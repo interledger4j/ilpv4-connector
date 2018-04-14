@@ -88,7 +88,7 @@ public interface RoutingTable<R extends Route> {
    * @param finalDestinationAddress An {@link InterledgerAddress} representing the final destination of the payment
    *                                (i.e., the address of the receiver of an ILP payment).
    *
-   * @return An optionally-present ILP-prefix identifying the ledger-plugin that should be used to make the next local
+   * @return An optionally-present ILP-prefix identifying the ledger-plugins that should be used to make the next local
    * transfer in an Interledger payment.
    */
   Collection<R> findNextHopRoutes(InterledgerAddress finalDestinationAddress);

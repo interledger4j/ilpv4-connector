@@ -9,23 +9,23 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>ilpv4-connector-model</artifactId>
+  <artifactId>ilpv4-connector-service</artifactId>
 
-  <name>ILPv4 :: Connector Model</name>
-  <description>Model objects for the ILPv4 Connectors.</description>
+  <name>ILPv4 :: Connector Services</name>
+  <description>All service objects for the ILPv4 Connector.</description>
 
   <dependencies>
     <dependency>
-      <groupId>javax.money</groupId>
-      <artifactId>money-api</artifactId>
+      <groupId>com.sappenin.ilpv4</groupId>
+      <artifactId>ilpv4-connector-model</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.immutables</groupId>
-      <artifactId>value</artifactId>
+      <groupId>com.sappenin.ilpv4</groupId>
+      <artifactId>ilpv4-connector-routing</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.interledger</groupId>
-      <artifactId>ilp-core</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot</artifactId>
     </dependency>
   </dependencies>
 </project>
