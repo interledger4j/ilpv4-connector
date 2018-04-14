@@ -27,6 +27,7 @@
     <module>ilpv4-connector-routing</module>
     <module>ilpv4-connector-service</module>
     <module>ilpv4-connector-server</module>
+    <module>ilpv4-connector-it</module>
   </modules>
 
   <dependencyManagement>
