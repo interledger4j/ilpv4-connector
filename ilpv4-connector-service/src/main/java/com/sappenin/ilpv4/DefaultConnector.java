@@ -1,7 +1,7 @@
 package com.sappenin.ilpv4;
 
-import com.sappenin.ilpv4.accounts.AccountManager;
 import com.sappenin.ilpv4.model.Account;
+import com.sappenin.ilpv4.peer.PeerManager;
 import com.sappenin.ilpv4.settings.ConnectorSettings;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
@@ -18,19 +18,19 @@ import java.util.concurrent.Future;
 public class DefaultConnector implements Connector {
 
   private final ConnectorSettings connectorSettings;
-  private final AccountManager accountManager;
+  private final PeerManager peerManager;
 
-  public DefaultConnector(final ConnectorSettings connectorSettings, final AccountManager accountManager) {
+  public DefaultConnector(final ConnectorSettings connectorSettings, final PeerManager peerManager) {
     this.connectorSettings = Objects.requireNonNull(connectorSettings);
-    this.accountManager = Objects.requireNonNull(accountManager);
+    this.peerManager = Objects.requireNonNull(peerManager);
   }
 
   @PostConstruct
   private final void init() {
-    // For each account setting, add an account to the AccountManager.
-    connectorSettings.getAccounts().stream()
-      .map(ConnectorSettings.ConfiguredAccount::toAccount)
-      .forEach(accountManager::add);
+    // For each peer, add it to the PeerManager.
+    connectorSettings.getPeers().stream()
+      .map(ConnectorSettings.ConfiguredPeer::toPeer)
+      .forEach(peerManager::add);
   }
 
   @Override

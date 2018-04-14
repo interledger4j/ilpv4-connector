@@ -20,7 +20,7 @@ public class ConnectorSettings {
 
   private String secret;
 
-  private List<ConfiguredAccount> accounts;
+  private List<ConfiguredPeer> peers;
 
   public String getIlpAddress() {
     return ilpAddress;
@@ -38,23 +38,64 @@ public class ConnectorSettings {
     this.secret = secret;
   }
 
-  public List<ConfiguredAccount> getAccounts() {
-    return accounts;
+  public List<ConfiguredPeer> getPeers() {
+    return peers;
   }
 
-  public void setAccounts(List<ConfiguredAccount> accounts) {
-    this.accounts = accounts;
+  public void setPeers(List<ConfiguredPeer> peers) {
+    this.peers = peers;
   }
 
   /**
-   * Models the YAML format for spring-boot automatic configuration propery loading.
+   * Models the YAML format for spring-boot automatic configuration property loading.
+   */
+  public static class ConfiguredPeer {
+
+    private UUID peerId;
+
+    private PeerType peerType;
+
+    public UUID getPeerId() {
+      return peerId;
+    }
+
+    public void setPeerId(UUID peerId) {
+      this.peerId = peerId;
+    }
+
+    public PeerType getPeerType() {
+      return peerType;
+    }
+
+    public void setPeerType(PeerType peerType) {
+      this.peerType = peerType;
+    }
+
+    public Peer toPeer() {
+      ImmutablePeer.Builder builder = ImmutablePeer.builder();
+
+      builder.peerId(PeerId.of(getPeerId()));
+      builder.relationship(getPeerType());
+
+      return builder.build();
+    }
+  }
+
+  /**
+   * Models the YAML format for spring-boot automatic configuration property loading.
    */
   public static class ConfiguredAccount {
 
     private UUID accountId;
     private Optional<BigInteger> balance;
-    private String pluginId;
-    private ConfiguredAccountOptions accountOptions;
+    private PluginType pluginType;
+    private Optional<BigInteger> minBalance;
+    private Optional<BigInteger> maxBalance;
+    private String assetCode;
+    private int currencyScale;
+    private Optional<BigInteger> settleThreshold;
+    private Optional<BigInteger> maximumPacketAmount;
+    private String relationship;
 
     public UUID getAccountId() {
       return accountId;
@@ -72,45 +113,13 @@ public class ConnectorSettings {
       this.balance = balance;
     }
 
-    public ConfiguredAccountOptions getAccountOptions() {
-      return accountOptions;
+    public PluginType getPluginType() {
+      return pluginType;
     }
 
-    public void setAccountOptions(ConfiguredAccountOptions configuredAccountOptions) {
-      this.accountOptions = configuredAccountOptions;
+    public void setPluginId(PluginType pluginType) {
+      this.pluginType = pluginType;
     }
-
-    public String getPluginId() {
-      return pluginId;
-    }
-
-    public void setPluginId(String pluginId) {
-      this.pluginId = pluginId;
-    }
-
-    public Account toAccount() {
-      ImmutableAccount.Builder builder = ImmutableAccount.builder();
-
-      builder.accountId(AccountId.of(getAccountId()));
-      builder.accountOptions(getAccountOptions().toAccountOptions());
-
-      getBalance().ifPresent(builder::balance);
-      return builder.build();
-    }
-  }
-
-  /**
-   * Models the YAML format for spring-boot automatic configuration property loading.
-   */
-  public static class ConfiguredAccountOptions {
-
-    private Optional<BigInteger> minBalance;
-    private Optional<BigInteger> maxBalance;
-    private String assetCode;
-    private int currencyScale;
-    private Optional<BigInteger> settleThreshold;
-    private Optional<BigInteger> maximumPacketAmount;
-    private String relationship;
 
     public Optional<BigInteger> getMinBalance() {
       return minBalance;
@@ -168,19 +177,20 @@ public class ConnectorSettings {
       this.relationship = relationship;
     }
 
-    public AccountOptions toAccountOptions() {
-      final ImmutableAccountOptions.Builder builder = ImmutableAccountOptions.builder();
+    public Account toAccount() {
+      ImmutableAccount.Builder builder = ImmutableAccount.builder();
 
-      builder.relationship(AccountRelationship.valueOf(getRelationship().toUpperCase()));
+      builder.accountId(AccountId.of(getAccountId()));
       builder.currencyScale(getCurrencyScale());
       builder.assetCode(Monetary.getCurrency(this.getAssetCode()));
-
       getMinBalance().ifPresent(builder::minBalance);
       getMaxBalance().ifPresent(builder::maxBalance);
       getMaximumPacketAmount().ifPresent(builder::maximumPacketAmount);
       getSettleThreshold().ifPresent(builder::settleThreshold);
+      getBalance().ifPresent(builder::balance);
 
       return builder.build();
     }
   }
+
 }

@@ -36,61 +36,63 @@ ilpv4:
     secret: secret
     # ILP address of the connector. This property can be omitted if an account with relation=parent
     # is configured under accounts.
-    ilp_address: test.com.sappenin.
+    ilp_address: test.sappenin
 
-    # Optional. If not present, this connector must be started with a persistent account store.
-    accounts:
-        - account_id: 280e5139-8d42-4719-b420-5accff63dcd1
-          counter_party_name: My ILSP
-          # Optional. Defines whether the connector should maintain and enforce a balance for this
-          # account. The balance is always from the connector's perspective. Therefore, a negative
-          # balance implies the connector owes money to the counterparty and a positive balance
-          # implies the counterparty owes money to the connector.
-          balance: 0
-          accountOptions:
-            # Relationship between the connector and the counterparty that the account is with.
-            relationship: parent
-            # Name of the ILP plugin that should be used for this account.
-            pluginId: "MockPlugin"
+    peers:
+      - peer_id: 280e5139-8d42-4719-b420-5accff63dcd1
+        # Relationship between the connector and the counterparty that the account is with. Options are PARENT, PEER,
+        # and CHILD.
+        peerType: parent
+        accounts:
+          - account_id: 280e5139-8d42-4719-b420-5accff63dcd1
+            counter_party_name: USD Account
+            # Optional. Defines whether the connector should maintain and enforce a balance for this
+            # account. The balance is always from the connector's perspective. Therefore, a negative
+            # balance implies the connector owes money to the counterparty and a positive balance
+            # implies the counterparty owes money to the connector.
+            balance: 0
             # Currency code or other asset identifier that will be used to select the correct rate
             # for this account.
             assetCode: USD
-#            # Interledger amounts are integers, but most currencies are typically represented as
-#            # fractional units, e.g. cents. This property defines how many Interledger units make
-#            # up one regular unit. For dollars, this would usually be set to 9, so that Interledger
-#            # amounts are expressed in nanodollars.
-#            assetScale: 9
-#            # Optional. Minimum balance (in this account's indivisible base units) the connector
-#            # must maintain. The connector will reject outgoing packets if they would put it below
-#            # this balance. The format is a string containing an integer (which may be prefixed with
-#            # - to indicate a negative value).
-#            minBalance: 0
-#            # Maximum balance (in this account's indivisible base units) the connector will allow.
-#            # The connector will reject incoming packets if they would put it above this balance.
-#            # The format is a string containing an integer (which may be prefixed with - to indicate
-#            # a negative value).
-#            maxBalance: 0
-#            # Optional. Maximum amount per packet for incoming prepare packets. Connector will reject
-#            # any incoming prepare packets from this account with a higher amount. Amount should be
-#            # provided as an integer in a string (in atomic units).
-#            maximumPacketAmount: 100000
-#            # Optional Balance (in this account's indivisible base units) numerically below which
-#            # the connector will automatically initiate a settlement. The format is a string
-#            # containing an integer (which may be prefixed with - to indicate a negative value).
-#            settleThreshold: 100
+            # Name of the ILP plugin that should be used for this account.
+            pluginId: "MockPlugin"
+
+#              # Interledger amounts are integers, but most currencies are typically represented as
+#              # fractional units, e.g. cents. This property defines how many Interledger units make
+#              # up one regular unit. For dollars, this would usually be set to 9, so that Interledger
+#              # amounts are expressed in nanodollars.
+#              assetScale: 9
+#              # Optional. Minimum balance (in this account's indivisible base units) the connector
+#              # must maintain. The connector will reject outgoing packets if they would put it below
+#              # this balance. The format is a string containing an integer (which may be prefixed with
+#              # - to indicate a negative value).
+#              minBalance: 0
+#              # Maximum balance (in this account's indivisible base units) the connector will allow.
+#              # The connector will reject incoming packets if they would put it above this balance.
+#              # The format is a string containing an integer (which may be prefixed with - to indicate
+#              # a negative value).
+#              maxBalance: 0
+#              # Optional. Maximum amount per packet for incoming prepare packets. Connector will reject
+#              # any incoming prepare packets from this account with a higher amount. Amount should be
+#              # provided as an integer in a string (in atomic units).
+#              maximumPacketAmount: 100000
+#              # Optional Balance (in this account's indivisible base units) numerically below which
+#              # the connector will automatically initiate a settlement. The format is a string
+#              # containing an integer (which may be prefixed with - to indicate a negative value).
+#              settleThreshold: 100
 
             # TODO: rateLimit, throughput, routes, options.
 
-        - account_id: 9408d80e-9d34-4fb5-88d7-c710b2df9793
-          counter_party_name: Adrian
-          balance: 0
-          account_options:
-            min_balance: 0
-            max_balance: 0
-            maximum_packet_amount: 100000
-            settle_threshold: 100
-            asset_code: USD
-            relationship: peer
+#        - account_id: 9408d80e-9d34-4fb5-88d7-c710b2df9793
+#          counter_party_name: Adrian
+#          balance: 0
+#          account_options:
+#            min_balance: 0
+#            max_balance: 0
+#            maximum_packet_amount: 100000
+#            settle_threshold: 100
+#            asset_code: USD
+#            relationship: peer
 
 ###
 #   H2 Settings

@@ -3,10 +3,11 @@ package com.sappenin.ilpv4.server;
 import com.sappenin.ilpv4.Connector;
 import com.sappenin.ilpv4.DefaultConnector;
 import com.sappenin.ilpv4.accounts.AccountManager;
-import com.sappenin.ilpv4.accounts.PropertyBasedAccountManager;
 import com.sappenin.ilpv4.connector.routing.InMemoryRoutingTable;
 import com.sappenin.ilpv4.connector.routing.Route;
 import com.sappenin.ilpv4.connector.routing.RoutingTable;
+import com.sappenin.ilpv4.peer.PeerManager;
+import com.sappenin.ilpv4.peer.PropertyBasedPeerManager;
 import com.sappenin.ilpv4.settings.ConnectorSettings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -26,8 +27,8 @@ public class ConnectorConfiguration extends WebMvcConfigurerAdapter {
   ConnectorSettings connectorSettings;
 
   @Bean
-  Connector connector(ConnectorSettings connectorSettings, AccountManager accountManager) {
-    return new DefaultConnector(connectorSettings, accountManager);
+  Connector connector(ConnectorSettings connectorSettings, PeerManager peerManager) {
+    return new DefaultConnector(connectorSettings, peerManager);
   }
 
   @Bean
@@ -41,7 +42,7 @@ public class ConnectorConfiguration extends WebMvcConfigurerAdapter {
   }
 
   @Bean
-  AccountManager accountManager() {
-    return new PropertyBasedAccountManager();
+  PeerManager accountManager() {
+    return new PropertyBasedPeerManager();
   }
 }

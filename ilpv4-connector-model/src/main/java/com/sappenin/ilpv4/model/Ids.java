@@ -17,4 +17,12 @@ public interface Ids {
 
   }
 
+  /**
+   * Identifier for {@link Account}.
+   */
+  @Value.Immutable
+  @Wrapped
+  abstract class _PeerId extends Wrapper<UUID> {
+
+  }
 }
