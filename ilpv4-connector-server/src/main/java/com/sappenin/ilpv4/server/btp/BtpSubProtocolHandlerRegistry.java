@@ -1,0 +1,25 @@
+package com.sappenin.ilpv4.server.btp;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+/**
+ * Holds BTP Subprotocol handlers for this IlpConnector.
+ */
+public class BtpSubProtocolHandlerRegistry {
+
+  private Map<String, BtpSubProtocolHandler> handlers = new HashMap<>();
+
+  public Optional<BtpSubProtocolHandler> getHandler(final String subProtocolName) {
+    Objects.requireNonNull(subProtocolName, "subProtocolName must not be null!");
+    return Optional.ofNullable(handlers.get(subProtocolName));
+  }
+
+  public BtpSubProtocolHandler putHandler(final String subProtocolName, final BtpSubProtocolHandler handler) {
+    Objects.requireNonNull(subProtocolName, "subProtocolName must not be null!");
+    Objects.requireNonNull(handler, "handler must not be null!");
+    return handlers.put(subProtocolName, handler);
+  }
+}

@@ -13,7 +13,7 @@ public interface Ids {
    */
   @Value.Immutable
   @Wrapped
-  abstract class _AccountId extends Wrapper<UUID> {
+  abstract class _AccountId extends Wrapper<String> {
 
   }
 

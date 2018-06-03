@@ -7,11 +7,13 @@ import org.springframework.context.annotation.Import;
 // A convenience annotation that adds all of the following:
 // @Configuration, @EnableAutoConfiguration, @EnableWebMvc,and @ComponentScan
 @SpringBootApplication
-@Import(ConnectorConfiguration.class)
 public class ConnectorApplication {
 
   public static void main(String[] args) {
-    SpringApplication.run(ConnectorApplication.class, args);
+
+    //SpringApplication.run(ConnectorApplication.class, args);
+
+    new ConnectorServer().start();
   }
 
 }

@@ -2,13 +2,13 @@ package com.sappenin.ilpv4.accounts;
 
 import com.sappenin.ilpv4.model.Account;
 import com.sappenin.ilpv4.model.AccountId;
-import com.sappenin.ilpv4.plugins.Plugin;
+import com.sappenin.ilpv4.model.Plugin;
 
 import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * <p>Manages Connector accounts for a given Interledger address prefix.</p>
+ * <p>Manages IlpConnector accounts for a given Interledger address prefix.</p>
  *
  * <p>A connector might have multiple accounts with the same Counterparty, each of which may
  * have a different or identical currency code.</p>

@@ -2,7 +2,6 @@ package com.sappenin.ilpv4.peer;
 
 import com.sappenin.ilpv4.model.Peer;
 import com.sappenin.ilpv4.model.PeerId;
-import com.sappenin.ilpv4.plugins.Plugin;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -21,6 +20,11 @@ public interface PeerManager {
    * An optionlly-present parent peer. //TODO: Add pointer to an overview of parent/child/peer relationships.
    */
   Optional<Peer> getParentPeer();
+
+  /**
+   * Called just before this Peer Manager will be destroyed (i.e., disconnect all peers).
+   */
+  void shutdown();
 
   /**
    * Add a peer peer to this manager.
@@ -43,12 +47,4 @@ public interface PeerManager {
    * Creates a {@code Stream} of Peers.
    */
   Stream<Peer> stream();
-
-  /**
-   * Gets the {@link Plugin} for the specified peer id.
-   */
-  Plugin getPlugin(PeerId peerId);
-
-  // TODO: Add getAccounts().
-
 }

@@ -8,19 +8,20 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.math.BigInteger;
 import java.util.Objects;
 import java.util.concurrent.Future;
 
 /**
- * A default implementation of {@link Connector}.
+ * A default implementation of {@link IlpConnector}.
  */
-public class DefaultConnector implements Connector {
+public class DefaultIlpConnector implements IlpConnector {
 
   private final ConnectorSettings connectorSettings;
   private final PeerManager peerManager;
 
-  public DefaultConnector(final ConnectorSettings connectorSettings, final PeerManager peerManager) {
+  public DefaultIlpConnector(final ConnectorSettings connectorSettings, final PeerManager peerManager) {
     this.connectorSettings = Objects.requireNonNull(connectorSettings);
     this.peerManager = Objects.requireNonNull(peerManager);
   }
@@ -28,15 +29,16 @@ public class DefaultConnector implements Connector {
   @PostConstruct
   private final void init() {
     // For each peer, add it to the PeerManager.
-    connectorSettings.getPeers().stream()
-      .map(ConnectorSettings.ConfiguredPeer::toPeer)
-      .forEach(peerManager::add);
+    connectorSettings.getPeers().stream().map(ConnectorSettings.PeerSettings::toPeer).forEach(peerManager::add);
+  }
+
+  @PreDestroy
+  public void shutdown() {
+    this.peerManager.shutdown();
   }
 
   @Override
-  public Future<InterledgerFulfillPacket> handleIncomingData(
-    Account sourceAccount, InterledgerPreparePacket interledgerPreparePacket
-  ) throws InterledgerProtocolException {
+  public Future<InterledgerFulfillPacket> handleIncomingData(Account sourceAccount, InterledgerPreparePacket interledgerPreparePacket) throws InterledgerProtocolException {
 
     throw new RuntimeException("Not yet implemented!");
   }

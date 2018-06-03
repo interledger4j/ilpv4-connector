@@ -3,6 +3,8 @@ package com.sappenin.ilpv4.model;
 import org.immutables.value.Value;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * An account tracks a balance between two Interledger peers.
@@ -27,4 +29,11 @@ public interface Peer {
    * @return
    */
   List<Account> getAccounts();
+
+  default Optional<Account> getAccountById(final AccountId accountId) {
+    Objects.requireNonNull(accountId, "accountId must be null!");
+    return this.getAccounts().stream()
+      .filter(account -> account.getAccountId().equals(accountId))
+      .findFirst();
+  }
 }

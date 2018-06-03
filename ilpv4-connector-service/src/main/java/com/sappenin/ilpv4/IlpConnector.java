@@ -8,7 +8,7 @@ import org.interledger.core.InterledgerProtocolException;
 import java.math.BigInteger;
 import java.util.concurrent.Future;
 
-public interface Connector {
+public interface IlpConnector {
 
   /**
    * Handle an incoming prepare-packet by either fulfilling it (if local) or by forwarding it to a remote peer.

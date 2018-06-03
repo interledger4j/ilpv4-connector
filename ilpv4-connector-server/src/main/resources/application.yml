@@ -55,31 +55,31 @@ ilpv4:
             # for this account.
             assetCode: USD
             # Name of the ILP plugin that should be used for this account.
-            pluginId: "MockPlugin"
+            pluginType: "MOCK"
 
-#              # Interledger amounts are integers, but most currencies are typically represented as
-#              # fractional units, e.g. cents. This property defines how many Interledger units make
-#              # up one regular unit. For dollars, this would usually be set to 9, so that Interledger
-#              # amounts are expressed in nanodollars.
-#              assetScale: 9
-#              # Optional. Minimum balance (in this account's indivisible base units) the connector
-#              # must maintain. The connector will reject outgoing packets if they would put it below
-#              # this balance. The format is a string containing an integer (which may be prefixed with
-#              # - to indicate a negative value).
-#              minBalance: 0
-#              # Maximum balance (in this account's indivisible base units) the connector will allow.
-#              # The connector will reject incoming packets if they would put it above this balance.
-#              # The format is a string containing an integer (which may be prefixed with - to indicate
-#              # a negative value).
-#              maxBalance: 0
-#              # Optional. Maximum amount per packet for incoming prepare packets. Connector will reject
-#              # any incoming prepare packets from this account with a higher amount. Amount should be
-#              # provided as an integer in a string (in atomic units).
-#              maximumPacketAmount: 100000
-#              # Optional Balance (in this account's indivisible base units) numerically below which
-#              # the connector will automatically initiate a settlement. The format is a string
-#              # containing an integer (which may be prefixed with - to indicate a negative value).
-#              settleThreshold: 100
+            # Interledger amounts are integers, but most currencies are typically represented as
+            # fractional units, e.g. cents. This property defines how many Interledger units make
+            # up one regular unit. For dollars, this would usually be set to 9, so that Interledger
+            # amounts are expressed in nanodollars.
+            assetScale: 9
+            # Optional. Minimum balance (in this account's indivisible base units) the connector
+            # must maintain. The connector will reject outgoing packets if they would put it below
+            # this balance. The format is a string containing an integer (which may be prefixed with
+            # - to indicate a negative value).
+            minBalance: 0
+            # Maximum balance (in this account's indivisible base units) the connector will allow.
+            # The connector will reject incoming packets if they would put it above this balance.
+            # The format is a string containing an integer (which may be prefixed with - to indicate
+            # a negative value).
+            maxBalance: 0
+            # Optional. Maximum amount per packet for incoming prepare packets. IlpConnector will reject
+            # any incoming prepare packets from this account with a higher amount. Amount should be
+            # provided as an integer in a string (in atomic units).
+            maximumPacketAmount: 100000
+            # Optional Balance (in this account's indivisible base units) numerically below which
+            # the connector will automatically initiate a settlement. The format is a string
+            # containing an integer (which may be prefixed with - to indicate a negative value).
+            settleThreshold: 100
 
             # TODO: rateLimit, throughput, routes, options.
 

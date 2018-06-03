@@ -4,7 +4,6 @@ import org.immutables.value.Value;
 
 import javax.money.CurrencyUnit;
 import java.math.BigInteger;
-import java.util.UUID;
 
 /**
  * An account tracks a balance between two Interledger peers.
@@ -31,7 +30,7 @@ public interface Account {
    *
    * @return
    */
-  PluginType getPluginType();
+  Plugin getPlugin();
 
   /**
    * The minimum balance this connector is allowed to have with the Counterparty of this account.

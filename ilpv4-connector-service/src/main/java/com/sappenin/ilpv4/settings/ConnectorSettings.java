@@ -1,13 +1,13 @@
 package com.sappenin.ilpv4.settings;
 
 import com.sappenin.ilpv4.model.*;
+import com.sappenin.ilpv4.plugins.MockPlugin;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import javax.money.Monetary;
 import java.math.BigInteger;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Pojo class for automatic mapping of configuration properties via Spring's {@link ConfigurationProperties}
@@ -20,7 +20,7 @@ public class ConnectorSettings {
 
   private String secret;
 
-  private List<ConfiguredPeer> peers;
+  private List<PeerSettings> peers;
 
   public String getIlpAddress() {
     return ilpAddress;
@@ -38,22 +38,24 @@ public class ConnectorSettings {
     this.secret = secret;
   }
 
-  public List<ConfiguredPeer> getPeers() {
+  public List<PeerSettings> getPeers() {
     return peers;
   }
 
-  public void setPeers(List<ConfiguredPeer> peers) {
+  public void setPeers(List<PeerSettings> peers) {
     this.peers = peers;
   }
 
   /**
    * Models the YAML format for spring-boot automatic configuration property loading.
    */
-  public static class ConfiguredPeer {
+  public static class PeerSettings {
 
     private UUID peerId;
 
     private PeerType peerType;
+
+    private Collection<AccountSettings> accounts;
 
     public UUID getPeerId() {
       return peerId;
@@ -71,11 +73,22 @@ public class ConnectorSettings {
       this.peerType = peerType;
     }
 
+    public Collection<AccountSettings> getAccounts() {
+      return accounts;
+    }
+
+    public void setAccounts(Collection<AccountSettings> accountSettings) {
+      this.accounts = accountSettings;
+    }
+
     public Peer toPeer() {
       ImmutablePeer.Builder builder = ImmutablePeer.builder();
 
       builder.peerId(PeerId.of(getPeerId()));
       builder.relationship(getPeerType());
+      builder.accounts(getAccounts().stream()
+        .map(AccountSettings::toAccount)
+        .collect(Collectors.toList()));
 
       return builder.build();
     }
@@ -84,9 +97,9 @@ public class ConnectorSettings {
   /**
    * Models the YAML format for spring-boot automatic configuration property loading.
    */
-  public static class ConfiguredAccount {
+  public static class AccountSettings {
 
-    private UUID accountId;
+    private String accountId;
     private Optional<BigInteger> balance;
     private PluginType pluginType;
     private Optional<BigInteger> minBalance;
@@ -97,11 +110,11 @@ public class ConnectorSettings {
     private Optional<BigInteger> maximumPacketAmount;
     private String relationship;
 
-    public UUID getAccountId() {
+    public String getAccountId() {
       return accountId;
     }
 
-    public void setAccountId(UUID accountId) {
+    public void setAccountId(String accountId) {
       this.accountId = accountId;
     }
 
@@ -117,7 +130,7 @@ public class ConnectorSettings {
       return pluginType;
     }
 
-    public void setPluginId(PluginType pluginType) {
+    public void setPluginType(PluginType pluginType) {
       this.pluginType = pluginType;
     }
 
@@ -180,17 +193,41 @@ public class ConnectorSettings {
     public Account toAccount() {
       ImmutableAccount.Builder builder = ImmutableAccount.builder();
 
-      builder.accountId(AccountId.of(getAccountId()));
-      builder.currencyScale(getCurrencyScale());
+      final AccountId accountId = AccountId.of(getAccountId());
+      builder.accountId(accountId);
+      builder.plugin(this.constructNewPlugin(accountId, getPluginType()));
       builder.assetCode(Monetary.getCurrency(this.getAssetCode()));
+      builder.currencyScale(getCurrencyScale());
       getMinBalance().ifPresent(builder::minBalance);
       getMaxBalance().ifPresent(builder::maxBalance);
       getMaximumPacketAmount().ifPresent(builder::maximumPacketAmount);
       getSettleThreshold().ifPresent(builder::settleThreshold);
       getBalance().ifPresent(builder::balance);
-
       return builder.build();
     }
-  }
 
+    /**
+     * Construct a new {@link Plugin} based upon the supplied info.
+     *
+     * @param accountId  The {@link AccountId} that this plugin is operating on behalf of.
+     * @param pluginType A {@link PluginType} that corresponds to the type of {@link Plugin} to construct.
+     *
+     * @return A newly constructed {@link Plugin}.
+     */
+    private Plugin constructNewPlugin(final AccountId accountId, final PluginType pluginType) {
+      Objects.requireNonNull(pluginType);
+
+      switch (pluginType) {
+        case MOCK: {
+          return new MockPlugin(accountId);
+        }
+        case BTP: {
+
+        }
+        default: {
+          throw new RuntimeException(String.format("Unsupported PluginType: %s", pluginType));
+        }
+      }
+    }
+  }
 }

@@ -1,10 +1,11 @@
-package com.sappenin.ilpv4.plugins;
+package com.sappenin.ilpv4.model;
 
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 
 import java.math.BigInteger;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 /**
@@ -15,13 +16,20 @@ import java.util.concurrent.Future;
  * <pre>
  * Sender --sendPacket-> Connector 1 --sendPacket-> Connector 2 --sendPacket-> Receiver
  *    |                        |                        |
- *    `----sendMoney->         `----sendMoney->         `----sendMoney->
+ *    `----settle->            `----settle->            `----settle->
  * </pre>
  *
  * Sender/Connector's call <tt>sendData</tt>, wait for a fulfillment, and then call
- * <tt>sendMoney</tt> if the fulfillment is valid.
+ * <tt>settle</tt> if the fulfillment is valid.
  */
 public interface Plugin {
+
+  /**
+   * Returns the account identifier that this plugin instance is using.
+   *
+   * @return An instance of {@link AccountId}.
+   */
+  AccountId getAccountId();
 
   void doConnect();
 
@@ -36,13 +44,21 @@ public interface Plugin {
    *
    * @throws InterledgerProtocolException if the request is rejected by the peer.
    */
-  Future<InterledgerFulfillPacket> sendPacket(InterledgerPreparePacket preparePacket)
+  CompletableFuture<InterledgerFulfillPacket> sendPacket(InterledgerPreparePacket preparePacket)
     throws InterledgerProtocolException;
 
   /**
-   * Transfer amount units of money from the caller to the counterparty of the account.
+   * Settle an outstanding ILP balance with a counterparty by transferring {@code amount} units of value from this ILP
+   * node to the counterparty of the account used by this plugin.
    *
-   * @param amount
+   * @param amount The amount of "money" to transfer.
    */
-  void sendMoney(BigInteger amount);
+  void settle(BigInteger amount);
+
+  /**
+   * Accessor for the type of this plugin.
+   *
+   * @return An instance of {@link PluginType}.
+   */
+  PluginType getPluginType();
 }
