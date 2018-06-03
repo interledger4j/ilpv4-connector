@@ -11,10 +11,10 @@ import com.sappenin.ilpv4.server.btp.BtpWebSocketConfig;
 import com.sappenin.ilpv4.server.support.ConnectorServerSettings;
 import com.sappenin.ilpv4.settings.ConnectorSettings;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -22,7 +22,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 /**
  * The root configuration file for the ILPv4 IlpConnector.
  */
-@Configuration
+@SpringBootApplication
 @Import({BtpWebSocketConfig.class})
 @EnableConfigurationProperties({ConnectorSettings.class})
 public class ConnectorServerConfig implements WebMvcConfigurer {

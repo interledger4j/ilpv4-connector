@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Import;
 
 // A convenience annotation that adds all of the following:
 // @Configuration, @EnableAutoConfiguration, @EnableWebMvc,and @ComponentScan
-@SpringBootApplication
+//@SpringBootApplication
 public class ConnectorApplication {
 
   public static void main(String[] args) {
