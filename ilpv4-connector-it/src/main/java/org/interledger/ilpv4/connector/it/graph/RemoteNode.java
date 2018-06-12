@@ -3,12 +3,12 @@ package org.interledger.ilpv4.connector.it.graph;
 /**
  * @author jfulton
  */
-public class RemoteVertex implements Vertex {
+public class RemoteNode implements Node {
 
     private final String host;
     private final int port;
 
-    public RemoteVertex(final String host, final int port) {
+    public RemoteNode(final String host, final int port) {
         this.host = host;
         this.port = port;
     }

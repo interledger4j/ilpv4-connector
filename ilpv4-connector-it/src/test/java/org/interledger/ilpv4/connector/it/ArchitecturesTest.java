@@ -1,32 +1,32 @@
 package org.interledger.ilpv4.connector.it;
 
 import org.interledger.ilpv4.connector.it.graph.Graph;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 /**
- * @author jfulton
+ * Simple test to verify that the BeerCoin graph is working properly.
  */
 public class ArchitecturesTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(ArchitecturesTest.class);
-    private Graph graph = Architectures.simple();
+  private static final Logger logger = LoggerFactory.getLogger(ArchitecturesTest.class);
+  private static Graph graph = Architectures.beerCoin();
 
-    @BeforeClass
-    public void setup() {
-        graph.start();
-    }
+  @BeforeClass
+  public static void setup() {
+    graph.start();
+  }
 
-    @AfterClass
-    public void shutdown() {
-        graph.stop();
-    }
+  @AfterClass
+  public static void shutdown() {
+    graph.stop();
+  }
 
-    @Test
-    public void testName() throws Exception {
-        logger.info("It works!");
-    }
+  @Test
+  public void testName() {
+    logger.info("It works!");
+  }
 }

@@ -1,6 +1,5 @@
 package com.sappenin.ilpv4.plugins;
 
-import com.sappenin.ilpv4.model.AccountId;
 import com.sappenin.ilpv4.model.Plugin;
 import com.sappenin.ilpv4.model.PluginType;
 import org.interledger.core.Fulfillment;
@@ -22,32 +21,35 @@ public class MockPlugin implements Plugin {
 
   private static final String PREIMAGE = "Roads? Where we're going we don't need roads!";
   private static final String ILP_DATA = "MARTY!";
+
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
-  private final AccountId accountId;
+
+  private final String interledgerAddress;
   private final AtomicBoolean connected;
 
   /**
    * Required-args Constructor.
    */
-  public MockPlugin(final AccountId accountId) {
-    this.accountId = Objects.requireNonNull(accountId);
+  public MockPlugin(final String interledgerAddress) {
+    this.interledgerAddress = Objects.requireNonNull(interledgerAddress);
     this.connected = new AtomicBoolean(false);
   }
 
   @Override
   public void doConnect() {
     // NO OP
-    logger.info("{} connecting to {}...", this.getPluginType().getPluginDescription(), this.getAccountId());
+    logger.info("{} connecting to {}...", this.getPluginType().getPluginDescription(), this.getInterledgerAddress());
     this.connected.compareAndSet(false, true);
-    logger.info("{} connected to {}!", this.getPluginType().getPluginDescription(), this.getAccountId());
+    logger.info("{} connected to {}!", this.getPluginType().getPluginDescription(), this.getInterledgerAddress());
   }
 
   @Override
   public void doDisconnect() {
     // NO OP
-    logger.info("{} disconnecting to {}...", this.getPluginType().getPluginDescription(), this.getAccountId());
+    logger
+      .info("{} disconnecting from {}...", this.getPluginType().getPluginDescription(), this.getInterledgerAddress());
     this.connected.compareAndSet(true, false);
-    logger.info("{} disconnected to {}!", this.getPluginType().getPluginDescription(), this.getAccountId());
+    logger.info("{} disconnected from {}!", this.getPluginType().getPluginDescription(), this.getInterledgerAddress());
   }
 
   /**
@@ -66,7 +68,7 @@ public class MockPlugin implements Plugin {
   @Override
   public void settle(BigInteger amount) {
     // NO OP
-    logger.info("Settling {} units!", amount);
+    logger.info("Settling {} units with {}!", amount, getInterledgerAddress());
   }
 
   @Override
@@ -75,7 +77,7 @@ public class MockPlugin implements Plugin {
   }
 
   @Override
-  public AccountId getAccountId() {
-    return this.accountId;
+  public String getInterledgerAddress() {
+    return this.interledgerAddress;
   }
 }

@@ -1,9 +1,8 @@
 package org.interledger.ilpv4.connector.it.graph;
 
 /**
- * @author jfulton
+ * A connection between two Nodes in a graph.
  */
 public abstract class Edge {
-
-    public abstract void connect(Graph graph);
+  public abstract void connect(Graph graph);
 }

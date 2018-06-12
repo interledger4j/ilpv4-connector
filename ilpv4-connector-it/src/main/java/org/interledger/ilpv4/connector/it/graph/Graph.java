@@ -6,40 +6,40 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author jfulton
+ * A collection of nodes and edges that connect those nodes.
  */
 public class Graph {
 
-    private Map<String, Vertex> vertices = new HashMap<>();
-    private List<Edge> edges = new ArrayList<>();
+  private final Map<String, Node> nodes = new HashMap<>();
+  private final List<Edge> edges = new ArrayList<>();
 
-    public Graph addVertex(String key, Vertex vertex) {
-        vertices.put(key, vertex);
-        return this;
-    }
+  public Graph addNode(String key, Node node) {
+    nodes.put(key, node);
+    return this;
+  }
 
-    public Graph addEdge(Edge edge) {
-        edges.add(edge);
-        return this;
-    }
+  public Graph addEdge(Edge edge) {
+    edges.add(edge);
+    return this;
+  }
 
-    public Vertex getVertex(String key) {
-        return vertices.get(key);
-    }
+  public Node getNode(String key) {
+    return nodes.get(key);
+  }
 
-    public Graph start() {
-        for (Vertex vertex : vertices.values()) {
-            vertex.start();
-        }
-        for (Edge edge : edges) {
-            edge.connect(this);
-        }
-        return this;
+  public Graph start() {
+    for (Node node : nodes.values()) {
+      node.start();
     }
+    for (Edge edge : edges) {
+      edge.connect(this);
+    }
+    return this;
+  }
 
-    public void stop() {
-        for (Vertex vertex : vertices.values()) {
-            vertex.stop();
-        }
+  public void stop() {
+    for (Node node : nodes.values()) {
+      node.stop();
     }
+  }
 }

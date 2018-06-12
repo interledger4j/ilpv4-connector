@@ -1,6 +1,7 @@
 package com.sappenin.ilpv4.model;
 
 import org.immutables.value.Value;
+import org.interledger.core.InterledgerAddress;
 
 import javax.money.CurrencyUnit;
 import java.math.BigInteger;
@@ -12,11 +13,13 @@ import java.math.BigInteger;
 public interface Account {
 
   /**
-   * An local identifier for the account
+   * The ILP Address for this account.
    *
-   * @return a UUID identifying the account
+   * @return A {@link InterledgerAddress} identifying the account
    */
-  AccountId getAccountId();
+  // TODO: Convert to ILP Address once https://github.com/hyperledger/quilt/issues/139 is fixed to relax the ILP
+  // address.
+  String getInterledgerAddress();
 
   /**
    * The current balance of this account.

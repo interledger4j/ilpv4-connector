@@ -13,7 +13,7 @@ import java.util.stream.Stream;
  */
 public class PropertyBasedPeerManager implements PeerManager {
 
-  private final Map<PeerId, Peer> peers;
+  private final Map<String, Peer> peers;
   private Optional<Peer> parentPeer = Optional.empty();
 
   public PropertyBasedPeerManager() {
@@ -40,7 +40,7 @@ public class PropertyBasedPeerManager implements PeerManager {
       // Set the parent peer, if it exists.
       this.parentPeer = Optional.of(peer);
     } else {
-      if (peers.putIfAbsent(peer.getPeerId(), peer) != null) {
+      if (peers.putIfAbsent(peer.getInterledgerAddress(), peer) != null) {
         throw new RuntimeException(
           String.format("Peers may only be configured once! Peer: %s", peer));
       }

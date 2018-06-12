@@ -1,31 +1,41 @@
 package org.interledger.ilpv4.connector.it.graph.edges;
 
+import com.sappenin.ilpv4.model.Peer;
+import com.sappenin.ilpv4.peer.PeerManager;
+import org.interledger.ilpv4.connector.it.graph.ConnectorNode;
 import org.interledger.ilpv4.connector.it.graph.Edge;
 import org.interledger.ilpv4.connector.it.graph.Graph;
-import org.interledger.ilpv4.connector.it.graph.Vertex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.Objects;
+
 /**
- * @author jfulton
+ * Connects two ILPv4 nodes together by adding a {@link Peer} to a {@link ConnectorNode}.
  */
 public class PeeringEdge extends Edge {
 
-    private static final Logger logger = LoggerFactory.getLogger(PeeringEdge.class);
-    private final String firstPeer;
-    private final String secondPeer;
+  private static final Logger logger = LoggerFactory.getLogger(PeeringEdge.class);
 
-    public PeeringEdge(final String firstPeer, final String secondPeer) {
-        this.firstPeer = firstPeer;
-        this.secondPeer = secondPeer;
-    }
+  private final String nodeKey;
+  private final List<Peer> peers;
 
-    @Override
-    public void connect(final Graph graph) {
-        Vertex first = graph.getVertex(firstPeer);
-        Vertex second = graph.getVertex(secondPeer);
-        logger.info("Peering {} ({}:{}) and {} ({}:{} together",
-            firstPeer, first.getHost(), first.getPort(),
-            secondPeer, second.getHost(), second.getPort());
-    }
+  public PeeringEdge(final String nodeKey, final List<Peer> peers) {
+    this.nodeKey = Objects.requireNonNull(nodeKey);
+    this.peers = Objects.requireNonNull(peers);
+  }
+
+  @Override
+  public void connect(final Graph graph) {
+    Objects.requireNonNull(graph);
+
+    final ConnectorNode connectorNode = (ConnectorNode) graph.getNode(nodeKey);
+    logger.info("Adding peer connectorNode {}...", connectorNode);
+    peers.stream().forEach(peer ->
+      connectorNode.getServer().getContext().getBean(PeerManager.class).add(peer)
+    );
+    logger.info("Node initialized: {}...", connectorNode);
+  }
+
 }
