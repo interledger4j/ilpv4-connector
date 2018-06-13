@@ -22,11 +22,21 @@ public interface Account {
   String getInterledgerAddress();
 
   /**
+   * The ILP Address for the Connector operating this account.
+   *
+   * @return
+   */
+  String getConnectorInterledgerAddress();
+
+  /**
    * The current balance of this account.
    *
    * @return A {@link BigInteger} representing the balance of this account.
    */
-  BigInteger getBalance();
+  @Value.Default
+  default BigInteger getBalance() {
+    return BigInteger.ZERO;
+  }
 
   /**
    * The type of plugin that this account uses to communicate with its peer.
@@ -72,11 +82,17 @@ public interface Account {
   /**
    * The threshold over which this account must be settled before it can process more ILP payment packets.
    */
-  BigInteger getSettleThreshold();
+  @Value.Default
+  default BigInteger getSettleThreshold() {
+    return BigInteger.valueOf(100);
+  }
 
   /**
    * The maximum amount that a particular payment packet can contain.
    */
-  BigInteger getMaximumPacketAmount();
+  @Value.Default
+  default BigInteger getMaximumPacketAmount() {
+    return BigInteger.valueOf(100);
+  }
 
 }

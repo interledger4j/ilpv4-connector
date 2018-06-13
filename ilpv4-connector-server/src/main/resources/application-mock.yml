@@ -40,10 +40,12 @@ ilpv4:
 
     peers:
       - interledger_address: test.mock-peer
+        connector_interledger_address: test.example
         # Relationship between the connector and the counterparty that the account is with. Options are PARENT, PEER,
         # and CHILD.
         peerType: parent
         accounts:
+          - connector_interledger_address: test.mock-peer
           - interledger_address: test.mock-peer.usd
             description: USD Account
             # Optional. Defines whether the connector should maintain and enforce a balance for this

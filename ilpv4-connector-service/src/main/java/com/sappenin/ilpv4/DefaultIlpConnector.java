@@ -6,6 +6,8 @@ import com.sappenin.ilpv4.settings.ConnectorSettings;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -18,6 +20,8 @@ import java.util.concurrent.Future;
  */
 public class DefaultIlpConnector implements IlpConnector {
 
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
   private final ConnectorSettings connectorSettings;
   private final PeerManager peerManager;
 
@@ -28,13 +32,17 @@ public class DefaultIlpConnector implements IlpConnector {
 
   @PostConstruct
   private final void init() {
-    // For each peer, add it to the PeerManager.
     connectorSettings.getPeers().stream().map(ConnectorSettings.PeerSettings::toPeer).forEach(peerManager::add);
   }
 
   @PreDestroy
   public void shutdown() {
     this.peerManager.shutdown();
+  }
+
+  @Override
+  public ConnectorSettings getConnectorSettings() {
+    return this.connectorSettings;
   }
 
   @Override

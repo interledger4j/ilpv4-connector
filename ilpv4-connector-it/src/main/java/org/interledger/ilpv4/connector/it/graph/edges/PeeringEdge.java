@@ -31,6 +31,8 @@ public class PeeringEdge extends Edge {
     Objects.requireNonNull(graph);
 
     final ConnectorNode connectorNode = (ConnectorNode) graph.getNode(nodeKey);
+    assert connectorNode != null;
+
     logger.info("Adding peer connectorNode {}...", connectorNode);
     peers.stream().forEach(peer ->
       connectorNode.getServer().getContext().getBean(PeerManager.class).add(peer)

@@ -23,6 +23,12 @@ public interface Peer {
   String getInterledgerAddress();
 
   /**
+   * The ILP Address for the Connector running
+   * @return
+   */
+  String getConnectorInterledgerAddress();
+
+  /**
    * The relationship between this account and the local node. When an Interledger node peers with another node through
    * an account, the source peer will establish a relationship that can have one of three types depending on how it fits
    * into the wider network hierarchy.

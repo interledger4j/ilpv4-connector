@@ -1,7 +1,6 @@
 package com.sappenin.ilpv4.server.support;
 
 import org.springframework.boot.SpringApplication;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.PropertiesPropertySource;
@@ -44,7 +43,7 @@ public class Server {
     return this;
   }
 
-  public ApplicationContext getContext() {
+  public ConfigurableApplicationContext getContext() {
     return context;
   }
 

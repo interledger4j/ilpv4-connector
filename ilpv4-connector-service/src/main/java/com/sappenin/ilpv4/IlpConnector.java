@@ -1,6 +1,7 @@
 package com.sappenin.ilpv4;
 
 import com.sappenin.ilpv4.model.Account;
+import com.sappenin.ilpv4.settings.ConnectorSettings;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
@@ -9,6 +10,8 @@ import java.math.BigInteger;
 import java.util.concurrent.Future;
 
 public interface IlpConnector {
+
+  ConnectorSettings getConnectorSettings();
 
   /**
    * Handle an incoming prepare-packet by either fulfilling it (if local) or by forwarding it to a remote peer.

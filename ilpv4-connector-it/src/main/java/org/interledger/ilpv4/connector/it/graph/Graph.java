@@ -1,9 +1,6 @@
 package org.interledger.ilpv4.connector.it.graph;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * A collection of nodes and edges that connect those nodes.
@@ -25,6 +22,10 @@ public class Graph {
 
   public Node getNode(String key) {
     return nodes.get(key);
+  }
+
+  public Collection<Node> getNodeValues(){
+    return nodes.values();
   }
 
   public Graph start() {

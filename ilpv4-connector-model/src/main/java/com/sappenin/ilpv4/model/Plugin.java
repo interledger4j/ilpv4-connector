@@ -31,6 +31,8 @@ public interface Plugin {
    */
   String getInterledgerAddress();
 
+  String getConnectorInterledgerAddress();
+
   void doConnect();
 
   void doDisconnect();

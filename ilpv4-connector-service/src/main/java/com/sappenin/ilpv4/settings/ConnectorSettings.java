@@ -57,6 +57,7 @@ public class ConnectorSettings {
   public static class PeerSettings {
 
     private String interledgerAddress;
+    private String connectorInterledgerAddress;
 
     private PeerType peerType = PeerType.PEER;
 
@@ -68,6 +69,14 @@ public class ConnectorSettings {
 
     public void setInterledgerAddress(String peerId) {
       this.interledgerAddress = peerId;
+    }
+
+    public String getConnectorInterledgerAddress() {
+      return connectorInterledgerAddress;
+    }
+
+    public void setConnectorInterledgerAddress(String connectorInterledgerAddress) {
+      this.connectorInterledgerAddress = connectorInterledgerAddress;
     }
 
     public PeerType getPeerType() {
@@ -90,6 +99,7 @@ public class ConnectorSettings {
       final ImmutablePeer.Builder builder = ImmutablePeer.builder();
 
       builder.interledgerAddress(getInterledgerAddress());
+      builder.connectorInterledgerAddress(getConnectorInterledgerAddress());
       builder.relationship(getPeerType());
       builder.accounts(getAccounts().stream()
         .map(AccountSettings::toAccount)
@@ -103,7 +113,11 @@ public class ConnectorSettings {
    * Models the YAML format for spring-boot automatic configuration property loading.
    */
   public static class AccountSettings {
+
+    // The ILP Address that this account correlates to.
     private String interledgerAddress;
+    private String connectorInterledgerAddress;
+
     private String assetCode;
 
     private Optional<BigInteger> balance = Optional.empty();
@@ -119,8 +133,16 @@ public class ConnectorSettings {
       return interledgerAddress;
     }
 
-    public void setInterledgerAddress(String peerId) {
-      this.interledgerAddress = peerId;
+    public void setInterledgerAddress(String sourceInterledgerAddress) {
+      this.interledgerAddress = sourceInterledgerAddress;
+    }
+
+    public String getConnectorInterledgerAddress() {
+      return connectorInterledgerAddress;
+    }
+
+    public void setConnectorInterledgerAddress(String connectorInterledgerAddress) {
+      this.connectorInterledgerAddress = connectorInterledgerAddress;
     }
 
     public Optional<BigInteger> getBalance() {
@@ -199,7 +221,10 @@ public class ConnectorSettings {
       ImmutableAccount.Builder builder = ImmutableAccount.builder();
 
       builder.interledgerAddress(getInterledgerAddress());
-      builder.plugin(this.constructNewPlugin(getInterledgerAddress(), getPluginType()));
+      builder.connectorInterledgerAddress(getConnectorInterledgerAddress());
+      builder.plugin(this.constructNewPlugin(
+        getConnectorInterledgerAddress(), getInterledgerAddress(), getPluginType()
+      ));
       builder.assetCode(Monetary.getCurrency(this.getAssetCode()));
       builder.currencyScale(getCurrencyScale());
       getMinBalance().ifPresent(builder::minBalance);
@@ -218,12 +243,13 @@ public class ConnectorSettings {
      *
      * @return A newly constructed {@link Plugin}.
      */
-    private Plugin constructNewPlugin(final String interledgerAddress, final PluginType pluginType) {
+    private Plugin constructNewPlugin(final String connectorInterledgerAddress, final String interledgerAddress, final
+    PluginType pluginType) {
       Objects.requireNonNull(pluginType);
 
       switch (pluginType) {
         case MOCK: {
-          return new MockPlugin(interledgerAddress);
+          return new MockPlugin(interledgerAddress, connectorInterledgerAddress);
         }
         case BTP: {
 
