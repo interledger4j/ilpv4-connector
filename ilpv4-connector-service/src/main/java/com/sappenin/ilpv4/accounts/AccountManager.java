@@ -1,7 +1,6 @@
 package com.sappenin.ilpv4.accounts;
 
 import com.sappenin.ilpv4.model.Account;
-import com.sappenin.ilpv4.model.AccountId;
 import com.sappenin.ilpv4.model.Plugin;
 
 import java.util.Optional;
@@ -16,27 +15,25 @@ import java.util.stream.Stream;
 public interface AccountManager {
 
   /**
-   * An optionlly-present parent account. //TODO: Add pointer to an overview of parent/child/peer relationships.
-   */
-  Optional<Account> getParentAccount();
-
-  /**
    * Add a peer account to this manager.
+   *
+   * @throws RuntimeException if the account already exists.
    */
-  boolean add(Account account);
+  void add(Account account);
 
   /**
    * Remove an account from this manager by its id.
    */
-  void remove(AccountId accountId);
+  void remove(String interledgerAddress);
 
   /**
    * Get the Ledger Layer2Plugin for the specified {@code ledgerPrefix}.
    *
-   * @param accountId The {@link AccountId} of the account to retrieve. ¬   * @return The requested {@link Account}, if
-   *                  present.
+   * @param interledgerAddress The {@link String} of the account to retrieve.
+   *
+   * @return The requested {@link Account}, if present.
    */
-  Optional<Account> getAccount(AccountId accountId);
+  Optional<Account> getAccount(String interledgerAddress);
 
   /**
    * Creates a {@code Stream} of Accounts.
@@ -44,8 +41,8 @@ public interface AccountManager {
   Stream<Account> stream();
 
   /**
-   * Gets the {@link Plugin} for the specified account id.
+   * Gets the {@link Plugin} for the specified account address.
    */
-  Plugin getPlugin(AccountId accountId);
+  Plugin getPlugin(String interledgerAddress);
 
 }

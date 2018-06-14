@@ -2,15 +2,12 @@ package com.sappenin.ilpv4.settings;
 
 import com.google.common.collect.Lists;
 import com.sappenin.ilpv4.model.*;
-import com.sappenin.ilpv4.plugins.MockPlugin;
-import org.interledger.core.InterledgerAddress;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import javax.money.Monetary;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -221,10 +218,7 @@ public class ConnectorSettings {
       ImmutableAccount.Builder builder = ImmutableAccount.builder();
 
       builder.interledgerAddress(getInterledgerAddress());
-      builder.connectorInterledgerAddress(getConnectorInterledgerAddress());
-      builder.plugin(this.constructNewPlugin(
-        getConnectorInterledgerAddress(), getInterledgerAddress(), getPluginType()
-      ));
+      builder.pluginType(getPluginType());
       builder.assetCode(Monetary.getCurrency(this.getAssetCode()));
       builder.currencyScale(getCurrencyScale());
       getMinBalance().ifPresent(builder::minBalance);
@@ -235,29 +229,5 @@ public class ConnectorSettings {
       return builder.build();
     }
 
-    /**
-     * Construct a new {@link Plugin} based upon the supplied info.
-     *
-     * @param interledgerAddress The {@link InterledgerAddress} that this plugin is operating on behalf of.
-     * @param pluginType         A {@link PluginType} that corresponds to the type of {@link Plugin} to construct.
-     *
-     * @return A newly constructed {@link Plugin}.
-     */
-    private Plugin constructNewPlugin(final String connectorInterledgerAddress, final String interledgerAddress, final
-    PluginType pluginType) {
-      Objects.requireNonNull(pluginType);
-
-      switch (pluginType) {
-        case MOCK: {
-          return new MockPlugin(interledgerAddress, connectorInterledgerAddress);
-        }
-        case BTP: {
-
-        }
-        default: {
-          throw new RuntimeException(String.format("Unsupported PluginType: %s", pluginType));
-        }
-      }
-    }
   }
 }

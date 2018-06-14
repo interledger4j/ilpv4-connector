@@ -1,7 +1,6 @@
 package com.sappenin.ilpv4.peer;
 
 import com.sappenin.ilpv4.model.Peer;
-import com.sappenin.ilpv4.model.PeerId;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -34,14 +33,16 @@ public interface PeerManager {
   /**
    * Remove an peer from this manager by its id.
    */
-  void remove(PeerId peerId);
+  void remove(String interledgerAddress);
 
   /**
    * Get the Ledger Layer2Plugin for the specified {@code ledgerPrefix}.
    *
-   * @param peerId The {@link PeerId} of the peer to retrieve. ¬   * @return The requested {@link Peer}, if present.
+   * @param interledgerAddress The {@link String} of the peer to retrieve.
+   *
+   * @return The requested {@link Peer}, if present.
    */
-  Optional<Peer> getPeer(PeerId peerId);
+  Optional<Peer> getPeer(String interledgerAddress);
 
   /**
    * Creates a {@code Stream} of Peers.

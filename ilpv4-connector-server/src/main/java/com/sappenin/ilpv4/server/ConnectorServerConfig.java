@@ -2,21 +2,18 @@ package com.sappenin.ilpv4.server;
 
 import com.sappenin.ilpv4.DefaultIlpConnector;
 import com.sappenin.ilpv4.IlpConnector;
+import com.sappenin.ilpv4.accounts.AccountManager;
+import com.sappenin.ilpv4.accounts.DefaultAccountManager;
 import com.sappenin.ilpv4.connector.routing.InMemoryRoutingTable;
 import com.sappenin.ilpv4.connector.routing.Route;
 import com.sappenin.ilpv4.connector.routing.RoutingTable;
+import com.sappenin.ilpv4.peer.DefaultPeerManager;
 import com.sappenin.ilpv4.peer.PeerManager;
-import com.sappenin.ilpv4.peer.PropertyBasedPeerManager;
 import com.sappenin.ilpv4.server.btp.BtpWebSocketConfig;
-import com.sappenin.ilpv4.server.support.ConnectorServerSettings;
 import com.sappenin.ilpv4.settings.ConnectorSettings;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -25,21 +22,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @SpringBootApplication
 @Import({BtpWebSocketConfig.class})
-//@EnableConfigurationProperties({ConnectorSettings.class})
 public class ConnectorServerConfig implements WebMvcConfigurer {
 
-  @Autowired
-  private ServletWebServerApplicationContext server;
-
   @Bean
-  @Order(Ordered.LOWEST_PRECEDENCE)
   ConnectorSettings connectorSettings() {
     return new ConnectorSettings();
-  }
-
-  @Bean
-  public ConnectorServerSettings settings() {
-    return new ConnectorServerSettings(server);
   }
 
   @Bean
@@ -58,7 +45,13 @@ public class ConnectorServerConfig implements WebMvcConfigurer {
   }
 
   @Bean
-  PeerManager accountManager() {
-    return new PropertyBasedPeerManager();
+  PeerManager peerManager(AccountManager accountManager) {
+    return new DefaultPeerManager(accountManager);
   }
+
+  @Bean
+  AccountManager accountManager(ConnectorSettings connectorSettings) {
+    return new DefaultAccountManager(connectorSettings);
+  }
+
 }

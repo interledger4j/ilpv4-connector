@@ -45,8 +45,8 @@ ilpv4:
         # and CHILD.
         peerType: parent
         accounts:
-          - connector_interledger_address: test.mock-peer
           - interledger_address: test.mock-peer.usd
+            connector_interledger_address: test.mock-peer
             description: USD Account
             # Optional. Defines whether the connector should maintain and enforce a balance for this
             # account. The balance is always from the connector's perspective. Therefore, a negative

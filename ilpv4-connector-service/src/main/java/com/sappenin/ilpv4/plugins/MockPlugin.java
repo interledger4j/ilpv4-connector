@@ -2,6 +2,7 @@ package com.sappenin.ilpv4.plugins;
 
 import com.sappenin.ilpv4.model.Plugin;
 import com.sappenin.ilpv4.model.PluginType;
+import com.sappenin.ilpv4.settings.ConnectorSettings;
 import org.interledger.core.Fulfillment;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
@@ -27,41 +28,41 @@ public class MockPlugin implements Plugin {
   // The ILP Address for this plugin.
   private final String interledgerAddress;
   // The ILP Address of the Connector operating this plugin.
-  private final String connectorInterledgerAddress;
+  private final ConnectorSettings connectorSettings;
   private final AtomicBoolean connected;
 
   /**
    * Required-args Constructor.
    *
-   * @param interledgerAddress          The Interledger Address for this plugin.
-   * @param connectorInterledgerAddress The Interledger Address for the Connector operating this plugin.
+   * @param connectorSettings
+   * @param interledgerAddress The Interledger Address for this plugin.
    */
-  public MockPlugin(final String interledgerAddress, final String connectorInterledgerAddress) {
+  public MockPlugin(final ConnectorSettings connectorSettings, final String interledgerAddress) {
+    this.connectorSettings = Objects.requireNonNull(connectorSettings);
     this.interledgerAddress = Objects.requireNonNull(interledgerAddress);
-    this.connectorInterledgerAddress = Objects.requireNonNull(connectorInterledgerAddress);
     this.connected = new AtomicBoolean(false);
   }
 
   @Override
   public void doConnect() {
     // NO OP
-    logger.info("{} for {} connecting to {}...", this.getPluginType().getPluginDescription(),
-      this.getInterledgerAddress(), this.getConnectorInterledgerAddress());
+    logger.info("[{}] {} connecting to {}...", this.getPluginType().getPluginDescription(),
+      this.getInterledgerAddress(), connectorSettings.getIlpAddress());
     this.connected.compareAndSet(false, true);
     logger
-      .info("{} for {} connected to {}!", this.getPluginType().getPluginDescription(), this.getInterledgerAddress(),
-        this.getConnectorInterledgerAddress());
+      .info("[{}] {} connected to {}!", this.getPluginType().getPluginDescription(), this.getInterledgerAddress(),
+        connectorSettings.getIlpAddress());
   }
 
   @Override
   public void doDisconnect() {
     // NO OP
     logger
-      .info("{} for {} disconnecting from {}...", this.getPluginType().getPluginDescription(),
-        this.getInterledgerAddress(), this.getConnectorInterledgerAddress());
+      .info("[{}] for {} disconnecting from {}...", this.getPluginType().getPluginDescription(),
+        this.getInterledgerAddress(), connectorSettings.getIlpAddress());
     this.connected.compareAndSet(true, false);
-    logger.info("{} for {} disconnected from {}!", this.getPluginType().getPluginDescription(),
-      this.getInterledgerAddress(), this.getConnectorInterledgerAddress());
+    logger.info("[{}] for {} disconnected from {}!", this.getPluginType().getPluginDescription(),
+      this.getInterledgerAddress(), connectorSettings.getIlpAddress());
   }
 
   /**
@@ -80,8 +81,9 @@ public class MockPlugin implements Plugin {
   @Override
   public void settle(BigInteger amount) {
     // NO OP
-    logger.info("{} settling {} units via {}!", this.getConnectorInterledgerAddress(), amount,
-      this.getInterledgerAddress());
+    logger.info("[{}] settling {} units via {}!",
+      connectorSettings.getIlpAddress(), amount, this.getInterledgerAddress()
+    );
   }
 
   @Override
@@ -93,10 +95,4 @@ public class MockPlugin implements Plugin {
   public String getInterledgerAddress() {
     return this.interledgerAddress;
   }
-
-  @Override
-  public String getConnectorInterledgerAddress() {
-    return this.connectorInterledgerAddress;
-  }
-
 }

@@ -22,13 +22,6 @@ public interface Account {
   String getInterledgerAddress();
 
   /**
-   * The ILP Address for the Connector operating this account.
-   *
-   * @return
-   */
-  String getConnectorInterledgerAddress();
-
-  /**
    * The current balance of this account.
    *
    * @return A {@link BigInteger} representing the balance of this account.
@@ -43,7 +36,7 @@ public interface Account {
    *
    * @return
    */
-  Plugin getPlugin();
+  PluginType getPluginType();
 
   /**
    * The minimum balance this connector is allowed to have with the Counterparty of this account.
