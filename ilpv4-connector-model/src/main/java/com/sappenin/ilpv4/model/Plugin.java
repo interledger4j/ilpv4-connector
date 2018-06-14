@@ -29,7 +29,7 @@ public interface Plugin {
    *
    * @return An instance of {@link AccountId}.
    */
-  String getInterledgerAddress();
+  InterledgerAddress getInterledgerAddress();
 
   void doConnect();
 

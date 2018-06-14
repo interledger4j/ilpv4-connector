@@ -22,6 +22,7 @@ public class ConnectorNode extends ServerNode implements Node {
 
   @Override
   public String toString() {
-    return ((IlpConnector) this.getServer().getContext().getBean("connector")).getConnectorSettings().getIlpAddress();
+    return ((IlpConnector) this.getServer().getContext().getBean("connector")).getConnectorSettings().getIlpAddress()
+      .toString();
   }
 }

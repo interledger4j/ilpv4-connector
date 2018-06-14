@@ -2,10 +2,7 @@ package com.sappenin.ilpv4.peer;
 
 import com.google.common.collect.Maps;
 import com.sappenin.ilpv4.accounts.AccountManager;
-import com.sappenin.ilpv4.model.Account;
-import com.sappenin.ilpv4.model.Peer;
-import com.sappenin.ilpv4.model.PeerType;
-import com.sappenin.ilpv4.model.Plugin;
+import com.sappenin.ilpv4.model.*;
 
 import java.util.Map;
 import java.util.Objects;
@@ -18,7 +15,7 @@ import java.util.stream.Stream;
  */
 public class DefaultPeerManager implements PeerManager {
 
-  private final Map<String, Peer> peers = Maps.newConcurrentMap();
+  private final Map<InterledgerAddress, Peer> peers = Maps.newConcurrentMap();
 
   private final AccountManager accountManager;
 
@@ -65,14 +62,14 @@ public class DefaultPeerManager implements PeerManager {
   }
 
   @Override
-  public void remove(final String interledgerAddress) {
+  public void remove(final InterledgerAddress interledgerAddress) {
     // Disconnect all Accounts and then remove the peer from teh collection.
     this.getPeer(interledgerAddress).ifPresent(this::disconnectPeer);
     this.peers.remove(interledgerAddress);
   }
 
   @Override
-  public Optional<Peer> getPeer(final String interledgerAddress) {
+  public Optional<Peer> getPeer(final InterledgerAddress interledgerAddress) {
     return Optional.empty();
   }
 

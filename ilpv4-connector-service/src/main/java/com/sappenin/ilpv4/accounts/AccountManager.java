@@ -1,6 +1,7 @@
 package com.sappenin.ilpv4.accounts;
 
 import com.sappenin.ilpv4.model.Account;
+import com.sappenin.ilpv4.model.InterledgerAddress;
 import com.sappenin.ilpv4.model.Plugin;
 
 import java.util.Optional;
@@ -24,16 +25,16 @@ public interface AccountManager {
   /**
    * Remove an account from this manager by its id.
    */
-  void remove(String interledgerAddress);
+  void remove(InterledgerAddress interledgerAddress);
 
   /**
    * Get the Ledger Layer2Plugin for the specified {@code ledgerPrefix}.
    *
-   * @param interledgerAddress The {@link String} of the account to retrieve.
+   * @param interledgerAddress The {@link InterledgerAddress} of the account to retrieve.
    *
    * @return The requested {@link Account}, if present.
    */
-  Optional<Account> getAccount(String interledgerAddress);
+  Optional<Account> getAccount(InterledgerAddress interledgerAddress);
 
   /**
    * Creates a {@code Stream} of Accounts.
@@ -43,6 +44,6 @@ public interface AccountManager {
   /**
    * Gets the {@link Plugin} for the specified account address.
    */
-  Plugin getPlugin(String interledgerAddress);
+  Plugin getPlugin(InterledgerAddress interledgerAddress);
 
 }

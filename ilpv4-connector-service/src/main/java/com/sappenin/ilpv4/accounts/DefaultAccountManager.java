@@ -2,6 +2,7 @@ package com.sappenin.ilpv4.accounts;
 
 import com.google.common.collect.Maps;
 import com.sappenin.ilpv4.model.Account;
+import com.sappenin.ilpv4.model.InterledgerAddress;
 import com.sappenin.ilpv4.model.Plugin;
 import com.sappenin.ilpv4.plugins.MockPlugin;
 import com.sappenin.ilpv4.settings.ConnectorSettings;
@@ -17,7 +18,7 @@ import java.util.stream.Stream;
 public class DefaultAccountManager implements AccountManager {
 
   private final ConnectorSettings connectorSettings;
-  private final Map<String, Account> accounts = Maps.newConcurrentMap();
+  private final Map<InterledgerAddress, Account> accounts = Maps.newConcurrentMap();
 
   public DefaultAccountManager(final ConnectorSettings connectorSettings) {
     this.connectorSettings = Objects.requireNonNull(connectorSettings);
@@ -34,12 +35,12 @@ public class DefaultAccountManager implements AccountManager {
   }
 
   @Override
-  public void remove(String interledgerAddress) {
+  public void remove(InterledgerAddress interledgerAddress) {
     this.accounts.remove(interledgerAddress);
   }
 
   @Override
-  public Optional<Account> getAccount(String interledgerAddress) {
+  public Optional<Account> getAccount(InterledgerAddress interledgerAddress) {
     return Optional.ofNullable(this.accounts.get(interledgerAddress));
   }
 
@@ -49,7 +50,7 @@ public class DefaultAccountManager implements AccountManager {
   }
 
   @Override
-  public Plugin getPlugin(String interledgerAddress) {
+  public Plugin getPlugin(InterledgerAddress interledgerAddress) {
     return this.getAccount(interledgerAddress)
       .map(account -> {
         switch (account.getPluginType()) {

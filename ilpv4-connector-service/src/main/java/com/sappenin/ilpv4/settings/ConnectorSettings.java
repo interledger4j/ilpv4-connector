@@ -18,17 +18,17 @@ import java.util.stream.Collectors;
 @ConfigurationProperties(prefix = "ilpv4.connector")
 public class ConnectorSettings {
 
-  private String ilpAddress;
+  private InterledgerAddress ilpAddress;
 
   private String secret;
 
   private List<PeerSettings> peers = Lists.newArrayList();
 
-  public String getIlpAddress() {
+  public InterledgerAddress getIlpAddress() {
     return ilpAddress;
   }
 
-  public void setIlpAddress(String ilpAddress) {
+  public void setIlpAddress(InterledgerAddress ilpAddress) {
     this.ilpAddress = ilpAddress;
   }
 
@@ -53,27 +53,18 @@ public class ConnectorSettings {
    */
   public static class PeerSettings {
 
-    private String interledgerAddress;
-    private String connectorInterledgerAddress;
+    private InterledgerAddress interledgerAddress;
 
     private PeerType peerType = PeerType.PEER;
 
     private Collection<AccountSettings> accounts = Lists.newArrayList();
 
-    public String getInterledgerAddress() {
+    public InterledgerAddress getInterledgerAddress() {
       return interledgerAddress;
     }
 
-    public void setInterledgerAddress(String peerId) {
+    public void setInterledgerAddress(InterledgerAddress peerId) {
       this.interledgerAddress = peerId;
-    }
-
-    public String getConnectorInterledgerAddress() {
-      return connectorInterledgerAddress;
-    }
-
-    public void setConnectorInterledgerAddress(String connectorInterledgerAddress) {
-      this.connectorInterledgerAddress = connectorInterledgerAddress;
     }
 
     public PeerType getPeerType() {
@@ -96,7 +87,6 @@ public class ConnectorSettings {
       final ImmutablePeer.Builder builder = ImmutablePeer.builder();
 
       builder.interledgerAddress(getInterledgerAddress());
-      builder.connectorInterledgerAddress(getConnectorInterledgerAddress());
       builder.relationship(getPeerType());
       builder.accounts(getAccounts().stream()
         .map(AccountSettings::toAccount)
@@ -112,8 +102,7 @@ public class ConnectorSettings {
   public static class AccountSettings {
 
     // The ILP Address that this account correlates to.
-    private String interledgerAddress;
-    private String connectorInterledgerAddress;
+    private InterledgerAddress interledgerAddress;
 
     private String assetCode;
 
@@ -126,20 +115,12 @@ public class ConnectorSettings {
     private Optional<BigInteger> maximumPacketAmount = Optional.empty();
     private String relationship = PeerType.PEER.name();
 
-    public String getInterledgerAddress() {
+    public InterledgerAddress getInterledgerAddress() {
       return interledgerAddress;
     }
 
-    public void setInterledgerAddress(String sourceInterledgerAddress) {
+    public void setInterledgerAddress(InterledgerAddress sourceInterledgerAddress) {
       this.interledgerAddress = sourceInterledgerAddress;
-    }
-
-    public String getConnectorInterledgerAddress() {
-      return connectorInterledgerAddress;
-    }
-
-    public void setConnectorInterledgerAddress(String connectorInterledgerAddress) {
-      this.connectorInterledgerAddress = connectorInterledgerAddress;
     }
 
     public Optional<BigInteger> getBalance() {

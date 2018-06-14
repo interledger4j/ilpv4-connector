@@ -2,6 +2,7 @@ package org.interledger.ilpv4.connector.it;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.sappenin.ilpv4.model.InterledgerAddress;
 import com.sappenin.ilpv4.model.Peer;
 import com.sappenin.ilpv4.server.ConnectorServer;
 import com.sappenin.ilpv4.settings.ConnectorSettings;
@@ -19,10 +20,10 @@ import java.util.List;
  */
 public class BeerCoinArchitecture {
 
-  public static final String DAVID = "test.david";
-  public static final String ADRIAN = "test.adrian";
-  public static final String JIMMIE = "test.jimmie";
-  public static final String BAR_AGRICOLE = "test.bar_agricole";
+  public static final InterledgerAddress DAVID = InterledgerAddress.of("test.david");
+  public static final InterledgerAddress ADRIAN = InterledgerAddress.of("test.adrian");
+  public static final InterledgerAddress JIMMIE = InterledgerAddress.of("test.jimmie");
+  public static final InterledgerAddress BAR_AGRICOLE = InterledgerAddress.of("test.bar_agricole");
 
   private static final String DOT = ".";
   private static final String GUIN = "GUIN";
@@ -63,16 +64,16 @@ public class BeerCoinArchitecture {
   public static final Graph beerCoinGraph() {
     return new Graph()
       // Nodes
-      .addNode(DAVID, new ConnectorNode(new ConnectorServer(defaultConnectorSettings(DAVID))))
-      .addNode(ADRIAN, new ConnectorNode(new ConnectorServer(defaultConnectorSettings(ADRIAN))))
-      .addNode(JIMMIE, new ConnectorNode(new ConnectorServer(defaultConnectorSettings(JIMMIE))))
-      .addNode(BAR_AGRICOLE, new ConnectorNode(new ConnectorServer(defaultConnectorSettings(BAR_AGRICOLE))))
+      .addNode(DAVID.getValue(), new ConnectorNode(new ConnectorServer(defaultConnectorSettings(DAVID))))
+      .addNode(ADRIAN.getValue(), new ConnectorNode(new ConnectorServer(defaultConnectorSettings(ADRIAN))))
+      .addNode(JIMMIE.getValue(), new ConnectorNode(new ConnectorServer(defaultConnectorSettings(JIMMIE))))
+      .addNode(BAR_AGRICOLE.getValue(), new ConnectorNode(new ConnectorServer(defaultConnectorSettings(BAR_AGRICOLE))))
 
       // Edges
-      .addEdge(new PeeringEdge(DAVID, peersOfDavid()))
-      .addEdge(new PeeringEdge(ADRIAN, peersOfAdrian()))
-      .addEdge(new PeeringEdge(JIMMIE, peersOfJimmie()))
-      .addEdge(new PeeringEdge(BAR_AGRICOLE, peersOfBar()));
+      .addEdge(new PeeringEdge(DAVID.getValue(), peersOfDavid()))
+      .addEdge(new PeeringEdge(ADRIAN.getValue(), peersOfAdrian()))
+      .addEdge(new PeeringEdge(JIMMIE.getValue(), peersOfJimmie()))
+      .addEdge(new PeeringEdge(BAR_AGRICOLE.getValue(), peersOfBar()));
   }
 
   /**
@@ -80,14 +81,14 @@ public class BeerCoinArchitecture {
    */
   private static List<Peer> peersOfDavid() {
     // Peer with Adrian
-    final ConnectorSettings.PeerSettings peerSettings = peerSettings(DAVID, ADRIAN, ADRIAN + DOT_GUIN, GUIN);
+    final ConnectorSettings.PeerSettings peerSettings = peerSettings(ADRIAN, ADRIAN.with(DOT_GUIN), GUIN);
     return Lists.newArrayList(peerSettings.toPeer());
   }
 
 
-  private static ConnectorSettings defaultConnectorSettings(final String ilpAddress) {
+  private static ConnectorSettings defaultConnectorSettings(final InterledgerAddress interledgerAddress) {
     final ConnectorSettings connectorSettings = new ConnectorSettings();
-    connectorSettings.setIlpAddress(ilpAddress);
+    connectorSettings.setIlpAddress(interledgerAddress);
     connectorSettings.setSecret("secret");
     return connectorSettings;
   }
@@ -100,13 +101,13 @@ public class BeerCoinArchitecture {
 
     {
       // Peer with David
-      final ConnectorSettings.PeerSettings peerSettings = peerSettings(ADRIAN, DAVID, DAVID + DOT_GUIN, GUIN);
+      final ConnectorSettings.PeerSettings peerSettings = peerSettings(DAVID, DAVID.with(DOT_GUIN), GUIN);
       peerListBuilder.add(peerSettings.toPeer());
     }
 
     {
       // Peer with Jimmie
-      final ConnectorSettings.PeerSettings peerSettings = peerSettings(ADRIAN, JIMMIE, JIMMIE + DOT_SAB, SAB);
+      final ConnectorSettings.PeerSettings peerSettings = peerSettings(JIMMIE, JIMMIE.with(DOT_SAB), SAB);
       peerListBuilder.add(peerSettings.toPeer());
     }
 
@@ -118,7 +119,7 @@ public class BeerCoinArchitecture {
    */
   private static List<Peer> peersOfJimmie() {
     // Peer with the Bar.
-    final ConnectorSettings.PeerSettings peerSettings = peerSettings(JIMMIE, BAR_AGRICOLE, BAR_AGRICOLE + DOT_SAB, SAB);
+    final ConnectorSettings.PeerSettings peerSettings = peerSettings(BAR_AGRICOLE, BAR_AGRICOLE.with(DOT_SAB), SAB);
     return Lists.newArrayList(peerSettings.toPeer());
   }
 
@@ -127,20 +128,17 @@ public class BeerCoinArchitecture {
    */
   private static List<Peer> peersOfBar() {
     // Peer with Jimmie
-    final ConnectorSettings.PeerSettings peerSettings = peerSettings(BAR_AGRICOLE, JIMMIE, JIMMIE + DOT_SAB, SAB);
+    final ConnectorSettings.PeerSettings peerSettings = peerSettings(JIMMIE, JIMMIE.with(DOT_SAB), SAB);
     return Lists.newArrayList(peerSettings.toPeer());
   }
 
   private static ConnectorSettings.PeerSettings peerSettings(
-    final String connectorIlpAddress,
-    final String peerIlpAddress, final String accountIlpAddress, final String accountAssetCode
+    final InterledgerAddress peerIlpAddress, final InterledgerAddress accountIlpAddress, final String accountAssetCode
   ) {
     final ConnectorSettings.PeerSettings peerSettings = new ConnectorSettings.PeerSettings();
-    peerSettings.setConnectorInterledgerAddress(connectorIlpAddress);
     peerSettings.setInterledgerAddress(peerIlpAddress);
     // account
     final ConnectorSettings.AccountSettings accountSettings = new ConnectorSettings.AccountSettings();
-    accountSettings.setConnectorInterledgerAddress(connectorIlpAddress);
     accountSettings.setInterledgerAddress(accountIlpAddress);
     accountSettings.setAssetCode(accountAssetCode);
     peerSettings.getAccounts().add(accountSettings);

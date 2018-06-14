@@ -1,6 +1,7 @@
 package org.interledger.ilpv4.connector.it;
 
 import com.sappenin.ilpv4.IlpConnector;
+import com.sappenin.ilpv4.model.InterledgerAddress;
 import org.interledger.ilpv4.connector.it.graph.Graph;
 import org.interledger.ilpv4.connector.it.graph.ServerNode;
 import org.junit.AfterClass;
@@ -50,8 +51,15 @@ public class BeerCoinArchitectureTest {
     assertThat(barConnector.getConnectorSettings().getIlpAddress(), is(BAR_AGRICOLE));
   }
 
-  IlpConnector getIlpConnectorFromGraph(final String interledgerAddress) {
-    return (IlpConnector) ((ServerNode) graph.getNode(interledgerAddress)).getServer().getContext()
+  /**
+   * Helper method to obtain an instance of {@link IlpConnector} from the graph, based upon its Interledger Address.
+   *
+   * @param interledgerAddress
+   *
+   * @return
+   */
+  private IlpConnector getIlpConnectorFromGraph(final InterledgerAddress interledgerAddress) {
+    return (IlpConnector) ((ServerNode) graph.getNode(interledgerAddress.getValue())).getServer().getContext()
       .getBean("connector");
 
   }

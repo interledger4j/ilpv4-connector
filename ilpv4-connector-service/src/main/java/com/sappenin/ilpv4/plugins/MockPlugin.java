@@ -1,5 +1,6 @@
 package com.sappenin.ilpv4.plugins;
 
+import com.sappenin.ilpv4.model.InterledgerAddress;
 import com.sappenin.ilpv4.model.Plugin;
 import com.sappenin.ilpv4.model.PluginType;
 import com.sappenin.ilpv4.settings.ConnectorSettings;
@@ -26,7 +27,7 @@ public class MockPlugin implements Plugin {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   // The ILP Address for this plugin.
-  private final String interledgerAddress;
+  private final InterledgerAddress interledgerAddress;
   // The ILP Address of the Connector operating this plugin.
   private final ConnectorSettings connectorSettings;
   private final AtomicBoolean connected;
@@ -37,7 +38,7 @@ public class MockPlugin implements Plugin {
    * @param connectorSettings
    * @param interledgerAddress The Interledger Address for this plugin.
    */
-  public MockPlugin(final ConnectorSettings connectorSettings, final String interledgerAddress) {
+  public MockPlugin(final ConnectorSettings connectorSettings, final InterledgerAddress interledgerAddress) {
     this.connectorSettings = Objects.requireNonNull(connectorSettings);
     this.interledgerAddress = Objects.requireNonNull(interledgerAddress);
     this.connected = new AtomicBoolean(false);
@@ -92,7 +93,7 @@ public class MockPlugin implements Plugin {
   }
 
   @Override
-  public String getInterledgerAddress() {
+  public InterledgerAddress getInterledgerAddress() {
     return this.interledgerAddress;
   }
 }
