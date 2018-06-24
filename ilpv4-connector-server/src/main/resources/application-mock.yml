@@ -4,6 +4,9 @@ logging:
       ROOT: INFO
       com.sappenin: DEBUG
       org.springframework: INFO
+      org.springframework.web.socket: DEBUG
+server:
+  port: 8080
 spring:
   output:
     ansi:

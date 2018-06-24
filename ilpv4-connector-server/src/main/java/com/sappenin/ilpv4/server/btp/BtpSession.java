@@ -1,6 +1,6 @@
 package com.sappenin.ilpv4.server.btp;
 
-import com.sappenin.ilpv4.model.AccountId;
+import com.sappenin.ilpv4.model.InterledgerAddress;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.util.Objects;
@@ -14,7 +14,7 @@ public class BtpSession {
   static final String ACCOUNT_KEY = "ILP-Account";
 
   private final WebSocketSession webSocketSession;
-  private final AccountId accountId;
+  private final InterledgerAddress accountId;
 
   /**
    * Private constructor.
@@ -28,11 +28,15 @@ public class BtpSession {
       Objects.requireNonNull(webSocketSession).getAttributes().get(ACCOUNT_KEY)
     )
       .map(Object::toString)
-      .map(AccountId::of)
+      .map(InterledgerAddress::of)
       .orElseThrow(() -> new RuntimeException("No Account found in WebSocket Session!"));
   }
 
-  public AccountId getAccountId() {
+  public InterledgerAddress getAccountId() {
     return this.accountId;
+  }
+
+  public WebSocketSession getWebSocketSession() {
+    return webSocketSession;
   }
 }

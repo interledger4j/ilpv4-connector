@@ -1,6 +1,7 @@
 package com.sappenin.ilpv4.peer;
 
 import com.google.common.collect.Maps;
+import com.sappenin.ilpv4.plugins.PluginManager;
 import com.sappenin.ilpv4.accounts.AccountManager;
 import com.sappenin.ilpv4.model.*;
 
@@ -18,11 +19,13 @@ public class DefaultPeerManager implements PeerManager {
   private final Map<InterledgerAddress, Peer> peers = Maps.newConcurrentMap();
 
   private final AccountManager accountManager;
+  private final PluginManager pluginManager;
 
   private Optional<Peer> parentPeer = Optional.empty();
 
-  public DefaultPeerManager(final AccountManager accountManager) {
+  public DefaultPeerManager(final AccountManager accountManager, final PluginManager pluginManager) {
     this.accountManager = Objects.requireNonNull(accountManager);
+    this.pluginManager = Objects.requireNonNull(pluginManager);
   }
 
   /**
@@ -51,6 +54,7 @@ public class DefaultPeerManager implements PeerManager {
       }
 
       // Connect each account in the peer...
+      // For BTP, we only need a single server to handle all peers and all account in a peer.
       peer.getAccounts().stream()
         .map(Account::getInterledgerAddress)
         .map(accountManager::getPlugin)
@@ -94,5 +98,10 @@ public class DefaultPeerManager implements PeerManager {
       .map(Account::getInterledgerAddress)
       .map(accountManager::getPlugin)
       .forEach(Plugin::doConnect);
+  }
+
+  @Override
+  public PluginManager getPluginManager() {
+    return pluginManager;
   }
 }

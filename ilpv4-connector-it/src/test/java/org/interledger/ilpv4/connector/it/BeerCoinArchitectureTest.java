@@ -51,6 +51,14 @@ public class BeerCoinArchitectureTest {
     assertThat(barConnector.getConnectorSettings().getIlpAddress(), is(BAR_AGRICOLE));
   }
 
+  @Test
+  public void davidPaysAdrian(){
+    final IlpConnector davidConnector = getIlpConnectorFromGraph(DAVID);
+    assertThat(davidConnector.getConnectorSettings().getIlpAddress(), is(DAVID));
+
+    //davidConnector.
+  }
+
   /**
    * Helper method to obtain an instance of {@link IlpConnector} from the graph, based upon its Interledger Address.
    *

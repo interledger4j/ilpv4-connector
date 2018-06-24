@@ -1,9 +1,9 @@
 package com.sappenin.ilpv4.server.btp;
 
 import org.interledger.btp.*;
-import org.interledger.btp.asn.framework.BtpCodecs;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.interledger.encoding.asn.framework.CodecContextFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.socket.BinaryMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.BinaryWebSocketHandler;
@@ -16,19 +16,34 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Objects;
 
+import static com.sappenin.ilpv4.server.btp.BtpSubProtocolHandlerRegistry.*;
+
+/**
+ * An extension of {@link BinaryWebSocketHandler} that handles BTP messages.
+ *
+ * @see "https://github.com/interledger/rfcs/blob/master/0023-bilateral-transfer-protocol/0023-bilateral-transfer
+ * -protocol.md"
+ */
 public class BtpSocketHandler extends BinaryWebSocketHandler {
 
-  public static final String SUB_PROTOCOL_ID__AUTH = "auth";
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
+  private final CodecContext codecContext;
   private final BtpSubProtocolHandlerRegistry registry;
-  private final CodecContext context;
 
-  public BtpSocketHandler(BtpSubProtocolHandlerRegistry registry) {
-    this.registry = registry;
-    this.context = CodecContextFactory.getContext(CodecContextFactory.OCTET_ENCODING_RULES);
-    BtpCodecs.register(context);
+  public BtpSocketHandler(final CodecContext codecContext, final BtpSubProtocolHandlerRegistry registry) {
+    this.registry = Objects.requireNonNull(registry);
+    this.codecContext = Objects.requireNonNull(codecContext);
   }
 
+  @Override
+  public void afterConnectionEstablished(WebSocketSession session) {
+    //the messages will be broadcasted to all users.
+    //sessions.add(session);
+    // TODO: Add a Plugin here?
+  }
+
+  @Override
   public void handleBinaryMessage(final WebSocketSession webSocketSession, final BinaryMessage binaryMessage)
     throws IOException {
 
@@ -98,10 +113,16 @@ public class BtpSocketHandler extends BinaryWebSocketHandler {
 
     final BtpMessage btpMessage = getBtpMessage(binaryMessage);
 
-    if (btpMessage.hasSubProtocol(SUB_PROTOCOL_ID__AUTH)) {
-      //This should be an auth binaryMessage
-      String auth_token = btpMessage.getSubProtocol("auth_token").getDataAsString();
-      String auth_user = btpMessage.getSubProtocol("auth_username").getDataAsString();
+    if (btpMessage.hasSubProtocol(BTP_SUB_PROTOCOL_AUTH)) {
+      final String auth_user = btpMessage.getSubProtocol(BTP_SUB_PROTOCOL_AUTH_USERNAME)
+        .map(BtpSubProtocol::getDataAsString)
+        .orElseThrow(() -> new RuntimeException(String.format("Expected SubProtocol with Id: %s",
+          BTP_SUB_PROTOCOL_AUTH_USERNAME)));
+
+      final String auth_token = btpMessage.getSubProtocol(BTP_SUB_PROTOCOL_AUTH_TOKEN)
+        .map(BtpSubProtocol::getDataAsString)
+        .orElseThrow(() -> new RuntimeException(String.format("Expected SubProtocol with Id: %s",
+          BTP_SUB_PROTOCOL_AUTH_TOKEN)));
 
       this.storeAuthInWebSocketSession(webSocketSession, auth_user, auth_token);
 
@@ -118,6 +139,7 @@ public class BtpSocketHandler extends BinaryWebSocketHandler {
         BtpError.builder()
           .requestId(btpMessage.getRequestId())
           .errorCode(BtpErrorCode.F00_NotAcceptedError)
+          // TODO: Add to BtpErrorCode
           .errorName("NotAcceptedError")
           .errorData(new byte[]{})
           .triggeredAt(Instant.now())
@@ -129,13 +151,13 @@ public class BtpSocketHandler extends BinaryWebSocketHandler {
   private BtpMessage getBtpMessage(final BinaryMessage binaryMessage) throws IOException {
     final ByteBuffer buffer = Objects.requireNonNull(binaryMessage).getPayload();
     final ByteArrayInputStream stream = new ByteArrayInputStream(buffer.array(), buffer.position(), buffer.limit());
-    return context.read(BtpMessage.class, stream);
+    return codecContext.read(BtpMessage.class, stream);
   }
 
   private BinaryMessage getBinaryMessage(final BtpPacket packet) throws IOException {
     Objects.requireNonNull(packet);
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    context.write(packet, baos);
+    codecContext.write(packet, baos);
     return new BinaryMessage(baos.toByteArray());
   }
 

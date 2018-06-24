@@ -48,10 +48,10 @@ public class MockPlugin implements Plugin {
   public void doConnect() {
     // NO OP
     logger.info("[{}] {} connecting to {}...", this.getPluginType().getPluginDescription(),
-      this.getInterledgerAddress(), connectorSettings.getIlpAddress());
+      this.getPeerAddress(), connectorSettings.getIlpAddress());
     this.connected.compareAndSet(false, true);
     logger
-      .info("[{}] {} connected to {}!", this.getPluginType().getPluginDescription(), this.getInterledgerAddress(),
+      .info("[{}] {} connected to {}!", this.getPluginType().getPluginDescription(), this.getPeerAddress(),
         connectorSettings.getIlpAddress());
   }
 
@@ -60,10 +60,10 @@ public class MockPlugin implements Plugin {
     // NO OP
     logger
       .info("[{}] for {} disconnecting from {}...", this.getPluginType().getPluginDescription(),
-        this.getInterledgerAddress(), connectorSettings.getIlpAddress());
+        this.getPeerAddress(), connectorSettings.getIlpAddress());
     this.connected.compareAndSet(true, false);
     logger.info("[{}] for {} disconnected from {}!", this.getPluginType().getPluginDescription(),
-      this.getInterledgerAddress(), connectorSettings.getIlpAddress());
+      this.getPeerAddress(), connectorSettings.getIlpAddress());
   }
 
   /**
@@ -79,12 +79,29 @@ public class MockPlugin implements Plugin {
     return CompletableFuture.supplyAsync(() -> ilpFulfillmentPacket);
   }
 
+  /**
+   * Handle an incoming Interledger data packets. If an error occurs, this method MAY throw an exception. In general,
+   * the callback should behave as sendData does.
+   *
+   * @param preparePacket
+   */
+  @Override
+  public CompletableFuture<InterledgerFulfillPacket> onIncomingPacket(InterledgerPreparePacket preparePacket) throws InterledgerProtocolException {
+    return null;
+  }
+
+
   @Override
   public void settle(BigInteger amount) {
     // NO OP
     logger.info("[{}] settling {} units via {}!",
-      connectorSettings.getIlpAddress(), amount, this.getInterledgerAddress()
+      connectorSettings.getIlpAddress(), amount, this.getPeerAddress()
     );
+  }
+
+  @Override
+  public void onIncomingSettle(BigInteger amount) {
+
   }
 
   @Override
@@ -93,7 +110,7 @@ public class MockPlugin implements Plugin {
   }
 
   @Override
-  public InterledgerAddress getInterledgerAddress() {
+  public InterledgerAddress getPeerAddress() {
     return this.interledgerAddress;
   }
 }

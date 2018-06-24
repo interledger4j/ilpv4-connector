@@ -9,6 +9,8 @@ import com.sappenin.ilpv4.connector.routing.Route;
 import com.sappenin.ilpv4.connector.routing.RoutingTable;
 import com.sappenin.ilpv4.peer.DefaultPeerManager;
 import com.sappenin.ilpv4.peer.PeerManager;
+import com.sappenin.ilpv4.plugins.DefaultPluginManager;
+import com.sappenin.ilpv4.plugins.PluginManager;
 import com.sappenin.ilpv4.server.btp.BtpWebSocketConfig;
 import com.sappenin.ilpv4.settings.ConnectorSettings;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -44,14 +46,19 @@ public class ConnectorServerConfig implements WebMvcConfigurer {
     return new RestTemplate();
   }
 
-  @Bean
-  PeerManager peerManager(AccountManager accountManager) {
-    return new DefaultPeerManager(accountManager);
-  }
 
   @Bean
   AccountManager accountManager(ConnectorSettings connectorSettings) {
     return new DefaultAccountManager(connectorSettings);
   }
 
+  @Bean
+  PluginManager pluginManager() {
+    return new DefaultPluginManager();
+  }
+
+  @Bean
+  PeerManager peerManager(AccountManager accountManager, PluginManager pluginManager) {
+    return new DefaultPeerManager(accountManager, pluginManager);
+  }
 }

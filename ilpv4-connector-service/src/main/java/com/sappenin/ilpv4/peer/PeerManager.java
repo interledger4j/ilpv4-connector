@@ -1,5 +1,6 @@
 package com.sappenin.ilpv4.peer;
 
+import com.sappenin.ilpv4.plugins.PluginManager;
 import com.sappenin.ilpv4.model.InterledgerAddress;
 import com.sappenin.ilpv4.model.Peer;
 
@@ -49,4 +50,6 @@ public interface PeerManager {
    * Creates a {@code Stream} of Peers.
    */
   Stream<Peer> stream();
+
+  PluginManager getPluginManager();
 }

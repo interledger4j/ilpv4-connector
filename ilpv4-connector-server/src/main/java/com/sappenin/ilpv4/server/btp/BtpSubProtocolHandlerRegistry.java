@@ -10,6 +10,11 @@ import java.util.Optional;
  */
 public class BtpSubProtocolHandlerRegistry {
 
+  public static final String BTP_SUB_PROTOCOL_ILP = "ilp";
+  public static final String BTP_SUB_PROTOCOL_AUTH = "auth";
+  public static final String BTP_SUB_PROTOCOL_AUTH_USERNAME = "user_name";
+  public static final String BTP_SUB_PROTOCOL_AUTH_TOKEN = "token";
+
   private Map<String, BtpSubProtocolHandler> handlers = new HashMap<>();
 
   public Optional<BtpSubProtocolHandler> getHandler(final String subProtocolName) {

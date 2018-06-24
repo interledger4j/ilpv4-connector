@@ -1,6 +1,7 @@
 package com.sappenin.ilpv4.model;
 
 import org.interledger.core.InterledgerFulfillPacket;
+import org.interledger.core.InterledgerPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 
@@ -9,9 +10,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 /**
- * <p>An abstraction for communicating with a remote peer.</p>
+ * <p>An abstraction for communicating with a remote Interledger peer.</p>
  *
- * The overall flow of funds in ILPv4 is as follows:
+ * <p>The overall flow of funds in ILPv4 is as follows:
  *
  * <pre>
  * Sender --sendPacket-> Connector 1 --sendPacket-> Connector 2 --sendPacket-> Receiver
@@ -20,23 +21,26 @@ import java.util.concurrent.Future;
  * </pre>
  *
  * Sender/Connector's call <tt>sendData</tt>, wait for a fulfillment, and then call
- * <tt>settle</tt> if the fulfillment is valid.
+ * <tt>settle</tt> (possibly infrequently or even only eventually for bulk settlement) if the fulfillment is valid.</p>
  */
 public interface Plugin {
 
   /**
-   * Returns the account identifier that this plugin instance is using.
+   * Returns the remote ILP Node address that this plugin is connected to. While a single node might operate upon
+   * multiple account addresses, a given plugin connection will always be initiated to only a single peer at a time (for
+   * a Connector to connect to multiple peers, the Connector must instantiate multiple plugins).
    *
-   * @return An instance of {@link AccountId}.
+   * @return An instance of {@link InterledgerAddress}.
    */
-  InterledgerAddress getInterledgerAddress();
+  InterledgerAddress getPeerAddress();
 
   void doConnect();
 
   void doDisconnect();
 
   /**
-   * Sends an ILP request packet to the peer and returns the response packet.
+   * Sends an ILP request packet to the peer and returns the response packet (this method correlates with
+   * <tt>sendData</tt> in the Javascript connector).
    *
    * @param preparePacket The ILP packet to send to the peer.
    *
@@ -48,12 +52,29 @@ public interface Plugin {
     throws InterledgerProtocolException;
 
   /**
+   * Handle an incoming Interledger data packets. If an error occurs, this method MAY throw an exception. In general,
+   * the callback should behave as sendData does.
+   *
+   * @param preparePacket
+   */
+  CompletableFuture<InterledgerFulfillPacket> onIncomingPacket(InterledgerPreparePacket preparePacket)
+    throws InterledgerProtocolException;
+
+  /**
    * Settle an outstanding ILP balance with a counterparty by transferring {@code amount} units of value from this ILP
-   * node to the counterparty of the account used by this plugin.
+   * node to the counterparty of the account used by this plugin (this method correlates to <tt>sendMoney</tt> in the
+   * Javascript Connector).
    *
    * @param amount The amount of "money" to transfer.
    */
   void settle(BigInteger amount);
+
+  /**
+   * Handle a request to settle an outstanding balance.
+   *
+   * @param amount The amount of "money" to transfer.
+   */
+  void onIncomingSettle(BigInteger amount);
 
   /**
    * Accessor for the type of this plugin.
