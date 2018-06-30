@@ -25,6 +25,7 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
+    open-in-view: false
     properties:
       hibernate:
         show_sql: true

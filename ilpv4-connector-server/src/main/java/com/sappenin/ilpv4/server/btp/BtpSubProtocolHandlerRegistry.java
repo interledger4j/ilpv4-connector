@@ -12,8 +12,8 @@ public class BtpSubProtocolHandlerRegistry {
 
   public static final String BTP_SUB_PROTOCOL_ILP = "ilp";
   public static final String BTP_SUB_PROTOCOL_AUTH = "auth";
-  public static final String BTP_SUB_PROTOCOL_AUTH_USERNAME = "user_name";
-  public static final String BTP_SUB_PROTOCOL_AUTH_TOKEN = "token";
+  public static final String BTP_SUB_PROTOCOL_AUTH_TOKEN = "auth_token";
+  public static final String BTP_SUB_PROTOCOL_AUTH_USERNAME = "auth_user_name";
 
   private Map<String, BtpSubProtocolHandler> handlers = new HashMap<>();
 

@@ -1,12 +1,17 @@
 package com.sappenin.ilpv4.server.btp;
 
 import com.sappenin.ilpv4.plugins.PluginManager;
+import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpErrorConverter;
+import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpMessageConverter;
+import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpResponseConverter;
+import com.sappenin.ilpv4.server.btp.converters.BtpPacketToBinaryMessageConverter;
 import org.interledger.btp.asn.framework.BtpCodecs;
+import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.interledger.encoding.asn.framework.CodecContextFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
@@ -22,6 +27,7 @@ import java.util.Arrays;
  * Spring configuration for BTP over Websocket.
  */
 @Configuration
+@Import({BtpWebSocketConfig.ConvertersConfig.class})
 @EnableWebSocket
 public class BtpWebSocketConfig implements WebSocketConfigurer {
 
@@ -32,10 +38,13 @@ public class BtpWebSocketConfig implements WebSocketConfigurer {
   //  IlpConnector ilpConnector;
 
   @Autowired
-  CodecContext codecContext;
+  PluginManager pluginManager;
 
   @Autowired
-  BtpSubProtocolHandlerRegistry btpSubProtocolHandlerRegistry;
+  BtpPacketToBinaryMessageConverter btpPacketToBinaryMessageConverter;
+
+  @Autowired
+  BinaryMessageToBtpMessageConverter binaryMessageToBtpMessageConverter;
 
   @Override
   public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
@@ -47,7 +56,8 @@ public class BtpWebSocketConfig implements WebSocketConfigurer {
 
     // Create a new instance of BtpSocketHandler for listening to incoming connection on a configured port...
     final WebSocketHandler btpSocketHandler = new LoggingWebSocketHandlerDecorator(
-      new BtpSocketHandler(codecContext, btpSubProtocolHandlerRegistry)
+      new BtpSocketHandler(codecContext(), btpSubProtocolHandlerRegistry(), binaryMessageToBtpMessageConverter,
+        btpPacketToBinaryMessageConverter)
     );
 
     // TODO: Connect the WebsocketHandler to a plugin?
@@ -61,27 +71,54 @@ public class BtpWebSocketConfig implements WebSocketConfigurer {
   }
 
   @Bean
-  IlpSubprotocolHandler ilpSubprotocolHandler(CodecContext codecContext, PluginManager pluginManager) {
-    return new IlpSubprotocolHandler(codecContext, pluginManager);
+  IlpSubprotocolHandler ilpSubprotocolHandler() {
+    return new IlpSubprotocolHandler(codecContext(), pluginManager);
   }
 
   @Bean
-  BtpSubProtocolHandlerRegistry btpSubProtocolHandlerRegistry(final IlpSubprotocolHandler ilpSubprotocolHandler) {
+  BtpSubProtocolHandlerRegistry btpSubProtocolHandlerRegistry() {
     final BtpSubProtocolHandlerRegistry registry = new BtpSubProtocolHandlerRegistry();
-    registry.putHandler(BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_ILP, ilpSubprotocolHandler);
+    registry.putHandler(BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_ILP, ilpSubprotocolHandler());
     return registry;
   }
 
   @Bean
   CodecContext codecContext() {
-    final CodecContext context = CodecContextFactory.getContext(CodecContextFactory.OCTET_ENCODING_RULES);
+    // Loads all OER plus ILP!
+    final CodecContext context = InterledgerCodecContextFactory.oer();
+
     // Connect this context with the BtpCodecs...
     BtpCodecs.register(context);
+
     return context;
   }
 
   @PostConstruct
   public void startup() {
+  }
+
+  @Configuration
+  static class ConvertersConfig {
+
+    @Bean
+    BinaryMessageToBtpResponseConverter binaryMessageToBtpResponseConverter(CodecContext codecContext) {
+      return new BinaryMessageToBtpResponseConverter(codecContext);
+    }
+
+    @Bean
+    BinaryMessageToBtpErrorConverter binaryMessageToBtpErrorConverter(CodecContext codecContext) {
+      return new BinaryMessageToBtpErrorConverter(codecContext);
+    }
+
+    @Bean
+    BinaryMessageToBtpMessageConverter binaryMessageToBtpMessageConverter(CodecContext codecContext) {
+      return new BinaryMessageToBtpMessageConverter(codecContext);
+    }
+
+    @Bean
+    BtpPacketToBinaryMessageConverter btpPacketToBinaryMessageConverter(CodecContext codecContext) {
+      return new BtpPacketToBinaryMessageConverter(codecContext);
+    }
   }
 
 }

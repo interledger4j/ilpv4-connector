@@ -17,11 +17,11 @@ import static com.sappenin.ilpv4.server.btp.BtpSubProtocolHandlerRegistry.BTP_SU
 import static org.interledger.btp.BtpSubProtocols.INTERLEDGER;
 
 /**
- * Helper class to assembles a binary message for BTP.
+ * Helper class to assembles a binary message for BTP for testing in a web-browser, for example.
  */
-public class BtpSendDataTest {
+public class BtpSendDataEmitter {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(BtpSendDataTest.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(BtpSendDataEmitter.class);
   private static final CodecContext CONTEXT = CodecContextFactory.getContext(CodecContextFactory.OCTET_ENCODING_RULES);
   private static final long REQUEST_ID = 1;
 

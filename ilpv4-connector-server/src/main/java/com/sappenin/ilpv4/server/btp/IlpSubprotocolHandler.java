@@ -4,7 +4,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.BaseEncoding;
 import com.sappenin.ilpv4.model.Plugin;
 import com.sappenin.ilpv4.plugins.PluginManager;
-import org.interledger.btp.*;
+import org.interledger.btp.BtpResponse;
+import org.interledger.btp.BtpSubProtocol;
+import org.interledger.btp.BtpSubProtocolContentType;
+import org.interledger.btp.BtpSubProtocols;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPacket;
 import org.interledger.core.InterledgerPreparePacket;
@@ -38,9 +41,9 @@ public class IlpSubprotocolHandler extends BtpSubProtocolHandler {
   }
 
   @Override
-  public byte[] handleBinaryMessage(BtpSession session, byte[] data) {
-    Objects.requireNonNull(session);
-    Objects.requireNonNull(data);
+  public byte[] handleBinaryMessage(final BtpSession session, final byte[] data) {
+    Objects.requireNonNull(session, "session must not be null!");
+    Objects.requireNonNull(data, "data must not be null!");
 
     if (logger.isDebugEnabled()) {
       logger.debug("Handling BTP data from {}: {}", BaseEncoding.base64().encode(data), session.getAccountId());
@@ -48,17 +51,14 @@ public class IlpSubprotocolHandler extends BtpSubProtocolHandler {
 
     // Per RFC-23, ILP packets are attached under the protocol name "ilp" with content-type "application/octet-stream"
     try {
-      final BtpMessage btpMessage = codecContext.read(BtpMessage.class, new ByteArrayInputStream(data));
-      final BtpSubProtocol ilpSubProtocol = btpMessage.getSubProtocol(INTERLEDGER);
-
       // Convert to an ILP Prepare packet.
       final InterledgerPreparePacket incomingPreparePacket =
-        codecContext.read(InterledgerPreparePacket.class, new ByteArrayInputStream(ilpSubProtocol.getData()));
+        codecContext.read(InterledgerPreparePacket.class, new ByteArrayInputStream(data));
 
       // Handle the packet, then convert to BTP response, and return.
       final Plugin plugin = this.pluginManager.getPlugin(session.getAccountId()).orElseThrow(
         // TODO: If this happens, will the catch block below handle this properly?
-        () -> new RuntimeException("Not Plugin found for Account %s")
+        () -> new RuntimeException("No Plugin found for Account %s")
       );
 
       return plugin.onIncomingPacket

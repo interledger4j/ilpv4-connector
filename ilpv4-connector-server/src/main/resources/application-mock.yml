@@ -1,9 +1,9 @@
 # See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
 logging:
     level:
-      ROOT: INFO
+      ROOT: DEBUG
       com.sappenin: DEBUG
-      org.springframework: INFO
+      org.springframework: DEBUG
       org.springframework.web.socket: DEBUG
 server:
   port: 8080
@@ -28,6 +28,7 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
+    open-in-view: false
     properties:
       hibernate:
         show_sql: true
