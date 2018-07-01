@@ -1,6 +1,7 @@
 package com.sappenin.ilpv4.model;
 
 import org.immutables.value.Value;
+import org.interledger.core.InterledgerAddress;
 
 import javax.money.CurrencyUnit;
 import java.math.BigInteger;
@@ -38,6 +39,7 @@ public interface Account {
   /**
    * The minimum balance this connector is allowed to have with the Counterparty of this account.
    */
+  // TODO: Make this optional instead of zero. A min-balance of zero might be valid.
   @Value.Default
   default BigInteger getMinBalance() {
     return BigInteger.ZERO;
@@ -46,6 +48,7 @@ public interface Account {
   /**
    * The maximum balance this connector is allowed to have with the Counterparty of this account.
    */
+  // TODO: Make this optional instead of zero. A min-balance of zero might be valid.
   @Value.Default
   default BigInteger getMaxBalance() {
     return BigInteger.ZERO;
@@ -73,6 +76,7 @@ public interface Account {
    * The threshold over which this account must be settled before it can process more ILP payment packets.
    */
   @Value.Default
+  // TODO: Make this optional instead of zero. A min-balance of zero might be valid.
   default BigInteger getSettleThreshold() {
     return BigInteger.valueOf(100);
   }
@@ -81,6 +85,7 @@ public interface Account {
    * The maximum amount that a particular payment packet can contain.
    */
   @Value.Default
+  // TODO: Make this optional instead of zero. A min-balance of zero might be valid.
   default BigInteger getMaximumPacketAmount() {
     return BigInteger.valueOf(100);
   }

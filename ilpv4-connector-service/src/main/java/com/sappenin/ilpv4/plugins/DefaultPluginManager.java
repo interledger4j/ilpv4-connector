@@ -1,13 +1,17 @@
 package com.sappenin.ilpv4.plugins;
 
 import com.google.common.collect.Maps;
-import com.sappenin.ilpv4.model.InterledgerAddress;
+import com.sappenin.ilpv4.accounts.AccountManager;
+import org.interledger.core.InterledgerAddress;
 import com.sappenin.ilpv4.model.Plugin;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Meant to only be accessed by the {@link AccountManager}.
+ */
 public class DefaultPluginManager implements PluginManager {
 
   private final Map<InterledgerAddress, Plugin> plugins;
@@ -20,7 +24,7 @@ public class DefaultPluginManager implements PluginManager {
   public void setPlugin(final InterledgerAddress accountAddress, final Plugin plugin) {
     Objects.requireNonNull(accountAddress);
     Objects.requireNonNull(plugin);
-    if (!plugins.replace(accountAddress, null, plugin)) {
+    if (plugins.putIfAbsent(accountAddress, plugin) != null) {
       throw new RuntimeException(
         String.format("Plugin already exists with InterledgerAddress: %s", accountAddress)
       );

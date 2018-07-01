@@ -33,7 +33,7 @@ public class ConnectorServerConfig implements WebMvcConfigurer {
 
   @Bean
   IlpConnector connector(ConnectorSettings connectorSettings, PeerManager peerManager) {
-    return new DefaultIlpConnector(connectorSettings, peerManager);
+    return new DefaultIlpConnector(connectorSettings, peerManager, routingTable, exchangeRateService);
   }
 
   @Bean
@@ -46,15 +46,14 @@ public class ConnectorServerConfig implements WebMvcConfigurer {
     return new RestTemplate();
   }
 
-
-  @Bean
-  AccountManager accountManager(ConnectorSettings connectorSettings) {
-    return new DefaultAccountManager(connectorSettings);
-  }
-
   @Bean
   PluginManager pluginManager() {
     return new DefaultPluginManager();
+  }
+
+  @Bean
+  AccountManager accountManager(ConnectorSettings connectorSettings, PluginManager pluginManager) {
+    return new DefaultAccountManager(connectorSettings, pluginManager);
   }
 
   @Bean

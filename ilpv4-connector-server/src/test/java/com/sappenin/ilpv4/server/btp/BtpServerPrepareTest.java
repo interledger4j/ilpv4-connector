@@ -106,7 +106,7 @@ public class BtpServerPrepareTest {
 
     // PREPARE
     final BtpMessage btpPrepareMessage = btpTestUtils.constructIlpPrepareMessage(
-      requestId, "foo", "bar", InterledgerAddress.of("test.beercoin.guin")
+      requestId, "foo", "bar", InterledgerAddress.of("test.parent.unlimited.usd")
     );
     //logger.info("Btp Prepare Message: {}", btpPrepareMessage);
     final BinaryMessage binaryMessage = btpPacketToBinaryMessageConverter.convert(btpPrepareMessage);

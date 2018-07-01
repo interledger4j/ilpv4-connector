@@ -1,6 +1,6 @@
 package com.sappenin.ilpv4.server.btp;
 
-import com.sappenin.ilpv4.model.InterledgerAddress;
+import org.interledger.core.InterledgerAddress;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.util.Objects;

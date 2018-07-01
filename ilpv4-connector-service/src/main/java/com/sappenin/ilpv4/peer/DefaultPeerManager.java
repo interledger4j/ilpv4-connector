@@ -1,7 +1,6 @@
 package com.sappenin.ilpv4.peer;
 
 import com.google.common.collect.Maps;
-import com.sappenin.ilpv4.plugins.PluginManager;
 import com.sappenin.ilpv4.accounts.AccountManager;
 import com.sappenin.ilpv4.model.*;
 
@@ -16,16 +15,14 @@ import java.util.stream.Stream;
  */
 public class DefaultPeerManager implements PeerManager {
 
-  private final Map<InterledgerAddress, Peer> peers = Maps.newConcurrentMap();
-
+  private final Map<InterledgerAddress, Peer> peers;
   private final AccountManager accountManager;
-  private final PluginManager pluginManager;
 
   private Optional<Peer> parentPeer = Optional.empty();
 
-  public DefaultPeerManager(final AccountManager accountManager, final PluginManager pluginManager) {
+  public DefaultPeerManager(final AccountManager accountManager) {
+    this.peers = Maps.newConcurrentMap();
     this.accountManager = Objects.requireNonNull(accountManager);
-    this.pluginManager = Objects.requireNonNull(pluginManager);
   }
 
   /**
@@ -41,11 +38,14 @@ public class DefaultPeerManager implements PeerManager {
   public void add(final Peer peer) {
     Objects.requireNonNull(peer);
 
+    // Remove this peer
+    this.remove(peer.getInterledgerAddress());
+
     try {
       // Set the parent-peer, but only if it hasn't been set.
       if (peer.getRelationship() == PeerType.PARENT && !parentPeer.isPresent()) {
         // Set the parent peer, if it exists.
-        this.parentPeer = Optional.of(peer);
+        this.setParentPeer(peer);
       } else {
         if (peers.putIfAbsent(peer.getInterledgerAddress(), peer) != null) {
           throw new RuntimeException(
@@ -55,20 +55,35 @@ public class DefaultPeerManager implements PeerManager {
 
       // Connect each account in the peer...
       // For BTP, we only need a single server to handle all peers and all account in a peer.
-      peer.getAccounts().stream()
+      peer.getAccounts().stream().forEach(account -> {
+        // Add every account to the account manager...
+        accountManager.add(account);
+      });
+
+      accountManager.stream()
         .map(Account::getInterledgerAddress)
         .map(accountManager::getPlugin)
         .forEach(Plugin::doConnect);
-    } catch (Exception e) {
+
+    } catch (RuntimeException e) {
       // If any exception is thrown, then remove the peer and any plugins...
       this.remove(peer.getInterledgerAddress());
+      throw new RuntimeException(e);
     }
   }
 
   @Override
   public void remove(final InterledgerAddress interledgerAddress) {
-    // Disconnect all Accounts and then remove the peer from teh collection.
-    this.getPeer(interledgerAddress).ifPresent(this::disconnectPeer);
+    this.getPeer(interledgerAddress).ifPresent(peer -> {
+      // Disconnect all Accounts for the Peer.
+      this.disconnectPeer(peer);
+
+      if (peer.getRelationship() == PeerType.PARENT) {
+        // Set the parent peer, if it exists.
+        this.parentPeer = Optional.empty();
+      }
+    });
+
     this.peers.remove(interledgerAddress);
   }
 
@@ -88,6 +103,21 @@ public class DefaultPeerManager implements PeerManager {
   }
 
   /**
+   * Allows only a single thread to set a peer at a time, ensuring that only one will win.
+   *
+   * @param peer
+   */
+  private synchronized void setParentPeer(final Peer peer) {
+    Objects.requireNonNull(peer);
+
+    if (this.parentPeer.isPresent()) {
+      throw new RuntimeException("Only a single Parent Peer may be configured for a Connector!");
+    }
+
+    this.parentPeer = Optional.of(peer);
+  }
+
+  /**
    * Helper method to disconnect a {@link Peer} based upon its Interledger Address.
    *
    * @param peer The {@link Peer} to disconnect.
@@ -101,7 +131,7 @@ public class DefaultPeerManager implements PeerManager {
   }
 
   @Override
-  public PluginManager getPluginManager() {
-    return pluginManager;
+  public AccountManager getAccountManager() {
+    return accountManager;
   }
 }

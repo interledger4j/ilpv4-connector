@@ -2,7 +2,7 @@ package org.interledger.ilpv4.connector.it;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.sappenin.ilpv4.model.InterledgerAddress;
+import org.interledger.core.InterledgerAddress;
 import com.sappenin.ilpv4.model.Peer;
 import com.sappenin.ilpv4.server.ConnectorServer;
 import com.sappenin.ilpv4.settings.ConnectorSettings;

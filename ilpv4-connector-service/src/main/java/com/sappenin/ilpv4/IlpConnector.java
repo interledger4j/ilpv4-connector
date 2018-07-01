@@ -1,13 +1,13 @@
 package com.sappenin.ilpv4;
 
-import com.sappenin.ilpv4.model.Account;
 import com.sappenin.ilpv4.settings.ConnectorSettings;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 
 import java.math.BigInteger;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 public interface IlpConnector {
 
@@ -18,20 +18,20 @@ public interface IlpConnector {
    *
    * Repeat calls to this method using the same transfer information must be idempotent.
    *
-   * @param sourceAccount            The {@link Account} that sent this incoming ILP packet.
+   * @param sourceAccountAddress     The {@link InterledgerAddress} for the account that sent this incoming ILP packet.
    * @param interledgerPreparePacket An {@link InterledgerPreparePacket} containing data about an ILP payment.
    *
    * @throws InterledgerProtocolException If the response from the remote peer is a rejection.
    */
-  Future<InterledgerFulfillPacket> handleIncomingData(
-    Account sourceAccount, InterledgerPreparePacket interledgerPreparePacket
+  CompletableFuture<InterledgerFulfillPacket> handleIncomingData(
+    InterledgerAddress sourceAccountAddress, InterledgerPreparePacket interledgerPreparePacket
   ) throws InterledgerProtocolException;
 
   /**
    * Handle an incoming request to transfer {@code amount} units of an asset from the callers account to this
    * connector.
    */
-  Future<Void> handleIncomingMoney(BigInteger amount);
+  CompletableFuture<Void> handleIncomingMoney(BigInteger amount);
 
 
 }

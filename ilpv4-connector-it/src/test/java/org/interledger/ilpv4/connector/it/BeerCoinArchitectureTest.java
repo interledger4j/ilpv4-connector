@@ -1,7 +1,7 @@
 package org.interledger.ilpv4.connector.it;
 
 import com.sappenin.ilpv4.IlpConnector;
-import com.sappenin.ilpv4.model.InterledgerAddress;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.ilpv4.connector.it.graph.Graph;
 import org.interledger.ilpv4.connector.it.graph.ServerNode;
 import org.junit.AfterClass;

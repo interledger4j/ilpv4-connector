@@ -1,8 +1,8 @@
 package com.sappenin.ilpv4.accounts;
 
 import com.sappenin.ilpv4.model.Account;
-import com.sappenin.ilpv4.model.InterledgerAddress;
 import com.sappenin.ilpv4.model.Plugin;
+import org.interledger.core.InterledgerAddress;
 
 import java.util.Optional;
 import java.util.stream.Stream;

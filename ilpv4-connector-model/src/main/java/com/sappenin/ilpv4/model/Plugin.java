@@ -1,7 +1,7 @@
 package com.sappenin.ilpv4.model;
 
+import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerFulfillPacket;
-import org.interledger.core.InterledgerPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 

@@ -1,6 +1,7 @@
 package com.sappenin.ilpv4.model;
 
 import org.immutables.value.Value;
+import org.interledger.core.InterledgerAddress;
 
 import java.util.List;
 import java.util.Objects;

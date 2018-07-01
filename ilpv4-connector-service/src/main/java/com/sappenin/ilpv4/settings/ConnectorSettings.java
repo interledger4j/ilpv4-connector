@@ -2,6 +2,7 @@ package com.sappenin.ilpv4.settings;
 
 import com.google.common.collect.Lists;
 import com.sappenin.ilpv4.model.*;
+import org.interledger.core.InterledgerAddress;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import javax.money.Monetary;

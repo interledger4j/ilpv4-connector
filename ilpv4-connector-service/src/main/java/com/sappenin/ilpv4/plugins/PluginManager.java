@@ -1,6 +1,6 @@
 package com.sappenin.ilpv4.plugins;
 
-import com.sappenin.ilpv4.model.InterledgerAddress;
+import org.interledger.core.InterledgerAddress;
 import com.sappenin.ilpv4.model.Plugin;
 
 import java.util.Optional;

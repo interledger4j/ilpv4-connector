@@ -1,9 +1,9 @@
 # See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
 logging:
     level:
-      ROOT: DEBUG
-      com.sappenin: DEBUG
-      org.springframework: DEBUG
+      ROOT: INFO
+      com.sappenin: INFO
+      org.springframework: INFO
       org.springframework.web.socket: DEBUG
 server:
   port: 8080
@@ -43,13 +43,14 @@ ilpv4:
     ilp_address: test.example
 
     peers:
-      - interledger_address: test.mock-peer
-        connector_interledger_address: test.example
+      - interledger_address: test.parent
         # Relationship between the connector and the counterparty that the account is with. Options are PARENT, PEER,
         # and CHILD.
         peerType: parent
         accounts:
-          - interledger_address: test.mock-peer.usd
+          # MicroPayments only...
+          # TODO: rateLimit, throughput, routes, options.
+          - interledger_address: test.parent.micro.usd
             description: USD Account
             # Optional. Defines whether the connector should maintain and enforce a balance for this
             # account. The balance is always from the connector's perspective. Therefore, a negative
@@ -61,7 +62,6 @@ ilpv4:
             assetCode: USD
             # Name of the ILP plugin that should be used for this account.
             pluginType: "MOCK"
-
             # Interledger amounts are integers, but most currencies are typically represented as
             # fractional units, e.g. cents. This property defines how many Interledger units make
             # up one regular unit. For dollars, this would usually be set to 9, so that Interledger
@@ -84,20 +84,13 @@ ilpv4:
             # Optional Balance (in this account's indivisible base units) numerically below which
             # the connector will automatically initiate a settlement. The format is a string
             # containing an integer (which may be prefixed with - to indicate a negative value).
-            settleThreshold: 100
-
-            # TODO: rateLimit, throughput, routes, options.
-
-#        - account_id: 9408d80e-9d34-4fb5-88d7-c710b2df9793
-#          counter_party_name: Adrian
-#          balance: 0
-#          account_options:
-#            min_balance: 0
-#            max_balance: 0
-#            maximum_packet_amount: 100000
-#            settle_threshold: 100
-#            asset_code: USD
-#            relationship: peer
+            settleThreshold: 10000000
+          - interledger_address: test.parent.unlimited.usd
+            description: USD Account
+            balance: 0
+            assetCode: USD
+            pluginType: "MOCK"
+            assetScale: 9
 
 ###
 #   H2 Settings

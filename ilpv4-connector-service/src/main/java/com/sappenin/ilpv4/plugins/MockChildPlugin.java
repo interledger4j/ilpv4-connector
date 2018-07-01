@@ -1,13 +1,10 @@
 package com.sappenin.ilpv4.plugins;
 
-import com.sappenin.ilpv4.model.InterledgerAddress;
+
 import com.sappenin.ilpv4.model.Plugin;
 import com.sappenin.ilpv4.model.PluginType;
 import com.sappenin.ilpv4.settings.ConnectorSettings;
-import org.interledger.core.Fulfillment;
-import org.interledger.core.InterledgerFulfillPacket;
-import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerProtocolException;
+import org.interledger.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,9 +14,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * An implementation of {@link Plugin} that simulates all calls to a faux remote peer.
+ * An implementation of {@link Plugin} that simulates a relationship with a parent node where this connector is the
+ * child.
  */
-public class MockPlugin implements Plugin {
+public class MockChildPlugin implements Plugin {
 
   private static final String PREIMAGE = "Roads? Where we're going we don't need roads!";
   private static final String ILP_DATA = "MARTY!";
@@ -38,7 +36,7 @@ public class MockPlugin implements Plugin {
    * @param connectorSettings
    * @param interledgerAddress The Interledger Address for this plugin.
    */
-  public MockPlugin(final ConnectorSettings connectorSettings, final InterledgerAddress interledgerAddress) {
+  public MockChildPlugin(final ConnectorSettings connectorSettings, final InterledgerAddress interledgerAddress) {
     this.connectorSettings = Objects.requireNonNull(connectorSettings);
     this.interledgerAddress = Objects.requireNonNull(interledgerAddress);
     this.connected = new AtomicBoolean(false);
@@ -100,7 +98,8 @@ public class MockPlugin implements Plugin {
   }
 
   @Override
-  public void onIncomingSettle(BigInteger amount) {
+  public void onIncomingSettle(final BigInteger amount) {
+    Objects.requireNonNull(amount);
 
   }
 
