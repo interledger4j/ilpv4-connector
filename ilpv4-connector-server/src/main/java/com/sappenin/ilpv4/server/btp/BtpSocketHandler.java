@@ -2,7 +2,9 @@ package com.sappenin.ilpv4.server.btp;
 
 import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpMessageConverter;
 import com.sappenin.ilpv4.server.btp.converters.BtpPacketToBinaryMessageConverter;
+import org.immutables.value.Value;
 import org.interledger.btp.*;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -211,10 +213,22 @@ public class BtpSocketHandler extends BinaryWebSocketHandler {
     Objects.requireNonNull(username);
     Objects.requireNonNull(token);
 
-    Objects.requireNonNull(webSocketSession).getAttributes().put(BtpSession.ACCOUNT_KEY, username + ":" + token);
+    Objects.requireNonNull(webSocketSession).getAttributes().put(BtpSession.CREDENTIALS_KEY,
+      ImmutableWebSocketCredentials.builder()
+        .username(InterledgerAddress.of(username))
+        .token(token)
+        .build()
+    );
   }
 
   private boolean isAuthenticated(final WebSocketSession webSocketSession) {
-    return Objects.requireNonNull(webSocketSession).getAttributes().containsKey(BtpSession.ACCOUNT_KEY);
+    return Objects.requireNonNull(webSocketSession).getAttributes().containsKey(BtpSession.CREDENTIALS_KEY);
+  }
+
+  @Value.Immutable
+  interface WebSocketCredentials {
+    InterledgerAddress username();
+
+    String token();
   }
 }

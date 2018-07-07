@@ -25,4 +25,14 @@ public class DefaultExchangeRateService implements ExchangeRateService {
 
     return sourceAmount.with(currencyConversion);
   }
+
+  /**
+   *This method is called to allow statistics to be collected by the backend.
+   *
+   * @param updateRatePaymentParams
+   */
+  @Override
+  public void logPaymentStats(UpdateRatePaymentParams updateRatePaymentParams) {
+    // No-op by default.
+  }
 }

@@ -46,14 +46,12 @@ public class InMemoryRoutingTable implements RoutingTable<Route> {
   @Override
   public Collection<Route> getRoutesByTargetPrefix(final InterledgerAddress addressPrefix) {
     Objects.requireNonNull(addressPrefix);
-    InterledgerAddress.requireAddressPrefix(addressPrefix);
     return this.interledgerPrefixMap.getRoutes(addressPrefix);
   }
 
   @Override
   public Collection<Route> removeAllRoutesForTargetPrefix(InterledgerAddress addressPrefix) {
     Objects.requireNonNull(addressPrefix);
-    InterledgerAddress.requireAddressPrefix(addressPrefix);
     return this.interledgerPrefixMap.removeAllRoutes(addressPrefix);
   }
 
@@ -65,7 +63,6 @@ public class InMemoryRoutingTable implements RoutingTable<Route> {
 
   @Override
   public Collection<Route> findNextHopRoutes(InterledgerAddress finalDestinationAddress) {
-    InterledgerAddress.requireNotAddressPrefix(finalDestinationAddress);
     return this.interledgerPrefixMap.findNextHopRoutes(finalDestinationAddress);
   }
 
@@ -74,8 +71,8 @@ public class InMemoryRoutingTable implements RoutingTable<Route> {
     final InterledgerAddress finalDestinationAddress,
     final InterledgerAddress sourcePrefix
   ) {
-    InterledgerAddress.requireNotAddressPrefix(finalDestinationAddress);
-    InterledgerAddress.requireAddressPrefix(sourcePrefix);
+    Objects.requireNonNull(finalDestinationAddress);
+    Objects.requireNonNull(sourcePrefix);
     return this.interledgerPrefixMap.findNextHopRoutes(finalDestinationAddress).stream()
       // Only return routes that are allowed per the source prefix filter...
       .filter(route -> route.getSourcePrefixRestrictionRegex().matcher(sourcePrefix.getValue()).matches())

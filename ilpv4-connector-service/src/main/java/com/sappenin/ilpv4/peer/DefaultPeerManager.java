@@ -2,7 +2,11 @@ package com.sappenin.ilpv4.peer;
 
 import com.google.common.collect.Maps;
 import com.sappenin.ilpv4.accounts.AccountManager;
-import com.sappenin.ilpv4.model.*;
+import com.sappenin.ilpv4.model.Account;
+import com.sappenin.ilpv4.model.Peer;
+import com.sappenin.ilpv4.model.PeerType;
+import com.sappenin.ilpv4.model.Plugin;
+import org.interledger.core.InterledgerAddress;
 
 import java.util.Map;
 import java.util.Objects;

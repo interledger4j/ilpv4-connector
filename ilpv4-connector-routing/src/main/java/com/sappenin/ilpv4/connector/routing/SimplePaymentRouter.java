@@ -30,7 +30,6 @@ public class SimplePaymentRouter implements PaymentRouter<Route> {
    *                                table).
    */
   public Optional<Route> findBestNexHop(final InterledgerAddress finalDestinationAddress) {
-    InterledgerAddress.requireNotAddressPrefix(finalDestinationAddress);
     return this.routingTable.findNextHopRoutes(finalDestinationAddress).stream().findFirst();
   }
 
@@ -51,8 +50,6 @@ public class SimplePaymentRouter implements PaymentRouter<Route> {
    */
   @Override
   public Optional<Route> findBestNexHop(InterledgerAddress finalDestinationAddress, InterledgerAddress sourceLedgerPrefix) {
-    InterledgerAddress.requireNotAddressPrefix(finalDestinationAddress);
-    InterledgerAddress.requireAddressPrefix(sourceLedgerPrefix);
     return this.routingTable.findNextHopRoutes(finalDestinationAddress, sourceLedgerPrefix).stream().findFirst();
   }
 }

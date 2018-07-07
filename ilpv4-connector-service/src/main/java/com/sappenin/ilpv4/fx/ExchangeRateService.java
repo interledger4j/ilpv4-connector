@@ -1,7 +1,12 @@
 package com.sappenin.ilpv4.fx;
 
+import org.immutables.value.Value;
+import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerFulfillPacket;
+
 import javax.money.CurrencyUnit;
 import javax.money.MonetaryAmount;
+import java.math.BigInteger;
 
 public interface ExchangeRateService {
 
@@ -25,4 +30,25 @@ public interface ExchangeRateService {
    */
   MonetaryAmount convert(MonetaryAmount sourceAmount, CurrencyUnit destinationCurrencyUnit);
 
+  /**
+   * This method is called to allow statistics to be collected by the backend.
+   *
+   * @param updateRatePaymentParams
+   */
+  void logPaymentStats(UpdateRatePaymentParams updateRatePaymentParams);
+
+  /**
+   * A container object that collect all necessary information for {@link #logPaymentStats(UpdateRatePaymentParams)}.
+   */
+  @Value.Immutable
+  interface UpdateRatePaymentParams {
+
+    InterledgerAddress sourceAccountAddress();
+
+    BigInteger sourceAmount();
+
+    InterledgerAddress destinationAccountAddress();
+
+    BigInteger destinationAmount();
+  }
 }

@@ -4,9 +4,9 @@ import com.sappenin.ilpv4.DefaultIlpConnector;
 import com.sappenin.ilpv4.IlpConnector;
 import com.sappenin.ilpv4.accounts.AccountManager;
 import com.sappenin.ilpv4.accounts.DefaultAccountManager;
-import com.sappenin.ilpv4.connector.routing.InMemoryRoutingTable;
-import com.sappenin.ilpv4.connector.routing.Route;
-import com.sappenin.ilpv4.connector.routing.RoutingTable;
+import com.sappenin.ilpv4.connector.routing.*;
+import com.sappenin.ilpv4.fx.DefaultExchangeRateService;
+import com.sappenin.ilpv4.fx.ExchangeRateService;
 import com.sappenin.ilpv4.peer.DefaultPeerManager;
 import com.sappenin.ilpv4.peer.PeerManager;
 import com.sappenin.ilpv4.plugins.DefaultPluginManager;
@@ -32,13 +32,25 @@ public class ConnectorServerConfig implements WebMvcConfigurer {
   }
 
   @Bean
-  IlpConnector connector(ConnectorSettings connectorSettings, PeerManager peerManager) {
-    return new DefaultIlpConnector(connectorSettings, peerManager, routingTable, exchangeRateService);
+  ExchangeRateService exchangeRateService() {
+    return new DefaultExchangeRateService();
+  }
+
+  @Bean
+  IlpConnector connector(
+    final ConnectorSettings connectorSettings, final PeerManager peerManager,
+    final PaymentRouter<Route> paymentRouter, final ExchangeRateService exchangeRateService) {
+    return new DefaultIlpConnector(connectorSettings, peerManager, paymentRouter, exchangeRateService);
   }
 
   @Bean
   RoutingTable<Route> routeRoutingTable() {
     return new InMemoryRoutingTable();
+  }
+
+  @Bean
+  PaymentRouter<Route> paymentRouter(final RoutingTable<Route> routingTable) {
+    return new SimplePaymentRouter(routingTable);
   }
 
   @Bean
@@ -57,7 +69,7 @@ public class ConnectorServerConfig implements WebMvcConfigurer {
   }
 
   @Bean
-  PeerManager peerManager(AccountManager accountManager, PluginManager pluginManager) {
-    return new DefaultPeerManager(accountManager, pluginManager);
+  PeerManager peerManager(AccountManager accountManager) {
+    return new DefaultPeerManager(accountManager);
   }
 }

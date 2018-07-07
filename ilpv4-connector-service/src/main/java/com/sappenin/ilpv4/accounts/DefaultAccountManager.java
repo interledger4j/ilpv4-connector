@@ -7,6 +7,9 @@ import com.sappenin.ilpv4.plugins.MockChildPlugin;
 import com.sappenin.ilpv4.plugins.PluginManager;
 import com.sappenin.ilpv4.settings.ConnectorSettings;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerErrorCode;
+import org.interledger.core.InterledgerProtocolException;
+import org.interledger.core.InterledgerRejectPacket;
 
 import java.util.Map;
 import java.util.Objects;
@@ -72,8 +75,11 @@ public class DefaultAccountManager implements AccountManager {
           }
         }
       })
-      .orElseThrow(
-        () -> new RuntimeException(String.format("Unable to obtain plugin for Account %s!", accountAddress))
+      .orElseThrow(() -> new InterledgerProtocolException(
+        InterledgerRejectPacket.builder()
+          .code(InterledgerErrorCode.F02_UNREACHABLE)
+          .message(String.format("Tried to get a Plugin for non-existent account: %s", accountAddress))
+          .build())
       );
   }
 }

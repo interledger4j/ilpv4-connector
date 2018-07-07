@@ -3,15 +3,11 @@ package com.sappenin.ilpv4.server.btp;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.BaseEncoding;
 import com.sappenin.ilpv4.IlpConnector;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.btp.BtpResponse;
 import org.interledger.btp.BtpSubProtocol;
 import org.interledger.btp.BtpSubProtocolContentType;
 import org.interledger.btp.BtpSubProtocols;
-import org.interledger.core.InterledgerFulfillPacket;
-import org.interledger.core.InterledgerPacket;
-import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerProtocolException;
+import org.interledger.core.*;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +44,10 @@ public class IlpSubprotocolHandler extends BtpSubProtocolHandler {
     Objects.requireNonNull(data, "data must not be null!");
 
     if (logger.isDebugEnabled()) {
-      logger.debug("Handling BTP data from {}: {}", BaseEncoding.base64().encode(data), session.getAccountId());
+      logger.debug(
+        "Handling BTP data from {}: {}",
+        BaseEncoding.base64().encode(data), session.getWebSocketCredentials().username()
+      );
     }
 
     // TODO: Move this logic out of the BTP-specific code, and into the connector.
@@ -64,7 +63,7 @@ public class IlpSubprotocolHandler extends BtpSubProtocolHandler {
       // TODO: However, BTP should ideally operate on a per-peer basis,
       // although the protocol is designed to have a single to/from in it. To explore this further, consider the
       // to/from sub-protocols proposed by Michiel.
-      final InterledgerAddress sourceAccountId = session.getAccountId();
+      final InterledgerAddress sourceAccountId = session.getWebSocketCredentials().username();
       return this.ilpConnector.handleIncomingData(sourceAccountId, incomingPreparePacket)
         .thenApply(this::toBtpResponse)
         // TODO: Change this to be a configurable timeout!

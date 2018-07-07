@@ -188,11 +188,11 @@ public class BtpPlugin implements Plugin {
   //    Objects.requireNonNull(username);
   //    Objects.requireNonNull(token);
   //
-  //    Objects.requireNonNull(webSocketSession).getAttributes().put(BtpSession.ACCOUNT_KEY, username + ":" + token);
+  //    Objects.requireNonNull(webSocketSession).getAttributes().put(BtpSession.CREDENTIALS_KEY, username + ":" + token);
   //  }
   //
   //  private boolean isAuthenticated(final WebSocketSession webSocketSession) {
-  //    return Objects.requireNonNull(webSocketSession).getAttributes().containsKey(BtpSession.ACCOUNT_KEY);
+  //    return Objects.requireNonNull(webSocketSession).getAttributes().containsKey(BtpSession.CREDENTIALS_KEY);
   //  }
 
   /**

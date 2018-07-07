@@ -1,5 +1,6 @@
 package com.sappenin.ilpv4.server.btp;
 
+import com.sappenin.ilpv4.IlpConnector;
 import com.sappenin.ilpv4.accounts.AccountManager;
 import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpErrorConverter;
 import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpMessageConverter;
@@ -41,6 +42,9 @@ public class BtpWebSocketConfig implements WebSocketConfigurer {
   AccountManager accountManager;
 
   @Autowired
+  IlpConnector ilpConnector;
+
+  @Autowired
   BtpPacketToBinaryMessageConverter btpPacketToBinaryMessageConverter;
 
   @Autowired
@@ -72,7 +76,7 @@ public class BtpWebSocketConfig implements WebSocketConfigurer {
 
   @Bean
   IlpSubprotocolHandler ilpSubprotocolHandler() {
-    return new IlpSubprotocolHandler(codecContext(), accountManager, ilpConnector);
+    return new IlpSubprotocolHandler(codecContext(), ilpConnector);
   }
 
   @Bean

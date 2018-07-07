@@ -34,18 +34,7 @@ public interface Route {
    *
    * @return An {@link InterledgerAddress}.
    */
-  InterledgerAddress getNextHopLedgerAccount();
-
-  /**
-   * <p>An {@link InterledgerAddress} representing the ILP ledger prefix that the next-hop ledger transfer should be
-   * performed on. Note that, in general, this value should be derived from {@link #getNextHopLedgerAccount()} since the
-   * connector account should match the prefix of the ledger it lives in.</p>
-   *
-   * @return An {@link InterledgerAddress}.
-   */
-  default InterledgerAddress getNextHopLedgerPrefix() {
-    return InterledgerAddress.requireNotAddressPrefix(getNextHopLedgerAccount()).getPrefix();
-  }
+  InterledgerAddress getNextHopAccount();
 
   /**
    * <p>A regular expression that can restrict routing table destinations to a subset of allowed payment-source
@@ -104,7 +93,7 @@ public interface Route {
       if (!getTargetPrefix().equals(that.getTargetPrefix())) {
         return false;
       }
-      if (!getNextHopLedgerAccount().equals(that.getNextHopLedgerAccount())) {
+      if (!getNextHopAccount().equals(that.getNextHopAccount())) {
         return false;
       }
 
@@ -120,14 +109,14 @@ public interface Route {
     @Override
     public int hashCode() {
       int result = getTargetPrefix().hashCode();
-      result = 31 * result + getNextHopLedgerAccount().hashCode();
+      result = 31 * result + getNextHopAccount().hashCode();
       return result;
     }
 
     @Value.Check
     void check() {
       InterledgerAddress.requireAddressPrefix(getTargetPrefix());
-      InterledgerAddress.requireNotAddressPrefix(getNextHopLedgerAccount());
+      InterledgerAddress.requireNotAddressPrefix(getNextHopAccount());
     }
   }
 }

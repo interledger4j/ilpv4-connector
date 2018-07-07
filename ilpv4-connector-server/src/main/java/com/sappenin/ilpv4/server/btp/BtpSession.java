@@ -1,6 +1,5 @@
 package com.sappenin.ilpv4.server.btp;
 
-import org.interledger.core.InterledgerAddress;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.util.Objects;
@@ -11,10 +10,11 @@ import java.util.Optional;
  */
 public class BtpSession {
 
-  static final String ACCOUNT_KEY = "ILP-Account";
+  static final String CREDENTIALS_KEY = "ILP-BTP-Credentials";
 
   private final WebSocketSession webSocketSession;
-  private final InterledgerAddress accountId;
+
+  private final BtpSocketHandler.WebSocketCredentials webSocketCredentials;
 
   /**
    * Private constructor.
@@ -22,18 +22,16 @@ public class BtpSession {
    * @param webSocketSession
    */
   public BtpSession(final WebSocketSession webSocketSession) {
-    this.webSocketSession = webSocketSession;
-
-    this.accountId = Optional.ofNullable(
-      Objects.requireNonNull(webSocketSession).getAttributes().get(ACCOUNT_KEY)
+    this.webSocketSession = Objects.requireNonNull(webSocketSession);
+    this.webSocketCredentials = Optional.ofNullable(
+      Objects.requireNonNull(webSocketSession).getAttributes().get(CREDENTIALS_KEY)
     )
-      .map(Object::toString)
-      .map(InterledgerAddress::of)
-      .orElseThrow(() -> new RuntimeException("No Account found in WebSocket Session!"));
+      .map(obj -> (BtpSocketHandler.WebSocketCredentials) obj)
+      .orElseThrow(() -> new RuntimeException("No Credentials found in WebSocket Session!"));
   }
 
-  public InterledgerAddress getAccountId() {
-    return this.accountId;
+  public BtpSocketHandler.WebSocketCredentials getWebSocketCredentials() {
+    return this.webSocketCredentials;
   }
 
   public WebSocketSession getWebSocketSession() {

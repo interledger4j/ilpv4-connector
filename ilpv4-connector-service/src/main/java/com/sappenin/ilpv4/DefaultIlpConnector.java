@@ -4,9 +4,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.sappenin.ilpv4.connector.routing.PaymentRouter;
 import com.sappenin.ilpv4.connector.routing.Route;
 import com.sappenin.ilpv4.fx.ExchangeRateService;
+import com.sappenin.ilpv4.fx.ImmutableUpdateRatePaymentParams;
 import com.sappenin.ilpv4.model.Account;
 import com.sappenin.ilpv4.peer.PeerManager;
 import com.sappenin.ilpv4.settings.ConnectorSettings;
+import org.immutables.value.Value;
 import org.interledger.core.*;
 import org.javamoney.moneta.Money;
 import org.slf4j.Logger;
@@ -20,8 +22,6 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-
-¬
 
 /**
  * A default implementation of {@link IlpConnector}.
@@ -39,7 +39,7 @@ public class DefaultIlpConnector implements IlpConnector {
   private final ExchangeRateService exchangeRateService;
 
   public DefaultIlpConnector(final ConnectorSettings connectorSettings, final PeerManager peerManager,
-                             final PaymentRouter paymentRouter, final ExchangeRateService exchangeRateService) {
+                             final PaymentRouter<Route> paymentRouter, final ExchangeRateService exchangeRateService) {
     this.connectorSettings = Objects.requireNonNull(connectorSettings);
     this.peerManager = Objects.requireNonNull(peerManager);
     this.paymentRouter = Objects.requireNonNull(paymentRouter);
@@ -53,8 +53,8 @@ public class DefaultIlpConnector implements IlpConnector {
 
   @PreDestroy
   public void shutdown() {
-    // peerManager#shutdown is called automatically by spring due to naming convention.
-    //this.peerManager.shutdown();
+    // peerManager#shutdown is called automatically by spring due to naming convention, so no need to call it here.
+    // this.peerManager.shutdown();
   }
 
   @Override
@@ -70,44 +70,65 @@ public class DefaultIlpConnector implements IlpConnector {
     Objects.requireNonNull(sourceAccountAddress);
     Objects.requireNonNull(sourcePreparePacket);
 
-    return CompletableFuture.supplyAsync(() -> {
-      if (sourcePreparePacket.getDestination().startsWith(PEER_PROTOCOL_PREFIX)) {
-        throw new RuntimeException("Not yet implemented!");
-        //return this.peerProtocolController.handle(packet, sourceAccount, {parsedPacket})
-      } else if (sourcePreparePacket.getDestination().equals(this.getConnectorSettings().getIlpAddress())) {
-        throw new RuntimeException("Not yet implemented!");
-        //return this.echoController.handle(packet, sourceAccount, { parsedPacket, outbound })
-      } else {
+    if (sourcePreparePacket.getDestination().startsWith(PEER_PROTOCOL_PREFIX)) {
+      throw new RuntimeException("Not yet implemented!");
+      //return this.peerProtocolController.handle(packet, sourceAccount, {parsedPacket})
+    } else if (sourcePreparePacket.getDestination().equals(this.getConnectorSettings().getIlpAddress())) {
+      throw new RuntimeException("Not yet implemented!");
+      //return this.echoController.handle(packet, sourceAccount, { parsedPacket, outbound })
+    } else {
 
-        // TODO: Construct the next-hop packet.
-        final InterledgerPacket nextHopPacket = getNextHopPacket(sourceAccountAddress, sourcePreparePacket);
+      final NextHopInfo nextHopInfo = getNextHopPacket(sourceAccountAddress, sourcePreparePacket);
 
-        finish !
-        // TODO: Send the outboud packet
-        //     log.debug('sending outbound ilp prepare. destination=%s amount=%s', destination, nextHopPacket.amount)
-        //    const result = await outbound(IlpPacket.serializeIlpPrepare(nextHopPacket), nextHop)
-
-
-        // TODO: Process fulfillment.
-        // It will either be a fulfill, or an exception will be thrown...
-
-        //        if (result[0] === IlpPacket.Type.TYPE_ILP_FULFILL) {
-        //          log.debug('got fulfillment. cond=%s nextHop=%s amount=%s', executionCondition.slice(0, 6).toString('base64'), nextHop, nextHopPacket.amount)
-        //
-        //          this.backend.submitPayment({
-        //            sourceAccount: sourceAccount,
-        //            sourceAmount: amount,
-        //            destinationAccount: nextHop,
-        //            destinationAmount: nextHopPacket.amount
-        //      })
-        //        .catch(err => {
-        //          const errInfo = (err && typeof err === 'object' && err.stack) ? err.stack : String(err)
-        //          log.warn('error while submitting payment to backend. error=%s', errInfo)
-        //        })
-        //        }
-
+      if (logger.isDebugEnabled()) {
+        logger.debug(
+          "Sending outbound ILP Prepare. destination={} packet={}", nextHopInfo.nextHopAccountAddress(),
+          nextHopInfo.nextHopPacket()
+        );
       }
-    });
+
+      // Throws an exception if the plugin cannot be found...
+      return this.peerManager.getAccountManager()
+        .getPlugin(nextHopInfo.nextHopAccountAddress())
+        .sendPacket(nextHopInfo.nextHopPacket())
+        .thenApplyAsync((result) -> {
+          // Log the fulfillment...
+          if (logger.isDebugEnabled()) {
+            logger.debug(
+              "Received fulfillment: {}", result
+            );
+          }
+          return result;
+        })
+        .thenApplyAsync((result) -> {
+          // Log statistics in the ExchangeRateService...
+          this.exchangeRateService.logPaymentStats(
+            ImmutableUpdateRatePaymentParams.builder()
+              .sourceAccountAddress(sourceAccountAddress)
+              .sourceAmount(sourcePreparePacket.getAmount())
+              .destinationAccountAddress(nextHopInfo.nextHopAccountAddress())
+              .destinationAmount(nextHopInfo.nextHopPacket().getAmount())
+              .build()
+          );
+          return result;
+        });
+    }
+  }
+
+  /**
+   * Find the appropriate plugin to send the outbound packet to.
+   *
+   * @param nextHopAccount
+   * @param nextHopPacket
+   */
+  @VisibleForTesting
+  protected CompletableFuture<InterledgerFulfillPacket> outbound(
+    final InterledgerAddress nextHopAccount, final InterledgerPreparePacket nextHopPacket
+  ) {
+    Objects.requireNonNull(nextHopAccount);
+    Objects.requireNonNull(nextHopPacket);
+
+    return this.peerManager.getAccountManager().getPlugin(nextHopAccount).sendPacket(nextHopPacket);
   }
 
   /**
@@ -124,7 +145,7 @@ public class DefaultIlpConnector implements IlpConnector {
    * @return A {@link InterledgerPreparePacket} that can be sent to the next-hop.
    */
   @VisibleForTesting
-  protected InterledgerPreparePacket getNextHopPacket(
+  protected NextHopInfo getNextHopPacket(
     final InterledgerAddress sourceAccountAddress, final InterledgerPreparePacket sourcePacket
   ) throws RuntimeException {
 
@@ -137,7 +158,7 @@ public class DefaultIlpConnector implements IlpConnector {
 
     final InterledgerAddress destinationAddress = sourcePacket.getDestination();
 
-    final Route nextHop = this.paymentRouter.findBestNexHop(destinationAddress)
+    final Route nextHopRoute = this.paymentRouter.findBestNexHop(destinationAddress)
       .orElseThrow(() -> new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
           .code(InterledgerErrorCode.F02_UNREACHABLE)
@@ -148,25 +169,25 @@ public class DefaultIlpConnector implements IlpConnector {
       ));
 
     if (logger.isDebugEnabled()) {
-      logger.debug("Determined next hop: {}", nextHop);
+      logger.debug("Determined next hop: {}", nextHopRoute);
     }
 
     final MonetaryAmount nextAmount = this.determineNextAmount(sourceAccountAddress, sourcePacket);
 
-    return InterledgerPreparePacket.builder()
-      .from(sourcePacket)
-      .amount(nextAmount.getNumber().numberValue(BigInteger.class))
-      .expiresAt(determineDestinationExpiresAt(sourcePacket.getExpiresAt()))
+    return ImmutableNextHopInfo.builder()
+      .nextHopAccountAddress(nextHopRoute.getNextHopAccount())
+      .nextHopPacket(
+        InterledgerPreparePacket.builder()
+          .from(sourcePacket)
+          .amount(nextAmount.getNumber().numberValue(BigInteger.class))
+          .expiresAt(determineDestinationExpiresAt(sourcePacket.getExpiresAt()))
+          .build())
       .build();
   }
-  //const nextAmount = new BigNumber(amount).times(rate).integerValue(BigNumber.ROUND_FLOOR)
-}
 
   /**
    * Given a source address, determine the exchange-rate and new amount that should be returned in order to create the
    * next packet in the chain.
-   *
-   * TODO: Account for fees here. See https://github.com/fluid-money/fluid-ilp-connector/blob/6105bd747c78a4756b82d0db86fc9e7bd26ced93/src/main/java/money/fluid/ilp/connector/services/ConnectorFeeService.java
    *
    * @param sourceAccountAddress
    * @param sourcePacket
@@ -175,7 +196,6 @@ public class DefaultIlpConnector implements IlpConnector {
    */
   @VisibleForTesting
   protected MonetaryAmount determineNextAmount(
-    // TODO: Replace with new ILP Address in gists.
     final InterledgerAddress sourceAccountAddress, final InterledgerPreparePacket sourcePacket
   ) {
     Objects.requireNonNull(sourcePacket);
@@ -230,7 +250,7 @@ public class DefaultIlpConnector implements IlpConnector {
           .build()
       );
     } else {
-      return destinationExpiryTime
+      return destinationExpiryTime;
     }
   }
 
@@ -248,5 +268,23 @@ public class DefaultIlpConnector implements IlpConnector {
     }
   }
 
+  /**
+   * A container that holds the next-hop packet (with a final destination) as well as the address of the next-hop
+   * account to send the packet to.
+   */
+  @Value.Immutable
+  interface NextHopInfo {
+
+    /**
+     * The {@link InterledgerAddress} of the next-hop account to send a prepare packet to.
+     */
+    InterledgerAddress nextHopAccountAddress();
+
+    /**
+     * The packet to send to the next hop.
+     */
+    InterledgerPreparePacket nextHopPacket();
+
+  }
 
 }

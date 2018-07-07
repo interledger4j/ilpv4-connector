@@ -3,6 +3,7 @@ package com.sappenin.ilpv4.connector.routing;
 import org.interledger.core.InterledgerAddress;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -30,11 +31,13 @@ import java.util.stream.Collectors;
  * "peer.usd.mypeer0." for any routing requests that don't match any other prefix in the table.</p>
  *
  * <p> Using this data, a Connector would, for example, be able to assemble an outgoing-payment to
- * <tt>peer.usd.bank.connector</tt> for a payment with a final destination of "g.eur.bank.bob". This allows the ILP node
+ * <tt>peer.usd.bank.connector</tt> for a payment with a final destination of "g.eur.bank.bob". This allows the ILP
+ * node
  * using this table to forward a payment for "bob" to the next hop in an overall path, without holding the entire graph
  * of all ILP nodes in-memory.</p>
  *
- * <p> This interface is extensible in that it can hold simple routes of type {@link R}, or it can hold more complicated
+ * <p> This interface is extensible in that it can hold simple routes of type {@link R}, or it can hold more
+ * complicated
  * implementations that extend {@link Route}.</p>
  */
 public interface RoutingTable<R extends Route> {
@@ -108,8 +111,8 @@ public interface RoutingTable<R extends Route> {
   default Collection<R> findNextHopRoutes(
     final InterledgerAddress finalDestinationAddress, final InterledgerAddress sourcePrefix
   ) {
-    InterledgerAddress.requireNotAddressPrefix(finalDestinationAddress);
-    InterledgerAddress.requireAddressPrefix(sourcePrefix);
+    Objects.requireNonNull(finalDestinationAddress);
+    Objects.requireNonNull(sourcePrefix);
 
     return this.findNextHopRoutes(finalDestinationAddress).stream()
       // Only return routes that are allowed per the source prefix filter...

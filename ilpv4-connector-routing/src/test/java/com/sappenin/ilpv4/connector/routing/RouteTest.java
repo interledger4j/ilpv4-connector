@@ -26,11 +26,11 @@ public class RouteTest {
   public void testDefaultValues() {
     final Route route1 = ImmutableRoute.builder()
       .targetPrefix(GLOBAL_TARGET_PREFIX)
-      .nextHopLedgerAccount(CONNECTOR_ACCOUNT_CONNIE)
+      .nextHopAccount(CONNECTOR_ACCOUNT_CONNIE)
       .build();
 
     assertThat(route1.getTargetPrefix(), is(GLOBAL_TARGET_PREFIX));
-    assertThat(route1.getNextHopLedgerAccount(), is(CONNECTOR_ACCOUNT_CONNIE));
+    assertThat(route1.getNextHopAccount(), is(CONNECTOR_ACCOUNT_CONNIE));
     assertThat(route1.getExpiresAt().isPresent(), is(false));
     assertThat(route1.getSourcePrefixRestrictionRegex().pattern(), is(ACCEPT_ALL_SOURCES_PATTERN.pattern()));
   }
@@ -39,23 +39,22 @@ public class RouteTest {
   public void testEqualsHashCode() {
     final Route route1 = ImmutableRoute.builder()
       .targetPrefix(GLOBAL_TARGET_PREFIX)
-      .nextHopLedgerAccount(CONNECTOR_ACCOUNT_CONNIE)
+      .nextHopAccount(CONNECTOR_ACCOUNT_CONNIE)
       .build();
     final Route route2 = ImmutableRoute.builder()
       .targetPrefix(GLOBAL_TARGET_PREFIX)
-      .nextHopLedgerAccount(CONNECTOR_ACCOUNT_CONNIE)
+      .nextHopAccount(CONNECTOR_ACCOUNT_CONNIE)
       .build();
 
     final Route route3 = ImmutableRoute.builder()
       .targetPrefix(GLOBAL_TARGET_PREFIX)
-      .nextHopLedgerAccount(CONNECTOR_ACCOUNT_CONNIE)
+      .nextHopAccount(CONNECTOR_ACCOUNT_CONNIE)
       .sourcePrefixRestrictionRegex(ACCEPT_NO_SOURCES_PATTERN)
       .build();
 
     assertThat(route1, is(route2));
     assertThat(route2, is(route1));
     assertThat(route1.hashCode(), is(route2.hashCode()));
-
 
     assertThat(route1, is(route2));
     assertThat(route2, is(route1));
@@ -74,16 +73,16 @@ public class RouteTest {
   public void testNotEqualsHashCode() {
     final Route route1 = ImmutableRoute.builder()
       .targetPrefix(GLOBAL_TARGET_PREFIX)
-      .nextHopLedgerAccount(CONNECTOR_ACCOUNT_BOB)
+      .nextHopAccount(CONNECTOR_ACCOUNT_BOB)
       .build();
     final Route route2 = ImmutableRoute.builder()
       .targetPrefix(GLOBAL_TARGET_PREFIX)
-      .nextHopLedgerAccount(CONNECTOR_ACCOUNT_CONNIE)
+      .nextHopAccount(CONNECTOR_ACCOUNT_CONNIE)
       .sourcePrefixRestrictionRegex(ACCEPT_NO_SOURCES_PATTERN)
       .build();
     final Route route3 = ImmutableRoute.builder()
       .targetPrefix(GLOBAL_TARGET_PREFIX)
-      .nextHopLedgerAccount(CONNECTOR_ACCOUNT_CONNIE)
+      .nextHopAccount(CONNECTOR_ACCOUNT_CONNIE)
       .sourcePrefixRestrictionRegex(ACCEPT_NO_SOURCES_PATTERN)
       .build();
 
@@ -105,7 +104,7 @@ public class RouteTest {
     try {
       ImmutableRoute.builder()
         .targetPrefix(CONNECTOR_ACCOUNT_CONNIE)
-        .nextHopLedgerAccount(CONNECTOR_ACCOUNT_CONNIE)
+        .nextHopAccount(CONNECTOR_ACCOUNT_CONNIE)
         .build();
       fail();
     } catch (IllegalArgumentException e) {
@@ -120,7 +119,7 @@ public class RouteTest {
     try {
       ImmutableRoute.builder()
         .targetPrefix(GLOBAL_TARGET_PREFIX)
-        .nextHopLedgerAccount(GLOBAL_TARGET_PREFIX)
+        .nextHopAccount(GLOBAL_TARGET_PREFIX)
         .build();
       fail();
     } catch (IllegalArgumentException e) {
