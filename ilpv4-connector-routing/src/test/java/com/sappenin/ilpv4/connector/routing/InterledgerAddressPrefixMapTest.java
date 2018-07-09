@@ -20,7 +20,7 @@ import static org.junit.Assert.fail;
 /**
  * Unit tests for {@link InterledgerPrefixMap}.
  */
-public class InterledgerPrefixMapTest {
+public class InterledgerAddressPrefixMapTest {
 
   private static final InterledgerAddress GLOBAL_ROUTE = InterledgerAddress.of("g.");
   private static final Pattern ACCEPT_SOME_SOURCES_PATTERN = Pattern.compile("g\\.usd\\.(.*)");

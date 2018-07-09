@@ -87,7 +87,17 @@
       </dependency>
       <dependency>
         <groupId>org.interledger</groupId>
+        <artifactId>codec-framework</artifactId>
+        <version>${ilp.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.interledger</groupId>
         <artifactId>ilp-core-codecs</artifactId>
+        <version>${ilp.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.interledger</groupId>
+        <artifactId>codec-framework</artifactId>
         <version>${ilp.version}</version>
       </dependency>
       <dependency>

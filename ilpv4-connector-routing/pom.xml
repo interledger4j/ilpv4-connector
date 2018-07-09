@@ -43,6 +43,14 @@
       <artifactId>ilp-core</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>codec-framework</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>ilp-core-codecs</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>

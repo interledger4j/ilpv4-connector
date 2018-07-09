@@ -115,8 +115,8 @@ public interface Route {
 
     @Value.Check
     void check() {
-      InterledgerAddress.requireAddressPrefix(getTargetPrefix());
-      InterledgerAddress.requireNotAddressPrefix(getNextHopAccount());
+      //InterledgerAddress.requireAddressPrefix(getTargetPrefix());
+      //InterledgerAddress.requireNotAddressPrefix(getNextHopAccount());
     }
   }
 }
