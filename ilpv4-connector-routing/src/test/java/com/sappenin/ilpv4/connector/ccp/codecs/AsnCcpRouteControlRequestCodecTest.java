@@ -14,7 +14,7 @@ import java.util.Collection;
 import java.util.UUID;
 
 /**
- * Unit tests for {@link AsnCcpRouteControlRequestCodec} that tests the encoding/decoding in the absense of an ILP
+ * Unit tests for {@link AsnCcpRouteControlRequestCodec} that tests the encoding/decoding in the absence of an ILP
  * packet.
  */
 @RunWith(Parameterized.class)

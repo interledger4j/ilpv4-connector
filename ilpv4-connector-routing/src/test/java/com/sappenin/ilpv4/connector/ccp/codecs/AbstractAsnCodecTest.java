@@ -1,9 +1,9 @@
 package com.sappenin.ilpv4.connector.ccp.codecs;
 
 import com.sappenin.ilpv4.connector.ccp.CcpRouteControlRequest;
+import com.sappenin.ilpv4.connector.ccp.CcpRouteControlResponse;
 import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.interledger.encoding.asn.framework.CodecContextFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,6 +51,7 @@ public abstract class AbstractAsnCodecTest<T> {
     codecContext = InterledgerCodecContextFactory.oer();
     codecContext.register(UUID.class, AsnUuidCodec::new);
     codecContext.register(CcpRouteControlRequest.class, AsnCcpRouteControlRequestCodec::new);
+    codecContext.register(CcpRouteControlResponse.class, AsnCcpRouteControlResponseCodec::new);
   }
 
   @Test
