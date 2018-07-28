@@ -4,8 +4,8 @@ import org.interledger.btp.BtpMessage;
 import org.interledger.btp.BtpSubProtocol;
 import org.interledger.btp.BtpSubProtocolContentType;
 import org.interledger.btp.BtpSubProtocols;
-import org.interledger.core.Condition;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
 
@@ -162,7 +162,7 @@ public class BtpTestUtils {
     try {
       final byte[] randomBytes = new byte[32];
       new Random().nextBytes(randomBytes);
-      final Condition executionCondition = Condition.of(randomBytes);
+      final InterledgerCondition executionCondition = InterledgerCondition.of(randomBytes);
 
       final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
         .amount(BigInteger.TEN)

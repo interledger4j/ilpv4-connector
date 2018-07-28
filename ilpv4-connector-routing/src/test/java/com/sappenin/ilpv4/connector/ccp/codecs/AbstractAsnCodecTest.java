@@ -1,11 +1,10 @@
 package com.sappenin.ilpv4.connector.ccp.codecs;
 
-import com.sappenin.ilpv4.connector.ccp.CcpRouteControlRequest;
-import com.sappenin.ilpv4.connector.ccp.CcpRouteControlResponse;
+import com.google.common.io.BaseEncoding;
+import com.sappenin.ilpv4.connector.ccp.*;
 import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -14,6 +13,7 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.UUID;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertArrayEquals;
 
@@ -22,11 +22,22 @@ import static org.junit.Assert.assertArrayEquals;
  */
 public abstract class AbstractAsnCodecTest<T> {
 
+  protected static CodecContext codecContext;
+
+  static {
+    // Register the codec to be tested...
+    codecContext = InterledgerCodecContextFactory.oer();
+    codecContext.register(UUID.class, AsnUuidCodec::new);
+    codecContext.register(CcpRouteControlRequest.class, AsnCcpRouteControlRequestCodec::new);
+    codecContext.register(CcpRouteControlResponse.class, AsnCcpRouteControlResponseCodec::new);
+    codecContext.register(CcpRouteUpdateRequest.class, AsnCcpRouteUpdateRequestCodec::new);
+    codecContext.register(CcpRoutePathPart.class, AsnCcpRoutePathPartCodec::new);
+    codecContext.register(CcpRouteProperty.class, AsnCcpRoutePropertyCodec::new);
+  }
+
   private final T expectedObject;
   private final byte[] asn1OerBytes;
   private final Class<T> clazz;
-
-  private CodecContext codecContext;
 
   /**
    * Construct an instance of this parameterized test with the supplied inputs.
@@ -42,18 +53,6 @@ public abstract class AbstractAsnCodecTest<T> {
     this.clazz = Objects.requireNonNull(clazz);
   }
 
-  /**
-   * Test setup.
-   */
-  @Before
-  public void setUp() {
-    // Register the codec to be tested...
-    codecContext = InterledgerCodecContextFactory.oer();
-    codecContext.register(UUID.class, AsnUuidCodec::new);
-    codecContext.register(CcpRouteControlRequest.class, AsnCcpRouteControlRequestCodec::new);
-    codecContext.register(CcpRouteControlResponse.class, AsnCcpRouteControlResponseCodec::new);
-  }
-
   @Test
   public void read() throws IOException {
     // This stream allows the codec to read the asn1Bytes...
@@ -67,7 +66,13 @@ public abstract class AbstractAsnCodecTest<T> {
     // Allow the AsnObjectCodec to write to 'outputStream'
     final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     codecContext.write(expectedObject, outputStream);
-    assertArrayEquals(this.asn1OerBytes, outputStream.toByteArray());
+
+    final byte[] actualBytes = outputStream.toByteArray();
+
+    final String expectedHex = BaseEncoding.base16().encode(this.asn1OerBytes);
+    final String actualHex = BaseEncoding.base16().encode(actualBytes);
+    assertThat(actualHex, is(expectedHex));
+    assertArrayEquals(this.asn1OerBytes, actualBytes);
   }
 
   @Test

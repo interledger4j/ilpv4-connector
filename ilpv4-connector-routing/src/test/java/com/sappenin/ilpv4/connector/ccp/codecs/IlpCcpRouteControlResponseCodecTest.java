@@ -1,13 +1,10 @@
 package com.sappenin.ilpv4.connector.ccp.codecs;
 
 import com.google.common.io.BaseEncoding;
-import com.sappenin.ilpv4.connector.ccp.CcpRouteControlRequest;
 import com.sappenin.ilpv4.connector.ccp.CcpRouteControlResponse;
 import com.sappenin.ilpv4.connector.ccp.ImmutableCcpRouteControlResponse;
-import org.interledger.core.Fulfillment;
 import org.interledger.core.InterledgerFulfillPacket;
-import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
-import org.interledger.encoding.asn.framework.CodecContext;
+import org.interledger.core.InterledgerFulfillment;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -15,7 +12,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
@@ -29,16 +25,6 @@ public class IlpCcpRouteControlResponseCodecTest extends AbstractAsnCodecTest<In
 
   private static final String FULFILLMENT_HEX =
     "0000000000000000000000000000000000000000000000000000000000000000";
-
-  private static final CodecContext codecContext;
-
-  static {
-    // Register the codec to be tested...
-    codecContext = InterledgerCodecContextFactory.oer();
-    codecContext.register(UUID.class, AsnUuidCodec::new);
-    codecContext.register(CcpRouteControlRequest.class, AsnCcpRouteControlRequestCodec::new);
-    codecContext.register(CcpRouteControlResponse.class, AsnCcpRouteControlResponseCodec::new);
-  }
 
   /**
    * Construct an instance of this parameterized test with the supplied inputs.
@@ -65,17 +51,18 @@ public class IlpCcpRouteControlResponseCodecTest extends AbstractAsnCodecTest<In
       {
         InterledgerFulfillPacket.builder()
           .fulfillment(
-            Fulfillment.of(BaseEncoding.base16().decode(FULFILLMENT_HEX))
+            InterledgerFulfillment.of(BaseEncoding.base16().decode(FULFILLMENT_HEX))
           )
           .data(BaseEncoding.base16().decode("0E6578616D706C652E636C69656E740D0358414D"))
           .build(),
-        BaseEncoding.base16().decode("0D350000000000000000000000000000000000000000000000000000000000000000140E6578616D706C652E636C69656E740D0358414D")
+        BaseEncoding.base16().decode(
+          "0D350000000000000000000000000000000000000000000000000000000000000000140E6578616D706C652E636C69656E740D0358414D")
       },
       // 1 - JS Compatibility (1)
       {
         InterledgerFulfillPacket.builder()
           .fulfillment(
-            Fulfillment.of(BaseEncoding.base16().decode(FULFILLMENT_HEX))
+            InterledgerFulfillment.of(BaseEncoding.base16().decode(FULFILLMENT_HEX))
           )
           .data(
             ((Supplier<byte[]>) () -> {

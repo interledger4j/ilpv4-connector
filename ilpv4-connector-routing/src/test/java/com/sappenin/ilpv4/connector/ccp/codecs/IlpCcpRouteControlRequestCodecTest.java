@@ -6,11 +6,9 @@ import com.sappenin.ilpv4.connector.ccp.CcpMode;
 import com.sappenin.ilpv4.connector.ccp.CcpRouteControlRequest;
 import com.sappenin.ilpv4.connector.ccp.ImmutableCcpRouteControlRequest;
 import com.sappenin.ilpv4.connector.ccp.ImmutableFeature;
-import org.interledger.core.Condition;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
-import org.interledger.encoding.asn.framework.CodecContext;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -41,15 +39,6 @@ public class IlpCcpRouteControlRequestCodecTest extends AbstractAsnCodecTest<Int
   // However, the value used in that test is off by 1 minute.
   private static final Instant INSTANT = Instant.ofEpochMilli(1434412800000L).plusSeconds(60);
 
-  private static final CodecContext codecContext;
-
-  static {
-    // Register the codec to be tested...
-    codecContext = InterledgerCodecContextFactory.oer();
-    codecContext.register(UUID.class, AsnUuidCodec::new);
-    codecContext.register(CcpRouteControlRequest.class, AsnCcpRouteControlRequestCodec::new);
-  }
-
   /**
    * Construct an instance of this parameterized test with the supplied inputs.
    *
@@ -77,7 +66,7 @@ public class IlpCcpRouteControlRequestCodecTest extends AbstractAsnCodecTest<Int
           .destination(PEER_ROUTE_CONTROL_DESTINATION)
           .amount(BigInteger.ZERO)
           .executionCondition(
-            Condition.of(BaseEncoding.base16().decode(EXECUTION_CONDITION_HEX))
+            InterledgerCondition.of(BaseEncoding.base16().decode(EXECUTION_CONDITION_HEX))
           )
           .expiresAt(INSTANT)
           .data(

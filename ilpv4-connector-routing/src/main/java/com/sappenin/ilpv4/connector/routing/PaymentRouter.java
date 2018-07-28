@@ -18,7 +18,7 @@ public interface PaymentRouter<R extends Route> {
    *
    * At a general level, this method works as follows:
    *
-   * Given an ILP Payment from A→C, find the next hop B on the payment path from A to C.
+   * Given an ILP Payment from A→C, find the next hop B on the payment pathParts from A to C.
    *
    * @param finalDestinationAddress An {@link InterledgerAddress} representing the final payment destination for a
    *                                payment or message (this address may or may not be locally accessible in the routing
@@ -32,7 +32,7 @@ public interface PaymentRouter<R extends Route> {
    *
    * At a general level, this method works as follows:
    *
-   * Given an ILP Payment from A→C, find the next hop B on the payment path from A to C.
+   * Given an ILP Payment from A→C, find the next hop B on the payment pathParts from A to C.
    *
    * @param finalDestinationAddress An {@link InterledgerAddress} representing the final payment destination for a
    *                                payment or message (this address may or may not be locally accessible in the routing

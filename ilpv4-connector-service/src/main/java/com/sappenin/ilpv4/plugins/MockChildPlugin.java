@@ -70,7 +70,7 @@ public class MockChildPlugin implements Plugin {
   @Override
   public CompletableFuture<InterledgerFulfillPacket> sendPacket(InterledgerPreparePacket preparePacket) throws InterledgerProtocolException {
     final InterledgerFulfillPacket ilpFulfillmentPacket = InterledgerFulfillPacket.builder()
-      .fulfillment(Fulfillment.of(PREIMAGE.getBytes()))
+      .fulfillment(InterledgerFulfillment.of(PREIMAGE.getBytes()))
       .data(ILP_DATA.getBytes())
       .build();
 

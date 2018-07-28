@@ -1,9 +1,11 @@
 package com.sappenin.ilpv4.connector.ccp.codecs;
 
+import com.google.common.collect.Lists;
 import com.sappenin.ilpv4.connector.ccp.CcpMode;
 import com.sappenin.ilpv4.connector.ccp.CcpRouteControlRequest;
 import com.sappenin.ilpv4.connector.ccp.ImmutableCcpRouteControlRequest;
 import org.interledger.encoding.asn.codecs.AsnSequenceCodec;
+import org.interledger.encoding.asn.codecs.AsnSequenceOfSequenceCodec;
 import org.interledger.encoding.asn.codecs.AsnUint32Codec;
 import org.interledger.encoding.asn.codecs.AsnUint8Codec;
 
@@ -22,7 +24,7 @@ public class AsnCcpRouteControlRequestCodec extends AsnSequenceCodec<CcpRouteCon
       new AsnUint8Codec(), // Mode
       new AsnUuidCodec(), // RoutingTableId (UUID)
       new AsnUint32Codec(), // The epoch
-      new AsnFeaturesCodec() // Feature List.
+      new AsnSequenceOfSequenceCodec(Lists::newArrayList, AsnFeatureCodec::new) // Feature List.
     );
   }
 

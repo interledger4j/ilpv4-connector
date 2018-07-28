@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  *
  * <p> Using this data, a Connector would, for example, be able to assemble an outgoing-payment to
  * <tt>peer.usd.bank.connector</tt> for a payment with a final destination of "g.eur.bank.bob". This allows the ILP
- * node using this table to forward a payment for "bob" to the next hop in an overall path, without holding the entire
+ * node using this table to forward a payment for "bob" to the next hop in an overall pathParts, without holding the entire
  * graph of all ILP nodes in-memory.</p>
  *
  * <p> This interface is extensible in that it can hold simple routes of type {@link R}, or it can hold more
