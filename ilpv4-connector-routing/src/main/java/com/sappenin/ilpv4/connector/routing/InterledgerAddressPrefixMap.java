@@ -46,11 +46,12 @@ public class InterledgerAddressPrefixMap<R extends RoutingTableEntry> {
     // Only allow a single thread to add a new route into this map at a time because the PatriciaTrie is not
     // thread-safe during puts.
     synchronized (prefixMap) {
-      prefixedRouteSet = Optional.ofNullable(this.prefixMap.get(route.getTargetPrefix().getValue()))
+      prefixedRouteSet = Optional.ofNullable(
+        this.prefixMap.get(toTrieKey(route.getTargetPrefix())))
         .orElseGet(() -> {
           final Set<R> newPrefixedRoutes = Sets.newConcurrentHashSet();
           // Synchronized so that another thread doesn't add an identical route prefix from underneath us.
-          this.prefixMap.put(route.getTargetPrefix().getValue(), newPrefixedRoutes);
+          this.prefixMap.put(toTrieKey(route.getTargetPrefix()), newPrefixedRoutes);
           return newPrefixedRoutes;
         });
     }
@@ -77,7 +78,7 @@ public class InterledgerAddressPrefixMap<R extends RoutingTableEntry> {
       if (result && routeCollection.isEmpty()) {
         // If there are no more routes in the table, then remove the entire collection to the getKeys works
         // properly.
-        this.prefixMap.remove(route.getTargetPrefix().getValue());
+        this.prefixMap.remove(toTrieKey(route.getTargetPrefix()));
       }
       return result;
     }
@@ -89,14 +90,15 @@ public class InterledgerAddressPrefixMap<R extends RoutingTableEntry> {
   public Collection<R> removeAll(final InterledgerAddressPrefix addressPrefix) {
     Objects.requireNonNull(addressPrefix);
     synchronized (prefixMap) {
-      return this.prefixMap.remove(addressPrefix.getValue());
+      return this.prefixMap.remove(toTrieKey(addressPrefix));
     }
   }
 
   public Collection<R> getEntries(final InterledgerAddressPrefix addressPrefix) {
     Objects.requireNonNull(addressPrefix, "addressPrefix must not be null!");
 
-    return Optional.ofNullable(this.prefixMap.get(addressPrefix.getValue())).orElse(Sets.newConcurrentHashSet());
+    return Optional.ofNullable(this.prefixMap.get(toTrieKey(addressPrefix)))
+      .orElse(Sets.newConcurrentHashSet());
   }
 
   /**
@@ -107,7 +109,10 @@ public class InterledgerAddressPrefixMap<R extends RoutingTableEntry> {
    * @return a set view of the keys contained in this map
    */
   public Set<InterledgerAddressPrefix> getPrefixMapKeys() {
-    return this.prefixMap.keySet().stream().map(InterledgerAddressPrefix::of).collect(Collectors.toSet());
+    return this.prefixMap.keySet().stream()
+      .map(this::stripTrailingDot)
+      .map(InterledgerAddressPrefix::of)
+      .collect(Collectors.toSet());
   }
 
   /**
@@ -127,13 +132,15 @@ public class InterledgerAddressPrefixMap<R extends RoutingTableEntry> {
   public Collection<R> findNextHops(final InterledgerAddress finalDestinationAddress) {
     Objects.requireNonNull(finalDestinationAddress);
 
-    return Optional.of(finalDestinationAddress)
-      .map(InterledgerAddressPrefix::from)
-      .map(this::findLongestPrefix)
-      .filter(Optional::isPresent)
-      .map(Optional::get)
-      .map(longestPrefix -> this.prefixMap.get(longestPrefix.getValue()))
-      .orElse(ImmutableList.of());
+    return
+      InterledgerAddressPrefix.from(finalDestinationAddress)
+        .getPrefix()
+        .map(this::findLongestPrefix)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .map(this::getEntries)
+        //.map(longestPrefix -> this.prefixMap.get(longestPrefix.getValue()))
+        .orElse(ImmutableList.of());
   }
 
   /**
@@ -167,7 +174,9 @@ public class InterledgerAddressPrefixMap<R extends RoutingTableEntry> {
     // routing-table has only "g", then "g.1.2." will not return a sub-map, so we should recursively search for a
     // sub-map with with "g.1" (which would return nothing), and then "g".
 
-    final SortedMap<String, Collection<R>> prefixSubMap = prefixMap.prefixMap(destinationAddressPrefix.getValue());
+    final SortedMap<String, Collection<R>> prefixSubMap = prefixMap.prefixMap(
+      toTrieKey(destinationAddressPrefix)
+    );
     if (prefixSubMap.isEmpty() && destinationAddressPrefix.hasPrefix()) {
       // The PatriciaTrie has no prefixes, so try this whole thing again with the parent prefix.
       return destinationAddressPrefix.getPrefix()
@@ -192,8 +201,10 @@ public class InterledgerAddressPrefixMap<R extends RoutingTableEntry> {
       // There are prefixes in the Trie to search. So, we loop through each one in this reduced search space.
       // This is effectively an O(n) operation with n being the number of entries in prefixSubMap.
       return prefixSubMap.keySet().stream()
-        .filter(val -> val.length() <= destinationAddressPrefix.getValue().length())
+        .filter(val -> val.length() <= (destinationAddressPrefix.getValue().length() + 1)) // account for dot
         .distinct()
+        // Strip trailing dot...
+        .map(prefix -> prefix.substring(0, prefix.length() - 1))
         // Map to InterledgerAddressPrefix
         .map(InterledgerAddressPrefix::of)
         // Don't allow more than one in this list.
@@ -206,4 +217,26 @@ public class InterledgerAddressPrefixMap<R extends RoutingTableEntry> {
     }
   }
 
+  /**
+   * Converter from a {@link InterledgerAddressPrefix} to a {@link String} that can be stored in the PatriciaTrie.
+   * InterledgerAddressPrefix does not allow a trailing dot (.) character, but the trie requires it for proper
+   * functionality.
+   *
+   * @param addressPrefix
+   *
+   * @return
+   */
+  protected String toTrieKey(InterledgerAddressPrefix addressPrefix) {
+    Objects.requireNonNull(addressPrefix);
+
+    return addressPrefix.getValue() + ".";
+  }
+
+  private String stripTrailingDot(final String addressPrefix) {
+    if (addressPrefix.endsWith(".")) {
+      return addressPrefix.substring(0, addressPrefix.length() - 1);
+    } else {
+      return addressPrefix;
+    }
+  }
 }

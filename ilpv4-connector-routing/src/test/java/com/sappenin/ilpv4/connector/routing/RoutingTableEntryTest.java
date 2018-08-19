@@ -42,6 +42,7 @@ public class RoutingTableEntryTest {
       .targetPrefix(GLOBAL_TARGET_PREFIX)
       .nextHopAccount(CONNECTOR_ACCOUNT_CONNIE)
       .build();
+
     final RoutingTableEntry routingTableEntry2 = ImmutableRoutingTableEntry.builder()
       .targetPrefix(GLOBAL_TARGET_PREFIX)
       .nextHopAccount(CONNECTOR_ACCOUNT_CONNIE)
@@ -61,13 +62,13 @@ public class RoutingTableEntryTest {
     assertThat(routingTableEntry2, is(routingTableEntry1));
     assertThat(routingTableEntry1.hashCode(), is(routingTableEntry2.hashCode()));
 
-    assertThat(routingTableEntry1, is(routingTableEntry3));
-    assertThat(routingTableEntry2, is(routingTableEntry3));
-    assertThat(routingTableEntry1.hashCode(), is(routingTableEntry3.hashCode()));
+    assertThat(routingTableEntry1, is(not(routingTableEntry3)));
+    assertThat(routingTableEntry2, is(not(routingTableEntry3)));
+    assertThat(routingTableEntry1.hashCode(), is(not(routingTableEntry3.hashCode())));
 
-    assertThat(routingTableEntry2, is(routingTableEntry3));
-    assertThat(routingTableEntry2, is(routingTableEntry3));
-    assertThat(routingTableEntry2.hashCode(), is(routingTableEntry3.hashCode()));
+    assertThat(routingTableEntry2, is(not(routingTableEntry3)));
+    assertThat(routingTableEntry2, is(not(routingTableEntry3)));
+    assertThat(routingTableEntry2.hashCode(), is(not(routingTableEntry3.hashCode())));
   }
 
   @Test

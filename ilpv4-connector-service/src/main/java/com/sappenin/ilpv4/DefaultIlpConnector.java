@@ -2,7 +2,7 @@ package com.sappenin.ilpv4;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.sappenin.ilpv4.connector.routing.PaymentRouter;
-import com.sappenin.ilpv4.connector.routing.Route;
+import com.sappenin.ilpv4.connector.routing.RoutingTableEntry;
 import com.sappenin.ilpv4.fx.ExchangeRateService;
 import com.sappenin.ilpv4.fx.ImmutableUpdateRatePaymentParams;
 import com.sappenin.ilpv4.model.Account;
@@ -28,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class DefaultIlpConnector implements IlpConnector {
 
+  // TODO: Use Prefix...
   // Used to determine if a message is for a peer (such as for routing) for for regular data/payment messages.
   private static final String PEER_PROTOCOL_PREFIX = "peer.";
 
@@ -35,11 +36,13 @@ public class DefaultIlpConnector implements IlpConnector {
 
   private final ConnectorSettings connectorSettings;
   private final PeerManager peerManager;
-  private final PaymentRouter<Route> paymentRouter;
+  private final PaymentRouter<RoutingTableEntry> paymentRouter;
   private final ExchangeRateService exchangeRateService;
 
-  public DefaultIlpConnector(final ConnectorSettings connectorSettings, final PeerManager peerManager,
-                             final PaymentRouter<Route> paymentRouter, final ExchangeRateService exchangeRateService) {
+  public DefaultIlpConnector(
+    final ConnectorSettings connectorSettings, final PeerManager peerManager,
+    final PaymentRouter<RoutingTableEntry> paymentRouter, final ExchangeRateService exchangeRateService
+  ) {
     this.connectorSettings = Objects.requireNonNull(connectorSettings);
     this.peerManager = Objects.requireNonNull(peerManager);
     this.paymentRouter = Objects.requireNonNull(paymentRouter);
@@ -158,7 +161,7 @@ public class DefaultIlpConnector implements IlpConnector {
 
     final InterledgerAddress destinationAddress = sourcePacket.getDestination();
 
-    final Route nextHopRoute = this.paymentRouter.findBestNexHop(destinationAddress)
+    final RoutingTableEntry nextHopRoute = this.paymentRouter.findBestNexHop(destinationAddress)
       .orElseThrow(() -> new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
           .code(InterledgerErrorCode.F02_UNREACHABLE)

@@ -9,10 +9,10 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
- * An implementation of {@link RoutingTable} that stores all routingTableEntrys in-memory using an {@link
+ * An implementation of {@link RoutingTable} that stores all routingTableEntries in-memory using an {@link
  * InterledgerAddressPrefixMap} for efficient search and prefix-matching operations.
  *
- * This implementation is meant for use-cases where routingTableEntrys do not change very often, like
+ * This implementation is meant for use-cases where routingTableEntries do not change very often, like
  * statically-configured routing environments where this table can be populated when the server starts-up.
  */
 public class InMemoryRoutingTable implements RoutingTable<RoutingTableEntry> {
@@ -64,6 +64,7 @@ public class InMemoryRoutingTable implements RoutingTable<RoutingTableEntry> {
 
   @Override
   public Collection<RoutingTableEntry> findNextHopRoutes(final InterledgerAddress finalDestinationAddress) {
+    Objects.requireNonNull(finalDestinationAddress, "finalDestinationAddress must not be null!");
     return this.interledgerAddressPrefixMap.findNextHops(finalDestinationAddress);
   }
 
@@ -75,9 +76,12 @@ public class InMemoryRoutingTable implements RoutingTable<RoutingTableEntry> {
     Objects.requireNonNull(finalDestinationAddress);
     Objects.requireNonNull(sourcePrefix);
     return this.interledgerAddressPrefixMap.findNextHops(finalDestinationAddress).stream()
-      // Only return routingTableEntrys that are allowed per the source prefix filter...
-      .filter(routingTableEntry -> routingTableEntry.getSourcePrefixRestrictionRegex().matcher(sourcePrefix.getValue())
-        .matches())
+      // Only return routingTableEntries that are allowed per the source prefix filter...
+      .filter(
+        routingTableEntry -> routingTableEntry.getSourcePrefixRestrictionRegex()
+          .matcher(sourcePrefix.getValue())
+          .matches()
+      )
       .collect(Collectors.toList());
   }
 }

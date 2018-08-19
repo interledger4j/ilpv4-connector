@@ -6,7 +6,9 @@ import org.immutables.value.Value.Default;
 import org.interledger.core.InterledgerAddress;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -101,52 +103,49 @@ public interface RoutingTableEntry {
       return new byte[0];
     }
 
-    //    /**
-    //     * <p>Indicates whether some other object is "equal to" this one.</p>
-    //     *
-    //     * <p>Route equality is based upon the <tt>targetPrefix</tt> and <tt>nextHopAccount</tt> only so that in
-    //     * general, there can exist multiple target prefixes pointing to different next-hop ledger accounts.</p>
-    //     *
-    //     * @param obj the reference object with which to compare.
-    //     *
-    //     * @return {@code true} if this object is the same as the obj argument; {@code false} otherwise.
-    //     */
-    //    @Override
-    //    public boolean equals(Object obj) {
-    //      if (this == obj) {
-    //        return true;
-    //      }
-    //      if (obj == null || getClass() != obj.getClass()) {
-    //        return false;
-    //      }
-    //
-    //      RoutingTableEntry that = (RoutingTableEntry) obj;
-    //
-    //      if (!getTargetPrefix().equals(that.getTargetPrefix())) {
-    //        return false;
-    //      }
-    //      if (!getNextHopAccount().equals(that.getNextHopAccount())) {
-    //        return false;
-    //      }
-    //
-    //      return true;
-    //    }
+    // These are overridden because Pattern does not define an equals method, which default to Object equality, making
+    // no pattern ever equal to any other pattern.
 
-    //    /**
-    //     * <p>Overidden to satisfy to the equals-method contract, which  states that equal objects must have equal hash
-    //     * codes.</p>
-    //     *
-    //     * @return a hash code value for this object.
-    //     */
-    //    @Override
-    //    public int hashCode() {
-    //      int result = getTargetPrefix().hashCode();
-    //      result = 31 * result + getNextHopAccount().hashCode();
-    //      return result;
-    //    }
+    /**
+     * This instance is equal to all instances of {@code ImmutableRoutingTableEntry} that have equal attribute values.
+     *
+     * @return {@code true} if {@code this} is equal to {@code another} instance
+     */
+    @Override
+    public boolean equals(Object another) {
+      if (this == another) {
+        return true;
+      }
+      return another instanceof ImmutableRoutingTableEntry
+        && equalTo((ImmutableRoutingTableEntry) another);
+    }
 
-    //    @Value.Check
-    //    void check() {
-    //    }
+    private boolean equalTo(ImmutableRoutingTableEntry another) {
+      return getSourcePrefixRestrictionRegex().pattern().equals(another.getSourcePrefixRestrictionRegex().pattern())
+        && Arrays.equals(getAuth(), another.getAuth())
+        && getTargetPrefix().equals(another.getTargetPrefix())
+        && getNextHopAccount().equals(another.getNextHopAccount())
+        && getPath().equals(another.getPath())
+        && Objects.equals(getExpiresAt(), another.getExpiresAt());
+    }
+
+    /**
+     * Computes a hash code from attributes: {@code sourcePrefixRestrictionRegex}, {@code auth}, {@code targetPrefix},
+     * {@code nextHopAccount}, {@code path}, {@code expiresAt}.
+     *
+     * @return hashCode value
+     */
+    @Override
+    public int hashCode() {
+      int h = 5381;
+      h += (h << 5) + getSourcePrefixRestrictionRegex().pattern().hashCode();
+      h += (h << 5) + Arrays.hashCode(getAuth());
+      h += (h << 5) + getTargetPrefix().hashCode();
+      h += (h << 5) + getNextHopAccount().hashCode();
+      h += (h << 5) + getPath().hashCode();
+      h += (h << 5) + Objects.hashCode(getExpiresAt());
+      return h;
+    }
+
   }
 }

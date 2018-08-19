@@ -39,17 +39,17 @@ public class ConnectorServerConfig implements WebMvcConfigurer {
   @Bean
   IlpConnector connector(
     final ConnectorSettings connectorSettings, final PeerManager peerManager,
-    final PaymentRouter<Route> paymentRouter, final ExchangeRateService exchangeRateService) {
+    final PaymentRouter<RoutingTableEntry> paymentRouter, final ExchangeRateService exchangeRateService) {
     return new DefaultIlpConnector(connectorSettings, peerManager, paymentRouter, exchangeRateService);
   }
 
   @Bean
-  RoutingTable<Route> routeRoutingTable() {
+  RoutingTable<RoutingTableEntry> routeRoutingTable() {
     return new InMemoryRoutingTable();
   }
 
   @Bean
-  PaymentRouter<Route> paymentRouter(final RoutingTable<Route> routingTable) {
+  PaymentRouter<RoutingTableEntry> paymentRouter(final RoutingTable<RoutingTableEntry> routingTable) {
     return new SimplePaymentRouter(routingTable);
   }
 
