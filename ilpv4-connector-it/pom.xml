@@ -15,7 +15,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>${project.version}</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-server</artifactId>
     </dependency>
     <dependency>

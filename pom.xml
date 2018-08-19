@@ -20,7 +20,7 @@
 
   <properties>
     <java.version>1.8</java.version>
-    <ilp.version>0.12.1-SNAPSHOT</ilp.version>
+    <ilp.version>0.13.0-SNAPSHOT</ilp.version>
   </properties>
 
   <modules>
@@ -51,6 +51,11 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>ilpv4-connector-server</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-it</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -108,7 +113,7 @@
       <dependency>
         <groupId>org.javamoney</groupId>
         <artifactId>moneta</artifactId>
-        <version>1.2.1</version>
+        <version>1.1</version>
       </dependency>
       <dependency>
         <groupId>org.mockito</groupId>

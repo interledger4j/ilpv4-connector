@@ -67,7 +67,7 @@ public class BeerCoinArchitectureTest {
    * @return
    */
   private IlpConnector getIlpConnectorFromGraph(final InterledgerAddress interledgerAddress) {
-    return (IlpConnector) ((ServerNode) graph.getNode(interledgerAddress.getValue())).getServer().getContext()
+    return (IlpConnector) ((ServerNode) graph.getNode(interledgerAddress.value())).getServer().getContext()
       .getBean("connector");
 
   }

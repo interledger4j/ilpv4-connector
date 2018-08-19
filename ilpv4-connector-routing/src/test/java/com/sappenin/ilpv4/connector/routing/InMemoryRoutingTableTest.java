@@ -31,7 +31,7 @@ public class InMemoryRoutingTableTest {
 //  private static final InterledgerAddress BOB_GLOBAL_ADDRESS = GLOBAL_PREFIX.with("bank.bob");
 //
 //  @Mock
-//  private InterledgerPrefixMap interledgerPrefixMapMock;
+//  private InterledgerAddressPrefixMap interledgerPrefixMapMock;
 //
 //  private InMemoryRoutingTable routingTable;
 //
@@ -84,7 +84,7 @@ public class InMemoryRoutingTableTest {
 //  @Test(expected = NullPointerException.class)
 //  public void testRemoveRouteNull() throws Exception {
 //    try {
-//      this.routingTable.removeRoute(null);
+//      this.routingTable.remove(null);
 //    } catch (NullPointerException e) {
 //      throw e;
 //    }
@@ -94,9 +94,9 @@ public class InMemoryRoutingTableTest {
 //  public void testRemoveRoute() throws Exception {
 //    final Route route = this.constructTestRoute(GLOBAL_PREFIX);
 //
-//    this.routingTable.removeRoute(route);
+//    this.routingTable.remove(route);
 //
-//    verify(interledgerPrefixMapMock).removeRoute(ArgumentMatchers.eq(route));
+//    verify(interledgerPrefixMapMock).remove(ArgumentMatchers.eq(route));
 //    verifyNoMoreInteractions(interledgerPrefixMapMock);
 //  }
 //
@@ -119,7 +119,7 @@ public class InMemoryRoutingTableTest {
 //
 //    this.routingTable.removeAllRoutesForTargetPrefix(route.getTargetPrefix());
 //
-//    verify(interledgerPrefixMapMock).removeAllRoutes(route.getTargetPrefix());
+//    verify(interledgerPrefixMapMock).removeAll(route.getTargetPrefix());
 //    verifyNoMoreInteractions(interledgerPrefixMapMock);
 //  }
 //
@@ -129,26 +129,26 @@ public class InMemoryRoutingTableTest {
 //    final Route route2 = this.constructTestRoute(GLOBAL_PREFIX.with("foo."));
 //    this.routingTable.addRoute(route1);
 //    this.routingTable.addRoute(route2);
-//    when(interledgerPrefixMapMock.removeAllRoutes(route1.getTargetPrefix())).thenReturn(ImmutableList.of(route1));
+//    when(interledgerPrefixMapMock.removeAll(route1.getTargetPrefix())).thenReturn(ImmutableList.of(route1));
 //    verify(interledgerPrefixMapMock).add(route1);
 //    verify(interledgerPrefixMapMock).add(route2);
 //
 //    this.routingTable.removeAllRoutesForTargetPrefix(route1.getTargetPrefix());
 //
-//    verify(interledgerPrefixMapMock).removeAllRoutes(route1.getTargetPrefix());
+//    verify(interledgerPrefixMapMock).removeAll(route1.getTargetPrefix());
 //    verifyNoMoreInteractions(interledgerPrefixMapMock);
 //  }
 //
 //  @Test
 //  public void testRemoveRoutes() throws Exception {
 //    final Route route = this.constructTestRoute(GLOBAL_PREFIX);
-//    when(interledgerPrefixMapMock.removeAllRoutes(route.getTargetPrefix())).thenReturn(ImmutableList.of(route));
+//    when(interledgerPrefixMapMock.removeAll(route.getTargetPrefix())).thenReturn(ImmutableList.of(route));
 //    this.routingTable.addRoute(route);
 //    verify(interledgerPrefixMapMock).add(route);
 //
 //    this.routingTable.removeAllRoutesForTargetPrefix(route.getTargetPrefix());
 //
-//    verify(interledgerPrefixMapMock).removeAllRoutes(route.getTargetPrefix());
+//    verify(interledgerPrefixMapMock).removeAll(route.getTargetPrefix());
 //    verifyNoMoreInteractions(interledgerPrefixMapMock);
 //  }
 //
@@ -171,7 +171,7 @@ public class InMemoryRoutingTableTest {
 //
 //    this.routingTable.getRoutesByTargetPrefix(route.getTargetPrefix());
 //
-//    verify(interledgerPrefixMapMock).getRoutes(route.getTargetPrefix());
+//    verify(interledgerPrefixMapMock).getEntries(route.getTargetPrefix());
 //    verifyNoMoreInteractions(interledgerPrefixMapMock);
 //  }
 //
@@ -200,13 +200,13 @@ public class InMemoryRoutingTableTest {
 //  }
 //
 //  ////////////////////
-//  // Test findNextHopRoutes
+//  // Test findNextHops
 //  ////////////////////
 //
 //  @Test(expected = NullPointerException.class)
 //  public void testFindNextHopRouteNull() throws Exception {
 //    try {
-//      this.routingTable.findNextHopRoutes(null);
+//      this.routingTable.findNextHops(null);
 //    } catch (NullPointerException e) {
 //      throw e;
 //    }
@@ -216,9 +216,9 @@ public class InMemoryRoutingTableTest {
 //  public void testFindNextHopRoute() throws Exception {
 //    final Route route = this.constructTestRoute(GLOBAL_PREFIX);
 //
-//    this.routingTable.findNextHopRoutes(BOB_GLOBAL_ADDRESS);
+//    this.routingTable.findNextHops(BOB_GLOBAL_ADDRESS);
 //
-//    verify(interledgerPrefixMapMock).findNextHopRoutes(BOB_GLOBAL_ADDRESS);
+//    verify(interledgerPrefixMapMock).findNextHops(BOB_GLOBAL_ADDRESS);
 //    verifyNoMoreInteractions(interledgerPrefixMapMock);
 //  }
 //
@@ -230,7 +230,7 @@ public class InMemoryRoutingTableTest {
 //  public void testFindNextHopRouteWithFilterNull1() throws Exception {
 //    try {
 //      InterledgerAddress filter = mock(InterledgerAddress.class);
-//      this.routingTable.findNextHopRoutes(null, filter);
+//      this.routingTable.findNextHops(null, filter);
 //    } catch (NullPointerException e) {
 //      throw e;
 //    }
@@ -240,7 +240,7 @@ public class InMemoryRoutingTableTest {
 //  public void testFindNextHopRouteWithFilterNull2() throws Exception {
 //    try {
 //      InterledgerAddress filter = mock(InterledgerAddress.class);
-//      this.routingTable.findNextHopRoutes(filter, null);
+//      this.routingTable.findNextHops(filter, null);
 //    } catch (NullPointerException e) {
 //      throw e;
 //    }
@@ -272,13 +272,13 @@ public class InMemoryRoutingTableTest {
 //      .compile("a^"))
 //      .build();
 //
-//    when(interledgerPrefixMapMock.findNextHopRoutes(finalDestinationAddress))
+//    when(interledgerPrefixMapMock.findNextHops(finalDestinationAddress))
 //      .thenReturn(
 //        Lists.newArrayList(allSourcesRoute, anyUSDSourcesRoute, usdBarOnlySourcesRoute, noSourcesRoute)
 //      );
 //
 //    // The USD Bar Sender is eligible for all routes (except the no-senders route), so we expect 3 to be returned...
-//    Collection<Route> actual = this.routingTable.findNextHopRoutes(finalDestinationAddress, usdBarSenderPrefix);
+//    Collection<Route> actual = this.routingTable.findNextHops(finalDestinationAddress, usdBarSenderPrefix);
 //    assertThat(actual.size(), is(3));
 //    assertThat(actual.contains(allSourcesRoute), is(true));
 //    assertThat(actual.contains(anyUSDSourcesRoute), is(true));
@@ -287,7 +287,7 @@ public class InMemoryRoutingTableTest {
 //
 //    // The USD Sender is not eligible for the route that requires "g.usd.bar." sources, so we
 //    // expect only 2 routes to be returned...
-//    actual = this.routingTable.findNextHopRoutes(finalDestinationAddress, usdSenderPrefix);
+//    actual = this.routingTable.findNextHops(finalDestinationAddress, usdSenderPrefix);
 //    assertThat(actual.size(), is(2));
 //    assertThat(actual.contains(allSourcesRoute), is(true));
 //    assertThat(actual.contains(anyUSDSourcesRoute), is(true));
@@ -295,12 +295,12 @@ public class InMemoryRoutingTableTest {
 //    assertThat(actual.contains(noSourcesRoute), is(false));
 //
 //    // The CNY Sender is eligible for only 1 route, so we expect 1 to be returned...
-//    actual = this.routingTable.findNextHopRoutes(finalDestinationAddress, cnySenderPrefix);
+//    actual = this.routingTable.findNextHops(finalDestinationAddress, cnySenderPrefix);
 //    assertThat(actual.size(), is(1));
 //    assertThat(actual.contains(allSourcesRoute), is(true));
 //    assertThat(actual.contains(anyUSDSourcesRoute), is(false));
 //
-//    verify(interledgerPrefixMapMock, times(3)).findNextHopRoutes(finalDestinationAddress);
+//    verify(interledgerPrefixMapMock, times(3)).findNextHops(finalDestinationAddress);
 //    verifyNoMoreInteractions(interledgerPrefixMapMock);
 //  }
 //

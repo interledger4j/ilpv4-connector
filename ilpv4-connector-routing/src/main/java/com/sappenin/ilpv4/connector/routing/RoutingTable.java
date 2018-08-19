@@ -1,5 +1,6 @@
 package com.sappenin.ilpv4.connector.routing;
 
+import com.sappenin.ilpv4.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerAddress;
 
 import java.util.Collection;
@@ -15,11 +16,11 @@ import java.util.stream.Collectors;
  * <p>The following is an example routing table:<p>
  *
  * <pre>
- *  | targetPrefix | nextHopLedgerAccount    | sourcePrefixFilter |
+ *  | targetPrefix | nextHopAccount          | sourcePrefixFilter |
  *  |==============|=========================|====================|
- *  | g.eur.bank.  | peer.usd.bank.connector | g.usd.bank.(.*?)   |
- *  | g.eur.       | peer.usd.bank2.connector| [absent]           |
- *  | g.  	       | peer.usd.mypeer0        | [absent]           |
+ *  | g.eur.bank   | peer.usd.bank.connector | g.usd.bank.(.*?)   |
+ *  | g.eur        | peer.usd.bank2.connector| [absent]           |
+ *  | g   	       | peer.usd.mypeer0        | [absent]           |
  * </pre>
  *
  * <p> In the above example, the route returned for a final-destination address of <tt>g.eur.bank.bob</tt> would be
@@ -32,15 +33,13 @@ import java.util.stream.Collectors;
  *
  * <p> Using this data, a Connector would, for example, be able to assemble an outgoing-payment to
  * <tt>peer.usd.bank.connector</tt> for a payment with a final destination of "g.eur.bank.bob". This allows the ILP
- * node
- * using this table to forward a payment for "bob" to the next hop in an overall pathParts, without holding the entire graph
- * of all ILP nodes in-memory.</p>
+ * node using this table to forward a payment for "bob" to the next hop in an overall pathParts, without holding the
+ * entire graph of all ILP nodes in-memory.</p>
  *
  * <p> This interface is extensible in that it can hold simple routes of type {@link R}, or it can hold more
- * complicated
- * implementations that extend {@link Route}.</p>
+ * complicated implementations that extend {@link Route}.</p>
  */
-public interface RoutingTable<R extends Route> {
+public interface RoutingTable<R extends RoutingTableEntry> {
 
   /**
    * Add a route to this routing table. If the route already exists (keyed by {@link R#getTargetPrefix()} and {@link
@@ -60,22 +59,23 @@ public interface RoutingTable<R extends Route> {
 
   /**
    * Accessor for all Routes in this routing table that are keyed by a target-prefix. Unlike {@link
-   * #findNextHopRoutes(InterledgerAddress)} or {@link #findNextHopRoutes(InterledgerAddress, InterledgerAddress)}, this
-   * method does not do any "longest-prefix" matching, and is instead meant to provide get-by-key semantics for the
-   * routing table.
+   * #findNextHopRoutes(InterledgerAddress)} or {@link #findNextHopRoutes(InterledgerAddress,
+   * InterledgerAddressPrefix)}, this method does not do any "longest-prefix" matching, and is instead meant to provide
+   * get-by-key semantics for the routing table.
    *
-   * @param addressPrefix An {@link InterledgerAddress} prefix used as a key in the routing table.
+   * @param addressPrefix An {@link InterledgerAddressPrefix} prefix used as a key in the routing table.
    *
    * @return A {@link Collection} of all routes for the supplied {@code addressPrefix} key.
    */
-  Collection<R> getRoutesByTargetPrefix(InterledgerAddress addressPrefix);
+  Collection<R> getRoutesByTargetPrefix(InterledgerAddressPrefix addressPrefix);
 
   /**
    * Remove all routes from the routing table that are keyed by {@code targetPrefix}.
    *
-   * @param targetPrefix An {@link InterledgerAddress} prefix used as a key in the routing table.
+   * @param targetPrefix An {@link InterledgerAddressPrefix} prefix used as a key in the routing table.
    */
-  Collection<R> removeAllRoutesForTargetPrefix(InterledgerAddress targetPrefix);
+
+  Collection<R> removeAllRoutesForTargetPrefix(InterledgerAddressPrefix targetPrefix);
 
   /**
    * Perform the following action on each item in the routing table.
@@ -109,11 +109,14 @@ public interface RoutingTable<R extends Route> {
    * @return An optionally-present {@link R} for the supplied addresses.
    */
   default Collection<R> findNextHopRoutes(
-    final InterledgerAddress finalDestinationAddress, final InterledgerAddress sourcePrefix
+    final InterledgerAddress finalDestinationAddress, final InterledgerAddressPrefix sourcePrefix
   ) {
     Objects.requireNonNull(finalDestinationAddress);
     Objects.requireNonNull(sourcePrefix);
 
+    // NOTE: This is not very performant since all routes are loaded and then post-filtered. However, as a default
+    // implementation, this is sufficient, but implementations of this interface should improve upon this method's
+    // implementation.
     return this.findNextHopRoutes(finalDestinationAddress).stream()
       // Only return routes that are allowed per the source prefix filter...
       .filter(route -> route.getSourcePrefixRestrictionRegex().matcher(sourcePrefix.getValue()).matches())

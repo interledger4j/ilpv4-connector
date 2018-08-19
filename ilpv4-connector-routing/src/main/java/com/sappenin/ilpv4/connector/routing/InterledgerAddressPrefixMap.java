@@ -3,6 +3,7 @@ package com.sappenin.ilpv4.connector.routing;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+import com.sappenin.ilpv4.InterledgerAddressPrefix;
 import org.apache.commons.collections4.trie.PatriciaTrie;
 import org.interledger.core.InterledgerAddress;
 import org.slf4j.Logger;
@@ -13,16 +14,16 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
- * A key/value data structure that holds {@link InterledgerAddress} keys in a hierarchical order to allow for easy
+ * A key/value data structure that holds {@link InterledgerAddressPrefix} keys in a hierarchical order to allow for easy
  * prefix-matching.
  */
-public class InterledgerPrefixMap<R extends Route> {
+public class InterledgerAddressPrefixMap<R extends RoutingTableEntry> {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final PatriciaTrie<Collection<R>> prefixMap;
 
-  public InterledgerPrefixMap() {
+  public InterledgerAddressPrefixMap() {
     this.prefixMap = new PatriciaTrie<>();
   }
 
@@ -66,12 +67,12 @@ public class InterledgerPrefixMap<R extends Route> {
    *
    * @return <tt>true</tt> if an element was removed as a result of this call.
    */
-  public boolean removeRoute(final R route) {
+  public boolean remove(final R route) {
     Objects.requireNonNull(route);
 
     synchronized (prefixMap) {
       // There will be only a single route in the routing table that can be removed. Find that, then remove it.
-      final Collection<R> routeCollection = this.getRoutes(route.getTargetPrefix());
+      final Collection<R> routeCollection = this.getEntries(route.getTargetPrefix());
       final boolean result = routeCollection.remove(route);
       if (result && routeCollection.isEmpty()) {
         // If there are no more routes in the table, then remove the entire collection to the getKeys works
@@ -85,15 +86,15 @@ public class InterledgerPrefixMap<R extends Route> {
   /**
    * Remove all routes for the supplied {@code addressPrefix} key.
    */
-  public Collection<R> removeAllRoutes(final InterledgerAddress addressPrefix) {
+  public Collection<R> removeAll(final InterledgerAddressPrefix addressPrefix) {
     Objects.requireNonNull(addressPrefix);
     synchronized (prefixMap) {
       return this.prefixMap.remove(addressPrefix.getValue());
     }
   }
 
-  public Collection<R> getRoutes(final InterledgerAddress addressPrefix) {
-    Objects.requireNonNull(addressPrefix);
+  public Collection<R> getEntries(final InterledgerAddressPrefix addressPrefix) {
+    Objects.requireNonNull(addressPrefix, "addressPrefix must not be null!");
 
     return Optional.ofNullable(this.prefixMap.get(addressPrefix.getValue())).orElse(Sets.newConcurrentHashSet());
   }
@@ -105,8 +106,8 @@ public class InterledgerPrefixMap<R extends Route> {
    *
    * @return a set view of the keys contained in this map
    */
-  public Set<InterledgerAddress> getPrefixMapKeys() {
-    return this.prefixMap.keySet().stream().map(InterledgerAddress::of).collect(Collectors.toSet());
+  public Set<InterledgerAddressPrefix> getPrefixMapKeys() {
+    return this.prefixMap.keySet().stream().map(InterledgerAddressPrefix::of).collect(Collectors.toSet());
   }
 
   /**
@@ -123,14 +124,15 @@ public class InterledgerPrefixMap<R extends Route> {
    *
    * @param finalDestinationAddress An ILP prefix address of type {@link InterledgerAddress}.
    */
-  public Collection<R> findNextHopRoutes(final InterledgerAddress finalDestinationAddress) {
+  public Collection<R> findNextHops(final InterledgerAddress finalDestinationAddress) {
     Objects.requireNonNull(finalDestinationAddress);
 
-    return finalDestinationAddress.getParentAddress()
+    return Optional.of(finalDestinationAddress)
+      .map(InterledgerAddressPrefix::from)
       .map(this::findLongestPrefix)
       .filter(Optional::isPresent)
       .map(Optional::get)
-      .map(longestPrefix -> this.prefixMap.get(longestPrefix))
+      .map(longestPrefix -> this.prefixMap.get(longestPrefix.getValue()))
       .orElse(ImmutableList.of());
   }
 
@@ -151,34 +153,49 @@ public class InterledgerPrefixMap<R extends Route> {
    * @return The longest-prefix match in the PatriciaTrie for the supplied {@code destinationAddress}.
    */
   @VisibleForTesting
-  protected Optional<String> findLongestPrefix(final InterledgerAddress destinationAddressPrefix) {
-    Objects.requireNonNull(destinationAddressPrefix);
+  protected Optional<InterledgerAddressPrefix> findLongestPrefix(
+    final InterledgerAddressPrefix destinationAddressPrefix
+  ) {
+    Objects.requireNonNull(destinationAddressPrefix, "destinationAddressPrefix must not be null!");
 
     // Unlike a typical prefix match, ILP addresses can be matched by subsections delimited by a period separator.
 
     // 1.) Narrow the overall search-space by using the PatriciaTrie to filter out any non-matching prefixes
-    // (e.g. for destAddress of "g.foo.bar.baz", the entries "g." and "g.foo." will not be returned by the
-    // prefixMap. This allows us to find a longest-match in that space. If there aren't any matches, we
-    // recurse this method (#findLongestPrefix) using the parent-prefix. For example, if the routing-table has
-    // only "g.", then "g.1.2." will not return a sub-map, so we should recursively search for a sub-map with
-    // with "g.1.", and then "g.".
+    // (e.g. for destAddress of "g.foo.bar.baz", the entries "g" and "g.foo" will not be returned by the
+    // PatriciaTrie. This allows us to find a longest-match in the "g.foo.bar.baz" space. If there aren't any
+    // matches, we recurse this method (#findLongestPrefix) using the parent-prefix. For example, if the
+    // routing-table has only "g", then "g.1.2." will not return a sub-map, so we should recursively search for a
+    // sub-map with with "g.1" (which would return nothing), and then "g".
 
     final SortedMap<String, Collection<R>> prefixSubMap = prefixMap.prefixMap(destinationAddressPrefix.getValue());
-    if (prefixSubMap.isEmpty() && destinationAddressPrefix.getParentAddress().isPresent()) {
-      final InterledgerAddress parentPrefix = destinationAddressPrefix.getParentAddress().get();
-      final Optional<String> longestMatch = this.findLongestPrefix(parentPrefix);
-      if (longestMatch.isPresent()) {
-        return longestMatch;
-      } else {
-        // Fallback to a global-prefix match, if any is defined in the routing table.
-        return this.findLongestPrefix(getRootPrefix(destinationAddressPrefix));
-      }
+    if (prefixSubMap.isEmpty() && destinationAddressPrefix.hasPrefix()) {
+      // The PatriciaTrie has no prefixes, so try this whole thing again with the parent prefix.
+      return destinationAddressPrefix.getPrefix()
+        .map(parentPrefix -> {
+          final Optional<InterledgerAddressPrefix> longestMatch = this.findLongestPrefix(parentPrefix);
+          if (longestMatch.isPresent()) {
+            return longestMatch;
+          } else {
+
+            // Fallback to a global-prefix match, if any is defined in the routing table.
+            return this.findLongestPrefix(destinationAddressPrefix.getRootPrefix());
+
+            //            // Search for the parent prefix, if possible, or else return `empty`.
+            //            return parentPrefix.getPrefix()
+            //              .map(this::findLongestPrefix)
+            //              .orElse(Optional.empty());
+          }
+        })
+        // Should never occur due to destinationAddressPrefix.getPrefix().isPresent() being true above...
+        .orElse(Optional.empty());
     } else {
       // There are prefixes in the Trie to search. So, we loop through each one in this reduced search space.
       // This is effectively an O(n) operation with n being the number of entries in prefixSubMap.
       return prefixSubMap.keySet().stream()
         .filter(val -> val.length() <= destinationAddressPrefix.getValue().length())
         .distinct()
+        // Map to InterledgerAddressPrefix
+        .map(InterledgerAddressPrefix::of)
         // Don't allow more than one in this list.
         .collect(Collectors.reducing((a, b) -> {
           logger.error(
@@ -187,22 +204,6 @@ public class InterledgerPrefixMap<R extends Route> {
           return null;
         }));
     }
-  }
-
-  /**
-   * Compute the root-prefix of the supplied {@code address}.
-   *
-   * @return An {@link InterledgerAddress} representing the root prefix for the supplied Interledger address.
-   */
-  @VisibleForTesting
-  protected InterledgerAddress getRootPrefix(final InterledgerAddress address) {
-    Objects.requireNonNull(address);
-
-    while (address.getParentAddress().isPresent()) {
-      return getRootPrefix(address.getParentAddress().get());
-    }
-
-    return address;
   }
 
 }

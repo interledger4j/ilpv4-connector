@@ -1,5 +1,6 @@
 package com.sappenin.ilpv4.connector.routing;
 
+import com.sappenin.ilpv4.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerAddress;
 
 import java.util.Objects;
@@ -9,11 +10,11 @@ import java.util.Optional;
  * A simple implementation of {@link PaymentRouter} that simply chooses the first route if multiple are returned from
  * the routing table.
  */
-public class SimplePaymentRouter implements PaymentRouter<Route> {
+public class SimplePaymentRouter implements PaymentRouter<RoutingTableEntry> {
 
-  private final RoutingTable<Route> routingTable;
+  private final RoutingTable<RoutingTableEntry> routingTable;
 
-  public SimplePaymentRouter(final RoutingTable<Route> routingTable) {
+  public SimplePaymentRouter(final RoutingTable<RoutingTableEntry> routingTable) {
     this.routingTable = Objects.requireNonNull(routingTable);
   }
 
@@ -29,7 +30,7 @@ public class SimplePaymentRouter implements PaymentRouter<Route> {
    *                                payment or message (this address may or may not be locally accessible in the routing
    *                                table).
    */
-  public Optional<Route> findBestNexHop(final InterledgerAddress finalDestinationAddress) {
+  public Optional<RoutingTableEntry> findBestNexHop(final InterledgerAddress finalDestinationAddress) {
     return this.routingTable.findNextHopRoutes(finalDestinationAddress).stream().findFirst();
   }
 
@@ -49,7 +50,8 @@ public class SimplePaymentRouter implements PaymentRouter<Route> {
    *                                available
    */
   @Override
-  public Optional<Route> findBestNexHop(InterledgerAddress finalDestinationAddress, InterledgerAddress sourceLedgerPrefix) {
+  public Optional<RoutingTableEntry> findBestNexHop(InterledgerAddress finalDestinationAddress,
+                                                    InterledgerAddressPrefix sourceLedgerPrefix) {
     return this.routingTable.findNextHopRoutes(finalDestinationAddress, sourceLedgerPrefix).stream().findFirst();
   }
 }

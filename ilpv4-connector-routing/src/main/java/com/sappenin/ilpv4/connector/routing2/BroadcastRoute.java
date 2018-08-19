@@ -1,7 +1,8 @@
 package com.sappenin.ilpv4.connector.routing2;
 
+import com.sappenin.ilpv4.InterledgerAddressPrefix;
+import com.sappenin.ilpv4.connector.routing.Route;
 import org.immutables.value.Value;
-import org.interledger.core.InterledgerAddress;
 
 /**
  * An ILPv4 "Incoming" Route (i.e., routing information from a remote peer).
@@ -13,10 +14,10 @@ public interface BroadcastRoute extends Route {
    *
    * @return
    */
-  InterledgerAddress getPrefix();
+  InterledgerAddressPrefix getPrefix();
 
   /**
-   * An abstract implementation of {@link com.sappenin.ilpv4.connector.routing.Route} for usage by Immutables.
+   * An abstract implementation of {@link BroadcastRoute} for usage by Immutables.
    *
    * @see "https://immutables.github.io"
    */

@@ -1,5 +1,6 @@
 package com.sappenin.ilpv4.connector.routing;
 
+import com.sappenin.ilpv4.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerAddress;
 
 import java.util.Optional;
@@ -10,7 +11,7 @@ import java.util.Optional;
  * implementation of this interface might decide to always choose the "closest" route, whereas another implementation
  * might decide to use the "most reliable" route.
  */
-public interface PaymentRouter<R extends Route> {
+public interface PaymentRouter<R extends RoutingTableEntry> {
 
   /**
    * Given an incoming transfer on a particular source ledger, this method finds the best "next-hop" route that should
@@ -37,9 +38,9 @@ public interface PaymentRouter<R extends Route> {
    * @param finalDestinationAddress An {@link InterledgerAddress} representing the final payment destination for a
    *                                payment or message (this address may or may not be locally accessible in the routing
    *                                table).
-   * @param sourceLedgerPrefix      An {@link InterledgerAddress} prefix that indicates the ILP node that received the
-   *                                payment being routed. This value is used to optionally restrict the set of available
-   *                                routes that can be used to service a next-hop payment or message.
+   * @param sourceLedgerPrefix      An {@link InterledgerAddressPrefix} prefix that indicates the ILP node that received
+   *                                the payment being routed. This value is used to optionally restrict the set of
+   *                                available routes that can be used to service a next-hop payment or message.
    */
-  Optional<R> findBestNexHop(InterledgerAddress finalDestinationAddress, InterledgerAddress sourceLedgerPrefix);
+  Optional<R> findBestNexHop(InterledgerAddress finalDestinationAddress, InterledgerAddressPrefix sourceLedgerPrefix);
 }

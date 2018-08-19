@@ -1,58 +1,36 @@
 package com.sappenin.ilpv4.connector.routing;
 
 import org.immutables.value.Value;
-import org.immutables.value.Value.Default;
 import org.interledger.core.InterledgerAddress;
 
-import java.time.Instant;
-import java.util.Optional;
-import java.util.regex.Pattern;
+import java.util.List;
 
 /**
- * <p>An entry in a {@link RoutingTable}, used by Interleder nodes to determine the "next hop" account that a payment
- * should be forwarded to in order to complete an Interledger payment.</p>
- *
- * <p> For more details about the structure of this class as it relates to other routes in a routing table, reference
- * {@link RoutingTable}.</p>
+ * <p>An path for a particular payment, as seen by a remote node.</p>
  */
 public interface Route {
 
-  String ALLOW_ALL_SOURCES = "(.*?)";
-
   /**
-   * <p>An {@link InterledgerAddress} used to perform a longest-prefix match operation against a final destination
-   * payment address. For example, if a payment is destined for <tt>g.example.alice</tt>, then the longest-matching
-   * target prefix might be <tt>g.example.</tt>, assuming such an entry exists in the routing table.</p>
-   *
-   * @return An {@link InterledgerAddress}.
-   */
-  InterledgerAddress getTargetPrefix();
-
-  /**
-   * <p>An {@link InterledgerAddress} representing the account that should be listed as the recipient of any next-hop
-   * ledger transfers.</p>
+   * <p>An {@link InterledgerAddress} representing the node that should be listed as the recipient of any next-hop
+   * ledger transfer.</p>
    *
    * @return An {@link InterledgerAddress}.
    */
   InterledgerAddress getNextHopAccount();
 
   /**
-   * <p>A regular expression that can restrict routing table destinations to a subset of allowed payment-source
-   * prefixes. By default, this filter allows all sources.</p>
+   * A list of nodes that a payment will traverse in order for a payment to make it to its destination.
    *
-   * @return A {@link Pattern}
+   * @return
    */
-  default Pattern getSourcePrefixRestrictionRegex() {
-    // Default to allow all sources.
-    return Pattern.compile(ALLOW_ALL_SOURCES);
-  }
+  List<InterledgerAddress> getPath();
 
   /**
-   * <p>An optionally-present expiration date/time for this route.</p>
+   * Bytes that can be used for authentication of a given route.
    *
-   * @return An {@link Instant} representing the
+   * @return
    */
-  Optional<Instant> getExpiresAt();
+  byte[] getAuth();
 
   /**
    * An abstract implementation of {@link Route} for usage by Immutables.
@@ -62,61 +40,6 @@ public interface Route {
   @Value.Immutable
   abstract class AbstractRoute implements Route {
 
-    @Default
-    @Override
-    public Pattern getSourcePrefixRestrictionRegex() {
-      // Default to allow all sources.
-      return Pattern.compile(ALLOW_ALL_SOURCES);
-    }
 
-    /**
-     * <p>Indicates whether some other object is "equal to" this one.</p>
-     *
-     * <p>Route equality is based upon the <tt>targetPrefix</tt> and <tt>nextHopLedgerAccount</tt> only so that in
-     * general, there can exist multiple target prefixes pointing to different next-hop ledger accounts.</p>
-     *
-     * @param obj the reference object with which to compare.
-     *
-     * @return {@code true} if this object is the same as the obj argument; {@code false} otherwise.
-     */
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj) {
-        return true;
-      }
-      if (obj == null || getClass() != obj.getClass()) {
-        return false;
-      }
-
-      Route that = (Route) obj;
-
-      if (!getTargetPrefix().equals(that.getTargetPrefix())) {
-        return false;
-      }
-      if (!getNextHopAccount().equals(that.getNextHopAccount())) {
-        return false;
-      }
-
-      return true;
-    }
-
-    /**
-     * <p>Overidden to satisfy to the equals-method contract, which  states that equal objects must have equal hash
-     * codes.</p>
-     *
-     * @return a hash code value for this object.
-     */
-    @Override
-    public int hashCode() {
-      int result = getTargetPrefix().hashCode();
-      result = 31 * result + getNextHopAccount().hashCode();
-      return result;
-    }
-
-    @Value.Check
-    void check() {
-      //InterledgerAddress.requireAddressPrefix(getTargetPrefix());
-      //InterledgerAddress.requireNotAddressPrefix(getNextHopAccount());
-    }
   }
 }

@@ -1,5 +1,6 @@
 package com.sappenin.ilpv4.connector.routing;
 
+import com.sappenin.ilpv4.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerAddress;
 
 import java.util.Collection;
@@ -8,74 +9,75 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
- * An implementation of {@link RoutingTable} that stores all routes in-memory using an {@link InterledgerPrefixMap} for
- * efficient search and prefix-matching operations.
+ * An implementation of {@link RoutingTable} that stores all routingTableEntrys in-memory using an {@link
+ * InterledgerAddressPrefixMap} for efficient search and prefix-matching operations.
  *
- * This implementation is meant for use-cases where routes do not change very often, like statically-configured routing
- * environments where this table can be populated when the server starts-up.
+ * This implementation is meant for use-cases where routingTableEntrys do not change very often, like
+ * statically-configured routing environments where this table can be populated when the server starts-up.
  */
-public class InMemoryRoutingTable implements RoutingTable<Route> {
+public class InMemoryRoutingTable implements RoutingTable<RoutingTableEntry> {
 
-  private final InterledgerPrefixMap<Route> interledgerPrefixMap;
+  private final InterledgerAddressPrefixMap<RoutingTableEntry> interledgerAddressPrefixMap;
 
   public InMemoryRoutingTable() {
-    this(new InterledgerPrefixMap());
+    this(new InterledgerAddressPrefixMap());
   }
 
   /**
    * Exists for testing purposes, but is otherwise not necessary.
    *
-   * @param interledgerPrefixMap
+   * @param interledgerAddressPrefixMap
    */
-  public InMemoryRoutingTable(final InterledgerPrefixMap interledgerPrefixMap) {
-    this.interledgerPrefixMap = Objects.requireNonNull(interledgerPrefixMap);
+  public InMemoryRoutingTable(final InterledgerAddressPrefixMap interledgerAddressPrefixMap) {
+    this.interledgerAddressPrefixMap = Objects.requireNonNull(interledgerAddressPrefixMap);
   }
 
   @Override
-  public boolean addRoute(final Route route) {
-    Objects.requireNonNull(route);
-    return this.interledgerPrefixMap.add(route);
+  public boolean addRoute(final RoutingTableEntry routingTableEntry) {
+    Objects.requireNonNull(routingTableEntry);
+    return this.interledgerAddressPrefixMap.add(routingTableEntry);
   }
 
   @Override
-  public boolean removeRoute(final Route route) {
-    Objects.requireNonNull(route);
-    return this.interledgerPrefixMap.removeRoute(route);
+  public boolean removeRoute(final RoutingTableEntry routingTableEntry) {
+    Objects.requireNonNull(routingTableEntry);
+    return this.interledgerAddressPrefixMap.remove(routingTableEntry);
   }
 
   @Override
-  public Collection<Route> getRoutesByTargetPrefix(final InterledgerAddress addressPrefix) {
+  public Collection<RoutingTableEntry> getRoutesByTargetPrefix(final InterledgerAddressPrefix addressPrefix) {
     Objects.requireNonNull(addressPrefix);
-    return this.interledgerPrefixMap.getRoutes(addressPrefix);
+    return this.interledgerAddressPrefixMap.getEntries(addressPrefix);
   }
 
   @Override
-  public Collection<Route> removeAllRoutesForTargetPrefix(InterledgerAddress addressPrefix) {
+  public Collection<RoutingTableEntry> removeAllRoutesForTargetPrefix(InterledgerAddressPrefix addressPrefix) {
     Objects.requireNonNull(addressPrefix);
-    return this.interledgerPrefixMap.removeAllRoutes(addressPrefix);
+    return this.interledgerAddressPrefixMap.removeAll(addressPrefix);
   }
 
   @Override
-  public void forEach(final BiConsumer<? super String, ? super Collection<Route>> action) {
+  public void forEach(final BiConsumer<? super String, ? super Collection<RoutingTableEntry>> action) {
     Objects.requireNonNull(action);
-    this.interledgerPrefixMap.forEach(action);
+    this.interledgerAddressPrefixMap.forEach(action);
   }
 
   @Override
-  public Collection<Route> findNextHopRoutes(InterledgerAddress finalDestinationAddress) {
-    return this.interledgerPrefixMap.findNextHopRoutes(finalDestinationAddress);
+  public Collection<RoutingTableEntry> findNextHopRoutes(final InterledgerAddress finalDestinationAddress) {
+    return this.interledgerAddressPrefixMap.findNextHops(finalDestinationAddress);
   }
 
   @Override
-  public Collection<Route> findNextHopRoutes(
+  public Collection<RoutingTableEntry> findNextHopRoutes(
     final InterledgerAddress finalDestinationAddress,
-    final InterledgerAddress sourcePrefix
+    final InterledgerAddressPrefix sourcePrefix
   ) {
     Objects.requireNonNull(finalDestinationAddress);
     Objects.requireNonNull(sourcePrefix);
-    return this.interledgerPrefixMap.findNextHopRoutes(finalDestinationAddress).stream()
-      // Only return routes that are allowed per the source prefix filter...
-      .filter(route -> route.getSourcePrefixRestrictionRegex().matcher(sourcePrefix.getValue()).matches())
+    return this.interledgerAddressPrefixMap.findNextHops(finalDestinationAddress).stream()
+      // Only return routingTableEntrys that are allowed per the source prefix filter...
+      .filter(routingTableEntry -> routingTableEntry.getSourcePrefixRestrictionRegex().matcher(sourcePrefix.getValue())
+        .matches())
       .collect(Collectors.toList());
   }
 }

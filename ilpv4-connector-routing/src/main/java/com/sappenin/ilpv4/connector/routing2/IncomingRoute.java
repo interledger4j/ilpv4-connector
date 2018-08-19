@@ -1,5 +1,6 @@
 package com.sappenin.ilpv4.connector.routing2;
 
+import com.sappenin.ilpv4.InterledgerAddressPrefix;
 import org.immutables.value.Value;
 import org.interledger.core.InterledgerAddress;
 
@@ -12,7 +13,8 @@ public interface IncomingRoute {
 
   InterledgerAddress getPeer();
 
-  InterledgerAddress getPrefix();
+  // TODO: Necessary?
+  InterledgerAddressPrefix getPrefix();
 
   List<InterledgerAddress> getPath();
 
