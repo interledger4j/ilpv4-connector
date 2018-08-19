@@ -1,8 +1,10 @@
 package com.sappenin.ilpv4.accounts;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.sappenin.ilpv4.model.Account;
 import com.sappenin.ilpv4.model.Plugin;
+import com.sappenin.ilpv4.model.PluginType;
 import com.sappenin.ilpv4.plugins.MockChildPlugin;
 import com.sappenin.ilpv4.plugins.PluginManager;
 import com.sappenin.ilpv4.settings.ConnectorSettings;
@@ -38,6 +40,10 @@ public class DefaultAccountManager implements AccountManager {
         String.format("Account already exists with InterledgerAddress: %s", account.getInterledgerAddress())
       );
     }
+
+    // Add a plugin for this account based upon its settings...
+    final Plugin plugin = this.constructPlugin(account.getInterledgerAddress(), account.getPluginType());
+    this.pluginManager.setPlugin(account.getInterledgerAddress(), plugin);
   }
 
   @Override
@@ -60,26 +66,47 @@ public class DefaultAccountManager implements AccountManager {
     Objects.requireNonNull(accountAddress);
 
     return this.getAccount(accountAddress)
-      .map(account -> {
-        switch (account.getPluginType()) {
+      .map(Account::getPluginType)
+      .map(pluginType -> {
+        switch (pluginType) {
           case MOCK: {
-            final Plugin plugin = new MockChildPlugin(connectorSettings, accountAddress);
-            this.pluginManager.setPlugin(accountAddress, plugin);
-            return plugin;
+            return this.pluginManager.getPlugin(accountAddress)
+              // Return null to fall-through to an F02_UNREACHABLE (below)
+              .orElse(null);
           }
           case BTP: {
             throw new RuntimeException("Not yet implemented!");
           }
           default: {
-            throw new RuntimeException(String.format("Unsupported PluginType: %s", account.getPluginType()));
+            throw new RuntimeException(String.format("Unsupported PluginType: %s", pluginType));
           }
         }
       })
       .orElseThrow(() -> new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
+          .triggeredBy(this.connectorSettings.getIlpAddress())
           .code(InterledgerErrorCode.F02_UNREACHABLE)
           .message(String.format("Tried to get a Plugin for non-existent account: %s", accountAddress))
           .build())
       );
+  }
+
+  @VisibleForTesting
+  protected Plugin constructPlugin(final InterledgerAddress accountAddress, final PluginType pluginType) {
+
+    Objects.requireNonNull(accountAddress);
+    Objects.requireNonNull(pluginType);
+
+    switch (pluginType) {
+      case MOCK: {
+        return new MockChildPlugin(connectorSettings, accountAddress);
+      }
+      case BTP: {
+        throw new RuntimeException("Not yet implemented!");
+      }
+      default: {
+        throw new RuntimeException(String.format("Unsupported PluginType: %s", pluginType));
+      }
+    }
   }
 }

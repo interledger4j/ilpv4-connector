@@ -164,6 +164,7 @@ public class DefaultIlpConnector implements IlpConnector {
     final RoutingTableEntry nextHopRoute = this.paymentRouter.findBestNexHop(destinationAddress)
       .orElseThrow(() -> new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
+          .triggeredBy(this.connectorSettings.getIlpAddress())
           .code(InterledgerErrorCode.F02_UNREACHABLE)
           .message(String.format(
             "No route found from source(%s) to destination(%s).", sourceAccountAddress, destinationAddress)
@@ -219,6 +220,7 @@ public class DefaultIlpConnector implements IlpConnector {
     if (sourceExpiry.isBefore(nowTime)) {
       throw new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
+          .triggeredBy(this.connectorSettings.getIlpAddress())
           .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
           .message(String.format(
             "Source transfer has already expired. sourceExpiry: {%s}, currentTime: {%s}", sourceExpiry, nowTime))
@@ -243,6 +245,7 @@ public class DefaultIlpConnector implements IlpConnector {
     if (destinationExpiryTime.minusMillis(minMessageWindow).isBefore(nowTime)) {
       throw new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
+          .triggeredBy(this.connectorSettings.getIlpAddress())
           .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
           .message(String.format(
             "Source transfer expires too soon to complete payment. SourceExpiry: {%s}, " +

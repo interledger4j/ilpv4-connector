@@ -1,6 +1,7 @@
 package com.sappenin.ilpv4.connector.ccp.codecs;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.interledger.encoding.asn.codecs.AsnOctetStringBasedObjectCodec;
 import org.interledger.encoding.asn.codecs.AsnOctetStringCodec;
 import org.interledger.encoding.asn.codecs.AsnSequenceCodec;
 import org.interledger.encoding.asn.codecs.AsnSizeConstraint;
@@ -8,15 +9,13 @@ import org.interledger.encoding.asn.codecs.AsnSizeConstraint;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
-public class AsnUuidCodec extends AsnSequenceCodec<UUID> {
+public class AsnUuidCodec extends AsnOctetStringBasedObjectCodec<UUID> {
 
   /**
    * Default constructor.
    */
   public AsnUuidCodec() {
-    super(
-      new AsnOctetStringCodec(new AsnSizeConstraint(16,16))
-    );
+    super(new AsnSizeConstraint(16,16));
   }
 
   /**
@@ -58,7 +57,7 @@ public class AsnUuidCodec extends AsnSequenceCodec<UUID> {
    */
   @Override
   public UUID decode() {
-    return getUUIDFromBytes(getValueAt(0));
+    return getUUIDFromBytes(getBytes());
   }
 
   /**
@@ -68,6 +67,6 @@ public class AsnUuidCodec extends AsnSequenceCodec<UUID> {
    */
   @Override
   public void encode(final UUID value) {
-    setValueAt(0, getBytesFromUUID(value));
+    setBytes(getBytesFromUUID(value));
   }
 }

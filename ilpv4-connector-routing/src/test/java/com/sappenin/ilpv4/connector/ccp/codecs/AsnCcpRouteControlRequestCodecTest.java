@@ -51,7 +51,7 @@ public class AsnCcpRouteControlRequestCodecTest extends AbstractAsnCodecTest<Ccp
           ImmutableFeature.builder().value("bar").build()
         ))
         .build(),
-        BaseEncoding.base16().decode("011070D1A134A0DF4F47964F6E19E2AB379000000020010203666F6F03626172")},
+        BaseEncoding.base16().decode("0170D1A134A0DF4F47964F6E19E2AB379000000020010203666F6F03626172")},
 
       // No Features...
       {ImmutableCcpRouteControlRequest.builder()
@@ -59,15 +59,15 @@ public class AsnCcpRouteControlRequestCodecTest extends AbstractAsnCodecTest<Ccp
         .lastKnownRoutingTableId(UUID.fromString("a1e2f8ba-d5cf-479e-a975-6f2cd0caf4a2"))
         .lastKnownEpoch(32)
         .build(),
-        BaseEncoding.base16().decode("0110A1E2F8BAD5CF479EA9756F2CD0CAF4A20000002000")},
+        BaseEncoding.base16().decode("01A1E2F8BAD5CF479EA9756F2CD0CAF4A2000000200100")},
 
       // Other Mode + 0 Epoch
       {ImmutableCcpRouteControlRequest.builder()
         .mode(CcpMode.MODE_IDLE)
-        .lastKnownRoutingTableId(UUID.fromString("feb16ffb-4d76-4cd8-ac21-d6ddafb505a3"))
+        .lastKnownRoutingTableId(UUID.fromString("70d1a134-a0df-4f47-964f-6e19e2ab3790"))
         .lastKnownEpoch(0)
         .build(),
-        BaseEncoding.base16().decode("0010FEB16FFB4D764CD8AC21D6DDAFB505A30000000000")},
+        BaseEncoding.base16().decode("0070D1A134A0DF4F47964F6E19E2AB3790000000000100")},
     });
   }
 

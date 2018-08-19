@@ -36,7 +36,7 @@ public class AsnCcpRouteControlRequestCodec extends AsnSequenceCodec<CcpRouteCon
   @Override
   public CcpRouteControlRequest decode() {
     return ImmutableCcpRouteControlRequest.builder()
-      .mode(CcpMode.fromInt(getValueAt(0)))
+      .mode(CcpMode.fromShort(getValueAt(0)))
       .lastKnownRoutingTableId(getValueAt(1))
       .lastKnownEpoch(getValueAt(2))
       .features(getValueAt(3))

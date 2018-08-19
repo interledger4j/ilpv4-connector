@@ -2,10 +2,10 @@ package org.interledger.ilpv4.connector.it;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import org.interledger.core.InterledgerAddress;
 import com.sappenin.ilpv4.model.Peer;
 import com.sappenin.ilpv4.server.ConnectorServer;
 import com.sappenin.ilpv4.settings.ConnectorSettings;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.ilpv4.connector.it.graph.ConnectorNode;
 import org.interledger.ilpv4.connector.it.graph.Graph;
 import org.interledger.ilpv4.connector.it.graph.edges.PeeringEdge;
@@ -25,11 +25,8 @@ public class BeerCoinArchitecture {
   public static final InterledgerAddress JIMMIE = InterledgerAddress.of("test.jimmie");
   public static final InterledgerAddress BAR_AGRICOLE = InterledgerAddress.of("test.bar_agricole");
 
-  private static final String DOT = ".";
   private static final String GUIN = "GUIN";
-  private static final String DOT_GUIN = DOT + GUIN;
   private static final String SAB = "SAB";
-  private static final String DOT_SAB = DOT + SAB;
 
   static {
     System.setProperty("server.port", "0");
@@ -81,7 +78,7 @@ public class BeerCoinArchitecture {
    */
   private static List<Peer> peersOfDavid() {
     // Peer with Adrian
-    final ConnectorSettings.PeerSettings peerSettings = peerSettings(ADRIAN, ADRIAN.with(DOT_GUIN), GUIN);
+    final ConnectorSettings.PeerSettings peerSettings = peerSettings(ADRIAN, ADRIAN.with(GUIN), GUIN);
     return Lists.newArrayList(peerSettings.toPeer());
   }
 
@@ -101,13 +98,13 @@ public class BeerCoinArchitecture {
 
     {
       // Peer with David
-      final ConnectorSettings.PeerSettings peerSettings = peerSettings(DAVID, DAVID.with(DOT_GUIN), GUIN);
+      final ConnectorSettings.PeerSettings peerSettings = peerSettings(DAVID, DAVID.with(GUIN), GUIN);
       peerListBuilder.add(peerSettings.toPeer());
     }
 
     {
       // Peer with Jimmie
-      final ConnectorSettings.PeerSettings peerSettings = peerSettings(JIMMIE, JIMMIE.with(DOT_SAB), SAB);
+      final ConnectorSettings.PeerSettings peerSettings = peerSettings(JIMMIE, JIMMIE.with(SAB), SAB);
       peerListBuilder.add(peerSettings.toPeer());
     }
 
@@ -119,7 +116,7 @@ public class BeerCoinArchitecture {
    */
   private static List<Peer> peersOfJimmie() {
     // Peer with the Bar.
-    final ConnectorSettings.PeerSettings peerSettings = peerSettings(BAR_AGRICOLE, BAR_AGRICOLE.with(DOT_SAB), SAB);
+    final ConnectorSettings.PeerSettings peerSettings = peerSettings(BAR_AGRICOLE, BAR_AGRICOLE.with(SAB), SAB);
     return Lists.newArrayList(peerSettings.toPeer());
   }
 
@@ -128,7 +125,7 @@ public class BeerCoinArchitecture {
    */
   private static List<Peer> peersOfBar() {
     // Peer with Jimmie
-    final ConnectorSettings.PeerSettings peerSettings = peerSettings(JIMMIE, JIMMIE.with(DOT_SAB), SAB);
+    final ConnectorSettings.PeerSettings peerSettings = peerSettings(JIMMIE, JIMMIE.with(SAB), SAB);
     return Lists.newArrayList(peerSettings.toPeer());
   }
 

@@ -52,7 +52,7 @@ public class BeerCoinArchitectureTest {
   }
 
   @Test
-  public void davidPaysAdrian(){
+  public void davidPaysAdrian() {
     final IlpConnector davidConnector = getIlpConnectorFromGraph(DAVID);
     assertThat(davidConnector.getConnectorSettings().getIlpAddress(), is(DAVID));
 
@@ -67,9 +67,8 @@ public class BeerCoinArchitectureTest {
    * @return
    */
   private IlpConnector getIlpConnectorFromGraph(final InterledgerAddress interledgerAddress) {
-    return (IlpConnector) ((ServerNode) graph.getNode(interledgerAddress.value())).getServer().getContext()
-      .getBean("connector");
-
+    return (IlpConnector) ((ServerNode) graph.getNode(interledgerAddress.getValue()))
+      .getServer().getContext().getBean("connector");
   }
 
 }

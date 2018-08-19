@@ -5,16 +5,16 @@ package com.sappenin.ilpv4.connector.ccp;
  */
 public enum CcpMode {
 
-  MODE_IDLE(0),
-  MODE_SYNC(1);
+  MODE_IDLE((short) 0),
+  MODE_SYNC((short) 1);
 
-  private int value;
+  private short value;
 
-  CcpMode(final int value) {
+  CcpMode(final short value) {
     this.value = value;
   }
 
-  public static CcpMode fromInt(final int value) {
+  public static CcpMode fromShort(final short value) {
     switch (value) {
       case 0: {
         return MODE_IDLE;
@@ -28,7 +28,7 @@ public enum CcpMode {
     }
   }
 
-  public int getValue() {
+  public short getValue() {
     return value;
   }
 }
