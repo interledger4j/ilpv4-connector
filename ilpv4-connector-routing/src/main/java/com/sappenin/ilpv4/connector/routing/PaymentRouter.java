@@ -1,6 +1,6 @@
 package com.sappenin.ilpv4.connector.routing;
 
-import com.sappenin.ilpv4.InterledgerAddressPrefix;
+import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerAddress;
 
 import java.util.Optional;

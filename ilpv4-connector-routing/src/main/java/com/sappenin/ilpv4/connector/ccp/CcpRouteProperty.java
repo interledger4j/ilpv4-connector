@@ -21,7 +21,7 @@ public abstract class CcpRouteProperty {
   private static final byte[] EMPTY_VALUE = new byte[0];
 
   /**
-   * The unique identifier of this propertdy.
+   * The unique identifier of this property.
    */
   public abstract int id();
 

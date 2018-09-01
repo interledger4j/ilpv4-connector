@@ -6,9 +6,16 @@ import org.interledger.core.InterledgerAddress;
 import javax.money.CurrencyUnit;
 import java.math.BigInteger;
 
+// TODO: Remove most of this information into AccountSettings....Balance comes from the AccountManager, or directly
+// from the Balance tracker, and settings comes from AccountSettings. Everything else is not needed....
+
+
 /**
  * An account tracks a balance between two Interledger peers.
+ *
+ * @deprecated Will go away once all settings are configured properly (will be replaced by AccountSettings).
  */
+@Deprecated
 @Value.Immutable
 public interface Account {
 
@@ -20,39 +27,11 @@ public interface Account {
   InterledgerAddress getInterledgerAddress();
 
   /**
-   * The current balance of this account.
-   *
-   * @return A {@link BigInteger} representing the balance of this account.
-   */
-  @Value.Default
-  default BigInteger getBalance() {
-    return BigInteger.ZERO;
-  }
-
-  /**
    * The type of plugin that this account uses to communicate with its peer.
    *
    * @return
    */
   PluginType getPluginType();
-
-  /**
-   * The minimum balance this connector is allowed to have with the Counterparty of this account.
-   */
-  // TODO: Make this optional instead of zero. A min-balance of zero might be valid.
-  @Value.Default
-  default BigInteger getMinBalance() {
-    return BigInteger.ZERO;
-  }
-
-  /**
-   * The maximum balance this connector is allowed to have with the Counterparty of this account.
-   */
-  // TODO: Make this optional instead of zero. A min-balance of zero might be valid.
-  @Value.Default
-  default BigInteger getMaxBalance() {
-    return BigInteger.ZERO;
-  }
 
   /**
    * The currency unit of the asset underlying this account. (Despite the name of the returned object, this value may
@@ -71,6 +50,28 @@ public interface Account {
    * following equation: 10000 * (10^(-2)), or "100.00".</p>
    */
   Integer getCurrencyScale();
+
+  // TODO: Move settings into AccountSettings, like min/max balance, etc.
+
+  // TODO: Extract this to an AccountSettings object that is accessible via ConnectorSettings.
+
+  /**
+   * The minimum balance this connector is allowed to have with the Counterparty of this account.
+   */
+  // TODO: Make this optional instead of zero. A min-balance of zero might be valid.
+  @Value.Default
+  default BigInteger getMinBalance() {
+    return BigInteger.ZERO;
+  }
+
+  /**
+   * The maximum balance this connector is allowed to have with the Counterparty of this account.
+   */
+  // TODO: Make this optional instead of zero. A min-balance of zero might be valid.
+  @Value.Default
+  default BigInteger getMaxBalance() {
+    return BigInteger.ZERO;
+  }
 
   /**
    * The threshold over which this account must be settled before it can process more ILP payment packets.

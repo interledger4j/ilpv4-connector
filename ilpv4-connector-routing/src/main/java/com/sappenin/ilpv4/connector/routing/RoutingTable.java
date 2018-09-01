@@ -1,51 +1,98 @@
 package com.sappenin.ilpv4.connector.routing;
 
-import com.sappenin.ilpv4.InterledgerAddressPrefix;
+import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerAddress;
 
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
- * <p>Defines a lookup-table of InterledgerAddress routes used to determine a target account that should be used in
- * order to initiate a "next-hop" local-ledger transfer or message-send operation.</p>
+ * <p>A Routing Table is a lookup table of routes, indexed by prefix.</p>
  *
- * <p>The following is an example routing table:<p>
+ * <p>
+ * <pre>
+ *   <ul>
+ *     <li><tt>Routes</tt> are an advertisement by a connector, stating that it can reach a particular destination
+ *     address prefix.</li>
+ *     <li>A <tt>Prefix</tt> is an ILP address prefix covering a portion of the overall Interledger address space.</li>
+ *     <li>The <tt>Origin</tt> of a route is the connector who first advertised the route.</li>
+ *     <li>A Routing Table is a lookup table of routes, indexed by prefix.</li>
+ *   </ul>
+ * </pre>
+ * </p>
+ *
+ * <p>This interface defines a lookup-table of InterledgerAddress routes used to determine a target account that
+ * should be used in order to move an Interledger prepare packet to the next Connector in an Interledger payment
+ * chain.</p>
+ *
+ * <p>To make a routing decision, this interface accepts a final-destination Interledger address, and the attempts
+ * to find the longest-matching prefix to use as the next-hop. For example, imagine a network that looks like this:</p>
  *
  * <pre>
- *  | targetPrefix | nextHopAccount          | sourcePrefixFilter |
- *  |==============|=========================|====================|
- *  | g.eur.bank   | peer.usd.bank.connector | g.usd.bank.(.*?)   |
- *  | g.eur        | peer.usd.bank2.connector| [absent]           |
- *  | g   	       | peer.usd.mypeer0        | [absent]           |
+ * ┌─────────┐      ┌─────────┐      ┌─────────┐
+ * │   g.a   │─ ─ ─ │   g.b   │─ ─ ─ │   g.c   │
+ * └─────────┘      └─────────┘      └─────────┘
+ *                       │
+ *
+ *                       │
+ *                  ┌─────────┐
+ *                  │   g.b   │
+ *                  └─────────┘
  * </pre>
  *
- * <p> In the above example, the route returned for a final-destination address of <tt>g.eur.bank.bob</tt> would be
- * <tt>peer.usd.bank.connector</tt>; the route returned for a final-destination address of <tt>g.eur.bob</tt> would be
- * <tt>peer.usd.bank2.connector</tt>; and all other destination addresses would be routed to
- * <tt>peer.ledger.mypeer0</tt>
+ * <p>The following is an example routing table from the perspective of <tt>g.b</tt>:<p>
  *
- * <p>The above table has a global catch-all route for the "g." prefix, which will return a "next-hop" ledger of
- * "peer.usd.mypeer0." for any routing requests that don't match any other prefix in the table.</p>
+ * <pre>
+ *  | targetPrefix | nextHopAccount | sourcePrefixFilter |
+ *  |==============|================|====================|
+ *  | g.a          | g.a            | [absent            |
+ *  | g.c          | g.b            | [absent]           |
+ *  | g.d          | g.d            | g.c.(.*?)          |
+ *  | g   	       | g.a            | g.b.(.*?)          |
+ * </pre>
  *
- * <p> Using this data, a Connector would, for example, be able to assemble an outgoing-payment to
- * <tt>peer.usd.bank.connector</tt> for a payment with a final destination of "g.eur.bank.bob". This allows the ILP
- * node using this table to forward a payment for "bob" to the next hop in an overall pathParts, without holding the
- * entire graph of all ILP nodes in-memory.</p>
+ * <p> In the above example, the route returned for a final-destination address of <tt>g.a</tt> would be
+ * <tt>g.a</tt>; the route returned for a final-destination address of <tt>g.c</tt> would be <tt>g.c</tt>, and the
+ * final-destination address of <tt>g.d</tt> would be sent through g.d, but only if the payment originates from
+ * <tt>g.c</tt>.</p>
  *
- * <p> This interface is extensible in that it can hold simple routes of type {@link R}, or it can hold more
- * complicated implementations that extend {@link Route}.</p>
+ * <p>Last but not least, the above table has a global catch-all route for the "g" prefix, which will return a
+ * "next-hop" address of "g.a" for any routing requests that don't match any other prefix in the table.</p>
+ *
+ * <p>Using data from a routing table allows an ILP node to forward packets to the correct next hop in an overall
+ * payment path, without holding the entire graph of all ILP nodes in-memory.</p>
+ *
+ * <p> This interface is extensible in that it can hold simple routes of type {@link RoutingTableEntry}, or it can hold
+ * more complicated implementations that extend {@link RoutingTableEntry}.</p>
  */
 public interface RoutingTable<R extends RoutingTableEntry> {
+
+  /**
+   * The unique identifier of this routing table, primarily used for coordinating Route updates via CCP.
+   *
+   * @return A {@link UUID}.
+   */
+  UUID getRoutingTableId();
+
+  /**
+   * <p>Accessor for the current epoch of this routing table.</p>
+   *
+   * <p>Every time the routing table is modified, the update is
+   * logged and the revision number of the table is increased. The revision number of the table is called an
+   * **epoch**.</p>
+   *
+   * @return A <tt>long</tt>.
+   */
+  default long getCurrentEpoch() {
+    return 0L;
+  }
 
   /**
    * Add a route to this routing table. If the route already exists (keyed by {@link R#getTargetPrefix()} and {@link
    * R#getSourcePrefixRestrictionRegex()}, then this operation is a no-op.
    *
-   * @param route A {@link Route} to add to this routing table.
+   * @param route A {@link RoutingTableEntry} to add to this routing table.
    */
   boolean addRoute(R route);
 
@@ -53,7 +100,7 @@ public interface RoutingTable<R extends RoutingTableEntry> {
    * Remove a particular route from the routing table, based upon {@link R#getTargetPrefix()} and any other data inside
    * of the supplied {@code route}.
    *
-   * @param route A {@link Route} to remove to this routing table.
+   * @param route A {@link RoutingTableEntry} to remove to this routing table.
    */
   boolean removeRoute(R route);
 
@@ -122,5 +169,15 @@ public interface RoutingTable<R extends RoutingTableEntry> {
       .filter(route -> route.getSourcePrefixRestrictionRegex().matcher(sourcePrefix.getValue()).matches())
       .collect(Collectors.toList());
   }
+
+  /**
+   * An in-memory log of route-updates, as recieved from remote peers. This is typed as an Array because it is typically
+   * operated upon using index-based lookups, so we want to ensure that an implementation doesn't accidentally use a
+   * non-performant {@link List}.
+   *
+   * @return
+   */
+  ArrayList<RouteUpdate> getRouteUpdateLog();
+
 
 }

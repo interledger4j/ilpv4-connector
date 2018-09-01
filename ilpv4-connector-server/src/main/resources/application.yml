@@ -1,9 +1,12 @@
 # See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
 logging:
-    level:
-      ROOT: INFO
-      com.sappenin: INFO
-      org.springframework: INFO
+  level:
+    ROOT: INFO
+    com.sappenin: INFO
+    org.springframework: INFO
+    org.springframework.web.socket: DEBUG
+server:
+  port: 8080
 spring:
   output:
     ansi:
@@ -32,12 +35,106 @@ spring:
         use_sql_comments: true
         format_sql: true
 
+# All values for this connector. Commented-out values are the default.
 ilpv4:
+  # Defines all options available for configuring a Connector.
   connector:
-    # ILP address of the connector. This property can be omitted if an account with relation=parent
-    # is configured under accounts.
-    ilp_address: test.sappenin
+    ## TODO: Doc!
     secret: secret
+    ## ILP address of the connector.
+    ## This property can be omitted if an account with relation=parent is configured under accounts.
+    ilp_address: test.example
+
+    #########
+    # Default Routing
+    #########
+    routeBroadcastSettings:
+      # Whether to broadcast known routes
+      routeBroadcastEnabled: true
+      # Frequency at which the connector broadcasts its routes to adjacent connectors. (in milliseconds)
+      routeBroadcastInterval: 3000
+      # The frequency at which the connector checks for expired routes. (in milliseconds)
+      routeCleanupInterval: 1000
+      # The maximum age of a route provided by this connector. (in milliseconds)
+      routeExpiry: 45000
+      # Seed used for generating routing table auth values.
+      routingSecret:
+      # The minimum interval to wait before sending another routing update via CCP.
+      minRouteUpdateInterval: 150
+      # The maximum number of epochs to transmit with any particular routing update message sent via CCP.
+      maxEpochsPerRoutingTable: 50
+
+    #########
+    # Accounts
+    #########
+    accounts:
+    # MicroPayments only...
+    # See https://github.com/interledgerjs/ilp-connector/blob/f938cbe1f156e3330a611daf0f8874b8b9fb35e4/src/schemas/Config.json
+    - interledger_address: test.parent.micro.usd
+      description: "USD Account"
+      # Relationship between this connector and a counterparty peer. Options are PARENT, PEER, and CHILD, describing the
+      # counterparty with respect to this connector.
+      relationship: PARENT
+      # Type of the ILP plugin that should be used for this account.
+      pluginType: MOCK
+      # Currency code or other asset identifier that will be used to select the correct rate for this account.
+      assetCode: USD
+      # Interledger amounts are integers, but most currencies are typically represented as
+      # fractional units, e.g. cents. This property defines how many Interledger units make
+      # up one regular unit. For dollars, this would usually be set to 9, so that Interledger
+      # amounts are expressed in nano-dollars.
+      assetScale: 9
+      # Optional. Maximum amount per packet for incoming prepare packets. IlpConnector will reject
+      # any incoming prepare packets from this account with a higher amount. Amount should be
+      # provided as an integer in a string (in atomic units).
+      maximumPacketAmount: 100000
+      #########
+      # Balance Settings
+      #########
+      balanceSettings:
+        # Optional. Minimum balance (in this account's indivisible base units) the connector
+        # must maintain. The connector will reject outgoing packets if they would put it below
+        # this balance. The format is a string containing an integer (which may be prefixed with
+        # - to indicate a negative value).
+        minBalance: 0
+        # Maximum balance (in this account's indivisible base units) the connector will allow.
+        # The connector will reject incoming packets if they would put it above this balance.
+        # The format is a string containing an integer (which may be prefixed with - to indicate
+        # a negative value).
+        maxBalance: 0
+        # Optional Balance (in this account's indivisible base units) numerically below which
+        # the connector will automatically initiate a settlement. The format is a string
+        # containing an integer (which may be prefixed with - to indicate a negative value).
+        settleThreshold: 10000000
+        # Optional Balance (in this account's indivisible base units) the connector will attempt to reach when settling.
+        settleTo: 0
+      #########
+      # Per-Account Routing
+      #########
+      routeBroadcastSettings:
+        # Whether to broadcast known routes.
+        routeBroadcastEnabled: false
+        # Frequency at which the connector broadcasts its routes to adjacent connectors, in milliseconds, starting at
+        # the point in time after which the previous route-broadcast operation ended.
+        routeBroadcastInterval: 30000
+        # The frequency at which the connector checks for expired routes. (in milliseconds) [Not currently used]
+        # routeCleanupInterval: 1000
+        # The maximum age of a route provided by this connector (in milliseconds).
+        routeExpiry: 45000
+        # Seed used for generating routing table auth values.
+        routingSecret:
+        # The minimum interval to wait before sending another routing update via CCP. Routing updates will not be
+        # sent more frequently than every N milliseconds, where N = minRouteUpdateInterval.
+        minRouteUpdateInterval: 150
+        # The maximum number of epochs to transmit with any particular routing update message sent via CCP.
+        maxEpochsPerRoutingTable: 50
+
+    - interledger_address: test.parent.unlimited.usd
+      description: USD Account
+      balance: 0
+      assetCode: USD
+      pluginType: "MOCK"
+      assetScale: 9
 
 ###
 #   H2 Settings

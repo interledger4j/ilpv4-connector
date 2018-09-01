@@ -55,7 +55,7 @@ public abstract class AbstractAsnCodecTest<T> {
 
   @Test
   public void read() throws IOException {
-    // This stream allows the codec to read the asn1Bytes...
+    // This getAllAccountSettings allows the codec to read the asn1Bytes...
     final ByteArrayInputStream inputStream = new ByteArrayInputStream(this.asn1OerBytes);
     final T actual = codecContext.read(clazz, inputStream);
     Assert.assertThat(actual, is(expectedObject));

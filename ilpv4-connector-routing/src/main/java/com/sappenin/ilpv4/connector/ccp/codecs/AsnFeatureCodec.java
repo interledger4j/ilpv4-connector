@@ -1,12 +1,12 @@
 package com.sappenin.ilpv4.connector.ccp.codecs;
 
-import com.sappenin.ilpv4.connector.ccp.Feature;
-import com.sappenin.ilpv4.connector.ccp.ImmutableFeature;
+import com.sappenin.ilpv4.connector.ccp.CcpFeature;
+import com.sappenin.ilpv4.connector.ccp.ImmutableCcpFeature;
 import org.interledger.encoding.asn.codecs.AsnIA5StringCodec;
 import org.interledger.encoding.asn.codecs.AsnSequenceCodec;
 import org.interledger.encoding.asn.codecs.AsnSizeConstraint;
 
-public class AsnFeatureCodec extends AsnSequenceCodec<Feature> {
+public class AsnFeatureCodec extends AsnSequenceCodec<CcpFeature> {
 
   /**
    * Default constructor.
@@ -23,8 +23,8 @@ public class AsnFeatureCodec extends AsnSequenceCodec<Feature> {
    * @return the decoded object
    */
   @Override
-  public Feature decode() {
-    return ImmutableFeature.builder()
+  public CcpFeature decode() {
+    return ImmutableCcpFeature.builder()
       .value(getValueAt(0))
       .build();
   }
@@ -35,7 +35,7 @@ public class AsnFeatureCodec extends AsnSequenceCodec<Feature> {
    * @param value the value to encode
    */
   @Override
-  public void encode(final Feature value) {
+  public void encode(final CcpFeature value) {
     setValueAt(0, value.value());
   }
 }

@@ -3,7 +3,7 @@ package com.sappenin.ilpv4.connector.routing;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
-import com.sappenin.ilpv4.InterledgerAddressPrefix;
+import org.interledger.core.InterledgerAddressPrefix;
 import org.apache.commons.collections4.trie.PatriciaTrie;
 import org.interledger.core.InterledgerAddress;
 import org.slf4j.Logger;

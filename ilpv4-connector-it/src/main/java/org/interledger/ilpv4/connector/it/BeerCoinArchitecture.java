@@ -1,14 +1,15 @@
 package org.interledger.ilpv4.connector.it;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.sappenin.ilpv4.model.Peer;
+import com.sappenin.ilpv4.model.settings.AccountSettings;
+import com.sappenin.ilpv4.model.settings.ConnectorSettings;
+import com.sappenin.ilpv4.model.settings.ImmutableAccountSettings;
+import com.sappenin.ilpv4.model.settings.ImmutableConnectorSettings;
 import com.sappenin.ilpv4.server.ConnectorServer;
-import com.sappenin.ilpv4.settings.ConnectorSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.ilpv4.connector.it.graph.ConnectorNode;
 import org.interledger.ilpv4.connector.it.graph.Graph;
-import org.interledger.ilpv4.connector.it.graph.edges.PeeringEdge;
+import org.interledger.ilpv4.connector.it.graph.edges.AccountEdge;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -20,13 +21,13 @@ import java.util.List;
  */
 public class BeerCoinArchitecture {
 
-  public static final InterledgerAddress DAVID = InterledgerAddress.of("test.david");
-  public static final InterledgerAddress ADRIAN = InterledgerAddress.of("test.adrian");
-  public static final InterledgerAddress JIMMIE = InterledgerAddress.of("test.jimmie");
-  public static final InterledgerAddress BAR_AGRICOLE = InterledgerAddress.of("test.bar_agricole");
+  static final InterledgerAddress DAVID = InterledgerAddress.of("test.david");
+  static final InterledgerAddress ADRIAN = InterledgerAddress.of("test.adrian");
+  static final InterledgerAddress JIMMIE = InterledgerAddress.of("test.jimmie");
+  static final InterledgerAddress BAR_AGRICOLE = InterledgerAddress.of("test.bar_agricole");
 
-  private static final String GUIN = "GUIN";
-  private static final String SAB = "SAB";
+  static final String GUIN = "GUIN";
+  static final String SAB = "SAB";
 
   static {
     System.setProperty("server.port", "0");
@@ -55,96 +56,95 @@ public class BeerCoinArchitecture {
    * │              │           │              │          │              │         │                 │
    * └──────────────┘           └──────────────┘          └──────────────┘         └─────────────────┘
    * </pre>
-   *
-   * @return
    */
-  public static final Graph beerCoinGraph() {
-    return new Graph()
+  static Graph beerCoinGraph() {
+    final Graph graph = new Graph()
       // Nodes
       .addNode(DAVID.getValue(), new ConnectorNode(new ConnectorServer(defaultConnectorSettings(DAVID))))
       .addNode(ADRIAN.getValue(), new ConnectorNode(new ConnectorServer(defaultConnectorSettings(ADRIAN))))
       .addNode(JIMMIE.getValue(), new ConnectorNode(new ConnectorServer(defaultConnectorSettings(JIMMIE))))
-      .addNode(BAR_AGRICOLE.getValue(), new ConnectorNode(new ConnectorServer(defaultConnectorSettings(BAR_AGRICOLE))))
+      .addNode(BAR_AGRICOLE.getValue(), new ConnectorNode(new ConnectorServer(defaultConnectorSettings(BAR_AGRICOLE))));
 
-      // Edges
-      .addEdge(new PeeringEdge(DAVID.getValue(), peersOfDavid()))
-      .addEdge(new PeeringEdge(ADRIAN.getValue(), peersOfAdrian()))
-      .addEdge(new PeeringEdge(JIMMIE.getValue(), peersOfJimmie()))
-      .addEdge(new PeeringEdge(BAR_AGRICOLE.getValue(), peersOfBar()));
+    // Edges
+    // Add all of david's accounts as an edge between David and each account.
+    accountsOfDavid().stream()
+      .forEach(accountSettings -> graph.addEdge(new AccountEdge(DAVID.getValue(), accountSettings)));
+
+    // Add all of adrian's accounts as an edge between Adrian and each account.
+    accountsOfAdrian().stream()
+      .forEach(accountSettings -> graph.addEdge(new AccountEdge(ADRIAN.getValue(), accountSettings)));
+
+    // Add all of Jimmie's accounts as an edge between Jimmie and each account.
+    accountsOfJimmie().stream()
+      .forEach(accountSettings -> graph.addEdge(new AccountEdge(JIMMIE.getValue(), accountSettings)));
+
+    // Add all of the Bar's accounts as an edge between the Bar and each account.
+    accountsOfBar().stream()
+      .forEach(accountSettings -> graph.addEdge(new AccountEdge(BAR_AGRICOLE.getValue(), accountSettings)));
+
+    return graph;
   }
 
   /**
-   * In this Architecture, David peers with Adrian.
+   * In this Architecture, David accounts with Adrian.
    */
-  private static List<Peer> peersOfDavid() {
+  private static List<AccountSettings> accountsOfDavid() {
     // Peer with Adrian
-    final ConnectorSettings.PeerSettings peerSettings = peerSettings(ADRIAN, ADRIAN.with(GUIN), GUIN);
-    return Lists.newArrayList(peerSettings.toPeer());
+    final AccountSettings accountSettings = accountSettings(ADRIAN.with(GUIN), GUIN);
+    return Lists.newArrayList(accountSettings);
   }
-
 
   private static ConnectorSettings defaultConnectorSettings(final InterledgerAddress interledgerAddress) {
-    final ConnectorSettings connectorSettings = new ConnectorSettings();
-    connectorSettings.setIlpAddress(interledgerAddress);
-    connectorSettings.setSecret("secret");
-    return connectorSettings;
+    return ImmutableConnectorSettings.builder()
+      .ilpAddress(interledgerAddress)
+      .secret("secret")
+      .build();
   }
 
   /**
-   * In this Architecture, David peers with Adrian.
+   * In this Architecture, David accounts with Adrian.
    */
-  private static List<Peer> peersOfAdrian() {
-    final ImmutableList.Builder<Peer> peerListBuilder = ImmutableList.builder();
+  private static List<AccountSettings> accountsOfAdrian() {
+    // Peer with David
+    final AccountSettings davidAccountSettings = accountSettings(DAVID.with(GUIN), GUIN);
 
-    {
-      // Peer with David
-      final ConnectorSettings.PeerSettings peerSettings = peerSettings(DAVID, DAVID.with(GUIN), GUIN);
-      peerListBuilder.add(peerSettings.toPeer());
-    }
-
-    {
-      // Peer with Jimmie
-      final ConnectorSettings.PeerSettings peerSettings = peerSettings(JIMMIE, JIMMIE.with(SAB), SAB);
-      peerListBuilder.add(peerSettings.toPeer());
-    }
-
-    return peerListBuilder.build();
-  }
-
-  /**
-   * In this Architecture, David peers with Adrian.
-   */
-  private static List<Peer> peersOfJimmie() {
-    // Peer with the Bar.
-    final ConnectorSettings.PeerSettings peerSettings = peerSettings(BAR_AGRICOLE, BAR_AGRICOLE.with(SAB), SAB);
-    return Lists.newArrayList(peerSettings.toPeer());
-  }
-
-  /**
-   * In this Architecture, David peers with Adrian.
-   */
-  private static List<Peer> peersOfBar() {
     // Peer with Jimmie
-    final ConnectorSettings.PeerSettings peerSettings = peerSettings(JIMMIE, JIMMIE.with(SAB), SAB);
-    return Lists.newArrayList(peerSettings.toPeer());
+    final AccountSettings jimmieAccountSettings = accountSettings(JIMMIE.with(SAB), SAB);
+
+    return Lists.newArrayList(davidAccountSettings, jimmieAccountSettings);
   }
 
-  private static ConnectorSettings.PeerSettings peerSettings(
-    final InterledgerAddress peerIlpAddress, final InterledgerAddress accountIlpAddress, final String accountAssetCode
+  /**
+   * In this Architecture, David accounts with Adrian.
+   */
+  private static List<AccountSettings> accountsOfJimmie() {
+    // Peer with the Bar.
+    final AccountSettings peerSettings = accountSettings(BAR_AGRICOLE.with(SAB), SAB);
+    return Lists.newArrayList(peerSettings);
+  }
+
+  /**
+   * In this Architecture, David accounts with Adrian.
+   */
+  private static List<AccountSettings> accountsOfBar() {
+    // Peer with Jimmie
+    final AccountSettings accountSettings = accountSettings(JIMMIE.with(SAB), SAB);
+    return Lists.newArrayList(accountSettings);
+  }
+
+  private static AccountSettings accountSettings(
+    final InterledgerAddress accountIlpAddress, final String accountAssetCode
   ) {
-    final ConnectorSettings.PeerSettings peerSettings = new ConnectorSettings.PeerSettings();
-    peerSettings.setInterledgerAddress(peerIlpAddress);
-    // account
-    final ConnectorSettings.AccountSettings accountSettings = new ConnectorSettings.AccountSettings();
-    accountSettings.setInterledgerAddress(accountIlpAddress);
-    accountSettings.setAssetCode(accountAssetCode);
-    peerSettings.getAccounts().add(accountSettings);
-    return peerSettings;
+    return ImmutableAccountSettings.builder()
+      .interledgerAddress(accountIlpAddress)
+      .assetCode(accountAssetCode)
+      .build();
   }
 
   /**
    * Configuration overrides for the <tt>test.david</tt> server.
    */
+  @SuppressWarnings("unused")
   private static final class ConnectorSettingsDavid {
 
     @Bean

@@ -1,7 +1,8 @@
 package com.sappenin.ilpv4.server;
 
+import com.sappenin.ilpv4.model.settings.ConnectorSettings;
+import com.sappenin.ilpv4.server.spring.SpringConnectorServerConfig;
 import com.sappenin.ilpv4.server.support.Server;
-import com.sappenin.ilpv4.settings.ConnectorSettings;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 
 import java.util.Optional;
@@ -14,12 +15,12 @@ public class ConnectorServer extends Server {
   private final Optional<ConnectorSettings> connectorSettings;
 
   public ConnectorServer() {
-    super(ConnectorServerConfig.class);
+    super(SpringConnectorServerConfig.class);
     connectorSettings = Optional.empty();
   }
 
   public ConnectorServer(final ConnectorSettings connectorSettings) {
-    super(ConnectorServerConfig.class);
+    super(SpringConnectorServerConfig.class);
     this.connectorSettings = Optional.of(connectorSettings);
   }
 

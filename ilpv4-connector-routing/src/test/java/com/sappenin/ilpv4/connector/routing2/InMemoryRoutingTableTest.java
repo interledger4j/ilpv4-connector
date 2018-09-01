@@ -2,7 +2,7 @@ package com.sappenin.ilpv4.connector.routing2;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.sappenin.ilpv4.InterledgerAddressPrefix;
+import org.interledger.core.InterledgerAddressPrefix;
 import com.sappenin.ilpv4.connector.routing.ImmutableRoutingTableEntry;
 import com.sappenin.ilpv4.connector.routing.InMemoryRoutingTable;
 import com.sappenin.ilpv4.connector.routing.InterledgerAddressPrefixMap;

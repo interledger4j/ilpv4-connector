@@ -1,10 +1,13 @@
 package com.sappenin.ilpv4.connector.routing;
 
-import com.sappenin.ilpv4.InterledgerAddressPrefix;
+import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerAddress;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -17,6 +20,8 @@ import java.util.stream.Collectors;
  */
 public class InMemoryRoutingTable implements RoutingTable<RoutingTableEntry> {
 
+  private final UUID routingTableId;
+  private final AtomicLong currentEpoch;
   private final InterledgerAddressPrefixMap<RoutingTableEntry> interledgerAddressPrefixMap;
 
   public InMemoryRoutingTable() {
@@ -29,7 +34,19 @@ public class InMemoryRoutingTable implements RoutingTable<RoutingTableEntry> {
    * @param interledgerAddressPrefixMap
    */
   public InMemoryRoutingTable(final InterledgerAddressPrefixMap interledgerAddressPrefixMap) {
+    this.routingTableId = UUID.randomUUID();
+    this.currentEpoch = new AtomicLong();
     this.interledgerAddressPrefixMap = Objects.requireNonNull(interledgerAddressPrefixMap);
+  }
+
+  @Override
+  public UUID getRoutingTableId() {
+    return this.routingTableId;
+  }
+
+  @Override
+  public long getCurrentEpoch() {
+    return this.currentEpoch.get();
   }
 
   @Override
@@ -83,5 +100,11 @@ public class InMemoryRoutingTable implements RoutingTable<RoutingTableEntry> {
           .matches()
       )
       .collect(Collectors.toList());
+  }
+
+
+  @Override
+  public ArrayList<RouteUpdate> getRouteUpdateLog() {
+    throw new RuntimeException("Not yet implemented!");
   }
 }

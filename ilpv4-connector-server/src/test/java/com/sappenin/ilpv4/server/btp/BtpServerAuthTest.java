@@ -1,6 +1,6 @@
 package com.sappenin.ilpv4.server.btp;
 
-import com.sappenin.ilpv4.server.ConnectorServerConfig;
+import com.sappenin.ilpv4.server.spring.SpringConnectorServerConfig;
 import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpErrorConverter;
 import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpResponseConverter;
 import com.sappenin.ilpv4.server.btp.converters.BtpPacketToBinaryMessageConverter;
@@ -37,7 +37,7 @@ import static org.hamcrest.core.Is.is;
 /**
  * Unit tests that excercise the functionality of the BTP Server using Websockets.
  */
-@ContextConfiguration(classes = {ConnectorServerConfig.class, BtpServerAuthTest.TestConfig.class})
+@ContextConfiguration(classes = {SpringConnectorServerConfig.class, BtpServerAuthTest.TestConfig.class})
 //@TestPropertySource(properties = {"foo.bar=0"})
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

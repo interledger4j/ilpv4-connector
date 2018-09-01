@@ -1,10 +1,10 @@
 # See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
 logging:
-    level:
-      ROOT: INFO
-      com.sappenin: INFO
-      org.springframework: INFO
-      org.springframework.web.socket: DEBUG
+  level:
+    ROOT: INFO
+    com.sappenin: INFO
+    org.springframework: INFO
+    org.springframework.web.socket: DEBUG
 server:
   port: 8080
 spring:
@@ -37,60 +37,30 @@ spring:
 
 ilpv4:
   connector:
-    secret: secret
+    secret: shhhhhh
     # ILP address of the connector. This property can be omitted if an account with relation=parent
     # is configured under accounts.
     ilp_address: test.example
 
-    peers:
-      - interledger_address: test.parent
-        # Relationship between the connector and the counterparty that the account is with. Options are PARENT, PEER,
-        # and CHILD.
-        peerType: parent
-        accounts:
-          # MicroPayments only...
-          # TODO: rateLimit, throughput, routes, options.
-          - interledger_address: test.parent.micro.usd
-            description: USD Account
-            # Optional. Defines whether the connector should maintain and enforce a balance for this
-            # account. The balance is always from the connector's perspective. Therefore, a negative
-            # balance implies the connector owes money to the counterparty and a positive balance
-            # implies the counterparty owes money to the connector.
-            balance: 0
-            # Currency code or other asset identifier that will be used to select the correct rate
-            # for this account.
-            assetCode: USD
-            # Name of the ILP plugin that should be used for this account.
-            pluginType: "MOCK"
-            # Interledger amounts are integers, but most currencies are typically represented as
-            # fractional units, e.g. cents. This property defines how many Interledger units make
-            # up one regular unit. For dollars, this would usually be set to 9, so that Interledger
-            # amounts are expressed in nanodollars.
-            assetScale: 9
-            # Optional. Minimum balance (in this account's indivisible base units) the connector
-            # must maintain. The connector will reject outgoing packets if they would put it below
-            # this balance. The format is a string containing an integer (which may be prefixed with
-            # - to indicate a negative value).
-            minBalance: 0
-            # Maximum balance (in this account's indivisible base units) the connector will allow.
-            # The connector will reject incoming packets if they would put it above this balance.
-            # The format is a string containing an integer (which may be prefixed with - to indicate
-            # a negative value).
-            maxBalance: 0
-            # Optional. Maximum amount per packet for incoming prepare packets. IlpConnector will reject
-            # any incoming prepare packets from this account with a higher amount. Amount should be
-            # provided as an integer in a string (in atomic units).
-            maximumPacketAmount: 100000
-            # Optional Balance (in this account's indivisible base units) numerically below which
-            # the connector will automatically initiate a settlement. The format is a string
-            # containing an integer (which may be prefixed with - to indicate a negative value).
-            settleThreshold: 10000000
-          - interledger_address: test.parent.unlimited.usd
-            description: USD Account
-            balance: 0
-            assetCode: USD
-            pluginType: "MOCK"
-            assetScale: 9
+    #########
+    # Peers
+    #########
+    accounts:
+    # MicroPayments only...
+    # TODO: rateLimit, throughput, routes, options.
+    #See https://github.com/interledgerjs/ilp-connector/blob/f938cbe1f156e3330a611daf0f8874b8b9fb35e4/src/schemas/Config.json
+    - interledger_address: test.parent.micro.usd
+      description: Parent micro-payments Account (USD)
+      relationship: PARENT
+      # Name of the ILP plugin that should be used for this account.
+      pluginType: "MOCK"
+
+    - interledger_address: test.parent.unlimited.usd
+      description: Unlimited Parent Account (USD)
+      relationship: PARENT
+      assetCode: USD
+      pluginType: "MOCK"
+      assetScale: 9
 
 ###
 #   H2 Settings

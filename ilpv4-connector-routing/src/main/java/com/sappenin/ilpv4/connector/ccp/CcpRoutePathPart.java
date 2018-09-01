@@ -4,7 +4,7 @@ import org.immutables.value.Value;
 import org.interledger.core.InterledgerAddress;
 
 /**
- * <p>An individual component of an overall path in a {@link CcpRoute}. For example, if a path traverses 3 nodes, then
+ * <p>An individual component of an overall path in a {@link CcpNewRoute}. For example, if a path traverses 3 nodes, then
  * each node in that path would be considered a {@link CcpRoutePathPart}.</p>
  *
  * <p>This value is interned because the values of this type contain only interned values. Additionally, the number of

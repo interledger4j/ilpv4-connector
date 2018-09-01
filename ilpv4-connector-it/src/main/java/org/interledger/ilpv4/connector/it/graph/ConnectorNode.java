@@ -8,7 +8,7 @@ import com.sappenin.ilpv4.server.support.Server;
  */
 public class ConnectorNode extends ServerNode implements Node {
 
-  //private static final Logger logger = LoggerFactory.getLogger(PeeringEdge.class);
+  //private static final Logger logger = LoggerFactory.getLogger(AccountEdge.class);
 
   /**
    * Required-args Constructor.

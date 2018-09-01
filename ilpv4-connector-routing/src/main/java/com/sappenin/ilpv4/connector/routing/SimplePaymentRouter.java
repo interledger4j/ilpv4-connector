@@ -1,8 +1,14 @@
 package com.sappenin.ilpv4.connector.routing;
 
-import com.sappenin.ilpv4.InterledgerAddressPrefix;
+import com.google.common.collect.Maps;
+import org.interledger.core.InterledgerAddressPrefix;
+import com.sappenin.ilpv4.connector.ccp.CcpRouteControlRequest;
+import com.sappenin.ilpv4.connector.ccp.CcpSyncMode;
 import org.interledger.core.InterledgerAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -11,10 +17,13 @@ import java.util.Optional;
  * the routing table.
  */
 public class SimplePaymentRouter implements PaymentRouter<RoutingTableEntry> {
-
   private final RoutingTable<RoutingTableEntry> routingTable;
 
+  // Begins life in IDLE mode...
+  private final Map<InterledgerAddress, CcpSyncMode> syncModes;
+
   public SimplePaymentRouter(final RoutingTable<RoutingTableEntry> routingTable) {
+    this.syncModes = Maps.newConcurrentMap();
     this.routingTable = Objects.requireNonNull(routingTable);
   }
 
@@ -54,4 +63,6 @@ public class SimplePaymentRouter implements PaymentRouter<RoutingTableEntry> {
                                                     InterledgerAddressPrefix sourceLedgerPrefix) {
     return this.routingTable.findNextHopRoutes(finalDestinationAddress, sourceLedgerPrefix).stream().findFirst();
   }
+
+
 }

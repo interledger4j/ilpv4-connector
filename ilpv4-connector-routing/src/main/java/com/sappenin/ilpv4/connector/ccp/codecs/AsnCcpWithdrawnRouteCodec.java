@@ -3,7 +3,7 @@ package com.sappenin.ilpv4.connector.ccp.codecs;
 import com.sappenin.ilpv4.connector.ccp.CcpRouteUpdateRequest;
 import com.sappenin.ilpv4.connector.ccp.CcpWithdrawnRoute;
 import com.sappenin.ilpv4.connector.ccp.ImmutableCcpWithdrawnRoute;
-import org.interledger.core.asn.codecs.AsnInterledgerAddressCodec;
+import org.interledger.core.asn.codecs.AsnInterledgerAddressPrefixCodec;
 import org.interledger.encoding.asn.codecs.AsnSequenceCodec;
 
 import java.util.Objects;
@@ -18,7 +18,7 @@ public class AsnCcpWithdrawnRouteCodec extends AsnSequenceCodec<CcpWithdrawnRout
    */
   public AsnCcpWithdrawnRouteCodec() {
     super(
-      new AsnInterledgerAddressCodec() // withdrawn route's prefix
+      new AsnInterledgerAddressPrefixCodec() // withdrawn route's prefix
     );
   }
 

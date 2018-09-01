@@ -14,34 +14,59 @@ import java.util.UUID;
 public interface CcpRouteUpdateRequest {
 
   /**
-   * The unique identifier of an entry in the routing table.
+   * The routing table ID that the requesting node knows about when this request is issued.
    *
-   * @return A {@link UUID} representing a route.
+   * @return A {@link UUID}.
    */
   UUID routingTableId();
 
+  /**
+   * The current epoch index that the requesting node has for the specified routing table identifier.
+   *
+   * @return A <tt>long</tt>.
+   */
   long currentEpochIndex();
 
+  /**
+   * The epoch index that the log of this update request starts from.
+   *
+   * @return A <tt>long</tt>.
+   */
   long fromEpochIndex();
 
+  /**
+   * The epoch index that the log of this update request ends at.
+   *
+   * @return A <tt>long</tt>.
+   */
   long toEpochIndex();
 
+  /**
+   * Reserved for the future, currently not used.
+   *
+   * @return
+   */
   long holdDownTime();
 
+  /**
+   * The {@link InterledgerAddress} of the Node making this Route Update request.
+   *
+   * @return An {@link InterledgerAddress}.
+   */
   InterledgerAddress speaker();
 
   /**
-   * New Routes that the speaker is advertising to a node.
+   * New Routes that the speaker is advertising to the counterpart node.
    *
-   * @return A {@link Collection} of routes of type {@link CcpRoute}.
+   * @return A {@link Collection} of routes of type {@link CcpNewRoute}.
    */
   @Value.Default
-  default Collection<CcpRoute> newRoutes() {
+  default Collection<CcpNewRoute> newRoutes() {
     return Collections.emptyList();
   }
 
   /**
-   * Withdawn Routes that the speaker is advertising as being no longer valid or useful.
+   * Withdrawn Routes that the speaker is advertising as being no longer valid or useful.
    *
    * @return A {@link Collection} of route-identifiers of type {@link InterledgerAddress}.
    */

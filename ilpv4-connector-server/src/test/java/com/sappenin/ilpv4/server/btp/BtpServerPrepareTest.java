@@ -1,7 +1,7 @@
 package com.sappenin.ilpv4.server.btp;
 
 import com.google.common.io.BaseEncoding;
-import com.sappenin.ilpv4.server.ConnectorServerConfig;
+import com.sappenin.ilpv4.server.spring.SpringConnectorServerConfig;
 import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpErrorConverter;
 import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpResponseConverter;
 import com.sappenin.ilpv4.server.btp.converters.BtpPacketToBinaryMessageConverter;
@@ -36,7 +36,7 @@ import static org.hamcrest.core.Is.is;
 /**
  * Unit tests that exercise the ILP Prepare functionality of the BTP Server using Websockets.
  */
-@ContextConfiguration(classes = {ConnectorServerConfig.class, BtpServerPrepareTest.TestConfig.class})
+@ContextConfiguration(classes = {SpringConnectorServerConfig.class, BtpServerPrepareTest.TestConfig.class})
 //@TestPropertySource(properties = {"foo.bar=0"})
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

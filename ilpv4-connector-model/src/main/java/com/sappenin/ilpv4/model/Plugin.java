@@ -26,15 +26,29 @@ import java.util.concurrent.Future;
 public interface Plugin {
 
   /**
-   * Returns the remote ILP Node address that this plugin is connected to. While a single node might operate upon
-   * multiple account addresses, a given plugin connection will always be initiated to only a single peer at a time (for
-   * a Connector to connect to multiple peers, the Connector must instantiate multiple plugins).
+   * <p>The Interledger address of the remote account.</p>
    *
-   * @return An instance of {@link InterledgerAddress}.
+   * <p>While a single node might operate upon multiple account addresses, a given plugin connection will always be
+   * initiated to only a single peer at a time (for a Connector to connect to multiple peers, the Connector must
+   * instantiate multiple plugins).</p>
    */
-  InterledgerAddress getPeerAddress();
+  InterledgerAddress getAccountAddress();
+
+  /**
+   * Accessor for the type of this plugin.
+   *
+   * @return An instance of {@link PluginType}.
+   */
+  PluginType getPluginType();
 
   void doConnect();
+
+  /**
+   * Determines if a plugin is connected or not.
+   *
+   * @return {@code true} if the plugin is connected; {@code false} otherwise.
+   */
+  boolean isConnected();
 
   void doDisconnect();
 
@@ -75,11 +89,4 @@ public interface Plugin {
    * @param amount The amount of "money" to transfer.
    */
   void onIncomingSettle(BigInteger amount);
-
-  /**
-   * Accessor for the type of this plugin.
-   *
-   * @return An instance of {@link PluginType}.
-   */
-  PluginType getPluginType();
 }

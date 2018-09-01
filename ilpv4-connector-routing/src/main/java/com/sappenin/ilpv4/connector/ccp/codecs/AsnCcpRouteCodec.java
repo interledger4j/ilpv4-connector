@@ -1,26 +1,29 @@
 package com.sappenin.ilpv4.connector.ccp.codecs;
 
 import com.google.common.collect.Lists;
-import com.sappenin.ilpv4.connector.ccp.CcpRoute;
+import com.sappenin.ilpv4.connector.ccp.CcpNewRoute;
 import com.sappenin.ilpv4.connector.ccp.CcpRouteUpdateRequest;
-import com.sappenin.ilpv4.connector.ccp.ImmutableCcpRoute;
-import org.interledger.core.asn.codecs.AsnInterledgerAddressCodec;
-import org.interledger.encoding.asn.codecs.*;
+import com.sappenin.ilpv4.connector.ccp.ImmutableCcpNewRoute;
+import org.interledger.core.asn.codecs.AsnInterledgerAddressPrefixCodec;
+import org.interledger.encoding.asn.codecs.AsnOctetStringCodec;
+import org.interledger.encoding.asn.codecs.AsnSequenceCodec;
+import org.interledger.encoding.asn.codecs.AsnSequenceOfSequenceCodec;
+import org.interledger.encoding.asn.codecs.AsnSizeConstraint;
 
 import java.util.ArrayList;
 import java.util.Objects;
 
 /**
- * A Codec instances of {@link CcpRoute} to and from ASN.1 OER.
+ * A Codec instances of {@link CcpNewRoute} to and from ASN.1 OER.
  */
-public class AsnCcpRouteCodec extends AsnSequenceCodec<CcpRoute> {
+public class AsnCcpRouteCodec extends AsnSequenceCodec<CcpNewRoute> {
 
   /**
    * Default constructor.
    */
   public AsnCcpRouteCodec() {
     super(
-      new AsnInterledgerAddressCodec(), // route.prefix
+      new AsnInterledgerAddressPrefixCodec(), // route.prefix
       new AsnSequenceOfSequenceCodec(Lists::newArrayList, AsnCcpRoutePathPartCodec::new), // List of CcpRoutePaths
       new AsnOctetStringCodec(new AsnSizeConstraint(32, 32)), // auth must always be 32 bytes.
       new AsnSequenceOfSequenceCodec(ArrayList::new, AsnCcpRoutePropertyCodec::new) // Route Props
@@ -33,8 +36,8 @@ public class AsnCcpRouteCodec extends AsnSequenceCodec<CcpRoute> {
    * @return the decoded object
    */
   @Override
-  public CcpRoute decode() {
-    return ImmutableCcpRoute.builder()
+  public CcpNewRoute decode() {
+    return ImmutableCcpNewRoute.builder()
       .prefix(getValueAt(0))
       .path(getValueAt(1))
       .auth(getValueAt(2))
@@ -48,7 +51,7 @@ public class AsnCcpRouteCodec extends AsnSequenceCodec<CcpRoute> {
    * @param value the {@link CcpRouteUpdateRequest} to encode.
    */
   @Override
-  public void encode(final CcpRoute value) {
+  public void encode(final CcpNewRoute value) {
     Objects.requireNonNull(value);
 
     setValueAt(0, value.prefix()); // route.prefix

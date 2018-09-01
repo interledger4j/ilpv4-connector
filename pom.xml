@@ -26,7 +26,8 @@
   <modules>
     <module>ilpv4-connector-model</module>
     <module>ilpv4-connector-routing</module>
-    <module>ilpv4-connector-service</module>
+    <module>ilpv4-connector-service-api</module>
+    <module>ilpv4-connector-service-impl</module>
     <module>ilpv4-connector-server</module>
     <module>ilpv4-connector-it</module>
   </modules>
@@ -45,7 +46,12 @@
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-service</artifactId>
+        <artifactId>ilpv4-connector-service-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-service-impl</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -62,6 +68,16 @@
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>21.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp</artifactId>
+        <version>3.11.0</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.inject</groupId>
+        <artifactId>javax.inject</artifactId>
+        <version>1</version>
       </dependency>
       <dependency>
         <groupId>javax.money</groupId>
@@ -120,16 +136,6 @@
         <artifactId>mockito-core</artifactId>
         <version>2.19.0</version>
         <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>com.squareup.okhttp3</groupId>
-        <artifactId>okhttp</artifactId>
-        <version>3.11.0</version>
-      </dependency>
-      <dependency>
-        <groupId>javax.inject</groupId>
-        <artifactId>javax.inject</artifactId>
-        <version>1</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

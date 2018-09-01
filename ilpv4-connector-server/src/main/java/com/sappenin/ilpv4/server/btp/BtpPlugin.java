@@ -1,9 +1,9 @@
 package com.sappenin.ilpv4.server.btp;
 
-import org.interledger.core.InterledgerAddress;
 import com.sappenin.ilpv4.model.Plugin;
 import com.sappenin.ilpv4.model.PluginType;
 import org.immutables.value.Value;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
@@ -31,9 +31,11 @@ import java.util.concurrent.CompletableFuture;
  */
 public class BtpPlugin implements Plugin {
 
+  // TODO: Unify this with AbstractBtpPlugin!
+
   // While a plugin can handle multiple account addresses (one per session), it should only connect to a single node
   // address.
-  private final InterledgerAddress peerAddress;
+  private final InterledgerAddress accountAddress;
   private final CodecContext codecContext;
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -42,11 +44,11 @@ public class BtpPlugin implements Plugin {
    * Required-args Constructor.
    */
   public BtpPlugin(
-    final InterledgerAddress peerAddress, final CodecContext codecContext
+    final InterledgerAddress accountAddress, final CodecContext codecContext
     //, final BtpSubProtocolHandlerRegistry registry
   ) {
     this.codecContext = Objects.requireNonNull(codecContext);
-    this.peerAddress = Objects.requireNonNull(peerAddress);
+    this.accountAddress = Objects.requireNonNull(accountAddress);
 
     //this.registry = Objects.requireNonNull(registry);
     // Add an ILP Sub-protocol handler here...
@@ -54,8 +56,8 @@ public class BtpPlugin implements Plugin {
   }
 
   @Override
-  public InterledgerAddress getPeerAddress() {
-    return this.peerAddress;
+  public InterledgerAddress getAccountAddress() {
+    return this.accountAddress;
   }
 
   @Override
@@ -69,6 +71,16 @@ public class BtpPlugin implements Plugin {
 
     // TODO: We want the server-variant to only require serve settings, and the client-variant to only require client
     // settings. Each of these will be configured at runtime, so perhaps we have two types of BTP connector.
+  }
+
+  /**
+   * Determines if a plugin is connected or not.
+   *
+   * @return {@code true} if the plugin is connected; {@code false} otherwise.
+   */
+  @Override
+  public boolean isConnected() {
+    throw new RuntimeException("Not yet implemented!");
   }
 
   @Override
@@ -117,7 +129,7 @@ public class BtpPlugin implements Plugin {
     Objects.requireNonNull(preparePacket);
 
     if (logger.isDebugEnabled()) {
-      logger.debug("Handling InterledgerPreparePacket from {}", this.getPeerAddress());
+      logger.debug("Handling InterledgerPreparePacket from {}", this.getAccountAddress());
     }
 
     //    final Account sourceAccount = this.accountManager.getAccount(session.getAccountId())
@@ -171,8 +183,8 @@ public class BtpPlugin implements Plugin {
   //
   //  private BtpMessage toBtpMessage(final BinaryMessage binaryMessage) throws IOException {
   //    final ByteBuffer buffer = Objects.requireNonNull(binaryMessage).getPayload();
-  //    final ByteArrayInputStream stream = new ByteArrayInputStream(buffer.array(), buffer.position(), buffer.limit());
-  //    return codecContext.read(BtpMessage.class, stream);
+  //    final ByteArrayInputStream getAllAccountSettings = new ByteArrayInputStream(buffer.array(), buffer.position(), buffer.limit());
+  //    return codecContext.read(BtpMessage.class, getAllAccountSettings);
   //  }
   //
   //

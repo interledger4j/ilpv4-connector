@@ -16,6 +16,10 @@
 
   <dependencies>
     <dependency>
+      <groupId>javax.inject</groupId>
+      <artifactId>javax.inject</artifactId>
+    </dependency>
+    <dependency>
       <groupId>javax.money</groupId>
       <artifactId>money-api</artifactId>
     </dependency>

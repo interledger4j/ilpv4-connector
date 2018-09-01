@@ -52,7 +52,7 @@ public class IlpSubprotocolHandler extends BtpSubProtocolHandler {
 
     // TODO: Move this logic out of the BTP-specific code, and into the connector.
 
-    // Per RFC-23, ILP packets are attached under the protocol name "ilp" with content-type "application/octet-stream"
+    // Per RFC-23, ILP packets are attached under the protocol name "ilp" with content-type "application/octet-getAllAccountSettings"
     try {
       // Convert to an ILP Prepare packet.
       final InterledgerPreparePacket incomingPreparePacket =

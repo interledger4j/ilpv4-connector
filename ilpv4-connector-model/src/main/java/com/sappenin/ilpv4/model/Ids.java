@@ -1,8 +1,10 @@
 package com.sappenin.ilpv4.model;
 
+// TODO: Remove if unused....
+@Deprecated
 public interface Ids {
 
-//  /**
+  //  /**
   //   * Identifier for {@link Account}.
   //   */
   //  @Value.Immutable
