@@ -2,10 +2,7 @@ package com.sappenin.ilpv4.connector.ccp.codecs;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.BaseEncoding;
-import com.sappenin.ilpv4.connector.ccp.CcpRouteControlRequest;
-import com.sappenin.ilpv4.connector.ccp.CcpSyncMode;
-import com.sappenin.ilpv4.connector.ccp.ImmutableCcpFeature;
-import com.sappenin.ilpv4.connector.ccp.ImmutableCcpRouteControlRequest;
+import com.sappenin.ilpv4.connector.ccp.*;
 import com.sappenin.ilpv4.model.RoutingTableId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
@@ -33,9 +30,6 @@ public class IlpCcpNewRouteControlRequestCodecTest extends AbstractAsnCodecTest<
 
   private static final String EXECUTION_CONDITION_HEX =
     "66687AADF862BD776C8FC18B8E9F8E20089714856EE233B3902A591D0D5F2925";
-
-  private static final InterledgerAddress PEER_ROUTE_CONTROL_DESTINATION =
-    InterledgerAddress.of("peer.getRoute.control");
 
   // Matches the JS tests in ILP JS which says, June 16, 2015 00:00:00 GMT
   // However, the value used in that test is off by 1 minute.
@@ -65,7 +59,7 @@ public class IlpCcpNewRouteControlRequestCodecTest extends AbstractAsnCodecTest<
       // 0 - JS Compatibility (1)
       {
         InterledgerPreparePacket.builder()
-          .destination(PEER_ROUTE_CONTROL_DESTINATION)
+          .destination(CcpConstants.CCP_CONTROL_DESTINATION_ADDRESS)
           .amount(BigInteger.ZERO)
           .executionCondition(
             InterledgerCondition.of(BaseEncoding.base16().decode(EXECUTION_CONDITION_HEX))

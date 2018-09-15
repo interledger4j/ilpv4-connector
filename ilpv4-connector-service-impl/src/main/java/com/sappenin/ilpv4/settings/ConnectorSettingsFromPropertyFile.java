@@ -12,6 +12,7 @@ import java.math.BigInteger;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Pojo class for automatic mapping of configuration properties via Spring's {@link ConfigurationProperties}
@@ -47,7 +48,17 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     this.routingSettings = routingSettings;
   }
 
-  @Override
+  /**
+   * Contains settings for all accounts configured for this Connector.
+   *
+   * @return An Collection of type {@link AccountSettings}.
+   */
+  public List<AccountSettings> getAccountSettings() {
+    return this.accounts.stream()
+      .map(accountSettingsFromPropertyFile -> (AccountSettings) accountSettingsFromPropertyFile).collect(
+        Collectors.toList());
+  }
+
   public List<AccountSettingsFromPropertyFile> getAccounts() {
     return accounts;
   }

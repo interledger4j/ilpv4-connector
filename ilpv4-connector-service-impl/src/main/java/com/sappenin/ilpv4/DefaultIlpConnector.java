@@ -52,7 +52,7 @@ public class DefaultIlpConnector implements IlpConnector {
 
   @PostConstruct
   private final void init() {
-    connectorSettings.getAccounts().stream()
+    connectorSettings.getAccountSettings().stream()
       .forEach(accountManager::add);
   }
 

@@ -46,7 +46,7 @@ public interface ConnectorSettings {
    */
   @Value.Default
   default RouteBroadcastSettings getRouteBroadcastSettings(final InterledgerAddress peerAccountAddress) {
-    return this.getAccounts().stream()
+    return this.getAccountSettings().stream()
       .filter(accountSettings -> accountSettings.getInterledgerAddress().equals(peerAccountAddress))
       .findFirst()
       .map(AccountSettings::getRouteBroadcastSettings)
@@ -58,7 +58,7 @@ public interface ConnectorSettings {
    *
    * @return An Collection of type {@link AccountSettings}.
    */
-  List<? extends AccountSettings> getAccounts();
+  List<AccountSettings> getAccountSettings();
 
   /**
    * The global address prefix for this operating envionment.
