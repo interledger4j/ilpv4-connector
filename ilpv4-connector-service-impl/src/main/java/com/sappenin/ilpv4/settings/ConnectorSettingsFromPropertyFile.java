@@ -2,14 +2,14 @@ package com.sappenin.ilpv4.settings;
 
 import com.google.common.collect.Lists;
 import com.sappenin.ilpv4.model.IlpRelationship;
-import com.sappenin.ilpv4.model.PluginType;
 import com.sappenin.ilpv4.model.settings.*;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.plugin.lpiv2.PluginType;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.math.BigInteger;
 import java.time.Duration;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,7 +23,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   private InterledgerAddress ilpAddress;
 
-  private String secret;
+  private RoutingSettings routingSettings;
 
   private RouteBroadcastSettingsFromPropertyFile routeBroadcastSettings;
 
@@ -39,22 +39,20 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   }
 
   @Override
-  public String getSecret() {
-    return secret;
+  public RoutingSettings getRoutingSettings() {
+    return routingSettings;
   }
 
-  public void setSecret(String secret) {
-    this.secret = secret;
+  public void setRoutingSettings(RoutingSettings routingSettings) {
+    this.routingSettings = routingSettings;
   }
 
-  /**
-   * Necessary for Spring to work...
-   */
+  @Override
   public List<AccountSettingsFromPropertyFile> getAccounts() {
     return accounts;
   }
 
-  public void setPeers(List<AccountSettingsFromPropertyFile> accounts) {
+  public void setAccounts(List<AccountSettingsFromPropertyFile> accounts) {
     this.accounts = accounts;
   }
 
@@ -65,16 +63,6 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   public void setRouteBroadcastSettings(RouteBroadcastSettingsFromPropertyFile routeBroadcastSettings) {
     this.routeBroadcastSettings = routeBroadcastSettings;
-  }
-
-  /**
-   * Contains settins for all accounts and associated plugins.
-   *
-   * @return An instance of {@link AccountSettings}.
-   */
-  @Override
-  public Collection<? extends AccountSettings> getAccountSettings() {
-    return this.getAccounts();
   }
 
   /**
@@ -139,6 +127,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     private int assetScale = 2;
 
     private AccountBalanceSettingsFromPropertyFile balanceSettings;
+    private RouteBroadcastSettings routeBroadcastSettings;
 
     private Optional<BigInteger> maximumPacketAmount = Optional.empty();
 
@@ -166,6 +155,15 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
     public void setBalanceSettings(AccountBalanceSettingsFromPropertyFile balanceSettings) {
       this.balanceSettings = balanceSettings;
+    }
+
+    @Override
+    public RouteBroadcastSettings getRouteBroadcastSettings() {
+      return routeBroadcastSettings;
+    }
+
+    public void setRouteBroadcastSettings(RouteBroadcastSettings routeBroadcastSettings) {
+      this.routeBroadcastSettings = routeBroadcastSettings;
     }
 
     @Override
@@ -210,7 +208,9 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
    */
   public static class RouteBroadcastSettingsFromPropertyFile implements RouteBroadcastSettings {
 
-    private boolean routeBroadcastEnabled;
+    private boolean sendRoutes;
+
+    private boolean receiveRoutes;
 
     private Duration routeBroadcastInterval;
 
@@ -220,18 +220,27 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
     private String routingSecret;
 
-    private Duration minRouteUpdateInterval;
-
     private int maxEpochsPerRoutingTable;
 
-    public boolean isRouteBroadcastEnabled() {
-      return routeBroadcastEnabled;
+    @Override
+    public boolean isSendRoutes() {
+      return sendRoutes;
     }
 
-    public void setRouteBroadcastEnabled(boolean routeBroadcastEnabled) {
-      this.routeBroadcastEnabled = routeBroadcastEnabled;
+    public void setSendRoutes(boolean sendRoutes) {
+      this.sendRoutes = sendRoutes;
     }
 
+    @Override
+    public boolean isReceiveRoutes() {
+      return receiveRoutes;
+    }
+
+    public void setReceiveRoutes(boolean receiveRoutes) {
+      this.receiveRoutes = receiveRoutes;
+    }
+
+    @Override
     public Duration getRouteBroadcastInterval() {
       return routeBroadcastInterval;
     }
@@ -240,6 +249,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
       this.routeBroadcastInterval = routeBroadcastInterval;
     }
 
+    @Override
     public Duration getRouteCleanupInterval() {
       return routeCleanupInterval;
     }
@@ -248,6 +258,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
       this.routeCleanupInterval = routeCleanupInterval;
     }
 
+    @Override
     public Duration getRouteExpiry() {
       return routeExpiry;
     }
@@ -256,22 +267,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
       this.routeExpiry = routeExpiry;
     }
 
-    public String getRoutingSecret() {
-      return routingSecret;
-    }
-
-    public void setRoutingSecret(String routingSecret) {
-      this.routingSecret = routingSecret;
-    }
-
-    public Duration getMinRouteUpdateInterval() {
-      return minRouteUpdateInterval;
-    }
-
-    public void setMinRouteUpdateInterval(Duration minRouteUpdateInterval) {
-      this.minRouteUpdateInterval = minRouteUpdateInterval;
-    }
-
+    @Override
     public int getMaxEpochsPerRoutingTable() {
       return maxEpochsPerRoutingTable;
     }
@@ -282,6 +278,79 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
     public RouteBroadcastSettings toRouteBroadcastSettings() {
       return ModifiableRouteBroadcastSettings.create().from(this);
+    }
+  }
+
+  public static class RoutingSettingsFromPropertyFile implements RoutingSettings {
+
+    private String routingSecret;
+    private boolean useParentForDefaultRoute;
+    private Optional<InterledgerAddressPrefix> defaultRoute;
+    private int maxEpochsPerRoutingTable;
+    private List<StaticRoute> staticRoutes;
+
+    @Override
+    public String getRoutingSecret() {
+      return routingSecret;
+    }
+
+    public void setRoutingSecret(String routingSecret) {
+      this.routingSecret = routingSecret;
+    }
+
+    @Override
+    public boolean useParentForDefaultRoute() {
+      return useParentForDefaultRoute;
+    }
+
+    public void setUseParentForDefaultRoute(boolean useParentForDefaultRoute) {
+      this.useParentForDefaultRoute = useParentForDefaultRoute;
+    }
+
+    @Override
+    public Optional<InterledgerAddressPrefix> getDefaultRoute() {
+      return defaultRoute;
+    }
+
+    public void setDefaultRoute(Optional<InterledgerAddressPrefix> defaultRoute) {
+      this.defaultRoute = defaultRoute;
+    }
+
+    @Override
+    public List<StaticRoute> getStaticRoutes() {
+      return staticRoutes;
+    }
+
+    public void setStaticRoutes(List<StaticRoute> staticRoutes) {
+      this.staticRoutes = staticRoutes;
+    }
+  }
+
+
+  /**
+   * Models the YAML format for spring-boot automatic configuration property loading.
+   */
+  public static class StaticRouteFromPropertyFile implements StaticRoute {
+
+    private InterledgerAddressPrefix targetPrefix;
+    private InterledgerAddress peerAddress;
+
+    @Override
+    public InterledgerAddressPrefix getTargetPrefix() {
+      return targetPrefix;
+    }
+
+    public void setTargetPrefix(InterledgerAddressPrefix targetPrefix) {
+      this.targetPrefix = targetPrefix;
+    }
+
+    @Override
+    public InterledgerAddress getPeerAddress() {
+      return peerAddress;
+    }
+
+    public void setPeerAddress(InterledgerAddress peerAddress) {
+      this.peerAddress = peerAddress;
     }
   }
 }

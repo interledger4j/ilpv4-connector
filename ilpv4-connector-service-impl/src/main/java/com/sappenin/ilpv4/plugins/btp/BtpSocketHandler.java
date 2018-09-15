@@ -1,7 +1,7 @@
-package com.sappenin.ilpv4.server.btp;
+package com.sappenin.ilpv4.plugins.btp;
 
-import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpMessageConverter;
-import com.sappenin.ilpv4.server.btp.converters.BtpPacketToBinaryMessageConverter;
+import com.sappenin.ilpv4.plugins.btp.converters.BinaryMessageToBtpMessageConverter;
+import com.sappenin.ilpv4.plugins.btp.converters.BtpPacketToBinaryMessageConverter;
 import org.immutables.value.Value;
 import org.interledger.btp.*;
 import org.interledger.core.InterledgerAddress;
@@ -18,8 +18,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-import static com.sappenin.ilpv4.server.btp.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH_TOKEN;
-import static com.sappenin.ilpv4.server.btp.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH_USERNAME;
+import static com.sappenin.ilpv4.plugins.btp.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH_TOKEN;
+import static com.sappenin.ilpv4.plugins.btp.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH_USERNAME;
 import static org.interledger.btp.BtpErrorCode.F00_NotAcceptedError;
 
 /**

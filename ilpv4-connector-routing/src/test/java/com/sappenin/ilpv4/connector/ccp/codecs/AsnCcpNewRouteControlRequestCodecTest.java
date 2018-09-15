@@ -2,10 +2,11 @@ package com.sappenin.ilpv4.connector.ccp.codecs;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.BaseEncoding;
-import com.sappenin.ilpv4.connector.ccp.CcpSyncMode;
 import com.sappenin.ilpv4.connector.ccp.CcpRouteControlRequest;
-import com.sappenin.ilpv4.connector.ccp.ImmutableCcpRouteControlRequest;
+import com.sappenin.ilpv4.connector.ccp.CcpSyncMode;
 import com.sappenin.ilpv4.connector.ccp.ImmutableCcpFeature;
+import com.sappenin.ilpv4.connector.ccp.ImmutableCcpRouteControlRequest;
+import com.sappenin.ilpv4.model.RoutingTableId;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -44,7 +45,7 @@ public class AsnCcpNewRouteControlRequestCodecTest extends AbstractAsnCodecTest<
       // 0 - JS Compatibility (1)
       {ImmutableCcpRouteControlRequest.builder()
         .mode(CcpSyncMode.MODE_SYNC)
-        .lastKnownRoutingTableId(UUID.fromString("70d1a134-a0df-4f47-964f-6e19e2ab3790"))
+        .lastKnownRoutingTableId(RoutingTableId.of(UUID.fromString("70d1a134-a0df-4f47-964f-6e19e2ab3790")))
         .lastKnownEpoch(32)
         .features(Lists.newArrayList(
           ImmutableCcpFeature.builder().value("foo").build(),
@@ -56,7 +57,7 @@ public class AsnCcpNewRouteControlRequestCodecTest extends AbstractAsnCodecTest<
       // No Features...
       {ImmutableCcpRouteControlRequest.builder()
         .mode(CcpSyncMode.MODE_SYNC)
-        .lastKnownRoutingTableId(UUID.fromString("a1e2f8ba-d5cf-479e-a975-6f2cd0caf4a2"))
+        .lastKnownRoutingTableId(RoutingTableId.of(UUID.fromString("a1e2f8ba-d5cf-479e-a975-6f2cd0caf4a2")))
         .lastKnownEpoch(32)
         .build(),
         BaseEncoding.base16().decode("01A1E2F8BAD5CF479EA9756F2CD0CAF4A2000000200100")},
@@ -64,7 +65,7 @@ public class AsnCcpNewRouteControlRequestCodecTest extends AbstractAsnCodecTest<
       // Other Mode + 0 Epoch
       {ImmutableCcpRouteControlRequest.builder()
         .mode(CcpSyncMode.MODE_IDLE)
-        .lastKnownRoutingTableId(UUID.fromString("70d1a134-a0df-4f47-964f-6e19e2ab3790"))
+        .lastKnownRoutingTableId(RoutingTableId.of(UUID.fromString("70d1a134-a0df-4f47-964f-6e19e2ab3790")))
         .lastKnownEpoch(0)
         .build(),
         BaseEncoding.base16().decode("0070D1A134A0DF4F47964F6E19E2AB3790000000000100")},

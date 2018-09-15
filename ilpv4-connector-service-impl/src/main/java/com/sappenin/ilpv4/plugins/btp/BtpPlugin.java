@@ -1,41 +1,39 @@
-package com.sappenin.ilpv4.server.btp;
+package com.sappenin.ilpv4.plugins.btp;
 
-import com.sappenin.ilpv4.model.Plugin;
-import com.sappenin.ilpv4.model.PluginType;
 import org.immutables.value.Value;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.encoding.asn.framework.CodecContext;
+import org.interledger.plugin.lpiv2.AbstractPlugin;
+import org.interledger.plugin.lpiv2.Plugin;
+import org.interledger.plugin.lpiv2.PluginSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * <p>An extension of {@link Plugin} that is capable of representing a data channel with no money involved. It will
  * send BTP messages with no knowledge of the data within, so it can be used for ILP packets. The {@link
- * #settle(BigInteger)} function is a no-op because, by default, there is no system involved in handling money with
+ * #sendMoney(BigInteger)} function is a no-op because, by default, there is no system involved in handling money with
  * BTP.</p>
  *
- * <p>Two functions must be defined in order for this plugin to handle money. The first is
- * {@link #settle(BigInteger)}, which sends an amount of units to the peer for this plugin. This should be done via a
- * BTP <tt>TRANSFER</tt> call. The second method is {@link #onIncomingSettle(BigInteger)}, which is called on an
- * incoming BTP
- * <tt>TRANSFER</tt> message.</p>
+ * <p>Two functions must be defined in order for this Plugin to handle money. The first is
+ * {@link #sendMoney(BigInteger)}, which sends an amount of units to the peer for this Plugin. This should be done via a
+ * BTP <tt>TRANSFER</tt> call. The second method is {@link #handleIncomingMoney(BigInteger)}, which is called on an
+ * incoming BTP <tt>TRANSFER</tt> message.</p>
  *
- * <p>The main use of this plugin, however, is as a building block for plugins that _do_ have an underlying ledger.</p>
+ * <p>The main use of this Plugin, however, is as a building block for plugins that _do_ have an underlying ledger.</p>
  */
-public class BtpPlugin implements Plugin {
+public class BtpPlugin extends AbstractPlugin<PluginSettings> implements Plugin<PluginSettings> {
 
-  // TODO: Unify this with AbstractBtpPlugin!
+  public static final String PLUGIN_TYPE = "BTP";
 
-  // While a plugin can handle multiple account addresses (one per session), it should only connect to a single node
+  // While a lpi2 can handle multiple account addresses (one per session), it should only connect to a single node
   // address.
-  private final InterledgerAddress accountAddress;
+  //private final InterledgerAddress accountAddress;
   private final CodecContext codecContext;
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -44,20 +42,16 @@ public class BtpPlugin implements Plugin {
    * Required-args Constructor.
    */
   public BtpPlugin(
-    final InterledgerAddress accountAddress, final CodecContext codecContext
-    //, final BtpSubProtocolHandlerRegistry registry
+    final PluginSettings pluginSettings,
+    //final InterledgerAddress accountAddress,
+    final CodecContext codecContext
   ) {
+    super(pluginSettings);
     this.codecContext = Objects.requireNonNull(codecContext);
-    this.accountAddress = Objects.requireNonNull(accountAddress);
 
     //this.registry = Objects.requireNonNull(registry);
     // Add an ILP Sub-protocol handler here...
     //this.registry.putHandler(BTP_SUB_PROTOCOL_ILP, new IlpSubprotocolHandler(codecContext, this));
-  }
-
-  @Override
-  public InterledgerAddress getAccountAddress() {
-    return this.accountAddress;
   }
 
   @Override
@@ -73,27 +67,19 @@ public class BtpPlugin implements Plugin {
     // settings. Each of these will be configured at runtime, so perhaps we have two types of BTP connector.
   }
 
-  /**
-   * Determines if a plugin is connected or not.
-   *
-   * @return {@code true} if the plugin is connected; {@code false} otherwise.
-   */
-  @Override
-  public boolean isConnected() {
-    throw new RuntimeException("Not yet implemented!");
-  }
-
   @Override
   public void doDisconnect() {
 
   }
 
+  /**
+   * Perform the logic of sending a packet to a remote peer.
+   *
+   * @param preparePacket
+   */
   @Override
-  public CompletableFuture<InterledgerFulfillPacket> sendPacket(
-    final InterledgerPreparePacket preparePacket
-  ) throws InterledgerProtocolException {
+  public InterledgerFulfillPacket doSendData(InterledgerPreparePacket preparePacket) throws InterledgerProtocolException {
     Objects.requireNonNull(preparePacket);
-
     // Get a BTP Session and send a message to it...
 
     // Use the underlying websocket stuff to send this packet...
@@ -115,55 +101,52 @@ public class BtpPlugin implements Plugin {
     //    }
 
     return null;
-
-
   }
+
+  //  /**
+  //   * This method is only ever called by the {@link IlpSubprotocolHandler} as part of the BTP Websock machinery.
+  //   */
+  //  @Override
+  //  public final CompletableFuture<InterledgerFulfillPacket> handleIncomingPacket(final InterledgerPreparePacket preparePacket)
+  //    throws InterledgerProtocolException {
+  //
+  //    Objects.requireNonNull(preparePacket);
+  //
+  //    if (logger.isDebugEnabled()) {
+  //      logger.debug("Handling InterledgerPreparePacket from {}", this.getAccountAddress());
+  //    }
+  //
+  //    //    final Account sourceAccount = this.accountManager.getAccount(session.getAccountId())
+  //    //      .orElseThrow(() -> new RuntimeException(
+  //    //        String.format("No Account found for Interledger Address: %s", session.getAccountId()))
+  //    //      );
+  //
+  //    // If local...
+  //
+  //
+  //    // else, forward...
+  //
+  //    // TODO: Grab the proper lpi2 here from the routing table..
+  //    Plugin plugin = null;
+  //
+  //    // TODO: Adjust the packet, if needed (expiry, amount, etc?)
+  //    return plugin.sendPacket(preparePacket);
+  //  }
 
   /**
-   * This method is only ever called by the {@link IlpSubprotocolHandler} as part of the BTP Websock machinery.
+   * Perform the logic of settling with a remote peer.
+   *
+   * @param amount
    */
   @Override
-  public final CompletableFuture<InterledgerFulfillPacket> onIncomingPacket(final InterledgerPreparePacket preparePacket)
-    throws InterledgerProtocolException {
-
-    Objects.requireNonNull(preparePacket);
-
-    if (logger.isDebugEnabled()) {
-      logger.debug("Handling InterledgerPreparePacket from {}", this.getAccountAddress());
-    }
-
-    //    final Account sourceAccount = this.accountManager.getAccount(session.getAccountId())
-    //      .orElseThrow(() -> new RuntimeException(
-    //        String.format("No Account found for Interledger Address: %s", session.getAccountId()))
-    //      );
-
-    // If local...
-
-
-    // else, forward...
-
-    // TODO: Grab the proper plugin here from the routing table..
-    Plugin plugin = null;
-
-    // TODO: Adjust the packet, if needed (expiry, amount, etc?)
-    return plugin.sendPacket(preparePacket);
-  }
-
-  @Override
-  public void settle(BigInteger amount) {
+  protected void doSendMoney(BigInteger amount) {
     // No-op in vanilla BTP. Can be extended by an ILP Plugin.
   }
 
-
-  @Override
-  public void onIncomingSettle(BigInteger amount) {
-    // No-op in vanilla BTP. Can be extended by an ILP Plugin.
-  }
-
-  @Override
-  public PluginType getPluginType() {
-    return PluginType.BTP;
-  }
+  //  @Override
+  //  public PluginType getPluginType() {
+  //    return PluginType.BTP;
+  //  }
 
   //  /**
   //   * Convert a {@link BtpPacket} into a {@link BinaryMessage}.
@@ -214,20 +197,20 @@ public class BtpPlugin implements Plugin {
   public enum BtpPluginType {
 
     /**
-     * This plugin is operating as a websocket <tt>client</tt>, and must connect to a remote server in order to begin a
+     * This lpi2 is operating as a websocket <tt>client</tt>, and must connect to a remote server in order to begin a
      * BTP session.
      */
     CLIENT,
 
     /**
-     * This plugin is operating as the <tt>server</tt> in a websocket connection, waiting for remote peers to connect to
+     * This lpi2 is operating as the <tt>server</tt> in a websocket connection, waiting for remote peers to connect to
      * it in order to begin a BTP session
      */
     SERVER;
   }
 
   /**
-   * Settings for a BTP Plugin when the plugin is operating as a Websocket server.
+   * Settings for a BTP Plugin when the lpi2 is operating as a Websocket server.
    */
   @Value.Immutable
   public interface BtpServerSettings {
@@ -240,13 +223,13 @@ public class BtpPlugin implements Plugin {
   }
 
   /**
-   * Settings for a BTP Plugin when the plugin is operating as a Websocket server.
+   * Settings for a BTP Plugin when the lpi2 is operating as a Websocket server.
    */
   @Value.Immutable
   public interface BtpClientSettings {
 
     /**
-     * <p>The remote websock address that this plugin will use to connect to its peer. For example,
+     * <p>The remote websock address that this lpi2 will use to connect to its peer. For example,
      * <tt>btp+ws://:shh_its_a_secret@localhost:9000</tt></p>
      *
      * @return

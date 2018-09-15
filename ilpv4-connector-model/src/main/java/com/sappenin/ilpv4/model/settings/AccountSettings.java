@@ -1,9 +1,9 @@
 package com.sappenin.ilpv4.model.settings;
 
 import com.sappenin.ilpv4.model.IlpRelationship;
-import com.sappenin.ilpv4.model.PluginType;
 import org.immutables.value.Value;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.plugin.lpiv2.PluginType;
 
 import java.math.BigInteger;
 import java.util.Optional;
@@ -49,11 +49,23 @@ public interface AccountSettings {
   int getAssetScale();
 
   /**
-   * If present, defines whether the connector should maintain and enforce a balance for this account.
+   * Defines whether the connector should maintain and enforce a balance for this account.
    *
    * @return The parameters for tracking balances for this account.
    */
   AccountBalanceSettings getBalanceSettings();
+
+  /**
+   * Defines routing characteristics for this account.
+   *
+   * @return An instance of {@link RouteBroadcastSettings}.
+   */
+  RouteBroadcastSettings getRouteBroadcastSettings();
+
+  // TODO: Configured Routes (i.e., static routes).
+  
+
+
 
   /**
    * The maximum amount per packet for incoming prepare packets. The connector will reject any incoming prepare packets

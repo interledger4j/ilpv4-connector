@@ -25,7 +25,7 @@ public interface CcpValidator {
 
     if (packet.getDestination().equals(CCP_CONTROL_DESTINATION)) {
       // TODO: Create an ILP Runtime exception that can take a packet?
-      throw new InterledgerRuntimeException("Packet is not a CCP route control request");
+      throw new InterledgerRuntimeException("Packet is not a CCP getRoute control request");
     }
 
     if (!PEER_PROTOCOL_EXECUTION_CONDITION.equals(packet.getExecutionCondition())) {
@@ -33,7 +33,7 @@ public interface CcpValidator {
     }
 
     if (Instant.now().isAfter(packet.getExpiresAt())) {
-      throw new InterledgerRuntimeException("CCP route control request packet is expired.");
+      throw new InterledgerRuntimeException("CCP getRoute control request packet is expired.");
     }
   }
 

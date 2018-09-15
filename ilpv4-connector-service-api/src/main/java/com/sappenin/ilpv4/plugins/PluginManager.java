@@ -1,14 +1,14 @@
 package com.sappenin.ilpv4.plugins;
 
-import com.sappenin.ilpv4.model.Plugin;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.plugin.lpiv2.Plugin;
 
 import java.util.Optional;
 
 public interface PluginManager {
 
   /**
-   * Associate the supplied {@code plugin} to the supplied {@code accountAddress}.
+   * Associate the supplied {@code lpi2} to the supplied {@code accountAddress}.
    *
    * @param accountAddress
    * @param plugin
@@ -16,15 +16,28 @@ public interface PluginManager {
   void setPlugin(InterledgerAddress accountAddress, Plugin plugin);
 
   /**
-   * <p>Retrieve a plugin for the supplied {@code accountAddress}.</p>
+   * <p>Retrieve a {@link Plugin} for the supplied {@code accountAddress}.</p>
    *
-   * <p>Note that this method returns a one or zeor plugins using an exact-match algorithm because a particular
-   * account can have only one plugin at a time.</p>
+   * <p>Note that this method returns one or zero plugins using an exact-match algorithm on the address because a
+   * particular account can have only one plugin at a time.</p>
    *
-   * @param accountAddress
+   * @param peerAccountAddress The {@link InterledgerAddress} of the remote peer.
+   *
+   * @return An optinoally-present {@link Plugin}.
+   */
+  Optional<Plugin> getPlugin(InterledgerAddress peerAccountAddress);
+
+  /**
+   * <p>Retrieve a {@link Plugin} for the supplied {@code accountAddress}, or construct a new instance if one does
+   * not exist already.</p>
+   *
+   * @param peerAccountAddress
    *
    * @return
+   *
+   * @deprecated This method should not be used, instead favor creating a plugin at Account construction time.
    */
-  Optional<Plugin> getPlugin(InterledgerAddress accountAddress);
+  @Deprecated
+  Plugin getOrCreatePlugin(InterledgerAddress peerAccountAddress);
 
 }

@@ -1,5 +1,6 @@
 package com.sappenin.ilpv4.connector.ccp;
 
+import com.sappenin.ilpv4.model.RoutingTableId;
 import org.immutables.value.Value;
 import org.interledger.core.InterledgerAddress;
 
@@ -18,28 +19,28 @@ public interface CcpRouteUpdateRequest {
    *
    * @return A {@link UUID}.
    */
-  UUID routingTableId();
+  RoutingTableId routingTableId();
 
   /**
-   * The current epoch index that the requesting node has for the specified routing table identifier.
+   * The current getEpoch index that the requesting node has for the specified routing table identifier.
    *
    * @return A <tt>long</tt>.
    */
-  long currentEpochIndex();
+  int currentEpochIndex();
 
   /**
-   * The epoch index that the log of this update request starts from.
+   * The getEpoch index that the log of this update request starts from.
    *
    * @return A <tt>long</tt>.
    */
-  long fromEpochIndex();
+  int fromEpochIndex();
 
   /**
-   * The epoch index that the log of this update request ends at.
+   * The getEpoch index that the log of this update request ends at.
    *
    * @return A <tt>long</tt>.
    */
-  long toEpochIndex();
+  int toEpochIndex();
 
   /**
    * Reserved for the future, currently not used.
@@ -68,7 +69,7 @@ public interface CcpRouteUpdateRequest {
   /**
    * Withdrawn Routes that the speaker is advertising as being no longer valid or useful.
    *
-   * @return A {@link Collection} of route-identifiers of type {@link InterledgerAddress}.
+   * @return A {@link Collection} of getRoute-identifiers of type {@link InterledgerAddress}.
    */
   @Value.Default
   default Collection<CcpWithdrawnRoute> withdrawnRoutePrefixes() {

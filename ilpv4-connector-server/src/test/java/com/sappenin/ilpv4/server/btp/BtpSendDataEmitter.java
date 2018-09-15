@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 
-import static com.sappenin.ilpv4.server.btp.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH;
+import static com.sappenin.ilpv4.plugins.btp.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH;
 import static org.interledger.btp.BtpSubProtocols.INTERLEDGER;
 
 /**

@@ -1,4 +1,4 @@
-package com.sappenin.ilpv4.server.btp.converters;
+package com.sappenin.ilpv4.plugins.btp.converters;
 
 import org.interledger.btp.BtpPacket;
 import org.interledger.encoding.asn.framework.CodecContext;

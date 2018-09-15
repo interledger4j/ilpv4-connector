@@ -2,9 +2,10 @@ package com.sappenin.ilpv4.connector.ccp.codecs;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.BaseEncoding;
-import org.interledger.core.InterledgerAddressPrefix;
 import com.sappenin.ilpv4.connector.ccp.*;
+import com.sappenin.ilpv4.model.RoutingTableId;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerPreparePacket;
 import org.junit.runner.RunWith;
@@ -32,7 +33,7 @@ public class IlpCcpNewRouteUpdateRequestCodecTest extends AbstractAsnCodecTest<I
   private static final String EXECUTION_CONDITION_HEX =
     "66687AADF862BD776C8FC18B8E9F8E20089714856EE233B3902A591D0D5F2925";
 
-  private static final InterledgerAddress PEER_ROUTE_UPDATE_DESTINATION = InterledgerAddress.of("peer.route.update");
+  private static final InterledgerAddress PEER_ROUTE_UPDATE_DESTINATION = InterledgerAddress.of("peer.getRoute.update");
 
   // Matches the JS tests in ILP JS which says, June 16, 2015 00:00:00 GMT
   // However, the value used in that test is off by 1 minute.
@@ -74,7 +75,7 @@ public class IlpCcpNewRouteUpdateRequestCodecTest extends AbstractAsnCodecTest<I
               try {
                 codecContext.write(
                   ImmutableCcpRouteUpdateRequest.builder()
-                    .routingTableId(UUID.fromString("21e55f8e-abcd-4e97-9ab9-bf0ff00a224c"))
+                    .routingTableId(RoutingTableId.of(UUID.fromString("21e55f8e-abcd-4e97-9ab9-bf0ff00a224c")))
                     .currentEpochIndex(52)
                     .fromEpochIndex(52)
                     .toEpochIndex(52)
@@ -110,7 +111,7 @@ public class IlpCcpNewRouteUpdateRequestCodecTest extends AbstractAsnCodecTest<I
               try {
                 codecContext.write(
                   ImmutableCcpRouteUpdateRequest.builder()
-                    .routingTableId(UUID.fromString("bffbf6ad-0ddc-4d3b-a1e5-b4f0537365bd"))
+                    .routingTableId(RoutingTableId.of(UUID.fromString("bffbf6ad-0ddc-4d3b-a1e5-b4f0537365bd")))
                     .currentEpochIndex(52)
                     .fromEpochIndex(46)
                     .toEpochIndex(50)

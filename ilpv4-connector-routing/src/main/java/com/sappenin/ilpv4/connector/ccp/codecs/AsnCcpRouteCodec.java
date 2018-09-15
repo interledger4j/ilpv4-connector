@@ -23,7 +23,7 @@ public class AsnCcpRouteCodec extends AsnSequenceCodec<CcpNewRoute> {
    */
   public AsnCcpRouteCodec() {
     super(
-      new AsnInterledgerAddressPrefixCodec(), // route.prefix
+      new AsnInterledgerAddressPrefixCodec(), // getRoute.prefix
       new AsnSequenceOfSequenceCodec(Lists::newArrayList, AsnCcpRoutePathPartCodec::new), // List of CcpRoutePaths
       new AsnOctetStringCodec(new AsnSizeConstraint(32, 32)), // auth must always be 32 bytes.
       new AsnSequenceOfSequenceCodec(ArrayList::new, AsnCcpRoutePropertyCodec::new) // Route Props
@@ -54,9 +54,9 @@ public class AsnCcpRouteCodec extends AsnSequenceCodec<CcpNewRoute> {
   public void encode(final CcpNewRoute value) {
     Objects.requireNonNull(value);
 
-    setValueAt(0, value.prefix()); // route.prefix
+    setValueAt(0, value.prefix()); // getRoute.prefix
     setValueAt(1, value.path()); // Collection of pathParts
-    setValueAt(2, value.auth()); // route auth
-    setValueAt(3, value.properties()); // Collection of route properties
+    setValueAt(2, value.auth()); // getRoute auth
+    setValueAt(3, value.properties()); // Collection of getRoute properties
   }
 }

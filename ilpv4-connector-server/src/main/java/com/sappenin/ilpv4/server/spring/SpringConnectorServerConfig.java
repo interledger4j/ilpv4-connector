@@ -8,8 +8,6 @@ import com.sappenin.ilpv4.connector.routing.*;
 import com.sappenin.ilpv4.fx.DefaultExchangeRateService;
 import com.sappenin.ilpv4.fx.ExchangeRateService;
 import com.sappenin.ilpv4.model.settings.ConnectorSettings;
-import com.sappenin.ilpv4.plugins.DefaultPluginManager;
-import com.sappenin.ilpv4.plugins.PluginManager;
 import com.sappenin.ilpv4.settings.ConnectorSettingsFromPropertyFile;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -44,17 +42,17 @@ public class SpringConnectorServerConfig implements WebMvcConfigurer {
   @Bean
   IlpConnector connector(
     final ConnectorSettings connectorSettings, final AccountManager accountManager,
-    final PaymentRouter<RoutingTableEntry> paymentRouter, final ExchangeRateService exchangeRateService) {
+    final PaymentRouter<Route> paymentRouter, final ExchangeRateService exchangeRateService) {
     return new DefaultIlpConnector(connectorSettings, accountManager, paymentRouter, exchangeRateService);
   }
 
   @Bean
-  RoutingTable<RoutingTableEntry> routeRoutingTable() {
+  RoutingTable<Route> routeRoutingTable() {
     return new InMemoryRoutingTable();
   }
 
   @Bean
-  PaymentRouter<RoutingTableEntry> paymentRouter(final RoutingTable<RoutingTableEntry> routingTable) {
+  PaymentRouter<Route> paymentRouter(final RoutingTable<Route> routingTable) {
     return new SimplePaymentRouter(routingTable);
   }
 
@@ -64,13 +62,8 @@ public class SpringConnectorServerConfig implements WebMvcConfigurer {
   }
 
   @Bean
-  PluginManager pluginManager() {
-    return new DefaultPluginManager();
-  }
-
-  @Bean
-  AccountManager accountManager(final ConnectorSettings connectorSettings, final PluginManager pluginManager) {
-    return new DefaultAccountManager(connectorSettings, pluginManager);
+  AccountManager accountManager(final ConnectorSettings connectorSettings) {
+    return new DefaultAccountManager(connectorSettings);
   }
 
   @Bean

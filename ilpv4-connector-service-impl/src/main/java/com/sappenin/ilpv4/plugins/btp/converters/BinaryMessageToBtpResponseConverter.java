@@ -1,6 +1,6 @@
-package com.sappenin.ilpv4.server.btp.converters;
+package com.sappenin.ilpv4.plugins.btp.converters;
 
-import org.interledger.btp.BtpMessage;
+import org.interledger.btp.BtpResponse;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.web.socket.BinaryMessage;
@@ -10,22 +10,22 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
-public class BinaryMessageToBtpMessageConverter implements Converter<BinaryMessage, BtpMessage> {
+public class BinaryMessageToBtpResponseConverter implements Converter<BinaryMessage, BtpResponse> {
 
   private final CodecContext codecContext;
 
-  public BinaryMessageToBtpMessageConverter(final CodecContext codecContext) {
+  public BinaryMessageToBtpResponseConverter(final CodecContext codecContext) {
     this.codecContext = Objects.requireNonNull(codecContext);
   }
 
   @Override
-  public BtpMessage convert(final BinaryMessage binaryMessage) {
+  public BtpResponse convert(final BinaryMessage binaryMessage) {
     Objects.requireNonNull(binaryMessage, "binaryMessage must not be null!");
 
     try {
       final ByteBuffer buffer = binaryMessage.getPayload();
       final ByteArrayInputStream stream = new ByteArrayInputStream(buffer.array(), buffer.position(), buffer.limit());
-      return codecContext.read(BtpMessage.class, stream);
+      return codecContext.read(BtpResponse.class, stream);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

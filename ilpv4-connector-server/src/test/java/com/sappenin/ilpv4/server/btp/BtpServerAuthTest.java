@@ -1,9 +1,9 @@
 package com.sappenin.ilpv4.server.btp;
 
+import com.sappenin.ilpv4.plugins.btp.converters.BinaryMessageToBtpErrorConverter;
+import com.sappenin.ilpv4.plugins.btp.converters.BinaryMessageToBtpResponseConverter;
+import com.sappenin.ilpv4.plugins.btp.converters.BtpPacketToBinaryMessageConverter;
 import com.sappenin.ilpv4.server.spring.SpringConnectorServerConfig;
-import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpErrorConverter;
-import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpResponseConverter;
-import com.sappenin.ilpv4.server.btp.converters.BtpPacketToBinaryMessageConverter;
 import org.interledger.btp.BtpError;
 import org.interledger.btp.BtpMessage;
 import org.interledger.btp.BtpResponse;
@@ -29,8 +29,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.sappenin.ilpv4.server.btp.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH_TOKEN;
-import static com.sappenin.ilpv4.server.btp.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH_USERNAME;
+import static com.sappenin.ilpv4.plugins.btp.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH_TOKEN;
+import static com.sappenin.ilpv4.plugins.btp.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH_USERNAME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
@@ -179,6 +179,8 @@ public class BtpServerAuthTest {
     }, "ws://localhost:{port}/btp", port).get();
 
 
+    // TODO: See BtpSocketHandler#authenticate -- currently, there is no authToken check against anything, so need to
+    // implement that. See JS implementation.
     final BtpMessage btpMessage = btpTestUtils.constructAuthMessage(requestId, "test.foo", "");
     session.sendMessage(btpPacketToBinaryMessageConverter.convert(btpMessage));
     logger.info("Sent test Auth BtpMessage: {}", btpMessage);

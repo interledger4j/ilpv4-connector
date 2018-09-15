@@ -19,7 +19,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.Random;
 
-import static com.sappenin.ilpv4.server.btp.BtpSubProtocolHandlerRegistry.*;
+import static com.sappenin.ilpv4.plugins.btp.BtpSubProtocolHandlerRegistry.*;
 
 public class BtpTestUtils {
 
@@ -63,7 +63,6 @@ public class BtpTestUtils {
     final BtpSubProtocol authSubProtocol = BtpSubProtocol.builder()
       .protocolName(BTP_SUB_PROTOCOL_AUTH)
       .contentType(BtpSubProtocolContentType.MIME_TEXT_PLAIN_UTF8)
-      //.data(new byte[0])
       .build();
 
     final BtpSubProtocol authUsernameSubprotocol = BtpSubProtocol.builder()

@@ -2,10 +2,11 @@ package com.sappenin.ilpv4.connector.ccp.codecs;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.BaseEncoding;
-import com.sappenin.ilpv4.connector.ccp.CcpSyncMode;
 import com.sappenin.ilpv4.connector.ccp.CcpRouteControlRequest;
+import com.sappenin.ilpv4.connector.ccp.CcpSyncMode;
 import com.sappenin.ilpv4.connector.ccp.ImmutableCcpFeature;
 import com.sappenin.ilpv4.connector.ccp.ImmutableCcpRouteControlRequest;
+import com.sappenin.ilpv4.model.RoutingTableId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerPreparePacket;
@@ -33,7 +34,8 @@ public class IlpCcpNewRouteControlRequestCodecTest extends AbstractAsnCodecTest<
   private static final String EXECUTION_CONDITION_HEX =
     "66687AADF862BD776C8FC18B8E9F8E20089714856EE233B3902A591D0D5F2925";
 
-  private static final InterledgerAddress PEER_ROUTE_CONTROL_DESTINATION = InterledgerAddress.of("peer.route.control");
+  private static final InterledgerAddress PEER_ROUTE_CONTROL_DESTINATION =
+    InterledgerAddress.of("peer.getRoute.control");
 
   // Matches the JS tests in ILP JS which says, June 16, 2015 00:00:00 GMT
   // However, the value used in that test is off by 1 minute.
@@ -76,7 +78,7 @@ public class IlpCcpNewRouteControlRequestCodecTest extends AbstractAsnCodecTest<
                 codecContext.write(
                   ImmutableCcpRouteControlRequest.builder()
                     .mode(CcpSyncMode.MODE_SYNC)
-                    .lastKnownRoutingTableId(UUID.fromString("70d1a134-a0df-4f47-964f-6e19e2ab3790"))
+                    .lastKnownRoutingTableId(RoutingTableId.of(UUID.fromString("70d1a134-a0df-4f47-964f-6e19e2ab3790")))
                     .lastKnownEpoch(32)
                     .features(Lists.newArrayList(
                       ImmutableCcpFeature.builder().value("foo").build(),

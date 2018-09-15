@@ -3,6 +3,7 @@ package com.sappenin.ilpv4.connector.ccp.codecs;
 import com.google.common.collect.Lists;
 import com.sappenin.ilpv4.connector.ccp.CcpRouteUpdateRequest;
 import com.sappenin.ilpv4.connector.ccp.ImmutableCcpRouteUpdateRequest;
+import com.sappenin.ilpv4.model.RoutingTableId;
 import org.interledger.core.asn.codecs.AsnInterledgerAddressCodec;
 import org.interledger.encoding.asn.codecs.AsnSequenceCodec;
 import org.interledger.encoding.asn.codecs.AsnSequenceOfSequenceCodec;
@@ -21,14 +22,13 @@ public class AsnCcpRouteUpdateRequestCodec extends AsnSequenceCodec<CcpRouteUpda
   public AsnCcpRouteUpdateRequestCodec() {
     super(
       new AsnUuidCodec(), // RoutingTableId (UUID)
-      new AsnUint32Codec(), // current epoch index
-      new AsnUint32Codec(), // from epoch index
-      new AsnUint32Codec(), // to epoch index
+      new AsnUint32Codec(), // current getEpoch index
+      new AsnUint32Codec(), // from getEpoch index
+      new AsnUint32Codec(), // to getEpoch index
       new AsnUint32Codec(), // hold down time
       new AsnInterledgerAddressCodec(), // speaker
-      new AsnSequenceOfSequenceCodec(Lists::newArrayList, AsnCcpRouteCodec::new), // routes
-      new AsnSequenceOfSequenceCodec(Lists::newArrayList, AsnCcpWithdrawnRouteCodec::new) // request
-      // .withdrawnRoutePrefixes
+      new AsnSequenceOfSequenceCodec(Lists::newArrayList, AsnCcpRouteCodec::new), // new routes
+      new AsnSequenceOfSequenceCodec(Lists::newArrayList, AsnCcpWithdrawnRouteCodec::new) // withdrawn routes
     );
   }
 
@@ -40,10 +40,10 @@ public class AsnCcpRouteUpdateRequestCodec extends AsnSequenceCodec<CcpRouteUpda
   @Override
   public CcpRouteUpdateRequest decode() {
     return ImmutableCcpRouteUpdateRequest.builder()
-      .routingTableId(getValueAt(0))
-      .currentEpochIndex(getValueAt(1))
-      .fromEpochIndex(getValueAt(2))
-      .toEpochIndex(getValueAt(3))
+      .routingTableId(RoutingTableId.of(getValueAt(0)))
+      .currentEpochIndex(((Long)getValueAt(1)).intValue())
+      .fromEpochIndex(((Long)getValueAt(2)).intValue())
+      .toEpochIndex(((Long)getValueAt(3)).intValue())
       .holdDownTime(getValueAt(4))
       .speaker(getValueAt(5))
       .newRoutes(getValueAt(6))
@@ -60,11 +60,11 @@ public class AsnCcpRouteUpdateRequestCodec extends AsnSequenceCodec<CcpRouteUpda
   public void encode(final CcpRouteUpdateRequest value) {
     Objects.requireNonNull(value);
 
-    setValueAt(0, value.routingTableId());
-    setValueAt(1, value.currentEpochIndex());
-    setValueAt(2, value.fromEpochIndex());
-    setValueAt(3, value.toEpochIndex());
-    setValueAt(4, value.holdDownTime());
+    setValueAt(0, value.routingTableId().value());
+    setValueAt(1, new Long(value.currentEpochIndex()));
+    setValueAt(2, new Long(value.fromEpochIndex()));
+    setValueAt(3, new Long(value.toEpochIndex()));
+    setValueAt(4, new Long(value.holdDownTime()));
     setValueAt(5, value.speaker());
     setValueAt(6, value.newRoutes());
     setValueAt(7, value.withdrawnRoutePrefixes());

@@ -3,9 +3,9 @@ package com.sappenin.ilpv4.connector.routing;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
-import org.interledger.core.InterledgerAddressPrefix;
 import org.apache.commons.collections4.trie.PatriciaTrie;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerAddressPrefix;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,10 +17,13 @@ import java.util.stream.Collectors;
  * A key/value data structure that holds {@link InterledgerAddressPrefix} keys in a hierarchical order to allow for easy
  * prefix-matching.
  */
-public class InterledgerAddressPrefixMap<R extends RoutingTableEntry> {
+public class InterledgerAddressPrefixMap<R extends BaseRoute> {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
+  // TODO: The PatriciaTrie should probably not contain a Collection of Routes. Instead, there should be only a
+  // single Route for a given prefix (at least according to the JS impl). Is there a reason to have multiple routes
+  // per prefix?
   private final PatriciaTrie<Collection<R>> prefixMap;
 
   public InterledgerAddressPrefixMap() {
@@ -43,15 +46,15 @@ public class InterledgerAddressPrefixMap<R extends RoutingTableEntry> {
     Objects.requireNonNull(route);
 
     final Collection<R> prefixedRouteSet;
-    // Only allow a single thread to add a new route into this map at a time because the PatriciaTrie is not
+    // Only allow a single thread to add a new getRoute into this map at a time because the PatriciaTrie is not
     // thread-safe during puts.
     synchronized (prefixMap) {
       prefixedRouteSet = Optional.ofNullable(
-        this.prefixMap.get(toTrieKey(route.getTargetPrefix())))
+        this.prefixMap.get(toTrieKey(route.getRoutePrefix())))
         .orElseGet(() -> {
           final Set<R> newPrefixedRoutes = Sets.newConcurrentHashSet();
-          // Synchronized so that another thread doesn't add an identical route prefix from underneath us.
-          this.prefixMap.put(toTrieKey(route.getTargetPrefix()), newPrefixedRoutes);
+          // Synchronized so that another thread doesn't add an identical getRoute prefix from underneath us.
+          this.prefixMap.put(toTrieKey(route.getRoutePrefix()), newPrefixedRoutes);
           return newPrefixedRoutes;
         });
     }
@@ -62,35 +65,37 @@ public class InterledgerAddressPrefixMap<R extends RoutingTableEntry> {
   }
 
   /**
-   * Remove a single route from the Prefix Map.
+   * Remove a single getRoute from the Prefix Map.
    *
-   * @param route A {@link R} to remove from the {@code prefixMap}.
+   * @param getRoute A {@link R} to remove from the {@code prefixMap}.
    *
    * @return <tt>true</tt> if an element was removed as a result of this call.
    */
-  public boolean remove(final R route) {
-    Objects.requireNonNull(route);
+  //  public boolean remove(final R getRoute) {
+  //    Objects.requireNonNull(getRoute);
+  //
+  //    synchronized (prefixMap) {
+  //      // There will be only a single getRoute in the routing table that can be removed. Find that, then remove it.
+  //      final Collection<R> routeCollection = this.getEntries(getRoute.getRoutePrefix());
+  //      final boolean result = routeCollection.remove(getRoute);
+  //      if (result && routeCollection.isEmpty()) {
+  //        // If there are no more routes in the table, then remove the entire collection to the getKeys works
+  //        // properly.
+  //        this.prefixMap.remove(toTrieKey(getRoute.getRoutePrefix()));
+  //      }
+  //      return result;
+  //    }
+  //  }
 
-    synchronized (prefixMap) {
-      // There will be only a single route in the routing table that can be removed. Find that, then remove it.
-      final Collection<R> routeCollection = this.getEntries(route.getTargetPrefix());
-      final boolean result = routeCollection.remove(route);
-      if (result && routeCollection.isEmpty()) {
-        // If there are no more routes in the table, then remove the entire collection to the getKeys works
-        // properly.
-        this.prefixMap.remove(toTrieKey(route.getTargetPrefix()));
-      }
-      return result;
-    }
-  }
 
   /**
    * Remove all routes for the supplied {@code addressPrefix} key.
    */
-  public Collection<R> removeAll(final InterledgerAddressPrefix addressPrefix) {
-    Objects.requireNonNull(addressPrefix);
+  // TODO: Collection?
+  public Collection<R> removeAll(final InterledgerAddressPrefix targetAddressPrefix) {
+    Objects.requireNonNull(targetAddressPrefix);
     synchronized (prefixMap) {
-      return this.prefixMap.remove(toTrieKey(addressPrefix));
+      return this.prefixMap.remove(toTrieKey(targetAddressPrefix));
     }
   }
 
@@ -117,10 +122,25 @@ public class InterledgerAddressPrefixMap<R extends RoutingTableEntry> {
 
   /**
    * Take an action for each {@link R} in the PrefixMap.
+   *
+   * @param action An instance of {@link BiConsumer} that provides two inputs, the ILP address of a remote peer, and a
+   *               Collection of routing table entries of type {@link BaseRoute}.
    */
-  public void forEach(final BiConsumer<? super String, ? super Collection<R>> action) {
+  public void forEach(final BiConsumer<? super InterledgerAddressPrefix, ? super Collection<R>> action) {
     Objects.requireNonNull(action);
-    this.prefixMap.forEach(action);
+
+    // In order to utilize this method with the prefixMap, we need to convert the BiConsumer into a String input from
+    // an ILP address.
+    final BiConsumer<String, Collection<R>> translatedAction = new BiConsumer<String, Collection<R>>() {
+      @Override
+      public void accept(String ilpPrefixAsString, Collection<R> routingTableEntries) {
+        action.accept(InterledgerAddressPrefix.of(ilpPrefixAsString), routingTableEntries);
+      }
+    };
+
+    // This call will take each value from prefixMap (which stores as a String) and then translate the values to
+    // typed equivalents, and then perform the supplied `action`.
+    prefixMap.forEach(translatedAction);
   }
 
   /**

@@ -2,9 +2,10 @@ package com.sappenin.ilpv4.connector.ccp.codecs;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.BaseEncoding;
-import org.interledger.core.InterledgerAddressPrefix;
 import com.sappenin.ilpv4.connector.ccp.*;
+import com.sappenin.ilpv4.model.RoutingTableId;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerAddressPrefix;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -42,7 +43,7 @@ public class AsnCcpNewRouteUpdateRequestCodecTest extends AbstractAsnCodecTest<C
 
         // 0 - JS Compatibility (simple request)
         {ImmutableCcpRouteUpdateRequest.builder()
-          .routingTableId(UUID.fromString("21e55f8e-abcd-4e97-9ab9-bf0ff00a224c"))
+          .routingTableId(RoutingTableId.of(UUID.fromString("21e55f8e-abcd-4e97-9ab9-bf0ff00a224c")))
           .currentEpochIndex(52)
           .fromEpochIndex(52)
           .toEpochIndex(52)
@@ -54,7 +55,7 @@ public class AsnCcpNewRouteUpdateRequestCodecTest extends AbstractAsnCodecTest<C
             "21E55F8EABCD4E979AB9BF0FF00A224C000000340000003400000034000075300D6578616D706C652E616C69636501000100")},
 
         {ImmutableCcpRouteUpdateRequest.builder()
-          .routingTableId(UUID.fromString("21e55f8e-abcd-4e97-9ab9-bf0ff00a224c"))
+          .routingTableId(RoutingTableId.of(UUID.fromString("21e55f8e-abcd-4e97-9ab9-bf0ff00a224c")))
           .currentEpochIndex(52)
           .fromEpochIndex(52)
           .toEpochIndex(52)
@@ -72,7 +73,7 @@ public class AsnCcpNewRouteUpdateRequestCodecTest extends AbstractAsnCodecTest<C
 
         //0 - JS Compatibility(complex request)
         {ImmutableCcpRouteUpdateRequest.builder()
-          .routingTableId(UUID.fromString("bffbf6ad-0ddc-4d3b-a1e5-b4f0537365bd"))
+          .routingTableId(RoutingTableId.of(UUID.fromString("bffbf6ad-0ddc-4d3b-a1e5-b4f0537365bd")))
           .currentEpochIndex(52)
           .fromEpochIndex(46)
           .toEpochIndex(50)

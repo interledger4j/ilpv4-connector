@@ -97,7 +97,7 @@ public class BeerCoinArchitecture {
   private static ConnectorSettings defaultConnectorSettings(final InterledgerAddress interledgerAddress) {
     return ImmutableConnectorSettings.builder()
       .ilpAddress(interledgerAddress)
-      .secret("secret")
+      //.secret("secret")
       .build();
   }
 

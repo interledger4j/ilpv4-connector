@@ -2,13 +2,13 @@ package com.sappenin.ilpv4.server.spring;
 
 import com.sappenin.ilpv4.IlpConnector;
 import com.sappenin.ilpv4.accounts.AccountManager;
-import com.sappenin.ilpv4.server.btp.BtpSocketHandler;
-import com.sappenin.ilpv4.server.btp.BtpSubProtocolHandlerRegistry;
-import com.sappenin.ilpv4.server.btp.IlpSubprotocolHandler;
-import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpErrorConverter;
-import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpMessageConverter;
-import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpResponseConverter;
-import com.sappenin.ilpv4.server.btp.converters.BtpPacketToBinaryMessageConverter;
+import com.sappenin.ilpv4.plugins.btp.BtpSocketHandler;
+import com.sappenin.ilpv4.plugins.btp.BtpSubProtocolHandlerRegistry;
+import com.sappenin.ilpv4.plugins.btp.IlpSubprotocolHandler;
+import com.sappenin.ilpv4.plugins.btp.converters.BinaryMessageToBtpErrorConverter;
+import com.sappenin.ilpv4.plugins.btp.converters.BinaryMessageToBtpMessageConverter;
+import com.sappenin.ilpv4.plugins.btp.converters.BinaryMessageToBtpResponseConverter;
+import com.sappenin.ilpv4.plugins.btp.converters.BtpPacketToBinaryMessageConverter;
 import org.interledger.btp.asn.framework.BtpCodecs;
 import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
@@ -67,7 +67,7 @@ public class SpringBtpConfig implements WebSocketConfigurer {
         btpPacketToBinaryMessageConverter)
     );
 
-    // TODO: Connect the WebsocketHandler to a plugin?
+    // TODO: Connect the WebsocketHandler to a lpi2?
     // 1. Get or create BtpPlugin.
     // 2. Create IlpSubProtocolHandler
 

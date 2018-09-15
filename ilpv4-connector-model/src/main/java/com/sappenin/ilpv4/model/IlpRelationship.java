@@ -20,18 +20,38 @@ package com.sappenin.ilpv4.model;
  * addresses. Generally these will be sub-addresses of the node's own address however this is not a requirement.</p>
  */
 public enum IlpRelationship {
+
   /**
    * The ILP Node on the other side of this link is a parent of this node.
    */
-  PARENT,
+  PARENT(0),
 
   /**
    * The ILP Node on the other side of this link is a peer of this node.
    */
-  PEER,
+  PEER(1),
 
   /**
    * The ILP Node on the other side of this link is a child of this node.
    */
-  CHILD
+  CHILD(2),
+
+  /**
+   * @deprecated May be removed if unused.
+   */
+  @Deprecated
+  LOCAL(3);
+
+  private int weight;
+
+  IlpRelationship(final int weight) {
+    this.weight = weight;
+  }
+
+  /**
+   * The weight of this relationship.
+   */
+  public int getWeight() {
+    return weight;
+  }
 }

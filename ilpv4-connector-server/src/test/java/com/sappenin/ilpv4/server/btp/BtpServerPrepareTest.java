@@ -1,10 +1,10 @@
 package com.sappenin.ilpv4.server.btp;
 
 import com.google.common.io.BaseEncoding;
+import com.sappenin.ilpv4.plugins.btp.converters.BinaryMessageToBtpErrorConverter;
+import com.sappenin.ilpv4.plugins.btp.converters.BinaryMessageToBtpResponseConverter;
+import com.sappenin.ilpv4.plugins.btp.converters.BtpPacketToBinaryMessageConverter;
 import com.sappenin.ilpv4.server.spring.SpringConnectorServerConfig;
-import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpErrorConverter;
-import com.sappenin.ilpv4.server.btp.converters.BinaryMessageToBtpResponseConverter;
-import com.sappenin.ilpv4.server.btp.converters.BtpPacketToBinaryMessageConverter;
 import org.interledger.btp.BtpMessage;
 import org.interledger.btp.BtpResponse;
 import org.interledger.core.InterledgerAddress;

@@ -1,7 +1,6 @@
 package com.sappenin.ilpv4.connector.ccp.codecs;
 
 import com.google.common.io.BaseEncoding;
-import com.sappenin.ilpv4.connector.ccp.*;
 import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.junit.Assert;
@@ -26,13 +25,7 @@ public abstract class AbstractAsnCodecTest<T> {
 
   static {
     // Register the codec to be tested...
-    codecContext = InterledgerCodecContextFactory.oer();
-    codecContext.register(UUID.class, AsnUuidCodec::new);
-    codecContext.register(CcpRouteControlRequest.class, AsnCcpRouteControlRequestCodec::new);
-    codecContext.register(CcpRouteControlResponse.class, AsnCcpRouteControlResponseCodec::new);
-    codecContext.register(CcpRouteUpdateRequest.class, AsnCcpRouteUpdateRequestCodec::new);
-    codecContext.register(CcpRoutePathPart.class, AsnCcpRoutePathPartCodec::new);
-    codecContext.register(CcpRouteProperty.class, AsnCcpRoutePropertyCodec::new);
+    codecContext = CcpCodecs.register(InterledgerCodecContextFactory.oer());
   }
 
   private final T expectedObject;

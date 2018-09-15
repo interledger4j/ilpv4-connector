@@ -18,7 +18,7 @@ public class AsnCcpWithdrawnRouteCodec extends AsnSequenceCodec<CcpWithdrawnRout
    */
   public AsnCcpWithdrawnRouteCodec() {
     super(
-      new AsnInterledgerAddressPrefixCodec() // withdrawn route's prefix
+      new AsnInterledgerAddressPrefixCodec() // withdrawn getRoute's prefix
     );
   }
 
@@ -42,6 +42,6 @@ public class AsnCcpWithdrawnRouteCodec extends AsnSequenceCodec<CcpWithdrawnRout
   @Override
   public void encode(final CcpWithdrawnRoute value) {
     Objects.requireNonNull(value);
-    setValueAt(0, value.prefix()); // withdrawn route.
+    setValueAt(0, value.prefix()); // withdrawn getRoute.
   }
 }

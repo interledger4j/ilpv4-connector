@@ -1,4 +1,4 @@
-package com.sappenin.ilpv4.server.btp;
+package com.sappenin.ilpv4.plugins.btp;
 
 public abstract class BtpSubProtocolHandler {
 

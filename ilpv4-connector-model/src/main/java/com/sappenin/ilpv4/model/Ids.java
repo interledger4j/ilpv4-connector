@@ -1,7 +1,14 @@
 package com.sappenin.ilpv4.model;
 
-// TODO: Remove if unused....
-@Deprecated
+import com.sappenin.ilpv4.model.immutables.Wrapped;
+import com.sappenin.ilpv4.model.immutables.Wrapper;
+import org.immutables.value.Value;
+
+import java.util.UUID;
+
+/**
+ * Typed-identifiers for all ILPv4 components.
+ */
 public interface Ids {
 
   //  /**
@@ -13,12 +20,16 @@ public interface Ids {
   //
   //  }
   //
-  //  /**
-  //   * Identifier for {@link Account}.
-  //   */
-  //  @Value.Immutable
-  //  @Wrapped
-  //  abstract class _PeerId extends Wrapper<UUID> {
-  //
-  //  }
+
+  /**
+   * Identifier for {@link Account}.
+   */
+  @Value.Immutable
+  @Wrapped
+  abstract class _RoutingTableId extends Wrapper<UUID> {
+//    @Value.Derived
+//    public UUID toUuid() {
+//      return this.value();
+//    }
+  }
 }

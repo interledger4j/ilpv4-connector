@@ -8,8 +8,12 @@ import java.util.Base64;
 
 public final class CcpConstants {
 
-  public static final InterledgerAddress CCP_CONTROL_DESTINATION = InterledgerAddress.of("peer.route.control");
-  public static final InterledgerAddress CCP_UPDATE_DESTINATION = InterledgerAddress.of("peer.route.update");
+  public static final String CCP_CONTROL_DESTINATION = "peer.getRoute.control";
+  public static final String CCP_UPDATE_DESTINATION = "peer.getRoute.update";
+
+  public static final InterledgerAddress CCP_CONTROL_DESTINATION_ADDRESS =
+    InterledgerAddress.of(CCP_CONTROL_DESTINATION);
+  public static final InterledgerAddress CCP_UPDATE_DESTINATION_ADDRESS = InterledgerAddress.of(CCP_UPDATE_DESTINATION);
 
   // Fulfilment with Zero-filled byte array of 32 bytes.
   public static final InterledgerFulfillment PEER_PROTOCOL_EXECUTION_FULFILLMENT

@@ -1,9 +1,10 @@
 package com.sappenin.ilpv4.accounts;
 
 import com.sappenin.ilpv4.model.Account;
-import com.sappenin.ilpv4.model.Plugin;
 import com.sappenin.ilpv4.model.settings.AccountSettings;
+import com.sappenin.ilpv4.plugins.PluginManager;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.plugin.lpiv2.Plugin;
 
 import java.math.BigInteger;
 import java.util.Optional;
@@ -15,7 +16,7 @@ import java.util.stream.Stream;
  * <p>A connector might have multiple accounts with the same Counterparty, each of which may
  * have a different or identical currency code.</p>
  */
-public interface AccountManager {
+public interface AccountManager extends PluginManager {
 
   /**
    * Called just before this Peer Manager will be destroyed (i.e., disconnect all peers).
@@ -53,7 +54,7 @@ public interface AccountManager {
   /**
    * Gets the {@link Plugin} for the specified account address.
    */
-  Plugin getPlugin(InterledgerAddress interledgerAddress);
+  Plugin getOrCreatePlugin(InterledgerAddress interledgerAddress);
 
   /**
    * Accessor for all accounts in this manager, as a {@code Stream}.
@@ -68,4 +69,14 @@ public interface AccountManager {
    * @return A {@link BigInteger} representing the balance of the account identified by {@code accountAddress}.
    */
   BigInteger getAccountBalance(InterledgerAddress accountAddress);
+
+  /**
+   * Given an input address, append it to this connector's address to create a child address that this Connector can
+   * advertise as its own.
+   *
+   * @param interledgerAddress
+   *
+   * @return
+   */
+  InterledgerAddress constructChildAddress(InterledgerAddress interledgerAddress);
 }

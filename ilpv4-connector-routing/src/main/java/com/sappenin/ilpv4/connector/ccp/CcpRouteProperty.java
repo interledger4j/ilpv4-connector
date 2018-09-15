@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import org.immutables.value.Value;
 
 /**
- * <p>A route-property is used to send meta-data about a route. Properties can be optional or required. Required
+ * <p>A getRoute-property is used to send meta-data about a getRoute. Properties can be optional or required. Required
  * properties are always transitive.</p>
  *
  * <p>However, if a property is optional, it may still be transitive, and it may also be a partial property.</p>
@@ -46,7 +46,7 @@ public abstract class CcpRouteProperty {
   }
 
   /**
-   * Determines if this route contains only partial information about the entire route.
+   * Determines if this getRoute contains only partial information about the entire getRoute.
    */
   @Value.Default
   public boolean partial() {

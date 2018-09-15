@@ -52,14 +52,14 @@ ilpv4:
     - interledger_address: test.parent.micro.usd
       description: Parent micro-payments Account (USD)
       relationship: PARENT
-      # Name of the ILP plugin that should be used for this account.
-      pluginType: "MOCK"
+      # Name of the ILP lpi2 that should be used for this account.
+      pluginType: "SimulatedChildPlugin"
 
     - interledger_address: test.parent.unlimited.usd
       description: Unlimited Parent Account (USD)
       relationship: PARENT
       assetCode: USD
-      pluginType: "MOCK"
+      pluginType: "SimulatedChildPlugin"
       assetScale: 9
 
 ###

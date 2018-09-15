@@ -1,4 +1,4 @@
-package com.sappenin.ilpv4.server.btp;
+package com.sappenin.ilpv4.plugins.btp;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.BaseEncoding;
@@ -58,7 +58,7 @@ public class IlpSubprotocolHandler extends BtpSubProtocolHandler {
       final InterledgerPreparePacket incomingPreparePacket =
         codecContext.read(InterledgerPreparePacket.class, new ByteArrayInputStream(data));
 
-      // For now, we assume that a peer will operate a plugin for each account that it owns, and so will initiate a BTP
+      // For now, we assume that a peer will operate a lpi2 for each account that it owns, and so will initiate a BTP
       // connection for each account transmitting value.
       // TODO: However, BTP should ideally operate on a per-peer basis,
       // although the protocol is designed to have a single to/from in it. To explore this further, consider the

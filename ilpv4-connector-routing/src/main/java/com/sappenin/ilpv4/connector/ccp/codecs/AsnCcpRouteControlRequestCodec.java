@@ -1,9 +1,10 @@
 package com.sappenin.ilpv4.connector.ccp.codecs;
 
 import com.google.common.collect.Lists;
-import com.sappenin.ilpv4.connector.ccp.CcpSyncMode;
 import com.sappenin.ilpv4.connector.ccp.CcpRouteControlRequest;
+import com.sappenin.ilpv4.connector.ccp.CcpSyncMode;
 import com.sappenin.ilpv4.connector.ccp.ImmutableCcpRouteControlRequest;
+import com.sappenin.ilpv4.model.RoutingTableId;
 import org.interledger.encoding.asn.codecs.AsnSequenceCodec;
 import org.interledger.encoding.asn.codecs.AsnSequenceOfSequenceCodec;
 import org.interledger.encoding.asn.codecs.AsnUint32Codec;
@@ -23,7 +24,7 @@ public class AsnCcpRouteControlRequestCodec extends AsnSequenceCodec<CcpRouteCon
     super(
       new AsnUint8Codec(), // Mode
       new AsnUuidCodec(), // RoutingTableId (UUID)
-      new AsnUint32Codec(), // The epoch
+      new AsnUint32Codec(), // The getEpoch
       new AsnSequenceOfSequenceCodec(Lists::newArrayList, AsnFeatureCodec::new) // CcpFeature List.
     );
   }
@@ -37,8 +38,8 @@ public class AsnCcpRouteControlRequestCodec extends AsnSequenceCodec<CcpRouteCon
   public CcpRouteControlRequest decode() {
     return ImmutableCcpRouteControlRequest.builder()
       .mode(CcpSyncMode.fromShort(getValueAt(0)))
-      .lastKnownRoutingTableId(getValueAt(1))
-      .lastKnownEpoch(getValueAt(2))
+      .lastKnownRoutingTableId(RoutingTableId.of(getValueAt(1)))
+      .lastKnownEpoch(((Long)getValueAt(2)).intValue())
       .features(getValueAt(3))
       .build();
   }
@@ -53,8 +54,8 @@ public class AsnCcpRouteControlRequestCodec extends AsnSequenceCodec<CcpRouteCon
     Objects.requireNonNull(value);
 
     setValueAt(0, value.getMode().getValue());
-    setValueAt(1, value.lastKnownRoutingTableId());
-    setValueAt(2, value.lastKnownEpoch());
+    setValueAt(1, value.lastKnownRoutingTableId().value());
+    setValueAt(2, new Long(value.lastKnownEpoch()));
     setValueAt(3, value.features());
   }
 }

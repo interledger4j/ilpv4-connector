@@ -2,18 +2,19 @@ package com.sappenin.ilpv4.accounts;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
+import com.sappenin.ilpv4.connector.routing.Peer;
 import com.sappenin.ilpv4.model.IlpRelationship;
-import com.sappenin.ilpv4.model.Peer;
-import com.sappenin.ilpv4.model.Plugin;
-import com.sappenin.ilpv4.model.PluginType;
 import com.sappenin.ilpv4.model.settings.AccountSettings;
 import com.sappenin.ilpv4.model.settings.ConnectorSettings;
-import com.sappenin.ilpv4.plugins.MockChildPlugin;
-import com.sappenin.ilpv4.plugins.PluginManager;
+import com.sappenin.ilpv4.plugins.btp.BtpPlugin;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
+import org.interledger.plugin.lpiv2.ImmutablePluginSettings;
+import org.interledger.plugin.lpiv2.Plugin;
+import org.interledger.plugin.lpiv2.PluginSettings;
+import org.interledger.plugin.lpiv2.SimulatedChildPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,9 +32,10 @@ public class DefaultAccountManager implements AccountManager {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final ConnectorSettings connectorSettings;
-  private final PluginManager pluginManager;
   //private final BalanceManager
   private final Map<InterledgerAddress, AccountSettings> accounts = Maps.newConcurrentMap();
+  private final Map<InterledgerAddress, Plugin> plugins;
+  private final Map<InterledgerAddress, Peer> peers;
 
   // A Connector can have multiple accounts of type `parent`, but only one can be the primary account, e.g., for
   // purposes of IL-DCP and other protocols.
@@ -41,9 +43,10 @@ public class DefaultAccountManager implements AccountManager {
   // TODO: Just use an ILP address here?
   private Optional<AccountSettings> primaryParentAccountSettings = Optional.empty();
 
-  public DefaultAccountManager(final ConnectorSettings connectorSettings, final PluginManager pluginManager) {
+  public DefaultAccountManager(final ConnectorSettings connectorSettings) {
     this.connectorSettings = Objects.requireNonNull(connectorSettings);
-    this.pluginManager = Objects.requireNonNull(pluginManager);
+    this.plugins = Maps.newConcurrentMap();
+    this.peers = Maps.newConcurrentMap();
   }
 
   /**
@@ -75,7 +78,7 @@ public class DefaultAccountManager implements AccountManager {
       }
 
       // Try to connect to the account...
-      this.getPlugin(account.getInterledgerAddress()).doConnect();
+      this.getOrCreatePlugin(account.getInterledgerAddress()).connect();
     } catch (RuntimeException e) {
       // If any exception is thrown, then remove the peer and any plugins...
       this.remove(account.getInterledgerAddress());
@@ -141,42 +144,70 @@ public class DefaultAccountManager implements AccountManager {
   }
 
   @Override
-  public Plugin getPlugin(final InterledgerAddress accountAddress) {
-    Objects.requireNonNull(accountAddress);
+  public InterledgerAddress constructChildAddress(InterledgerAddress interledgerAddress) {
+    Objects.requireNonNull(interledgerAddress);
 
-    final AccountSettings accountSettings = this.getAccountSettings(accountAddress)
+    return this.connectorSettings.getIlpAddress().with(interledgerAddress.getValue());
+  }
+
+  @Override
+  public Plugin getOrCreatePlugin(final InterledgerAddress peerAccountAddress) {
+    Objects.requireNonNull(peerAccountAddress);
+
+    final AccountSettings accountSettings = this.getAccountSettings(peerAccountAddress)
       .orElseThrow(() -> new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
           .triggeredBy(this.connectorSettings.getIlpAddress())
           .code(InterledgerErrorCode.F02_UNREACHABLE)
-          .message(String.format("Tried to get a Plugin for non-existent account: %s", accountAddress))
+          .message(String.format("Tried to get a Plugin for non-existent account: %s", peerAccountAddress))
           .build())
       );
 
-    // Return the already constructed plugin, or attempt to construct a new one...
-    return this.pluginManager.getPlugin(accountAddress)
+    // Return the already constructed Plugin, or attempt to construct a new one...
+    return this.getPlugin(peerAccountAddress)
       .orElseGet(() -> {
-        final Plugin plugin = this.constructPlugin(accountAddress, accountSettings.getPluginType());
-        pluginManager.setPlugin(accountAddress, plugin);
+        final Plugin plugin = this.constructPlugin(
+          ImmutablePluginSettings.builder()
+            .pluginType(accountSettings.getPluginType())
+            .peerAccount(peerAccountAddress)
+            .localNodeAddress(this.connectorSettings.getIlpAddress())
+            .build()
+        );
+        this.setPlugin(peerAccountAddress, plugin);
         return plugin;
       });
   }
 
-  @VisibleForTesting
-  protected Plugin constructPlugin(final InterledgerAddress accountAddress, final PluginType pluginType) {
-
+  @Override
+  public Optional<Plugin> getPlugin(final InterledgerAddress accountAddress) {
     Objects.requireNonNull(accountAddress);
-    Objects.requireNonNull(pluginType);
+    return Optional.ofNullable(this.plugins.get(accountAddress));
+  }
 
-    switch (pluginType) {
-      case MOCK: {
-        return new MockChildPlugin(connectorSettings, accountAddress);
+  @Override
+  public void setPlugin(final InterledgerAddress accountAddress, final Plugin plugin) {
+    Objects.requireNonNull(accountAddress);
+    Objects.requireNonNull(plugin);
+    if (plugins.putIfAbsent(accountAddress, plugin) != null) {
+      throw new RuntimeException(
+        String.format("Plugin already exists with InterledgerAddress: %s", accountAddress)
+      );
+    }
+  }
+
+  @VisibleForTesting
+  protected Plugin constructPlugin(final PluginSettings pluginSettings) {
+    Objects.requireNonNull(pluginSettings);
+
+    switch (pluginSettings.getPluginType().value()) {
+      case SimulatedChildPlugin.PLUGIN_TYPE: {
+        return new SimulatedChildPlugin(pluginSettings);
       }
-      case BTP: {
+      case BtpPlugin.PLUGIN_TYPE: {
         throw new RuntimeException("Not yet implemented!");
       }
       default: {
-        throw new RuntimeException(String.format("Unsupported PluginType: %s", pluginType));
+        throw new RuntimeException(String.format("Unsupported PluginType: %s", pluginSettings.getPluginType()));
       }
     }
   }
@@ -189,7 +220,7 @@ public class DefaultAccountManager implements AccountManager {
   private void disconnectAccount(final AccountSettings accountSettings) {
     Optional.of(accountSettings)
       .map(AccountSettings::getInterledgerAddress)
-      .map(this::getPlugin)
-      .ifPresent(Plugin::doDisconnect);
+      .map(this::getOrCreatePlugin)
+      .ifPresent(Plugin::disconnect);
   }
 }

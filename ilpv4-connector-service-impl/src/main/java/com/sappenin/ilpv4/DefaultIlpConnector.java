@@ -3,7 +3,7 @@ package com.sappenin.ilpv4;
 import com.google.common.annotations.VisibleForTesting;
 import com.sappenin.ilpv4.accounts.AccountManager;
 import com.sappenin.ilpv4.connector.routing.PaymentRouter;
-import com.sappenin.ilpv4.connector.routing.RoutingTableEntry;
+import com.sappenin.ilpv4.connector.routing.Route;
 import com.sappenin.ilpv4.fx.ExchangeRateService;
 import com.sappenin.ilpv4.fx.ImmutableUpdateRatePaymentParams;
 import com.sappenin.ilpv4.model.settings.AccountSettings;
@@ -37,12 +37,12 @@ public class DefaultIlpConnector implements IlpConnector {
 
   private final ConnectorSettings connectorSettings;
   private final AccountManager accountManager;
-  private final PaymentRouter<RoutingTableEntry> paymentRouter;
+  private final PaymentRouter<Route> paymentRouter;
   private final ExchangeRateService exchangeRateService;
 
   public DefaultIlpConnector(
     final ConnectorSettings connectorSettings, final AccountManager accountManager,
-    final PaymentRouter<RoutingTableEntry> paymentRouter, final ExchangeRateService exchangeRateService
+    final PaymentRouter<Route> paymentRouter, final ExchangeRateService exchangeRateService
   ) {
     this.connectorSettings = Objects.requireNonNull(connectorSettings);
     this.accountManager = Objects.requireNonNull(accountManager);
@@ -52,7 +52,7 @@ public class DefaultIlpConnector implements IlpConnector {
 
   @PostConstruct
   private final void init() {
-    connectorSettings.getAccountSettings().stream()
+    connectorSettings.getAccounts().stream()
       .forEach(accountManager::add);
   }
 
@@ -91,10 +91,10 @@ public class DefaultIlpConnector implements IlpConnector {
         );
       }
 
-      // Throws an exception if the plugin cannot be found...
+      // Throws an exception if the lpi2 cannot be found...
       return this.accountManager
-        .getPlugin(nextHopInfo.nextHopAccountAddress())
-        .sendPacket(nextHopInfo.nextHopPacket())
+        .getOrCreatePlugin(nextHopInfo.nextHopAccountAddress())
+        .sendData(nextHopInfo.nextHopPacket())
         .thenApplyAsync((result) -> {
           // Log the fulfillment...
           if (logger.isDebugEnabled()) {
@@ -120,7 +120,7 @@ public class DefaultIlpConnector implements IlpConnector {
   }
 
   /**
-   * Find the appropriate plugin to send the outbound packet to.
+   * Find the appropriate lpi2 to send the outbound packet to.
    *
    * @param nextHopAccount
    * @param nextHopPacket
@@ -132,7 +132,7 @@ public class DefaultIlpConnector implements IlpConnector {
     Objects.requireNonNull(nextHopAccount);
     Objects.requireNonNull(nextHopPacket);
 
-    return this.accountManager.getPlugin(nextHopAccount).sendPacket(nextHopPacket);
+    return this.accountManager.getOrCreatePlugin(nextHopAccount).sendData(nextHopPacket);
   }
 
   /**
@@ -162,13 +162,13 @@ public class DefaultIlpConnector implements IlpConnector {
 
     final InterledgerAddress destinationAddress = sourcePacket.getDestination();
 
-    final RoutingTableEntry nextHopRoute = this.paymentRouter.findBestNexHop(destinationAddress)
+    final Route nextHopRoute = this.paymentRouter.findBestNexHop(destinationAddress)
       .orElseThrow(() -> new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
           .triggeredBy(this.connectorSettings.getIlpAddress())
           .code(InterledgerErrorCode.F02_UNREACHABLE)
           .message(String.format(
-            "No route found from source(%s) to destination(%s).", sourceAccountAddress, destinationAddress)
+            "No getRoute found from source(%s) to destination(%s).", sourceAccountAddress, destinationAddress)
           )
           .build()
       ));

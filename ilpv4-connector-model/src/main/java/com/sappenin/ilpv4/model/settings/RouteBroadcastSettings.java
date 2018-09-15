@@ -13,10 +13,18 @@ import java.time.temporal.ChronoUnit;
 public interface RouteBroadcastSettings {
 
   /**
-   * Whether to broadcast known routes.
+   * Whether to broadcast known routes to the remote peer.
    */
   @Value.Default
-  default boolean routeBroadcastEnabled() {
+  default boolean isSendRoutes() {
+    return true;
+  }
+
+  /**
+   * Whether to receive routing updates from the remote peer.
+   */
+  @Value.Default
+  default boolean isReceiveRoutes() {
     return true;
   }
 
@@ -25,7 +33,7 @@ public interface RouteBroadcastSettings {
    * route-update operation.
    */
   @Value.Default
-  default Duration routeBroadcastInterval() {
+  default Duration getRouteBroadcastInterval() {
     return Duration.of(30000, ChronoUnit.MILLIS);
   }
 
@@ -33,7 +41,7 @@ public interface RouteBroadcastSettings {
    * The frequency at which the connector checks for expired routes.
    */
   @Value.Default
-  default Duration routeCleanupInterval() {
+  default Duration getRouteCleanupInterval() {
     return Duration.of(1000, ChronoUnit.MILLIS);
   }
 
@@ -41,23 +49,15 @@ public interface RouteBroadcastSettings {
    * The maximum age of a route provided by this connector.
    */
   @Value.Default
-  default Duration routeExpiry() {
+  default Duration getRouteExpiry() {
     return Duration.of(45000, ChronoUnit.MILLIS);
-  }
-
-  /**
-   * Seed used for generating routing table auth values.
-   */
-  @Value.Default
-  default String routingSecret() {
-    return "";
   }
 
   /**
    * The maximum number of epochs to transmit with any particular routing update message sent via CCP.
    */
   @Value.Default
-  default long maxEpochsPerRoutingTable() {
+  default int getMaxEpochsPerRoutingTable() {
     return 50;
   }
 

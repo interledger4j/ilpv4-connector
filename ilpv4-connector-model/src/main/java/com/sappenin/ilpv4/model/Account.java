@@ -2,6 +2,7 @@ package com.sappenin.ilpv4.model;
 
 import org.immutables.value.Value;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.plugin.lpiv2.PluginType;
 
 import javax.money.CurrencyUnit;
 import java.math.BigInteger;
@@ -27,7 +28,7 @@ public interface Account {
   InterledgerAddress getInterledgerAddress();
 
   /**
-   * The type of plugin that this account uses to communicate with its peer.
+   * The type of lpi2 that this account uses to communicate with its peer.
    *
    * @return
    */
