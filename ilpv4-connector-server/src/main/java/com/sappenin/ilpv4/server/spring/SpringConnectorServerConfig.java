@@ -17,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
 /**
  * The root configuration file for the ILPv4 IlpConnector.
@@ -30,8 +31,10 @@ import java.util.concurrent.Executor;
 public class SpringConnectorServerConfig implements WebMvcConfigurer {
 
   @Bean
-  ConnectorSettings connectorSettings() {
-    return new ConnectorSettingsFromPropertyFile();
+  Supplier<ConnectorSettings> connectorSettingsSupplier() {
+    // TODO: Make this runtime-reloadable
+    final ConnectorSettingsFromPropertyFile settings = new ConnectorSettingsFromPropertyFile();
+    return () -> settings;
   }
 
   @Bean
@@ -62,8 +65,8 @@ public class SpringConnectorServerConfig implements WebMvcConfigurer {
   }
 
   @Bean
-  AccountManager accountManager(final ConnectorSettings connectorSettings) {
-    return new DefaultAccountManager(connectorSettings);
+  AccountManager accountManager(final Supplier<ConnectorSettings> connectorSettingsSupplier) {
+    return new DefaultAccountManager(connectorSettingsSupplier);
   }
 
   @Bean

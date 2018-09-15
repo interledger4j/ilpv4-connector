@@ -22,6 +22,7 @@ import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -31,7 +32,7 @@ public class DefaultAccountManager implements AccountManager {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  private final ConnectorSettings connectorSettings;
+  private final Supplier<ConnectorSettings> connectorSettings;
   //private final BalanceManager
   private final Map<InterledgerAddress, AccountSettings> accounts = Maps.newConcurrentMap();
   private final Map<InterledgerAddress, Plugin> plugins;
@@ -43,7 +44,7 @@ public class DefaultAccountManager implements AccountManager {
   // TODO: Just use an ILP address here?
   private Optional<AccountSettings> primaryParentAccountSettings = Optional.empty();
 
-  public DefaultAccountManager(final ConnectorSettings connectorSettings) {
+  public DefaultAccountManager(final Supplier<ConnectorSettings> connectorSettings) {
     this.connectorSettings = Objects.requireNonNull(connectorSettings);
     this.plugins = Maps.newConcurrentMap();
     this.peers = Maps.newConcurrentMap();
@@ -144,10 +145,10 @@ public class DefaultAccountManager implements AccountManager {
   }
 
   @Override
-  public InterledgerAddress constructChildAddress(InterledgerAddress interledgerAddress) {
+  public InterledgerAddress toChildAddress(InterledgerAddress interledgerAddress) {
     Objects.requireNonNull(interledgerAddress);
 
-    return this.connectorSettings.getIlpAddress().with(interledgerAddress.getValue());
+    return this.connectorSettings.get().getIlpAddress().with(interledgerAddress.getValue());
   }
 
   @Override
@@ -157,7 +158,7 @@ public class DefaultAccountManager implements AccountManager {
     final AccountSettings accountSettings = this.getAccountSettings(peerAccountAddress)
       .orElseThrow(() -> new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
-          .triggeredBy(this.connectorSettings.getIlpAddress())
+          .triggeredBy(this.connectorSettings.get().getIlpAddress())
           .code(InterledgerErrorCode.F02_UNREACHABLE)
           .message(String.format("Tried to get a Plugin for non-existent account: %s", peerAccountAddress))
           .build())
@@ -170,7 +171,7 @@ public class DefaultAccountManager implements AccountManager {
           ImmutablePluginSettings.builder()
             .pluginType(accountSettings.getPluginType())
             .peerAccount(peerAccountAddress)
-            .localNodeAddress(this.connectorSettings.getIlpAddress())
+            .localNodeAddress(this.connectorSettings.get().getIlpAddress())
             .build()
         );
         this.setPlugin(peerAccountAddress, plugin);

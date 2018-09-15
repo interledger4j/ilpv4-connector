@@ -94,6 +94,16 @@ public class InMemoryRoutingTable implements RoutingTable<Route> {
     return this.interledgerAddressPrefixMap.removeAll(addressPrefix);
   }
 
+  /**
+   * Obtain a view of all Routes in this Routing Table.
+   *
+   * @return
+   */
+  @Override
+  public Iterable<InterledgerAddressPrefix> getAllPrefixes() {
+    return this.interledgerAddressPrefixMap.getPrefixMapKeys();
+  }
+
   @Override
   public void forEach(final BiConsumer<? super InterledgerAddressPrefix, ? super Collection<Route>> action) {
     Objects.requireNonNull(action);

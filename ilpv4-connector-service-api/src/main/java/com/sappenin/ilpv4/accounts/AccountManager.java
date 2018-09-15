@@ -52,8 +52,12 @@ public interface AccountManager extends PluginManager {
   Optional<AccountSettings> getAccountSettings(InterledgerAddress interledgerAddress);
 
   /**
-   * Gets the {@link Plugin} for the specified account address.
+   * Gets the {@link Plugin} for the specified account address, creating it if needed.
+   *
+   * @deprecated consider separating this into two methods: get & create. Create should only be called once, when the
+   * account is added to the Connector.
    */
+  @Deprecated
   Plugin getOrCreatePlugin(InterledgerAddress interledgerAddress);
 
   /**
@@ -71,12 +75,12 @@ public interface AccountManager extends PluginManager {
   BigInteger getAccountBalance(InterledgerAddress accountAddress);
 
   /**
-   * Given an input address, append it to this connector's address to create a child address that this Connector can
-   * advertise as its own.
+   * Convert a child account into an address scoped underneath this connector. For example, given an input address,
+   * append it to this connector's address to create a child address that this Connector can advertise as its own.
    *
    * @param interledgerAddress
    *
    * @return
    */
-  InterledgerAddress constructChildAddress(InterledgerAddress interledgerAddress);
+  InterledgerAddress toChildAddress(InterledgerAddress interledgerAddress);
 }

@@ -2,7 +2,7 @@ package com.sappenin.ilpv4.model.settings;
 
 import com.google.common.base.Preconditions;
 import org.immutables.value.Value;
-import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.core.InterledgerAddress;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +36,7 @@ public interface RoutingSettings {
    * An optionally-defined account that should be used as the default route for all un-routed traffic. If empty, the
    * default route is disabled.
    */
-  Optional<InterledgerAddressPrefix> getDefaultRoute();
+  Optional<InterledgerAddress> getDefaultRoute();
 
   /**
    * Contains any preconfigured static routes for this connector.

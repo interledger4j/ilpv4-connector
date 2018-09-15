@@ -37,7 +37,7 @@ public interface PluginManager {
    *
    * @deprecated This method should not be used, instead favor creating a plugin at Account construction time.
    */
-  @Deprecated
-  Plugin getOrCreatePlugin(InterledgerAddress peerAccountAddress);
+  //@Deprecated
+  //Plugin getOrCreatePlugin(InterledgerAddress peerAccountAddress);
 
 }

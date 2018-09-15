@@ -285,7 +285,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
     private String routingSecret;
     private boolean useParentForDefaultRoute;
-    private Optional<InterledgerAddressPrefix> defaultRoute;
+    private Optional<InterledgerAddress> defaultRoute;
     private int maxEpochsPerRoutingTable;
     private List<StaticRoute> staticRoutes;
 
@@ -308,11 +308,11 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     }
 
     @Override
-    public Optional<InterledgerAddressPrefix> getDefaultRoute() {
+    public Optional<InterledgerAddress> getDefaultRoute() {
       return defaultRoute;
     }
 
-    public void setDefaultRoute(Optional<InterledgerAddressPrefix> defaultRoute) {
+    public void setDefaultRoute(Optional<InterledgerAddress> defaultRoute) {
       this.defaultRoute = defaultRoute;
     }
 

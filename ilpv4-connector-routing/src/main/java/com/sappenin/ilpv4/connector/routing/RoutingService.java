@@ -8,6 +8,7 @@ import com.sappenin.ilpv4.accounts.AccountManager;
 import com.sappenin.ilpv4.model.IlpRelationship;
 import com.sappenin.ilpv4.model.settings.AccountSettings;
 import com.sappenin.ilpv4.model.settings.ConnectorSettings;
+import com.sappenin.ilpv4.model.settings.StaticRoute;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.encoding.asn.framework.CodecContext;
@@ -25,6 +26,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Defines a centralized service that manages all routing decisions for an ILPv4 Connector.
@@ -353,7 +356,7 @@ public interface RoutingService {
             // Only do this if the relationship is CHILD...
             .ifPresent($ -> {
               // TODO: Revisit this!
-              //this.updatePrefix(accountManager.constructChildAddress(peerAccountAddress))
+              //this.updatePrefix(accountManager.toChildAddress(peerAccountAddress))
             });
 
         });
@@ -540,42 +543,61 @@ public interface RoutingService {
           .build()
       );
 
+      // Determine the default Route, and add it to the local routing table.
+      final InterledgerAddress nextHopForDefaultRoute;
+      if (connectorSettingsSupplier.get().getRoutingSettings().useParentForDefaultRoute()) {
+        nextHopForDefaultRoute = this.accountManager.getAllAccountSettings()
+          .filter(accountSettings -> accountSettings.getRelationship().equals(IlpRelationship.PARENT))
+          .findFirst()
+          .map(AccountSettings::getInterledgerAddress)
+          .orElseThrow(() -> new RuntimeException("Connector was configured to use the Parent account " +
+            "as the nextHop for the default route, but no Parent Account was configured!"));
+      } else {
+        nextHopForDefaultRoute = connectorSettingsSupplier.get().getRoutingSettings().getDefaultRoute()
+          .orElseThrow(() -> new RuntimeException("Connector was configured to use a default address as the nextHop " +
+            "for the default route, but no Account was configured for this address!"));
+      }
+      this.localRoutingTable.addRoute(
+        InterledgerAddressPrefix.GLOBAL,
+        ImmutableRoute.builder()
+          .routePrefix(InterledgerAddressPrefix.GLOBAL)
+          .nextHopAccount(nextHopForDefaultRoute)
+          // empty path
+          .auth(hmac(this.connectorSettingsSupplier.get().getRoutingSettings().getRoutingSecret(),
+            InterledgerAddressPrefix.GLOBAL))
+          // empty path.
+          // never expires
+          .build()
+      );
 
-      //
-      //      let defaultRoute = this.config.defaultRoute
-      //      if (defaultRoute === 'auto') {
-      //        defaultRoute = localAccounts.filter(id => this.accounts.getInfo(id).relation === 'parent')[0]
-      //      }
-      //      if (defaultRoute) {
-      //      const globalPrefix = this.getGlobalPrefix()
-      //        this.localRoutes.set(globalPrefix, {
-      //          nextHop: defaultRoute,
-      //          path: [],
-      //        auth: hmac(this.routingSecret, globalPrefix)
-      //      })
-      //      }
-      //
-      //      for (let accountId of localAccounts) {
-      //        if (this.getAccountRelation(accountId) === 'child') {
-      //        const childAddress = this.accounts.getChildAddress(accountId)
-      //          this.localRoutes.set(childAddress, {
-      //            nextHop: accountId,
-      //            path: [],
-      //          auth: hmac(this.routingSecret, childAddress)
-      //        })
-      //        }
-      //      }
-      //
-      //    const localPrefixes = Array.from(this.localRoutes.keys())
-      //    const configuredPrefixes = this.config.routes
-      //        ? this.config.routes.map(r => r.targetPrefix)
-      //      : []
-      //
-      //      for (let prefix of localPrefixes.concat(configuredPrefixes)) {
-      //        this.updatePrefix(prefix)
-      //      }
+      // For each local account that is a child...
+      this.accountManager.getAllAccountSettings()
+        .filter(localAccount -> localAccount.getRelationship().equals(IlpRelationship.CHILD))
+        .map(AccountSettings::getInterledgerAddress)
+        .forEach(localAccountAddress -> {
+          final InterledgerAddressPrefix childAddressAsPrefix =
+            InterledgerAddressPrefix.from(this.accountManager.toChildAddress(localAccountAddress));
+          localRoutingTable.addRoute(childAddressAsPrefix,
+            ImmutableRoute.builder()
+              .nextHopAccount(localAccountAddress)
+              // No Path
+              .auth(hmac(
+                this.connectorSettingsSupplier.get().getRoutingSettings().getRoutingSecret(), childAddressAsPrefix)
+              )
+              .build()
+          );
+        });
 
+      // Local prefixes Stream
+      final Stream<InterledgerAddressPrefix> localPrfixesStream =
+        StreamSupport.stream(this.localRoutingTable.getAllPrefixes().spliterator(), false);
 
+      // Configured prefixes Stream (from Static routes)
+      final Stream<InterledgerAddressPrefix> configuredPrefixesStream =
+        this.connectorSettingsSupplier.get().getRoutingSettings().getStaticRoutes().stream()
+          .map(StaticRoute::getTargetPrefix);
+      // Update all prefixes...
+      Stream.concat(localPrfixesStream, configuredPrefixesStream).forEach(this::updatePrefix);
     }
 
     @VisibleForTesting

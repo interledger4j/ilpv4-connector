@@ -148,6 +148,13 @@ public interface RoutingTable<R extends BaseRoute> {
   Collection<R> removeAllRoutesForPrefix(InterledgerAddressPrefix routePrefix);
 
   /**
+   * Obtain a view of all Routes in this Routing Table.
+   *
+   * @return
+   */
+  Iterable<InterledgerAddressPrefix> getAllPrefixes();
+
+  /**
    * Perform the following action on each item in the routing table.
    *
    * @param action
