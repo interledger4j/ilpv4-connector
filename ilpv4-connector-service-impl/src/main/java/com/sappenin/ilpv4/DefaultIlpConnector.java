@@ -23,6 +23,7 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 /**
  * A default implementation of {@link IlpConnector}.
@@ -35,16 +36,16 @@ public class DefaultIlpConnector implements IlpConnector {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  private final ConnectorSettings connectorSettings;
+  private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final AccountManager accountManager;
   private final PaymentRouter<Route> paymentRouter;
   private final ExchangeRateService exchangeRateService;
 
   public DefaultIlpConnector(
-    final ConnectorSettings connectorSettings, final AccountManager accountManager,
+    final Supplier<ConnectorSettings> connectorSettingsSupplier, final AccountManager accountManager,
     final PaymentRouter<Route> paymentRouter, final ExchangeRateService exchangeRateService
   ) {
-    this.connectorSettings = Objects.requireNonNull(connectorSettings);
+    this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountManager = Objects.requireNonNull(accountManager);
     this.paymentRouter = Objects.requireNonNull(paymentRouter);
     this.exchangeRateService = exchangeRateService;
@@ -52,7 +53,7 @@ public class DefaultIlpConnector implements IlpConnector {
 
   @PostConstruct
   private final void init() {
-    connectorSettings.getAccountSettings().stream()
+    getConnectorSettings().getAccountSettings().stream()
       .forEach(accountManager::add);
   }
 
@@ -61,9 +62,10 @@ public class DefaultIlpConnector implements IlpConnector {
     // accountManager#shutdown is called automatically by spring due to naming convention, so no need to call it here.
   }
 
+  // TODO: Make this a supplier.
   @Override
   public ConnectorSettings getConnectorSettings() {
-    return this.connectorSettings;
+    return this.connectorSettingsSupplier.get();
   }
 
   @Override
@@ -165,7 +167,7 @@ public class DefaultIlpConnector implements IlpConnector {
     final Route nextHopRoute = this.paymentRouter.findBestNexHop(destinationAddress)
       .orElseThrow(() -> new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
-          .triggeredBy(this.connectorSettings.getIlpAddress())
+          .triggeredBy(this.getConnectorSettings().getIlpAddress())
           .code(InterledgerErrorCode.F02_UNREACHABLE)
           .message(String.format(
             "No getRoute found from source(%s) to destination(%s).", sourceAccountAddress, destinationAddress)
@@ -222,7 +224,7 @@ public class DefaultIlpConnector implements IlpConnector {
     if (sourceExpiry.isBefore(nowTime)) {
       throw new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
-          .triggeredBy(this.connectorSettings.getIlpAddress())
+          .triggeredBy(this.getConnectorSettings().getIlpAddress())
           .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
           .message(String.format(
             "Source transfer has already expired. sourceExpiry: {%s}, currentTime: {%s}", sourceExpiry, nowTime))
@@ -247,7 +249,7 @@ public class DefaultIlpConnector implements IlpConnector {
     if (destinationExpiryTime.minusMillis(minMessageWindow).isBefore(nowTime)) {
       throw new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
-          .triggeredBy(this.connectorSettings.getIlpAddress())
+          .triggeredBy(this.getConnectorSettings().getIlpAddress())
           .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
           .message(String.format(
             "Source transfer expires too soon to complete payment. SourceExpiry: {%s}, " +

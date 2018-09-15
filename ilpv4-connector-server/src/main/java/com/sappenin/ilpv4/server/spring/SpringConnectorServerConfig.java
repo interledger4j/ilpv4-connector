@@ -44,9 +44,9 @@ public class SpringConnectorServerConfig implements WebMvcConfigurer {
 
   @Bean
   IlpConnector connector(
-    final ConnectorSettings connectorSettings, final AccountManager accountManager,
+    final Supplier<ConnectorSettings> connectorSettingsSupplier, final AccountManager accountManager,
     final PaymentRouter<Route> paymentRouter, final ExchangeRateService exchangeRateService) {
-    return new DefaultIlpConnector(connectorSettings, accountManager, paymentRouter, exchangeRateService);
+    return new DefaultIlpConnector(connectorSettingsSupplier, accountManager, paymentRouter, exchangeRateService);
   }
 
   @Bean
