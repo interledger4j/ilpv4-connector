@@ -5,7 +5,6 @@ import com.sappenin.ilpv4.accounts.AccountManager;
 import com.sappenin.ilpv4.model.settings.ImmutableAccountSettings;
 import com.sappenin.ilpv4.plugins.btp.spring.converters.BinaryMessageToBtpErrorConverter;
 import com.sappenin.ilpv4.plugins.btp.spring.converters.BinaryMessageToBtpResponseConverter;
-import com.sappenin.ilpv4.plugins.btp.spring.converters.BtpPacketToBinaryMessageConverter;
 import com.sappenin.ilpv4.plugins.btp.ws.ServerWebsocketBtpPlugin;
 import com.sappenin.ilpv4.server.spring.SpringConnectorWebMvc;
 import org.interledger.btp.BtpError;
@@ -13,6 +12,7 @@ import org.interledger.btp.BtpMessage;
 import org.interledger.btp.BtpResponse;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.plugin.lpiv2.ImmutablePluginSettings;
+import org.interledger.plugin.lpiv2.btp2.spring.converters.BtpPacketToBinaryMessageConverter;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,13 +35,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.sappenin.ilpv4.plugins.btp.BtpPluginSettings.KEY_SECRET;
 import static com.sappenin.ilpv4.plugins.btp.subprotocols.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH_TOKEN;
 import static com.sappenin.ilpv4.server.btp.BtpTestUtils.*;
 import static com.sappenin.ilpv4.server.spring.CodecContextConfig.BTP;
 import static com.sappenin.ilpv4.server.spring.CodecContextConfig.ILP;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.interledger.plugin.lpiv2.btp2.BtpPluginSettings.KEY_SECRET;
 
 /**
  * Unit tests that exercise the functionality of the BTP Server using Websockets.

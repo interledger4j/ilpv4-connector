@@ -1,7 +1,7 @@
 package com.sappenin.ilpv4.server.spring;
 
 import com.sappenin.ilpv4.model.settings.ConnectorSettings;
-import com.sappenin.ilpv4.plugins.btp.spring.BtpSocketHandler;
+import com.sappenin.ilpv4.plugins.btp.BtpSocketHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -60,6 +60,13 @@ public class SpringWsConfig implements WebSocketConfigurer {
     // Can't rely upon the ConnectorSettings, because at this point in the initialization, its value is the one take
     // from the properties file, which may be overidden at runtime.
     if (websocketServerEnabled) {
+
+      // TODO: Instead of doing it this way via late-binding, we can remove the BtpSocketHandler, and always create
+      // an instance of BtpServerPlugin, and Inject it into SpringWsConfig. If Websockets are turned on, we can
+      // connect the plugin to the WebsocketHandler directly in the config. This will drastically simplify the design
+      // . If we want to operate something like mini-accounts, we should prefer gRPC and not try to make BTP conform
+      // to a design it wasn't meant to support.
+
       // TODO: The current JS connector has a single port per plugin. If that design holds, we need to register new
       // filters for each server-BTP plugin. Before doing that, however, let's research the types of plugins that will
       // be built, and see if this is actually needed. See TODO in BtpSocketHandler.

@@ -1,43 +1,42 @@
 package com.sappenin.ilpv4.plugins;
 
 import com.sappenin.ilpv4.packetswitch.IlpPacketSwitch;
-import com.sappenin.ilpv4.plugins.btp.BtpClientPluginSettings;
-import com.sappenin.ilpv4.plugins.btp.BtpServerPluginSettings;
-import com.sappenin.ilpv4.plugins.btp.spring.converters.BinaryMessageToBtpPacketConverter;
-import com.sappenin.ilpv4.plugins.btp.spring.converters.BtpPacketToBinaryMessageConverter;
-import com.sappenin.ilpv4.plugins.btp.subprotocols.BtpSubProtocolHandlerRegistry;
-import com.sappenin.ilpv4.plugins.btp.ws.ClientWebsocketBtpPlugin;
-import com.sappenin.ilpv4.plugins.btp.ws.ServerWebsocketBtpPlugin;
+import com.sappenin.ilpv4.plugins.btp.BtpSocketHandler;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.plugin.lpiv2.Plugin;
 import org.interledger.plugin.lpiv2.PluginSettings;
 import org.interledger.plugin.lpiv2.SimulatedChildPlugin;
+import org.interledger.plugin.lpiv2.btp2.BtpClientPluginSettings;
+import org.interledger.plugin.lpiv2.btp2.BtpServerPluginSettings;
+import org.interledger.plugin.lpiv2.btp2.spring.ClientWebsocketBtpPlugin;
+import org.interledger.plugin.lpiv2.btp2.spring.ServerWebsocketBtpPlugin;
+import org.interledger.plugin.lpiv2.btp2.spring.converters.BinaryMessageToBtpPacketConverter;
+import org.interledger.plugin.lpiv2.btp2.spring.converters.BtpPacketToBinaryMessageConverter;
+import org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 
 import java.util.Objects;
 
-import static com.sappenin.ilpv4.plugins.btp.BtpPluginSettings.KEY_SECRET;
+import static org.interledger.plugin.lpiv2.btp2.BtpPluginSettings.KEY_SECRET;
 
 /**
- * A factory for constructing instances of {@link org.interledger.plugin.lpiv2.Plugin}.
+ * A factory for constructing instances of {@link org.interledger.plugin.lpiv2.Plugin} based upon configured settings.
  */
 public class IlpPluginFactory {
 
   private final CodecContext ilpCodecContext;
   private final CodecContext btpCodecContext;
-  //private final IlpLogUtils ilpLogUtils;
   private final BtpSubProtocolHandlerRegistry btpSubProtocolHandlerRegistry;
   private final BinaryMessageToBtpPacketConverter binaryMessageToBtpPacketConverter;
   private final BtpPacketToBinaryMessageConverter btpPacketToBinaryMessageConverter;
 
   private final IlpPacketSwitch ilpPacketSwitch;
 
-  // Required to connect the server plugin that is constructed inside of this class to the Spring WebSocket server
-  // handler.
+  // Required to connect this class's potentially-constructed server plugin to the Spring WebSocket server.
   @Autowired
-  private ApplicationContext appContext;
+  private ApplicationContext applicationContext;
 
   /**
    * Required-args Constructo.
@@ -45,14 +44,13 @@ public class IlpPluginFactory {
   public IlpPluginFactory(
     final CodecContext ilpCodecContext,
     final CodecContext btpCodecContext,
-    //final IlpLogUtils ilpLogUtils,
     final BtpSubProtocolHandlerRegistry btpSubProtocolHandlerRegistry,
     final BinaryMessageToBtpPacketConverter binaryMessageToBtpPacketConverter,
     final BtpPacketToBinaryMessageConverter btpPacketToBinaryMessageConverter,
-    final IlpPacketSwitch ilpPacketSwitch) {
+    final IlpPacketSwitch ilpPacketSwitch
+  ) {
     this.ilpCodecContext = Objects.requireNonNull(ilpCodecContext);
     this.btpCodecContext = Objects.requireNonNull(btpCodecContext);
-    //this.ilpLogUtils = Objects.requireNonNull(ilpLogUtils);
     this.btpSubProtocolHandlerRegistry = Objects.requireNonNull(btpSubProtocolHandlerRegistry);
     this.binaryMessageToBtpPacketConverter = Objects.requireNonNull(binaryMessageToBtpPacketConverter);
     this.btpPacketToBinaryMessageConverter = Objects.requireNonNull(btpPacketToBinaryMessageConverter);
@@ -85,10 +83,18 @@ public class IlpPluginFactory {
           btpCodecContext,
           btpSubProtocolHandlerRegistry,
           binaryMessageToBtpPacketConverter,
-          btpPacketToBinaryMessageConverter,
-          //this.ilpLogUtils,
-          this.appContext
+          btpPacketToBinaryMessageConverter
         );
+
+        // TODO: Instead of doing it this way via late-binding, we can remove the BtpSocketHandler, and always create
+        // an instance of BtpServerPlugin, and Inject it into SpringWsConfig. If Websockets are turned on, we can
+        // connect the plugin to the WebsocketHandler directly in the config.
+
+        // Grab BtpSocketHandler from the Context, and call setServerWebsocketBtpPlugin(this) in order to connect the two.
+        this.applicationContext.getBean(BtpSocketHandler.class).setServerWebsocketBtpPlugin(
+          (ServerWebsocketBtpPlugin) constructedPlugin
+        );
+
         break;
       }
       case ClientWebsocketBtpPlugin.PLUGIN_TYPE_STRING: {
@@ -103,7 +109,6 @@ public class IlpPluginFactory {
           btpSubProtocolHandlerRegistry,
           binaryMessageToBtpPacketConverter,
           btpPacketToBinaryMessageConverter,
-          //this.ilpLogUtils,
           new StandardWebSocketClient()
         );
         break;

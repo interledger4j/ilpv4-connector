@@ -1,6 +1,6 @@
-package com.sappenin.ilpv4.plugins.btp.spring;
+package com.sappenin.ilpv4.plugins.btp;
 
-import com.sappenin.ilpv4.plugins.btp.ws.ServerWebsocketBtpPlugin;
+import org.interledger.plugin.lpiv2.btp2.spring.ServerWebsocketBtpPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.socket.BinaryMessage;
@@ -17,7 +17,13 @@ import java.util.Objects;
  *
  * <p>Note that all messages handled by this handler are processing using BTP, although multiple callers/sessions may
  * exist and be handled by this same handler.</p>
+ *
+ * @deprecated Instead using this class to facilitate late-binding of a BTP Server plugin, we can remove this class and
+ * instead always create a BtpServerPlugin Bean via spring. Then, we can Inject that instance into SpringWsConfig. If
+ * Websockets are turned on, we can connect the injected plugin to the WebsocketHandler directly in the config. This
+ * will drastically simplify the implementation.
  */
+@Deprecated
 public class BtpSocketHandler extends BinaryWebSocketHandler {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -36,11 +42,12 @@ public class BtpSocketHandler extends BinaryWebSocketHandler {
   @Override
   public void handleBinaryMessage(final WebSocketSession webSocketSession, final BinaryMessage binaryMessage) {
     Objects.requireNonNull(serverWebsocketBtpPlugin, "BTP over Websockets requires a ServerWebsocketBtpPlugin!");
-    // TODO: What does the other side of the Websocket see if there's an exception here?
 
     this.serverWebsocketBtpPlugin.onIncomingBinaryMessage(webSocketSession, binaryMessage)
       .ifPresent(response -> {
         try {
+          // Return the response to the caller...
+          // TODO: What does the other side of the Websocket see if there's an exception here?
           webSocketSession.sendMessage(response);
         } catch (IOException e) {
           throw new RuntimeException(e);
