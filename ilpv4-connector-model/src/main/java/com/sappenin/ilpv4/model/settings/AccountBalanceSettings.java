@@ -28,7 +28,10 @@ public interface AccountBalanceSettings {
    *
    * @return The maximum balance, or {@link Optional#empty()} if there is no maximum.
    */
-  BigInteger getMaxBalance();
+  @Value.Default
+  default BigInteger getMaxBalance() {
+    return BigInteger.TEN;
+  }
 
   /**
    * Optional Balance (in this account's indivisible base units) numerically below which the connector will

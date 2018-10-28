@@ -1,10 +1,13 @@
 package com.sappenin.ilpv4.accounts;
 
+import com.sappenin.ilpv4.connector.routing.PaymentRouter;
+import com.sappenin.ilpv4.connector.routing.Route;
 import com.sappenin.ilpv4.model.Account;
 import com.sappenin.ilpv4.model.settings.AccountSettings;
 import com.sappenin.ilpv4.plugins.PluginManager;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.plugin.lpiv2.Plugin;
+import org.interledger.plugin.lpiv2.PluginSettings;
 
 import java.math.BigInteger;
 import java.util.Optional;
@@ -58,7 +61,7 @@ public interface AccountManager extends PluginManager {
    * account is added to the Connector.
    */
   @Deprecated
-  Plugin getOrCreatePlugin(InterledgerAddress interledgerAddress);
+  Plugin<? extends PluginSettings> getOrCreatePlugin(InterledgerAddress interledgerAddress);
 
   /**
    * Accessor for all accounts in this manager, as a {@code Stream}.

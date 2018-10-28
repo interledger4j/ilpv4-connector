@@ -1,7 +1,7 @@
 package com.sappenin.ilpv4.server;
 
 import com.sappenin.ilpv4.model.settings.ConnectorSettings;
-import com.sappenin.ilpv4.server.spring.SpringConnectorServerConfig;
+import com.sappenin.ilpv4.server.support.ConnectorServerConfig;
 import com.sappenin.ilpv4.server.support.Server;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 
@@ -12,34 +12,26 @@ import java.util.Optional;
  */
 public class ConnectorServer extends Server {
 
-  private final Optional<ConnectorSettings> connectorSettings;
+  // Allows a Server to use an overridden ConnectorSettings (useful for ITs).
+  private final Optional<ConnectorSettings> connectorSettingsOverride;
 
   public ConnectorServer() {
-    super(SpringConnectorServerConfig.class);
-    connectorSettings = Optional.empty();
+    super(ConnectorServerConfig.class);
+    this.connectorSettingsOverride = Optional.empty();
   }
 
   public ConnectorServer(final ConnectorSettings connectorSettings) {
-    super(SpringConnectorServerConfig.class);
-    this.connectorSettings = Optional.of(connectorSettings);
-  }
-
-  /**
-   * Constructor that allows a {@link ConnectorServer} to be initialized with a different configuration.
-   *
-   * @param connectorSettings
-   * @param configurationOverrides
-   */
-  public ConnectorServer(ConnectorSettings connectorSettings, Class<?>... configurationOverrides) {
-    super(configurationOverrides);
-    this.connectorSettings = Optional.of(connectorSettings);
+    super(ConnectorServerConfig.class);
+    this.connectorSettingsOverride = Optional.of(connectorSettings);
   }
 
   @Override
   public void start() {
     super.start();
 
-    this.connectorSettings.ifPresent(cs -> {
+    // Replace the connectorSettings with the supplied variant in order to override what's configured statically via
+    // the Server's configuration files or properties...
+    this.connectorSettingsOverride.ifPresent(cs -> {
       ((BeanDefinitionRegistry) this.getContext().getAutowireCapableBeanFactory())
         .removeBeanDefinition("connectorSettings");
       this.getContext().getBeanFactory().registerSingleton("connectorSettings", cs);

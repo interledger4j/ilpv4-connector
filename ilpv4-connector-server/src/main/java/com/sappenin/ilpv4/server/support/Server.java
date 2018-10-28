@@ -6,6 +6,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.PropertiesPropertySource;
 
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.Properties;
 
 /**
@@ -13,6 +14,8 @@ import java.util.Properties;
  * instances on different ports in the same JVM, which is especially useful for integration testing purposes.
  */
 public class Server {
+
+  public static final String ILP_SERVER_PORT = "ilp.server.port";
 
   private final Properties properties;
   private SpringApplication application;
@@ -48,10 +51,15 @@ public class Server {
   }
 
   public int getPort() {
-    if (context != null) {
-      return context.getBean(ConnectorServerSettings.class).getPort();
-    } else {
-      throw new IllegalStateException("Server not started!");
-    }
+    // Take the port out of the properties...
+    return Optional.ofNullable(this.properties.getProperty(ILP_SERVER_PORT))
+      .map(Integer::new)
+      .orElseGet(() -> {
+        if (context != null) {
+          return context.getBean(ConnectorServerConfig.class).getPort();
+        } else {
+          throw new IllegalStateException("Server not started!");
+        }
+      });
   }
 }

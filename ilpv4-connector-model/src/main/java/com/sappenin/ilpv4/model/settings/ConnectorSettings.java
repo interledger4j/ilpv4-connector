@@ -13,10 +13,25 @@ import java.util.List;
 @Value.Modifiable
 public interface ConnectorSettings {
 
+  String PROPERTY_NAME__WEBSOCKETS_ENABLED = "ilpv4.connector.websocketServerEnabled";
+
   /**
    * @return The ILP address of this connector.
    */
   InterledgerAddress getIlpAddress();
+
+  /**
+   * The global address prefix for this operating envionment.
+   */
+  @Value.Default
+  default InterledgerAddressPrefix getGlobalPrefix() {
+    return InterledgerAddressPrefix.of("g");
+  }
+
+  @Value.Default
+  default boolean websocketServerEnabled() {
+    return false;
+  }
 
   /**
    * Defines route-update settings for the Connector globally.
@@ -59,13 +74,4 @@ public interface ConnectorSettings {
    * @return An Collection of type {@link AccountSettings}.
    */
   List<AccountSettings> getAccountSettings();
-
-  /**
-   * The global address prefix for this operating envionment.
-   */
-  @Value.Default
-  default InterledgerAddressPrefix getGlobalPrefix() {
-    return InterledgerAddressPrefix.of("g");
-  }
-
 }

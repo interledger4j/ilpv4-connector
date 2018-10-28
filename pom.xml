@@ -20,15 +20,17 @@
 
   <properties>
     <java.version>1.8</java.version>
-    <ilp.version>0.13.0-SNAPSHOT</ilp.version>
+    <ilp.version>0.15.0-SNAPSHOT</ilp.version>
   </properties>
 
   <modules>
     <module>ilpv4-connector-model</module>
-    <module>ilpv4-connector-routing</module>
+    <module>ilpv4-connector-routing-api</module>
     <module>ilpv4-connector-service-api</module>
+    <module>ilpv4-connector-routing-impl</module>
     <module>ilpv4-connector-service-impl</module>
     <module>ilpv4-connector-server</module>
+    <module>ilpv4-client</module>
     <module>ilpv4-connector-it</module>
   </modules>
 
@@ -41,7 +43,12 @@
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-routing</artifactId>
+        <artifactId>ilpv4-connector-routing-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-routing-impl</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -108,8 +115,18 @@
       </dependency>
       <dependency>
         <groupId>org.interledger</groupId>
-        <artifactId>ilp-plugin</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <artifactId>ildcp-core</artifactId>
+        <version>${ilp.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.interledger</groupId>
+        <artifactId>ilp-plugin-core</artifactId>
+        <version>2.0.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.interledger</groupId>
+        <artifactId>ilp-plugin-btp</artifactId>
+        <version>2.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.interledger</groupId>
@@ -119,6 +136,11 @@
       <dependency>
         <groupId>org.interledger</groupId>
         <artifactId>ilp-core-codecs</artifactId>
+        <version>${ilp.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.interledger</groupId>
+        <artifactId>ildcp-core-codecs</artifactId>
         <version>${ilp.version}</version>
       </dependency>
       <dependency>

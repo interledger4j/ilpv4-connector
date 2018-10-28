@@ -1,37 +1,36 @@
 package com.sappenin.ilpv4;
 
+import com.sappenin.ilpv4.accounts.AccountManager;
+import com.sappenin.ilpv4.connector.routing.PaymentRouter;
+import com.sappenin.ilpv4.connector.routing.Route;
 import com.sappenin.ilpv4.model.settings.ConnectorSettings;
+import com.sappenin.ilpv4.packetswitch.IlpPacketSwitch;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
+import org.interledger.plugin.lpiv2.Plugin;
 
-import java.math.BigInteger;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 public interface IlpConnector {
 
   ConnectorSettings getConnectorSettings();
 
-  /**
-   * Handle an incoming prepare-packet by either fulfilling it (if local) or by forwarding it to a remote peer.
-   *
-   * Repeat calls to this method using the same transfer information must be idempotent.
-   *
-   * @param sourceAccountAddress     The {@link InterledgerAddress} for the account that sent this incoming ILP packet.
-   * @param interledgerPreparePacket An {@link InterledgerPreparePacket} containing data about an ILP payment.
-   *
-   * @throws InterledgerProtocolException If the response from the remote peer is a rejection.
-   */
-  CompletableFuture<InterledgerFulfillPacket> handleIncomingData(
-    InterledgerAddress sourceAccountAddress, InterledgerPreparePacket interledgerPreparePacket
-  ) throws InterledgerProtocolException;
+ // Plugin.IlpDataHandler getIlpPluginDataHandler();
+
+ // Plugin.IlpMoneyHandler getIlpPluginMoneyHandler();
+
+  AccountManager getAccountManager();
 
   /**
-   * Handle an incoming request to transfer {@code amount} units of an asset from the callers account to this
-   * connector.
+   * Accessor for the {@link PaymentRouter} used by this account manager.
+   *
+   * @return
    */
-  CompletableFuture<Void> handleIncomingMoney(BigInteger amount);
+  PaymentRouter<Route> getPaymentRouter();
 
+  IlpPacketSwitch getIlpPacketSwitch();
 
 }

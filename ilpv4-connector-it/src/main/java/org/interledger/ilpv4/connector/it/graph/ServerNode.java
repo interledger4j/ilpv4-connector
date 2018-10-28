@@ -20,6 +20,11 @@ public class ServerNode implements Node {
   }
 
   @Override
+  public String getScheme() {
+    return "ws";
+  }
+
+  @Override
   public String getHost() {
     return "localhost";
   }

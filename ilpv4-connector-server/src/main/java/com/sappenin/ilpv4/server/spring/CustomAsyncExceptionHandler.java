@@ -7,7 +7,7 @@ import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
 import java.lang.reflect.Method;
 
 /**
- * When a method return type is a Future, exception handling is easy – Future.get() method will throw the exception.
+ * When a method return type is a Future, exception handling is easy – Future.getEntry() method will throw the exception.
  *
  * But, if the return type is void, exceptions will not be propagated to the calling thread. Hence we need to add extra
  * configurations to handle exceptions.

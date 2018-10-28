@@ -5,12 +5,14 @@ import com.sappenin.ilpv4.model.IlpRelationship;
 import com.sappenin.ilpv4.model.settings.*;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.plugin.lpiv2.PluginSettings;
 import org.interledger.plugin.lpiv2.PluginType;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.math.BigInteger;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -24,9 +26,13 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   private InterledgerAddress ilpAddress;
 
-  private RoutingSettings routingSettings;
+  private boolean websocketServerEnabled;
 
-  private RouteBroadcastSettingsFromPropertyFile routeBroadcastSettings;
+  private InterledgerAddressPrefix globalPrefix;
+
+  private RoutingSettings routingSettings = new RoutingSettingsFromPropertyFile();
+
+  private RouteBroadcastSettings routeBroadcastSettings = new RouteBroadcastSettingsFromPropertyFile();
 
   private List<AccountSettingsFromPropertyFile> accounts = Lists.newArrayList();
 
@@ -37,6 +43,23 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   public void setIlpAddress(InterledgerAddress ilpAddress) {
     this.ilpAddress = ilpAddress;
+  }
+
+  @Override
+  public InterledgerAddressPrefix getGlobalPrefix() {
+    return globalPrefix;
+  }
+
+  public void setGlobalPrefix(InterledgerAddressPrefix globalPrefix) {
+    this.globalPrefix = globalPrefix;
+  }
+
+  public boolean websocketServerEnabled() {
+    return websocketServerEnabled;
+  }
+
+  public void setWebsocketServerEnabled(boolean websocketServerEnabled) {
+    this.websocketServerEnabled = websocketServerEnabled;
   }
 
   @Override
@@ -68,11 +91,11 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   }
 
   @Override
-  public RouteBroadcastSettingsFromPropertyFile getRouteBroadcastSettings() {
+  public RouteBroadcastSettings getRouteBroadcastSettings() {
     return routeBroadcastSettings;
   }
 
-  public void setRouteBroadcastSettings(RouteBroadcastSettingsFromPropertyFile routeBroadcastSettings) {
+  public void setRouteBroadcastSettings(RouteBroadcastSettings routeBroadcastSettings) {
     this.routeBroadcastSettings = routeBroadcastSettings;
   }
 
@@ -130,15 +153,17 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
     // The ILP Address that this account correlates to.
     private InterledgerAddress interledgerAddress;
-    private IlpRelationship relationship;
 
-    private PluginType pluginType;
+    private String description;
 
-    private String assetCode;
+    private IlpRelationship relationship = IlpRelationship.CHILD;
+
+    private String assetCode = "USD";
     private int assetScale = 2;
 
-    private AccountBalanceSettingsFromPropertyFile balanceSettings;
-    private RouteBroadcastSettings routeBroadcastSettings;
+    private AccountBalanceSettings balanceSettings = new AccountBalanceSettingsFromPropertyFile();
+    private RouteBroadcastSettings routeBroadcastSettings = new RouteBroadcastSettingsFromPropertyFile();
+    private PluginSettings pluginSettings = new PluginSettingsFromPropertyFile();
 
     private Optional<BigInteger> maximumPacketAmount = Optional.empty();
 
@@ -151,6 +176,15 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     }
 
     @Override
+    public String getDescription() {
+      return description;
+    }
+
+    public void setDescription(String description) {
+      this.description = description;
+    }
+
+    @Override
     public IlpRelationship getRelationship() {
       return relationship;
     }
@@ -160,11 +194,11 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     }
 
     @Override
-    public AccountBalanceSettingsFromPropertyFile getBalanceSettings() {
+    public AccountBalanceSettings getBalanceSettings() {
       return balanceSettings;
     }
 
-    public void setBalanceSettings(AccountBalanceSettingsFromPropertyFile balanceSettings) {
+    public void setBalanceSettings(AccountBalanceSettings balanceSettings) {
       this.balanceSettings = balanceSettings;
     }
 
@@ -178,12 +212,12 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     }
 
     @Override
-    public PluginType getPluginType() {
-      return pluginType;
+    public PluginSettings getPluginSettings() {
+      return pluginSettings;
     }
 
-    public void setPluginType(PluginType pluginType) {
-      this.pluginType = pluginType;
+    public void setPluginSettings(PluginSettings pluginSettings) {
+      this.pluginSettings = pluginSettings;
     }
 
     @Override
@@ -219,23 +253,23 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
    */
   public static class RouteBroadcastSettingsFromPropertyFile implements RouteBroadcastSettings {
 
-    private boolean sendRoutes;
+    private boolean sendRoutes = true;
 
-    private boolean receiveRoutes;
+    private boolean receiveRoutes = true;
 
-    private Duration routeBroadcastInterval;
+    private Duration routeBroadcastInterval = Duration.ofMillis(30000);
 
-    private Duration routeCleanupInterval;
+    private Duration routeCleanupInterval = Duration.ofMillis(1000);
 
-    private Duration routeExpiry;
+    private Duration routeExpiry = Duration.ofMillis(45000);
 
     private String routingSecret;
 
-    private int maxEpochsPerRoutingTable;
+    private int maxEpochsPerRoutingTable = 50;
 
     @Override
     public boolean isSendRoutes() {
-      return sendRoutes;
+      return this.sendRoutes;
     }
 
     public void setSendRoutes(boolean sendRoutes) {
@@ -292,13 +326,16 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     }
   }
 
+  /**
+   * Models the YAML format for spring-boot automatic configuration property loading.
+   */
   public static class RoutingSettingsFromPropertyFile implements RoutingSettings {
 
     private String routingSecret;
     private boolean useParentForDefaultRoute;
-    private Optional<InterledgerAddress> defaultRoute;
+    private InterledgerAddress defaultRoute;
     private int maxEpochsPerRoutingTable;
-    private List<StaticRoute> staticRoutes;
+    private List<StaticRouteFromPropertyFile> staticRoutes = Lists.newArrayList();
 
     @Override
     public String getRoutingSecret() {
@@ -320,23 +357,69 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
     @Override
     public Optional<InterledgerAddress> getDefaultRoute() {
-      return defaultRoute;
+      return Optional.ofNullable(defaultRoute);
     }
 
-    public void setDefaultRoute(Optional<InterledgerAddress> defaultRoute) {
+    public void setDefaultRoute(InterledgerAddress defaultRoute) {
       this.defaultRoute = defaultRoute;
     }
 
     @Override
-    public List<StaticRoute> getStaticRoutes() {
+    public List<StaticRouteFromPropertyFile> getStaticRoutes() {
       return staticRoutes;
     }
 
-    public void setStaticRoutes(List<StaticRoute> staticRoutes) {
+    public void setStaticRoutes(List<StaticRouteFromPropertyFile> staticRoutes) {
       this.staticRoutes = staticRoutes;
     }
   }
 
+  /**
+   * Models the YAML format for spring-boot automatic configuration property loading.
+   */
+  public static class PluginSettingsFromPropertyFile implements PluginSettings {
+
+    private PluginType pluginType;
+    private InterledgerAddress peerAccountAddress;
+    private InterledgerAddress localNodeAddress;
+    private Map<String, Object> customSettings;
+
+    @Override
+    public PluginType getPluginType() {
+      return pluginType;
+    }
+
+    public void setPluginType(PluginType pluginType) {
+      this.pluginType = pluginType;
+    }
+
+    @Override
+    public InterledgerAddress getPeerAccountAddress() {
+      return peerAccountAddress;
+    }
+
+    public void setPeerAccountAddress(InterledgerAddress peerAccountAddress) {
+      this.peerAccountAddress = peerAccountAddress;
+    }
+
+    @Override
+    public InterledgerAddress getLocalNodeAddress() {
+      return localNodeAddress;
+    }
+
+    public void setLocalNodeAddress(InterledgerAddress localNodeAddress) {
+      this.localNodeAddress = localNodeAddress;
+    }
+
+    @Override
+    public Map<String, Object> getCustomSettings() {
+      return customSettings;
+    }
+
+    public void setCustomSettings(Map<String, Object> customSettings) {
+      this.customSettings = customSettings;
+    }
+  }
 
   /**
    * Models the YAML format for spring-boot automatic configuration property loading.

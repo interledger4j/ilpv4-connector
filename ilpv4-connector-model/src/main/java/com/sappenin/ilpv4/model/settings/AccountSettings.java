@@ -3,6 +3,8 @@ package com.sappenin.ilpv4.model.settings;
 import com.sappenin.ilpv4.model.IlpRelationship;
 import org.immutables.value.Value;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.plugin.lpiv2.ImmutablePluginSettings;
+import org.interledger.plugin.lpiv2.PluginSettings;
 import org.interledger.plugin.lpiv2.PluginType;
 
 import java.math.BigInteger;
@@ -22,6 +24,14 @@ public interface AccountSettings {
   InterledgerAddress getInterledgerAddress();
 
   /**
+   * A human-readable description of this account.
+   */
+  @Value.Default
+  default String getDescription() {
+    return "";
+  }
+
+  /**
    * The relationship between this connector and a remote system, for this asset type.
    */
   @Value.Default
@@ -32,12 +42,18 @@ public interface AccountSettings {
   /**
    * @return The {@link PluginType} that should be used for this account.
    */
-  PluginType getPluginType();
+  @Value.Default
+  default PluginSettings getPluginSettings() {
+    return ImmutablePluginSettings.builder().build();
+  }
 
   /**
    * Currency code or other asset identifier that will be used to select the correct rate for this account.
    */
-  String getAssetCode();
+  @Value.Default
+  default String getAssetCode() {
+    return "USD";
+  }
 
   /**
    * Interledger amounts are integers, but most currencies are typically represented as # fractional units, e.g. cents.
@@ -46,25 +62,32 @@ public interface AccountSettings {
    *
    * @return
    */
-  int getAssetScale();
+  @Value.Default
+  default int getAssetScale() {
+    return 2;
+  }
 
   /**
    * Defines whether the connector should maintain and enforce a balance for this account.
    *
    * @return The parameters for tracking balances for this account.
    */
-  AccountBalanceSettings getBalanceSettings();
+  @Value.Default
+  default AccountBalanceSettings getBalanceSettings() {
+    return ImmutableAccountBalanceSettings.builder().build();
+  }
 
   /**
    * Defines routing characteristics for this account.
    *
    * @return An instance of {@link RouteBroadcastSettings}.
    */
-  RouteBroadcastSettings getRouteBroadcastSettings();
+  @Value.Default
+  default RouteBroadcastSettings getRouteBroadcastSettings() {
+    return ImmutableRouteBroadcastSettings.builder().build();
+  }
 
   // TODO: Configured Routes (i.e., static routes).
-  
-
 
 
   /**

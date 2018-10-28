@@ -1,19 +1,25 @@
 package com.sappenin.ilpv4.server.btp;
 
-import com.sappenin.ilpv4.plugins.btp.converters.BinaryMessageToBtpErrorConverter;
-import com.sappenin.ilpv4.plugins.btp.converters.BinaryMessageToBtpResponseConverter;
-import com.sappenin.ilpv4.plugins.btp.converters.BtpPacketToBinaryMessageConverter;
-import com.sappenin.ilpv4.server.spring.SpringConnectorServerConfig;
+import com.sappenin.ilpv4.IlpConnector;
+import com.sappenin.ilpv4.accounts.AccountManager;
+import com.sappenin.ilpv4.model.settings.ImmutableAccountSettings;
+import com.sappenin.ilpv4.plugins.btp.spring.converters.BinaryMessageToBtpErrorConverter;
+import com.sappenin.ilpv4.plugins.btp.spring.converters.BinaryMessageToBtpResponseConverter;
+import com.sappenin.ilpv4.plugins.btp.spring.converters.BtpPacketToBinaryMessageConverter;
+import com.sappenin.ilpv4.plugins.btp.ws.ServerWebsocketBtpPlugin;
+import com.sappenin.ilpv4.server.spring.SpringConnectorWebMvc;
 import org.interledger.btp.BtpError;
 import org.interledger.btp.BtpMessage;
 import org.interledger.btp.BtpResponse;
 import org.interledger.encoding.asn.framework.CodecContext;
+import org.interledger.plugin.lpiv2.ImmutablePluginSettings;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.context.annotation.Configuration;
@@ -29,15 +35,18 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.sappenin.ilpv4.plugins.btp.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH_TOKEN;
-import static com.sappenin.ilpv4.plugins.btp.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH_USERNAME;
+import static com.sappenin.ilpv4.plugins.btp.BtpPluginSettings.KEY_SECRET;
+import static com.sappenin.ilpv4.plugins.btp.subprotocols.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH_TOKEN;
+import static com.sappenin.ilpv4.server.btp.BtpTestUtils.*;
+import static com.sappenin.ilpv4.server.spring.CodecContextConfig.BTP;
+import static com.sappenin.ilpv4.server.spring.CodecContextConfig.ILP;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 /**
- * Unit tests that excercise the functionality of the BTP Server using Websockets.
+ * Unit tests that exercise the functionality of the BTP Server using Websockets.
  */
-@ContextConfiguration(classes = {SpringConnectorServerConfig.class, BtpServerAuthTest.TestConfig.class})
+@ContextConfiguration(classes = {SpringConnectorWebMvc.class, BtpServerAuthTest.TestConfig.class})
 //@TestPropertySource(properties = {"foo.bar=0"})
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -46,7 +55,18 @@ public class BtpServerAuthTest {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   @Autowired
-  CodecContext codecContext;
+  @Qualifier(BTP)
+  CodecContext btpCodecContext;
+
+  @Autowired
+  @Qualifier(ILP)
+  CodecContext ilpCodecContext;
+
+  @Autowired
+  IlpConnector ilpConnector;
+
+  @Autowired
+  AccountManager accountManager;
 
   @Autowired
   BinaryMessageToBtpResponseConverter binaryMessageToBtpResponseConverter;
@@ -72,7 +92,24 @@ public class BtpServerAuthTest {
   @Before
   public void setup() {
     this.wsClient = new StandardWebSocketClient();
-    this.btpTestUtils = new BtpTestUtils(codecContext);
+    this.btpTestUtils = new BtpTestUtils(ilpCodecContext, btpCodecContext);
+
+    // Only add the account to the test-connector instance once per test-run.
+    if (accountManager.getAccountSettings(LOCAL_ILP_ADDRESS).isPresent() == false) {
+      accountManager.add(
+        ImmutableAccountSettings.builder()
+          .interledgerAddress(LOCAL_ILP_ADDRESS)
+          .pluginSettings(
+            ImmutablePluginSettings.builder()
+              .localNodeAddress(LOCAL_ILP_ADDRESS)
+              .peerAccountAddress(REMOTE_ILP_ADDRESS)
+              .pluginType(ServerWebsocketBtpPlugin.PLUGIN_TYPE)
+              .putCustomSettings(KEY_SECRET, TEST_AUTH_TOKEN)
+              .build()
+          )
+          .build()
+      );
+    }
   }
 
   /**
@@ -84,7 +121,7 @@ public class BtpServerAuthTest {
 
     final WebSocketSession session = wsClient.doHandshake(new BinaryWebSocketHandler() {
       @Override
-      protected void handleBinaryMessage(WebSocketSession session, BinaryMessage message) throws Exception {
+      protected void handleBinaryMessage(WebSocketSession session, BinaryMessage message) {
         final BtpResponse btpResponse = binaryMessageToBtpResponseConverter.convert(message);
         assertThat(btpResponse.getRequestId(), is(requestId));
 
@@ -100,7 +137,7 @@ public class BtpServerAuthTest {
     final BtpMessage btpMessage = btpTestUtils.constructAuthMessage(requestId);
     session.sendMessage(btpPacketToBinaryMessageConverter.convert(btpMessage));
     logger.info("Sent test Auth BtpMessage: {}", btpMessage);
-    assertThat("Latch countdown should have reached zero!", lock.await(5, TimeUnit.SECONDS), is(true));
+    assertThat("Latch countdown should have reached zero!", lock.await(LATCH_LOCK_TIMEOUT, TimeUnit.SECONDS), is(true));
   }
 
   /**
@@ -127,7 +164,7 @@ public class BtpServerAuthTest {
     final BtpMessage btpMessage = btpTestUtils.constructAuthMessageWithNoAuthToken(requestId);
     session.sendMessage(btpPacketToBinaryMessageConverter.convert(btpMessage));
     logger.info("Sent test Auth BtpMessage: {}", btpMessage);
-    assertThat("Latch countdown should have reached zero!", lock.await(5, TimeUnit.SECONDS), is(true));
+    assertThat("Latch countdown should have reached zero!", lock.await(LATCH_LOCK_TIMEOUT, TimeUnit.SECONDS), is(true));
   }
 
   /**
@@ -140,13 +177,10 @@ public class BtpServerAuthTest {
     final WebSocketSession session = wsClient.doHandshake(new BinaryWebSocketHandler() {
       @Override
       protected void handleBinaryMessage(WebSocketSession session, BinaryMessage message) {
-        final BtpError btpError = binaryMessageToBtpErrorConverter.convert(message);
-        assertThat(btpError.getRequestId(), is(requestId));
-        assertThat(btpError.getSubProtocols().size(), is(0));
-        assertThat(new String(btpError.getErrorData()), is("Expected BTP SubProtocol with Id: " +
-          BTP_SUB_PROTOCOL_AUTH_USERNAME));
-
-        logger.info("Received Auth Error Respsonse: {}", btpError);
+        final BtpResponse btpResponse = binaryMessageToBtpResponseConverter.convert(message);
+        assertThat(btpResponse.getRequestId(), is(requestId));
+        assertThat(btpResponse.getSubProtocols().size(), is(0));
+        logger.info("Received Auth Response: {}", btpResponse);
         lock.countDown();
       }
     }, "ws://localhost:{port}/btp", port).get();
@@ -154,7 +188,7 @@ public class BtpServerAuthTest {
     final BtpMessage btpMessage = btpTestUtils.constructAuthMessageWithNoAuthUsername(requestId);
     session.sendMessage(btpPacketToBinaryMessageConverter.convert(btpMessage));
     logger.info("Sent test Auth BtpMessage: {}", btpMessage);
-    assertThat("Latch countdown should have reached zero!", lock.await(5, TimeUnit.SECONDS), is(true));
+    assertThat("Latch countdown should have reached zero!", lock.await(LATCH_LOCK_TIMEOUT, TimeUnit.SECONDS), is(true));
   }
 
   /**
@@ -170,21 +204,17 @@ public class BtpServerAuthTest {
         final BtpError btpError = binaryMessageToBtpErrorConverter.convert(message);
         assertThat(btpError.getRequestId(), is(requestId));
         assertThat(btpError.getSubProtocols().size(), is(0));
-        assertThat(new String(btpError.getErrorData()),
-          is("Expected BTP SubProtocol with Id: " + BTP_SUB_PROTOCOL_AUTH_TOKEN));
+        assertThat(new String(btpError.getErrorData()), is("invalid auth_token"));
 
         logger.info("Received Auth Error Respsonse: {}", btpError);
         lock.countDown();
       }
     }, "ws://localhost:{port}/btp", port).get();
 
-
-    // TODO: See BtpSocketHandler#authenticate -- currently, there is no authToken check against anything, so need to
-    // implement that. See JS implementation.
-    final BtpMessage btpMessage = btpTestUtils.constructAuthMessage(requestId, "test.foo", "");
+    final BtpMessage btpMessage = btpTestUtils.constructAuthMessage(requestId, TEST_AUTH_USERNAME, "");
     session.sendMessage(btpPacketToBinaryMessageConverter.convert(btpMessage));
     logger.info("Sent test Auth BtpMessage: {}", btpMessage);
-    assertThat("Latch countdown should have reached zero!", lock.await(5, TimeUnit.SECONDS), is(true));
+    assertThat("Latch countdown should have reached zero!", lock.await(LATCH_LOCK_TIMEOUT, TimeUnit.SECONDS), is(true));
   }
 
   /**

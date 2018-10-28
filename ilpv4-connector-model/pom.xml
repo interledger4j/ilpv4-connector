@@ -16,6 +16,10 @@
 
   <dependencies>
     <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
+    <dependency>
       <groupId>javax.inject</groupId>
       <artifactId>javax.inject</artifactId>
     </dependency>
@@ -33,7 +37,7 @@
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
-      <artifactId>ilp-plugin</artifactId>
+      <artifactId>ilp-plugin-core</artifactId>
     </dependency>
   </dependencies>
 </project>

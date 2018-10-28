@@ -25,6 +25,14 @@
       <artifactId>ilpv4-connector-service-impl</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.sappenin.ilpv4</groupId>
+      <artifactId>ilpv4-connector-routing-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.sappenin.ilpv4</groupId>
+      <artifactId>ilpv4-connector-routing-impl</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>ilp-core-codecs</artifactId>
     </dependency>

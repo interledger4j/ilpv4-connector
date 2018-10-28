@@ -35,32 +35,122 @@ spring:
         use_sql_comments: true
         format_sql: true
 
+# All values for this connector. Commented-out values are the default.
 ilpv4:
+  # Defines all options available for configuring a Connector.
   connector:
-    secret: shhhhhh
-    # ILP address of the connector. This property can be omitted if an account with relation=parent
-    # is configured under accounts.
-    ilp_address: test.example
+    ## ILP address of the connector.
+    ## This property can be omitted if an account with relation=parent is configured under accounts.
+    ilpAddress: test.example
+    # The global prefix. For production environments, this should be `g`. For test environments, consider `test`.
+    globalPrefix: g
+    # Set to true if this server will operate a Websocket server.
+    websocketServerEnabled: true
+    # Global Routing Settings for this connector.
+    routingSettings:
+      # Determines if the parent-account should be used as the default route. This value overrides any specified
+      # `defaultRoute` value.
+      useParentForDefaultRoute: true
+      # Which account should be used as the default route for all un-routed traffic. If empty, the default route is
+      # disabled.
+      defaultRoute: self.internal
+      # Seed used for generating routing table auth values.
+      routingSecret:
+      #########
+      # Static Routes
+      #########
+      staticRoutes:
+      # ILP address prefix that this getRoute applies to. Configured routes take precedence over the same or shorter
+      # prefixes that are local or published by peers. More specific prefixes will still take precedence. Prefixes
+      # should NOT include a trailing period.
+      - targetPrefix: test.parent.micro
+        # ID of the account that destinations matching `targetPrefix` should be forwarded to. Must be one of the
+        # accounts in `accounts`.
+        peerAddress: test.parent.micro.usd
+      - targetPrefix: test
+        peerAddress: test.parent.unlimited.usd
 
     #########
-    # Peers
+    # Accounts
     #########
     accounts:
     # MicroPayments only...
-    # TODO: rateLimit, throughput, routes, options.
-    #See https://github.com/interledgerjs/ilp-connector/blob/f938cbe1f156e3330a611daf0f8874b8b9fb35e4/src/schemas/Config.json
+    # See https://github.com/interledgerjs/ilp-connector/blob/f938cbe1f156e3330a611daf0f8874b8b9fb35e4/src/schemas/Config.json
     - interledger_address: test.parent.micro.usd
-      description: Parent micro-payments Account (USD)
+      description: "USD Account"
+      # Relationship between this connector and a counterparty peer. Options are PARENT, PEER, and CHILD, describing the
+      # counterparty with respect to this connector.
       relationship: PARENT
-      # Name of the ILP lpi2 that should be used for this account.
-      pluginType: "SimulatedChildPlugin"
+      # Type of the ILP lpi2 that should be used for this account.
+      pluginSettings:
+        pluginType: SimulatedChildPlugin
+        peerAccountAddress: test.parent.micro.usd
+        localNodeAddress: ${ilpv4.connector.ilpAddress}
+        customSettings:
+          foo: bar
+          boo: baz
+      # Currency code or other asset identifier that will be used to select the correct rate for this account.
+      assetCode: USD
+      # Interledger amounts are integers, but most currencies are typically represented as
+      # fractional units, e.g. cents. This property defines how many Interledger units make
+      # up one regular unit. For dollars, this would usually be set to 9, so that Interledger
+      # amounts are expressed in nano-dollars.
+      assetScale: 9
+      # Optional. Maximum amount per packet for incoming prepare packets. IlpConnector will reject
+      # any incoming prepare packets from this account with a higher amount. Amount should be
+      # provided as an integer in a string (in atomic units).
+      maximumPacketAmount: 100000
+      #########
+      # Balance Settings
+      #########
+      balanceSettings:
+        # Optional. Minimum balance (in this account's indivisible base units) the connector
+        # must maintain. The connector will reject outgoing packets if they would putEntry it below
+        # this balance. The format is a string containing an integer (which may be prefixed with
+        # - to indicate a negative value).
+        minBalance: 0
+        # Maximum balance (in this account's indivisible base units) the connector will allow.
+        # The connector will reject incoming packets if they would putEntry it above this balance.
+        # The format is a string containing an integer (which may be prefixed with - to indicate
+        # a negative value).
+        maxBalance: 0
+        # Optional Balance (in this account's indivisible base units) numerically below which
+        # the connector will automatically initiate a settlement. The format is a string
+        # containing an integer (which may be prefixed with - to indicate a negative value).
+        settleThreshold: 10000000
+        # Optional Balance (in this account's indivisible base units) the connector will attempt to reach when settling.
+        settleTo: 0
+      #########
+      # Per-Account Routing
+      #########
+      routeBroadcastSettings:
+        # Whether this connector should broadcast routes to this peer. Defaults to `false` for `relation=child` and
+        # `true` otherwise.
+        sendRoutes: true
+        # Whether we should receive and process getRoute broadcasts from this peer. Defaults to `false` for
+        # `relation=child` and `true` otherwise.
+        receiveRoutes: true
+        # Frequency at which the connector broadcasts its routes to adjacent connectors, in milliseconds, starting at
+        # the point in time after which the previous getRoute-broadcast operation ended.
+        routeBroadcastInterval: 30000
+        # The frequency at which the connector checks for expired routes. (in milliseconds) [Not currently used]
+        # getRouteCleanupInterval: 1000
+        # The maximum age of a getRoute provided by this connector (in milliseconds).
+        routeExpiry: 45000
+        # Seed used for generating routing table auth values.
+        routingSecret:
+        # The minimum interval to wait before sending another routing update via CCP. Routing updates will not be
+        # sent more frequently than every N milliseconds, where N = minRouteUpdateInterval.
+        minRouteUpdateInterval: 150
+        # The maximum number of epochs to transmit with any particular routing update message sent via CCP.
+        maxEpochsPerRoutingTable: 50
 
     - interledger_address: test.parent.unlimited.usd
-      description: Unlimited Parent Account (USD)
-      relationship: PARENT
-      assetCode: USD
-      pluginType: "SimulatedChildPlugin"
-      assetScale: 9
+      description: USD Account
+      pluginSettings:
+        pluginType: SimulatedChildPlugin
+        peerAccountAddress: test.parent.unlimited.usd
+        localNodeAddress: ${ilpv4.connector.ilpAddress}
 
 ###
 #   H2 Settings

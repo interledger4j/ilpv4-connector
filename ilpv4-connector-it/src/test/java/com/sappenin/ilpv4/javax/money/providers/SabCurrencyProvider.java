@@ -15,7 +15,7 @@ import java.util.Set;
  */
 public class SabCurrencyProvider implements CurrencyProviderSpi {
 
-  public static final String SAB = "SAB";
+  public static final String SAB = "XRP";
   private Set<CurrencyUnit> currencyUnits;
 
   public SabCurrencyProvider() {

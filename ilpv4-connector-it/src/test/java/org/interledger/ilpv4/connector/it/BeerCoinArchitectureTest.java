@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.ilpv4.connector.it.BeerCoinArchitecture.*;
+import static org.interledger.ilpv4.connector.it.graph.ConnectorNode.CONNECTOR_BEAN;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -56,6 +57,7 @@ public class BeerCoinArchitectureTest {
     final IlpConnector davidConnector = getIlpConnectorFromGraph(DAVID);
     assertThat(davidConnector.getConnectorSettings().getIlpAddress(), is(DAVID));
 
+    //
     //davidConnector.
   }
 
@@ -68,7 +70,7 @@ public class BeerCoinArchitectureTest {
    */
   private IlpConnector getIlpConnectorFromGraph(final InterledgerAddress interledgerAddress) {
     return (IlpConnector) ((ServerNode) graph.getNode(interledgerAddress.getValue()))
-      .getServer().getContext().getBean("connector");
+      .getServer().getContext().getBean(CONNECTOR_BEAN);
   }
 
 }

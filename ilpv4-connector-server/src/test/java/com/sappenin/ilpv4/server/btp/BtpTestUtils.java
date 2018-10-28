@@ -2,7 +2,6 @@ package com.sappenin.ilpv4.server.btp;
 
 import org.interledger.btp.BtpMessage;
 import org.interledger.btp.BtpSubProtocol;
-import org.interledger.btp.BtpSubProtocolContentType;
 import org.interledger.btp.BtpSubProtocols;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
@@ -19,15 +18,24 @@ import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.Random;
 
-import static com.sappenin.ilpv4.plugins.btp.BtpSubProtocolHandlerRegistry.*;
+import static com.sappenin.ilpv4.plugins.btp.subprotocols.BtpSubProtocolHandlerRegistry.*;
 
 public class BtpTestUtils {
 
-  private final Random random;
-  private final CodecContext codecContext;
+  public static final int LATCH_LOCK_TIMEOUT = 3;
+  public static final InterledgerAddress LOCAL_ILP_ADDRESS = InterledgerAddress.of("test.btp-server");
+  public static final InterledgerAddress REMOTE_ILP_ADDRESS = InterledgerAddress.of("test.peer");
 
-  public BtpTestUtils(final CodecContext codecContext) {
-    this.codecContext = Objects.requireNonNull(codecContext);
+  public static final String TEST_AUTH_USERNAME = REMOTE_ILP_ADDRESS.getValue();
+  public static final String TEST_AUTH_TOKEN = "shh";
+
+  private final Random random;
+  private final CodecContext btpCodecContext;
+  private final CodecContext ilpCodecContext;
+
+  public BtpTestUtils(final CodecContext ilpCodecContext, final CodecContext btpCodecContext) {
+    this.btpCodecContext = Objects.requireNonNull(btpCodecContext);
+    this.ilpCodecContext = Objects.requireNonNull(ilpCodecContext);
     this.random = new SecureRandom();
   }
 
@@ -62,12 +70,12 @@ public class BtpTestUtils {
 
     final BtpSubProtocol authSubProtocol = BtpSubProtocol.builder()
       .protocolName(BTP_SUB_PROTOCOL_AUTH)
-      .contentType(BtpSubProtocolContentType.MIME_TEXT_PLAIN_UTF8)
+      .contentType(BtpSubProtocol.ContentType.MIME_TEXT_PLAIN_UTF8)
       .build();
 
     final BtpSubProtocol authUsernameSubprotocol = BtpSubProtocol.builder()
       .protocolName(BTP_SUB_PROTOCOL_AUTH_USERNAME)
-      .contentType(BtpSubProtocolContentType.MIME_TEXT_PLAIN_UTF8)
+      .contentType(BtpSubProtocol.ContentType.MIME_TEXT_PLAIN_UTF8)
       .data(username.getBytes(StandardCharsets.UTF_8))
       .build();
 
@@ -75,7 +83,7 @@ public class BtpTestUtils {
     // but it cannot be omitted.
     final BtpSubProtocol authTokenSubprotocol = BtpSubProtocol.builder()
       .protocolName(BTP_SUB_PROTOCOL_AUTH_TOKEN)
-      .contentType(BtpSubProtocolContentType.MIME_TEXT_PLAIN_UTF8)
+      .contentType(BtpSubProtocol.ContentType.MIME_TEXT_PLAIN_UTF8)
       .data(authToken.getBytes(StandardCharsets.UTF_8))
       .build();
 
@@ -100,13 +108,13 @@ public class BtpTestUtils {
 
     final BtpSubProtocol authSubProtocol = BtpSubProtocol.builder()
       .protocolName(BTP_SUB_PROTOCOL_AUTH)
-      .contentType(BtpSubProtocolContentType.MIME_TEXT_PLAIN_UTF8)
+      .contentType(BtpSubProtocol.ContentType.MIME_TEXT_PLAIN_UTF8)
       .build();
 
     final BtpSubProtocol authUsernameSubprotocol = BtpSubProtocol.builder()
       .protocolName(BTP_SUB_PROTOCOL_AUTH_USERNAME)
-      .contentType(BtpSubProtocolContentType.MIME_TEXT_PLAIN_UTF8)
-      .data("test.foo".getBytes(StandardCharsets.UTF_8))
+      .contentType(BtpSubProtocol.ContentType.MIME_TEXT_PLAIN_UTF8)
+      .data(REMOTE_ILP_ADDRESS.getValue().getBytes(StandardCharsets.UTF_8))
       .build();
 
     final BtpSubProtocols btpSubProtocols = BtpSubProtocols.fromPrimarySubProtocol(authSubProtocol);
@@ -129,15 +137,15 @@ public class BtpTestUtils {
 
     final BtpSubProtocol authSubProtocol = BtpSubProtocol.builder()
       .protocolName(BTP_SUB_PROTOCOL_AUTH)
-      .contentType(BtpSubProtocolContentType.MIME_TEXT_PLAIN_UTF8)
+      .contentType(BtpSubProtocol.ContentType.MIME_TEXT_PLAIN_UTF8)
       .build();
 
     // In situations where no authentication is needed, the 'auth_token' data can be set to the empty string,
     // but it cannot be omitted.
     final BtpSubProtocol authTokenSubprotocol = BtpSubProtocol.builder()
       .protocolName(BTP_SUB_PROTOCOL_AUTH_TOKEN)
-      .contentType(BtpSubProtocolContentType.MIME_TEXT_PLAIN_UTF8)
-      .data("password".getBytes(StandardCharsets.UTF_8))
+      .contentType(BtpSubProtocol.ContentType.MIME_TEXT_PLAIN_UTF8)
+      .data(TEST_AUTH_TOKEN.getBytes(StandardCharsets.UTF_8))
       .build();
 
     final BtpSubProtocols btpSubProtocols = BtpSubProtocols.fromPrimarySubProtocol(authSubProtocol);
@@ -156,8 +164,7 @@ public class BtpTestUtils {
    *
    * @return
    */
-  public BtpMessage constructIlpPrepareMessage(final long requestId, final String username, final String authToken,
-                                               final InterledgerAddress interledgerAddress) {
+  public BtpMessage constructIlpPrepareMessage(final long requestId, final InterledgerAddress interledgerAddress) {
     try {
       final byte[] randomBytes = new byte[32];
       new Random().nextBytes(randomBytes);
@@ -170,7 +177,7 @@ public class BtpTestUtils {
         .expiresAt(Instant.now().plus(10, ChronoUnit.MINUTES)).build();
 
       final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      codecContext.write(preparePacket, baos);
+      btpCodecContext.write(preparePacket, baos);
 
       final BtpSubProtocol ilpSubProtocol = BtpSubProtocol.builder()
         .protocolName(BTP_SUB_PROTOCOL_ILP)

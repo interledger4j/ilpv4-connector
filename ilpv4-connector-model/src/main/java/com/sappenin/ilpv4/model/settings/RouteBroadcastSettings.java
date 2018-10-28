@@ -34,7 +34,7 @@ public interface RouteBroadcastSettings {
    */
   @Value.Default
   default Duration getRouteBroadcastInterval() {
-    return Duration.of(30000, ChronoUnit.MILLIS);
+    return Duration.ofMillis(30000);
   }
 
   /**
@@ -42,7 +42,7 @@ public interface RouteBroadcastSettings {
    */
   @Value.Default
   default Duration getRouteCleanupInterval() {
-    return Duration.of(1000, ChronoUnit.MILLIS);
+    return Duration.ofMillis(1000);
   }
 
   /**
@@ -50,7 +50,7 @@ public interface RouteBroadcastSettings {
    */
   @Value.Default
   default Duration getRouteExpiry() {
-    return Duration.of(45000, ChronoUnit.MILLIS);
+    return Duration.ofMillis(45000);
   }
 
   /**

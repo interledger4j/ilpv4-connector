@@ -1,12 +1,14 @@
 package com.sappenin.ilpv4.server.btp;
 
 import com.google.common.io.BaseEncoding;
-import com.sappenin.ilpv4.plugins.btp.converters.BinaryMessageToBtpErrorConverter;
-import com.sappenin.ilpv4.plugins.btp.converters.BinaryMessageToBtpResponseConverter;
-import com.sappenin.ilpv4.plugins.btp.converters.BtpPacketToBinaryMessageConverter;
-import com.sappenin.ilpv4.server.spring.SpringConnectorServerConfig;
+import com.sappenin.ilpv4.plugins.btp.spring.converters.BinaryMessageToBtpErrorConverter;
+import com.sappenin.ilpv4.plugins.btp.spring.converters.BinaryMessageToBtpResponseConverter;
+import com.sappenin.ilpv4.plugins.btp.spring.converters.BtpPacketToBinaryMessageConverter;
+import com.sappenin.ilpv4.server.spring.SpringConnectorWebMvc;
 import org.interledger.btp.BtpMessage;
+import org.interledger.btp.BtpMessageType;
 import org.interledger.btp.BtpResponse;
+import org.interledger.btp.BtpSubProtocols;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.junit.Before;
@@ -15,6 +17,7 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.context.annotation.Configuration;
@@ -30,13 +33,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import static com.sappenin.ilpv4.server.btp.BtpTestUtils.LATCH_LOCK_TIMEOUT;
+import static com.sappenin.ilpv4.server.spring.CodecContextConfig.BTP;
+import static com.sappenin.ilpv4.server.spring.CodecContextConfig.ILP;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 /**
  * Unit tests that exercise the ILP Prepare functionality of the BTP Server using Websockets.
  */
-@ContextConfiguration(classes = {SpringConnectorServerConfig.class, BtpServerPrepareTest.TestConfig.class})
+@ContextConfiguration(classes = {SpringConnectorWebMvc.class, BtpServerPrepareTest.TestConfig.class})
 //@TestPropertySource(properties = {"foo.bar=0"})
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -45,7 +51,12 @@ public class BtpServerPrepareTest {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   @Autowired
-  CodecContext codecContext;
+  @Qualifier(BTP)
+  CodecContext btpCodecContext;
+
+  @Autowired
+  @Qualifier(ILP)
+  CodecContext ilpCodecContext;
 
   @Autowired
   BinaryMessageToBtpResponseConverter binaryMessageToBtpResponseConverter;
@@ -71,7 +82,7 @@ public class BtpServerPrepareTest {
   @Before
   public void setup() {
     this.wsClient = new StandardWebSocketClient();
-    this.btpTestUtils = new BtpTestUtils(codecContext);
+    this.btpTestUtils = new BtpTestUtils(ilpCodecContext, btpCodecContext);
   }
 
   /**
@@ -87,10 +98,18 @@ public class BtpServerPrepareTest {
         final BtpResponse btpResponse = binaryMessageToBtpResponseConverter.convert(message);
         assertThat(btpResponse.getRequestId(), is(requestId));
 
-        // Expect a valid auth response, which is merely an ACK packet that correlates to the above request id.
-        assertThat(btpResponse.getSubProtocols().size(), is(0));
+        if (btpResponse.hasSubProtocol(BtpSubProtocols.INTERLEDGER)) {
+          // Expect a valid auth response, which is merely an ACK packet that correlates to the above request id.
+          logger.info("Received IlpFulfill Response: {}", btpResponse);
+          assertThat(btpResponse.getType(), is(BtpMessageType.RESPONSE));
+          assertThat(btpResponse.getSubProtocols().size(), is(1));
+        } else {
+          // Expect a valid auth response, which is merely an ACK packet that correlates to the above request id.
+          logger.info("Received Auth Response: {}", btpResponse);
+          assertThat(btpResponse.getType(), is(BtpMessageType.RESPONSE));
+          assertThat(btpResponse.getSubProtocols().size(), is(0));
+        }
 
-        logger.info("Received Auth Response: {}", btpResponse);
         lock.countDown();
       }
     }, "ws://localhost:{port}/btp", port).get();
@@ -99,22 +118,18 @@ public class BtpServerPrepareTest {
     // AUTH
     final BtpMessage btpAuthMessage = btpTestUtils.constructAuthMessage(requestId);
     final BinaryMessage binaryAuthMessage = btpPacketToBinaryMessageConverter.convert(btpAuthMessage);
-    logger.info(
-      "Websocket Auth BinaryMessage Bytes: {}", BaseEncoding.base16().encode(binaryAuthMessage.getPayload().array())
-    );
+    logger.info("Sending binaryAuthMessage: {}", BaseEncoding.base16().encode(binaryAuthMessage.getPayload().array()));
     session.sendMessage(binaryAuthMessage);
 
     // PREPARE
     final BtpMessage btpPrepareMessage = btpTestUtils.constructIlpPrepareMessage(
-      requestId, "foo", "bar", InterledgerAddress.of("test.parent.unlimited.usd")
+      requestId, InterledgerAddress.of("test.parent.unlimited.usd")
     );
-    //logger.info("Btp Prepare Message: {}", btpPrepareMessage);
     final BinaryMessage binaryMessage = btpPacketToBinaryMessageConverter.convert(btpPrepareMessage);
-    logger.info(
-      "Websocket Prepare BinaryMessage Bytes: {}: {}", BaseEncoding.base16().encode(binaryMessage.getPayload().array())
-    );
+    logger
+      .info("Sending  IlpPrepare BinaryMessage: {}", BaseEncoding.base16().encode(binaryMessage.getPayload().array()));
     session.sendMessage(binaryMessage);
-    assertThat("Latch countdown should have reached zero!", lock.await(5, TimeUnit.SECONDS), is(true));
+    assertThat("Latch countdown should have reached zero!", lock.await(LATCH_LOCK_TIMEOUT, TimeUnit.SECONDS), is(true));
   }
 
   /**

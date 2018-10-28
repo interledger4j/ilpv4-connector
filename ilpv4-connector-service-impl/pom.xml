@@ -10,7 +10,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>ilpv4-connector-service-impl</artifactId>
-  <name>ILPv4 :: Connector Services</name>
+  <name>ILPv4 :: Connector Services Impl</name>
   <description>All service object implementations for the ILPv4 Connector.</description>
 
   <dependencies>
@@ -24,7 +24,7 @@
     </dependency>
     <dependency>
       <groupId>com.sappenin.ilpv4</groupId>
-      <artifactId>ilpv4-connector-routing</artifactId>
+      <artifactId>ilpv4-connector-routing-api</artifactId>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
@@ -36,7 +36,11 @@
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
-      <artifactId>ilp-plugin</artifactId>
+      <artifactId>ildcp-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>ilp-plugin-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>

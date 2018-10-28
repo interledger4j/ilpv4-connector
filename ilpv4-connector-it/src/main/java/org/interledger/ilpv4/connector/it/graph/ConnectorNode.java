@@ -1,6 +1,7 @@
 package org.interledger.ilpv4.connector.it.graph;
 
 import com.sappenin.ilpv4.IlpConnector;
+import com.sappenin.ilpv4.server.ConnectorServer;
 import com.sappenin.ilpv4.server.support.Server;
 
 /**
@@ -8,7 +9,7 @@ import com.sappenin.ilpv4.server.support.Server;
  */
 public class ConnectorNode extends ServerNode implements Node {
 
-  //private static final Logger logger = LoggerFactory.getLogger(AccountEdge.class);
+  public static final String CONNECTOR_BEAN = "ilpConnector";
 
   /**
    * Required-args Constructor.
@@ -19,10 +20,17 @@ public class ConnectorNode extends ServerNode implements Node {
     super(server);
   }
 
-
   @Override
   public String toString() {
-    return ((IlpConnector) this.getServer().getContext().getBean("connector")).getConnectorSettings().getIlpAddress()
-      .toString();
+    return getIlpConnector().getConnectorSettings().getIlpAddress().toString();
   }
+
+  public IlpConnector getIlpConnector() {
+    return ((IlpConnector) this.getServer().getContext().getBean(CONNECTOR_BEAN));
+  }
+
+  public ConnectorServer getServer() {
+    return (ConnectorServer) super.getServer();
+  }
+
 }

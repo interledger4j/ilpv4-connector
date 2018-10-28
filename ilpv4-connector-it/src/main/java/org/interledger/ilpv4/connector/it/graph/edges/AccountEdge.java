@@ -16,9 +16,9 @@ import java.util.Objects;
 public class AccountEdge extends Edge {
 
   private static final Logger logger = LoggerFactory.getLogger(AccountEdge.class);
-
   private final String nodeKey;
   private final AccountSettings accountSettings;
+  private boolean connected;
 
   public AccountEdge(final String nodeKey, final AccountSettings accountSettings) {
     this.nodeKey = Objects.requireNonNull(nodeKey);
@@ -35,6 +35,11 @@ public class AccountEdge extends Edge {
     logger.info("Adding peer connectorNode {}...", connectorNode);
     connectorNode.getServer().getContext().getBean(AccountManager.class).add(accountSettings);
     logger.info("Node initialized: {}...", connectorNode);
+
+    this.connected = true;
   }
 
+  public boolean isConnected() {
+    return this.connected;
+  }
 }

@@ -8,6 +8,11 @@ import okhttp3.HttpUrl;
 public interface Node {
 
   /**
+   * The Http scheme this node uses.
+   */
+  String getScheme();
+
+  /**
    * The hostname for this node (can be used to create an HttpUrl).
    */
   String getHost();

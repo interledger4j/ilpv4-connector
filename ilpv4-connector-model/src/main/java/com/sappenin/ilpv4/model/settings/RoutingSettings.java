@@ -1,6 +1,7 @@
 package com.sappenin.ilpv4.model.settings;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import org.immutables.value.Value;
 import org.interledger.core.InterledgerAddress;
 
@@ -43,7 +44,10 @@ public interface RoutingSettings {
    *
    * @return An Collection of type {@link StaticRoute}.
    */
-  List<StaticRoute> getStaticRoutes();
+  @Value.Default
+  default List<? extends StaticRoute> getStaticRoutes() {
+    return Lists.newArrayList();
+  }
 
   @Value.Check
   default void verify() {

@@ -2,9 +2,8 @@ package com.sappenin.ilpv4.server.btp;
 
 import com.google.common.io.BaseEncoding;
 import org.interledger.btp.*;
-import org.interledger.btp.asn.framework.BtpCodecs;
+import org.interledger.btp.asn.framework.BtpCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.interledger.encoding.asn.framework.CodecContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +12,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 
-import static com.sappenin.ilpv4.plugins.btp.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH;
+import static com.sappenin.ilpv4.plugins.btp.subprotocols.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH;
 import static org.interledger.btp.BtpSubProtocols.INTERLEDGER;
 
 /**
@@ -22,12 +21,12 @@ import static org.interledger.btp.BtpSubProtocols.INTERLEDGER;
 public class BtpSendDataEmitter {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(BtpSendDataEmitter.class);
-  private static final CodecContext CONTEXT = CodecContextFactory.getContext(CodecContextFactory.OCTET_ENCODING_RULES);
-  private static final long REQUEST_ID = 1;
 
-  static {
-    BtpCodecs.register(CONTEXT);
-  }
+  //private static final CodecContext ILP_CONTEXT =
+  // CodecContextFactory.getContext(CodecContextFactory.OCTET_ENCODING_RULES);
+  private static final CodecContext BTP_CONTEXT = BtpCodecContextFactory.oer();
+
+  private static final long REQUEST_ID = 1;
 
   public static void main(String[] args) throws IOException {
     emitBtpTransferBytes();
@@ -42,10 +41,10 @@ public class BtpSendDataEmitter {
       .build();
 
     final ByteArrayOutputStream transferOs = new ByteArrayOutputStream();
-    CONTEXT.write(transfer, transferOs);
+    BTP_CONTEXT.write(transfer, transferOs);
     final BtpSubProtocol ilpSubProtocol = BtpSubProtocol.builder()
       .protocolName(INTERLEDGER)
-      .contentType(BtpSubProtocolContentType.MIME_APPLICATION_OCTET_STREAM)
+      .contentType(BtpSubProtocol.ContentType.MIME_APPLICATION_OCTET_STREAM)
       .data(transferOs.toByteArray())
       .build();
 
@@ -64,19 +63,19 @@ public class BtpSendDataEmitter {
 
     final BtpSubProtocol authSubProtocol = BtpSubProtocol.builder()
       .protocolName(BTP_SUB_PROTOCOL_AUTH)
-      .contentType(BtpSubProtocolContentType.MIME_TEXT_PLAIN_UTF8)
+      .contentType(BtpSubProtocol.ContentType.MIME_TEXT_PLAIN_UTF8)
       .data("Test Data".getBytes(StandardCharsets.UTF_8))
       .build();
 
     final BtpSubProtocol authUsernameSubprotocol = BtpSubProtocol.builder()
       .protocolName("auth_username")
-      .contentType(BtpSubProtocolContentType.MIME_TEXT_PLAIN_UTF8)
+      .contentType(BtpSubProtocol.ContentType.MIME_TEXT_PLAIN_UTF8)
       .data("g.david.guin".getBytes(StandardCharsets.UTF_8))
       .build();
 
     final BtpSubProtocol authTokenSubprotocol = BtpSubProtocol.builder()
       .protocolName("auth_token")
-      .contentType(BtpSubProtocolContentType.MIME_TEXT_PLAIN_UTF8)
+      .contentType(BtpSubProtocol.ContentType.MIME_TEXT_PLAIN_UTF8)
       .data("password".getBytes(StandardCharsets.UTF_8))
       .build();
 
@@ -96,7 +95,7 @@ public class BtpSendDataEmitter {
     try {
       final ByteArrayOutputStream os = new ByteArrayOutputStream();
 
-      CONTEXT.write(btpPacket, os);
+      BTP_CONTEXT.write(btpPacket, os);
       final String transferBase64 = BaseEncoding.base16().encode(os.toByteArray());
       LOGGER.info("{} Hex Bytes: {}", btpPacket.getClass().getSimpleName(), transferBase64);
     } catch (IOException e) {
