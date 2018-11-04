@@ -18,9 +18,9 @@ import java.util.Objects;
  * <p>Note that all messages handled by this handler are processing using BTP, although multiple callers/sessions may
  * exist and be handled by this same handler.</p>
  *
- * @deprecated Instead using this class to facilitate late-binding of a BTP Server plugin, we can remove this class and
- * instead always create a BtpServerPlugin Bean via spring. Then, we can Inject that instance into SpringWsConfig. If
- * Websockets are turned on, we can connect the injected plugin to the WebsocketHandler directly in the config. This
+ * @deprecated of Instead using this class to facilitate late-binding of a BTP Server plugin, we can remove this class
+ * and instead always create a BtpServerPlugin Bean via spring. Then, we can Inject that instance into SpringWsConfig.
+ * If Websockets are turned on, we can connect the injected plugin to the WebsocketHandler directly in the config. This
  * will drastically simplify the implementation.
  */
 @Deprecated

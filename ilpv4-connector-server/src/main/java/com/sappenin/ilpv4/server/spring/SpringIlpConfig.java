@@ -10,12 +10,14 @@ import com.sappenin.ilpv4.fx.ExchangeRateService;
 import com.sappenin.ilpv4.model.settings.ConnectorSettings;
 import com.sappenin.ilpv4.packetswitch.DefaultIlpPacketSwitch;
 import com.sappenin.ilpv4.packetswitch.IlpPacketSwitch;
+import com.sappenin.ilpv4.packetswitch.preemptors.EchoController;
 import com.sappenin.ilpv4.plugins.IlpPluginFactory;
-import com.sappenin.ilpv4.plugins.btp.spring.converters.BinaryMessageToBtpPacketConverter;
-import com.sappenin.ilpv4.plugins.btp.spring.converters.BtpPacketToBinaryMessageConverter;
-import com.sappenin.ilpv4.plugins.btp.subprotocols.BtpSubProtocolHandlerRegistry;
 import com.sappenin.ilpv4.settings.ConnectorSettingsFromPropertyFile;
 import org.interledger.encoding.asn.framework.CodecContext;
+import org.interledger.encoding.asn.framework.CodecContextFactory;
+import org.interledger.plugin.lpiv2.btp2.spring.converters.BinaryMessageToBtpPacketConverter;
+import org.interledger.plugin.lpiv2.btp2.spring.converters.BtpPacketToBinaryMessageConverter;
+import org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
@@ -90,37 +92,23 @@ public class SpringIlpConfig {
     return new DefaultExchangeRateService();
   }
 
-  //  @Bean
-  //  @Lazy
-  //  Plugin.IlpDataHandler ilpPluginDataHandler(
-  //    final Supplier<ConnectorSettings> connectorSettingsSupplier,
-  //    final AccountManager accountManager,
-  //    final PaymentRouter<Route> paymentRouter,
-  //    final ExchangeRateService exchangeRateService
-  //  ) {
-  //    return new DefaultIlpDataHandler(connectorSettingsSupplier, accountManager, paymentRouter, exchangeRateService,
-  //      packetswitch);
-  //  }
-
-  //  @Bean
-  //  @Lazy
-  //  Plugin.IlpMoneyHandler ilpPluginMoneyHandler() {
-  //    return new Plugin.IlpMoneyHandler() {
-  //      @Override
-  //      public void accept(BigInteger amount) throws InterledgerProtocolException {
-  //
-  //      }
-  //    };
-  //  }
+  @Bean
+  EchoController echoController() {
+    return new EchoController(
+      CodecContextFactory.getContext(CodecContextFactory.OCTET_ENCODING_RULES)
+    );
+  }
 
   @Bean
   IlpPacketSwitch ilpPacketSwitch(
     final ConnectorSettings connectorSettings,
     final PaymentRouter<Route> paymentRouter,
     final ExchangeRateService exchangeRateService,
-    final AccountManager accountManager
+    final AccountManager accountManager,
+    final EchoController echoController
   ) {
-    return new DefaultIlpPacketSwitch(connectorSettings, paymentRouter, exchangeRateService, accountManager);
+    return new DefaultIlpPacketSwitch(connectorSettings, paymentRouter, exchangeRateService, accountManager,
+      echoController);
   }
 
   @Bean

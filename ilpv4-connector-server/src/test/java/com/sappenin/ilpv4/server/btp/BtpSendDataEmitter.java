@@ -12,8 +12,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 
-import static com.sappenin.ilpv4.plugins.btp.subprotocols.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH;
 import static org.interledger.btp.BtpSubProtocols.INTERLEDGER;
+import static org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH;
 
 /**
  * Helper class to assembles a binary message for BTP for testing in a web-browser, for example.

@@ -7,17 +7,17 @@ import com.sappenin.ilpv4.model.settings.AccountSettings;
 import com.sappenin.ilpv4.model.settings.ConnectorSettings;
 import com.sappenin.ilpv4.model.settings.ImmutableAccountSettings;
 import com.sappenin.ilpv4.model.settings.ImmutableConnectorSettings;
-import com.sappenin.ilpv4.plugins.btp.ws.ClientWebsocketBtpPlugin;
-import com.sappenin.ilpv4.plugins.btp.ws.ServerWebsocketBtpPlugin;
 import com.sappenin.ilpv4.server.ConnectorServer;
 import com.sappenin.ilpv4.server.support.Server;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.ilpv4.connector.it.graph.ConnectorNode;
+import org.interledger.ilpv4.connector.it.graph.nodes.ConnectorNode;
 import org.interledger.ilpv4.connector.it.graph.Graph;
 import org.interledger.ilpv4.connector.it.graph.ServerNode;
-import org.interledger.ilpv4.connector.it.graph.edges.AccountEdge;
+import org.interledger.ilpv4.connector.it.graph.edges.ConnectorAccountEdge;
 import org.interledger.plugin.lpiv2.ImmutablePluginSettings;
 import org.interledger.plugin.lpiv2.PluginSettings;
+import org.interledger.plugin.lpiv2.btp2.spring.ClientWebsocketBtpPlugin;
+import org.interledger.plugin.lpiv2.btp2.spring.ServerWebsocketBtpPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,12 +25,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.sappenin.ilpv4.plugins.btp.BtpClientPluginSettings.*;
-import static com.sappenin.ilpv4.plugins.btp.BtpPluginSettings.KEY_SECRET;
+import static org.interledger.plugin.lpiv2.btp2.BtpClientPluginSettings.*;
+import static org.interledger.plugin.lpiv2.btp2.BtpPluginSettings.KEY_SECRET;
 
 /**
  * A graph and setup for simulating the "BeerCoin" token.
+ *
+ * @deprecated This will be replaced by discrete toplogies.
  */
+@Deprecated
 public class BtpArchitectures {
 
   public static final String USD = "USD";
@@ -78,11 +81,11 @@ public class BtpArchitectures {
         // Edges
         // Add all of alice's accounts as an edge between Alice and each account.
         accountsOfAlice(g).stream()
-          .forEach(accountSettings -> g.addEdge(new AccountEdge(ALICE.getValue(), accountSettings)));
+          .forEach(accountSettings -> g.addEdge(new ConnectorAccountEdge(ALICE.getValue(), accountSettings)));
 
         // Add all of bob's accounts as an edge between Bob and each account.
         accountsOfBob(g).stream()
-          .forEach(accountSettings -> g.addEdge(new AccountEdge(BOB.getValue(), accountSettings)));
+          .forEach(accountSettings -> g.addEdge(new ConnectorAccountEdge(BOB.getValue(), accountSettings)));
       }
     });
 
@@ -101,7 +104,6 @@ public class BtpArchitectures {
     ///////////////////
     // Configure Bob
     ///////////////////
-
 
 
     LOGGER.info("\n" +
@@ -145,11 +147,11 @@ public class BtpArchitectures {
         // Edges
         // Add all of alice's accounts as an edge between Alice and each account.
         accountsOfAlice(g).stream()
-          .forEach(accountSettings -> g.addEdge(new AccountEdge(ALICE.getValue(), accountSettings)));
+          .forEach(accountSettings -> g.addEdge(new ConnectorAccountEdge(ALICE.getValue(), accountSettings)));
 
         // Add all of bob's accounts as an edge between Bob and each account.
         accountsOfBob(g).stream()
-          .forEach(accountSettings -> g.addEdge(new AccountEdge(BOB.getValue(), accountSettings)));
+          .forEach(accountSettings -> g.addEdge(new ConnectorAccountEdge(BOB.getValue(), accountSettings)));
       }
 
       //((ServerNode) graph.getNode(ALICE.getValue())).getServer().setProperty(KEY_REMOTE_PEER_SCHEME, "ws");
@@ -226,9 +228,9 @@ public class BtpArchitectures {
     final Map<String, Object> customSettings = Maps.newConcurrentMap();
     customSettings.put("foo", "bar");
     customSettings.put(KEY_SECRET, "shh");
-    customSettings.put(KEY_REMOTE_PEER_SCHEME, graph.getNode(ALICE.getValue()).getScheme());
-    customSettings.put(KEY_REMOTE_PEER_HOSTNAME, graph.getNode(ALICE.getValue()).getHost());
-    customSettings.put(KEY_REMOTE_PEER_PORT, graph.getNode(ALICE.getValue()).getPort());
+    customSettings.put(KEY_REMOTE_PEER_SCHEME, graph.getNodeAsServer(ALICE.getValue()).getScheme());
+    customSettings.put(KEY_REMOTE_PEER_HOSTNAME, graph.getNodeAsServer(ALICE.getValue()).getHost());
+    customSettings.put(KEY_REMOTE_PEER_PORT, graph.getNodeAsServer(ALICE.getValue()).getPort());
 
     final PluginSettings pluginSettings = ImmutablePluginSettings.builder()
       // Bob is the BTP Client!

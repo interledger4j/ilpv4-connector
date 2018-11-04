@@ -18,7 +18,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.Random;
 
-import static com.sappenin.ilpv4.plugins.btp.subprotocols.BtpSubProtocolHandlerRegistry.*;
+import static org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandlerRegistry.*;
 
 public class BtpTestUtils {
 

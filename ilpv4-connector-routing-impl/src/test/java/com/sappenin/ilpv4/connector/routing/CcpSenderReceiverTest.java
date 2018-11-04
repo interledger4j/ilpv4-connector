@@ -450,9 +450,9 @@ public class CcpSenderReceiverTest {
         throw new RuntimeException("Unhandled Destination: " + sourcePreparePacket.getDestination());
       });
 
-      this.registerMoneyHandler((amount) -> {
-        // No-op.
-      });
+      //      this.registerMoneyHandler((amount) -> {
+      //        // No-op.
+      //      });
     }
 
     @Override
@@ -477,7 +477,9 @@ public class CcpSenderReceiverTest {
       throws InterledgerProtocolException {
       // For simulation purposes, we simply reach through into the other connector directly and place the
       // preparePacket into it.
-      return this.remoteConnector.getPlugin().onIncomingData(InterledgerAddress.of("test.foo"), preparePacket);
+      return this.remoteConnector.getPlugin().getDataHandler().handleIncomingData(
+        InterledgerAddress.of("test.foo"), preparePacket
+      );
     }
 
     /**

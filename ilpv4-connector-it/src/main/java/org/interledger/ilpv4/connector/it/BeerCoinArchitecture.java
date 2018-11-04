@@ -6,14 +6,14 @@ import com.sappenin.ilpv4.model.settings.AccountSettings;
 import com.sappenin.ilpv4.model.settings.ConnectorSettings;
 import com.sappenin.ilpv4.model.settings.ImmutableAccountSettings;
 import com.sappenin.ilpv4.model.settings.ImmutableConnectorSettings;
-import com.sappenin.ilpv4.plugins.btp.ws.ClientWebsocketBtpPlugin;
 import com.sappenin.ilpv4.server.ConnectorServer;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.ilpv4.connector.it.graph.ConnectorNode;
+import org.interledger.ilpv4.connector.it.graph.nodes.ConnectorNode;
 import org.interledger.ilpv4.connector.it.graph.Graph;
-import org.interledger.ilpv4.connector.it.graph.edges.AccountEdge;
+import org.interledger.ilpv4.connector.it.graph.edges.ConnectorAccountEdge;
 import org.interledger.plugin.lpiv2.ImmutablePluginSettings;
 import org.interledger.plugin.lpiv2.PluginSettings;
+import org.interledger.plugin.lpiv2.btp2.spring.ClientWebsocketBtpPlugin;
 
 import java.util.List;
 import java.util.Map;
@@ -67,19 +67,19 @@ public class BeerCoinArchitecture {
         // Edges
         // Add all of david's accounts as an edge between David and each account.
         accountsOfDavid().stream()
-          .forEach(accountSettings -> graph.addEdge(new AccountEdge(DAVID.getValue(), accountSettings)));
+          .forEach(accountSettings -> graph.addEdge(new ConnectorAccountEdge(DAVID.getValue(), accountSettings)));
 
         // Add all of adrian's accounts as an edge between Adrian and each account.
         accountsOfAdrian().stream()
-          .forEach(accountSettings -> graph.addEdge(new AccountEdge(ADRIAN.getValue(), accountSettings)));
+          .forEach(accountSettings -> graph.addEdge(new ConnectorAccountEdge(ADRIAN.getValue(), accountSettings)));
 
         // Add all of Jimmie's accounts as an edge between Jimmie and each account.
         accountsOfJimmie().stream()
-          .forEach(accountSettings -> graph.addEdge(new AccountEdge(JIMMIE.getValue(), accountSettings)));
+          .forEach(accountSettings -> graph.addEdge(new ConnectorAccountEdge(JIMMIE.getValue(), accountSettings)));
 
         // Add all of the Bar's accounts as an edge between the Bar and each account.
         accountsOfBar().stream()
-          .forEach(accountSettings -> graph.addEdge(new AccountEdge(BAR_AGRICOLE.getValue(), accountSettings)));
+          .forEach(accountSettings -> graph.addEdge(new ConnectorAccountEdge(BAR_AGRICOLE.getValue(), accountSettings)));
       }
     })
       // Nodes

@@ -7,9 +7,6 @@ import java.util.Objects;
 /**
  * An implementation of {@link Node} that contains a {@link Server} for simulating any type of Spring Boot server
  * runtime.
- *
- * @author jfulton
- * @author sappenin
  */
 public class ServerNode implements Node {
 
@@ -19,17 +16,14 @@ public class ServerNode implements Node {
     this.server = Objects.requireNonNull(server);
   }
 
-  @Override
   public String getScheme() {
     return "ws";
   }
 
-  @Override
   public String getHost() {
     return "localhost";
   }
 
-  @Override
   public int getPort() {
     return server.getPort();
   }

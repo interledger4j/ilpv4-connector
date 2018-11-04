@@ -24,7 +24,7 @@
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
-      <artifactId>ilp-plugin</artifactId>
+      <artifactId>ilp-plugin-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.javamoney</groupId>

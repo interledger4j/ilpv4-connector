@@ -34,6 +34,10 @@
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
+      <artifactId>ilp-plugin-btp-springws</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
       <artifactId>ilp-core-codecs</artifactId>
     </dependency>
     <dependency>
@@ -41,9 +45,22 @@
       <artifactId>codec-framework</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-websocket</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.immutables</groupId>
       <artifactId>value</artifactId>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.ilpv4.connector.it.BeerCoinArchitecture.*;
-import static org.interledger.ilpv4.connector.it.graph.ConnectorNode.CONNECTOR_BEAN;
+import static org.interledger.ilpv4.connector.it.graph.nodes.ConnectorNode.CONNECTOR_BEAN;
 import static org.junit.Assert.assertThat;
 
 /**

@@ -2,12 +2,12 @@ package org.interledger.ilpv4.connector.it;
 
 import com.sappenin.ilpv4.IlpConnector;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.ilpv4.connector.it.graph.ConnectorNode;
+import org.interledger.ilpv4.connector.it.graph.nodes.ConnectorNode;
 import org.interledger.ilpv4.connector.it.graph.Graph;
 import org.interledger.ilpv4.connector.it.graph.ServerNode;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.interledger.ilpv4.connector.it.graph.ConnectorNode.CONNECTOR_BEAN;
+import static org.interledger.ilpv4.connector.it.graph.nodes.ConnectorNode.CONNECTOR_BEAN;
 import static org.junit.Assert.assertThat;
 
 public abstract class AbstractArchitectureTest {

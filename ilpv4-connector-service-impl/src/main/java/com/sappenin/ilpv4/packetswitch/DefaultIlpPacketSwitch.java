@@ -12,6 +12,7 @@ import com.sappenin.ilpv4.packetswitch.filters.DefaultSendDataFilterChain;
 import com.sappenin.ilpv4.packetswitch.filters.SendDataFilter;
 import com.sappenin.ilpv4.packetswitch.filters.SendDataFilterChain;
 import com.sappenin.ilpv4.packetswitch.filters.SendMoneyFilter;
+import com.sappenin.ilpv4.packetswitch.preemptors.EchoController;
 import org.immutables.value.Value;
 import org.interledger.core.*;
 import org.interledger.plugin.lpiv2.Plugin;
@@ -38,6 +39,8 @@ public class DefaultIlpPacketSwitch implements IlpPacketSwitch {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultIlpPacketSwitch.class);
 
+  private final InterledgerFulfillment ECHO_FULFILLMENT = InterledgerFulfillment.of(new byte[32]);
+
   private final ConnectorSettings connectorSettings;
   private final PaymentRouter<Route> paymentRouter;
   private final ExchangeRateService exchangeRateService;
@@ -46,25 +49,28 @@ public class DefaultIlpPacketSwitch implements IlpPacketSwitch {
   private final List<SendDataFilter> sendDataFilters;
   private final List<SendMoneyFilter> sendMoneyFilters;
 
+  private final EchoController echoController;
+
   public DefaultIlpPacketSwitch(
     final ConnectorSettings connectorSettings,
     final PaymentRouter<Route> paymentRouter,
     final ExchangeRateService exchangeRateService,
-    final AccountManager accountManager
-  ) {
+    final AccountManager accountManager,
+    EchoController echoController) {
     this.connectorSettings = Objects.requireNonNull(connectorSettings);
     this.paymentRouter = Objects.requireNonNull(paymentRouter);
     this.exchangeRateService = Objects.requireNonNull(exchangeRateService);
     this.accountManager = Objects.requireNonNull(accountManager);
+    this.echoController = echoController;
 
     this.sendDataFilters = Lists.newArrayList();
     this.sendMoneyFilters = Lists.newArrayList();
   }
 
-
   @Override
-  public CompletableFuture<InterledgerFulfillPacket> sendMoney(BigInteger amount) throws InterledgerProtocolException {
-    return null;
+  public CompletableFuture<Void> sendMoney(BigInteger amount) throws InterledgerProtocolException {
+    // TODO: Implement this!
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
@@ -88,14 +94,21 @@ public class DefaultIlpPacketSwitch implements IlpPacketSwitch {
       throw new RuntimeException("Not yet implemented!");
       //return this.peerProtocolController.handle(packet, sourceAccount, {parsedPacket})
     } else if (sourcePreparePacket.getDestination().equals(connectorSettings.getIlpAddress())) {
-      // TODO: FINISH!
-      throw new RuntimeException("Not yet implemented!");
-      //return this.echoController.handle(packet, sourceAccount, { parsedPacket, outbound })
+      final InterledgerPreparePacket returnPacket =
+        this.echoController.handleIncomingData(sourceAccountAddress, sourcePreparePacket);
+      // Send the echo payment....
+      this.sendData(sourceAccountAddress, returnPacket);
+      // Fulfill the original payment...
+      return CompletableFuture.completedFuture(InterledgerFulfillPacket.builder()
+        .fulfillment(ECHO_FULFILLMENT)
+        .build()
+      );
     } else {
       final NextHopInfo nextHopInfo = getNextHopPacket(sourceAccountAddress, sourcePreparePacket);
 
-      // Don't reflect payments...
       // TODO: Make this configurable. See JS Connector for details.
+      // TODO: Move this to the routing layer. If the router is configured to not return a NextHop like this, then
+      // this should never happen, and can be removed.
       if (sourceAccountAddress.equals(nextHopInfo.nextHopAccountAddress())) {
         throw new InterledgerProtocolException(
           InterledgerRejectPacket.builder()

@@ -1,8 +1,10 @@
-package org.interledger.ilpv4.connector.it.graph;
+package org.interledger.ilpv4.connector.it.graph.nodes;
 
 import com.sappenin.ilpv4.IlpConnector;
 import com.sappenin.ilpv4.server.ConnectorServer;
 import com.sappenin.ilpv4.server.support.Server;
+import org.interledger.ilpv4.connector.it.graph.Node;
+import org.interledger.ilpv4.connector.it.graph.ServerNode;
 
 /**
  * An implementation of {@link Node} that contains a {@link Server} running an ILP Connectors.

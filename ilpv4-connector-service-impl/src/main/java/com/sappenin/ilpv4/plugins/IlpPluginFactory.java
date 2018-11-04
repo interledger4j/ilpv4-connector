@@ -8,6 +8,7 @@ import org.interledger.plugin.lpiv2.PluginSettings;
 import org.interledger.plugin.lpiv2.SimulatedChildPlugin;
 import org.interledger.plugin.lpiv2.btp2.BtpClientPluginSettings;
 import org.interledger.plugin.lpiv2.btp2.BtpServerPluginSettings;
+import org.interledger.plugin.lpiv2.btp2.ImmutableBtpClientPluginSettings;
 import org.interledger.plugin.lpiv2.btp2.spring.ClientWebsocketBtpPlugin;
 import org.interledger.plugin.lpiv2.btp2.spring.ServerWebsocketBtpPlugin;
 import org.interledger.plugin.lpiv2.btp2.spring.converters.BinaryMessageToBtpPacketConverter;
@@ -98,10 +99,10 @@ public class IlpPluginFactory {
         break;
       }
       case ClientWebsocketBtpPlugin.PLUGIN_TYPE_STRING: {
-        // Translate from Plugin.customSettings...
-        final BtpClientPluginSettings clientPluginSettings = BtpClientPluginSettings
-          .fromPluginSettingsWithCustomSettings(pluginSettings)
-          .build();
+        // Translate from Plugin.customSettings, being sure to apply custom settings from the incoming plugin.
+        final ImmutableBtpClientPluginSettings.Builder builder = BtpClientPluginSettings.builder();
+        final BtpClientPluginSettings clientPluginSettings =
+          BtpClientPluginSettings.applyCustomSettings(builder, pluginSettings.getCustomSettings()).build();
         constructedPlugin = new ClientWebsocketBtpPlugin(
           clientPluginSettings,
           ilpCodecContext,

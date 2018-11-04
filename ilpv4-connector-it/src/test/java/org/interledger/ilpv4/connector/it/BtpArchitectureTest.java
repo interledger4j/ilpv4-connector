@@ -22,14 +22,13 @@ import java.time.Instant;
 import java.util.concurrent.ExecutionException;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.interledger.ilpv4.connector.it.BtpArchitectures.ALICE;
-import static org.interledger.ilpv4.connector.it.BtpArchitectures.BOB;
-import static org.interledger.ilpv4.connector.it.BtpArchitectures.USD;
+import static org.interledger.ilpv4.connector.it.BtpArchitectures.*;
 import static org.junit.Assert.assertThat;
 
 /**
  * Simple test to verify that two nodes can speak BTP to each other over Websockets.
  */
+// TODO: Rename this to align with Topology naming convention...
 public class BtpArchitectureTest extends AbstractArchitectureTest {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(BtpArchitectureTest.class);

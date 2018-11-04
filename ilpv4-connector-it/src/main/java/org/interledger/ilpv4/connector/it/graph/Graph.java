@@ -1,5 +1,7 @@
 package org.interledger.ilpv4.connector.it.graph;
 
+import org.interledger.core.InterledgerAddress;
+
 import java.util.*;
 
 /**
@@ -29,6 +31,11 @@ public class Graph {
     return this;
   }
 
+  public Graph addNode(InterledgerAddress key, Node node) {
+    nodes.put(key.getValue(), node);
+    return this;
+  }
+
   public Graph addEdge(Edge edge) {
     edges.add(edge);
     return this;
@@ -36,6 +43,18 @@ public class Graph {
 
   public Node getNode(String key) {
     return nodes.get(key);
+  }
+
+  public Node getNode(InterledgerAddress key) {
+    return getNode(key.getValue());
+  }
+
+  public ServerNode getNodeAsServer(String key) {
+    return (ServerNode) getNode(key);
+  }
+
+  public ServerNode getNodeAsServer(InterledgerAddress key) {
+    return (ServerNode) getNode(key);
   }
 
   public Collection<Node> getNodeValues() {

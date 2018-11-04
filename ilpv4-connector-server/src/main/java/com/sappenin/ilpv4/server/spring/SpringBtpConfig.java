@@ -1,12 +1,13 @@
 package com.sappenin.ilpv4.server.spring;
 
 import com.sappenin.ilpv4.packetswitch.IlpPacketSwitch;
-import com.sappenin.ilpv4.plugins.btp.subprotocols.ilp.IlpConnectorBtpSubprotocolHandler;
+import org.interledger.btp.BtpSubProtocol;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.plugin.lpiv2.btp2.spring.converters.BinaryMessageToBtpPacketConverter;
 import org.interledger.plugin.lpiv2.btp2.spring.converters.BtpPacketToBinaryMessageConverter;
 import org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandlerRegistry;
 import org.interledger.plugin.lpiv2.btp2.subprotocols.auth.AuthBtpSubprotocolHandler;
+import org.interledger.plugin.lpiv2.btp2.subprotocols.ilp.DefaultIlpBtpSubprotocolHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -38,7 +39,7 @@ public class SpringBtpConfig {
   IlpPacketSwitch ilpPacketSwitch;
 
   @Autowired
-  IlpConnectorBtpSubprotocolHandler ilpConnectorBtpSubprotocolHandler;
+  DefaultIlpBtpSubprotocolHandler defaultIlpBtpSubprotocolHandler;
 
   @Autowired
   BtpSubProtocolHandlerRegistry btpSubProtocolHandlerRegistry;
@@ -55,16 +56,22 @@ public class SpringBtpConfig {
   @PostConstruct
   public void startup() {
     // Register the BTP Auth Protocol...
-    btpSubProtocolHandlerRegistry
-      .putHandler(BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH, authBtpSubprotocolHandler);
+    btpSubProtocolHandlerRegistry.putHandler(
+      BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH,
+      BtpSubProtocol.ContentType.MIME_APPLICATION_OCTET_STREAM,
+      authBtpSubprotocolHandler
+    );
 
-    // TODO: Consider injecting the PacketSwitch directly into the ilpConnectorBtpSubprotocolHandler. If that works,
+    // TODO: Consider injecting the PacketSwitch directly into the connectorIlpBtpSubprotocolHandler. If that works,
     // then this section can be removed.
     // Link the BTP Plugin to the Connector Fabric.
-    ilpConnectorBtpSubprotocolHandler.setIlpPluginDataHandler(ilpPacketSwitch::sendData);
+    defaultIlpBtpSubprotocolHandler.setIlpPluginDataHandler(ilpPacketSwitch::sendData);
 
-    btpSubProtocolHandlerRegistry
-      .putHandler(BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_ILP, ilpConnectorBtpSubprotocolHandler);
+    btpSubProtocolHandlerRegistry.putHandler(
+      BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_ILP,
+      BtpSubProtocol.ContentType.MIME_APPLICATION_OCTET_STREAM,
+      defaultIlpBtpSubprotocolHandler
+    );
   }
 
   @Bean
@@ -73,8 +80,8 @@ public class SpringBtpConfig {
   }
 
   @Bean
-  IlpConnectorBtpSubprotocolHandler ilpBtpSubprotocolHandler(@Qualifier(ILP) CodecContext ilpCodecContext) {
-    return new IlpConnectorBtpSubprotocolHandler(ilpCodecContext);
+  DefaultIlpBtpSubprotocolHandler ilpBtpSubprotocolHandler(@Qualifier(ILP) CodecContext ilpCodecContext) {
+    return new DefaultIlpBtpSubprotocolHandler(ilpCodecContext);
   }
 
   @Bean
