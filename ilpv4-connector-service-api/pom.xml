@@ -16,6 +16,10 @@
   <dependencies>
     <dependency>
       <groupId>com.sappenin.ilpv4</groupId>
+      <artifactId>ilpv4-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.sappenin.ilpv4</groupId>
       <artifactId>ilpv4-connector-model</artifactId>
     </dependency>
     <dependency>

@@ -1,44 +1,57 @@
 package org.interledger.ilpv4.connector.it.graph;
 
-import com.sappenin.ilpv4.server.support.Server;
-
-import java.util.Objects;
+import com.sappenin.interledger.ilpv4.connector.server.support.Server;
+import okhttp3.HttpUrl;
 
 /**
- * An implementation of {@link Node} that contains a {@link Server} for simulating any type of Spring Boot server
- * runtime.
+ * An extension of {@link Node} whose contained object is an instance of {@link Server}, which is useful for simulating
+ * any type of Spring Boot server runtime, such as for a Connector.
+ *
+ * @param <S> The type of Server that this server-node exposes (e.g., `ConnectorServer` for a connector).
  */
-public class ServerNode implements Node {
+public interface ServerNode<S extends Server> extends PluginNode<S> {
 
-  private final Server server;
+  /**
+   * The <tt>scheme</tt> for this server, such as `https`, `ws`, or `wss`, which can be used to make HTTP calls *
+   * against this server.
+   */
+  String getScheme();
 
-  public ServerNode(final Server server) {
-    this.server = Objects.requireNonNull(server);
-  }
-
-  public String getScheme() {
-    return "ws";
-  }
-
-  public String getHost() {
+  /**
+   * The <tt>host</tt> for this server, such as `localhost` or an IP address, which can be used to make HTTP calls
+   * against this server.
+   */
+  default String getHost() {
     return "localhost";
   }
 
-  public int getPort() {
-    return server.getPort();
+  /**
+   * The <tt>port</tt> for this server, such as `localhost` or an IP address, which can be used to make HTTP calls
+   * against this server.
+   */
+  default int getPort() {
+    return getServer().getPort();
   }
 
   @Override
-  public void start() {
-    server.start();
+  default void start() {
+    getServer().start();
   }
 
   @Override
-  public void stop() {
-    server.stop();
+  default void stop() {
+    getServer().stop();
   }
 
-  public Server getServer() {
-    return server;
+  /**
+   * Get this node's endpoint location as an HTTP URL.
+   */
+  default HttpUrl getNodeUrl() {
+    return HttpUrl.parse(getHost()).newBuilder().port(getPort()).build();
   }
+
+  /**
+   * Accessor for the Spring server powering this ILP Node.
+   */
+  S getServer();
 }

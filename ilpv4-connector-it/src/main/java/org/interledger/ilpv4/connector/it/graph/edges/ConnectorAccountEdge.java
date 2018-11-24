@@ -1,18 +1,18 @@
 package org.interledger.ilpv4.connector.it.graph.edges;
 
-import com.sappenin.ilpv4.accounts.AccountManager;
-import com.sappenin.ilpv4.model.settings.AccountSettings;
+import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.ilpv4.connector.it.graph.Edge;
 import org.interledger.ilpv4.connector.it.graph.Graph;
-import org.interledger.ilpv4.connector.it.graph.nodes.ConnectorNode;
+import org.interledger.ilpv4.connector.it.graph.nodes.interledger.BtpServerPluginNode;
+import com.sappenin.interledger.ilpv4.connector.model.settings.AccountSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
 /**
- * Connects two ILPv4 nodes together by adding an {@link AccountSettings} to a {@link ConnectorNode}.
+ * Configures an ILPv4 Connector with a new account.
  */
 public class ConnectorAccountEdge extends Edge {
 
@@ -35,12 +35,13 @@ public class ConnectorAccountEdge extends Edge {
   public void connect(final Graph graph) {
     Objects.requireNonNull(graph);
 
-    final ConnectorNode connectorNode = (ConnectorNode) graph.getNode(nodeKey);
-    assert connectorNode != null;
+    final BtpServerPluginNode pluginNode = (BtpServerPluginNode) graph.getNode(nodeKey);
+    final ILPv4Connector ilpConnectorNode = pluginNode.getIlpV4ConnectorNode();
+    assert ilpConnectorNode != null;
 
-    logger.info("Adding peer connectorNode {}...", connectorNode);
-    connectorNode.getServer().getContext().getBean(AccountManager.class).add(accountSettings);
-    logger.info("Node initialized: {}...", connectorNode);
+    logger.info("Adding account `{}` to ilpConnectorNode...", accountSettings.getInterledgerAddress());
+    ilpConnectorNode.getAccountManager().add(accountSettings);
+    logger.info("ilpConnectorNode initialized with account `{}`", accountSettings.getInterledgerAddress());
 
     this.connected = true;
   }

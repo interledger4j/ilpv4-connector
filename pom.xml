@@ -25,18 +25,29 @@
   </properties>
 
   <modules>
+    <module>ilpv4-api</module>
     <module>ilpv4-connector-model</module>
     <module>ilpv4-connector-routing-api</module>
     <module>ilpv4-connector-service-api</module>
     <module>ilpv4-connector-routing-impl</module>
     <module>ilpv4-connector-service-impl</module>
     <module>ilpv4-connector-server</module>
-    <module>ilpv4-client</module>
     <module>ilpv4-connector-it</module>
+    <module>ilpv4-node</module>
   </modules>
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-node</artifactId>
+        <version>${project.version}</version>
+      </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>ilpv4-connector-model</artifactId>
@@ -73,9 +84,9 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-client</artifactId>
-        <version>${project.version}</version>
+        <groupId>com.sappenin.ilpv4</groupId>
+        <artifactId>ilpv4-client-core</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>

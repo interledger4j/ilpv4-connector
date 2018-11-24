@@ -7,6 +7,15 @@ logging:
     org.springframework.web.socket: DEBUG
 server:
   port: 8080
+  #port: 8443
+  ssl:
+    enabled: false
+    key-store: classpath:tls/server/server.jks
+    key-store-type: PKCS12
+    key-store-password: secret
+    key-alias: localhost
+    key-password: secret
+
 spring:
   output:
     ansi:
@@ -55,7 +64,7 @@ ilpv4:
       # disabled.
       defaultRoute: self.internal
       # Seed used for generating routing table auth values.
-      routingSecret:
+      routingSecret: shh
       #########
       # Static Routes
       #########
@@ -83,7 +92,7 @@ ilpv4:
       relationship: PARENT
       # Type of the ILP lpi2 that should be used for this account.
       pluginSettings:
-        pluginType: SimulatedChildPlugin
+        pluginType: SimulatedPlugin
         peerAccountAddress: test.parent.micro.usd
         localNodeAddress: ${ilpv4.connector.ilpAddress}
         customSettings:
@@ -96,7 +105,7 @@ ilpv4:
       # up one regular unit. For dollars, this would usually be set to 9, so that Interledger
       # amounts are expressed in nano-dollars.
       assetScale: 9
-      # Optional. Maximum amount per packet for incoming prepare packets. IlpConnector will reject
+      # Optional. Maximum amount per packet for incoming prepare packets. ILPv4Connector will reject
       # any incoming prepare packets from this account with a higher amount. Amount should be
       # provided as an integer in a string (in atomic units).
       maximumPacketAmount: 100000
@@ -148,7 +157,7 @@ ilpv4:
     - interledger_address: test.parent.unlimited.usd
       description: USD Account
       pluginSettings:
-        pluginType: SimulatedChildPlugin
+        pluginType: SimulatedPlugin
         peerAccountAddress: test.parent.unlimited.usd
         localNodeAddress: ${ilpv4.connector.ilpAddress}
 

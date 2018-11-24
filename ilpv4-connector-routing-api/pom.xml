@@ -23,10 +23,6 @@
       <groupId>com.sappenin.ilpv4</groupId>
       <artifactId>ilpv4-connector-model</artifactId>
     </dependency>
-    <!--<dependency>-->
-      <!--<groupId>com.sappenin.ilpv4</groupId>-->
-      <!--<artifactId>ilpv4-connector-service-api</artifactId>-->
-    <!--</dependency>-->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
