@@ -9,7 +9,7 @@ import java.lang.reflect.Method;
 /**
  * When a method return type is a Future, exception handling is easy – Future.getEntry() method will throw the exception.
  *
- * But, if the return type is void, exceptions will not be propagated to the calling thread. Hence we need to add extra
+ * But, if the return type is void, exceptions will not be propagated to the calling thread. Hence we need to addAccount extra
  * configurations to handle exceptions.
  */
 public class CustomAsyncExceptionHandler implements AsyncUncaughtExceptionHandler {

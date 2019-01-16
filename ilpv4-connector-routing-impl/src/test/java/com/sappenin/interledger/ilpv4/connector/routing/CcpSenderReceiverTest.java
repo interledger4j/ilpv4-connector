@@ -1,14 +1,15 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
 import com.google.common.collect.Lists;
+import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteControlRequest;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteUpdateRequest;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpSyncMode;
 import com.sappenin.interledger.ilpv4.connector.ccp.codecs.CcpCodecs;
-import com.sappenin.interledger.ilpv4.connector.model.settings.ConnectorSettings;
-import com.sappenin.interledger.ilpv4.connector.model.settings.ImmutableConnectorSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.ImmutableConnectorSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerFulfillPacket;
@@ -18,11 +19,10 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.plugin.lpiv2.AbstractPlugin;
+import org.interledger.plugin.lpiv2.ImmutablePluginSettings;
 import org.interledger.plugin.lpiv2.Plugin;
+import org.interledger.plugin.lpiv2.PluginSettings;
 import org.interledger.plugin.lpiv2.PluginType;
-import org.interledger.plugin.lpiv2.settings.ImmutablePluginSettings;
-import org.interledger.plugin.lpiv2.settings.PluginSettings;
-import org.interledger.plugin.lpiv2.support.Completions;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -54,7 +54,7 @@ import static org.hamcrest.core.Is.is;
  *
  * <pre>
  * ┌─────────┐      ┌─────────┐      ┌─────────┐      ┌─────────┐
- * │   g.a   │─ ─ ─ │   g.b   │─ ─ ─ │   g.c   │─ ─ ─ │   g.d   │
+ * │   t.a   │─ ─ ─ │   t.b   │─ ─ ─ │   t.c   │─ ─ ─ │   t.d   │
  * └─────────┘      └─────────┘      └─────────┘      └─────────┘
  * </pre>
  *
@@ -62,15 +62,27 @@ import static org.hamcrest.core.Is.is;
  */
 public class CcpSenderReceiverTest {
 
-  private static final InterledgerAddress CONNECTOR_A_ADDRESS = InterledgerAddress.of("test1.a");
-  private static final InterledgerAddress CONNECTOR_B_ADDRESS = InterledgerAddress.of("test1.b");
-  private static final InterledgerAddress CONNECTOR_C_ADDRESS = InterledgerAddress.of("test1.c");
-  private static final InterledgerAddress CONNECTOR_D_ADDRESS = InterledgerAddress.of("test1.d");
+  private static final AccountId CONNECTOR_A_ACCOUNT = AccountId.of("a");
+  private static final AccountId CONNECTOR_B_ACCOUNT = AccountId.of("b");
+  private static final AccountId CONNECTOR_C_ACCOUNT = AccountId.of("c");
+  private static final AccountId CONNECTOR_D_ACCOUNT = AccountId.of("d");
 
-  private static final InterledgerAddressPrefix CONNECTOR_A_PREFIX =
-    InterledgerAddressPrefix.of(CONNECTOR_A_ADDRESS.getValue());
-  private static final InterledgerAddressPrefix CONNECTOR_B_PREFIX =
-    InterledgerAddressPrefix.of(CONNECTOR_B_ADDRESS.getValue());
+  private static final InterledgerAddress CONNECTOR_A_ADDRESS =
+    InterledgerAddress.of(InterledgerAddressPrefix.TEST1.getValue() + "." + CONNECTOR_A_ACCOUNT.value());
+
+  private static final InterledgerAddress CONNECTOR_B_ADDRESS =
+    InterledgerAddress.of(InterledgerAddressPrefix.TEST1.getValue() + "." + CONNECTOR_B_ACCOUNT.value());
+
+  private static final InterledgerAddress CONNECTOR_C_ADDRESS =
+    InterledgerAddress.of(InterledgerAddressPrefix.TEST1.getValue() + "." + CONNECTOR_C_ACCOUNT.value());
+
+  private static final InterledgerAddress CONNECTOR_D_ADDRESS =
+    InterledgerAddress.of(InterledgerAddressPrefix.TEST1.getValue() + "." + CONNECTOR_D_ACCOUNT.value());
+
+//  private static final InterledgerAddressPrefix CONNECTOR_A_PREFIX =
+//    InterledgerAddressPrefix.of(CONNECTOR_A_ADDRESS.getValue());
+//  private static final InterledgerAddressPrefix CONNECTOR_B_PREFIX =
+//    InterledgerAddressPrefix.of(CONNECTOR_B_ADDRESS.getValue());
 
   private static final InterledgerAddressPrefix CONNECTOR_C_PREFIX =
     InterledgerAddressPrefix.of(CONNECTOR_C_ADDRESS.getValue());
@@ -102,16 +114,15 @@ public class CcpSenderReceiverTest {
 
     this.codecContext = CcpCodecs.register(InterledgerCodecContextFactory.oer());
     this.connectorA_ConnectorSettings = ImmutableConnectorSettings.builder()
-      .ilpAddress(CONNECTOR_A_ADDRESS)
+      .operatorAddress(CONNECTOR_A_ADDRESS)
       .build();
     this.connectorB_ConnectorSettings = ImmutableConnectorSettings.builder()
-      .ilpAddress(CONNECTOR_B_ADDRESS)
+      .operatorAddress(CONNECTOR_B_ADDRESS)
       .build();
 
     final PluginSettings pluginSettingsA = ImmutablePluginSettings.builder()
       .pluginType(PluginType.of(IpcRouteHandlingPlugin.class.getSimpleName()))
-      .peerAccountAddress(CONNECTOR_B_ADDRESS)
-      .localNodeAddress(CONNECTOR_A_ADDRESS)
+      .operatorAddress(CONNECTOR_A_ADDRESS)
       .build();
     final IpcRouteHandlingPlugin pluginRunningOnA = new IpcRouteHandlingPlugin(pluginSettingsA, codecContext);
 
@@ -120,44 +131,35 @@ public class CcpSenderReceiverTest {
         new InMemoryRouteUpdateForwardRoutingTable();
       final ForwardingRoutingTable<IncomingRoute> incomingRouteForwardingRoutingTable =
         new InMemoryIncomingRouteForwardRoutingTable();
-      final RoutingTable<Route> routingTable = new InMemoryRoutingTable();
       final CcpSender ccpSender = new DefaultCcpSender(
-        () -> connectorA_ConnectorSettings,
-        routeUpdateForwardingRoutingTable,
-        connectorAAccountManagerMock,
-        codecContext,
-        pluginRunningOnA
+        () -> connectorA_ConnectorSettings, CONNECTOR_B_ACCOUNT, pluginRunningOnA,
+        routeUpdateForwardingRoutingTable, connectorAAccountManagerMock, codecContext
       );
       final CcpReceiver ccpReceiver =
-        new DefaultCcpReceiver(() -> connectorA_ConnectorSettings, incomingRouteForwardingRoutingTable,
-          codecContext,
-          pluginRunningOnA);
+        new DefaultCcpReceiver(() -> connectorA_ConnectorSettings, CONNECTOR_B_ACCOUNT, pluginRunningOnA,
+          incomingRouteForwardingRoutingTable,
+          codecContext
+        );
 
       this.connectorA = new SimulatedConnector(CONNECTOR_A_ADDRESS, pluginRunningOnA, ccpSender, ccpReceiver);
     }
 
-    final PluginSettings pluginSettingsB = ImmutablePluginSettings.builder()
-      .pluginType(PluginType.of(IpcRouteHandlingPlugin.class.getSimpleName()))
-      .peerAccountAddress(CONNECTOR_A_ADDRESS)
-      .localNodeAddress(CONNECTOR_B_ADDRESS)
-      .build();
     final IpcRouteHandlingPlugin pluginRunningOnB = new IpcRouteHandlingPlugin(pluginSettingsA, codecContext);
     {
       final ForwardingRoutingTable<RouteUpdate> routeUpdateForwardingRoutingTable =
         new InMemoryRouteUpdateForwardRoutingTable();
       final ForwardingRoutingTable<IncomingRoute> incomingRouteForwardingRoutingTable =
         new InMemoryIncomingRouteForwardRoutingTable();
-      final RoutingTable<Route> routingTable = new InMemoryRoutingTable();
       final CcpSender ccpSender = new DefaultCcpSender(
         () -> connectorB_ConnectorSettings,
-        routeUpdateForwardingRoutingTable,
-        connectorB_AccountManagerMock,
-        codecContext,
-        pluginRunningOnB);
+        CONNECTOR_A_ACCOUNT, pluginRunningOnB, routeUpdateForwardingRoutingTable,
+        connectorB_AccountManagerMock, codecContext
+      );
       final CcpReceiver ccpReceiver =
-        new DefaultCcpReceiver(() -> connectorB_ConnectorSettings, incomingRouteForwardingRoutingTable,
-          codecContext,
-          pluginRunningOnB);
+        new DefaultCcpReceiver(() -> connectorB_ConnectorSettings, CONNECTOR_A_ACCOUNT, pluginRunningOnB,
+          incomingRouteForwardingRoutingTable,
+          codecContext
+        );
 
       this.connectorB = new SimulatedConnector(CONNECTOR_B_ADDRESS, pluginRunningOnB, ccpSender, ccpReceiver);
     }
@@ -240,7 +242,7 @@ public class CcpSenderReceiverTest {
           ImmutableRoute.builder()
             .routePrefix(CONNECTOR_C_PREFIX)
             .addPath(CONNECTOR_C_ADDRESS)
-            .nextHopAccount(CONNECTOR_C_ADDRESS)
+            .nextHopAccountId(CONNECTOR_C_ACCOUNT)
             .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS))
             .build()
         )
@@ -256,7 +258,7 @@ public class CcpSenderReceiverTest {
           ImmutableRoute.builder()
             .routePrefix(CONNECTOR_D_PREFIX)
             .addPath(CONNECTOR_C_ADDRESS, CONNECTOR_D_ADDRESS)
-            .nextHopAccount(CONNECTOR_C_ADDRESS)
+            .nextHopAccountId(CONNECTOR_C_ACCOUNT)
             .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS))
             .build()
         )
@@ -401,7 +403,7 @@ public class CcpSenderReceiverTest {
 
               logger
                 .debug("Received getRoute control message. sender={}, tableId={} getEpoch={} features={}",
-                  this.getPluginSettings().getPeerAccountAddress(),
+                  pluginSettings.getOperatorAddress(),
                   routeControlRequest.lastKnownRoutingTableId(), routeControlRequest.lastKnownEpoch(),
                   routeControlRequest.features());
 
@@ -410,7 +412,7 @@ public class CcpSenderReceiverTest {
               this.localConnector.ccpSender.handleRouteControlRequest(routeControlRequest);
 
               // If no exception, then return a fulfill response...
-              return Completions.supplyAsync(
+              return CompletableFuture.supplyAsync(
                 () -> Optional.of((InterledgerResponsePacket) InterledgerFulfillPacket.builder()
                   .fulfillment(CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT).build()))
                 .toCompletableFuture();
@@ -428,7 +430,7 @@ public class CcpSenderReceiverTest {
               logger
                 .debug("Received routes. sender={} speaker={} currentEpoch={} fromEpoch={} toEpoch={} newRoutes={} " +
                     "withdrawnRoutes={}",
-                  this.getPluginSettings().getPeerAccountAddress(),
+                  pluginSettings.getOperatorAddress(),
                   routeUpdateRequest.speaker(), routeUpdateRequest.currentEpochIndex(),
                   routeUpdateRequest.fromEpochIndex(), routeUpdateRequest.toEpochIndex(),
                   routeUpdateRequest.newRoutes().size(),
@@ -449,7 +451,7 @@ public class CcpSenderReceiverTest {
               // But in this test we don't do that...
 
               // If no exception, then return a fulfill response...
-              return Completions.supplyAsync(
+              return CompletableFuture.supplyAsync(
                 () -> Optional.of(
                   (InterledgerResponsePacket) InterledgerFulfillPacket.builder()
                     .fulfillment(CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT).build())
@@ -486,7 +488,7 @@ public class CcpSenderReceiverTest {
      * @param preparePacket
      */
     @Override
-    public CompletableFuture<Optional<InterledgerResponsePacket>> doSendData(InterledgerPreparePacket preparePacket)
+    public CompletableFuture<Optional<InterledgerResponsePacket>> sendData(InterledgerPreparePacket preparePacket)
       throws InterledgerProtocolException {
       // For simulation purposes, we simply reach through into the other connector directly and place the
       // preparePacket into it.
@@ -499,7 +501,7 @@ public class CcpSenderReceiverTest {
      * @param amount
      */
     @Override
-    protected CompletableFuture<Void> doSendMoney(final BigInteger amount) {
+    public CompletableFuture<Void> sendMoney(final BigInteger amount) {
       // No-op for routing purposes...
       return CompletableFuture.completedFuture(null);
     }

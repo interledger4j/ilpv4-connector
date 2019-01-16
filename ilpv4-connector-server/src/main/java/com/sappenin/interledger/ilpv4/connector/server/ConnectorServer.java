@@ -1,8 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.server;
 
-import com.sappenin.interledger.ilpv4.connector.model.settings.ConnectorSettings;
-import com.sappenin.interledger.ilpv4.connector.server.support.ConnectorServerConfig;
-import com.sappenin.interledger.ilpv4.connector.server.support.Server;
+import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
+import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 
 import java.util.Optional;
@@ -27,15 +26,14 @@ public class ConnectorServer extends Server {
 
   @Override
   public void start() {
-
-    // For configuration-override purposes, we in-general need to replace the bean in the ApplicationContext called
-    // ConnectorSettings. However, there is no application context available until _after_ the server has started.
-    // Thus, some properties are initialized from whatever yaml file happens to be on the class-path, which will
-    // initialize certain internal plugins with the wrong information. This is limited to the Connector's ILPAddress
-    // and routing prefix, so those are preemptively set via property overrides here.
+    // For configuration-override purposes (e.g., in an Integration Test), we in-general need to replace the bean in
+    // the ApplicationContext called ConnectorSettings. However, there is no application context available until
+    // _after_ the server has started. Thus, some properties are initialized from whatever yaml file happens to be on
+    // the class-path, which will initialize certain internal plugins with the wrong information. This is limited to
+    // the Connector's ILPAddress and routing prefix, so those are preemptively set via property overrides here.
     this.connectorSettingsOverride.ifPresent(cso -> {
-      this.setProperty("ilpv4.connector.ilpAddress", cso.getIlpAddress().getValue());
-      this.setProperty("ilpv4.connector.globalPrefix", cso.getGlobalPrefix().getValue());
+      this.setProperty(ConnectorProperties.NODE_ILP_ADDRESS, cso.getOperatorAddress().getValue());
+      this.setProperty(ConnectorProperties.GLOBAL_PREFIX, cso.getGlobalPrefix().getValue());
     });
 
     super.start();

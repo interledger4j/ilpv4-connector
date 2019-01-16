@@ -1,7 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.server.btp;
 
 import com.google.common.io.BaseEncoding;
-import com.sappenin.interledger.ilpv4.connector.server.spring.SpringConnectorWebMvc;
+import com.sappenin.interledger.ilpv4.connector.server.spring.settings.SpringConnectorWebMvc;
 import org.interledger.btp.BtpMessage;
 import org.interledger.btp.BtpMessageType;
 import org.interledger.btp.BtpPacket;
@@ -33,8 +33,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.sappenin.interledger.ilpv4.connector.server.btp.BtpTestUtils.LATCH_LOCK_TIMEOUT;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.CodecContextConfig.BTP;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.CodecContextConfig.ILP;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.BTP;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.ILP;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 

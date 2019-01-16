@@ -1,16 +1,16 @@
 package com.sappenin.interledger.ilpv4.connector.server.btp;
 
+import com.sappenin.interledger.ilpv4.connector.ImmutableAccount;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
-import com.sappenin.interledger.ilpv4.connector.model.settings.ImmutableAccountSettings;
-import com.sappenin.interledger.ilpv4.connector.server.spring.SpringConnectorWebMvc;
+import com.sappenin.interledger.ilpv4.connector.server.spring.settings.SpringConnectorWebMvc;
+import com.sappenin.interledger.ilpv4.connector.settings.ImmutableAccountSettings;
 import org.interledger.btp.BtpError;
 import org.interledger.btp.BtpMessage;
 import org.interledger.btp.BtpPacket;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.interledger.plugin.lpiv2.btp2.spring.ServerWebsocketBtpPlugin;
+import org.interledger.plugin.lpiv2.btp2.spring.BtpServerPlugin;
 import org.interledger.plugin.lpiv2.btp2.spring.converters.BinaryMessageToBtpPacketConverter;
 import org.interledger.plugin.lpiv2.btp2.spring.converters.BtpPacketToBinaryMessageConverter;
-import org.interledger.plugin.lpiv2.settings.ImmutablePluginSettings;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,20 +33,17 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.sappenin.interledger.ilpv4.connector.server.btp.BtpTestUtils.ACCOUNT_ILP_ADDRESS;
 import static com.sappenin.interledger.ilpv4.connector.server.btp.BtpTestUtils.LATCH_LOCK_TIMEOUT;
-import static com.sappenin.interledger.ilpv4.connector.server.btp.BtpTestUtils.LOCAL_ILP_ADDRESS;
-import static com.sappenin.interledger.ilpv4.connector.server.btp.BtpTestUtils.TEST_AUTH_TOKEN;
+import static com.sappenin.interledger.ilpv4.connector.server.btp.BtpTestUtils.LOCAL_ACCOUNT_ID;
 import static com.sappenin.interledger.ilpv4.connector.server.btp.BtpTestUtils.TEST_AUTH_USERNAME;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.CodecContextConfig.BTP;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.CodecContextConfig.ILP;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.BTP;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.ILP;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.interledger.plugin.lpiv2.btp2.BtpPluginSettings.KEY_SECRET;
 import static org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH_TOKEN;
 
 /**
- * Unit tests that exercise the functionality of the BTP Server using Websockets.
+ * Unit tests that exercise the functionality of the BTP Server using WebSockets.
  */
 @ContextConfiguration(classes = {SpringConnectorWebMvc.class, BtpServerAuthTest.TestConfig.class})
 //@TestPropertySource(properties = {"foo.bar=0"})
@@ -94,15 +91,13 @@ public class BtpServerAuthTest {
     this.btpTestUtils = new BtpTestUtils(ilpCodecContext, btpCodecContext);
 
     // Only add the account to the test-connector instance once per test-run.
-    if (accountManager.getAccountSettings(LOCAL_ILP_ADDRESS).isPresent() == false) {
-      accountManager.add(
-        ImmutableAccountSettings.builder()
-          .pluginSettings(
-            ImmutablePluginSettings.builder()
-              .localNodeAddress(LOCAL_ILP_ADDRESS)
-              .peerAccountAddress(ACCOUNT_ILP_ADDRESS)
-              .pluginType(ServerWebsocketBtpPlugin.PLUGIN_TYPE)
-              .putCustomSettings(KEY_SECRET, TEST_AUTH_TOKEN)
+    if (accountManager.getAccount(LOCAL_ACCOUNT_ID).isPresent() == false) {
+      accountManager.addAccount(
+        ImmutableAccount.builder()
+          .accountSettings(
+            ImmutableAccountSettings.builder()
+              .id(LOCAL_ACCOUNT_ID)
+              .pluginType(BtpServerPlugin.PLUGIN_TYPE)
               .build()
           )
           .build()

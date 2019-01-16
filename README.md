@@ -1,15 +1,89 @@
 # java-ilp-connector
-A Java implementation of an Interledger Connector
+A Java implementation of an Interledger v4 Connector
 
 # Configuration
-Configuration of this Connector is sourced from a variety of potential sources when the connector
+Configuration of this Connector is obtained from a variety of potential sources when the connector
 starts up. This includes property files, environment variables, and more, per Spring Boot functionality.
+and can be updated at runtime without server restarts.
 
-At runtime, configuration values can be changed (this facility is not yet implemented, but will be via
-an adminstrative API and possibly via JMX).
+TODO: Finish config docs.
 
-TODO: Document diff between config values, runtime attributes, etc, and how each changes at runtime.
-e.g., Peer address can't change, but the routeUpdateInterval can. Things that can change at runtime
-aren't generally accessible via something like a `Peer` object (which is immutable), but instead
-must be accessed via PeerManager.
+# Connector Profiles
+This implementation supports a variety of profiles that a Connector can be started in, with each
+profile targeting a different use-case.
 
+## Plugin Mode
+The simplest of connector profiles, this profile is meant to operate as an Interledger
+client operating a single plugin. This profile requires a connection to a parent connector
+that will provide more advanced functionality, such as routing, FX, and connectivity to the broader Interledger
+network.
+
+### Supported Functionality
+A plugin-mode Connector operates with limited functionality, specifically:
+
+* Only a single Account is supported using a client-plugin. This means the connector will always
+be the `child` of some other parent Connector.
+* Connection configuration is defined statically, and read by the Connector at startup.
+* CCP and other routing functionality is not supported (plugin-mode Connectors delegate this functionality to a parent Connector).
+* The Connectors will not track account balances. Instead, balance-tracking occurs entirely
+in the parent/peer connector.
+* [ILDCP](https://github.com/interledger/rfcs/blob/master/0031-dynamic-configuration-protocol/0031-dynamic-configuration-protocol.md)
+is optionally supported.
+
+For an example configuration of a plugin-mode Connector, see [application-plugin-mode-connector.yml](FIXME).
+
+### Startup
+TODO
+
+## Connector Mode
+This mode supports all functionality of an ILP Connector, and is intended for
+connectors operating as an ILSP. In this way, this mode is meant to allow
+a Connector to listen to many incoming connections from external parties and
+respond to them appropriately.
+
+### Supported Functionality
+An Infrastructure-mode Connector operates with all functionality enabled, although with some
+limitations:
+
+* Connection types are limited to multi-account types, such as BPP or multi-account BTP.
+
+For an example configuration of a mini-connector, see [application-infrastrucutre-connector.yml](FIXME).
+
+### Startup
+TODO
+
+## Infrastructure-mode Connector
+The next type of supported profile is a connector running in infrastructure` mode. This mode
+is meant to allow a Connector to peer with other highly-trusted connectors so that the
+ balance tracking and settlement sub-subsystem can be optimized using post-funding of accounts
+ and infrequent settlement operations.
+
+### Supported Functionality
+An Infrastructure-mode Connector operates with all functionality enabled, although with some
+limitations:
+
+* Connection types are limited to multi-account types, such as BPP or multi-account BTP.
+
+For an example configuration of a mini-connector, see [application-infrastrucutre-connector.yml](FIXME).
+
+### Startup
+TODO
+
+
+TODO: Loopback mode,
+
+
+# Options
+
+* BPP defines a single connection using two MUX transports (grp server + gprc client)
+    * BPP supports account multiplexing if desired, but auth happens at the MUX level.
+
+
+
+* Mini-connector.
+* Clustered Mode:
+* [I] BPP Connector (uses BPP to talk to a remote connector). Primary infrastructure-mode?
+* [I] BTP Single-Account Client: Creates a new Websocket client for each connection, always of type PARENT. No routing.
+* [I] BTP Single-Account Server: Runs a single websocket server, intended for infrastructure mode.
+
+* [R] BTP Multi-Account Server: No routing, implementation-specific settings (via custom-settings or otherwise).

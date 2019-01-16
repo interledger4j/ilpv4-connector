@@ -61,7 +61,7 @@ import java.util.function.BiConsumer;
  * "next-hop" address of "g.a" for any routing requests that don't match any other prefix in the table.</p>
  *
  * <p>Using data from a routing table allows an ILP node to forward packets to the correct next hop in an overall
- * payment path, without holding the entire graph of all ILP nodes in-memory.</p>
+ * payment path, without holding the entire topology of all ILP nodes in-memory.</p>
  *
  * <p> This interface is extensible in that it can hold simple routes of type {@link BaseRoute}, or it can hold
  * more complicated implementations that extend {@link BaseRoute}.</p>

@@ -19,13 +19,22 @@
   <description>The parent pom for this ILPv4 Connector.</description>
 
   <properties>
+    <!-- By default, we run in production mode, unless a different profile is specified. -->
+    <activeProfile>production</activeProfile>
     <java.version>1.8</java.version>
     <ilp.version>0.15.0-SNAPSHOT</ilp.version>
     <ilp-plugin.version>2.0.0-SNAPSHOT</ilp-plugin.version>
+
+    <grpc.version>1.16.1</grpc.version>
+    <protobuf.maven.plugin.version>0.6.1</protobuf.maven.plugin.version>
+    <protoc.version>3.6.1</protoc.version>
+    <protoc.gen.grpc.java.version>1.16.1</protoc.gen.grpc.java.version>
   </properties>
 
   <modules>
     <module>ilpv4-api</module>
+    <module>ilpv4-node</module>
+    <module>ilpv4-connector-proto</module>
     <module>ilpv4-connector-model</module>
     <module>ilpv4-connector-routing-api</module>
     <module>ilpv4-connector-service-api</module>
@@ -33,7 +42,6 @@
     <module>ilpv4-connector-service-impl</module>
     <module>ilpv4-connector-server</module>
     <module>ilpv4-connector-it</module>
-    <module>ilpv4-node</module>
   </modules>
 
   <dependencyManagement>
@@ -89,6 +97,11 @@
         <version>0.1.0-SNAPSHOT</version>
       </dependency>
       <dependency>
+        <groupId>com.spotify</groupId>
+        <artifactId>futures-extra</artifactId>
+        <version>4.1.1</version>
+      </dependency>
+      <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>21.0</version>
@@ -97,6 +110,27 @@
         <groupId>com.squareup.okhttp3</groupId>
         <artifactId>okhttp</artifactId>
         <version>3.11.0</version>
+      </dependency>
+      <dependency>
+        <groupId>io.grpc</groupId>
+        <artifactId>grpc-netty-shaded</artifactId>
+        <version>${grpc.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.grpc</groupId>
+        <artifactId>grpc-protobuf</artifactId>
+        <version>${grpc.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.grpc</groupId>
+        <artifactId>grpc-stub</artifactId>
+        <version>${grpc.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.grpc</groupId>
+        <artifactId>grpc-testing</artifactId>
+        <version>${grpc.version}</version>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>javax.inject</groupId>
@@ -190,12 +224,39 @@
   </dependencyManagement>
 
   <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-dependency-plugin</artifactId>
-      </plugin>
-    </plugins>
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.6.1</version>
+      </extension>
+    </extensions>
   </build>
+
+  <profiles>
+    <!-- -->
+    <profile>
+      <id>dev</id>
+      <properties>
+        <spring.profiles.active>dev,connector-mode</spring.profiles.active>
+      </properties>
+    </profile>
+    <profile>
+      <id>test</id>
+      <properties>
+        <spring.profiles.active>test,connector-mode</spring.profiles.active>
+      </properties>
+    </profile>
+    <profile>
+      <id>prod</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <spring.profiles.active>prod,connector-mode</spring.profiles.active>
+      </properties>
+    </profile>
+  </profiles>
 
   <repositories>
     <repository>

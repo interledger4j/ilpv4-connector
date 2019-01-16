@@ -1,12 +1,17 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
+import com.google.common.hash.Hashing;
+import com.sappenin.interledger.ilpv4.connector.AccountId;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerAddressPrefix;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * <p>An entry in a {@link RoutingTable}, used by Interledger nodes to determine the "next hop" account that a payment
@@ -19,13 +24,26 @@ public interface Route extends BaseRoute {
 
   byte[] EMPTY_AUTH = new byte[32];
 
+  static ImmutableRoute.Builder builder() {
+    return ImmutableRoute.builder();
+  }
+
+  /**
+   * Create an HMAC of the routing secret and address prefix using Hmac SHA256.
+   */
+  static byte[] HMAC(String routingSecret, InterledgerAddressPrefix addressPrefix) {
+    return Hashing
+      .hmacSha256(routingSecret.getBytes(UTF_8))
+      .hashBytes(addressPrefix.getValue().getBytes(UTF_8)).asBytes();
+  }
+
   /**
    * <p>An {@link InterledgerAddress} representing the account that should be listed as the recipient of any next-hop
    * ledger transfers for this route.</p>
    *
    * @return An {@link InterledgerAddress}.
    */
-  InterledgerAddress getNextHopAccount();
+  AccountId getNextHopAccountId();
 
   /**
    * A list of nodes that a payment will traverse in order for a payment to make it to its destination.

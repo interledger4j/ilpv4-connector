@@ -1,6 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.settings;
 
-import com.sappenin.interledger.ilpv4.connector.model.settings.ConnectorSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 
 /**
  * Provides runtime-reloadable access to all settings for this connector (peers, routing, etc).

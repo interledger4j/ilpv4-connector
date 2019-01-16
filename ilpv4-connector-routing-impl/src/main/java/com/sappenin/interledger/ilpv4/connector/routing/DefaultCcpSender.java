@@ -3,13 +3,22 @@ package com.sappenin.interledger.ilpv4.connector.routing;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.sappenin.interledger.ilpv4.connector.ccp.*;
-import com.sappenin.interledger.ilpv4.connector.model.settings.ConnectorSettings;
-import org.interledger.core.InterledgerAddress;
+import com.sappenin.interledger.ilpv4.connector.Account;
+import com.sappenin.interledger.ilpv4.connector.AccountId;
+import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
+import com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants;
+import com.sappenin.interledger.ilpv4.connector.ccp.CcpNewRoute;
+import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteControlRequest;
+import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteUpdateRequest;
+import com.sappenin.interledger.ilpv4.connector.ccp.CcpSyncMode;
+import com.sappenin.interledger.ilpv4.connector.ccp.CcpWithdrawnRoute;
+import com.sappenin.interledger.ilpv4.connector.ccp.ImmutableCcpNewRoute;
+import com.sappenin.interledger.ilpv4.connector.ccp.ImmutableCcpRoutePathPart;
+import com.sappenin.interledger.ilpv4.connector.ccp.ImmutableCcpRouteUpdateRequest;
+import com.sappenin.interledger.ilpv4.connector.ccp.ImmutableCcpWithdrawnRoute;
+import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
-import com.sappenin.interledger.ilpv4.connector.model.settings.AccountSettings;
 import org.interledger.plugin.lpiv2.Plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +28,6 @@ import javax.annotation.PreDestroy;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,12 +47,15 @@ public class DefaultCcpSender implements CcpSender {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
+  // TODO: Replace this with a RouteBroadcastSettings. This will be for a given sender/receiver pair, because a
+  //  CcpSender is created anew for each connection. We should remove this supplier which will re-enable per-peer
+  // route broadcast settings.
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final ForwardingRoutingTable<RouteUpdate> forwardingRoutingTable;
   private final AccountManager accountManager;
   private final CodecContext codecContext;
 
-  // Note that the ILP Address and other settings for this sender are found in this Plugin.
+  private final AccountId peerAccountId;
   private final Plugin plugin;
 
   private final AtomicInteger lastKnownEpoch;
@@ -61,11 +72,13 @@ public class DefaultCcpSender implements CcpSender {
    */
   public DefaultCcpSender(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final AccountId peerAccountId, 
+    final Plugin plugin,
     final ForwardingRoutingTable<RouteUpdate> forwardingRoutingTable,
     final AccountManager accountManager,
-    final CodecContext codecContext,
-    final Plugin plugin
+    final CodecContext codecContext
   ) {
+    this.peerAccountId = Objects.requireNonNull(peerAccountId);
     this.forwardingRoutingTable = Objects.requireNonNull(forwardingRoutingTable);
     this.accountManager = Objects.requireNonNull(accountManager);
     this.codecContext = codecContext;
@@ -85,15 +98,15 @@ public class DefaultCcpSender implements CcpSender {
   public void handleRouteControlRequest(final CcpRouteControlRequest routeControlRequest) {
     Preconditions.checkNotNull(plugin, "Plugin must be assigned before using a CcpSender!");
 
-    final InterledgerAddress peerAccountAddress = plugin.getPluginSettings().getPeerAccountAddress();
+    //final InterledgerAddress peerAccountId = plugin.getPluginSettings().getpeerAddress();
 
     logger
-      .debug("Peer `{}` sent CcpRouteControlRequest: {}", peerAccountAddress.getValue(),
+      .debug("Peer `{}` sent CcpRouteControlRequest: {}", peerAccountId,
         routeControlRequest);
     if (syncMode.get() != routeControlRequest.getMode()) {
       logger.debug(
         "Peer `{}` requested changing routing mode. oldMode={} newMode={}",
-        peerAccountAddress.getValue(), this.syncMode.get(), routeControlRequest.getMode()
+        peerAccountId, this.syncMode.get(), routeControlRequest.getMode()
       );
     }
     this.syncMode.set(routeControlRequest.getMode());
@@ -101,13 +114,13 @@ public class DefaultCcpSender implements CcpSender {
     if (lastKnownRoutingTableId.get().equals(this.forwardingRoutingTable.getRoutingTableId()) == false) {
       logger.debug(
         "Peer `{}` has old routing table id, resetting lastKnownEpoch to 0. theirTableId=`{}` correctTableId=`{}`",
-        peerAccountAddress.getValue(), lastKnownRoutingTableId,
+        peerAccountId, lastKnownRoutingTableId,
         this.forwardingRoutingTable.getRoutingTableId());
       this.lastKnownEpoch.set(0);
     } else {
       logger
         .debug("Peer getEpoch set. getEpoch={} currentEpoch={}",
-          peerAccountAddress.getValue(),
+          peerAccountId,
           lastKnownEpoch,
           this.forwardingRoutingTable.getCurrentEpoch());
       this.lastKnownEpoch.set(routeControlRequest.lastKnownEpoch());
@@ -134,15 +147,14 @@ public class DefaultCcpSender implements CcpSender {
       if (scheduledTask == null) {
         scheduledTask = this.scheduler.scheduleWithFixedDelay(
           this::sendRouteUpdateRequest,
-          this.connectorSettingsSupplier.get().getRouteBroadcastSettings(
-            plugin.getPluginSettings().getPeerAccountAddress()
-          ).getRouteBroadcastInterval()
+          // TODO: FIX this once Routebroadcast settings is the thing passed-in instead of connector settings.
+          //this.connectorSettingsSupplier.get().getRouteBroadcastSettings().getRouteBroadcastInterval()
+          null
         );
       } else {
         // Do nothing. The getRoute-update has already been scheduled...
       }
     }
-
   }
 
   @PreDestroy
@@ -172,7 +184,6 @@ public class DefaultCcpSender implements CcpSender {
     Preconditions.checkNotNull(plugin, "Plugin must be assigned before using a CcpSender!");
 
     // Perform getRoute update, catch and log any exceptions...
-    final InterledgerAddress peerAccountAddress = plugin.getPluginSettings().getPeerAccountAddress();
     try {
       if (!this.plugin.isConnected()) {
         logger.warn("Cannot send routes, lpi2 not connected (yet). Plugin: {}", plugin);
@@ -187,9 +198,10 @@ public class DefaultCcpSender implements CcpSender {
       // routing table's Log. These are the udpates that should be sent to the remote peer.
 
       int skip = nextRequestedEpoch;
-      int limit =
-        (int) (nextRequestedEpoch + this.connectorSettingsSupplier.get().getRouteBroadcastSettings(peerAccountAddress)
-          .getMaxEpochsPerRoutingTable());
+      int limit = 0;
+      // TODO:FIXME
+      //        (int) (nextRequestedEpoch + this.connectorSettingsSupplier.get().getRouteBroadcastSettings()
+      //          .getMaxEpochsPerRoutingTable());
       final Iterable<RouteUpdate> allUpdatesToSend = this.forwardingRoutingTable.getPartialRouteLog(skip, limit);
 
       // Despite asking for N updates, there may not be that many to send, so compute the `toEpoch` properly.
@@ -206,24 +218,22 @@ public class DefaultCcpSender implements CcpSender {
           } else {
             final Route actualRoute = routeUpdate.getRoute().get();
             // Don't send peer their own routes (i.e., withdraw this route)
-            if (actualRoute.getNextHopAccount().equals(peerAccountAddress)) {
+            if (actualRoute.getNextHopAccountId().equals(peerAccountId)) {
               return null;
             }
 
             // Don't advertise Peer or Supplier (Parent) routes to Suppliers (Parents).
             final boolean nextHopRelationIsPeerOrParent =
-              this.accountManager.getAccountSettings(actualRoute.getNextHopAccount())
-                .map(accountSettings -> accountSettings.getRelationship() == AccountSettings.AccountRelationship.PARENT ||
-                  accountSettings.getRelationship() == AccountSettings.AccountRelationship.PEER)
+              this.accountManager.getAccount(actualRoute.getNextHopAccountId())
+                .map(Account::isPeerOrParentAccount)
                 .orElseGet(() -> {
-                  logger.error("NextHop Route {} was not found in the PeerManager!", actualRoute.getNextHopAccount());
+                  logger.error("NextHop Route {} was not found in the PeerManager!", actualRoute.getNextHopAccountId());
                   return false;
                 });
 
             final boolean thisPluginIsParent =
-              this.accountManager.getAccountSettings(peerAccountAddress)
-                .map(AccountSettings::getRelationship)
-                .map(relationship -> relationship == AccountSettings.AccountRelationship.PARENT)
+              this.accountManager.getAccount(peerAccountId)
+                .map(Account::isParentAccount)
                 .orElse(false);
 
             if (thisPluginIsParent || nextHopRelationIsPeerOrParent) {
@@ -272,12 +282,13 @@ public class DefaultCcpSender implements CcpSender {
 
       // Construct RouteUpdateRequest
       final CcpRouteUpdateRequest ccpRouteUpdateRequest = ImmutableCcpRouteUpdateRequest.builder()
-        .speaker(this.connectorSettingsSupplier.get().getIlpAddress())
+        .speaker(this.connectorSettingsSupplier.get().getOperatorAddress())
         .routingTableId(this.forwardingRoutingTable.getRoutingTableId())
-        .holdDownTime(
-          this.connectorSettingsSupplier.get().getRouteBroadcastSettings(peerAccountAddress).getRouteExpiry()
-            .toMillis()
-        )
+        // TODO: FIXME!
+        //        .holdDownTime(
+        //          this.connectorSettingsSupplier.get().getRouteBroadcastSettings().getRouteExpiry()
+        //            .toMillis()
+        //        )
         .currentEpochIndex(this.forwardingRoutingTable.getCurrentEpoch())
         .fromEpochIndex(this.lastKnownEpoch.get())
         .toEpochIndex(toEpoch)
@@ -296,38 +307,41 @@ public class DefaultCcpSender implements CcpSender {
           .amount(BigInteger.ZERO)
           .destination(CcpConstants.CCP_UPDATE_DESTINATION_ADDRESS)
           .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
-          .expiresAt(Instant.now().plus(
-            this.connectorSettingsSupplier.get().getRouteBroadcastSettings(peerAccountAddress).getRouteExpiry()
-          ))
+          // TODO: FIXME!
+          //          .expiresAt(Instant.now().plus(
+          //            this.connectorSettingsSupplier.get().getRouteBroadcastSettings().getRouteExpiry()
+          //          ))
           .data(serializeCcpPacket(ccpRouteUpdateRequest))
           .build()
       ).handle((fulfillment, error) -> {
         if (error != null) {
           logger.error("Failed to broadcast getRoute information to peer. peer=`{}`: {}",
-            peerAccountAddress.getValue(), error);
+            peerAccountId, error);
         } else {
           logger
-            .debug("Route update succeeded to peer: `{}`!", peerAccountAddress.getValue());
+            .debug("Route update succeeded to peer: `{}`!", peerAccountId);
         }
         return null;
       });
 
       //return ImmutableRouteUpdateResults.builder().build();
-    } catch (IOException | RuntimeException e) {
-      logger
-        .error("Failed to broadcast getRoute information to peer. peer=`{}`",
-          peerAccountAddress.getValue(), e);
-      throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
+    } catch (RuntimeException e) {
+      logger.error("Failed to broadcast getRoute information to peer. peer=`{}`", peerAccountId, e);
+      throw e;
     }
   }
 
   @VisibleForTesting
-  protected byte[] serializeCcpPacket(final CcpRouteUpdateRequest ccpRouteUpdateRequest) throws IOException {
+  protected byte[] serializeCcpPacket(final CcpRouteUpdateRequest ccpRouteUpdateRequest) {
     Objects.requireNonNull(ccpRouteUpdateRequest);
 
-    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    codecContext.write(ccpRouteUpdateRequest, outputStream);
-    return outputStream.toByteArray();
+    try {
+      ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+      codecContext.write(ccpRouteUpdateRequest, outputStream);
+      return outputStream.toByteArray();
+    } catch (IOException e) {
+      throw new RuntimeException(e.getMessage(), e);
+    }
   }
 
   public CcpSyncMode getSyncMode() {

@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.server.btp;
 
+import com.sappenin.interledger.ilpv4.connector.AccountId;
 import org.interledger.btp.BtpMessage;
 import org.interledger.btp.BtpSubProtocol;
 import org.interledger.btp.BtpSubProtocols;
@@ -18,11 +19,18 @@ import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.Random;
 
-import static org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandlerRegistry.*;
+import static org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH;
+import static org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH_TOKEN;
+import static org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_AUTH_USERNAME;
+import static org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_ILP;
 
 public class BtpTestUtils {
 
   public static final int LATCH_LOCK_TIMEOUT = 3;
+
+  public static final AccountId LOCAL_ACCOUNT_ID = AccountId.of("account-with-peer");
+
+
   public static final InterledgerAddress LOCAL_ILP_ADDRESS = InterledgerAddress.of("test.btp-server");
   public static final InterledgerAddress ACCOUNT_ILP_ADDRESS = InterledgerAddress.of("test.account-with-peer");
 

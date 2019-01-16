@@ -1,9 +1,10 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
+import com.sappenin.interledger.ilpv4.connector.accounts.AccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.ccp.codecs.CcpCodecs;
-import com.sappenin.interledger.ilpv4.connector.model.settings.ConnectorSettings;
-import com.sappenin.interledger.ilpv4.connector.model.settings.ImmutableConnectorSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.ImmutableConnectorSettings;
 import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.junit.Before;
@@ -23,6 +24,9 @@ public class DefaultRoutingServiceTest {
 
   @Mock
   private AccountManager accountManagerMock;
+
+  @Mock
+  private AccountIdResolver accountIdResolverMock;
 
   private CodecContext codecContext;
   private Supplier<ConnectorSettings> connectorSettingsSupplier;
@@ -49,7 +53,8 @@ public class DefaultRoutingServiceTest {
       localRoutingTable,
       incomingRoutingTable,
       outgoingRoutingTable,
-      accountManagerMock
+      accountManagerMock,
+      accountIdResolverMock
     );
   }
 

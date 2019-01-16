@@ -2,20 +2,26 @@ package com.sappenin.interledger.ilpv4.connector.packetswitch;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.sappenin.interledger.ilpv4.connector.Account;
+import com.sappenin.interledger.ilpv4.connector.AccountId;
+import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.fx.ExchangeRateService;
-import com.sappenin.interledger.ilpv4.connector.model.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.DefaultSendDataFilterChain;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.SendDataFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.SendDataFilterChain;
 import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
 import com.sappenin.interledger.ilpv4.connector.routing.Route;
+import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.immutables.value.Value;
-import org.interledger.core.*;
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
-import com.sappenin.interledger.ilpv4.connector.model.settings.AccountSettings;
+import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerErrorCode;
+import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerProtocolException;
+import org.interledger.core.InterledgerRejectPacket;
+import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.plugin.lpiv2.Plugin;
-import org.interledger.plugin.lpiv2.exceptions.PluginNotFoundException;
-import org.interledger.plugin.lpiv2.settings.PluginSettings;
+import org.interledger.plugin.lpiv2.PluginSettings;
 import org.javamoney.moneta.Money;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,10 +67,10 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
 
   @Override
   public final CompletableFuture<Optional<InterledgerResponsePacket>> sendData(
-    final InterledgerAddress sourceAccountAddress, final InterledgerPreparePacket sourcePreparePacket
+    final AccountId sourceAccountId, final InterledgerPreparePacket sourcePreparePacket
   ) {
 
-    Objects.requireNonNull(sourceAccountAddress);
+    Objects.requireNonNull(sourceAccountId);
     Objects.requireNonNull(sourcePreparePacket);
 
     //    This logic should move to 1 or more Packet filters so that this method can apply each filter?
@@ -76,11 +82,11 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     //      // TODO: FINISH!
     //      throw new RuntimeException("Peer packets should be routed to a different switch!");
     //      //return this.peerProtocolController.handle(packet, sourceAccount, {parsedPacket})
-    //    } else if (sourcePreparePacket.getDestination().equals(connectorSettings.getIlpAddress())) {
+    //    } else if (sourcePreparePacket.getDestination().equals(connectorSettings.getOperatorAddress())) {
     //      final InterledgerPreparePacket returnPacket =
-    //        this.echoController.handleIncomingData(sourceAccountAddress, sourcePreparePacket);
+    //        this.echoController.handleIncomingData(sourceAccountId, sourcePreparePacket);
     //      // Send the echo payment....
-    //      this.sendData(sourceAccountAddress, returnPacket);
+    //      this.sendData(sourceAccountId, returnPacket);
     //      // Fulfill the original payment...
     //      return CompletableFuture.completedFuture(Optional.of(
     //        InterledgerFulfillPacket.builder()
@@ -89,39 +95,37 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     //        )
     //      );
     //    } else {
-    final NextHopInfo nextHopInfo = getNextHopPacket(sourceAccountAddress, sourcePreparePacket);
+    final NextHopInfo nextHopInfo = getNextHopPacket(sourceAccountId, sourcePreparePacket);
 
     // TODO: Make this configurable. See JS Connector for details.
     // TODO: Move this to the routing layer. If the router is configured to not return a NextHop like this, then
     // this should never happen, and can be removed.
-    if (sourceAccountAddress.equals(nextHopInfo.nextHopAccountAddress())) {
+    if (sourceAccountId.equals(nextHopInfo.nextHopAccountId())) {
       throw new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
           .code(InterledgerErrorCode.T01_LEDGER_UNREACHABLE)
-          .triggeredBy(connectorSettingsSupplier.get().getIlpAddress())
+          .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
           .message(
             String.format("Refusing to route payments back to sender. sourceAccount=`%s` destinationAccount=`%s`",
-              sourceAccountAddress, nextHopInfo.nextHopAccountAddress()))
+              sourceAccountId, nextHopInfo.nextHopAccountId()))
           .build()
       );
     }
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug(
-        "Sending outbound ILP Prepare. destination={} packet={}", nextHopInfo.nextHopAccountAddress(),
+        "Sending outbound ILP Prepare. destination={} packet={}", nextHopInfo.nextHopAccountId(),
         nextHopInfo.nextHopPacket()
       );
     }
 
     // Create a new FilterChain, and use it to both filter the sendData call, as well as to make the actual call.
     final Plugin<? extends PluginSettings> plugin =
-      this.accountManager.getPluginManager()
-        .getPlugin(nextHopInfo.nextHopAccountAddress())
-        .orElseThrow(() -> new PluginNotFoundException(nextHopInfo.nextHopAccountAddress()));
+      this.accountManager.safeGetAccount(nextHopInfo.nextHopAccountId()).getPlugin();
 
     final SendDataFilterChain filterChain = new DefaultSendDataFilterChain(this.sendDataFilters, plugin);
 
-    return filterChain.doFilter(sourceAccountAddress, sourcePreparePacket);
+    return filterChain.doFilter(sourceAccountId, sourcePreparePacket);
 
     // TODO: Add Logging Filter...
     // TODO: Add ExchangeRate Update filter...
@@ -143,7 +147,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     //          // Log statistics in the ExchangeRateService...
     //          this.exchangeRateService.logPaymentStats(
     //            ImmutableUpdateRatePaymentParams.builder()
-    //              .sourceAccountAddress(sourceAccountAddress)
+    //              .sourceAccountId(sourceAccountId)
     //              .sourceAmount(sourcePreparePacket.getAmount())
     //              .destinationAccountAddress(nextHopInfo.nextHopAccountAddress())
     //              .destinationAmount(nextHopInfo.nextHopPacket().getAmount())
@@ -162,21 +166,21 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
    * * @param {string} sourceAccount ILP address of our peer who sent us the packet * @param {IlpPrepare} sourcePacket
    * (Parsed packet that we received * @returns {NextHopPacketInfo} Account and packet for next hop
    *
-   * @param sourceAccountAddress The {@link InterledgerAddress} of the peer who sent this packet into the Connector.
-   *                             This is typically the remote peer-address configured in a plugin.
-   * @param sourcePacket         The {@link InterledgerPreparePacket} that we received from the source address.
+   * @param sourceAccountId The {@link AccountId} of the peer who sent this packet into the Connector. This is typically
+   *                        the remote peer-address configured in a plugin.
+   * @param sourcePacket    The {@link InterledgerPreparePacket} that we received from the source address.
    *
    * @return A {@link InterledgerPreparePacket} that can be sent to the next-hop.
    */
   @VisibleForTesting
   protected NextHopInfo getNextHopPacket(
-    final InterledgerAddress sourceAccountAddress, final InterledgerPreparePacket sourcePacket
+    final AccountId sourceAccountId, final InterledgerPreparePacket sourcePacket
   ) throws RuntimeException {
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug(
         "Constructing NextHop InterledgerPreparePacket for source: {} from packet: {}",
-        sourceAccountAddress, sourcePacket
+        sourceAccountId, sourcePacket
       );
     }
 
@@ -185,10 +189,11 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     final Route nextHopRoute = this.paymentRouter.findBestNexHop(destinationAddress)
       .orElseThrow(() -> new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
-          .triggeredBy(connectorSettingsSupplier.get().getIlpAddress())
+          .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
           .code(InterledgerErrorCode.F02_UNREACHABLE)
-          .message(String.format("No route found from source(`%s`) to destination(`%s`).",
-            sourceAccountAddress.getValue(), destinationAddress.getValue())
+          .message(
+            String.format("No route found from source(`%s`) to destination(`%s`).",
+              sourceAccountId, destinationAddress.getValue())
           )
           .build()
       ));
@@ -197,10 +202,10 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
       LOGGER.debug("Determined next hop: {}", nextHopRoute);
     }
 
-    final MonetaryAmount nextAmount = this.determineNextAmount(sourceAccountAddress, sourcePacket);
+    final MonetaryAmount nextAmount = this.determineNextAmount(sourceAccountId, sourcePacket);
 
     return ImmutableNextHopInfo.builder()
-      .nextHopAccountAddress(nextHopRoute.getNextHopAccount())
+      .nextHopAccountId(nextHopRoute.getNextHopAccountId())
       .nextHopPacket(
         InterledgerPreparePacket.builder()
           .from(sourcePacket)
@@ -214,22 +219,23 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
    * Given a source address, determine the exchange-rate and new amount that should be returned in order to create the
    * next packet in the chain.
    *
-   * @param sourceAccountAddress
+   * @param sourceAccountId
    * @param sourcePacket
    *
    * @return
    */
   @VisibleForTesting
   protected MonetaryAmount determineNextAmount(
-    final InterledgerAddress sourceAccountAddress, final InterledgerPreparePacket sourcePacket
+    final AccountId sourceAccountId, final InterledgerPreparePacket sourcePacket
   ) {
     Objects.requireNonNull(sourcePacket);
 
     final CurrencyUnit sourceCurrencyUnit = this.accountManager
-      .getAccountSettings(sourceAccountAddress)
+      .getAccount(sourceAccountId)
+      .map(Account::getAccountSettings)
       .map(AccountSettings::getAssetCode)
       .map(Monetary::getCurrency)
-      .orElseThrow(() -> new RuntimeException(String.format("No Source Account found for `%s`", sourceAccountAddress)));
+      .orElseThrow(() -> new RuntimeException(String.format("No Source Account for AccountId: `%s`", sourceAccountId)));
     final MonetaryAmount sourceAmount = Money.of(sourcePacket.getAmount(), sourceCurrencyUnit);
     return this.exchangeRateService.convert(sourceAmount, sourceCurrencyUnit);
   }
@@ -242,7 +248,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     if (sourceExpiry.isBefore(nowTime)) {
       throw new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
-          .triggeredBy(connectorSettingsSupplier.get().getIlpAddress())
+          .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
           .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
           .message(String.format(
             "Source transfer has already expired. sourceExpiry: {%s}, currentTime: {%s}", sourceExpiry, nowTime))
@@ -267,7 +273,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     if (destinationExpiryTime.minusMillis(minMessageWindow).isBefore(nowTime)) {
       throw new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
-          .triggeredBy(connectorSettingsSupplier.get().getIlpAddress())
+          .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
           .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
           .message(String.format(
             "Source transfer expires too soon to complete payment. SourceExpiry: {%s}, " +
@@ -323,7 +329,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     /**
      * The {@link InterledgerAddress} of the next-hop account to send a prepare packet to.
      */
-    InterledgerAddress nextHopAccountAddress();
+    AccountId nextHopAccountId();
 
     /**
      * The packet to send to the next hop.

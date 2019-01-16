@@ -28,22 +28,26 @@ import java.util.concurrent.CompletableFuture;
  *
  * @see "https://github.com/interledger/rfcs/blob/master/0001-interledger-architecture/"
  * @see "https://github.com/interledger/rfcs/blob/master/0027-interledger-protocol-4/"
+ *
+ * @deprecated It's unclear if this interface is useful. Likely the handleData will be defined in the Connector
+ * inteface. Otherwise, a plugin should be used if something isn't a connector.
  */
+@Deprecated
 public interface ILPv4Receiver extends ILPv4Node {
 
-  /**
-   * Handles an incoming {@link InterledgerPreparePacket} received from a connected peer, but that may have originated
-   * from any Interledger sender in the network.
-   *
-   * @param sourceAccountAddress  An {@link InterledgerAddress} for the remote peer (directly connected to this
-   *                              receiver) that immediately sent the packet.
-   * @param incomingPreparePacket A {@link InterledgerPreparePacket} containing data about an incoming payment.
-   *
-   * @return A {@link CompletableFuture} that resolves to an optionally-present {@link InterledgerResponsePacket}, which
-   * will be of concrete type {@link InterledgerFulfillPacket} or {@link InterledgerRejectPacket}, if present.
-   */
-  CompletableFuture<Optional<InterledgerResponsePacket>> handleIncomingData(
-    InterledgerAddress sourceAccountAddress, InterledgerPreparePacket incomingPreparePacket
-  );
+//  /**
+//   * Handles an incoming {@link InterledgerPreparePacket} received from a connected peer, but that may have originated
+//   * from any Interledger sender in the network.
+//   *
+//   * @param sourceAccountAddress  An {@link InterledgerAddress} for the remote peer (directly connected to this
+//   *                              receiver) that immediately sent the packet.
+//   * @param incomingPreparePacket A {@link InterledgerPreparePacket} containing data about an incoming payment.
+//   *
+//   * @return A {@link CompletableFuture} that resolves to an optionally-present {@link InterledgerResponsePacket}, which
+//   * will be of concrete type {@link InterledgerFulfillPacket} or {@link InterledgerRejectPacket}, if present.
+//   */
+//  CompletableFuture<Optional<InterledgerResponsePacket>> handleIncomingData(
+//    AccountId accountId, InterledgerPreparePacket incomingPreparePacket
+//  );
 
 }

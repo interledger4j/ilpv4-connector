@@ -15,7 +15,10 @@ import java.util.concurrent.CompletableFuture;
  * <p>Defines how an Interledger Node can send ILPv4 packets to remote account on the Interledger. This interface
  * supports multiple sender-address, unlike its counterpart, which assumes only a single address (see {@link
  * ILPv4Sender}.</p>
+ *
+ * @deprecated Should be removed in-favor of just a single-account sender found in {@link ILPv4Sender}.
  */
+@Deprecated
 public interface ILPv4MulitSender extends ILPv4Node {
 
   /**

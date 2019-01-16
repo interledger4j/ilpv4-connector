@@ -4,25 +4,25 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * Simple test to verify that the BeerCoin graph is working properly.
+ * Simple test to verify that the BeerCoin topology is working properly.
  */
 public class BeerCoinTopologyTest {
 
 //  private static final Logger LOGGER = LoggerFactory.getLogger(BeerCoinTopologyTest.class);
-//  private static Graph graph = BeerCoinTopology.beerCoinGraph();
+//  private static Topology topology = BeerCoinTopology.beerCoinGraph();
 //
 //  @BeforeClass
 //  public static void setup() {
-//    LOGGER.info("Starting ILP test graph...");
-//    graph.start();
-//    LOGGER.info("ILP test graph started!");
+//    LOGGER.info("Starting ILP test topology...");
+//    topology.start();
+//    LOGGER.info("ILP test topology started!");
 //  }
 //
 //  @AfterClass
 //  public static void shutdown() {
-//    LOGGER.info("Stopping ILP test graph...");
-//    graph.stop();
-//    LOGGER.info("ILP test graph stopped!");
+//    LOGGER.info("Stopping ILP test topology...");
+//    topology.stop();
+//    LOGGER.info("ILP test topology stopped!");
 //  }
 //
 //  @Test
@@ -50,14 +50,14 @@ public class BeerCoinTopologyTest {
 //  }
 //
 //  /**
-//   * Helper method to obtain an instance of {@link ILPv4Connector} from the graph, based upon its Interledger Address.
+//   * Helper method to obtain an instance of {@link ILPv4Connector} from the topology, based upon its Interledger Address.
 //   *
 //   * @param interledgerAddress
 //   *
 //   * @return
 //   */
 //  private ILPv4Connector getIlpConnectorFromGraph(final InterledgerAddress interledgerAddress) {
-//    return (ILPv4Connector) ((ServerNode) graph.getNode(interledgerAddress.getValue()))
+//    return (ILPv4Connector) ((ServerNode) topology.getNode(interledgerAddress.getValue()))
 //      .getServer().getContext().getBean(CONNECTOR_BEAN);
 //  }
 

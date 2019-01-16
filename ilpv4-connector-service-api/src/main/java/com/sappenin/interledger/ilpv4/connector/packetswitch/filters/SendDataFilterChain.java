@@ -1,6 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
-import org.interledger.core.InterledgerAddress;
+import com.sappenin.interledger.ilpv4.connector.AccountId;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 
@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 public interface SendDataFilterChain {
 
   CompletableFuture<Optional<InterledgerResponsePacket>> doFilter(
-    final InterledgerAddress sourceAccountAddress, final InterledgerPreparePacket sourcePreparePacket
+    AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket
   );
 
 }

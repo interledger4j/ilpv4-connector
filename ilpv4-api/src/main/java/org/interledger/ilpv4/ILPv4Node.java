@@ -8,7 +8,7 @@ import org.interledger.core.InterledgerAddress;
  * program. In the case where a node represents a device or software program, the node is usually connected to another
  * node that represents the device's owner or the person running the software.</p>
  *
- * The Interledger network can be envisioned as a graph where the points are individual nodes and the edges are accounts
+ * The Interledger network can be envisioned as a topology where the points are individual nodes and the edges are accounts
  * between two parties. Parties with only one account can send or receive through the party on the other side of that
  * account. Parties with two or more accounts are connectors, who can facilitate payments to or from anyone they're
  * connected to.</p>

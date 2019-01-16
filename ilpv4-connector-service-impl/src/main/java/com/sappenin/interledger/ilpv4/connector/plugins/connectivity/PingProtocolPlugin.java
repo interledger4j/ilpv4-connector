@@ -1,11 +1,16 @@
 package com.sappenin.interledger.ilpv4.connector.plugins.connectivity;
 
 import com.sappenin.interledger.ilpv4.connector.plugins.InternallyRoutedPlugin;
-import org.interledger.core.*;
+import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.core.InterledgerCondition;
+import org.interledger.core.InterledgerFulfillment;
+import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.plugin.lpiv2.Plugin;
+import org.interledger.plugin.lpiv2.PluginSettings;
 import org.interledger.plugin.lpiv2.PluginType;
-import org.interledger.plugin.lpiv2.settings.PluginSettings;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -13,8 +18,9 @@ import java.util.concurrent.CompletableFuture;
 /**
  * <p>A LPIv2 {@link Plugin} that implements the <tt>ping</tt> protocol. The packet-switch will have routed packets
  * addressed to this connector's address to this plugin (via an appropriate routing table entry). Once this plugin's
- * {@link #sendData(InterledgerPreparePacket)} is called, it will merely respond with fulfill packets containing a known
- * response, and will also track the balance of payments this connector has accrued due to incoming ping-payments.
+ * {@link DataSender#sendData(InterledgerPreparePacket)} is called, it will merely respond with fulfill packets
+ * containing a known response, and will also track the balance of payments this connector has accrued due to incoming
+ * ping-payments.
  * </p>
  * <p>
  * Note that while this plugin is tracking payments related to ping requests, this account is actually between the
@@ -45,21 +51,27 @@ public class PingProtocolPlugin extends InternallyRoutedPlugin implements Plugin
     super(pluginSettings, oerCodecContext);
   }
 
-  /**
-   * In the current design, this plugin is called in the send-data flow by the switch. In this case, it's acting like a
-   * plugin to the ping infrastructure contained in this connector.
-   *
-   * @param preparePacket
-   *
-   * @return
-   */
   @Override
-  public CompletableFuture<Optional<InterledgerResponsePacket>> doSendData(InterledgerPreparePacket preparePacket) {
-    return CompletableFuture.completedFuture(
-      Optional.of(InterledgerFulfillPacket.builder()
-        .fulfillment(PING_PROTOCOL_FULFILLMENT)
-        .build())
-    );
-
+  public CompletableFuture<Optional<InterledgerResponsePacket>> sendData(InterledgerPreparePacket preparePacket) {
+    // TODO
+    throw new RuntimeException("FIXME!");
   }
+
+  //  /**
+  //   * In the current design, this plugin is called in the send-data flow by the switch. In this case, it's acting like a
+  //   * plugin to the ping infrastructure contained in this connector.
+  //   *
+  //   * @param preparePacket
+  //   *
+  //   * @return
+  //   */
+  //  @Override
+  //  public CompletableFuture<Optional<InterledgerResponsePacket>> doSendData(InterledgerPreparePacket preparePacket) {
+  //    return CompletableFuture.completedFuture(
+  //      Optional.of(InterledgerFulfillPacket.builder()
+  //        .fulfillment(PING_PROTOCOL_FULFILLMENT)
+  //        .build())
+  //    );
+  //
+  //  }
 }

@@ -15,6 +15,15 @@
   <name>ILPv4 :: Connector Server</name>
   <description>A Spring Server runtime for an ILPv4 Connector.</description>
 
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+  </build>
+
   <dependencies>
     <dependency>
       <groupId>com.sappenin.ilpv4</groupId>

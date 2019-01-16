@@ -1,7 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
+import com.sappenin.interledger.ilpv4.connector.Account;
 import org.immutables.value.Value;
-import com.sappenin.interledger.ilpv4.connector.model.settings.AccountSettings;
 
 /**
  * A container for holding information about the routing relationship that applies to a particular account (which is
@@ -11,7 +11,7 @@ import com.sappenin.interledger.ilpv4.connector.model.settings.AccountSettings;
 @Value.Immutable
 public interface RoutableAccount {
 
-  AccountSettings getAccountSettings();
+  Account getAccount();
 
   CcpSender getCcpSender();
 

@@ -66,7 +66,7 @@ public interface SourceRestrictedRoute extends Route {
       return getSourcePrefixRestrictionRegex().pattern().equals(another.getSourcePrefixRestrictionRegex().pattern())
         && Arrays.equals(getAuth(), another.getAuth())
         && getRoutePrefix().equals(another.getRoutePrefix())
-        && getNextHopAccount().equals(another.getNextHopAccount())
+        && getNextHopAccountId().equals(another.getNextHopAccountId())
         && getPath().equals(another.getPath())
         && Objects.equals(getExpiresAt(), another.getExpiresAt());
     }
@@ -83,7 +83,7 @@ public interface SourceRestrictedRoute extends Route {
       h += (h << 5) + getSourcePrefixRestrictionRegex().pattern().hashCode();
       h += (h << 5) + Arrays.hashCode(getAuth());
       h += (h << 5) + getRoutePrefix().hashCode();
-      h += (h << 5) + getNextHopAccount().hashCode();
+      h += (h << 5) + getNextHopAccountId().hashCode();
       h += (h << 5) + getPath().hashCode();
       h += (h << 5) + Objects.hashCode(getExpiresAt());
       return h;

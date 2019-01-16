@@ -3,9 +3,20 @@ package com.sappenin.interledger.ilpv4.connector.routing;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.sappenin.interledger.ilpv4.connector.ccp.*;
-import com.sappenin.interledger.ilpv4.connector.model.settings.ConnectorSettings;
-import org.interledger.core.*;
+import com.sappenin.interledger.ilpv4.connector.AccountId;
+import com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants;
+import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteControlRequest;
+import com.sappenin.interledger.ilpv4.connector.ccp.CcpRoutePathPart;
+import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteUpdateRequest;
+import com.sappenin.interledger.ilpv4.connector.ccp.CcpSyncMode;
+import com.sappenin.interledger.ilpv4.connector.ccp.CcpWithdrawnRoute;
+import com.sappenin.interledger.ilpv4.connector.ccp.ImmutableCcpRouteControlRequest;
+import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerProtocolException;
+import org.interledger.core.InterledgerRejectPacket;
+import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.plugin.lpiv2.Plugin;
 import org.slf4j.Logger;
@@ -34,7 +45,9 @@ public class DefaultCcpReceiver implements CcpReceiver {
   private final ForwardingRoutingTable<IncomingRoute> incomingRoutes;
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final CodecContext codecContext;
+
   // The Plugin that can communicate to the remote peer.
+  private final AccountId peerAccountId;
   private final Plugin plugin;
 
   // Contains the identifier used used by our peer. We'll reset the getEpoch to 0 if the identifier changes.
@@ -42,13 +55,13 @@ public class DefaultCcpReceiver implements CcpReceiver {
 
   public DefaultCcpReceiver(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final ForwardingRoutingTable<IncomingRoute> incomingRoutes,
-    final CodecContext codecContext,
-    final Plugin plugin
+    final AccountId peerAccountId, final Plugin plugin, final ForwardingRoutingTable<IncomingRoute> incomingRoutes,
+    final CodecContext codecContext
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.incomingRoutes = Objects.requireNonNull(incomingRoutes);
     this.codecContext = Objects.requireNonNull(codecContext);
+    this.peerAccountId = peerAccountId;
     this.plugin = Objects.requireNonNull(plugin);
   }
 
@@ -118,7 +131,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
     // New Routes
     routeUpdateRequest.newRoutes().stream()
       .map(ccpNewRoute -> ImmutableIncomingRoute.builder()
-        .peerAddress(this.plugin.getPluginSettings().getPeerAccountAddress())
+        .peerAccountId(peerAccountId)
         .routePrefix(ccpNewRoute.prefix())
         .path(
           ccpNewRoute.path().stream()
@@ -128,9 +141,9 @@ public class DefaultCcpReceiver implements CcpReceiver {
         .auth(ccpNewRoute.auth())
         .build()
       )
-      .forEach(newRoute -> {
-        if (this.incomingRoutes.addRoute(newRoute.getRoutePrefix(), newRoute)) {
-          changedPrefixesBuilder.add(newRoute.getRoutePrefix());
+      .forEach(newIncomingRoute -> {
+        if (this.incomingRoutes.addRoute(newIncomingRoute.getRoutePrefix(), newIncomingRoute)) {
+          changedPrefixesBuilder.add(newIncomingRoute.getRoutePrefix());
         }
       });
 
@@ -157,10 +170,8 @@ public class DefaultCcpReceiver implements CcpReceiver {
       .amount(BigInteger.ZERO)
       .destination(CcpConstants.CCP_CONTROL_DESTINATION_ADDRESS)
       .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
-      .expiresAt(Instant.now().plus(
-        connectorSettingsSupplier.get().getRouteBroadcastSettings(plugin.getPluginSettings().getPeerAccountAddress())
-          .getRouteExpiry())
-      )
+      // TODO: FIXME once routebroadcast settings are enabled.
+      //.expiresAt(Instant.now().plus(connectorSettingsSupplier.get().getRouteBroadcastSettings().getRouteExpiry()))
       .data(serializeCcpPacket(request))
       .build();
 
@@ -175,14 +186,11 @@ public class DefaultCcpReceiver implements CcpReceiver {
             logger.debug("Route control message was rejected. rejection={}", rejectPacket.getMessage());
             Optional.of(rejectPacket);
           } else {
-            logger
-              .error("Unknown response fulfillPacket type. peer={}",
-                plugin.getPluginSettings().getPeerAccountAddress().getValue(), error);
+            logger.error("Unknown response fulfillPacket type. peer={}; error={}", peerAccountId, error);
           }
           return Optional.<InterledgerResponsePacket>empty();
         } else {
-          logger.debug("Successfully sent getRoute control message. peer={}",
-            plugin.getPluginSettings().getPeerAccountAddress().getValue());
+          logger.debug("Successfully sent getRoute control message. peer={}", peerAccountId);
           return fulfillPacket;
         }
       });

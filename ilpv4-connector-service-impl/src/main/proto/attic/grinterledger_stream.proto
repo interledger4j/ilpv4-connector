@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+//option java_multiple_files = false;
+//option java_package = "org.interledger.bilateral.connections.grpc.stream";
+//option java_outer_classname = "PinterledgerStreamProto";
+//option objc_class_prefix = "PINTS";
+//
+//package interledger;
+
+//// Peer-to-Peer Interledger with Streams (aka, PINTS), is a streaming RPC service that allows two peers to send and
+//// receive ILPv4 packets related to a single Interledger account (e.g., a shared balance between two peers, or possibly
+//// an XRP Paychan).
+//
+//// This mechanism requires that each peer is able to connect to the other using a gRPC client to make `send` calls.
+//
+//// Note that any custom information for these request must be supplied in meta-data using gRPC headers, since there is
+//// no direct support for sub-protocols in this service definition.
+//
+//// Authentication context for each request is provided by gRPC/HTTP/TLS
+//service Pinterledgers {
+//    // Send an ILP Prepare packet.
+//    rpc Send(stream PinterledgersPreparePacket) returns (stream PinterledgersResponsePacket) {
+//    }
+//}
+//
+//// An envelope for an Interledger Prepare Packet.
+//message PinterledgersPreparePacket {
+//    bytes id = 1; // Encoded UUID for this request packet.
+//    bytes packetBytes = 2;
+//}
+//
+//// An envelope for an Interledger Packet (fulfill, or reject).
+//message PinterledgersResponsePacket {
+//    bytes id = 1; // Encoded UUID for this request packet.
+//    bytes originalRequestId = 2; // The UUID for the original request.
+//    bytes packetBytes = 3;
+//}

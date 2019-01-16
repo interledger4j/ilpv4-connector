@@ -137,7 +137,7 @@ public class InterledgerAddressPrefixMultiMapTest {
 //    // DEFAULT_CONNECTOR_ACCOUNT
 //    final InterledgerAddress nextHopEqualityCheck = nextHopAccount.orElse(DEFAULT_CONNECTOR_ACCOUNT);
 //    return this.prefixMap.getEntries(routePrefix).stream()
-//      .filter(r -> r.getNextHopAccount().equals(nextHopEqualityCheck))
+//      .filter(r -> r.getNextHopAccountId().equals(nextHopEqualityCheck))
 //      .findFirst().get();
 //  }
 //

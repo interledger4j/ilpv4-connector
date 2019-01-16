@@ -1,8 +1,8 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
+import com.sappenin.interledger.ilpv4.connector.AccountId;
 import org.immutables.value.Value;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.core.InterledgerAddressPrefix;
 
 import java.util.List;
 
@@ -15,16 +15,17 @@ import static com.sappenin.interledger.ilpv4.connector.routing.Route.EMPTY_AUTH;
 public interface IncomingRoute extends BaseRoute {
 
   /**
-   * <p>An {@link InterledgerAddressPrefix} representing the address of the peer that sent this getRoute to us.</p>
+   * <p>An {@link AccountId} representing the peer account that sent this route to us.</p>
    *
-   * @return A {@link InterledgerAddress}.
+   * @return A {@link AccountId}.
    */
-  InterledgerAddress getPeerAddress();
+  AccountId getPeerAccountId();
 
   /**
-   * A list of nodes that a payment will traverse in order for a payment to make it to its destination.
+   * A list of nodes (represented by {@link InterledgerAddress} that a payment will traverse in order for a payment to
+   * make it to its destination.
    *
-   * @return
+   * @return A {@link List} of type {@link InterledgerAddress}.
    */
   List<InterledgerAddress> getPath();
 

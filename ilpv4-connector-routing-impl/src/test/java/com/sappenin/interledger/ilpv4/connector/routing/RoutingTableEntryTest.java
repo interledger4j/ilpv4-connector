@@ -24,7 +24,7 @@ public class RoutingTableEntryTest {
 //      .build();
 //
 //    assertThat(routingTableEntry1.getRoutePrefix(), is(GLOBAL_TARGET_PREFIX));
-//    assertThat(routingTableEntry1.getNextHopAccount(), is(CONNECTOR_ACCOUNT_CONNIE));
+//    assertThat(routingTableEntry1.getNextHopAccountId(), is(CONNECTOR_ACCOUNT_CONNIE));
 //    assertThat(routingTableEntry1.getExpiresAt().isPresent(), is(false));
 //    assertThat(routingTableEntry1.getSourcePrefixRestrictionRegex().pattern(),
 //      is(ACCEPT_ALL_SOURCES_PATTERN.pattern()));

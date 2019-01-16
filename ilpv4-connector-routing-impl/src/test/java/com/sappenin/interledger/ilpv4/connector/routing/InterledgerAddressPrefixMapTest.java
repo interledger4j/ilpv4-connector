@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
+import com.sappenin.interledger.ilpv4.connector.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.junit.Before;
@@ -20,7 +21,11 @@ public class InterledgerAddressPrefixMapTest {
 
   private static final InterledgerAddressPrefix GLOBAL_ROUTING_TABLE_ENTRY = InterledgerAddressPrefix.of("g");
   private static final InterledgerAddressPrefix DEFAULT_TARGET_ADDRESS_PREFIX = GLOBAL_ROUTING_TABLE_ENTRY;
-  private static final InterledgerAddress DEFAULT_CONNECTOR_ACCOUNT = InterledgerAddress.of("g.mainhub.connie");
+  private static final InterledgerAddress DEFAULT_CONNECTOR_ADDRESS = InterledgerAddress.of("g.mainhub.connie");
+
+  private static final AccountId DEFAULT_CONNECTOR_ACCOUNT = AccountId.of("account1");
+  private static final AccountId OTHER_CONNECTOR_ACCOUNT = AccountId.of("somethingelse");
+
   private static final InterledgerAddressPrefix ROUTING_TABLE_ENTRY0_TARGET_PREFIX = GLOBAL_ROUTING_TABLE_ENTRY;
   private static final InterledgerAddressPrefix ROUTING_TABLE_ENTRY1_TARGET_PREFIX =
     GLOBAL_ROUTING_TABLE_ENTRY.with("foo");
@@ -40,8 +45,6 @@ public class InterledgerAddressPrefixMapTest {
     GLOBAL_ROUTING_TABLE_ENTRY.with("baz.boo.bar");
   private static final InterledgerAddressPrefix ROUTING_TABLE_ENTRY5_TARGET_PREFIX =
     GLOBAL_ROUTING_TABLE_ENTRY.with("baz.boo.bar");
-  private static final InterledgerAddress ROUTING_TABLE_ENTRY5_CONNECTOR_ACCOUNT =
-    DEFAULT_CONNECTOR_ACCOUNT.with("somethingelse");
 
   ////////////////////
   // Test RemoveRoutingTableEntry
@@ -59,7 +62,7 @@ public class InterledgerAddressPrefixMapTest {
     for (int i = 1; i <= 10; i++) {
       final Route route = ImmutableRoute.builder()
         .routePrefix(InterledgerAddressPrefix.of("g." + i))
-        .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
+        .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
         .build();
       prefixMap.putEntry(route.getRoutePrefix(), route);
       assertThat(prefixMap.getNumKeys(), is(i));
@@ -84,7 +87,7 @@ public class InterledgerAddressPrefixMapTest {
   public void testAddSameRoutingTableEntryMultipleTimes() {
     final Route globalRoute = ImmutableRoute.builder()
       .routePrefix(DEFAULT_TARGET_ADDRESS_PREFIX)
-      .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
+      .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
       .build();
 
     for (int i = 0; i < 10; i++) {
@@ -134,11 +137,11 @@ public class InterledgerAddressPrefixMapTest {
    * Helper method to getEntry a matching routingTableEntry from the prefix map
    */
   private Route getMatchingRoutingTableEntry(
-    InterledgerAddressPrefix routePrefix, Optional<InterledgerAddress> nextHopAccount
+    InterledgerAddressPrefix routePrefix, Optional<AccountId> nextHopAccountId
   ) {
-    // This logic assumes that if nextHopAccount is unspecified, then the next-hop connector account is
+    // This logic assumes that if nextHopAccountId is unspecified, then the next-hop connector account is
     // DEFAULT_CONNECTOR_ACCOUNT
-    final InterledgerAddress nextHopEqualityCheck = nextHopAccount.orElse(DEFAULT_CONNECTOR_ACCOUNT);
+    final AccountId nextHopEqualityCheck = nextHopAccountId.orElse(DEFAULT_CONNECTOR_ACCOUNT);
     return this.prefixMap.getEntry(routePrefix).get();
   }
 
@@ -146,14 +149,16 @@ public class InterledgerAddressPrefixMapTest {
   // Test ForEach
   ////////////////////
 
+  // TODO: Fix this, or remove it!
+
   /**
    * Helper method to getEntry a matching routingTableEntry from the prefix map, which might hold multiple
    * routingTableEntrys for a given routePrefix.
    */
   private Route getMatchingRoutingTableEntry(
-    InterledgerAddressPrefix routePrefix, InterledgerAddress nextHopAccount
+    InterledgerAddressPrefix routePrefix, AccountId nextHopAccountId
   ) {
-    return getMatchingRoutingTableEntry(routePrefix, Optional.of(nextHopAccount));
+    return getMatchingRoutingTableEntry(routePrefix, Optional.of(nextHopAccountId));
   }
 
   ////////////////////
@@ -324,7 +329,7 @@ public class InterledgerAddressPrefixMapTest {
   public void testGetRoutingTableEntrysMultipleTimes() {
     final Route globalRoute = ImmutableRoute.builder()
       .routePrefix(DEFAULT_TARGET_ADDRESS_PREFIX)
-      .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
+      .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
       .build();
 
     for (int i = 0; i < 10; i++) {
@@ -338,13 +343,13 @@ public class InterledgerAddressPrefixMapTest {
   public void testForEach() {
     final Route globalRoutingTableEntry = ImmutableRoute.builder()
       .routePrefix(DEFAULT_TARGET_ADDRESS_PREFIX)
-      .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
+      .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
       .build();
     prefixMap.putEntry(globalRoutingTableEntry.getRoutePrefix(), globalRoutingTableEntry);
 
     final Route globalRoutingTableEntry2 = ImmutableRoute.builder()
       .routePrefix(DEFAULT_TARGET_ADDRESS_PREFIX.with("foo"))
-      .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
+      .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
       .build();
     prefixMap.putEntry(globalRoutingTableEntry2.getRoutePrefix(), globalRoutingTableEntry2);
 
@@ -369,7 +374,7 @@ public class InterledgerAddressPrefixMapTest {
     for (int i = 1; i <= 10; i++) {
       final Route route = ImmutableRoute.builder()
         .routePrefix(InterledgerAddressPrefix.of("g." + i))
-        .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
+        .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
         .build();
       prefixMap.putEntry(route.getRoutePrefix(), route);
 
@@ -389,11 +394,11 @@ public class InterledgerAddressPrefixMapTest {
     for (int i = 1; i <= 10; i++) {
       final Route route = ImmutableRoute.builder()
         .routePrefix(GLOBAL_ROUTING_TABLE_ENTRY)
-        .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT.with("" + i))
+        .nextHopAccountId(AccountId.of(DEFAULT_CONNECTOR_ACCOUNT.value() + +i))
         .build();
       prefixMap.putEntry(route.getRoutePrefix(), route);
 
-      final InterledgerAddress destinationAddress = DEFAULT_CONNECTOR_ACCOUNT.with("bob");
+      final InterledgerAddress destinationAddress = DEFAULT_CONNECTOR_ADDRESS.with("bob");
       assertThat("Each destination address should map to N number of RoutingTableEntries!",
         prefixMap.findNextHop(destinationAddress).isPresent(), is(true)
       );
@@ -402,7 +407,7 @@ public class InterledgerAddressPrefixMapTest {
 
   @Test
   public void testGetNextHopRoutingTableEntryWithNoRoutingTableEntrysInMap() {
-    assertThat(prefixMap.findNextHop(DEFAULT_CONNECTOR_ACCOUNT.with("bob")).isPresent(), is(false));
+    assertThat(prefixMap.findNextHop(DEFAULT_CONNECTOR_ADDRESS.with("bob")).isPresent(), is(false));
   }
 
   ////////////////////
@@ -413,7 +418,7 @@ public class InterledgerAddressPrefixMapTest {
   public void testGetNextHopRoutingTableEntryWithNonMatchingDestination1() {
     final Route route = ImmutableRoute.builder()
       .routePrefix(GLOBAL_ROUTING_TABLE_ENTRY)
-      .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
+      .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
       .build();
 
     prefixMap.putEntry(route.getRoutePrefix(), route);
@@ -433,7 +438,7 @@ public class InterledgerAddressPrefixMapTest {
   public void testGetNextHopRoutingTableEntryWithNonMatchingDestination2() {
     final Route route = ImmutableRoute.builder()
       .routePrefix(GLOBAL_ROUTING_TABLE_ENTRY.with("foo"))
-      .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
+      .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
       .build();
 
     prefixMap.putEntry(route.getRoutePrefix(), route);
@@ -468,7 +473,7 @@ public class InterledgerAddressPrefixMapTest {
 
     final Route newRoute1 = ImmutableRoute.builder()
       .routePrefix(GLOBAL_ROUTING_TABLE_ENTRY.with("unittest"))
-      .nextHopAccount(InterledgerAddress.of("g.this.account1"))
+      .nextHopAccountId(AccountId.of("g.this.account1"))
       .build();
     prefixMap.putEntry(newRoute1.getRoutePrefix(), newRoute1);
     Optional<Route> route = prefixMap.findNextHop(InterledgerAddress.of("g.unittest.receiver"));
@@ -476,7 +481,7 @@ public class InterledgerAddressPrefixMapTest {
 
     final Route newRoute2 = ImmutableRoute.builder()
       .routePrefix(GLOBAL_ROUTING_TABLE_ENTRY.with("unittest"))
-      .nextHopAccount(InterledgerAddress.of("g.this.account2"))
+      .nextHopAccountId(AccountId.of("g.this.account2"))
       .build();
     prefixMap.putEntry(newRoute2.getRoutePrefix(), newRoute2);
 
@@ -600,32 +605,32 @@ public class InterledgerAddressPrefixMapTest {
   private InterledgerAddressPrefixMap constructPopulatedPrefixMap() {
     final Route route0 = ImmutableRoute.builder()
       .routePrefix(ROUTING_TABLE_ENTRY0_TARGET_PREFIX)
-      .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
+      .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
       .build();
 
     final Route route1 = ImmutableRoute.builder()
       .routePrefix(ROUTING_TABLE_ENTRY1_TARGET_PREFIX)
-      .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
+      .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
       .build();
 
     final Route route2 = ImmutableRoute.builder()
       .routePrefix(ROUTING_TABLE_ENTRY2_TARGET_PREFIX)
-      .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
+      .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
       .build();
 
     final Route route3 = ImmutableRoute.builder()
       .routePrefix(ROUTING_TABLE_ENTRY3_TARGET_PREFIX)
-      .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
+      .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
       .build();
 
     final Route route4 = ImmutableRoute.builder()
       .routePrefix(ROUTING_TABLE_ENTRY4_TARGET_PREFIX)
-      .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
+      .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
       .build();
 
     final Route route5 = ImmutableRoute.builder()
       .routePrefix(ROUTING_TABLE_ENTRY5_TARGET_PREFIX)
-      .nextHopAccount(ROUTING_TABLE_ENTRY5_CONNECTOR_ACCOUNT)
+      .nextHopAccountId(OTHER_CONNECTOR_ACCOUNT)
       .build();
 
     return constructTestPrefixMapWithRoutingTableEntrys(route5, route4, route3,

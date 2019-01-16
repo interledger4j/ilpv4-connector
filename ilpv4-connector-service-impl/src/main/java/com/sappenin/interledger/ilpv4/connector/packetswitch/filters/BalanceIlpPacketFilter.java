@@ -1,6 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
-import org.interledger.core.InterledgerAddress;
+import com.sappenin.interledger.ilpv4.connector.AccountId;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 
@@ -15,7 +15,7 @@ public class BalanceIlpPacketFilter implements SendDataFilter {
 
   @Override
   public CompletableFuture<Optional<InterledgerResponsePacket>> doFilter(
-    final InterledgerAddress sourceAccountAddress,
+    final AccountId sourceAccountId,
     final InterledgerPreparePacket sourcePreparePacket,
     final SendDataFilterChain filterChain
   ) {
@@ -24,6 +24,6 @@ public class BalanceIlpPacketFilter implements SendDataFilter {
     // TODO: Implement Balance tracking logic.
 
     // Call the next filter in the chain...
-    return filterChain.doFilter(sourceAccountAddress, sourcePreparePacket);
+    return filterChain.doFilter(sourceAccountId, sourcePreparePacket);
   }
 }

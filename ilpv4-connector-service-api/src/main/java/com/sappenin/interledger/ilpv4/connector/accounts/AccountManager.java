@@ -1,71 +1,90 @@
 package com.sappenin.interledger.ilpv4.connector.accounts;
 
-import com.sappenin.interledger.ilpv4.connector.model.settings.AccountSettings;
+import com.sappenin.interledger.ilpv4.connector.Account;
+import com.sappenin.interledger.ilpv4.connector.AccountId;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.plugin.lpiv2.Plugin;
-import org.interledger.plugin.lpiv2.exceptions.PluginNotFoundException;
 
 import java.math.BigInteger;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * <p>Manages accounts for a given Interledger address prefix.</p>
+ * <p>This manager contains all accounts this connector might use during its operations. Accounts are added to this
+ * manager at startup (for preconfigured accounts, like a BTP client account) and are also be added to this manager by
+ * server plugins whenever a new connection is initiated (e.g., a BTP Server plugin).</p>
  *
- * <p>A node might have multiple accounts with the same counterparty, each of which may have a different or
- * identical currency code.</p>
+ * <p>Even though an account has been added to this manager, is it not necessarily eligible to be used by the
+ * Connector until it has been added to the `tracked accounts` collection. An account is only tracked when a plugin
+ * connects successfully. When a plugin disconnects, the account is moved into the un-tracked accounts collection so
+ * that it is no longer eligible to participate in Connector functionality (however, the account still exists in the
+ * Manager).</p>
  *
- * <p>This interface is currently structured as a service, such that there is no Java object called an
- * <tt>Account</tt>. Instead, this service is used to retrieve or operate on Account-related information, such as a
- * balance. In this way, it's possible to operate on an Account via this interface, or get the settings for an account.
- * Otherwise, there is no formal <tt>account</tt> primitive or object.</p>
+ * <p>In this way, accounts must be added to the Account manager before they can be tracked (i.e., adding and
+ * tracking are distinct operations).
  */
 public interface AccountManager {
 
   /**
-   * Called just before this Peer Manager will be destroyed (i.e., disconnect all peers).
-   */
-  void shutdown();
-
-  /**
-   * Add a peer accountSettings to this manager.
+   * Stop tracking the Account. This will remove this account from consideration for packet-switching, as well as
+   * disable any Routing messages (if appropriate).
    *
-   * @throws RuntimeException if the accountSettings already exists.
+   * @return The account that was untracked, if any.
    */
-  Plugin add(AccountSettings accountSettings);
+  // Optional<Account> stopAccountTracking(InterledgerAddress accountAddress) throws RuntimeException;
 
   /**
-   * Remove an account from this manager by its id.
+   * Add an account to this manager using configured settings appropriate for the account. If the account already
+   * exists, it is simply returned (i.e., no new account is constructed or connected)
    */
-  void remove(InterledgerAddress interledgerAddress);
+  Account addAccount(Account account) throws RuntimeException;
+
+  /**
+   * Start tracking the Account. This will enable this account to participate in packet-switching, as well as Routing
+   * (if appropriate).
+   *
+   * @return The account that was tracked.
+   */
+  // void startAccountTracking(InterledgerAddress accountAddress) throws RuntimeException;
+
+  /**
+   * Remove an account from this manager by its unique id.
+   *
+   * @return The removed account, if any.
+   */
+  Optional<Account> removeAccount(AccountId accountId);
 
   /**
    * Returns the primary parent-account. A Connector can have multiple accounts of type `parent`, but only one can be
    * the primary account, e.g., for purposes of IL-DCP and other protocols that operate in conjunction with the primary
    * parent.
    */
-  Optional<AccountSettings> getPrimaryParentAccountSettings();
+  Optional<Account> getPrimaryParentAccount();
 
   /**
-   * Get the account settings for the specified {@code interledgerAddress}.
+   * Get the account settings for the specified {@code accountId}.
    *
-   * @param interledgerAddress The {@link InterledgerAddress} of the account to retrieve.
+   * @param accountId The {@link AccountId} of the account to retrieve.
    *
-   * @return The requested {@link AccountSettings}, if present.
+   * @return The requested {@link Account}, if present.
    */
-  Optional<AccountSettings> getAccountSettings(InterledgerAddress interledgerAddress);
+  Optional<Account> getAccount(AccountId accountId);
 
   /**
-   * Accessor for the manager that controls all plugins for any accounts defined in this manager.
+   * Get the account settings for the specified {@code accountId}.
    *
-   * @return
+   * @param accountId The {@link AccountId} of the account to retrieve.
+   *
+   * @return The requested {@link Account}, if present.
    */
-  PluginManager getPluginManager();
+  default Account safeGetAccount(AccountId accountId) {
+    // TODO: Consider an AccountNotFoundException?
+    return this.getAccount(accountId).orElseThrow(() -> new RuntimeException("No Account found for Id: " + accountId));
+  }
 
   /**
    * Accessor for all accounts in this manager, as a {@code Stream}.
    */
-  Stream<AccountSettings> getAllAccountSettings();
+  Stream<Account> getAllAccounts();
 
   /**
    * The current balance of this account.
@@ -74,52 +93,16 @@ public interface AccountManager {
    *
    * @return A {@link BigInteger} representing the balance of the account identified by {@code accountAddress}.
    */
-  BigInteger getAccountBalance(InterledgerAddress accountAddress);
+  //BigInteger getAccountBalance(InterledgerAddress accountAddress);
 
   /**
    * Convert a child account into an address scoped underneath this connector. For example, given an input address,
    * append it to this connector's address to create a child address that this Connector can advertise as its own.
    *
-   * @param interledgerAddress
+   * @param accountId
    *
    * @return
    */
-  InterledgerAddress toChildAddress(InterledgerAddress interledgerAddress);
+  InterledgerAddress toChildAddress(AccountId accountId);
 
-  /**
-   * Defines how to operate on plugins associated with a particular {@link AccountManager}.
-   */
-  interface PluginManager {
-
-    /**
-     * Associate the supplied {@code lpi2} to the supplied {@code accountAddress}.
-     *
-     * @param accountAddress
-     * @param plugin
-     */
-    void setPlugin(InterledgerAddress accountAddress, Plugin plugin);
-
-    /**
-     * <p>Retrieve a {@link Plugin} for the supplied {@code accountAddress}.</p>
-     *
-     * <p>Note that this method returns one or zero plugins using an exact-match algorithm on the address because a
-     * particular account can have only one plugin at a time.</p>
-     *
-     * @param peerAccountAddress The {@link InterledgerAddress} of the remote peer.
-     *
-     * @return An optinoally-present {@link Plugin}.
-     */
-    Optional<Plugin> getPlugin(InterledgerAddress peerAccountAddress);
-
-    /**
-     * @param peerAccountAddress
-     *
-     * @return
-     *
-     * @throws PluginNotFoundException if no plugin exists for this peer.
-     */
-    Plugin safeGetPlugin(InterledgerAddress peerAccountAddress);
-
-    Plugin createPlugin(final AccountSettings accountSettings);
-  }
 }

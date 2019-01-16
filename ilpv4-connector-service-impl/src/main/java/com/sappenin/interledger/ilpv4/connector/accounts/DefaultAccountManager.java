@@ -1,10 +1,11 @@
 package com.sappenin.interledger.ilpv4.connector.accounts;
 
 import com.google.common.collect.Maps;
-import com.sappenin.interledger.ilpv4.connector.model.settings.ConnectorSettings;
+import com.sappenin.interledger.ilpv4.connector.Account;
+import com.sappenin.interledger.ilpv4.connector.AccountId;
+import com.sappenin.interledger.ilpv4.connector.settings.AccountRelationship;
+import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerAddress;
-import com.sappenin.interledger.ilpv4.connector.model.settings.AccountSettings;
-import org.interledger.plugin.lpiv2.Plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +17,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
- * The default implementation of {@link AccountManager}.
+ * An implementation of {@link AccountManager} that supports multiple accounts, each with its own plugin.
  *
  * WARNING: This Account manager should never know anything about routing.
  */
@@ -25,150 +26,112 @@ public class DefaultAccountManager implements AccountManager {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final Supplier<ConnectorSettings> connectorSettings;
-  private final Map<InterledgerAddress, AccountSettings> accounts = Maps.newConcurrentMap();
 
-  private final PluginManager pluginManager;
+  private final Map<AccountId, Account> accounts = Maps.newConcurrentMap();
 
   // A Connector can have multiple accounts of type `parent`, but only one can be the primary account, e.g., for
   // purposes of IL-DCP and other protocols.
-  // TODO: Just use an ILP address here?
-  private Optional<AccountSettings> primaryParentAccountSettings = Optional.empty();
+  private Optional<Account> primaryParentAccount = Optional.empty();
 
   /**
    * Required-args Constructor.
    */
-  public DefaultAccountManager(final Supplier<ConnectorSettings> connectorSettings, final PluginManager pluginManager) {
+  public DefaultAccountManager(final Supplier<ConnectorSettings> connectorSettings) {
     this.connectorSettings = Objects.requireNonNull(connectorSettings);
-    this.pluginManager = pluginManager;
   }
 
   /**
-   * Called just before this Peer Manager will be destroyed (i.e., disconnect all peers), via Spring naming convention
-   * when the Spring container is shut down.
+   * Add an account to this manager using configured settings appropriate for the account, as long as no pre-existing
+   * account already exists.
+   *
+   * @param account
+   *
+   * @throws RuntimeException if an account already exists with the same account id.
    */
-  @Override
-  public void shutdown() {
-    // Attempt to disconnect from each Account configured for this Peer.
-    this.accounts.values().stream().forEach(this::disconnectAccount);
-  }
-
-  @Override
-  public Plugin add(final AccountSettings account) {
+  public Account addAccount(final Account account) {
     Objects.requireNonNull(account);
 
     // Set the primary parent-account, but only if it hasn't been set.
-    if (account.getRelationship() == AccountSettings.AccountRelationship.PARENT &&
-      !primaryParentAccountSettings.isPresent()) {
+    if (account.isParentAccount() && !primaryParentAccount.isPresent()) {
       // Set the parent peer, if it exists.
-      this.setPrimaryParentAccountSettings(account);
+      this.setPrimaryParentAccount(account);
     }
 
     try {
-      if (accounts.putIfAbsent(account.getInterledgerAddress(), account) != null) {
+      if (accounts.putIfAbsent(account.getId(), account) != null) {
         throw new RuntimeException(
-          String.format("Account may only be configured once! InterledgerAddress: %s",
-            account.getInterledgerAddress())
+          String.format("Account may only be configured once in the AccountManager! AccountId: %s", account.getId())
         );
       }
 
-      // Try to connect to the account...block until the connection is made, or throw an exception...
-      final Plugin plugin = this.getPluginManager().getPlugin(account.getInterledgerAddress())
-        .orElseGet(() -> this.getPluginManager().createPlugin(account));
-
-      return plugin;
+      return account;
     } catch (Exception e) {
       // If any exception is thrown, then removeEntry the peer and any plugins...
-      this.remove(account.getInterledgerAddress());
+      this.removeAccount(account.getId());
       throw new RuntimeException(e);
     }
   }
 
-
   @Override
-  public void remove(final InterledgerAddress interledgerAddress) {
-    Objects.requireNonNull(interledgerAddress);
+  public Optional<Account> removeAccount(final AccountId accountId) {
+    Objects.requireNonNull(accountId);
 
-    this.getAccountSettings(interledgerAddress).ifPresent(accountSettings -> {
+    this.getAccount(accountId).ifPresent(accountSettings -> {
       // Disconnect the account...
-      this.disconnectAccount(accountSettings);
+      //this.disconnectAccount(accountSettings.getAccountAddress());
 
-      if (accountSettings.getRelationship() == AccountSettings.AccountRelationship.PARENT) {
+      if (accountSettings.getAccountSettings().getRelationship() == AccountRelationship.PARENT) {
         // Set the parent peer, if it exists.
         this.unsetPrimaryParentAccountSettings();
       }
     });
 
-    this.accounts.remove(interledgerAddress);
+    return Optional.ofNullable(this.accounts.remove(accountId));
   }
 
   @Override
-  public Optional<AccountSettings> getPrimaryParentAccountSettings() {
-    return this.primaryParentAccountSettings;
+  public Optional<Account> getPrimaryParentAccount() {
+    return this.primaryParentAccount;
   }
 
   /**
    * Allows only a single thread to set a peer at a time, ensuring that only one will win.
    */
-  private synchronized void setPrimaryParentAccountSettings(final AccountSettings accountSettings) {
-    Objects.requireNonNull(accountSettings);
+  private synchronized void setPrimaryParentAccount(final Account account) {
+    Objects.requireNonNull(account);
 
-    if (this.primaryParentAccountSettings.isPresent()) {
+    if (this.primaryParentAccount.isPresent()) {
       throw new RuntimeException("Only a single Primary Parent Account may be configured for a Connector!");
     }
 
-    logger.info("Primary Parent Account: {}", accountSettings.getInterledgerAddress().getValue());
-    this.primaryParentAccountSettings = Optional.of(accountSettings);
+    logger.info("Primary Parent Account: {}", account.getId());
+    this.primaryParentAccount = Optional.of(account);
   }
 
   /**
    * Allows only a single thread to unset a peer at a time, ensuring that only one will win.
    */
   private synchronized void unsetPrimaryParentAccountSettings() {
-    this.primaryParentAccountSettings = Optional.empty();
+    this.primaryParentAccount = Optional.empty();
   }
 
   @Override
-  public Optional<AccountSettings> getAccountSettings(InterledgerAddress interledgerAddress) {
-    return Optional.ofNullable(this.accounts.get(interledgerAddress));
-  }
-
-  /**
-   * Accessor for the manager that controls all plugins for any accounts defined in this manager.
-   *
-   * @return
-   */
-  @Override
-  public PluginManager getPluginManager() {
-    return this.pluginManager;
+  public Optional<Account> getAccount(AccountId accountId) {
+    return Optional.ofNullable(this.accounts.get(accountId));
   }
 
   @Override
-  public Stream<AccountSettings> getAllAccountSettings() {
+  public Stream<Account> getAllAccounts() {
     return accounts.values().stream();
   }
 
   public BigInteger getAccountBalance(InterledgerAddress accountAddress) {
-    throw new RuntimeException("Balance Tracket not yet implemented!");
+    throw new RuntimeException("Balance Tracker not yet implemented!");
   }
 
   @Override
-  public InterledgerAddress toChildAddress(InterledgerAddress interledgerAddress) {
-    Objects.requireNonNull(interledgerAddress);
-
-    return this.connectorSettings.get().getIlpAddress().with(interledgerAddress.getValue());
-  }
-
-  /**
-   * Helper method to disconnect an account based upon its Interledger Address.
-   *
-   * @param accountSettings The {@link AccountSettings} to disconnect.
-   */
-  private void disconnectAccount(final AccountSettings accountSettings) {
-    Optional.of(accountSettings)
-      .map(AccountSettings::getInterledgerAddress)
-      .map(address -> this.getPluginManager().getPlugin(address))
-      .filter(Optional::isPresent)
-      .map(Optional::get)
-      .ifPresent(Plugin::disconnect);
+  public InterledgerAddress toChildAddress(final AccountId accountId) {
+    Objects.requireNonNull(accountId);
+    return this.connectorSettings.get().getOperatorAddress().with(accountId.value());
   }
 }

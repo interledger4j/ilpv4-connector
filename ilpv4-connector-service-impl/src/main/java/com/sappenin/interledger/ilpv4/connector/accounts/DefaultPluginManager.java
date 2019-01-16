@@ -1,86 +1,42 @@
 package com.sappenin.interledger.ilpv4.connector.accounts;
 
-import com.google.common.collect.Maps;
-import com.sappenin.interledger.ilpv4.connector.plugins.IlpPluginFactory;
-import org.interledger.core.InterledgerAddress;
-import com.sappenin.interledger.ilpv4.connector.model.settings.AccountSettings;
+import com.sappenin.interledger.ilpv4.connector.AccountId;
+import org.interledger.plugin.lpiv2.AbstractPlugin;
 import org.interledger.plugin.lpiv2.Plugin;
-import org.interledger.plugin.lpiv2.exceptions.PluginNotFoundException;
+import org.interledger.plugin.lpiv2.PluginId;
+import org.interledger.plugin.lpiv2.PluginSettings;
+import org.interledger.plugin.lpiv2.btp2.spring.factories.PluginFactoryProvider;
 
-import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
-public class DefaultPluginManager implements AccountManager.PluginManager {
+/**
+ * A default implementation of {@link PluginManager} that stores all plugins in-memory.
+ */
+public class DefaultPluginManager implements PluginManager {
 
-  private final Map<InterledgerAddress, Plugin> plugins;
-  private final IlpPluginFactory ilpPluginFactory;
+  private final PluginFactoryProvider pluginFactoryProvider;
 
   /**
    * Required-args constructor.
-   *
-   * @param ilpPluginFactory
    */
-  public DefaultPluginManager(final IlpPluginFactory ilpPluginFactory) {
-    this.ilpPluginFactory = Objects.requireNonNull(ilpPluginFactory);
-    this.plugins = Maps.newConcurrentMap();
+  public DefaultPluginManager(final PluginFactoryProvider pluginFactoryProvider) {
+    this.pluginFactoryProvider = Objects.requireNonNull(pluginFactoryProvider);
   }
 
-  /**
-   * Associate the supplied {@code lpi2} to the supplied {@code accountAddress}.
-   *
-   * @param accountAddress
-   * @param plugin
-   */
-  @Override
-  public void setPlugin(InterledgerAddress accountAddress, Plugin plugin) {
-    Objects.requireNonNull(accountAddress);
-    Objects.requireNonNull(plugin);
+  public Plugin<?> createPlugin(final AccountId accountId, final PluginSettings pluginSettings) {
+    Objects.requireNonNull(accountId);
+    Objects.requireNonNull(pluginSettings);
 
-    this.plugins.put(accountAddress, plugin);
-  }
-
-  /**
-   * <p>Retrieve a {@link Plugin} for the supplied {@code accountAddress}.</p>
-   *
-   * <p>Note that this method returns one or zero plugins using an exact-match algorithm on the address because a
-   * particular account can have only one plugin at a time.</p>
-   *
-   * @param peerAccountAddress The {@link InterledgerAddress} of the remote peer.
-   *
-   * @return An optinoally-present {@link Plugin}.
-   */
-  @Override
-  public Optional<Plugin> getPlugin(InterledgerAddress peerAccountAddress) {
-    return Optional.ofNullable(plugins.get(peerAccountAddress));
-  }
-
-  /**
-   * @param peerAccountAddress
-   *
-   * @return
-   *
-   * @throws PluginNotFoundException if no plugin exists for this peer.
-   */
-  @Override
-  public Plugin safeGetPlugin(InterledgerAddress peerAccountAddress) {
-    return this.getPlugin(peerAccountAddress).orElseThrow(() -> new PluginNotFoundException(peerAccountAddress));
-  }
-
-  @Override
-  public Plugin createPlugin(final AccountSettings accountSettings) {
-    Objects.requireNonNull(accountSettings);
-
-    // TODO: This should throw if the plugin already exists!
-
-    // Return the already constructed Plugin, or attempt to construct a new one...
-    return this.getPlugin(accountSettings.getInterledgerAddress())
-      .orElseGet(() -> {
-          final Plugin<?> plugin = this.ilpPluginFactory.constructPlugin(accountSettings.getPluginSettings());
-          // Add this plugin to the plugin-map, keyed by address.
-          this.plugins.put(accountSettings.getInterledgerAddress(), plugin);
-          return plugin;
-        }
+    //Use the first pluginFactory that supports the pluginType...
+    final Plugin<?> plugin = this.pluginFactoryProvider.getPluginFactory(pluginSettings.getPluginType())
+      .map(pluginFactory -> pluginFactory.constructPlugin(pluginSettings))
+      .orElseThrow(() -> new RuntimeException(
+        String.format("No registered PluginFactory supports: %s", pluginSettings.getPluginType()))
       );
+
+    // Set the PluginId to match the AccountId...
+    ((AbstractPlugin) plugin).setPluginId(PluginId.of(accountId.value()));
+
+    return plugin;
   }
 }

@@ -1,6 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
-import org.interledger.core.InterledgerAddress;
+import com.sappenin.interledger.ilpv4.connector.AccountId;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.plugin.lpiv2.Plugin;
@@ -30,14 +30,14 @@ public class DefaultSendDataFilterChain implements SendDataFilterChain {
 
   @Override
   public CompletableFuture<Optional<InterledgerResponsePacket>> doFilter(
-    final InterledgerAddress sourceAccountAddress, final InterledgerPreparePacket sourcePreparePacket
+    final AccountId sourceAccountId, final InterledgerPreparePacket sourcePreparePacket
   ) {
 
-    Objects.requireNonNull(sourceAccountAddress);
+    Objects.requireNonNull(sourceAccountId);
     Objects.requireNonNull(sourcePreparePacket);
 
     if (this._filterIndex < this.sendDataFilters.size()) {
-      return sendDataFilters.get(_filterIndex++).doFilter(sourceAccountAddress, sourcePreparePacket, this);
+      return sendDataFilters.get(_filterIndex++).doFilter(sourceAccountId, sourcePreparePacket, this);
     } else {
       return plugin.sendData(sourcePreparePacket);
     }

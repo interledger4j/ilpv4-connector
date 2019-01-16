@@ -7,7 +7,6 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
 import org.interledger.core.InterledgerResponsePacketMapper;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -30,7 +29,10 @@ import java.util.concurrent.CompletableFuture;
  *
  * @see "https://github.com/interledger/rfcs/blob/master/0001-interledger-architecture/"
  * @see "https://github.com/interledger/rfcs/blob/master/0027-interledger-protocol-4/"
+ * @deprecated It's unclear if this interface is useful. Likely the handleData will be defined in the Connector
+ * inteface. Otherwise, a plugin should be used if something isn't a connector.
  */
+@Deprecated
 public interface ILPv4Sender extends ILPv4Node {
 
   /**
@@ -57,19 +59,19 @@ public interface ILPv4Sender extends ILPv4Node {
    */
   CompletableFuture<Optional<InterledgerResponsePacket>> sendData(InterledgerPreparePacket sourcePreparePacket);
 
-  /**
-   * <p>Sends an ILPv4 request packet to the connected peer and handles the response, if any.</p>
-   *
-   * @param preparePacket An {@link InterledgerPreparePacket} to send to the remote peer.
-   * @param packetHandler A {@link InterledgerResponsePacketHandler} that can handle the async response.
-   *
-   * @return A {@link CompletableFuture} that resolves to an optionally-present {@link InterledgerResponsePacket}, which
-   * represents either
-   */
-  default void sendData(final InterledgerPreparePacket preparePacket, InterledgerResponsePacketHandler packetHandler) {
-    Objects.requireNonNull(preparePacket);
-    Objects.requireNonNull(packetHandler);
-    packetHandler.handle(sendData(preparePacket).join());
-  }
+  //  /**
+  //   * <p>Sends an ILPv4 request packet to the connected peer and handles the response, if any.</p>
+  //   *
+  //   * @param preparePacket An {@link InterledgerPreparePacket} to send to the remote peer.
+  //   * @param packetHandler A {@link InterledgerResponsePacketHandler} that can handle the async response.
+  //   *
+  //   * @return A {@link CompletableFuture} that resolves to an optionally-present {@link InterledgerResponsePacket}, which
+  //   * represents either
+  //   */
+  //  default void sendData(final InterledgerPreparePacket preparePacket, InterledgerResponsePacketHandler packetHandler) {
+  //    Objects.requireNonNull(preparePacket);
+  //    Objects.requireNonNull(packetHandler);
+  //    packetHandler.handle(sendData(preparePacket).join());
+  //  }
 
 }

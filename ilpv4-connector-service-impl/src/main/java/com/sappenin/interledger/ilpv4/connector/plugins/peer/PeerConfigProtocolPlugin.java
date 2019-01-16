@@ -6,10 +6,8 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerRuntimeException;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.plugin.lpiv2.Plugin;
+import org.interledger.plugin.lpiv2.PluginSettings;
 import org.interledger.plugin.lpiv2.PluginType;
-import org.interledger.plugin.lpiv2.settings.PluginSettings;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -38,13 +36,19 @@ public class PeerConfigProtocolPlugin extends InternallyRoutedPlugin implements 
   }
 
   @Override
-  public CompletableFuture<Optional<InterledgerResponsePacket>> doSendData(InterledgerPreparePacket preparePacket) {
-
-    if (!PEER_PROTOCOL_EXECUTION_CONDITION.equals(preparePacket.getExecutionCondition())) {
-      throw new InterledgerRuntimeException("Packet does not contain correct condition for a peer protocol request.");
-    }
-
-    throw new RuntimeException("FIXME! See ildcpHostController");
-
+  public CompletableFuture<Optional<InterledgerResponsePacket>> sendData(InterledgerPreparePacket preparePacket) {
+    // TODO
+    throw new RuntimeException("FIXME!");
   }
+
+  //  @Override
+//  public CompletableFuture<Optional<InterledgerResponsePacket>> doSendData(InterledgerPreparePacket preparePacket) {
+//
+//    if (!PEER_PROTOCOL_EXECUTION_CONDITION.equals(preparePacket.getExecutionCondition())) {
+//      throw new InterledgerRuntimeException("Packet does not contain correct condition for a peer protocol request.");
+//    }
+//
+//    throw new RuntimeException("FIXME! See ildcpHostController");
+//
+//  }
 }

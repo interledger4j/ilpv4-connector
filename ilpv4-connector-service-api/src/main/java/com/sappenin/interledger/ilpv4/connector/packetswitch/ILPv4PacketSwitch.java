@@ -1,10 +1,16 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch;
 
+import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.SendDataFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.SendDataFilterChain;
 import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
 import com.sappenin.interledger.ilpv4.connector.routing.Route;
-import org.interledger.core.*;
+import org.interledger.core.InterledgerFulfillPacket;
+import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerRejectPacket;
+import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.core.InterledgerResponsePacketHandler;
+import org.interledger.core.InterledgerResponsePacketMapper;
 import org.interledger.plugin.lpiv2.Plugin;
 
 import java.util.Optional;
@@ -40,14 +46,14 @@ public interface ILPv4PacketSwitch {
    * </ol>
    * </pre>
    *
-   * @param sourceAccountAddress An {@link InterledgerAddress} for the source account that  this packet.
-   * @param sourcePreparePacket  An {@link InterledgerPreparePacket} to send to the remote peer.
+   * @param sourceAccountId     An {@link AccountId} that identifies the source account that this packet came from.
+   * @param sourcePreparePacket An {@link InterledgerPreparePacket} to send to the remote peer.
    *
    * @return A {@link CompletableFuture} that resolves to an optionally-present {@link InterledgerResponsePacket}, which
    * will be of concrete type {@link InterledgerFulfillPacket} or {@link InterledgerRejectPacket}, if present.
    */
   CompletableFuture<Optional<InterledgerResponsePacket>> sendData(
-    InterledgerAddress sourceAccountAddress, InterledgerPreparePacket sourcePreparePacket
+    AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket
   );
 
   // NOTE: The ILP PacketSwitch layer doesn't expressly have a "sendMoney" handler because this action is a bilateral
