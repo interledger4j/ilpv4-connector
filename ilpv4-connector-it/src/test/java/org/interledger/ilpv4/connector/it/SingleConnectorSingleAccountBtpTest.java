@@ -5,12 +5,15 @@ import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.ConnectorProfile;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
 import org.interledger.ilpv4.ILPv4Node;
 import org.interledger.ilpv4.connector.it.topologies.btp.SingleConnectorSingleAccountBtpTopology;
+import org.interledger.ilpv4.connector.it.topology.BtpClientPluginNode;
 import org.interledger.ilpv4.connector.it.topology.PluginNode;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.interledger.plugin.lpiv2.btp2.spring.BtpClientPlugin;
@@ -22,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -42,12 +46,13 @@ public class SingleConnectorSingleAccountBtpTest {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SingleConnectorSingleAccountBtpTest.class);
   private static Topology topology = SingleConnectorSingleAccountBtpTopology.init();
-  private final int TIMEOUT = 2;
+  private final int TIMEOUT = 10;
 
   @BeforeClass
   public static void setup() {
     System.setProperty("spring.profiles.active", ConnectorProfile.CONNECTOR_MODE + "," + ConnectorProfile.DEV);
     System.setProperty(ConnectorProperties.BTP_ENABLED, "true");
+    System.setProperty(ConnectorProperties.WEBSOCKET_SERVER_ENABLED, "true");
 
     LOGGER.info("Starting test topology `{}`...", "SingleConnectorMultiAccountBtpTopology");
     topology.start();
@@ -70,29 +75,79 @@ public class SingleConnectorSingleAccountBtpTest {
   @Test
   public void testConnieNodeSettings() {
     final ILPv4Node connieNode = getILPv4NodeFromGraph(CONNIE);
-    assertThat(connieNode.getAddress(), is(CONNIE));
+    assertThat(connieNode.getNodeIlpAddress(), is(CONNIE));
   }
 
+  /**
+   * Pinging yourself is not currently allowed because an account is generally not routed to itself, so this should
+   * reject.
+   */
   @Test
   public void testAlicePingsAlice() throws InterruptedException, ExecutionException, TimeoutException {
-    this.testPing(ALICE, ALICE);
+    final BtpClientPlugin btpClient = getClientNodeFromGraph(ALICE).getContentObject();
+    final Optional<InterledgerResponsePacket> responsePacket = btpClient.ping(ALICE).get(TIMEOUT, TimeUnit.SECONDS);
+
+    new InterledgerResponsePacketHandler() {
+      @Override
+      protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s)", interledgerFulfillPacket));
+      }
+
+      @Override
+      protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
+        assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
+        assertThat(interledgerRejectPacket.getMessage(),
+          is("No route found from source(`AccountId(alice)`) to destination(`test.alice`)."));
+        assertThat(interledgerRejectPacket.getTriggeredBy(), is(CONNIE));
+      }
+
+      @Override
+      protected void handleExpiredPacket() {
+        fail("Ping request expired, but should have fulfilled!");
+      }
+    }.handle(responsePacket);
   }
 
-  //
-  //  @Test
-  //  public void testAlicePingsAliceAtConnie() throws InterruptedException, ExecutionException, TimeoutException {
-  //    this.testPing(ALICE, ALICE_AT_CONNIE);
-  //  }
-  //
-  //  @Test
-  //  public void testAlicePingsConnie() throws InterruptedException, ExecutionException, TimeoutException {
-  //    this.testPing(ALICE, CONNIE);
-  //  }
-  //
-  //  @Test
-  //  public void testAlicePingsBob() throws InterruptedException, ExecutionException, TimeoutException {
-  //    this.testPing(ALICE, BOB_AT_CONNIE);
-  //  }
+  /**
+   * Alice and Connie should have an account with each other, so this ping should succeed.
+   */
+  @Test
+  public void testAlicePingsConnie() throws InterruptedException, ExecutionException, TimeoutException {
+    this.testPing(ALICE, CONNIE);
+  }
+
+  /**
+   * Random address should reject since it's not in the Connector's routing table.
+   */
+  @Test
+  public void testAlicePingsRandom() throws InterruptedException, ExecutionException, TimeoutException {
+    final InterledgerAddress randomDestination =
+      InterledgerAddress.of(InterledgerAddressPrefix.TEST3.with(UUID.randomUUID().toString()).getValue());
+    final BtpClientPlugin btpClient = getClientNodeFromGraph(ALICE).getContentObject();
+    final Optional<InterledgerResponsePacket> responsePacket =
+      btpClient.ping(randomDestination).get(TIMEOUT, TimeUnit.SECONDS);
+
+    new InterledgerResponsePacketHandler() {
+      @Override
+      protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s)", interledgerFulfillPacket));
+      }
+
+      @Override
+      protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
+        assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
+        assertThat(interledgerRejectPacket.getMessage(), is(
+          "No route found from source(`AccountId(alice)`) to destination(`" + randomDestination.getValue() + "`).")
+        );
+        assertThat(interledgerRejectPacket.getTriggeredBy(), is(CONNIE));
+      }
+
+      @Override
+      protected void handleExpiredPacket() {
+        fail("Ping request expired, but should have fulfilled!");
+      }
+    }.handle(responsePacket);
+  }
 
   /////////////////
   // Helper Methods
@@ -119,9 +174,9 @@ public class SingleConnectorSingleAccountBtpTest {
    *
    * @return
    */
-  private PluginNode<BtpClientPlugin> getClientNodeFromGraph(final InterledgerAddress interledgerAddress) {
+  private BtpClientPluginNode getClientNodeFromGraph(final InterledgerAddress interledgerAddress) {
     Objects.requireNonNull(interledgerAddress);
-    return (PluginNode) topology.getNode(interledgerAddress);
+    return (BtpClientPluginNode) topology.getNode(interledgerAddress);
   }
 
   /**
@@ -130,10 +185,8 @@ public class SingleConnectorSingleAccountBtpTest {
    * @param senderNodeAddress  The {@link InterledgerAddress} for the node initiating the ILP ping.
    * @param destinationAddress The {@link InterledgerAddress} to ping.
    */
-  private void testPing(
-    final InterledgerAddress senderNodeAddress,
-    final InterledgerAddress destinationAddress
-  ) throws InterruptedException, ExecutionException, TimeoutException {
+  private void testPing(final InterledgerAddress senderNodeAddress, final InterledgerAddress destinationAddress)
+    throws InterruptedException, ExecutionException, TimeoutException {
 
     Objects.requireNonNull(senderNodeAddress);
     Objects.requireNonNull(destinationAddress);
@@ -150,7 +203,7 @@ public class SingleConnectorSingleAccountBtpTest {
 
       @Override
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-        fail("Ping request rejected, but should have fulfilled!");
+        fail(String.format("Ping request rejected, but should have fulfilled: %s", interledgerRejectPacket));
       }
 
       @Override

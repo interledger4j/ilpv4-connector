@@ -8,18 +8,13 @@ import java.util.Objects;
  * An implementation of {@link Node} that contains a {@link Server} for simulating any type of Spring Boot server
  * runtime.
  */
-public abstract class AbstractServerNode<S extends Server> implements ServerNode<S> {
+public abstract class AbstractServerNode<S extends Server> extends AbstractNode<S> implements ServerNode<S> {
 
-  private final S server;
   private final String scheme;
   private final String host;
 
-  public AbstractServerNode(final S server) {
-    this(server, "https", "localost");
-  }
-
   public AbstractServerNode(final S server, final String scheme, String host) {
-    this.server = Objects.requireNonNull(server);
+    super(server);
     this.scheme = Objects.requireNonNull(scheme);
     this.host = Objects.requireNonNull(host);
   }
@@ -28,15 +23,7 @@ public abstract class AbstractServerNode<S extends Server> implements ServerNode
    * Accessor for the {@link Server}.
    */
   public S getServer() {
-    return server;
-  }
-
-  /**
-   * Accessor for the {@link S} contained in this Node.
-   */
-  @Override
-  public S getContentObject() {
-    return getServer();
+    return getContentObject();
   }
 
   /**
@@ -57,16 +44,11 @@ public abstract class AbstractServerNode<S extends Server> implements ServerNode
 
   @Override
   public void start() {
-    server.start();
+    getServer().start();
   }
 
   @Override
   public void stop() {
-    server.stop();
+    getServer().stop();
   }
-
-//  @Override
-//  public void setPlugin(Plugin<?> plugin) {
-//    throw new RuntimeException("AbstractServerNode does not allow its plugin to be replaced at Runtime!");
-//  }
 }

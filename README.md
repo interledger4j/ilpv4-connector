@@ -1,7 +1,35 @@
 # java-ilp-connector
 A Java implementation of an Interledger v4 Connector
 
-# Configuration
+# Architecture & Design
+
+
+
+
+
+
+
+# Development
+(how to build from source, contributing, etc)
+
+# Operating a Connector
+(how to intall, turn on , etc, configuration)
+
+# Connector Releases
+(overview of versioning, and software releases --> see github for this)
+
+#
+
+
+
+
+
+===============================
+===============================
+===============================
+
+
+## Configuration
 Configuration of this Connector is obtained from a variety of potential sources when the connector
 starts up. This includes property files, environment variables, and more, per Spring Boot functionality.
 and can be updated at runtime without server restarts.

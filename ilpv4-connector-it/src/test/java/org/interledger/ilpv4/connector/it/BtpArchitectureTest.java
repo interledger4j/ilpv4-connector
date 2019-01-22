@@ -120,7 +120,7 @@ public class BtpArchitectureTest extends AbstractArchitectureTest {
   //    try {
   //      final InterledgerFulfillPacket fulfillPacket =
   //        aliceConnector.getAccountManager().getOrCreatePlugin(BOB_AT_CONNIE)
-  //          .sendData(preparePacket).get();
+  //          .routeData(preparePacket).get();
   //      assertThat(fulfillPacket.getFulfillment(), is(fulfillment));
   //    } catch (ExecutionException e) {
   //      throw e.getCause();

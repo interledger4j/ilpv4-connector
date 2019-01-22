@@ -1,8 +1,8 @@
 package com.sappenin.interledger.ilpv4.connector.server;
 
-import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.boot.context.event.ApplicationPreparedEvent;
+import org.springframework.context.ApplicationEvent;
 
 import java.util.Optional;
 
@@ -26,27 +26,23 @@ public class ConnectorServer extends Server {
 
   @Override
   public void start() {
-    // For configuration-override purposes (e.g., in an Integration Test), we in-general need to replace the bean in
-    // the ApplicationContext called ConnectorSettings. However, there is no application context available until
-    // _after_ the server has started. Thus, some properties are initialized from whatever yaml file happens to be on
-    // the class-path, which will initialize certain internal plugins with the wrong information. This is limited to
-    // the Connector's ILPAddress and routing prefix, so those are preemptively set via property overrides here.
-    this.connectorSettingsOverride.ifPresent(cso -> {
-      this.setProperty(ConnectorProperties.NODE_ILP_ADDRESS, cso.getOperatorAddress().getValue());
-      this.setProperty(ConnectorProperties.GLOBAL_PREFIX, cso.getGlobalPrefix().getValue());
-    });
-
     super.start();
+  }
 
-    // Replace the connectorSettings with the supplied variant in order to override what's configured statically via
-    // the Server's configuration files or properties...
-    this.connectorSettingsOverride.ifPresent(cso -> {
-      final BeanDefinitionRegistry registry = (
-        (BeanDefinitionRegistry) this.getContext().getAutowireCapableBeanFactory()
-      );
-      registry.removeBeanDefinition(ConnectorSettings.BEAN_NAME);
-      // Replace here...
-      this.getContext().getBeanFactory().registerSingleton(ConnectorSettings.BEAN_NAME, cso);
-    });
+  /**
+   * Handle an application event.
+   *
+   * @param event the event to respond to
+   */
+  @Override
+  public void onApplicationEvent(final ApplicationEvent event) {
+    if (event instanceof ApplicationPreparedEvent) {
+      // If there is a ConnectorSettingsOverride, then add it to the ApplicationContext. The ConnectorConfig is smart
+      // enough to detect it and use it instead.
+      this.connectorSettingsOverride
+        .ifPresent(cso -> ((ApplicationPreparedEvent) event).getApplicationContext().getBeanFactory()
+          .registerSingleton(ConnectorSettings.OVERRIDE_BEAN_NAME, cso));
+
+    }
   }
 }

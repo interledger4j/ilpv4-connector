@@ -13,7 +13,8 @@ import java.util.List;
 @Value.Modifiable
 public interface ConnectorSettings {
 
-  String BEAN_NAME = "connectorSettings";
+  String OVERRIDE_BEAN_NAME = "ilpv4.connector.connectorSettingsOverride";
+  String BEAN_NAME = "ilpv4.connector.connectorSettings";
 
   /**
    * @return The ILP address of this connector.
@@ -25,7 +26,12 @@ public interface ConnectorSettings {
    */
   @Value.Default
   default InterledgerAddressPrefix getGlobalPrefix() {
-    return InterledgerAddressPrefix.of("g");
+    return InterledgerAddressPrefix.of("test3");
+  }
+
+  @Value.Default
+  default EnabledProtocolSettings getEnabledProtocols() {
+    return EnabledProtocolSettings.builder().build();
   }
 
   @Value.Default
@@ -49,4 +55,10 @@ public interface ConnectorSettings {
    */
   List<AccountSettings> getAccountSettings();
 
+  /**
+   * Contains settings for all single-accounts connections configured for this Connector.
+   *
+   * @return An Collection of type {@link AccountSettings}.
+   */
+  List<AccountProviderSettings> getAccountProviderSettings();
 }

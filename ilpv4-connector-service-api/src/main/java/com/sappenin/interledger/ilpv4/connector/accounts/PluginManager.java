@@ -20,7 +20,6 @@ public interface PluginManager {
    *
    * @throws RuntimeException if the plugin already exists.
    */
-  // TODO: is accountId necessary?
   Plugin<?> createPlugin(final AccountId accountId, final PluginSettings pluginSettings);
 
 }

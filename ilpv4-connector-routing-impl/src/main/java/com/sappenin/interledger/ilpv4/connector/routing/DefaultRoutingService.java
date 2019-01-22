@@ -133,6 +133,7 @@ public class DefaultRoutingService implements RoutingService {
     this.routingServiceListenerId = UUID.randomUUID();
   }
 
+  @Override
   public void start() {
     this.reloadLocalRoutes();
 
@@ -146,6 +147,7 @@ public class DefaultRoutingService implements RoutingService {
       .forEach(this::registerAccount);
   }
 
+  @Override
   @PreDestroy
   public void shutdown() {
     this.accountManager.getAllAccounts()
@@ -176,7 +178,7 @@ public class DefaultRoutingService implements RoutingService {
     plugin.addPluginEventListener(routingServiceListenerId, new PluginEventListener() {
       @Override
       public void onConnect(PluginConnectedEvent pluginConnectedEvent) {
-        final AccountId accountId = accountIdResolver.resolveAccountId(plugin);
+        final AccountId accountId = AccountId.of(plugin.getPluginId().get().value());
         if (!plugin.isConnected()) {
           // some plugins don't set `isConnected() = true` before emitting the
           // connect event, setImmediate has a good chance of working.
@@ -200,6 +202,12 @@ public class DefaultRoutingService implements RoutingService {
         logger.error(pluginErrorEvent.getError().getMessage(), pluginErrorEvent.getError());
       }
     });
+
+    // If the plugin for the account above is already connected, then the account/plugin won't become eligible for
+    // routing without this extra check.
+    if (plugin.isConnected()) {
+      this.addTrackedAccount(accountId);
+    }
   }
 
   /**
@@ -278,7 +286,7 @@ public class DefaultRoutingService implements RoutingService {
 
     this.getTrackedAccount(accountId)
       .map(existingPeer -> {
-        // Every time we reconnect, we'll send a new getRoute control message to make sure they are still sending us
+        // Every time we reconnect, we'll send a new route control message to make sure they are still sending us
         // routes.
         existingPeer.getCcpReceiver().sendRouteControl();
         return existingPeer;
@@ -338,8 +346,7 @@ public class DefaultRoutingService implements RoutingService {
     if (account.isChildAccount()) {
       return SHOULD_NOT_SEND_ROUTES;
     } else {
-      throw new RuntimeException("FIXME!");
-      //     return account.getRouteBroadcastSettings().sendRoutes();
+      return account.getAccountSettings().isSendRoutes();
     }
   }
 
@@ -356,9 +363,7 @@ public class DefaultRoutingService implements RoutingService {
     if (account.isChildAccount()) {
       return SHOULD_NOT_RECEIVE_ROUTES;
     } else {
-
-      throw new RuntimeException("FIXME!");
-      //return account.getRouteBroadcastSettings().isReceiveRoutes();
+      return account.getAccountSettings().isReceiveRoutes();
     }
   }
 
@@ -372,7 +377,7 @@ public class DefaultRoutingService implements RoutingService {
         peer.getCcpSender().stopBroadcasting();
 
         // We have to removeEntry the peer before calling updatePrefix on each of its advertised prefixes in order to
-        // find the next best getRoute.
+        // find the next best route.
         this.trackedAccounts.remove(accountId);
 
         peer.getCcpReceiver().forEachIncomingRoute((incomingRoute) -> {
@@ -423,14 +428,14 @@ public class DefaultRoutingService implements RoutingService {
       newBestRoute
         .map(nbr -> {
           logger.debug(
-            "New best getRoute for prefix. prefix={} oldBest={} newBest={}",
+            "New best route for prefix. prefix={} oldBest={} newBest={}",
             addressPrefix, currentNextHop, nbr.getNextHopAccountId()
           );
           this.localRoutingTable.addRoute(nbr);
           return ROUTES_HAVE_CHANGED;
         })
         .orElseGet(() -> {
-          logger.debug("No more getRoute available for prefix. prefix={}", addressPrefix);
+          logger.debug("No more route available for prefix. prefix={}", addressPrefix);
           this.localRoutingTable.removeRoute(addressPrefix);
           return ROUTES_HAVE_NOT_CHANGED;
         });
@@ -477,10 +482,10 @@ public class DefaultRoutingService implements RoutingService {
 
         final boolean canDragonFilter = false; // TODO: Dragon!
 
-        // We don't advertise getRoute if any of the following are true:
+        // We don't advertise route if any of the following are true:
         // 1. Route doesn't start with the global prefix.
-        // 2. The prefix _is_ the global prefix (i.e., the default getRoute).
-        // 3. The prefix is for a local-customer getRoute.
+        // 2. The prefix _is_ the global prefix (i.e., the default route).
+        // 3. The prefix is for a local-customer route.
         // 4. The prefix can be dragon-filtered.
         if (!hasGlobalPrefix || isDefaultRoute || isLocalCustomerRoute || canDragonFilter) {
           // This will map to Optional.empty above...
@@ -512,10 +517,10 @@ public class DefaultRoutingService implements RoutingService {
           .epoch(newEpoch)
           .build();
 
-        // Add the getRoute update to the outoing routing table so that it will be sent to remote peers on the next CCP
+        // Add the route update to the outoing routing table so that it will be sent to remote peers on the next CCP
         // send operation.
         this.outgoingRoutingTable.addRoute(addressPrefix, newBestRouteUpdate);
-        logger.debug("Logging getRoute update. update={}", newBestRouteUpdate);
+        logger.debug("Logging route update. update={}", newBestRouteUpdate);
 
         // If there's a current-best, null-out the getEpoch.
         currentBest.ifPresent(ru -> outgoingRoutingTable.resetEpochValue(ru.getEpoch()));
@@ -530,7 +535,7 @@ public class DefaultRoutingService implements RoutingService {
         // If there's a new best local route, then we need to re-check any prefixes that start with this prefix to see
         // if we can apply DRAGON filtering.
         //
-        // Note that we do this check *after* we have added the new getRoute above.
+        // Note that we do this check *after* we have added the new route above.
         this.outgoingRoutingTable.getKeysStartingWith(addressPrefix).stream()
           // If the subPrefix equals the addressPrefix, then ignore it.
           .filter(subPrefix -> !subPrefix.equals(addressPrefix))
@@ -559,46 +564,52 @@ public class DefaultRoutingService implements RoutingService {
     //this.accountManager.getAllAccounts();
 
     // Add a route for our own address....
-    final InterledgerAddress ourAddress = this.connectorSettingsSupplier.get().getOperatorAddress();
-    this.localRoutingTable.addRoute(
-      //      InterledgerAddressPrefix.from(ourAddress),
-      ImmutableRoute.builder()
-        .nextHopAccountId(AccountId.of("self"))
-        .routePrefix(InterledgerAddressPrefix.from(ourAddress))
-        .auth(HMAC(this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret(),
-          InterledgerAddressPrefix.from(ourAddress)))
-        // empty path.
-        // never expires
-        .build()
-    );
+    //final InterledgerAddress ourAddress = this.connectorSettingsSupplier.get().getOperatorAddress();
+
+    //    this.localRoutingTable.addRoute(
+    //      //      InterledgerAddressPrefix.from(ourAddress),
+    //      ImmutableRoute.builder()
+    //        .nextHopAccountId(AccountId.of("self-ping"))
+    //        .routePrefix(InterledgerAddressPrefix.from(ourAddress))
+    //        .auth(HMAC(this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret(),
+    //          InterledgerAddressPrefix.from(ourAddress)))
+    //        // empty path.
+    //        // never expires
+    //        .build()
+    //    );
 
     // Determine the default Route, and add it to the local routing table.
-    final AccountId nextHopForDefaultRoute;
+    final Optional<AccountId> nextHopForDefaultRoute;
     if (connectorSettingsSupplier.get().getGlobalRoutingSettings().isUseParentForDefaultRoute()) {
       nextHopForDefaultRoute = this.accountManager.getAllAccounts()
         .filter(account -> account.isParentAccount())
         .findFirst()
         .map(Account::getAccountSettings)
         .map(AccountSettings::getId)
+        .map(Optional::of)
         .orElseThrow(() -> new RuntimeException("Connector was configured to use the Parent account " +
           "as the nextHop for the default route, but no Parent Account was configured!"));
-    } else {
+    } else if (connectorSettingsSupplier.get().getGlobalRoutingSettings().getDefaultRoute().isPresent()) {
       nextHopForDefaultRoute = connectorSettingsSupplier.get().getGlobalRoutingSettings().getDefaultRoute()
+        .map(Optional::of)
         .orElseThrow(() -> new RuntimeException("Connector was configured to use a default address as the nextHop " +
           "for the default route, but no Account was configured for this address!"));
+    } else {
+      logger.warn("No Default Route configured.");
+      nextHopForDefaultRoute = Optional.empty();
     }
-    this.localRoutingTable.addRoute(
-      //InterledgerAddressPrefix.GLOBAL,
-      ImmutableRoute.builder()
+
+    nextHopForDefaultRoute.ifPresent(nextHopAccountId ->
+      this.localRoutingTable.addRoute(ImmutableRoute.builder()
         .routePrefix(InterledgerAddressPrefix.GLOBAL)
-        .nextHopAccountId(nextHopForDefaultRoute)
+        .nextHopAccountId(nextHopAccountId)
         // empty path
         .auth(HMAC(this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret(),
           InterledgerAddressPrefix.GLOBAL))
         // empty path.
         // never expires
         .build()
-    );
+      ));
 
     // TODO: FIX THIS block per the JS impl...
     // For each local account that is a child...
@@ -620,15 +631,16 @@ public class DefaultRoutingService implements RoutingService {
       });
 
     // Local prefixes Stream
-    final Stream<InterledgerAddressPrefix> localPrfixesStream =
+    final Stream<InterledgerAddressPrefix> localPrefixesStream =
       StreamSupport.stream(this.localRoutingTable.getAllPrefixes().spliterator(), false);
 
     // Configured prefixes Stream (from Static routes)
     final Stream<InterledgerAddressPrefix> configuredPrefixesStream =
       this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getStaticRoutes().stream()
         .map(StaticRoute::getTargetPrefix);
+
     // Update all prefixes...
-    Stream.concat(localPrfixesStream, configuredPrefixesStream).forEach(this::updatePrefix);
+    Stream.concat(localPrefixesStream, configuredPrefixesStream).forEach(this::updatePrefix);
   }
 
   @VisibleForTesting
@@ -643,15 +655,15 @@ public class DefaultRoutingService implements RoutingService {
       connectorSettingsSupplier.get().getGlobalRoutingSettings().getStaticRoutes().stream()
         .filter(staticRoute -> staticRoute.getTargetPrefix().equals(addressPrefix))
         .findFirst()
-        // If there's a static getRoute, then try to find the account that exists for that getRoute...
+        // If there's a static route, then try to find the account that exists for that route...
         .map(staticRoute -> accountManager.getAccount(staticRoute.getPeerAccountId()).orElseGet(() -> {
-          logger.warn("Ignoring configured getRoute, account does not exist. prefix={} accountId={}",
+          logger.warn("Ignoring configured route, account does not exist. prefix={} accountId={}",
             staticRoute.getTargetPrefix(), staticRoute.getPeerAccountId());
           return null;
         }))
-        // If there's a static getRoute, and the account exists...
+        // If there's a static route, and the account exists...
         .map(accountSettings -> {
-          // Otherwise, if the account exists, then we should return a new getRoute to the peer.
+          // Otherwise, if the account exists, then we should return a new route to the peer.
           final Route route = ImmutableRoute.builder()
             .path(Collections.emptyList())
             .nextHopAccountId(accountSettings.getAccountSettings().getId())
@@ -661,11 +673,11 @@ public class DefaultRoutingService implements RoutingService {
         })
         .orElseGet(() -> {
             //...then look in the receiver.
-            // If we getEntry here, there was no statically-configured getRoute, _or_, there was a statically configured getRoute
-            // but no account existed. Either way, look for a local getRoute.
+            // If we getEntry here, there was no statically-configured route, _or_, there was a statically configured route
+            // but no account existed. Either way, look for a local route.
             return localRoutingTable.getRouteByPrefix(addressPrefix)
               .orElseGet(() -> {
-                // If we getEntry here, there was no local getRoute, so search through all tracked accounts and sort all
+                // If we getEntry here, there was no local route, so search through all tracked accounts and sort all
                 // of the routes to find the shortest-path (i.e., lowest weight) route that will work for `addressPrefix`.
                 return trackedAccounts.values().stream()
                   .map(RoutableAccount::getCcpReceiver)

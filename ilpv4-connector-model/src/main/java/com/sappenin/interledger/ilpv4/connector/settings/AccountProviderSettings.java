@@ -1,6 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.settings;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
+import com.sappenin.interledger.ilpv4.connector.AccountProviderId;
 import org.immutables.value.Value;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.plugin.lpiv2.PluginSettings;
@@ -8,41 +8,18 @@ import org.interledger.plugin.lpiv2.PluginType;
 
 import java.math.BigInteger;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Tracks settings for a given Connector <tt>account</tt>, which is a mechanism for tracking fungible asset value
- * between two Interledger nodes, using a single asset-type.
+ * Tracks settings for a given Connector <tt>account provider</tt>, which allows a Connector to define Account
+ * attributes on-the-fly for any new incoming connection that supports. Examples of an AccountProvider include a BTP
+ * server, where connecting to a new account requires settings and other default information that very account sould
+ * support.
  */
-public interface AccountSettings {
+public interface AccountProviderSettings {
 
-  static ImmutableAccountSettings.Builder builder() {
-    return ImmutableAccountSettings.builder();
-  }
-
-  /**
-   * Construct an instance of {@link ImmutableAccountSettings.Builder} from a supplied instance of {@link
-   * AccountProviderSettings}.
-   *
-   * @param accountProviderSettings The account provider settings to source configuration from.
-   *
-   * @return A {@link ImmutableAccountSettings.Builder}.
-   */
-  static ImmutableAccountSettings.Builder from(final AccountProviderSettings accountProviderSettings) {
-    Objects.requireNonNull(accountProviderSettings);
-
-    return builder()
-      .assetScale(accountProviderSettings.getAssetScale())
-      .assetCode(accountProviderSettings.getAssetCode())
-      .pluginType(accountProviderSettings.getPluginType())
-      .relationship(accountProviderSettings.getRelationship())
-      .putAllCustomSettings(accountProviderSettings.getCustomSettings())
-      .balanceSettings(accountProviderSettings.getBalanceSettings())
-      .maximumPacketAmount(accountProviderSettings.getMaximumPacketAmount())
-      .ilpAddressSegment(accountProviderSettings.getIlpAddressSegment())
-      .isSendRoutes(accountProviderSettings.isSendRoutes())
-      .isReceiveRoutes(accountProviderSettings.isReceiveRoutes());
+  static ImmutableAccountProviderSettings.Builder builder() {
+    return ImmutableAccountProviderSettings.builder();
   }
 
   /**
@@ -52,14 +29,7 @@ public interface AccountSettings {
    *
    * @see {@link #getIlpAddressSegment()}.
    */
-  AccountId getId();
-
-  /**
-   * The segment that will be appended to the connector's ILP address to form this account's ILP address. Only
-   * applicable to accounts with relation={@link AccountRelationship#CHILD}. By default, this will be the identifier of
-   * the account, i.e. the key used in the accounts config object.
-   */
-  Optional<String> getIlpAddressSegment();
+  AccountProviderId getId();
 
   /**
    * A human-readable description of this account.
@@ -67,6 +37,13 @@ public interface AccountSettings {
   default String getDescription() {
     return "";
   }
+
+  /**
+   * The segment that will be appended to the connector's ILP address to form this account's ILP address. Only
+   * applicable to accounts with relation={@link AccountRelationship#CHILD}. By default, this will be the identifier of
+   * the account, i.e. the key used in the accounts config object.
+   */
+  Optional<String> getIlpAddressSegment();
 
   /**
    * The relationship between this connector and a remote system, for this asset type.
@@ -130,7 +107,7 @@ public interface AccountSettings {
   Map<String, Object> getCustomSettings();
 
   @Value.Immutable(intern = true)
-  abstract class AbstractAccountSettings implements AccountSettings {
+  abstract class AbstractAccountProviderSettings implements AccountProviderSettings {
 
     @Value.Default
     @Override

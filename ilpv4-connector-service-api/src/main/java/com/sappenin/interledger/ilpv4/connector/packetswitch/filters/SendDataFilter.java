@@ -17,6 +17,16 @@ public interface SendDataFilter {
 
   // TODO: Init and Destroy?
 
+  /**
+   * Applies logic to an incoming Prepare packet, optionally preventing the packet from being processed by the packet
+   * switching framework.
+   *
+   * @param sourceAccountId
+   * @param sourcePreparePacket
+   * @param filterChain
+   *
+   * @return
+   */
   CompletableFuture<Optional<InterledgerResponsePacket>> doFilter(
     AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket, SendDataFilterChain filterChain
   );

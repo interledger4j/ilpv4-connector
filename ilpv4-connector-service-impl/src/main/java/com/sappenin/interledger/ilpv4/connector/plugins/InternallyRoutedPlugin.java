@@ -18,7 +18,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * <p>An extension of {@link AbstractPlugin} that provides base-line functionality for all incoming packets destined
  * for `peer.` addresses, which are always handled internally (i.e., handled by this Connector) and never forwarded to a
- * peered Connector.</p>
+ * remote peer Connector.</p>
  *
  * <p>Examples of special addresses that should not be forwarded to a peer include <tt>`peer.config`</tt> and
  * any address starting with the <tt>self</tt> prefix.</p>
@@ -35,26 +35,25 @@ import java.util.concurrent.CompletableFuture;
  * <pre>
  *                                            ┌────────────┐             ┌────────────────┐
  *                ┌────────┐                  │ Connector  │             │   Internally   │
- * ────sendData──▷│ Plugin │──onIncomingData─▷│   Switch   │───sendData─▶│ Routed Plugin  │
+ * ───-sendData──▷│ Plugin │──onIncomingData─▷│   Switch   │──routeData─▶│ Routed Plugin  │
  *                └────────┘                  └────────────┘             └────────────────┘
- *
  * </pre>
  */
 public abstract class InternallyRoutedPlugin extends AbstractPlugin<PluginSettings> implements Plugin<PluginSettings> {
 
   protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  private final CodecContext oerCodecContext;
+  private final CodecContext ilpCodecContext;
 
   /**
    * Required-args constructor.
    *
    * @param pluginSettings
-   * @param oerCodecContext
+   * @param ilpCodecContext
    */
-  protected InternallyRoutedPlugin(final PluginSettings pluginSettings, final CodecContext oerCodecContext) {
+  protected InternallyRoutedPlugin(final PluginSettings pluginSettings, final CodecContext ilpCodecContext) {
     super(pluginSettings);
-    this.oerCodecContext = Objects.requireNonNull(oerCodecContext);
+    this.ilpCodecContext = Objects.requireNonNull(ilpCodecContext);
   }
 
   @Override
@@ -69,19 +68,11 @@ public abstract class InternallyRoutedPlugin extends AbstractPlugin<PluginSettin
     return CompletableFuture.completedFuture(null);
   }
 
-  // TODO: Un-comment this?
-  //  @Override
-  //  protected CompletableFuture<Void> doSendMoney(BigInteger amount) {
-  //    // No-op. Internally-routed plugins don't involve settlement.
-  //    return CompletableFuture.completedFuture(null);
-  //  }
-
   @Override
   public CompletableFuture<Void> sendMoney(BigInteger amount) {
     // By default, this is a no-op.
     return CompletableFuture.completedFuture(null);
   }
-
 
   @Override
   public void registerDataHandler(DataHandler ilpDataHandler) throws DataHandlerAlreadyRegisteredException {
@@ -100,7 +91,7 @@ public abstract class InternallyRoutedPlugin extends AbstractPlugin<PluginSettin
   /**
    * Accessor for the {@link CodecContext} of this plugin.
    */
-  protected CodecContext getOerCodecContext() {
-    return oerCodecContext;
+  protected CodecContext getIlpCodecContext() {
+    return ilpCodecContext;
   }
 }

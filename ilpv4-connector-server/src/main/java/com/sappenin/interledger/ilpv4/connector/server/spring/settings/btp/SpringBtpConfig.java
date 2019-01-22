@@ -15,7 +15,6 @@ import org.interledger.plugin.lpiv2.btp2.spring.factories.BtpClientPluginFactory
 import org.interledger.plugin.lpiv2.btp2.spring.factories.BtpServerPluginFactory;
 import org.interledger.plugin.lpiv2.btp2.spring.factories.PluginFactoryProvider;
 import org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandlerRegistry;
-import org.interledger.plugin.lpiv2.btp2.subprotocols.auth.AuthBtpSubprotocolHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -64,10 +63,10 @@ public class SpringBtpConfig {
   void startup() {
 
     ///////////////////////////////////
-    // Register BTP PluginFactories....
+    // Register Plugin Factories....
     ///////////////////////////////////
 
-    // BtpClientPluginFactory
+    // Register BtpClientPluginFactory
     pluginFactoryProvider.registerPluginFactory(BtpClientPlugin.PLUGIN_TYPE, new BtpClientPluginFactory(
       btpCodecContext,
       binaryMessageToBtpPacketConverter,
@@ -75,15 +74,19 @@ public class SpringBtpConfig {
       btpSubProtocolHandlerRegistry
     ));
 
-    // BtpServerPluginFactory
-    pluginFactoryProvider.registerPluginFactory(
-      BtpServerPlugin.PLUGIN_TYPE, new BtpServerPluginFactory(
-        btpCodecContext,
-        binaryMessageToBtpPacketConverter,
-        btpPacketToBinaryMessageConverter,
-        btpSubProtocolHandlerRegistry,
-        pendingResponseManager
-      ));
+    // Register BtpServerPluginFactory
+    pluginFactoryProvider.registerPluginFactory(BtpServerPlugin.PLUGIN_TYPE, new BtpServerPluginFactory(
+      btpCodecContext,
+      binaryMessageToBtpPacketConverter,
+      btpPacketToBinaryMessageConverter,
+      btpSubProtocolHandlerRegistry,
+      pendingResponseManager
+    ));
+  }
+
+  @Bean
+  PendingResponseManager<BtpResponsePacket> pendingResponseManager() {
+    return new PendingResponseManager<>(BtpResponsePacket.class);
   }
 
   @Bean
@@ -98,11 +101,6 @@ public class SpringBtpConfig {
     @Qualifier(BTP) final CodecContext btpCodecContext
   ) {
     return new BtpPacketToBinaryMessageConverter(btpCodecContext);
-  }
-
-  @Bean
-  BtpSubProtocolHandlerRegistry btpSubProtocolHandlerRegistry(final AuthBtpSubprotocolHandler authBtpSubprotocolHandler) {
-    return new BtpSubProtocolHandlerRegistry(authBtpSubprotocolHandler);
   }
 
 }

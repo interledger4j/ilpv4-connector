@@ -22,6 +22,20 @@ public class NoOpRoutingService implements RoutingService {
   }
 
   @Override
+  public void start() {
+    this.routeRoutingTable.reset();
+  }
+
+  /**
+   * Shutdown the Routing Service.
+   */
+  @Override
+  public void shutdown() {
+    // Not technically necessary, but just in-case...
+    this.routeRoutingTable.reset();
+  }
+
+  @Override
   public void registerAccount(AccountId accountId) {
     // No-op. Routing is disabled in this implementation, so no need to track any accounts.
   }

@@ -1,0 +1,64 @@
+# A Connector running in `plugin-mode` operates a single plugin, does not routing or balance tracking, and requires a
+# parent ILSP that all traffic will be forwarded to.
+logging:
+  level:
+    ROOT: INFO
+    com.sappenin: TRACE
+    org.springframework: INFO
+    org.springframework.web.socket: DEBUG
+server:
+  port: 8080
+spring:
+  profiles:
+    active: ${spring.profiles.active}
+  output:
+    ansi:
+      enabled: ALWAYS
+  http:
+    # MULTIPART (MultipartProperties)
+    multipart:
+      enabled: false
+      #max-file-size: 2KB
+      #max-request-size: 2KB
+  # Database Settings
+#  datasource:
+#    url: jdbc:h2:mem:example-app;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+#    platform: h2
+#    username: sa
+#    password:
+#    driverClassName: org.h2.Driver
+#  jpa:
+#    database-platform: org.hibernate.dialect.H2Dialect
+#    hibernate:
+#      ddl-auto: update
+#    open-in-view: false
+#    properties:
+#      hibernate:
+#        show_sql: true
+#        use_sql_comments: true
+#        format_sql: true
+
+###
+#   H2 Settings
+###
+#h2:
+#  console:
+#    enabled: true
+#    path: /console
+#    settings:
+#      trace: false
+#      web-allow-others: false
+# Configuration for a Mini-Connector. Uncomment any value to enable a particular setting.
+ilpv4:
+  connector:
+    enabledProtocols:
+      pingProtocolEnabled: true
+      echoProtocolEnabled: true
+    websocketServerEnabled: false
+    ## ILP address of the connector.
+    ## This property can be omitted if an account with relation=parent is configured under accounts.
+    nodeIlpAddress: test2.connie
+    # Global Routing Settings for this connector.
+    globalRoutingSettings:
+      # Seed used for generating routing table auth values.
+      routingSecret: DocIHaveToTellYouSomethingAboutY

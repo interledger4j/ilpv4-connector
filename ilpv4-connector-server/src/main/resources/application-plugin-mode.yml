@@ -53,7 +53,7 @@ ilpv4:
   connector:
     ## ILP address of the connector.
     ## This property can be omitted if an account with relation=parent is configured under accounts.
-    nodeIlpAddress: test.example
+    nodeIlpAddress: test.alice
     # No Global Route Settings necessary because all packets are forwarded to the parent.
 
     # Account Balance Settings

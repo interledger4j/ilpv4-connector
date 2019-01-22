@@ -18,7 +18,7 @@ public class BtpServerNode extends AbstractServerNode<ConnectorServer> {
 
   @Override
   public String toString() {
-    return getILPv4Connector().getAddress().toString();
+    return getILPv4Connector().getNodeIlpAddress().toString();
   }
 
   /**

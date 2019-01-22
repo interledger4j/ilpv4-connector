@@ -18,7 +18,7 @@ public class DefaultSendDataFilterChain implements SendDataFilterChain {
   private int _filterIndex;
 
   /**
-   * A chain of filters that are applied to a sendData request before forwarding the actual request to the plugin.
+   * A chain of filters that are applied to a routeData request before forwarding the actual request to the plugin.
    *
    * @param sendDataFilters
    * @param plugin

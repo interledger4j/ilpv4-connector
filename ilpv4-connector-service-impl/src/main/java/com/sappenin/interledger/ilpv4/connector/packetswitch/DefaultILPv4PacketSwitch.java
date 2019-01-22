@@ -15,6 +15,7 @@ import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.immutables.value.Value;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
@@ -51,6 +52,9 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
 
   private final List<SendDataFilter> sendDataFilters;
 
+  /**
+   * Required-args Constructor.
+   */
   public DefaultILPv4PacketSwitch(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final PaymentRouter<Route> paymentRouter,
@@ -66,12 +70,12 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   }
 
   @Override
-  public final CompletableFuture<Optional<InterledgerResponsePacket>> sendData(
-    final AccountId sourceAccountId, final InterledgerPreparePacket sourcePreparePacket
+  public final CompletableFuture<Optional<InterledgerResponsePacket>> routeData(
+    final AccountId sourceAccountId, final InterledgerPreparePacket incomingSourcePreparePacket
   ) {
 
     Objects.requireNonNull(sourceAccountId);
-    Objects.requireNonNull(sourcePreparePacket);
+    Objects.requireNonNull(incomingSourcePreparePacket);
 
     //    This logic should move to 1 or more Packet filters so that this method can apply each filter?
     //    Or, we can assume that the Fabric always does this, and then applies any filters before hand? The problem is that it's
@@ -86,7 +90,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     //      final InterledgerPreparePacket returnPacket =
     //        this.echoController.handleIncomingData(sourceAccountId, sourcePreparePacket);
     //      // Send the echo payment....
-    //      this.sendData(sourceAccountId, returnPacket);
+    //      this.routeData(sourceAccountId, returnPacket);
     //      // Fulfill the original payment...
     //      return CompletableFuture.completedFuture(Optional.of(
     //        InterledgerFulfillPacket.builder()
@@ -95,67 +99,81 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     //        )
     //      );
     //    } else {
-    final NextHopInfo nextHopInfo = getNextHopPacket(sourceAccountId, sourcePreparePacket);
+    try {
+      final NextHopInfo nextHopInfo = getNextHopPacket(sourceAccountId, incomingSourcePreparePacket);
 
-    // TODO: Make this configurable. See JS Connector for details.
-    // TODO: Move this to the routing layer. If the router is configured to not return a NextHop like this, then
-    // this should never happen, and can be removed.
-    if (sourceAccountId.equals(nextHopInfo.nextHopAccountId())) {
-      throw new InterledgerProtocolException(
-        InterledgerRejectPacket.builder()
-          .code(InterledgerErrorCode.T01_LEDGER_UNREACHABLE)
-          .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
-          .message(
-            String.format("Refusing to route payments back to sender. sourceAccount=`%s` destinationAccount=`%s`",
-              sourceAccountId, nextHopInfo.nextHopAccountId()))
-          .build()
-      );
+      // TODO: Make this configurable. See JS Connector for details.
+      // TODO: Move this to the routing layer. If the router is configured to not return a NextHop like this, then
+      // this should never happen, and can be removed.
+      if (sourceAccountId.equals(nextHopInfo.nextHopAccountId())) {
+        throw new InterledgerProtocolException(
+          InterledgerRejectPacket.builder()
+            .code(InterledgerErrorCode.T01_LEDGER_UNREACHABLE)
+            .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
+            .message(
+              String.format("Refusing to route payments back to sender. sourceAccount=`%s` destinationAccount=`%s`",
+                sourceAccountId, nextHopInfo.nextHopAccountId()))
+            .build()
+        );
+      }
+
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug(
+          "Sending outbound ILP Prepare. destination={} packet={}", nextHopInfo.nextHopAccountId(),
+          nextHopInfo.nextHopPacket()
+        );
+      }
+
+      // Create a new FilterChain, and use it to both filter the routeData call, as well as to make the actual call.
+      final Plugin<? extends PluginSettings> plugin =
+        this.accountManager.safeGetAccount(nextHopInfo.nextHopAccountId()).getPlugin();
+
+      final SendDataFilterChain filterChain = new DefaultSendDataFilterChain(this.sendDataFilters, plugin);
+
+      return filterChain.doFilter(sourceAccountId, incomingSourcePreparePacket)
+        .exceptionally(error -> {
+          // Any rejections should be caught here, and returned as such....
+          if (error instanceof InterledgerProtocolException) {
+            final InterledgerProtocolException ilpError = (InterledgerProtocolException) error;
+            return Optional.of(ilpError.getInterledgerRejectPacket());
+          } else {
+            LOGGER.error(error.getMessage(), error);
+            return Optional.empty();
+          }
+        });
+
+      // TODO: Add Logging Filter...
+      // TODO: Add ExchangeRate Update filter...
+
+      // Throws an exception if the lpi2 cannot be found...
+      //      return this.accountManager
+      //        .getOrCreatePlugin(nextHopInfo.nextHopAccountAddress())
+      //        .routeData(nextHopInfo.nextHopPacket())
+      //        .thenApplyAsync((result) -> {
+      //          // Log the fulfillment...
+      //          if (LOGGER.isDebugEnabled()) {
+      //            LOGGER.debug(
+      //              "Received fulfillment: {}", result
+      //            );
+      //          }
+      //          return result;
+      //        })
+      //        .thenApplyAsync((result) -> {
+      //          // Log statistics in the ExchangeRateService...
+      //          this.exchangeRateService.logPaymentStats(
+      //            ImmutableUpdateRatePaymentParams.builder()
+      //              .sourceAccountId(sourceAccountId)
+      //              .sourceAmount(sourcePreparePacket.getAmount())
+      //              .destinationAccountAddress(nextHopInfo.nextHopAccountAddress())
+      //              .destinationAmount(nextHopInfo.nextHopPacket().getAmount())
+      //              .build()
+      //          );
+      //          return result;
+      //        });
+    } catch (InterledgerProtocolException e) {
+      // Any rejections should be caught here, and returned as such....
+      return CompletableFuture.completedFuture(Optional.of(e.getInterledgerRejectPacket()));
     }
-
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug(
-        "Sending outbound ILP Prepare. destination={} packet={}", nextHopInfo.nextHopAccountId(),
-        nextHopInfo.nextHopPacket()
-      );
-    }
-
-    // Create a new FilterChain, and use it to both filter the sendData call, as well as to make the actual call.
-    final Plugin<? extends PluginSettings> plugin =
-      this.accountManager.safeGetAccount(nextHopInfo.nextHopAccountId()).getPlugin();
-
-    final SendDataFilterChain filterChain = new DefaultSendDataFilterChain(this.sendDataFilters, plugin);
-
-    return filterChain.doFilter(sourceAccountId, sourcePreparePacket);
-
-    // TODO: Add Logging Filter...
-    // TODO: Add ExchangeRate Update filter...
-
-    // Throws an exception if the lpi2 cannot be found...
-    //      return this.accountManager
-    //        .getOrCreatePlugin(nextHopInfo.nextHopAccountAddress())
-    //        .sendData(nextHopInfo.nextHopPacket())
-    //        .thenApplyAsync((result) -> {
-    //          // Log the fulfillment...
-    //          if (LOGGER.isDebugEnabled()) {
-    //            LOGGER.debug(
-    //              "Received fulfillment: {}", result
-    //            );
-    //          }
-    //          return result;
-    //        })
-    //        .thenApplyAsync((result) -> {
-    //          // Log statistics in the ExchangeRateService...
-    //          this.exchangeRateService.logPaymentStats(
-    //            ImmutableUpdateRatePaymentParams.builder()
-    //              .sourceAccountId(sourceAccountId)
-    //              .sourceAmount(sourcePreparePacket.getAmount())
-    //              .destinationAccountAddress(nextHopInfo.nextHopAccountAddress())
-    //              .destinationAmount(nextHopInfo.nextHopPacket().getAmount())
-    //              .build()
-    //          );
-    //          return result;
-    //        });
-
   }
 
   /**
@@ -202,17 +220,32 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
       LOGGER.debug("Determined next hop: {}", nextHopRoute);
     }
 
-    final MonetaryAmount nextAmount = this.determineNextAmount(sourceAccountId, sourcePacket);
-
+    final BigInteger nextAmount = this.determineNextAmount(sourceAccountId, sourcePacket);
     return ImmutableNextHopInfo.builder()
       .nextHopAccountId(nextHopRoute.getNextHopAccountId())
       .nextHopPacket(
         InterledgerPreparePacket.builder()
           .from(sourcePacket)
-          .amount(nextAmount.getNumber().numberValue(BigInteger.class))
-          .expiresAt(determineDestinationExpiresAt(sourcePacket.getExpiresAt()))
+          .amount(nextAmount)
+          .expiresAt(determineDestinationExpiresAt(sourcePacket.getExpiresAt(), sourcePacket.getDestination()))
           .build())
       .build();
+  }
+
+  /**
+   * @deprecated This method should be removed, in-favor of settings up internal-accounts and real routing-table entries
+   * for things like `self` and `peer` in the routing service. Basically, it should be possible to track an account for
+   * any `self.` and `peer.` addresses using typical plugin infrasructure. In this way, we need to configure special
+   * accounts in the account-manager for these types of destination addresses.
+   */
+  @Deprecated
+  private boolean isInternallyRoutedDestination(final InterledgerAddress destinationAddress) {
+    Objects.requireNonNull(destinationAddress);
+
+    // NOTE: PRIVATE addresses should be routed normally, and not "internally" routed inside of this Connector.
+    return destinationAddress.startsWith(InterledgerAddressPrefix.SELF.getValue()) ||
+      destinationAddress.startsWith(InterledgerAddressPrefix.PEER.getValue()
+      );
   }
 
   /**
@@ -222,69 +255,82 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
    * @param sourceAccountId
    * @param sourcePacket
    *
-   * @return
+   * @return A BigInteger is the correct units for the source account.
    */
   @VisibleForTesting
-  protected MonetaryAmount determineNextAmount(
+  protected BigInteger determineNextAmount(
     final AccountId sourceAccountId, final InterledgerPreparePacket sourcePacket
   ) {
     Objects.requireNonNull(sourcePacket);
 
-    final CurrencyUnit sourceCurrencyUnit = this.accountManager
-      .getAccount(sourceAccountId)
-      .map(Account::getAccountSettings)
-      .map(AccountSettings::getAssetCode)
-      .map(Monetary::getCurrency)
-      .orElseThrow(() -> new RuntimeException(String.format("No Source Account for AccountId: `%s`", sourceAccountId)));
-    final MonetaryAmount sourceAmount = Money.of(sourcePacket.getAmount(), sourceCurrencyUnit);
-    return this.exchangeRateService.convert(sourceAmount, sourceCurrencyUnit);
+    if (this.isInternallyRoutedDestination(sourcePacket.getDestination())) {
+      return sourcePacket.getAmount();
+    } else {
+
+      final CurrencyUnit sourceCurrencyUnit = this.accountManager
+        .getAccount(sourceAccountId)
+        .map(Account::getAccountSettings)
+        .map(AccountSettings::getAssetCode)
+        .map(Monetary::getCurrency)
+        .orElseThrow(
+          () -> new RuntimeException(String.format("No Source Account for AccountId: `%s`", sourceAccountId)));
+      final MonetaryAmount sourceAmount = Money.of(sourcePacket.getAmount(), sourceCurrencyUnit);
+      return this.exchangeRateService.convert(sourceAmount, sourceCurrencyUnit).getNumber()
+        .numberValue(BigInteger.class);
+    }
   }
 
   @VisibleForTesting
-  protected Instant determineDestinationExpiresAt(final Instant sourceExpiry) {
+  protected Instant determineDestinationExpiresAt(
+    final Instant sourceExpiry, final InterledgerAddress destinationAddress
+  ) {
     Objects.requireNonNull(sourceExpiry);
 
-    final Instant nowTime = Instant.now();
-    if (sourceExpiry.isBefore(nowTime)) {
-      throw new InterledgerProtocolException(
-        InterledgerRejectPacket.builder()
-          .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
-          .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
-          .message(String.format(
-            "Source transfer has already expired. sourceExpiry: {%s}, currentTime: {%s}", sourceExpiry, nowTime))
-          .build()
-      );
-    }
-
-    // We will set the next transfer's expiry based on the source expiry and our minMessageWindow, but cap it at our
-    // maxHoldTime.
-
-    final int minMessageWindow = 5000; //TODO: Enable this --> connectorSettingsSupplier.get().getMinMessageWindow();
-    final int maxHoldTime = 5000; //TODO: Enable this --> connectorSettingsSupplier.get().getMaxHoldTime();
-
-    // The expiry of the packet, reduced by the minMessageWindow, which is "the minimum time the connector wants to
-    // budget for getting a message to the accounts its trading on. In milliseconds."
-    final Instant adjustedSourceExpiryInstant = sourceExpiry.minusMillis(minMessageWindow);
-
-    // The point in time after which this Connector will not wait around for a fulfillment.
-    final Instant maxHoldInstant = nowTime.plusMillis(maxHoldTime);
-
-    final Instant destinationExpiryTime = lesser(adjustedSourceExpiryInstant, maxHoldInstant);
-    if (destinationExpiryTime.minusMillis(minMessageWindow).isBefore(nowTime)) {
-      throw new InterledgerProtocolException(
-        InterledgerRejectPacket.builder()
-          .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
-          .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
-          .message(String.format(
-            "Source transfer expires too soon to complete payment. SourceExpiry: {%s}, " +
-              "RequiredSourceExpiry: {%s}, CurrentTime: {%s}",
-            sourceExpiry,
-            nowTime.plusMillis(minMessageWindow * 2),
-            nowTime))
-          .build()
-      );
+    if (this.isInternallyRoutedDestination(destinationAddress)) {
+      return sourceExpiry;
     } else {
-      return destinationExpiryTime;
+      final Instant nowTime = Instant.now();
+      if (sourceExpiry.isBefore(nowTime)) {
+        throw new InterledgerProtocolException(
+          InterledgerRejectPacket.builder()
+            .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
+            .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
+            .message(String.format(
+              "Source transfer has already expired. sourceExpiry: {%s}, currentTime: {%s}", sourceExpiry, nowTime))
+            .build()
+        );
+      }
+
+      // We will set the next transfer's expiry based on the source expiry and our minMessageWindow, but cap it at our
+      // maxHoldTime.
+
+      final int minMessageWindow = 5000; //TODO: Enable this --> connectorSettingsSupplier.get().getMinMessageWindow();
+      final int maxHoldTime = 5000; //TODO: Enable this --> connectorSettingsSupplier.get().getMaxHoldTime();
+
+      // The expiry of the packet, reduced by the minMessageWindow, which is "the minimum time the connector wants to
+      // budget for getting a message to the accounts its trading on. In milliseconds."
+      final Instant adjustedSourceExpiryInstant = sourceExpiry.minusMillis(minMessageWindow);
+
+      // The point in time after which this Connector will not wait around for a fulfillment.
+      final Instant maxHoldInstant = nowTime.plusMillis(maxHoldTime);
+
+      final Instant destinationExpiryTime = lesser(adjustedSourceExpiryInstant, maxHoldInstant);
+      if (destinationExpiryTime.minusMillis(minMessageWindow).isBefore(nowTime)) {
+        throw new InterledgerProtocolException(
+          InterledgerRejectPacket.builder()
+            .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
+            .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
+            .message(String.format(
+              "Source transfer expires too soon to complete payment. SourceExpiry: {%s}, " +
+                "RequiredSourceExpiry: {%s}, CurrentTime: {%s}",
+              sourceExpiry,
+              nowTime.plusMillis(minMessageWindow * 2),
+              nowTime))
+            .build()
+        );
+      } else {
+        return destinationExpiryTime;
+      }
     }
   }
 

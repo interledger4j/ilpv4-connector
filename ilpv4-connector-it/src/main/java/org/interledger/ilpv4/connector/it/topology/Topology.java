@@ -50,17 +50,25 @@ public class Topology {
     return nodes.get(key);
   }
 
+  public <T> T getNode(String key, Class<T> clazz) {
+    return (T) nodes.get(key);
+  }
+
   public Node getNode(InterledgerAddress key) {
     return getNode(key.getValue());
   }
 
-  public ServerNode getNodeAsServer(String key) {
-    return (ServerNode) getNode(key);
+  public <T> T getNode(InterledgerAddress key, Class<T> clazz) {
+    return (T) nodes.get(key);
   }
 
-  public ServerNode getNodeAsServer(InterledgerAddress key) {
-    return (ServerNode) getNode(key);
-  }
+//  public ServerNode getNodeAsServer(String key) {
+//    return (ServerNode) getNode(key);
+//  }
+//
+//  public ServerNode getNodeAsServer(InterledgerAddress key) {
+//    return (ServerNode) getNode(key);
+//  }
 
   public Collection<Node> getNodeValues() {
     return nodes.values();
@@ -92,8 +100,8 @@ public class Topology {
   }
 
   /**
-   * Allows the test-harness to addAccount edges _after_ the topology has started. This is useful for things like adding a
-   * plugin, which might need to know the port of a peering server, which isn't known until after the Spring container
+   * Allows the test-harness to addAccount edges _after_ the topology has started. This is useful for things like adding
+   * a plugin, which might need to know the port of a peering server, which isn't known until after the Spring container
    * has started.
    */
   public static abstract class PostConstructListener {

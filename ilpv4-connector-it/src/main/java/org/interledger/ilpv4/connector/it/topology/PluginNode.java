@@ -1,21 +1,32 @@
 package org.interledger.ilpv4.connector.it.topology;
 
-import org.interledger.core.InterledgerAddress;
 import org.interledger.plugin.lpiv2.Plugin;
+import org.interledger.plugin.lpiv2.PluginSettings;
 
 /**
- * A node in a topology which exposes one or more instances of {@link Plugin} that can be used to interact with the Node.
+ * A node in a topology which exposes an instance of {@link Plugin} that can be used to interact with the Node.
  */
-public interface PluginNode<T> extends Node<T> {
+public class PluginNode<PS extends PluginSettings, P extends Plugin<PS>> extends AbstractNode<P> implements Node<P> {
+
+  public PluginNode(final P contentObject) {
+    super(contentObject);
+  }
 
   /**
-   * Accessor for the plugin identified by {@code accountAddress}.
+   * Start this node. Sometimes a node is started when the topology starts-up, but not always (e.g., a delayed start).
    */
-  Plugin<?> getPlugin(InterledgerAddress accountAddress);
+  @Override
+  public void start() {
+    getContentObject().connect().join();
+  }
 
   /**
-   * Allows for late-binding of the plugin, so that it can be created and set by an edge.
+   * Stop this node.
    */
-  void setPlugin(final Plugin<?> clientPlugin);
+  @Override
+  public void stop() {
+    getContentObject().disconnect().join();
+  }
+
 
 }

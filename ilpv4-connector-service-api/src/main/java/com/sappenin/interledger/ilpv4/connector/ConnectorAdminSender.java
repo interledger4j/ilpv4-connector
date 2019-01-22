@@ -1,37 +1,25 @@
-package com.sappenin.interledger.ilpv4.connector.packetswitch;
+package com.sappenin.interledger.ilpv4.connector;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
-import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.SendDataFilter;
-import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.SendDataFilterChain;
-import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
-import com.sappenin.interledger.ilpv4.connector.routing.Route;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
 import org.interledger.core.InterledgerResponsePacketMapper;
-import org.interledger.plugin.lpiv2.Plugin;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * <p>A switching fabric for mapping incoming ILP packets to outgoing links.</p>
- *
- * <p>A packet switch allows for one or more PacketHandlers to applied to every Packet that traverses this
- * switch's routing fabric.</p>
- *
- * <p>In the happy path, a packet will come into the connector from a particular {@link Plugin} and then will
- * be handed off to this switch to be routed to a (typically) different target {@link Plugin}. This call will result in
- * either an {@link InterledgerFulfillPacket} or an {@link InterledgerRejectPacket}, which can then be returned back to
- * the original caller via the plugin that originated the {@link InterledgerPreparePacket}.</p>
+ * Defines how to send data from a particular Connector account into a Connector.
  */
-public interface ILPv4PacketSwitch {
+@FunctionalInterface
+public
+interface ConnectorAdminSender {
 
   /**
-   * <p>Routes an incoming ILPv4 request packet to a connected peer and returns the response packet (if one is
-   * returned).</p>
+   * <p>Allows a Connector administrator to send an {@link InterledgerPreparePacket} from a particular account to a
+   * connected peer, and then return the response packet (if one is returned).</p>
    *
    * <p>This method supports one of three responses, which can be handled by using utility classes such as {@link
    * InterledgerResponsePacketMapper} or {@link InterledgerResponsePacketHandler}:
@@ -58,26 +46,14 @@ public interface ILPv4PacketSwitch {
    * </ol>
    * </pre>
    *
-   * @param accountId             The {@link AccountId} to send this packet from.
-   * @param incomingPreparePacket An incoming {@link InterledgerPreparePacket} that should be routed to the most
-   *                              appropriate peer connected to this Connector.
+   * @param accountId     The {@link AccountId} to send this packet from.
+   * @param preparePacket An {@link InterledgerPreparePacket} to send to the remote peer.
    *
    * @return A {@link CompletableFuture} that resolves to an optionally-present {@link InterledgerResponsePacket}, which
    * will be of concrete type {@link InterledgerFulfillPacket} or {@link InterledgerRejectPacket}, if present.
    */
-  CompletableFuture<Optional<InterledgerResponsePacket>> routeData(
-    AccountId accountId, InterledgerPreparePacket incomingPreparePacket
+  CompletableFuture<Optional<InterledgerResponsePacket>> sendData(
+    AccountId accountId, InterledgerPreparePacket preparePacket
   );
 
-  // NOTE: The ILP PacketSwitch layer doesn't expressly have a "sendMoney" handler because this action is a bilateral
-  // concern of an account/plugin, and not a Interledger-layer concern. It likewise does not have an onDataHandler
-  // because this switch always only sends data, and returns a response.
-
-  boolean add(SendDataFilter sendDataFilter);
-
-  void addFirst(SendDataFilter sendDataFilter);
-
-  SendDataFilterChain getSendDataFilterChain();
-
-  PaymentRouter<Route> getPaymentRouter();
 }

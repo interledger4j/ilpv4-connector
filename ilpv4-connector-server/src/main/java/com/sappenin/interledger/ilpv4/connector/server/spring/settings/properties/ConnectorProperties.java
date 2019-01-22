@@ -37,6 +37,11 @@ public class ConnectorProperties {
 
   public static final String NODE_ILP_ADDRESS = ILPV4_CONNECTOR_PREFIX + "nodeIlpAddress";
   public static final String GLOBAL_PREFIX = ILPV4_CONNECTOR_PREFIX + "globalPrefix";
+
+  /**
+   * @deprecated This is no longer necessary because the WebSocket server config doens't engage unless BTP is enabled.
+   */
+  @Deprecated
   public static final String WEBSOCKET_SERVER_ENABLED = ILPV4_CONNECTOR_PREFIX + "websocketServerEnabled";
 
   /**

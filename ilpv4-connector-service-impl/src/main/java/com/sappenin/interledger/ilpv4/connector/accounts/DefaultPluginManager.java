@@ -34,7 +34,11 @@ public class DefaultPluginManager implements PluginManager {
         String.format("No registered PluginFactory supports: %s", pluginSettings.getPluginType()))
       );
 
-    // Set the PluginId to match the AccountId...
+    // TODO: Refactor Plugin to require a pluginId. We shouldn't construct a plugin (client or server) if we don't
+    //  know the Account, which is the PluginId.
+
+    // Set the PluginId to match the AccountId...this way the Plugin can always use this value to represent the
+    // accountId that a given plugin should use.
     ((AbstractPlugin) plugin).setPluginId(PluginId.of(accountId.value()));
 
     return plugin;

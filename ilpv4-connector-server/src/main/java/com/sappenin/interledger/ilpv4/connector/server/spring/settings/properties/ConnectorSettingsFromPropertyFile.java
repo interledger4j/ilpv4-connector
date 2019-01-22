@@ -2,6 +2,7 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.settings.properti
 
 import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.AccountId;
+import com.sappenin.interledger.ilpv4.connector.settings.AccountProviderSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.GlobalRoutingSettings;
@@ -22,17 +23,30 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
+  // For override purposes, this is the bean name that is registered in Spring. See ConnectorServer for more details.
+  public static final String BEAN_NAME = "ilpv4.connector-com.sappenin.interledger.ilpv4.connector.server.spring" +
+    ".settings.properties.ConnectorSettingsFromPropertyFile";
+
   private InterledgerAddress nodeIlpAddress;
+
+  private EnabledProtocolSettingsFromPropertyFile enabledProtocols =
+    new EnabledProtocolSettingsFromPropertyFile();
 
   private boolean websocketServerEnabled;
 
-  private InterledgerAddressPrefix globalPrefix;
+  private InterledgerAddressPrefix globalPrefix = InterledgerAddressPrefix.TEST;
 
-  private GlobalRoutingSettingsFromPropertyFile globalRoutingSettings;
+  private GlobalRoutingSettingsFromPropertyFile globalRoutingSettings = new GlobalRoutingSettingsFromPropertyFile();
 
   private List<AccountSettingsFromPropertyFile> accounts = Lists.newArrayList();
 
+  private List<AccountProviderSettingsFromPropertyFile> accountProviders = Lists.newArrayList();
+
   public InterledgerAddress getOperatorAddress() {
+    return nodeIlpAddress;
+  }
+
+  public InterledgerAddress getNodeIlpAddress() {
     return nodeIlpAddress;
   }
 
@@ -46,6 +60,14 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   public void setGlobalPrefix(InterledgerAddressPrefix globalPrefix) {
     this.globalPrefix = globalPrefix;
+  }
+
+  public EnabledProtocolSettingsFromPropertyFile getEnabledProtocols() {
+    return enabledProtocols;
+  }
+
+  public void setEnabledProtocols(EnabledProtocolSettingsFromPropertyFile enabledProtocols) {
+    this.enabledProtocols = enabledProtocols;
   }
 
   public boolean isWebsocketServerEnabled() {
@@ -76,19 +98,30 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     this.accounts = accounts;
   }
 
+  @Override
+  public List<AccountProviderSettings> getAccountProviderSettings() {
+    return accountProviders.stream()
+      .map(accountSettings -> (AccountProviderSettings) accountSettings)
+      .collect(Collectors.toList());
+  }
+
+  public void setAccountProviders(List<AccountProviderSettingsFromPropertyFile> accountProviders) {
+    this.accountProviders = accountProviders;
+  }
+
   /**
    * Models the YAML format for spring-boot automatic configuration property loading.
    */
   public static class GlobalRoutingSettingsFromPropertyFile implements GlobalRoutingSettings {
 
     private boolean routeBroadcastEnabled;
-    private Optional<AccountId> defaultRoute;
-    private Duration routeCleanupInterval;
-    private Duration routeExpiry;
-    private int maxEpochsPerRoutingTable;
+    private Optional<AccountId> defaultRoute = Optional.empty();
+    private Duration routeCleanupInterval = Duration.ofSeconds(1);
+    private Duration routeExpiry = Duration.ofSeconds(45);
+    private int maxEpochsPerRoutingTable = 50;
     private String routingSecret;
     private boolean useParentForDefaultRoute;
-    private Duration routeBroadcastInterval;
+    private Duration routeBroadcastInterval = Duration.ofSeconds(30);
     private List<StaticRouteFromPropertyFile> staticRoutes = Lists.newArrayList();
 
     @Override

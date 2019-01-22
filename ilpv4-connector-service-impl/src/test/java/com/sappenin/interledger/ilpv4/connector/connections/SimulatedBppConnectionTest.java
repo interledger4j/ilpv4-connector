@@ -1,24 +1,5 @@
 package com.sappenin.interledger.ilpv4.connector.connections;
 
-import org.interledger.core.InterledgerAddress;
-import org.interledger.core.InterledgerFulfillPacket;
-import org.interledger.core.InterledgerFulfillment;
-import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerRejectPacket;
-import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.core.InterledgerResponsePacketHandler;
-import org.interledger.plugin.lpiv2.PluginSettings;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.math.BigInteger;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Optional;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-
 /**
  * Unit tests for {@link SimulatedBppConnection} that is operating two bilateral sender/receivers, one representing a
  * USD account and another representing an EUR account.

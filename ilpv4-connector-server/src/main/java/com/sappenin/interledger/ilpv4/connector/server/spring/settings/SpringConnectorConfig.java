@@ -1,10 +1,12 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings;
 
+import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.DefaultILPv4Connector;
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountSettingsResolver;
+import com.sappenin.interledger.ilpv4.connector.accounts.BtpAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountSettingsResolver;
@@ -14,16 +16,16 @@ import com.sappenin.interledger.ilpv4.connector.fx.DefaultExchangeRateService;
 import com.sappenin.interledger.ilpv4.connector.fx.ExchangeRateService;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.DefaultILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
+import com.sappenin.interledger.ilpv4.connector.plugins.connectivity.PingProtocolPlugin;
+import com.sappenin.interledger.ilpv4.connector.plugins.connectivity.PingProtocolPluginFactory;
 import com.sappenin.interledger.ilpv4.connector.routing.DefaultRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.NoOpRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.RoutingService;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.btp.SpringBtpConfig;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
-import org.interledger.btp.BtpResponsePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.plugin.lpiv2.LoopbackPlugin;
-import org.interledger.plugin.lpiv2.btp2.spring.PendingResponseManager;
 import org.interledger.plugin.lpiv2.btp2.spring.factories.LoopbackPluginFactory;
 import org.interledger.plugin.lpiv2.btp2.spring.factories.PluginFactoryProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,8 +69,24 @@ public class SpringConnectorConfig {
   @Autowired
   private ApplicationContext applicationContext;
 
+  @Autowired
+  private ILPv4Connector ilPv4Connector;
+
   @PostConstruct
-  public void startup() {
+  public void onStartup() {
+
+    // Once the Connector has been initialized, we start the routing service in order to initialize any default
+    // routes and/or other settings. No need to gate this on any modes, since each implementation of the
+    // RoutingService will handle this call properly.
+
+    // TODO This should be replaced by a proper Connector-eventing system that starts and stops various services
+    // after the Connector starts. See other parts of this code for some ideas around that system.
+    this.ilPv4Connector.getRoutingService().start();
+  }
+
+  @Bean
+  EventBus eventBus() {
+    return new EventBus();
   }
 
   // This is just a supplier that can be given to beans for later usage after the application has started. This
@@ -76,21 +94,28 @@ public class SpringConnectorConfig {
   // application-context, which occurs via the EnableConfigurationProperties annotation on this class.
   @Bean
   Supplier<ConnectorSettings> connectorSettingsSupplier() {
-    // This is necessary to allow for Runtime-reloading of ConnectorSettings via the Application Context.
-    return () -> applicationContext.getBean(ConnectorSettings.class);
+
+    // The normal `ConnectorSettings` will be the one loaded from the Properties files above (see
+    // ConnectorSettingsFromPropertyFile). However, for IT purposes, we want to use the override.
+
+    if (applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME) != null) {
+      return () -> (ConnectorSettings) applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME);
+    } else {
+      // No override was detected, so return the normal variant that exists because of the EnableConfigurationProperties
+      // directive above.
+      return () -> applicationContext.getBean(ConnectorSettings.class);
+    }
   }
 
   @Bean
-  PendingResponseManager<BtpResponsePacket> pendingResponseManager() {
-    return new PendingResponseManager<>(BtpResponsePacket.class);
-  }
-
-  @Bean
-  PluginFactoryProvider pluginFactoryProvider() {
+  PluginFactoryProvider pluginFactoryProvider(
+    @Qualifier(ILP) CodecContext ilpCodecContext
+  ) {
     final PluginFactoryProvider provider = new PluginFactoryProvider();
 
     // Register known types...Spring will register proper known types based upon config...
     provider.registerPluginFactory(LoopbackPlugin.PLUGIN_TYPE, new LoopbackPluginFactory());
+    provider.registerPluginFactory(PingProtocolPlugin.PLUGIN_TYPE, new PingProtocolPluginFactory(ilpCodecContext));
 
     // TODO: Register any SPI types..
     // See SPI as well as https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/io/support/SpringFactoriesLoader.html
@@ -120,13 +145,21 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  AccountIdResolver accountIdResolver(Supplier<ConnectorSettings> connectorSettingsSupplier) {
-    return new DefaultAccountIdResolver(connectorSettingsSupplier);
+  AccountIdResolver accountIdResolver(BtpAccountIdResolver btpAccountIdResolver) {
+    return btpAccountIdResolver;
   }
 
   @Bean
-  AccountSettingsResolver accountSettingsResolver(Supplier<ConnectorSettings> connectorSettingsSupplier) {
-    return new DefaultAccountSettingsResolver(connectorSettingsSupplier);
+  BtpAccountIdResolver btpAccountIdResolver() {
+    return new DefaultAccountIdResolver();
+  }
+
+  @Bean
+  AccountSettingsResolver accountSettingsResolver(
+    Supplier<ConnectorSettings> connectorSettingsSupplier, AccountIdResolver accountIdResolver,
+    AccountManager accountManager
+  ) {
+    return new DefaultAccountSettingsResolver(connectorSettingsSupplier, accountIdResolver, accountManager);
   }
 
   @Bean
@@ -157,6 +190,10 @@ public class SpringConnectorConfig {
       accountManager);
   }
 
+  /**
+   * This is necessary to be able to supply references to this connector to dependent services, such as the BTP server
+   * handlers.
+   */
   @Bean
   ILPv4Connector ilpConnector(
     Supplier<ConnectorSettings> connectorSettingsSupplier,

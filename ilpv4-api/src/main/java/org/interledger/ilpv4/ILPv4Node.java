@@ -24,5 +24,5 @@ public interface ILPv4Node {
    *
    * @return
    */
-  InterledgerAddress getAddress();
+  InterledgerAddress getNodeIlpAddress();
 }

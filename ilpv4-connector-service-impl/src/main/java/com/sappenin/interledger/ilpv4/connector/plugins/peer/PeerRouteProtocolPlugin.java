@@ -96,7 +96,7 @@ public class PeerRouteProtocolPlugin extends InternallyRoutedPlugin implements P
 //        if (preparePacket.getDestination().equals(CCP_CONTROL_DESTINATION_ADDRESS)) {
 //          final ByteArrayInputStream inputStream = new ByteArrayInputStream(preparePacket.getData());
 //          final CcpRouteControlRequest routeControlRequest =
-//            getOerCodecContext().read(CcpRouteControlRequest.class, inputStream);
+//            getIlpCodecContext().read(CcpRouteControlRequest.class, inputStream);
 //
 //          final RoutableAccount routableAccount =
 //            this.routingService.getTrackedAccount(this.getPluginSettings().getAccountAddress())
@@ -112,7 +112,7 @@ public class PeerRouteProtocolPlugin extends InternallyRoutedPlugin implements P
 //        } else if (preparePacket.getDestination().equals(CCP_UPDATE_DESTINATION_ADDRESS)) {
 //          final ByteArrayInputStream inputStream = new ByteArrayInputStream(preparePacket.getData());
 //          final CcpRouteUpdateRequest routeUpdateRequest =
-//            getOerCodecContext().read(CcpRouteUpdateRequest.class, inputStream);
+//            getIlpCodecContext().read(CcpRouteUpdateRequest.class, inputStream);
 //
 //          final RoutableAccount routableAccount =
 //            this.routingService.getTrackedAccount(this.getPluginSettings().getAccountAddress())

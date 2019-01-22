@@ -1,5 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector;
 
+import org.immutables.value.Value;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 
 /**
@@ -7,6 +9,13 @@ import org.interledger.core.InterledgerAddressPrefix;
  * published by peers. More specific prefixes will still take precedence.
  */
 public interface StaticRoute {
+
+  InterledgerAddressPrefix SELF_INTERNAL = InterledgerAddressPrefix.SELF.with("internal");
+  InterledgerAddress STANDARD_DEFAULT_ROUTE = InterledgerAddress.of(SELF_INTERNAL.getValue());
+
+  static ImmutableStaticRoute.Builder builder() {
+    return ImmutableStaticRoute.builder();
+  }
 
   /**
    * A target address prefix that corresponds to {@code #getPeerAddress}.
@@ -22,5 +31,10 @@ public interface StaticRoute {
    * @return
    */
   AccountId getPeerAccountId();
+
+  @Value.Immutable(intern = true)
+  abstract class AbstractStaticRoute implements StaticRoute {
+
+  }
 
 }

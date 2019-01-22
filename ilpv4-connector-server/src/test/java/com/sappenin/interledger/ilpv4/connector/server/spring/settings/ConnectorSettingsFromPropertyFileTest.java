@@ -1,8 +1,11 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings;
 
+import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import com.sappenin.interledger.ilpv4.connector.settings.AccountBalanceSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.AccountProviderSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.GlobalRoutingSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
@@ -40,9 +43,14 @@ public class ConnectorSettingsFromPropertyFileTest {
     assertThat(connectorSettings.getOperatorAddress(), is(InterledgerAddress.of("test.example")));
     assertThat(connectorSettings.getGlobalPrefix(), is(InterledgerAddressPrefix.of("test")));
 
+    // Enabled Protocol Settings
+    final EnabledProtocolSettings enabledProtocolSettings = connectorSettings.getEnabledProtocols();
+    assertThat(enabledProtocolSettings.isEchoProtocolEnabled(), is(true));
+    assertThat(enabledProtocolSettings.isPingProtocolEnabled(), is(true));
+
     // Global Routing Settings
     final GlobalRoutingSettings globalRoutingSettings = connectorSettings.getGlobalRoutingSettings();
-    assertThat(globalRoutingSettings.getDefaultRoute().get(), is(InterledgerAddress.of("self.internal")));
+    assertThat(globalRoutingSettings.getDefaultRoute().get(), is(AccountId.of("self.internal")));
     assertThat(globalRoutingSettings.isUseParentForDefaultRoute(), is(true));
     assertThat(globalRoutingSettings.getRoutingSecret(), is("shh"));
     assertThat(globalRoutingSettings.getRouteBroadcastInterval(), is(Duration.ofMillis(30001L)));
@@ -56,11 +64,11 @@ public class ConnectorSettingsFromPropertyFileTest {
     );
     assertThat(
       globalRoutingSettings.getStaticRoutes().stream().findFirst().get().getPeerAccountId(),
-      is(InterledgerAddress.of("bob"))
+      is(AccountId.of("bob"))
     );
 
     final List<AccountSettings> accounts = connectorSettings.getAccountSettings();
-    assertThat(accounts.size(), is(3));
+    assertThat(accounts.size(), is(4));
 
     /////////////////////////
     //  Alice's Account
@@ -124,6 +132,99 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(account.getCustomSettings().isEmpty(), is(true));
 
       final AccountBalanceSettings balanceSettings = account.getBalanceSettings();
+      assertThat(balanceSettings.getMinBalance(), is(Optional.empty()));
+      assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
+      assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));
+      assertThat(balanceSettings.getSettleTo(), is(Optional.empty()));
+    }
+
+    /////////////////////////
+    //  Minimal Parent
+    /////////////////////////
+    {
+      final AccountSettings account = accounts.get(3);
+      assertThat(account.getId().value(), is("minimal.child"));
+      assertThat(account.getDescription(), is("A child account with minimal settings."));
+      assertThat(account.getPluginType(), is(LoopbackPlugin.PLUGIN_TYPE));
+      assertThat(account.getAssetCode(), is("USD"));
+      assertThat(account.getAssetScale(), is(9));
+      assertThat(account.isSendRoutes(), is(false));
+      assertThat(account.isReceiveRoutes(), is(false));
+      assertThat(account.getMaximumPacketAmount().isPresent(), is(false));
+      assertThat(account.getCustomSettings().isEmpty(), is(true));
+
+      final AccountBalanceSettings balanceSettings = account.getBalanceSettings();
+      assertThat(balanceSettings.getMinBalance(), is(Optional.empty()));
+      assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
+      assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));
+      assertThat(balanceSettings.getSettleTo(), is(Optional.empty()));
+    }
+
+    final List<AccountProviderSettings> accountProviders = connectorSettings.getAccountProviderSettings();
+    assertThat(accountProviders.size(), is(3));
+
+    /////////////////////////
+    //  testServer1
+    /////////////////////////
+    {
+      final AccountProviderSettings settings = accountProviders.get(0);
+      assertThat(settings.getId().value(), is("testServer1"));
+      assertThat(settings.getDescription(), is("The testServer1 AccountProvider"));
+      assertThat(settings.getPluginType(), is(LoopbackPlugin.PLUGIN_TYPE));
+      assertThat(settings.getAssetCode(), is("USD"));
+      assertThat(settings.getAssetScale(), is(8));
+      assertThat(settings.isSendRoutes(), is(false));
+      assertThat(settings.isReceiveRoutes(), is(false));
+      assertThat(settings.getMaximumPacketAmount(), is(Optional.of(BigInteger.valueOf(100001L))));
+      assertThat(settings.getCustomSettings().get("foo"), is("bar"));
+      assertThat(settings.getCustomSettings().get("boo"), is("baz"));
+
+      final AccountBalanceSettings balanceSettings = settings.getBalanceSettings();
+      assertThat(balanceSettings.getMinBalance(), is(Optional.of(BigInteger.valueOf(1L))));
+      assertThat(balanceSettings.getMaxBalance(), is(Optional.of(BigInteger.valueOf(2L))));
+      assertThat(balanceSettings.getSettleThreshold(), is(Optional.of(BigInteger.valueOf(10000001L))));
+      assertThat(balanceSettings.getSettleTo(), is(Optional.of(BigInteger.valueOf(3L))));
+    }
+
+    /////////////////////////
+    //  empty
+    /////////////////////////
+    {
+      final AccountProviderSettings settings = accountProviders.get(1);
+      assertThat(settings.getId().value(), is("empty"));
+      assertThat(settings.getDescription(), is(""));
+      assertThat(settings.getPluginType(), is(nullValue()));
+      assertThat(settings.getAssetCode(), is("USD"));
+      assertThat(settings.getAssetScale(), is(2));
+      assertThat(settings.isSendRoutes(), is(false));
+      assertThat(settings.isReceiveRoutes(), is(false));
+      assertThat(settings.getMaximumPacketAmount().isPresent(), is(false));
+      assertThat(settings.getCustomSettings().isEmpty(), is(true));
+
+      final AccountBalanceSettings balanceSettings = settings.getBalanceSettings();
+      assertThat(balanceSettings.getMinBalance(), is(Optional.empty()));
+      assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
+      assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));
+      assertThat(balanceSettings.getSettleTo(), is(Optional.empty()));
+    }
+
+    /////////////////////////
+    //  minimal.parent
+    /////////////////////////
+
+    {
+      final AccountProviderSettings settings = accountProviders.get(2);
+      assertThat(settings.getId().value(), is("minimal.parent"));
+      assertThat(settings.getDescription(), is("The minimal.parent AccountProvider"));
+      assertThat(settings.getPluginType(), is(LoopbackPlugin.PLUGIN_TYPE));
+      assertThat(settings.getAssetCode(), is("USD"));
+      assertThat(settings.getAssetScale(), is(9));
+      assertThat(settings.isSendRoutes(), is(false));
+      assertThat(settings.isReceiveRoutes(), is(false));
+      assertThat(settings.getMaximumPacketAmount().isPresent(), is(false));
+      assertThat(settings.getCustomSettings().isEmpty(), is(true));
+
+      final AccountBalanceSettings balanceSettings = settings.getBalanceSettings();
       assertThat(balanceSettings.getMinBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));

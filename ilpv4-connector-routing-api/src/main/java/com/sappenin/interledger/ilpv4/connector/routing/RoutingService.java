@@ -14,6 +14,16 @@ import java.util.Optional;
 public interface RoutingService extends PaymentRouter<Route> {
 
   /**
+   * Start the Routing Service, re-initializing it if necessary.
+   */
+  void start();
+
+  /**
+   * Shutdown the Routing Service.
+   */
+  void shutdown();
+
+  /**
    * Register this service to respond to connect/disconnect events that may be emitted from a {@link Plugin}, and then
    * add the account to this service's internal machinery.
    *

@@ -1,9 +1,9 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties;
 
 import com.google.common.collect.Maps;
-import com.sappenin.interledger.ilpv4.connector.AccountId;
+import com.sappenin.interledger.ilpv4.connector.AccountProviderId;
+import com.sappenin.interledger.ilpv4.connector.settings.AccountProviderSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.AccountRelationship;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
 import org.interledger.plugin.lpiv2.PluginType;
 
 import java.math.BigInteger;
@@ -13,9 +13,9 @@ import java.util.Optional;
 /**
  * Models the YAML format for spring-boot automatic configuration property loading.
  */
-public class AccountSettingsFromPropertyFile implements AccountSettings {
+public class AccountProviderSettingsFromPropertyFile implements AccountProviderSettings {
 
-  private AccountId id;
+  private AccountProviderId id;
   private Optional<String> ilpAddressSegment;
   private String description = "";
   private AccountRelationship relationship = AccountRelationship.CHILD;
@@ -31,21 +31,12 @@ public class AccountSettingsFromPropertyFile implements AccountSettings {
   private Optional<BigInteger> maximumPacketAmount = Optional.empty();
 
   @Override
-  public AccountId getId() {
+  public AccountProviderId getId() {
     return id;
   }
 
-  public void setId(AccountId id) {
+  public void setId(AccountProviderId id) {
     this.id = id;
-  }
-
-  @Override
-  public Optional<String> getIlpAddressSegment() {
-    return ilpAddressSegment;
-  }
-
-  public void setIlpAddressSegment(Optional<String> ilpAddressSegment) {
-    this.ilpAddressSegment = ilpAddressSegment;
   }
 
   @Override
@@ -55,6 +46,15 @@ public class AccountSettingsFromPropertyFile implements AccountSettings {
 
   public void setDescription(String description) {
     this.description = description;
+  }
+
+  @Override
+  public Optional<String> getIlpAddressSegment() {
+    return ilpAddressSegment;
+  }
+
+  public void setIlpAddressSegment(Optional<String> ilpAddressSegment) {
+    this.ilpAddressSegment = ilpAddressSegment;
   }
 
   @Override
