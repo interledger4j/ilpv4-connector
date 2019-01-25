@@ -38,13 +38,13 @@ public class PingProtocolPlugin extends InternallyRoutedPlugin implements Plugin
   public static final String PLUGIN_TYPE_STRING = "PING_PROTOCOL_PLUGIN";
   public static final PluginType PLUGIN_TYPE = PluginType.of(PLUGIN_TYPE_STRING);
 
-  public static final InterledgerAddress SELF_DOT_PING
-    = InterledgerAddress.of(InterledgerAddressPrefix.SELF.with("ping").getValue());
+//  public static final InterledgerAddress SELF_DOT_PING
+//    = InterledgerAddress.of(InterledgerAddressPrefix.SELF.with("ping").getValue());
 
   public static final InterledgerFulfillment PING_PROTOCOL_FULFILLMENT = InterledgerFulfillment.of(new byte[32]);
   public static final InterledgerCondition PING_PROTOCOL_CONDITION = PING_PROTOCOL_FULFILLMENT.getCondition();
 
-  // TODO: Add balance tracking.
+  // TODO: Add balance tracking?
 
   /**
    * Required-args constructor.

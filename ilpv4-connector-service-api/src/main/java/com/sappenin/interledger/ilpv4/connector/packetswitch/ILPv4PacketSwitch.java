@@ -1,8 +1,8 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch;
 
 import com.sappenin.interledger.ilpv4.connector.AccountId;
-import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.SendDataFilter;
-import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.SendDataFilterChain;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PacketSwitchFilter;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PacketSwitchFilterChain;
 import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
 import com.sappenin.interledger.ilpv4.connector.routing.Route;
 import org.interledger.core.InterledgerFulfillPacket;
@@ -73,11 +73,13 @@ public interface ILPv4PacketSwitch {
   // concern of an account/plugin, and not a Interledger-layer concern. It likewise does not have an onDataHandler
   // because this switch always only sends data, and returns a response.
 
-  boolean add(SendDataFilter sendDataFilter);
+  boolean add(PacketSwitchFilter packetSwitchFilter);
 
-  void addFirst(SendDataFilter sendDataFilter);
+  void addFirst(PacketSwitchFilter packetSwitchFilter);
 
-  SendDataFilterChain getSendDataFilterChain();
+  PacketSwitchFilterChain getSendDataFilterChain();
 
-  PaymentRouter<Route> getPaymentRouter();
+  PaymentRouter<Route> getInternalPaymentRouter();
+
+  PaymentRouter<Route> getExternalPaymentRouter();
 }

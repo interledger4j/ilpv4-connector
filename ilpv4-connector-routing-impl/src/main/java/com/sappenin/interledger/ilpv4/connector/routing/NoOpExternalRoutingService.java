@@ -7,17 +7,17 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * An implementation of {@link RoutingService} that neither responds to nor issues routing requests, and assumes only a
+ * An implementation of {@link ExternalRoutingService} that neither responds to nor issues routing requests, and assumes only a
  * single account exists for purposes of routing.
  */
-public class NoOpRoutingService implements RoutingService {
+public class NoOpExternalRoutingService implements ExternalRoutingService {
 
   private final RoutingTable<Route> routeRoutingTable;
 
   /**
    * Required-args Constructor.
    */
-  public NoOpRoutingService() {
+  public NoOpExternalRoutingService() {
     this.routeRoutingTable = new InMemoryRoutingTable();
   }
 

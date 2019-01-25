@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * <p>Filters perform filtering in the <code>doFilter</code> method.
  */
-public interface SendDataFilter {
+public interface PacketSwitchFilter {
 
   // TODO: Init and Destroy?
 
@@ -28,7 +28,7 @@ public interface SendDataFilter {
    * @return
    */
   CompletableFuture<Optional<InterledgerResponsePacket>> doFilter(
-    AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket, SendDataFilterChain filterChain
+    AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket, PacketSwitchFilterChain filterChain
   );
 
 }

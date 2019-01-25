@@ -2,9 +2,11 @@ package com.sappenin.interledger.ilpv4.connector.accounts;
 
 import com.sappenin.interledger.ilpv4.connector.Account;
 import com.sappenin.interledger.ilpv4.connector.AccountId;
+import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 
 import java.math.BigInteger;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -68,6 +70,37 @@ public interface AccountManager {
    * @return The requested {@link Account}, if present.
    */
   Optional<Account> getAccount(AccountId accountId);
+
+  /**
+   * Determines if the account represented by {@code accountId} is internal.
+   *
+   * @param accountId
+   *
+   * @return {@code true} or {@code false}, or {@link Optional#empty()} if the account doesn't exist.
+   */
+  default Optional<Boolean> isInternal(final AccountId accountId) {
+    Objects.requireNonNull(accountId);
+
+    return this.getAccount(accountId)
+      .map(Account::getAccountSettings)
+      .map(AccountSettings::isInternal)
+      .map(Optional::ofNullable)
+      .orElse(Optional.empty());
+  }
+
+  /**
+   * Determines if the account represented by {@code accountId} is internal.
+   *
+   * @param accountId
+   *
+   * @return {@code true} or {@code false}, or {@link Optional#empty()} if the account doesn't exist.
+   */
+  default Optional<Boolean> isNotInternal(final AccountId accountId) {
+    Objects.requireNonNull(accountId);
+
+    return this.isInternal(accountId)
+      .map(isInternal -> !isInternal);
+  }
 
   /**
    * Get the account settings for the specified {@code accountId}.

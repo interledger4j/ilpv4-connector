@@ -55,6 +55,16 @@ public interface AccountSettings {
   AccountId getId();
 
   /**
+   * Determines if this account is <tt>internal</tt> or <tt>external</tt>. Internal accounts are allowed to process
+   * packets in the `self` and `private` prefixes, but packets from an internal account MUST not be forwarded to an
+   * external address. External account are not allowed to route packets to an internal account, but are allowed to have
+   * packets forwarded to other external accounts.
+   *
+   * @return {@code true} if this account is <tt>internal</tt>; {@code false} otherwise.
+   */
+  boolean isInternal();
+
+  /**
    * The segment that will be appended to the connector's ILP address to form this account's ILP address. Only
    * applicable to accounts with relation={@link AccountRelationship#CHILD}. By default, this will be the identifier of
    * the account, i.e. the key used in the accounts config object.
@@ -131,6 +141,12 @@ public interface AccountSettings {
 
   @Value.Immutable(intern = true)
   abstract class AbstractAccountSettings implements AccountSettings {
+
+    @Override
+    @Value.Default
+    public boolean isInternal() {
+      return false;
+    }
 
     @Value.Default
     @Override

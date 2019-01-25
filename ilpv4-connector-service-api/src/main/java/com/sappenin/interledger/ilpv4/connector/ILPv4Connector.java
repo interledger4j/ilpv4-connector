@@ -2,7 +2,8 @@ package com.sappenin.interledger.ilpv4.connector;
 
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
-import com.sappenin.interledger.ilpv4.connector.routing.RoutingService;
+import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
+import com.sappenin.interledger.ilpv4.connector.routing.InternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.ilpv4.ILPv4Node;
 import org.interledger.ilpv4.ILPv4Receiver;
@@ -28,9 +29,7 @@ import org.interledger.ilpv4.ILPv4Sender;
  *
  * @see "https://github.com/interledger/rfcs/blob/master/0001-interledger-architecture"
  */
-public interface ILPv4Connector extends ILPv4Node
-  //ConnectorAdminSender
-{
+public interface ILPv4Connector extends ILPv4Node {
 
   ConnectorSettings getConnectorSettings();
 
@@ -42,5 +41,6 @@ public interface ILPv4Connector extends ILPv4Node
   // level.
   AccountManager getAccountManager();
 
-  RoutingService getRoutingService();
+  ExternalRoutingService getExternalRoutingService();
+  InternalRoutingService getInternalRoutingService();
 }

@@ -1,17 +1,10 @@
 package com.sappenin.interledger.ilpv4.connector.plugins.peer;
 
-import com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants;
-import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteControlRequest;
-import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteUpdateRequest;
 import com.sappenin.interledger.ilpv4.connector.plugins.InternallyRoutedPlugin;
-import com.sappenin.interledger.ilpv4.connector.routing.RoutableAccount;
-import com.sappenin.interledger.ilpv4.connector.routing.RoutingService;
+import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
-import org.interledger.core.InterledgerErrorCode;
-import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.plugin.lpiv2.Plugin;
@@ -20,15 +13,9 @@ import org.interledger.plugin.lpiv2.PluginType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-
-import static com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants.CCP_CONTROL_DESTINATION_ADDRESS;
-import static com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants.CCP_UPDATE_DESTINATION_ADDRESS;
-import static com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION;
 
 /**
  * <p>A LPIv2 {@link Plugin} that implements the ILP Peer Config sub-protocol, which allows two peers to exchange
@@ -46,7 +33,7 @@ public class PeerRouteProtocolPlugin extends InternallyRoutedPlugin implements P
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  private final RoutingService routingService;
+  private final ExternalRoutingService externalRoutingService;
 
   /**
    * Required-args Constructor.
@@ -55,11 +42,11 @@ public class PeerRouteProtocolPlugin extends InternallyRoutedPlugin implements P
    * @param oerCodecContext
    */
   public PeerRouteProtocolPlugin(
-    final PluginSettings pluginSettings, final CodecContext oerCodecContext, final RoutingService routingService
+    final PluginSettings pluginSettings, final CodecContext oerCodecContext, final ExternalRoutingService externalRoutingService
   ) {
     super(pluginSettings, oerCodecContext);
 
-    this.routingService = Objects.requireNonNull(routingService);
+    this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
   }
 
   @Override
@@ -99,7 +86,7 @@ public class PeerRouteProtocolPlugin extends InternallyRoutedPlugin implements P
 //            getIlpCodecContext().read(CcpRouteControlRequest.class, inputStream);
 //
 //          final RoutableAccount routableAccount =
-//            this.routingService.getTrackedAccount(this.getPluginSettings().getAccountAddress())
+//            this.externalRoutingService.getTrackedAccount(this.getPluginSettings().getAccountAddress())
 //              .orElseThrow(() -> new RuntimeException("No tracked RoutableAccount found!"));
 //
 //          routableAccount.getCcpSender().handleRouteControlRequest(routeControlRequest);
@@ -115,7 +102,7 @@ public class PeerRouteProtocolPlugin extends InternallyRoutedPlugin implements P
 //            getIlpCodecContext().read(CcpRouteUpdateRequest.class, inputStream);
 //
 //          final RoutableAccount routableAccount =
-//            this.routingService.getTrackedAccount(this.getPluginSettings().getAccountAddress())
+//            this.externalRoutingService.getTrackedAccount(this.getPluginSettings().getAccountAddress())
 //              .orElseThrow(() -> new RuntimeException("No tracked RoutableAccount found!"));
 //
 //          routableAccount.getCcpReceiver().handleRouteUpdateRequest(routeUpdateRequest);

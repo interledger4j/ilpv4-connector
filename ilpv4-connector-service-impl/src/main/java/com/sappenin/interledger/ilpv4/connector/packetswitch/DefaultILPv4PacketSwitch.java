@@ -6,16 +6,15 @@ import com.sappenin.interledger.ilpv4.connector.Account;
 import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.fx.ExchangeRateService;
-import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.DefaultSendDataFilterChain;
-import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.SendDataFilter;
-import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.SendDataFilterChain;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.DefaultPacketSwitchFilterChain;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PacketSwitchFilter;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PacketSwitchFilterChain;
 import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
 import com.sappenin.interledger.ilpv4.connector.routing.Route;
 import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.immutables.value.Value;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
@@ -44,132 +43,86 @@ import java.util.function.Supplier;
 public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultILPv4PacketSwitch.class);
+  private static final String DESTINATION_ADDRESS_IS_UNREACHABLE = "Destination address is unreachable";
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
-  private final PaymentRouter<Route> paymentRouter;
+  private final PaymentRouter<Route> internalPaymentRouter;
+  private final PaymentRouter<Route> externalRoutingService;
   private final ExchangeRateService exchangeRateService;
   private final AccountManager accountManager;
+  private final InterledgerAddressUtils addressUtils;
 
-  private final List<SendDataFilter> sendDataFilters;
+  private final List<PacketSwitchFilter> packetSwitchFilters;
 
   /**
    * Required-args Constructor.
    */
   public DefaultILPv4PacketSwitch(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final PaymentRouter<Route> paymentRouter,
+    final PaymentRouter<Route> internalPaymentRouter,
+    final PaymentRouter<Route> externalRoutingService,
     final ExchangeRateService exchangeRateService,
-    final AccountManager accountManager
+    final AccountManager accountManager,
+    final InterledgerAddressUtils addressUtils
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
-    this.paymentRouter = Objects.requireNonNull(paymentRouter);
+    this.internalPaymentRouter = Objects.requireNonNull(internalPaymentRouter);
+    this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
     this.exchangeRateService = Objects.requireNonNull(exchangeRateService);
     this.accountManager = Objects.requireNonNull(accountManager);
-
-    this.sendDataFilters = Lists.newArrayList();
+    this.addressUtils = Objects.requireNonNull(addressUtils);
+    this.packetSwitchFilters = Lists.newArrayList();
   }
 
   @Override
   public final CompletableFuture<Optional<InterledgerResponsePacket>> routeData(
     final AccountId sourceAccountId, final InterledgerPreparePacket incomingSourcePreparePacket
   ) {
-
     Objects.requireNonNull(sourceAccountId);
     Objects.requireNonNull(incomingSourcePreparePacket);
 
-    //    This logic should move to 1 or more Packet filters so that this method can apply each filter?
-    //    Or, we can assume that the Fabric always does this, and then applies any filters before hand? The problem is that it's
-    //  difficult to create the notion of a pre and post filter. So, either we do that, or we should move all of this into its
-    //   own packetfilter. Look at ServletFilter for an exmaple...maybe we just have pre and post filters...
-
-    //    if (sourcePreparePacket.getDestination().startsWith(DefaultILPv4Connector.PEER_PROTOCOL_PREFIX)) {
-    //      // TODO: FINISH!
-    //      throw new RuntimeException("Peer packets should be routed to a different switch!");
-    //      //return this.peerProtocolController.handle(packet, sourceAccount, {parsedPacket})
-    //    } else if (sourcePreparePacket.getDestination().equals(connectorSettings.getOperatorAddress())) {
-    //      final InterledgerPreparePacket returnPacket =
-    //        this.echoController.handleIncomingData(sourceAccountId, sourcePreparePacket);
-    //      // Send the echo payment....
-    //      this.routeData(sourceAccountId, returnPacket);
-    //      // Fulfill the original payment...
-    //      return CompletableFuture.completedFuture(Optional.of(
-    //        InterledgerFulfillPacket.builder()
-    //          .fulfillment(ECHO_FULFILLMENT)
-    //          .build()
-    //        )
-    //      );
-    //    } else {
     try {
-      final NextHopInfo nextHopInfo = getNextHopPacket(sourceAccountId, incomingSourcePreparePacket);
 
-      // TODO: Make this configurable. See JS Connector for details.
-      // TODO: Move this to the routing layer. If the router is configured to not return a NextHop like this, then
-      // this should never happen, and can be removed.
-      if (sourceAccountId.equals(nextHopInfo.nextHopAccountId())) {
-        throw new InterledgerProtocolException(
-          InterledgerRejectPacket.builder()
-            .code(InterledgerErrorCode.T01_LEDGER_UNREACHABLE)
-            .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
-            .message(
-              String.format("Refusing to route payments back to sender. sourceAccount=`%s` destinationAccount=`%s`",
-                sourceAccountId, nextHopInfo.nextHopAccountId()))
-            .build()
-        );
+      // Before packet-forwarding is engaged, this code ensures the incoming account/packet information is eligible
+      // to be packet-switched, considering the destination address as well as characteristics of the source account.
+      if (
+        !addressUtils.isDestinationAllowedFromAccount(sourceAccountId, incomingSourcePreparePacket.getDestination())
+      ) {
+        // REJECT!
+        return CompletableFuture.completedFuture(Optional.of(InterledgerRejectPacket.builder()
+          .code(InterledgerErrorCode.F02_UNREACHABLE)
+          .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
+          .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
+          .build()));
+      } else {
+
+        /////////////////
+        // If we get here, then route the packet according to whatever is in the routing table.
+        /////////////////
+
+        final NextHopInfo nextHopInfo = getNextHopPacket(sourceAccountId, incomingSourcePreparePacket);
+
+        // TODO: Add Logging Filter...
+        // TODO: Add ExchangeRate Update filter...
+
+        // Create a new FilterChain, and use it to both filter the routeData call, as well as to make the actual call.
+        final Plugin<? extends PluginSettings> plugin =
+          this.accountManager.safeGetAccount(nextHopInfo.nextHopAccountId()).getPlugin();
+
+        final PacketSwitchFilterChain filterChain =
+          new DefaultPacketSwitchFilterChain(this.packetSwitchFilters, plugin);
+        return filterChain.doFilter(sourceAccountId, incomingSourcePreparePacket)
+          .exceptionally(error -> {
+            // Any rejections should be caught here, and returned as such....
+            if (error instanceof InterledgerProtocolException) {
+              final InterledgerProtocolException ilpError = (InterledgerProtocolException) error;
+              return Optional.of(ilpError.getInterledgerRejectPacket());
+            } else {
+              LOGGER.error(error.getMessage(), error);
+              return Optional.empty();
+            }
+          });
       }
-
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(
-          "Sending outbound ILP Prepare. destination={} packet={}", nextHopInfo.nextHopAccountId(),
-          nextHopInfo.nextHopPacket()
-        );
-      }
-
-      // Create a new FilterChain, and use it to both filter the routeData call, as well as to make the actual call.
-      final Plugin<? extends PluginSettings> plugin =
-        this.accountManager.safeGetAccount(nextHopInfo.nextHopAccountId()).getPlugin();
-
-      final SendDataFilterChain filterChain = new DefaultSendDataFilterChain(this.sendDataFilters, plugin);
-
-      return filterChain.doFilter(sourceAccountId, incomingSourcePreparePacket)
-        .exceptionally(error -> {
-          // Any rejections should be caught here, and returned as such....
-          if (error instanceof InterledgerProtocolException) {
-            final InterledgerProtocolException ilpError = (InterledgerProtocolException) error;
-            return Optional.of(ilpError.getInterledgerRejectPacket());
-          } else {
-            LOGGER.error(error.getMessage(), error);
-            return Optional.empty();
-          }
-        });
-
-      // TODO: Add Logging Filter...
-      // TODO: Add ExchangeRate Update filter...
-
-      // Throws an exception if the lpi2 cannot be found...
-      //      return this.accountManager
-      //        .getOrCreatePlugin(nextHopInfo.nextHopAccountAddress())
-      //        .routeData(nextHopInfo.nextHopPacket())
-      //        .thenApplyAsync((result) -> {
-      //          // Log the fulfillment...
-      //          if (LOGGER.isDebugEnabled()) {
-      //            LOGGER.debug(
-      //              "Received fulfillment: {}", result
-      //            );
-      //          }
-      //          return result;
-      //        })
-      //        .thenApplyAsync((result) -> {
-      //          // Log statistics in the ExchangeRateService...
-      //          this.exchangeRateService.logPaymentStats(
-      //            ImmutableUpdateRatePaymentParams.builder()
-      //              .sourceAccountId(sourceAccountId)
-      //              .sourceAmount(sourcePreparePacket.getAmount())
-      //              .destinationAccountAddress(nextHopInfo.nextHopAccountAddress())
-      //              .destinationAmount(nextHopInfo.nextHopPacket().getAmount())
-      //              .build()
-      //          );
-      //          return result;
-      //        });
     } catch (InterledgerProtocolException e) {
       // Any rejections should be caught here, and returned as such....
       return CompletableFuture.completedFuture(Optional.of(e.getInterledgerRejectPacket()));
@@ -177,12 +130,12 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   }
 
   /**
-   * Construct the next ILP prepare packet.
+   * Construct the <tt>next-hop</tt> ILP prepare packet, meaning a new packet with potentially new pricing, destination,
+   * and expiry characterstics. This method also includes the proper "next hop" account that the new packet should be
+   * forwarded to in order to continue the Interledger protocol.
    *
-   * Given a previous ILP prepare packet ({@code sourcePacket}), return the next ILP prepare packet in the chain.
-   *
-   * * @param {string} sourceAccount ILP address of our peer who sent us the packet * @param {IlpPrepare} sourcePacket
-   * (Parsed packet that we received * @returns {NextHopPacketInfo} Account and packet for next hop
+   * Given a previous ILP prepare packet (i.e., a {@code sourcePacket}), return the next ILP prepare packet in the
+   * chain.
    *
    * @param sourceAccountId The {@link AccountId} of the peer who sent this packet into the Connector. This is typically
    *                        the remote peer-address configured in a plugin.
@@ -202,26 +155,42 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
       );
     }
 
+    // We first check the External routing table, because in the general case, _most_ packets will traverse this path.
+    // If there is no route here, fallback to the internal routing-table. If no route is found there, then reject.
     final InterledgerAddress destinationAddress = sourcePacket.getDestination();
 
-    final Route nextHopRoute = this.paymentRouter.findBestNexHop(destinationAddress)
-      .orElseThrow(() -> new InterledgerProtocolException(
-        InterledgerRejectPacket.builder()
-          .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
-          .code(InterledgerErrorCode.F02_UNREACHABLE)
-          .message(
-            String.format("No route found from source(`%s`) to destination(`%s`).",
-              sourceAccountId, destinationAddress.getValue())
+    final Route nextHopRoute = this.externalRoutingService.findBestNexHop(destinationAddress)
+      .orElseGet(() -> this.internalPaymentRouter.findBestNexHop(destinationAddress)
+        .orElseThrow(() -> new InterledgerProtocolException(
+            InterledgerRejectPacket.builder()
+              .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
+              .code(InterledgerErrorCode.F02_UNREACHABLE)
+              .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
+              .build(),
+            String.format("No route found from accountId(`%s`) to destination(`%s`).", sourceAccountId,
+              destinationAddress.getValue())
           )
-          .build()
-      ));
+        ));
 
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("Determined next hop: {}", nextHopRoute);
     }
 
+    // TODO: Make this configurable. See JS Connector for details.
+    if (sourceAccountId.equals(nextHopRoute.getNextHopAccountId())) {
+      throw new InterledgerProtocolException(
+        InterledgerRejectPacket.builder()
+          .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
+          .code(InterledgerErrorCode.F02_UNREACHABLE)
+          .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
+          .build(),
+        String.format("Refusing to route payments back to sender. sourceAccount=`%s` destinationAccount=`%s`",
+          sourceAccountId, nextHopRoute.getNextHopAccountId())
+      );
+    }
+
     final BigInteger nextAmount = this.determineNextAmount(sourceAccountId, sourcePacket);
-    return ImmutableNextHopInfo.builder()
+    return NextHopInfo.builder()
       .nextHopAccountId(nextHopRoute.getNextHopAccountId())
       .nextHopPacket(
         InterledgerPreparePacket.builder()
@@ -230,22 +199,6 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
           .expiresAt(determineDestinationExpiresAt(sourcePacket.getExpiresAt(), sourcePacket.getDestination()))
           .build())
       .build();
-  }
-
-  /**
-   * @deprecated This method should be removed, in-favor of settings up internal-accounts and real routing-table entries
-   * for things like `self` and `peer` in the routing service. Basically, it should be possible to track an account for
-   * any `self.` and `peer.` addresses using typical plugin infrasructure. In this way, we need to configure special
-   * accounts in the account-manager for these types of destination addresses.
-   */
-  @Deprecated
-  private boolean isInternallyRoutedDestination(final InterledgerAddress destinationAddress) {
-    Objects.requireNonNull(destinationAddress);
-
-    // NOTE: PRIVATE addresses should be routed normally, and not "internally" routed inside of this Connector.
-    return destinationAddress.startsWith(InterledgerAddressPrefix.SELF.getValue()) ||
-      destinationAddress.startsWith(InterledgerAddressPrefix.PEER.getValue()
-      );
   }
 
   /**
@@ -263,7 +216,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   ) {
     Objects.requireNonNull(sourcePacket);
 
-    if (this.isInternallyRoutedDestination(sourcePacket.getDestination())) {
+    if (!this.addressUtils.isExternalForwardingAllowed(sourcePacket.getDestination())) {
       return sourcePacket.getAmount();
     } else {
 
@@ -286,7 +239,9 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   ) {
     Objects.requireNonNull(sourceExpiry);
 
-    if (this.isInternallyRoutedDestination(destinationAddress)) {
+    if (!this.addressUtils.isExternalForwardingAllowed(destinationAddress)) {
+      // If this packet is not going to be externally-forwarded, then we don't need to wait for a downstream
+      // Connector to process it, so we can leave the expiry unchanged.
       return sourceExpiry;
     } else {
       final Instant nowTime = Instant.now();
@@ -344,25 +299,30 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   }
 
   @Override
-  public boolean add(final SendDataFilter sendDataFilter) {
-    Objects.requireNonNull(sendDataFilter);
-    return this.sendDataFilters.add(sendDataFilter);
+  public boolean add(final PacketSwitchFilter packetSwitchFilter) {
+    Objects.requireNonNull(packetSwitchFilter);
+    return this.packetSwitchFilters.add(packetSwitchFilter);
   }
 
   @Override
-  public void addFirst(final SendDataFilter sendDataFilter) {
-    Objects.requireNonNull(sendDataFilter);
-    this.sendDataFilters.add(0, sendDataFilter);
+  public void addFirst(final PacketSwitchFilter packetSwitchFilter) {
+    Objects.requireNonNull(packetSwitchFilter);
+    this.packetSwitchFilters.add(0, packetSwitchFilter);
   }
 
   @Override
-  public SendDataFilterChain getSendDataFilterChain() {
+  public PacketSwitchFilterChain getSendDataFilterChain() {
     return null;
   }
 
   @Override
-  public PaymentRouter<Route> getPaymentRouter() {
-    return this.paymentRouter;
+  public PaymentRouter<Route> getExternalPaymentRouter() {
+    return this.externalRoutingService;
+  }
+
+  @Override
+  public PaymentRouter<Route> getInternalPaymentRouter() {
+    return this.internalPaymentRouter;
   }
 
   /**
@@ -371,6 +331,10 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
    */
   @Value.Immutable
   interface NextHopInfo {
+
+    static ImmutableNextHopInfo.Builder builder() {
+      return ImmutableNextHopInfo.builder();
+    }
 
     /**
      * The {@link InterledgerAddress} of the next-hop account to send a prepare packet to.

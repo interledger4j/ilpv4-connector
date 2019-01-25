@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.PreDestroy;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,9 +38,11 @@ import java.util.stream.StreamSupport;
 import static com.sappenin.interledger.ilpv4.connector.routing.Route.HMAC;
 
 /**
- * The default implementation of {@link RoutingService}.
+ * An implementation of {@link ExternalRoutingService} that manages an in-memory routing table used to route packets
+ * between publicly accessible peers (i.e., other ILP nodes that we might want to forward public ILP network routing
+ * information to).
  */
-public class DefaultRoutingService implements RoutingService {
+public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
   private static final boolean SHOULD_SEND_ROUTES = true;
   private static final boolean SHOULD_NOT_SEND_ROUTES = false;
@@ -85,7 +86,7 @@ public class DefaultRoutingService implements RoutingService {
   /**
    * Required-args Constructor.
    */
-  public DefaultRoutingService(
+  public InMemoryExternalRoutingService(
     final CodecContext ilpCodecContext,
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountManager accountManager,
@@ -110,7 +111,7 @@ public class DefaultRoutingService implements RoutingService {
    * Required-args Constructor.
    */
   @VisibleForTesting
-  protected DefaultRoutingService(
+  protected InMemoryExternalRoutingService(
     final CodecContext ilpCodecContext,
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final RoutingTable<Route> localRoutingTable,
@@ -137,12 +138,13 @@ public class DefaultRoutingService implements RoutingService {
   public void start() {
     this.reloadLocalRoutes();
 
-    // Add each account to this service so that each can be tracked. For example, if a lpi2 for a given account
-    // disconnects, then we want this RoutingService to know about it so that payments aren't routed through a
+    // Add each non-internal account to this service so that each can be tracked. For example, if a lpi2 for a given
+    // account disconnects, then we want this ExternalRoutingService to know about it so that payments aren't routed through a
     // disconencted lpi2.
 
     this.accountManager.getAllAccounts()
       .map(Account::getAccountSettings)
+      .filter(accountSettings -> accountSettings.isInternal() == false)
       .map(AccountSettings::getId)
       .forEach(this::registerAccount);
   }
@@ -557,7 +559,7 @@ public class DefaultRoutingService implements RoutingService {
   protected void reloadLocalRoutes() {
     logger.debug("Entering #reloadLocalRoutes...");
 
-    // Rese the local routing table.
+    // Reset the local routing table.
     this.localRoutingTable.reset();
 
     // Local Accounts?
@@ -734,51 +736,4 @@ public class DefaultRoutingService implements RoutingService {
     return this.localRoutingTable;
   }
 
-  protected class RoutingTableEntryComparator implements Comparator<IncomingRoute> {
-    private final AccountManager accountManager;
-
-    public RoutingTableEntryComparator(final AccountManager accountManager) {
-      this.accountManager = Objects.requireNonNull(accountManager);
-    }
-
-    @Override
-    public int compare(IncomingRoute entryA, IncomingRoute entryB) {
-      // Null checks...
-      if (entryA == null && entryB == null) {
-        return 0;
-      } else if (entryA == null) {
-        return 1;
-      } else if (entryB == null) {
-        return -1;
-      }
-
-      // First sort by peer weight
-      int weight1 = getWeight(entryA);
-      int weight2 = getWeight(entryB);
-
-      if (weight1 != weight2) {
-        return weight2 - weight1;
-      }
-
-      // Then sort by path length
-      int sizePathA = entryA.getPath().size();
-      int sizePathB = entryB.getPath().size();
-
-      if (sizePathA != sizePathB) {
-        return sizePathA - sizePathB;
-      }
-
-      // Finally, tie-break by AccountId
-      return entryA.getPeerAccountId().compareTo(entryB.getPeerAccountId());
-    }
-
-    @VisibleForTesting
-    protected int getWeight(final IncomingRoute route) {
-      return this.accountManager.getAccount(route.getPeerAccountId())
-        .orElseThrow(() -> new RuntimeException(
-          String.format("Account should have existed: %s", route.getPeerAccountId())
-        ))
-        .getAccountSettings().getRelationship().getWeight();
-    }
-  }
 }

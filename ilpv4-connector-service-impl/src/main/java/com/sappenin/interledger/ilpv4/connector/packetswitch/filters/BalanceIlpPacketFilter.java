@@ -9,15 +9,15 @@ import java.util.concurrent.CompletableFuture;
 
 
 /**
- * An implementation of {@link SendDataFilter} for handling balances between two accounts/plugins in an ILP connector.
+ * An implementation of {@link PacketSwitchFilter} for handling balances between two accounts/plugins in an ILP connector.
  */
-public class BalanceIlpPacketFilter implements SendDataFilter {
+public class BalanceIlpPacketFilter implements PacketSwitchFilter {
 
   @Override
   public CompletableFuture<Optional<InterledgerResponsePacket>> doFilter(
     final AccountId sourceAccountId,
     final InterledgerPreparePacket sourcePreparePacket,
-    final SendDataFilterChain filterChain
+    final PacketSwitchFilterChain filterChain
   ) {
 
     // For now, this is just a pass-through.

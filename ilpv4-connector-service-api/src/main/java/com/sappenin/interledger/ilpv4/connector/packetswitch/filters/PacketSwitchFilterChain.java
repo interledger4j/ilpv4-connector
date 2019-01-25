@@ -12,9 +12,9 @@ import java.util.concurrent.CompletableFuture;
  * use the this contract to invoke the next filter in the chain, or if the calling filter is the last filter in the
  * chain, to invoke the send-data call on the targeted plugin resource at the end of the chain.
  *
- * @see SendDataFilter
+ * @see PacketSwitchFilter
  **/
-public interface SendDataFilterChain {
+public interface PacketSwitchFilterChain {
 
   CompletableFuture<Optional<InterledgerResponsePacket>> doFilter(
     AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket

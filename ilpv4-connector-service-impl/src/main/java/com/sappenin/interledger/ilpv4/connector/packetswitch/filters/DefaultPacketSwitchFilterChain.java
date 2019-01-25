@@ -4,15 +4,18 @@ import com.sappenin.interledger.ilpv4.connector.AccountId;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.plugin.lpiv2.Plugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-public class DefaultSendDataFilterChain implements SendDataFilterChain {
+public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
 
-  private final List<SendDataFilter> sendDataFilters;
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
+  private final List<PacketSwitchFilter> packetSwitchFilters;
   private final Plugin plugin;
   // The index of the filter to call next...
   private int _filterIndex;
@@ -20,11 +23,11 @@ public class DefaultSendDataFilterChain implements SendDataFilterChain {
   /**
    * A chain of filters that are applied to a routeData request before forwarding the actual request to the plugin.
    *
-   * @param sendDataFilters
+   * @param packetSwitchFilters
    * @param plugin
    */
-  public DefaultSendDataFilterChain(final List<SendDataFilter> sendDataFilters, final Plugin plugin) {
-    this.sendDataFilters = Objects.requireNonNull(sendDataFilters);
+  public DefaultPacketSwitchFilterChain(final List<PacketSwitchFilter> packetSwitchFilters, final Plugin plugin) {
+    this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
     this.plugin = Objects.requireNonNull(plugin);
   }
 
@@ -36,11 +39,14 @@ public class DefaultSendDataFilterChain implements SendDataFilterChain {
     Objects.requireNonNull(sourceAccountId);
     Objects.requireNonNull(sourcePreparePacket);
 
-    if (this._filterIndex < this.sendDataFilters.size()) {
-      return sendDataFilters.get(_filterIndex++).doFilter(sourceAccountId, sourcePreparePacket, this);
+    if (this._filterIndex < this.packetSwitchFilters.size()) {
+      return packetSwitchFilters.get(_filterIndex++).doFilter(sourceAccountId, sourcePreparePacket, this);
     } else {
+      logger.debug(
+        "Sending outbound ILP Prepare. sourceAccountId: `{}` plugin={} packet={}",
+        sourceAccountId, plugin, sourcePreparePacket
+      );
       return plugin.sendData(sourcePreparePacket);
     }
-
   }
 }

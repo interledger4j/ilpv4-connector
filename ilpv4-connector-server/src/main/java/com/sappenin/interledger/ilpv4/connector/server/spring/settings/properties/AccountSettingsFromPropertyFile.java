@@ -16,6 +16,7 @@ import java.util.Optional;
 public class AccountSettingsFromPropertyFile implements AccountSettings {
 
   private AccountId id;
+  private boolean internal;
   private Optional<String> ilpAddressSegment;
   private String description = "";
   private AccountRelationship relationship = AccountRelationship.CHILD;
@@ -37,6 +38,15 @@ public class AccountSettingsFromPropertyFile implements AccountSettings {
 
   public void setId(AccountId id) {
     this.id = id;
+  }
+
+  @Override
+  public boolean isInternal() {
+    return internal;
+  }
+
+  public void setInternal(boolean internal) {
+    this.internal = internal;
   }
 
   @Override

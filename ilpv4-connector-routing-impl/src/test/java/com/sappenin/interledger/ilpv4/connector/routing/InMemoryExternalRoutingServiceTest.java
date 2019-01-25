@@ -16,9 +16,9 @@ import org.slf4j.LoggerFactory;
 import java.util.function.Supplier;
 
 /**
- * Unit tests for {@link DefaultRoutingService}.
+ * Unit tests for {@link InMemoryExternalRoutingService}.
  */
-public class DefaultRoutingServiceTest {
+public class InMemoryExternalRoutingServiceTest {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -34,7 +34,7 @@ public class DefaultRoutingServiceTest {
   private ForwardingRoutingTable<IncomingRoute> incomingRoutingTable;
   private ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable;
 
-  private RoutingService routingService;
+  private ExternalRoutingService externalRoutingService;
 
   @Before
   public void setUp() {
@@ -47,7 +47,7 @@ public class DefaultRoutingServiceTest {
 
     this.codecContext = CcpCodecs.register(InterledgerCodecContextFactory.oer());
 
-    this.routingService = new DefaultRoutingService(
+    this.externalRoutingService = new InMemoryExternalRoutingService(
       codecContext,
       connectorSettingsSupplier,
       localRoutingTable,

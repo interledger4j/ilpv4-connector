@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -85,27 +86,37 @@ public class SingleConnectorSingleAccountBtpTest {
   @Test
   public void testAlicePingsAlice() throws InterruptedException, ExecutionException, TimeoutException {
     final BtpClientPlugin btpClient = getClientNodeFromGraph(ALICE).getContentObject();
+
+    final CountDownLatch latch = new CountDownLatch(1);
+    final long start = System.currentTimeMillis();
+
     final Optional<InterledgerResponsePacket> responsePacket = btpClient.ping(ALICE).get(TIMEOUT, TimeUnit.SECONDS);
 
     new InterledgerResponsePacketHandler() {
       @Override
       protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
         fail(String.format("Ping request fulfilled, but should have rejected: %s)", interledgerFulfillPacket));
+        latch.countDown();
       }
 
       @Override
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
         assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
-        assertThat(interledgerRejectPacket.getMessage(),
-          is("No route found from source(`AccountId(alice)`) to destination(`test.alice`)."));
+        assertThat(interledgerRejectPacket.getMessage(), is("Destination address is unreachable"));
         assertThat(interledgerRejectPacket.getTriggeredBy(), is(CONNIE));
+        latch.countDown();
       }
 
       @Override
       protected void handleExpiredPacket() {
         fail("Ping request expired, but should have fulfilled!");
+        latch.countDown();
       }
     }.handle(responsePacket);
+
+    latch.await(5, TimeUnit.SECONDS);
+    final long end = System.currentTimeMillis();
+    LOGGER.info("Ping took {}ms", end - start);
   }
 
   /**
@@ -124,6 +135,10 @@ public class SingleConnectorSingleAccountBtpTest {
     final InterledgerAddress randomDestination =
       InterledgerAddress.of(InterledgerAddressPrefix.TEST3.with(UUID.randomUUID().toString()).getValue());
     final BtpClientPlugin btpClient = getClientNodeFromGraph(ALICE).getContentObject();
+
+    final CountDownLatch latch = new CountDownLatch(1);
+    final long start = System.currentTimeMillis();
+
     final Optional<InterledgerResponsePacket> responsePacket =
       btpClient.ping(randomDestination).get(TIMEOUT, TimeUnit.SECONDS);
 
@@ -131,22 +146,27 @@ public class SingleConnectorSingleAccountBtpTest {
       @Override
       protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
         fail(String.format("Ping request fulfilled, but should have rejected: %s)", interledgerFulfillPacket));
+        latch.countDown();
       }
 
       @Override
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
         assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
-        assertThat(interledgerRejectPacket.getMessage(), is(
-          "No route found from source(`AccountId(alice)`) to destination(`" + randomDestination.getValue() + "`).")
-        );
+        assertThat(interledgerRejectPacket.getMessage(), is("Destination address is unreachable"));
         assertThat(interledgerRejectPacket.getTriggeredBy(), is(CONNIE));
+        latch.countDown();
       }
 
       @Override
       protected void handleExpiredPacket() {
         fail("Ping request expired, but should have fulfilled!");
+        latch.countDown();
       }
     }.handle(responsePacket);
+
+    latch.await(5, TimeUnit.SECONDS);
+    final long end = System.currentTimeMillis();
+    LOGGER.info("Ping took {}ms", end - start);
   }
 
   /////////////////
@@ -191,6 +211,9 @@ public class SingleConnectorSingleAccountBtpTest {
     Objects.requireNonNull(senderNodeAddress);
     Objects.requireNonNull(destinationAddress);
 
+    final CountDownLatch latch = new CountDownLatch(1);
+    final long start = System.currentTimeMillis();
+
     final BtpClientPlugin btpClient = getClientNodeFromGraph(ALICE).getContentObject();
     final Optional<InterledgerResponsePacket> responsePacket =
       btpClient.ping(destinationAddress).get(TIMEOUT, TimeUnit.SECONDS);
@@ -199,17 +222,24 @@ public class SingleConnectorSingleAccountBtpTest {
       @Override
       protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
         assertThat(interledgerFulfillPacket.getFulfillment().validateCondition(PING_PROTOCOL_CONDITION), is(true));
+        latch.countDown();
       }
 
       @Override
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
         fail(String.format("Ping request rejected, but should have fulfilled: %s", interledgerRejectPacket));
+        latch.countDown();
       }
 
       @Override
       protected void handleExpiredPacket() {
         fail("Ping request expired, but should have fulfilled!");
+        latch.countDown();
       }
     }.handle(responsePacket);
+
+    latch.await(5, TimeUnit.SECONDS);
+    final long end = System.currentTimeMillis();
+    LOGGER.info("Ping took {}ms", end - start);
   }
 }

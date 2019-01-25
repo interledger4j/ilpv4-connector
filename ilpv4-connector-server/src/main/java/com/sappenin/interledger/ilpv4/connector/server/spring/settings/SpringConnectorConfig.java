@@ -16,11 +16,16 @@ import com.sappenin.interledger.ilpv4.connector.fx.DefaultExchangeRateService;
 import com.sappenin.interledger.ilpv4.connector.fx.ExchangeRateService;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.DefaultILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.InterledgerAddressUtils;
 import com.sappenin.interledger.ilpv4.connector.plugins.connectivity.PingProtocolPlugin;
 import com.sappenin.interledger.ilpv4.connector.plugins.connectivity.PingProtocolPluginFactory;
-import com.sappenin.interledger.ilpv4.connector.routing.DefaultRoutingService;
-import com.sappenin.interledger.ilpv4.connector.routing.NoOpRoutingService;
-import com.sappenin.interledger.ilpv4.connector.routing.RoutingService;
+import com.sappenin.interledger.ilpv4.connector.routing.DefaultInternalRoutingService;
+import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
+import com.sappenin.interledger.ilpv4.connector.routing.InMemoryExternalRoutingService;
+import com.sappenin.interledger.ilpv4.connector.routing.InternalRoutingService;
+import com.sappenin.interledger.ilpv4.connector.routing.NoOpExternalRoutingService;
+import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
+import com.sappenin.interledger.ilpv4.connector.routing.Route;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.btp.SpringBtpConfig;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
@@ -74,14 +79,6 @@ public class SpringConnectorConfig {
 
   @PostConstruct
   public void onStartup() {
-
-    // Once the Connector has been initialized, we start the routing service in order to initialize any default
-    // routes and/or other settings. No need to gate this on any modes, since each implementation of the
-    // RoutingService will handle this call properly.
-
-    // TODO This should be replaced by a proper Connector-eventing system that starts and stops various services
-    // after the Connector starts. See other parts of this code for some ideas around that system.
-    this.ilPv4Connector.getRoutingService().start();
   }
 
   @Bean
@@ -89,15 +86,17 @@ public class SpringConnectorConfig {
     return new EventBus();
   }
 
-  // This is just a supplier that can be given to beans for later usage after the application has started. This
-  // supplier will not resolve to anything until the `ConnectorSettings` bean has been loaded into the
-  // application-context, which occurs via the EnableConfigurationProperties annotation on this class.
+  /**
+   * <p>This is a supplier that can be given to beans for later usage after the application has started. This
+   * supplier will not resolve to anything until the `ConnectorSettings` bean has been loaded into the
+   * application-context, which occurs via the EnableConfigurationProperties annotation on this class.</p>
+   *
+   * <p>The normal `ConnectorSettings` will be the one loaded from the Properties files above (see
+   * ConnectorSettingsFromPropertyFile). However, for IT purposes, we can optionally use an overrided instance of {@link
+   * ConnectorSettings}.</p>
+   */
   @Bean
   Supplier<ConnectorSettings> connectorSettingsSupplier() {
-
-    // The normal `ConnectorSettings` will be the one loaded from the Properties files above (see
-    // ConnectorSettingsFromPropertyFile). However, for IT purposes, we want to use the override.
-
     if (applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME) != null) {
       return () -> (ConnectorSettings) applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME);
     } else {
@@ -162,38 +161,59 @@ public class SpringConnectorConfig {
     return new DefaultAccountSettingsResolver(connectorSettingsSupplier, accountIdResolver, accountManager);
   }
 
+  ///////////////////////////
+  // Internal Routing Table
+
   @Bean
+  public InternalRoutingService internalPaymentRouter() {
+    return new DefaultInternalRoutingService();
+  }
+
+  ///////////////////////////
+  // External Routing Service
+  ///////////////////////////
+  @Bean
+  @Qualifier("externalPaymentRouter")
   @Profile(ConnectorProfile.CONNECTOR_MODE)
-  RoutingService connectorModeRoutingService(
+  ExternalRoutingService connectorModeRoutingService(
     @Qualifier(ILP) CodecContext ilpCodecContext,
     Supplier<ConnectorSettings> connectorSettingsSupplier,
     AccountManager accountManager,
     AccountIdResolver accountIdResolver
   ) {
-    return new DefaultRoutingService(ilpCodecContext, connectorSettingsSupplier, accountManager, accountIdResolver);
+    return new InMemoryExternalRoutingService(ilpCodecContext, connectorSettingsSupplier, accountManager,
+      accountIdResolver);
   }
 
   @Bean
+  @Qualifier("externalPaymentRouter")
   @Profile({ConnectorProfile.PLUGIN_MODE})
-  RoutingService pluginModePaymentRoutingService() {
-    return new NoOpRoutingService();
+  ExternalRoutingService pluginModePaymentRoutingService() {
+    return new NoOpExternalRoutingService();
+  }
+
+  @Bean
+  InterledgerAddressUtils interledgerAddressUtils(
+    final Supplier<ConnectorSettings> connectorSettingsSupplier, final AccountManager accountManager
+  ) {
+    return new InterledgerAddressUtils(connectorSettingsSupplier, accountManager);
   }
 
   @Bean
   ILPv4PacketSwitch ilpPacketSwitch(
     Supplier<ConnectorSettings> connectorSettingsSupplier,
-    RoutingService routingService,
+    @Qualifier("internalPaymentRouter") PaymentRouter<Route> internalPaymentRouter,
+    @Qualifier("externalPaymentRouter") PaymentRouter<Route> externalPaymentRouter,
     ExchangeRateService exchangeRateService,
-    AccountManager accountManager
+    AccountManager accountManager,
+    InterledgerAddressUtils interledgerAddressUtils
   ) {
-    return new DefaultILPv4PacketSwitch(connectorSettingsSupplier, routingService, exchangeRateService,
-      accountManager);
+    return new DefaultILPv4PacketSwitch(
+      connectorSettingsSupplier, internalPaymentRouter, externalPaymentRouter,
+      exchangeRateService, accountManager, interledgerAddressUtils
+    );
   }
 
-  /**
-   * This is necessary to be able to supply references to this connector to dependent services, such as the BTP server
-   * handlers.
-   */
   @Bean
   ILPv4Connector ilpConnector(
     Supplier<ConnectorSettings> connectorSettingsSupplier,
@@ -201,7 +221,8 @@ public class SpringConnectorConfig {
     AccountSettingsResolver accountSettingsResolver,
     AccountManager accountManager,
     PluginManager pluginManager,
-    RoutingService routingService,
+    InternalRoutingService internalRoutingService,
+    ExternalRoutingService externalRoutingService,
     ILPv4PacketSwitch ilpPacketSwitch
   ) {
     // All initialization is performed in DefaultILPv4Connector#init
@@ -211,7 +232,7 @@ public class SpringConnectorConfig {
       accountSettingsResolver,
       accountManager,
       pluginManager,
-      routingService,
+      internalRoutingService, externalRoutingService,
       ilpPacketSwitch
     );
   }

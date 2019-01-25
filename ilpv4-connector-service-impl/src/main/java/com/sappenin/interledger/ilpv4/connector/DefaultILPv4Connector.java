@@ -9,9 +9,9 @@ import com.sappenin.interledger.ilpv4.connector.events.IlpNodeEventHandler;
 import com.sappenin.interledger.ilpv4.connector.events.PluginConstructedEvent;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.plugins.connectivity.PingProtocolPlugin;
-import com.sappenin.interledger.ilpv4.connector.routing.ImmutableRoute;
+import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
+import com.sappenin.interledger.ilpv4.connector.routing.InternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.Route;
-import com.sappenin.interledger.ilpv4.connector.routing.RoutingService;
 import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
@@ -37,15 +37,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
- * <p>A default implementation of {@link ILPv4Connector}.</p>
+ * <p>A default implementation of an {@link ILPv4Connector}.</p>
  *
  * <h1>Accounts and Plugins</h1>
- * <p>A Connector Account contains a Plugin, and cannot be created until the Plugin is created. The flow is that a
- * Plugin connects and then emits an {@link PluginConnectedEvent}, which this class responds to by constructing an
- * account and adding the account to the {@link AccountManager} for tracking.</p>
+ * <p>A Connector Account contains a Plugin, and cannot be created until the Plugin is created. For some
+ * plugin/account combinations, this means that a Plugin must first connect, and then emits a {@link
+ * PluginConnectedEvent}, the Connector will respond to by constructing and beinging to manager an Account. In other
+ * cases, an Account is pre-configured in this node, and thus triggers the creation of a plugin which connects to a
+ * remote server (the PluginConnectedEvent process is the same in this case).
+ * </p>
  *
  * <h1>^^ Account Manager ^^</h1>
- * <p>Connector accounts are managed in the Connector by the AccountManager. Accounts are added to the AccountManager
+ * <p>Connector accounts are managed by the {@link AccountManager}. Accounts can be added to the AccountManager
  * indirectly in response to a particular Plugin emitting a {@link PluginConnectedEvent}. This process can be initiated
  * during Connector startup (by configuring accounts in a properties file, database, or other mechanism); or at runtime
  * via a configuration mechanism (e.g., Admin API). Additionally, depending on the Plugin type, incoming connections can
@@ -54,8 +57,8 @@ import java.util.function.Supplier;
  * </p>
  *
  * <h1>^^ Plugin Provider ^^</h1>
- * <p>Plugins are created dynamically in response to various events using a {@link PluginFactoryProvider}. To be
- * used by this connector, every plugin must have a corresponding factory class, which must be registered with the
+ * <p>Some plugin types are created dynamically in response to various events using a {@link PluginFactoryProvider}.
+ * To be used by this connector, every plugin must have a corresponding factory class, which must be registered with the
  * factory provider.</p>
  *
  * <h1>^^ Plugin Factory ^^</h1>
@@ -63,7 +66,8 @@ import java.util.function.Supplier;
  *
  * <h1>^^ Account Tracking ^^</h1>
  * When an account is constructed in response to a plugin connecting, the account is added to the {@link AccountManager}
- * for tracking. This makes the account eliglbe for routing, balance tracking, and packet-switching.
+ * for tracking. This makes the account eligible for balance tracking, packet-switching, and route-propagation via the
+ * CCP.
  *
  * <h2>^^ Server Account Tracking ^^</h2>
  * Some plugins support multiple accounts, such as a BTP WebSocket Server. For each connection the server accepts, a new
@@ -89,9 +93,11 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
   // TODO: Consider placing the PluginManager back inside of the AccountManager.
   private final AccountManager accountManager;
   private final PluginManager pluginManager;
-  private final RoutingService routingService;
 
-  // Handles all other packet addresses.
+  private final InternalRoutingService internalRoutingService;
+  private final ExternalRoutingService externalRoutingService;
+
+  // Handles all packet addresses.
   private final ILPv4PacketSwitch ilpPacketSwitch;
 
   public DefaultILPv4Connector(
@@ -100,7 +106,7 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
     final AccountSettingsResolver accountSettingsResolver,
     final AccountManager accountManager,
     final PluginManager pluginManager,
-    final RoutingService routingService,
+    final InternalRoutingService internalRoutingService, final ExternalRoutingService externalRoutingService,
     final ILPv4PacketSwitch ilpPacketSwitch
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
@@ -108,7 +114,8 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
     this.accountSettingsResolver = Objects.requireNonNull(accountSettingsResolver);
     this.accountManager = Objects.requireNonNull(accountManager);
     this.pluginManager = Objects.requireNonNull(pluginManager);
-    this.routingService = Objects.requireNonNull(routingService);
+    this.internalRoutingService = Objects.requireNonNull(internalRoutingService);
+    this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
     this.ilpPacketSwitch = Objects.requireNonNull(ilpPacketSwitch);
   }
 
@@ -117,7 +124,6 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
    */
   @PostConstruct
   private final void init() {
-
     // ^^ Preconfigurated Accounts ^^
     // For any pre-configured accounts, we need to construct their corresponding plugin and `connect` it so it will
     // be added to the AccountManager for proper tracking.
@@ -154,7 +160,7 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
     final EnabledProtocolSettings enabledProtocolSettings = connectorSettingsSupplier.get().getEnabledProtocols();
 
     if (enabledProtocolSettings.isPingProtocolEnabled()) {
-      this.enablePingProtocol();
+      this.initializePingEchoProtocol();
     }
     // TODO: re-enable after RFC
     //    if (enabledProtocolSettings.isPingProtocolEnabled()) {
@@ -185,8 +191,13 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
   }
 
   @Override
-  public RoutingService getRoutingService() {
-    return this.routingService;
+  public ExternalRoutingService getExternalRoutingService() {
+    return this.externalRoutingService;
+  }
+
+  @Override
+  public InternalRoutingService getInternalRoutingService() {
+    return this.internalRoutingService;
   }
 
   @Override
@@ -194,13 +205,15 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
     return this.ilpPacketSwitch;
   }
 
-  // TODO: SendData Should be part of a ConnectoAdministrative service. It should not be a part of the Connector's
-  //  business logic proper, because the only thing a Connector does is handle an incoming packet.
+  // TODO: Move this to an admin interface that this Connector _has_. Consider making this connector be part of a
+  //  ConnectoAdministrative service.
+  //  It should not be a part of the Connector's
+  //  business logic proper, because the only thing a Connector does is handle an administratively triggered packet.
 
   // From the perspective of a Connector/Switch, it's only ever handling incoming data from an account, and then
   // routing it to another account.
   //  @Override
-  //  public CompletableFuture<Optional<InterledgerResponsePacket>> routeData(
+  //  public CompletableFuture<Optional<InterledgerResponsePacket>> sendData(
   //    final AccountId accountId, final InterledgerPreparePacket preparePacket
   //  ) {
   //    Objects.requireNonNull(accountId);
@@ -274,89 +287,42 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
   }
 
   /**
-   * Enables support for the `PING` and `ECHO` protocols by installing entries into the routing table to handle this
-   * type of packet.
+   * <p>Enables support for the `PING` and `ECHO` protocols by installing entries into the internal routing table and
+   * configuring the account-manager properly.</p>
+   *
+   * <p>Internal routing of this type of packet works as follows:
+   * <ol>
+   * <li>A packet addressed to this Connector enters the switching fabric.</li>
+   * <li>The internal routing table has an entry that forwards the packet to a local account associated to an
+   * instance of the Ping Plugin.</li>
+   * <li>The Ping Plugin handles the packet appropriately.</li>
+   * </ol>
+   * </p>
    */
-  private void enablePingProtocol() {
+  private void initializePingEchoProtocol() {
     ////////////////
     // PING PROTOCOL
     ////////////////
 
-    // This account handles all `ping` protocol requests and responses. The account for this plugin is called `self
-    // .ping`, which is an internal ILP account operated by this plugin. In other words, if you want to ping this
-    // connector, you need to send a payment directly to the connector, and this account both segments that
-    // handler from the typical Connector switching fabric, but also conveniently tracks those payments. In this way,
-    // ping packets can drain liquidity from this Connector's peer that is forwarding the ping packets.
-    final UUID accountUuid = UUID.randomUUID();
-    final AccountId accountId = AccountId.of(accountUuid.toString());
+    final UUID pingAccountUuid = UUID.randomUUID();
+    final AccountId accountId = AccountId.of(pingAccountUuid.toString());
 
-    // For any packets destined to this Connector, we route them to the `self.ping` account.
-    final Route route = ImmutableRoute.builder()
+    final Route internalRoute = Route.builder()
+      // Never expires.
+      // No Auth needed (these routes are not propagated externally via CCP).
       .routePrefix(InterledgerAddressPrefix.from(connectorSettingsSupplier.get().getOperatorAddress()))
       .nextHopAccountId(accountId)
       .build();
-    this.getRoutingService().getRoutingTable().addRoute(route);
+    this.internalRoutingService.addRoute(internalRoute);
 
     final PluginSettings pingProtocolPluginSettings = ImmutablePluginSettings.builder()
       .pluginType(PingProtocolPlugin.PLUGIN_TYPE)
       .operatorAddress(connectorSettingsSupplier.get().getOperatorAddress())
       .build();
     final Plugin pingProtocolPlugin = this.pluginManager.createPlugin(accountId, pingProtocolPluginSettings);
-    pingProtocolPlugin.addPluginEventListener(accountUuid, this);
+    pingProtocolPlugin.addPluginEventListener(pingAccountUuid, this);
+    // Connecting this plugin will register it with the AccountManager.
     pingProtocolPlugin.connect().join();
-  }
-
-  /**
-   * Enables support for the `PING` and `ECHO` protocols by installing entries into the routing table to handle this
-   * type of packet.
-   */
-  private void enableEchoProtocol() {
-
-    // TODO: FIXME.
-
-    throw new RuntimeException("Not yet implemented!");
-
-    ////////////////
-    // PING PROTOCOL
-    ////////////////
-
-    //    // This account handles all `ping` protocol requests and responses. The account for this plugin is called `self
-    //    // .ping`, which is an internal ILP account operated by this plugin. In other words, if you want to ping this
-    //    // connector, you need to send a payment directly to the connector, and this account both segments that
-    //    // handler from the typical Connector switching fabric, but also conveniently tracks those payments. In this way,
-    //    // ping packets can drain liquidity from this Connector's peer that is forwarding the ping packets.
-    //    final PluginSettings pluginSettings = ImmutablePluginSettings.builder()
-    //      .pluginType(PingProtocolPlugin.PLUGIN_TYPE)
-    //      .localNodeAddress(connectorSettingsSupplier.get().getOperatorAddress())
-    //      .accountAddress(SELF_DOT_PING)
-    //      .build();
-    //    final AccountSettings accountSettings = ImmutableAccountSettings.builder()
-    //      .pluginSettings(pluginSettings)
-    //      .description("Plugin for handling ping-protocol packets.")
-    //      // TODO: Reconsider this...
-    //      .maximumPacketAmount(BigInteger.ZERO)
-    //      // From the perspective of the node operator, the _other_ node is the child of this node.
-    //      .relationship(AccountRelationship.CHILD)
-    //      .build();
-    //    this.getAccountManager().addAccount(accountSettings);
-    //
-    //    // For any packets destined to this Connector, we route them to the `self.ping` account.
-    //    final Route route = ImmutableRoute.builder()
-    //      .routePrefix(InterledgerAddressPrefix.from(connectorSettingsSupplier.get().getOperatorAddress()))
-    //      .nextHopAccount(SELF_DOT_PING)
-    //      .build();
-    //    this.getRoutingService().getRoutingTable().addRoute(route);
-
-    ////////////////
-    // `peer.config` PROTOCOL
-    ////////////////
-
-    ////////////////
-    // `peer.route` PROTOCOL
-    ////////////////
-    // A connector should be able to speak CCP with its peers. To do this, we utilize an Internally-routed plugin,
-    // which handles all incoming traffic for the `peer.route` address.
-
   }
 
   private void initializePeerConfigProtocol() {
@@ -399,14 +365,14 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
         .build()
     );
 
-    // TODO: Make the AccountManager handle this connection? Currently, the RoutingService _has an_ AccountManager, so
+    // TODO: Make the AccountManager handle this connection? Currently, the ExternalRoutingService _has an_ AccountManager, so
     // we don't really want to introduce a circular dependency here. However, it does seem natural that the
-    // AccountManager should choreograph everything in the RoutingService, rather than having any listeners in the
+    // AccountManager should choreograph everything in the ExternalRoutingService, rather than having any listeners in the
     // Routing Service.
 
-    // Register this account with the routing service...this won't work because the RoutingService won't start
+    // Register this account with the routing service...this won't work because the ExternalRoutingService won't start
     // tracking until the plugin connects, but by this point in time, the plugin has already connected!
-    routingService.registerAccount(accountSettings.getId());
+    externalRoutingService.registerAccount(accountSettings.getId());
   }
 
   /**
@@ -424,7 +390,7 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
     // TODO: See comment above about merging Routing registration into AccountMangager.
     // Remove the account from any other consideration.
     // Unregister this account with the routing service...
-    //this.routingService.unregisterAccount(accountId);
+    //this.externalRoutingService.unregisterAccount(accountId);
 
     this.accountManager.removeAccount(accountId);
   }
@@ -438,6 +404,45 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
   public void onError(final PluginErrorEvent event) {
     Objects.requireNonNull(event);
     logger.error("Plugin: {}; PluginError: {}", event.getPlugin(), event.getError());
+  }
+
+
+  private void updateConnectorSettings(final ConnectorSettings connectorSettings) {
+    Objects.requireNonNull(connectorSettings);
+
+    //    final ApplicationContext applicationContext = SpringContext.getApplicationContext();
+
+    //    applicationContext.getAutowireCapableBeanFactory()
+    //
+    //    if (applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME) != null) {
+    //      return () -> (ConnectorSettings) applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME);
+    //    } else {
+    //      // No override was detected, so return the normal variant that exists because of the EnableConfigurationProperties
+    //      // directive above.
+    //      return () -> applicationContext.getBean(ConnectorSettings.class);
+    //    }
+
+
+    //    this.connectorSettingsOverride.ifPresent(cso -> {
+    //      final BeanDefinitionRegistry registry = (
+    //        (BeanDefinitionRegistry) this.getContext().getAutowireCapableBeanFactory()
+    //      );
+    //
+    //      try {
+    //        registry.removeBeanDefinition(ConnectorSettingsFromPropertyFile.BEAN_NAME);
+    //      } catch (NoSuchBeanDefinitionException e) {
+    //        // Swallow...
+    //        logger.warn(e.getMessage(), e);
+    //      }
+    //
+    //      // Replace here...
+    //      this.getContext().getBeanFactory().registerSingleton(ConnectorSettings.BEAN_NAME, cso);
+    //    });
+
+
+    //    this.connectorSettingsOverride
+    //      .ifPresent(cso -> ((ApplicationPreparedEvent) event).getApplicationContext().getBeanFactory()
+    //        .registerSingleton(ConnectorSettings.OVERRIDE_BEAN_NAME, cso));
   }
 
 

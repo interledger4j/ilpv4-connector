@@ -1,9 +1,6 @@
 package org.interledger.ilpv4.connector.it.topologies.btp;
 
-import com.google.common.collect.Lists;
-import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.AccountProviderId;
-import com.sappenin.interledger.ilpv4.connector.StaticRoute;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import com.sappenin.interledger.ilpv4.connector.settings.AccountProviderSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.AccountRelationship;
@@ -89,10 +86,10 @@ public class SingleConnectorSingleAccountBtpTopology {
         //  reload themselves. The primary use-case is this IT where the RoutingSettings first get loaded from the
         //  .yml file, and then replaced in ConnectorServer. In ConnectorServer, we would want to call `reload` so
         //  that all sub-services re-initialized themselves with the new ConnectorSettings. This would also be useful
-        //  if ConnectorSettings ever change during runtime. For now, however, this is limited to the RoutingService,
+        //  if ConnectorSettings ever change during runtime. For now, however, this is limited to the ExternalRoutingService,
         // so we just manually trigger this here.
         //  @depracated
-        connieServerNode.getILPv4Connector().getRoutingService().start();
+        connieServerNode.getILPv4Connector().getExternalRoutingService().start();
 
         // Connect Alice to Connie.
         final BtpClientPluginNode pluginNode = new BtpClientPluginNode(constructClientConnection(conniePort, ALICE));
@@ -193,12 +190,6 @@ public class SingleConnectorSingleAccountBtpTopology {
       .globalPrefix(InterledgerAddressPrefix.TEST)
       .globalRoutingSettings(GlobalRoutingSettings.builder()
         .routingSecret("DocIHaveToTellYouSomethingAboutY")
-//        .staticRoutes(Lists.newArrayList(
-//          StaticRoute.builder()
-//            .peerAccountId(AccountId.of("*"))
-//            .targetPrefix(InterledgerAddressPrefix.TEST.with("connie"))
-//            .build()
-//        ))
         .build()
       )
       .addAccountProviderSettings(btpServerAccountSettings)
