@@ -1,5 +1,6 @@
-package org.interledger.ilpv4.connector.it;
+package org.interledger.ilpv4.connector.it.blast;
 
+import com.sappenin.interledger.ilpv4.connector.Account;
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.ConnectorProfile;
@@ -11,12 +12,10 @@ import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
-import org.interledger.ilpv4.ILPv4Node;
-import org.interledger.ilpv4.connector.it.topologies.btp.SingleConnectorSingleAccountBtpTopology;
-import org.interledger.ilpv4.connector.it.topology.BtpClientPluginNode;
+import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology;
 import org.interledger.ilpv4.connector.it.topology.PluginNode;
 import org.interledger.ilpv4.connector.it.topology.Topology;
-import org.interledger.plugin.lpiv2.btp2.spring.BtpClientPlugin;
+import org.interledger.lpiv2.blast.BlastPlugin;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -34,8 +33,8 @@ import java.util.concurrent.TimeoutException;
 import static com.sappenin.interledger.ilpv4.connector.plugins.connectivity.PingProtocolPlugin.PING_PROTOCOL_CONDITION;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
-import static org.interledger.ilpv4.connector.it.topologies.btp.SingleConnectorSingleAccountBtpTopology.ALICE;
-import static org.interledger.ilpv4.connector.it.topologies.btp.SingleConnectorSingleAccountBtpTopology.CONNIE;
+import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.ALICE_ADDRESS;
+import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.BOB_ADDRESS;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -43,40 +42,49 @@ import static org.junit.Assert.assertThat;
  * transferred both from Alice->Chloe, and then in the opposite direction. Thus, both Alice and Chloe sometimes play the
  * role of sender and sometimes play the role of receiver.
  */
-public class SingleConnectorSingleAccountBtpTest {
+// TODO: Once the PING protocol is specified via RFC, extract the PING tests into an abstract super-class. Every IT
+//  should excercise PING functionality as a baseline, and thus far both BTP and BLAST duplicate the same PING tests.
+public class TwoConnectorBlastIT {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(SingleConnectorSingleAccountBtpTest.class);
-  private static Topology topology = SingleConnectorSingleAccountBtpTopology.init();
+  private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorBlastIT.class);
+  private static Topology topology = TwoConnectorBlastTopology.init();
   private final int TIMEOUT = 10;
 
   @BeforeClass
   public static void setup() {
     System.setProperty("spring.profiles.active", ConnectorProfile.CONNECTOR_MODE + "," + ConnectorProfile.DEV);
-    System.setProperty(ConnectorProperties.BTP_ENABLED, "true");
-    System.setProperty(ConnectorProperties.WEBSOCKET_SERVER_ENABLED, "true");
+    System.setProperty(ConnectorProperties.BTP_ENABLED, "false");
+    System.setProperty(ConnectorProperties.WEBSOCKET_SERVER_ENABLED, "false");
+    System.setProperty(ConnectorProperties.BLAST_ENABLED, "true");
 
-    LOGGER.info("Starting test topology `{}`...", "SingleConnectorMultiAccountBtpTopology");
+    LOGGER.info("Starting test topology `{}`...", "TwoConnectorBlastTopology");
     topology.start();
-    LOGGER.info("Test topology `{}` started!", "SingleConnectorMultiAccountBtpTopology");
+    LOGGER.info("Test topology `{}` started!", "TwoConnectorBlastTopology");
   }
 
   @AfterClass
   public static void shutdown() {
-    LOGGER.info("Stopping test topology `{}`...", "SingleConnectorMultiAccountBtpTopology");
+    LOGGER.info("Stopping test topology `{}`...", "TwoConnectorBlastTopology");
     topology.stop();
-    LOGGER.info("Test topology `{}` stopped!", "SingleConnectorMultiAccountBtpTopology");
+    LOGGER.info("Test topology `{}` stopped!", "TwoConnectorBlastTopology");
   }
 
   @Test
   public void testAliceNodeSettings() {
-    final BtpClientPlugin clientConnection = getClientNodeFromGraph(ALICE).getContentObject();
-    assertThat(clientConnection.getPluginSettings().getOperatorAddress(), is(ALICE));
+    final ILPv4Connector connector = getILPv4NodeFromGraph(ALICE_ADDRESS);
+    assertThat(connector.getConnectorSettings().getOperatorAddress(), is(TwoConnectorBlastTopology.ALICE_ADDRESS));
+
+    final BlastPlugin blastPlugin = getBlastPluginFromGraph(ALICE_ADDRESS);
+    assertThat(blastPlugin.getPluginSettings().getOperatorAddress(), is(ALICE_ADDRESS));
   }
 
   @Test
-  public void testConnieNodeSettings() {
-    final ILPv4Node connieNode = getILPv4NodeFromGraph(CONNIE);
-    assertThat(connieNode.getNodeIlpAddress(), is(CONNIE));
+  public void testBobNodeSettings() {
+    final ILPv4Connector connector = getILPv4NodeFromGraph(BOB_ADDRESS);
+    assertThat(connector.getConnectorSettings().getOperatorAddress(), is(TwoConnectorBlastTopology.BOB_ADDRESS));
+
+    final BlastPlugin blastPlugin = getBlastPluginFromGraph(BOB_ADDRESS);
+    assertThat(blastPlugin.getPluginSettings().getOperatorAddress(), is(TwoConnectorBlastTopology.BOB_ADDRESS));
   }
 
   /**
@@ -85,12 +93,12 @@ public class SingleConnectorSingleAccountBtpTest {
    */
   @Test
   public void testAlicePingsAlice() throws InterruptedException, ExecutionException, TimeoutException {
-    final BtpClientPlugin btpClient = getClientNodeFromGraph(ALICE).getContentObject();
+    final BlastPlugin blastPlugin = getBlastPluginFromGraph(ALICE_ADDRESS);
 
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final Optional<InterledgerResponsePacket> responsePacket = btpClient.ping(ALICE).get(TIMEOUT, TimeUnit.SECONDS);
+    final Optional<InterledgerResponsePacket> responsePacket = blastPlugin.ping(ALICE_ADDRESS).get(TIMEOUT, TimeUnit.SECONDS);
 
     new InterledgerResponsePacketHandler() {
       @Override
@@ -103,7 +111,7 @@ public class SingleConnectorSingleAccountBtpTest {
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
         assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
         assertThat(interledgerRejectPacket.getMessage(), is("Destination address is unreachable"));
-        assertThat(interledgerRejectPacket.getTriggeredBy(), is(CONNIE));
+        assertThat(interledgerRejectPacket.getTriggeredBy(), is(BOB_ADDRESS));
         latch.countDown();
       }
 
@@ -123,8 +131,8 @@ public class SingleConnectorSingleAccountBtpTest {
    * Alice and Connie should have an account with each other, so this ping should succeed.
    */
   @Test
-  public void testAlicePingsConnie() throws InterruptedException, ExecutionException, TimeoutException {
-    this.testPing(ALICE, CONNIE);
+  public void testAlicePingsBob() throws InterruptedException, ExecutionException, TimeoutException {
+    this.testPing(ALICE_ADDRESS, BOB_ADDRESS);
   }
 
   /**
@@ -134,13 +142,14 @@ public class SingleConnectorSingleAccountBtpTest {
   public void testAlicePingsRandom() throws InterruptedException, ExecutionException, TimeoutException {
     final InterledgerAddress randomDestination =
       InterledgerAddress.of(InterledgerAddressPrefix.TEST3.with(UUID.randomUUID().toString()).getValue());
-    final BtpClientPlugin btpClient = getClientNodeFromGraph(ALICE).getContentObject();
+
+    final BlastPlugin blastPlugin = getBlastPluginFromGraph(ALICE_ADDRESS);
 
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
     final Optional<InterledgerResponsePacket> responsePacket =
-      btpClient.ping(randomDestination).get(TIMEOUT, TimeUnit.SECONDS);
+      blastPlugin.ping(randomDestination).get(TIMEOUT, TimeUnit.SECONDS);
 
     new InterledgerResponsePacketHandler() {
       @Override
@@ -153,7 +162,7 @@ public class SingleConnectorSingleAccountBtpTest {
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
         assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
         assertThat(interledgerRejectPacket.getMessage(), is("Destination address is unreachable"));
-        assertThat(interledgerRejectPacket.getTriggeredBy(), is(CONNIE));
+        assertThat(interledgerRejectPacket.getTriggeredBy(), is(BOB_ADDRESS));
         latch.countDown();
       }
 
@@ -194,9 +203,13 @@ public class SingleConnectorSingleAccountBtpTest {
    *
    * @return
    */
-  private BtpClientPluginNode getClientNodeFromGraph(final InterledgerAddress interledgerAddress) {
+  private BlastPlugin getBlastPluginFromGraph(final InterledgerAddress interledgerAddress) {
     Objects.requireNonNull(interledgerAddress);
-    return (BtpClientPluginNode) topology.getNode(interledgerAddress);
+    return (BlastPlugin) getILPv4NodeFromGraph(interledgerAddress).getAccountManager().getAllAccounts()
+      .filter(account -> account.getAccountSettings().getPluginType().equals(BlastPlugin.PLUGIN_TYPE))
+      .findFirst()
+      .map(Account::getPlugin)
+      .get();
   }
 
   /**
@@ -214,9 +227,9 @@ public class SingleConnectorSingleAccountBtpTest {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BtpClientPlugin btpClient = getClientNodeFromGraph(ALICE).getContentObject();
+    final BlastPlugin blastPlugin = getBlastPluginFromGraph(ALICE_ADDRESS);
     final Optional<InterledgerResponsePacket> responsePacket =
-      btpClient.ping(destinationAddress).get(TIMEOUT, TimeUnit.SECONDS);
+      blastPlugin.ping(destinationAddress).get(TIMEOUT, TimeUnit.SECONDS);
 
     new InterledgerResponsePacketHandler() {
       @Override

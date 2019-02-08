@@ -16,7 +16,7 @@ package org.interledger.ilpv4.connector.it.topologies.btp;
  *           │                      ┌──────────────┐                     │
  *           │                      │              │                     ▼
  * ┌───────────────────┐            │              │           ┌──────────────────┐
- * │      SENDER       │            │  CONNECTOR_MODE   │           │     RECEIVER     │
+ * │      SENDER       │            │  CONNECTOR   │           │     RECEIVER     │
  * │ test.connie.alice │───USD─────▷│ test.connie  │────EUR───▶│ test.connie.bob  │
  * └───────────────────┘            │              │           └──────────────────┘
  *                                  │              │
@@ -28,8 +28,8 @@ public class SingleConnectorMultiAccountBtpTopology {
 //  public static final String USD = "USD";
 //  public static final String EUR = "EUR";
 //
-//  public static final InterledgerAddress ALICE = InterledgerAddress.of("test.alice");
-//  public static final InterledgerAddress BOB = InterledgerAddress.of("test.bob");
+//  public static final InterledgerAddress ALICE_ADDRESS = InterledgerAddress.of("test.alice");
+//  public static final InterledgerAddress BOB_ADDRESS = InterledgerAddress.of("test.bob");
 //  public static final InterledgerAddress CONNIE = InterledgerAddress.of("test.connie");
 //  public static final InterledgerAddress ALICE_AT_CONNIE = CONNIE.with("alice");
 //  public static final InterledgerAddress BOB_AT_CONNIE = CONNIE.with("bob");
@@ -51,7 +51,7 @@ public class SingleConnectorMultiAccountBtpTopology {
 //      protected void doAfterGraphStartup(Topology g) {
 //
 //        // Connect Alice to Connie.
-//        g.addNode(ALICE, new BtpSingleAccountClientNode(constructBtpWebsocketClient(g, ALICE, ALICE_AT_CONNIE)));
+//        g.addNode(ALICE_ADDRESS, new BtpSingleAccountClientNode(constructBtpWebsocketClient(g, ALICE_ADDRESS, ALICE_AT_CONNIE)));
 //
 //
 //        //        g.addEdge(
@@ -59,7 +59,7 @@ public class SingleConnectorMultiAccountBtpTopology {
 //        //        );
 //
 //        // Connect Bob to Connie.
-//        g.addNode(BOB, new BtpSingleAccountClientNode(constructBtpWebsocketClient(g, BOB, BOB_AT_CONNIE)));
+//        g.addNode(BOB_ADDRESS, new BtpSingleAccountClientNode(constructBtpWebsocketClient(g, BOB_ADDRESS, BOB_AT_CONNIE)));
 //
 //        //        g.addEdge(
 //        //          new ClientWebsocketBtpPluginEdge(BOB_AT_CONNIE, connieAccountInBob(g))
@@ -79,7 +79,7 @@ public class SingleConnectorMultiAccountBtpTopology {
 //    // Configure Connie
 //    ///////////////////
 //    {
-//      topology.addNode(CONNIE, new BtpServerNode(new ConnectorServer(constructConnectorSettingsForConnie())));
+//      topology.addNode(CONNIE, new ConnectorServerNode(new ConnectorServer(constructConnectorSettingsForConnie())));
 //      // This must be set before startup in order for the Websocket Server to enable...
 //      //toServerNode(topology, CONNIE).setProperty(ConnectorSettings.PROPERTY_NAME__WEBSOCKETS_ENABLED, "true");
 //    }
@@ -88,18 +88,18 @@ public class SingleConnectorMultiAccountBtpTopology {
 //    // Configure Bob
 //    ///////////////////
 //    {
-//      //topology.addNode(BOB, new BtpSingleAccountClientNode(constructSingleAccountConnection(BOB, BOB_AT_CONNIE)));
+//      //topology.addNode(BOB_ADDRESS, new BtpSingleAccountClientNode(constructSingleAccountConnection(BOB_ADDRESS, BOB_AT_CONNIE)));
 //    }
 //
 //    LOGGER.info("\n" +
-//      "\nSTARTING 1-CONNECTOR_MODE TOPOLOGY" +
+//      "\nSTARTING 1-CONNECTOR TOPOLOGY" +
 //      "\n" +
 //      "                                                                                \n" +
 //      "          ┌────────────────────────────Setup──────────────────────────┐         \n" +
 //      "          │                      ┌──────────────┐                     │         \n" +
 //      "          │                      │              │                     ▼         \n" +
 //      "┌───────────────────┐            │              │           ┌──────────────────┐\n" +
-//      "│      SENDER       │            │  CONNECTOR_MODE   │           │     RECEIVER     │\n" +
+//      "│      SENDER       │            │  CONNECTOR   │           │     RECEIVER     │\n" +
 //      "│ test.connie.alice │───USD─────▷│ test.connie  │────USD───▶│ test.connie.bob  │\n" +
 //      "└───────────────────┘            │              │           └──────────────────┘\n" +
 //      "                                 │              │                               \n" +

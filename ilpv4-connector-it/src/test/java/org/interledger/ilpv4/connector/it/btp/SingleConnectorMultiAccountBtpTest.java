@@ -1,4 +1,4 @@
-package org.interledger.ilpv4.connector.it;
+package org.interledger.ilpv4.connector.it.btp;
 
 import org.interledger.ilpv4.ILPv4Receiver;
 import org.interledger.ilpv4.ILPv4Sender;
@@ -32,7 +32,7 @@ public class SingleConnectorMultiAccountBtpTest {
 //
 //  @Test
 //  public void testAliceNodeSettings() {
-//    final Plugin client = getPluginNodeFromGraph(ALICE).getPlugin(ALICE_AT_CONNIE);
+//    final Plugin client = getPluginNodeFromGraph(ALICE_ADDRESS).getPlugin(ALICE_AT_CONNIE);
 //    assertThat(client.getPluginSettings().getLocalNodeAddress(), is(ALICE_AT_CONNIE));
 //    assertThat(client.isConnected(), is(true));
 //  }
@@ -57,22 +57,22 @@ public class SingleConnectorMultiAccountBtpTest {
 //  //
 //  //  @Test
 //  //  public void testAlicePingsAlice() throws InterruptedException, ExecutionException, TimeoutException {
-//  //    this.testPing(ALICE, ALICE);
+//  //    this.testPing(ALICE_ADDRESS, ALICE_ADDRESS);
 //  //  }
 //  //
 //  //  @Test
 //  //  public void testAlicePingsAliceAtConnie() throws InterruptedException, ExecutionException, TimeoutException {
-//  //    this.testPing(ALICE, ALICE_AT_CONNIE);
+//  //    this.testPing(ALICE_ADDRESS, ALICE_AT_CONNIE);
 //  //  }
 //  //
 //  //  @Test
 //  //  public void testAlicePingsConnie() throws InterruptedException, ExecutionException, TimeoutException {
-//  //    this.testPing(ALICE, CONNIE);
+//  //    this.testPing(ALICE_ADDRESS, CONNIE);
 //  //  }
 //  //
 //  //  @Test
 //  //  public void testAlicePingsBob() throws InterruptedException, ExecutionException, TimeoutException {
-//  //    this.testPing(ALICE, BOB_AT_CONNIE);
+//  //    this.testPing(ALICE_ADDRESS, BOB_AT_CONNIE);
 //  //  }
 //
 //  /////////////////
@@ -113,7 +113,7 @@ public class SingleConnectorMultiAccountBtpTest {
 //  //  private BilateralSender getClientSenderFromGraph(final InterledgerAddress interledgerAddress) {
 //  //    Objects.requireNonNull(interledgerAddress);
 //  //
-//  //    final BilateralConnection connection = ((BtpSingleAccountClientNode) topology.getNode(ALICE)).getContentObject();
+//  //    final BilateralConnection connection = ((BtpSingleAccountClientNode) topology.getNode(ALICE_ADDRESS)).getContentObject();
 //  //    final AbstractBilateralComboMux comboMux = (AbstractBilateralComboMux) connection.getBilateralSenderMux();
 //  //
 //  //    return comboMux.getBilateralSender(ALICE_AT_CONNIE).get();

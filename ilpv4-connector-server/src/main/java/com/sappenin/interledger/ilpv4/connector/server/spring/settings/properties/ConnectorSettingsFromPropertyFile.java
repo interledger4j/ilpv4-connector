@@ -34,6 +34,8 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   private boolean websocketServerEnabled;
 
+  private boolean blastEnabled;
+
   private InterledgerAddressPrefix globalPrefix = InterledgerAddressPrefix.TEST;
 
   private GlobalRoutingSettingsFromPropertyFile globalRoutingSettings = new GlobalRoutingSettingsFromPropertyFile();
@@ -70,12 +72,30 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     this.enabledProtocols = enabledProtocols;
   }
 
+  @Override
+  public boolean websocketServerEnabled() {
+    return isWebsocketServerEnabled();
+  }
+
   public boolean isWebsocketServerEnabled() {
     return websocketServerEnabled;
   }
 
   public void setWebsocketServerEnabled(boolean websocketServerEnabled) {
     this.websocketServerEnabled = websocketServerEnabled;
+  }
+
+  @Override
+  public boolean blastEnabled() {
+    return isBlastEnabled();
+  }
+
+  public boolean isBlastEnabled() {
+    return blastEnabled;
+  }
+
+  public void setBlastEnabled(boolean blastEnabled) {
+    this.blastEnabled = blastEnabled;
   }
 
   @Override

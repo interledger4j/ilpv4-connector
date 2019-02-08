@@ -3,6 +3,8 @@ package com.sappenin.interledger.ilpv4.connector.routing;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.common.hash.Hashing;
 import com.sappenin.interledger.ilpv4.connector.Account;
 import com.sappenin.interledger.ilpv4.connector.AccountId;
@@ -42,7 +44,7 @@ import static com.sappenin.interledger.ilpv4.connector.routing.Route.HMAC;
  * between publicly accessible peers (i.e., other ILP nodes that we might want to forward public ILP network routing
  * information to).
  */
-public class InMemoryExternalRoutingService implements ExternalRoutingService {
+public class InMemoryExternalRoutingService implements ExternalRoutingService, PluginEventListener {
 
   private static final boolean SHOULD_SEND_ROUTES = true;
   private static final boolean SHOULD_NOT_SEND_ROUTES = false;
@@ -52,6 +54,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   private static final boolean ROUTES_HAVE_NOT_CHANGED = false;
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
+  private final EventBus eventBus;
 
   private final UUID routingServiceListenerId;
 
@@ -87,11 +91,13 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
    * Required-args Constructor.
    */
   public InMemoryExternalRoutingService(
+    final EventBus eventBus,
     final CodecContext ilpCodecContext,
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountManager accountManager,
     final AccountIdResolver accountIdResolver
   ) {
+    this.eventBus = Objects.requireNonNull(eventBus);
     this.ilpCodecContext = Objects.requireNonNull(ilpCodecContext);
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
 
@@ -112,6 +118,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
    */
   @VisibleForTesting
   protected InMemoryExternalRoutingService(
+    final EventBus eventBus,
     final CodecContext ilpCodecContext,
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final RoutingTable<Route> localRoutingTable,
@@ -120,6 +127,9 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     final AccountManager accountManager,
     final AccountIdResolver accountIdResolver
   ) {
+    this.eventBus = Objects.requireNonNull(eventBus);
+    this.eventBus.register(this);
+
     this.ilpCodecContext = Objects.requireNonNull(ilpCodecContext);
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.localRoutingTable = Objects.requireNonNull(localRoutingTable);
@@ -734,6 +744,36 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   @Override
   public RoutingTable<Route> getRoutingTable() {
     return this.localRoutingTable;
+  }
+
+  ////////////////////////
+  // Plugin Event Listener
+  ////////////////////////
+
+  /**
+   * Called to handle an {@link PluginConnectedEvent}.
+   *
+   * @param event A {@link PluginConnectedEvent}.
+   */
+  @Override
+  @Subscribe
+  public void onConnect(PluginConnectedEvent event) {
+    // Unregister the account (associated to the plugin that connected) with the routing service.
+    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getPlugin());
+    this.registerAccount(accountId);
+  }
+
+  /**
+   * Called to handle an {@link PluginDisconnectedEvent}.
+   *
+   * @param event A {@link PluginDisconnectedEvent}.
+   */
+  @Override
+  @Subscribe
+  public void onDisconnect(PluginDisconnectedEvent event) {
+    // Unregister the account (associated to the plugin that disconnected) from the routing service.
+    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getPlugin());
+    this.unregisterAccount(accountId);
   }
 
 }

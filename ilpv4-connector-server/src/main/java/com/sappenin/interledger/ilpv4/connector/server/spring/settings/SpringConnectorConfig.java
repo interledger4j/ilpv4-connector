@@ -26,6 +26,7 @@ import com.sappenin.interledger.ilpv4.connector.routing.InternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.NoOpExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
 import com.sappenin.interledger.ilpv4.connector.routing.Route;
+import com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.SpringConnectorWebMvc;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.btp.SpringBtpConfig;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
@@ -33,6 +34,8 @@ import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.plugin.lpiv2.LoopbackPlugin;
 import org.interledger.plugin.lpiv2.btp2.spring.factories.LoopbackPluginFactory;
 import org.interledger.plugin.lpiv2.btp2.spring.factories.PluginFactoryProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -43,7 +46,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
 import java.util.concurrent.Executor;
@@ -58,7 +60,7 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.Co
  * details.</p>
  */
 @Configuration
-@EnableConfigurationProperties(ConnectorSettingsFromPropertyFile.class)
+@EnableConfigurationProperties({ConnectorSettingsFromPropertyFile.class})
 @ConditionalOnExpression
 @Import(
   {
@@ -71,11 +73,10 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.Co
   })
 public class SpringConnectorConfig {
 
-  @Autowired
-  private ApplicationContext applicationContext;
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   @Autowired
-  private ILPv4Connector ilPv4Connector;
+  private ApplicationContext applicationContext;
 
   @PostConstruct
   public void onStartup() {
@@ -97,13 +98,16 @@ public class SpringConnectorConfig {
    */
   @Bean
   Supplier<ConnectorSettings> connectorSettingsSupplier() {
-    if (applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME) != null) {
-      return () -> (ConnectorSettings) applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME);
-    } else {
-      // No override was detected, so return the normal variant that exists because of the EnableConfigurationProperties
-      // directive above.
-      return () -> applicationContext.getBean(ConnectorSettings.class);
+    try {
+      final Object overrideBean = applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME);
+      return () -> (ConnectorSettings) overrideBean;
+    } catch (Exception e) {
+      logger.info("No Override Bean found....");
     }
+
+    // No override was detected, so return the normal variant that exists because of the EnableConfigurationProperties
+    // directive above.
+    return () -> applicationContext.getBean(ConnectorSettings.class);
   }
 
   @Bean
@@ -119,24 +123,23 @@ public class SpringConnectorConfig {
     // TODO: Register any SPI types..
     // See SPI as well as https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/io/support/SpringFactoriesLoader.html
 
-
     return provider;
   }
 
   @Bean
-  PluginManager pluginManager(PluginFactoryProvider pluginFactoryProvider) {
-    return new DefaultPluginManager(pluginFactoryProvider);
+  PluginManager pluginManager(EventBus eventBus, PluginFactoryProvider pluginFactoryProvider) {
+    return new DefaultPluginManager(eventBus, pluginFactoryProvider);
   }
 
   @Bean
-  AccountManager accountManager(Supplier<ConnectorSettings> connectorSettingsSupplier) {
-    return new DefaultAccountManager(connectorSettingsSupplier);
+  AccountManager accountManager(
+    Supplier<ConnectorSettings> connectorSettingsSupplier,
+    AccountIdResolver accountIdResolver, AccountSettingsResolver accountSettingsResolver,
+    PluginManager pluginManager, EventBus eventBus
+  ) {
+    return new DefaultAccountManager(connectorSettingsSupplier, accountIdResolver, accountSettingsResolver,
+      pluginManager, eventBus);
   }
-
-  //  @Bean
-  //  RoutingTable<Route> routeRoutingTable() {
-  //    return new InMemoryRoutingTable();
-  //  }
 
   @Bean
   ExchangeRateService exchangeRateService() {
@@ -155,38 +158,32 @@ public class SpringConnectorConfig {
 
   @Bean
   AccountSettingsResolver accountSettingsResolver(
-    Supplier<ConnectorSettings> connectorSettingsSupplier, AccountIdResolver accountIdResolver,
-    AccountManager accountManager
+    Supplier<ConnectorSettings> connectorSettingsSupplier, AccountIdResolver accountIdResolver
   ) {
-    return new DefaultAccountSettingsResolver(connectorSettingsSupplier, accountIdResolver, accountManager);
+    return new DefaultAccountSettingsResolver(connectorSettingsSupplier, accountIdResolver);
   }
-
-  ///////////////////////////
-  // Internal Routing Table
 
   @Bean
   public InternalRoutingService internalPaymentRouter() {
     return new DefaultInternalRoutingService();
   }
 
-  ///////////////////////////
-  // External Routing Service
-  ///////////////////////////
   @Bean
-  @Qualifier("externalPaymentRouter")
+  @Qualifier("externalPaymentRouter") // This is also a PaymentRouter
   @Profile(ConnectorProfile.CONNECTOR_MODE)
   ExternalRoutingService connectorModeRoutingService(
+    EventBus eventBus,
     @Qualifier(ILP) CodecContext ilpCodecContext,
     Supplier<ConnectorSettings> connectorSettingsSupplier,
     AccountManager accountManager,
     AccountIdResolver accountIdResolver
   ) {
-    return new InMemoryExternalRoutingService(ilpCodecContext, connectorSettingsSupplier, accountManager,
+    return new InMemoryExternalRoutingService(eventBus, ilpCodecContext, connectorSettingsSupplier, accountManager,
       accountIdResolver);
   }
 
   @Bean
-  @Qualifier("externalPaymentRouter")
+  @Qualifier("externalPaymentRouter") // This is also a PaymentRouter
   @Profile({ConnectorProfile.PLUGIN_MODE})
   ExternalRoutingService pluginModePaymentRoutingService() {
     return new NoOpExternalRoutingService();
@@ -217,29 +214,21 @@ public class SpringConnectorConfig {
   @Bean
   ILPv4Connector ilpConnector(
     Supplier<ConnectorSettings> connectorSettingsSupplier,
-    AccountIdResolver accountIdResolver,
-    AccountSettingsResolver accountSettingsResolver,
     AccountManager accountManager,
     PluginManager pluginManager,
     InternalRoutingService internalRoutingService,
     ExternalRoutingService externalRoutingService,
-    ILPv4PacketSwitch ilpPacketSwitch
+    ILPv4PacketSwitch ilpPacketSwitch,
+    EventBus eventBus
   ) {
-    // All initialization is performed in DefaultILPv4Connector#init
     return new DefaultILPv4Connector(
       connectorSettingsSupplier,
-      accountIdResolver,
-      accountSettingsResolver,
       accountManager,
       pluginManager,
       internalRoutingService, externalRoutingService,
-      ilpPacketSwitch
+      ilpPacketSwitch,
+      eventBus
     );
-  }
-
-  @Bean
-  RestTemplate restTemplate() {
-    return new RestTemplate();
   }
 
   @Bean

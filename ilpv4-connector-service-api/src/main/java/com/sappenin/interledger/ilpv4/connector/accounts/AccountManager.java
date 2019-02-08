@@ -27,26 +27,17 @@ import java.util.stream.Stream;
 public interface AccountManager {
 
   /**
-   * Stop tracking the Account. This will remove this account from consideration for packet-switching, as well as
-   * disable any Routing messages (if appropriate).
+   * Create an {@link Account} using the supplied {@code accountSettings}. The account won't
    *
-   * @return The account that was untracked, if any.
+   * @param accountSettings
    */
-  // Optional<Account> stopAccountTracking(InterledgerAddress accountAddress) throws RuntimeException;
+  void createAccount(final AccountSettings accountSettings);
 
   /**
    * Add an account to this manager using configured settings appropriate for the account. If the account already
    * exists, it is simply returned (i.e., no new account is constructed or connected)
    */
   Account addAccount(Account account) throws RuntimeException;
-
-  /**
-   * Start tracking the Account. This will enable this account to participate in packet-switching, as well as Routing
-   * (if appropriate).
-   *
-   * @return The account that was tracked.
-   */
-  // void startAccountTracking(InterledgerAddress accountAddress) throws RuntimeException;
 
   /**
    * Remove an account from this manager by its unique id.

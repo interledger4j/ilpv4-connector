@@ -49,6 +49,14 @@ public class AccountSettingsFromPropertyFile implements AccountSettings {
     this.internal = internal;
   }
 
+  /**
+   * Always set to true if the settings come from here...
+   */
+  @Override
+  public boolean isPreconfigured() {
+    return true;
+  }
+
   @Override
   public Optional<String> getIlpAddressSegment() {
     return ilpAddressSegment;

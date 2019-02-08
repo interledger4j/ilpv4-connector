@@ -1,6 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector;
 
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
+import com.sappenin.interledger.ilpv4.connector.accounts.PluginManager;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.InternalRoutingService;
@@ -41,6 +42,9 @@ public interface ILPv4Connector extends ILPv4Node {
   // level.
   AccountManager getAccountManager();
 
+  PluginManager getPluginManager();
+
   ExternalRoutingService getExternalRoutingService();
+
   InternalRoutingService getInternalRoutingService();
 }

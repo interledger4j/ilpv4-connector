@@ -13,9 +13,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 /**
  * Configures async and scheduling support in Spring.
  */
-@Configuration
-@EnableAsync
-@EnableScheduling
+//@Configuration
+//@EnableAsync
+//@EnableScheduling
 public class SpringAsyncConfig implements AsyncConfigurer {
 
   @Override

@@ -3,7 +3,6 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.settings.btp;
 import com.sappenin.interledger.ilpv4.connector.accounts.PluginManager;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.btp.connectorMode.BtpConnectorModeConfig;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.btp.pluginMode.BtpPluginModeConfig;
-import com.sappenin.interledger.ilpv4.connector.server.spring.settings.conditionals.BtpEnabledCondition;
 import org.interledger.btp.BtpResponsePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.plugin.lpiv2.btp2.spring.BtpClientPlugin;
@@ -17,20 +16,21 @@ import org.interledger.plugin.lpiv2.btp2.spring.factories.PluginFactoryProvider;
 import org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 import javax.annotation.PostConstruct;
 
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.BTP;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.BTP_ENABLED;
 
 /**
  * Spring configuration for BTP over Websocket.
  */
 @Configuration
-@Conditional(BtpEnabledCondition.class)
+@ConditionalOnProperty(BTP_ENABLED)
 @Import({BtpPluginModeConfig.class, BtpConnectorModeConfig.class}) // Each are conditional...
 public class SpringBtpConfig {
 

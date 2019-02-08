@@ -1,25 +1,37 @@
 package com.sappenin.interledger.ilpv4.connector.accounts;
 
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.sappenin.interledger.ilpv4.connector.AccountId;
 import org.interledger.plugin.lpiv2.AbstractPlugin;
 import org.interledger.plugin.lpiv2.Plugin;
 import org.interledger.plugin.lpiv2.PluginId;
 import org.interledger.plugin.lpiv2.PluginSettings;
 import org.interledger.plugin.lpiv2.btp2.spring.factories.PluginFactoryProvider;
+import org.interledger.plugin.lpiv2.events.PluginConnectedEvent;
+import org.interledger.plugin.lpiv2.events.PluginDisconnectedEvent;
+import org.interledger.plugin.lpiv2.events.PluginErrorEvent;
+import org.interledger.plugin.lpiv2.events.PluginEventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
 /**
  * A default implementation of {@link PluginManager} that stores all plugins in-memory.
  */
-public class DefaultPluginManager implements PluginManager {
+public class DefaultPluginManager implements PluginManager, PluginEventListener {
 
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
+  private final EventBus eventBus;
   private final PluginFactoryProvider pluginFactoryProvider;
 
   /**
    * Required-args constructor.
    */
-  public DefaultPluginManager(final PluginFactoryProvider pluginFactoryProvider) {
+  public DefaultPluginManager(final EventBus eventBus, final PluginFactoryProvider pluginFactoryProvider) {
+    this.eventBus = Objects.requireNonNull(eventBus);
+    this.eventBus.register(this);
     this.pluginFactoryProvider = Objects.requireNonNull(pluginFactoryProvider);
   }
 
@@ -42,5 +54,24 @@ public class DefaultPluginManager implements PluginManager {
     ((AbstractPlugin) plugin).setPluginId(PluginId.of(accountId.value()));
 
     return plugin;
+  }
+
+  @Override
+  // No need to @Subscribe
+  public void onConnect(PluginConnectedEvent event) {
+    // No-op.
+  }
+
+  @Override
+  // No need to @Subscribe
+  public void onDisconnect(PluginDisconnectedEvent event) {
+    // No-op.
+  }
+
+  @Override
+  @Subscribe
+  public void onError(PluginErrorEvent event) {
+    Objects.requireNonNull(event);
+    logger.error("Plugin: {}; PluginError: {}", event.getPlugin(), event.getError());
   }
 }

@@ -1,0 +1,226 @@
+package org.interledger.ilpv4.connector.it.topologies.blast;
+
+import com.sappenin.interledger.ilpv4.connector.Account;
+import com.sappenin.interledger.ilpv4.connector.AccountId;
+import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
+import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.IlpHttpController;
+import com.sappenin.interledger.ilpv4.connector.settings.AccountRelationship;
+import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.GlobalRoutingSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.ImmutableConnectorSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.ModifiableAccountSettings;
+import okhttp3.HttpUrl;
+import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.ilpv4.connector.it.topology.Topology;
+import org.interledger.ilpv4.connector.it.topology.nodes.ConnectorServerNode;
+import org.interledger.lpiv2.blast.BlastPlugin;
+import org.interledger.lpiv2.blast.BlastPluginSettings;
+import org.interledger.lpiv2.blast.ModifiableBlastPluginSettings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
+
+/**
+ * <p>A very simple topology that simulates a single ILP-over-HTTP (BLAST) connection between two Connectors.</p>
+ *
+ * <p>In this topology, Alice and Bob share a single XRP account (meaning Alice and Bob can owe
+ * each other XRP).</p>
+ *
+ * <p>Nodes in this topology are connected as follows:</p>
+ *
+ * <pre>
+ * ┌──────────────┐                     ┌──────────────┐
+ * │              ◁───────HTTP/2────────┤              │
+ * │              │                     │              │
+ * │  CONNECTOR   │                     │  CONNECTOR   │
+ * │  test.alice  │                     │   test.bob   │
+ * │              │                     │              │
+ * │              ├──────HTTP/2─────────▷              │
+ * └──────────────┘                     └──────────────┘
+ * </pre>
+ */
+public class TwoConnectorBlastTopology {
+
+  public static final String XRP = "XRP";
+
+  public static final String ALICE = "alice";
+  public static final String BOB = "bob";
+
+  public static final InterledgerAddress ALICE_ADDRESS = InterledgerAddress.of("test." + ALICE);
+  public static final InterledgerAddress BOB_ADDRESS = InterledgerAddress.of("test." + BOB);
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorBlastTopology.class);
+
+  static {
+    // This is set to 0 so that the "port" value is used instead...
+    System.setProperty("server.port", "0");
+    System.setProperty("spring.jmx.enabled", "false");
+    System.setProperty("spring.application.admin.enabled", "false");
+  }
+
+  /**
+   * In this topology, each Connector starts-up with an Account for the other connector. During initialization,
+   *
+   * @return
+   */
+  public static Topology init() {
+
+    // Some configuration must be done _after_ the topology starts...e.g., to grab the port that will be used.
+    final Topology topology = new Topology(new Topology.PostConstructListener() {
+      @Override
+      protected void doAfterTopologyStartup(Topology g) {
+        final ConnectorServerNode aliceServerNode = g.getNode(ALICE_ADDRESS.getValue(), ConnectorServerNode.class);
+        final int alicePort = aliceServerNode.getPort();
+        final ConnectorServerNode bobServerNode = g.getNode(BOB_ADDRESS.getValue(), ConnectorServerNode.class);
+        final int bobPort = bobServerNode.getPort();
+
+        try {
+          {
+            final Account bobAccount = aliceServerNode.getILPv4Connector().getAccountManager()
+              .getAccount(AccountId.of(BOB_ADDRESS.getValue())).get();
+
+            // Need to reach-into the AccountManager and adjust the outgoing URL for Bob, based upon the newly discovered
+            // port in `bobBlastUrl`
+            final HttpUrl bobBlastUrl = HttpUrl.parse("http://localhost:" + bobPort + IlpHttpController.ILP_PATH);
+            final ModifiableBlastPluginSettings modifiableBlastPluginSettings = (ModifiableBlastPluginSettings)
+              bobAccount.getPlugin().getPluginSettings();
+            modifiableBlastPluginSettings.setOutgoingUrl(bobBlastUrl);
+            ((BlastPlugin) bobAccount.getPlugin()).reconfigure(modifiableBlastPluginSettings);
+
+            // Try to re-connect the plugin...
+            bobAccount.getPlugin().connect().get(5, TimeUnit.SECONDS);
+          }
+          {
+            final Account aliceAccount = bobServerNode.getILPv4Connector().getAccountManager()
+              .getAccount(AccountId.of(ALICE_ADDRESS.getValue())).get();
+
+            // Need to reach-into the AccountManager and adjust the outgoing URL for Alice, based upon the newly
+            // discovered port in `aliceBlastUrl`
+            final HttpUrl aliceBlastUrl = HttpUrl.parse("http://localhost:" + alicePort + IlpHttpController.ILP_PATH);
+            final ModifiableBlastPluginSettings modifiableBlastPluginSettings = (ModifiableBlastPluginSettings)
+              aliceAccount.getPlugin().getPluginSettings();
+            modifiableBlastPluginSettings.setOutgoingUrl(aliceBlastUrl);
+            ((BlastPlugin) aliceAccount.getPlugin()).reconfigure(modifiableBlastPluginSettings);
+
+            // Try to re-connect the plugin...
+            aliceAccount.getPlugin().connect().get(5, TimeUnit.SECONDS);
+          }
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+    });
+
+    ///////////////////
+    // Alice Connector Node
+    ///////////////////
+    {
+      topology
+        .addNode(ALICE_ADDRESS, new ConnectorServerNode(new ConnectorServer(constructConnectorSettingsForAlice())));
+    }
+
+    ///////////////////
+    // Bob Connector Node
+    ///////////////////
+
+    {
+      topology.addNode(BOB_ADDRESS, new ConnectorServerNode(new ConnectorServer(constructConnectorSettingsForBob())));
+    }
+
+    LOGGER.info("\n" +
+      "\nSTARTING BLAST TOPOLOGY\n" +
+      "┌──────────────┐                     ┌──────────────┐\n" +
+      "│              ◁───────HTTP/2────────┤              │\n" +
+      "│              │                     │              │\n" +
+      "│  CONNECTOR   │                     │  CONNECTOR   │\n" +
+      "│  test.alice  │                     │   test.bob   │\n" +
+      "│              │                     │              │\n" +
+      "│              ├──────HTTP/2─────────▷              │\n" +
+      "└──────────────┘                     └──────────────┘\n"
+    );
+    return topology;
+  }
+
+  /**
+   * Construct a {@link ConnectorSettings} with a Connector properly configured to represent <tt>Alice</tt>.
+   */
+  public static ConnectorSettings constructConnectorSettingsForAlice() {
+
+    final AccountSettings accountSettings = AccountSettings.builder()
+      .id(AccountId.of(BOB_ADDRESS.getValue()))
+      .description("Blast Peer account")
+      .isPreconfigured(true)
+      .relationship(AccountRelationship.PEER)
+      .pluginType(BlastPlugin.PLUGIN_TYPE)
+      .assetScale(9)
+      .assetCode(XRP)
+      .putCustomSettings(BlastPluginSettings.BLAST_INCOMING_SECRET, "12345678912345678912345678912345")
+      .putCustomSettings(BlastPluginSettings.BLAST_OUTGOING_SECRET, "12345678912345678912345678912345")
+      .putCustomSettings(BlastPluginSettings.BLAST_OUTGOING_TOKEN_EXPIRY, "PT2M")
+      .putCustomSettings(BlastPluginSettings.BLAST_OUTGOING_URL, "http://example.com/set-after-topology-init")
+      .build();
+
+    return ImmutableConnectorSettings.builder()
+      .operatorAddress(ALICE_ADDRESS)
+      .blastEnabled(true)
+      .enabledProtocols(EnabledProtocolSettings.builder()
+        .isPingProtocolEnabled(true)
+        .isEchoProtocolEnabled(false)
+        .build())
+      .globalPrefix(InterledgerAddressPrefix.TEST)
+      .globalRoutingSettings(GlobalRoutingSettings.builder()
+        .routingSecret("DocIHaveToTellYouSomethingAboutY")
+        .build()
+      )
+      .addAccountSettings(
+        // Must be modifiable so that we can update these settings after the Topology starts (to assign ports).
+        // This type of non-immutability is only used for tests like this one, and should not be used in production.
+        ModifiableAccountSettings.create().from(accountSettings)
+      )
+      .build();
+  }
+
+  /**
+   * Construct a {@link ConnectorSettings} with a Connector properly configured to represent <tt>Bob</tt>.
+   */
+  public static ConnectorSettings constructConnectorSettingsForBob() {
+
+    final AccountSettings accountSettings = AccountSettings.builder()
+      .id(AccountId.of(ALICE_ADDRESS.getValue()))
+      .description("Blast Peer account")
+      .isPreconfigured(true)
+      .relationship(AccountRelationship.PEER)
+      .pluginType(BlastPlugin.PLUGIN_TYPE)
+      .assetScale(9)
+      .assetCode(XRP)
+      .putCustomSettings(BlastPluginSettings.BLAST_INCOMING_SECRET, "12345678912345678912345678912345")
+      .putCustomSettings(BlastPluginSettings.BLAST_OUTGOING_SECRET, "12345678912345678912345678912345")
+      .putCustomSettings(BlastPluginSettings.BLAST_OUTGOING_TOKEN_EXPIRY, "PT2M")
+      .putCustomSettings(BlastPluginSettings.BLAST_OUTGOING_URL, "http://example.com/set-after-topology-init")
+      .build();
+
+    return ImmutableConnectorSettings.builder()
+      .operatorAddress(BOB_ADDRESS)
+      .blastEnabled(true)
+      .enabledProtocols(EnabledProtocolSettings.builder()
+        .isPingProtocolEnabled(true)
+        .isEchoProtocolEnabled(false)
+        .build())
+      .globalPrefix(InterledgerAddressPrefix.TEST)
+      .globalRoutingSettings(GlobalRoutingSettings.builder()
+        .routingSecret("DocIHaveToTellYouSomethingAboutY")
+        .build()
+      )
+      .addAccountSettings(
+        // Must be modifiable so that we can update these settings after the Topology starts (to assign ports).
+        // This type of non-immutability is only used for tests like this one, and should not be used in production.
+        ModifiableAccountSettings.create().from(accountSettings)
+      )
+      .build();
+  }
+
+}

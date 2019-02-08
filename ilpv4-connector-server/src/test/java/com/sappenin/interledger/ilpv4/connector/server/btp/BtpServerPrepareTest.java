@@ -1,7 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.server.btp;
 
 import com.google.common.io.BaseEncoding;
-import com.sappenin.interledger.ilpv4.connector.server.spring.settings.SpringConnectorWebMvc;
+import com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.SpringConnectorWebMvc;
 import org.interledger.btp.BtpMessage;
 import org.interledger.btp.BtpMessageType;
 import org.interledger.btp.BtpPacket;

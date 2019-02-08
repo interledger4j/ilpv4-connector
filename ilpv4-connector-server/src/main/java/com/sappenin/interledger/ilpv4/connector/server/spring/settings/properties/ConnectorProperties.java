@@ -16,12 +16,13 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.settings.properti
 public class ConnectorProperties {
 
   /**
-   * @deprecated BTP Enable/disable should be determined on whether there's an account configured that uses BTP. the
-   * only thing needed here is whether to turn on or off the WebSocket server, so perhaps that's another gate. We should
+   * TODO: BTP Enable/disable should be determined on whether there's an account configured that uses BTP. the only
+   * thing needed here is whether to turn on or off the WebSocket server, so perhaps that's another gate. We should
    * investigate the ConditionalOnBean?
    */
-  @Deprecated
   public static final String BTP_ENABLED = "btp.enabled";
+
+  public static final String BLAST_ENABLED = "blast.enabled";
 
   private static final String DOT = ".";
   private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";

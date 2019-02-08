@@ -12,9 +12,9 @@ import org.interledger.btp.asn.framework.BtpCodecContextFactory;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
-import org.interledger.ilpv4.connector.it.topology.BtpClientPluginNode;
+import org.interledger.ilpv4.connector.it.topology.nodes.BtpClientPluginNode;
 import org.interledger.ilpv4.connector.it.topology.Topology;
-import org.interledger.ilpv4.connector.it.topology.nodes.btp.BtpServerNode;
+import org.interledger.ilpv4.connector.it.topology.nodes.ConnectorServerNode;
 import org.interledger.plugin.lpiv2.btp2.spring.BtpClientPlugin;
 import org.interledger.plugin.lpiv2.btp2.spring.BtpClientPluginSettings;
 import org.interledger.plugin.lpiv2.btp2.spring.BtpServerPlugin;
@@ -47,7 +47,7 @@ import java.util.Objects;
  *           │                      ┌──────────────┐
  *           │                      │              │
  * ┌───────────────────┐            │              │
- * │  CLIENT PLUGIN_MODE    │            │  CONNECTOR_MODE   │
+ * │  CLIENT PLUGIN    │            │  CONNECTOR   │
  * │ test.connie.alice │───USD─────▷│ test.connie  │
  * └───────────────────┘            │              │
  *                                  │              │
@@ -77,7 +77,7 @@ public class SingleConnectorSingleAccountBtpTopology {
       @Override
       protected void doAfterTopologyStartup(Topology g) {
 
-        final BtpServerNode connieServerNode = g.getNode(CONNIE.getValue(), BtpServerNode.class);
+        final ConnectorServerNode connieServerNode = g.getNode(CONNIE.getValue(), ConnectorServerNode.class);
         final int conniePort = connieServerNode.getPort();
 
         ////////////////////
@@ -102,11 +102,11 @@ public class SingleConnectorSingleAccountBtpTopology {
     // Connie Node
     ///////////////////
     {
-      topology.addNode(CONNIE, new BtpServerNode(new ConnectorServer(constructConnectorSettingsForConnie())));
+      topology.addNode(CONNIE, new ConnectorServerNode(new ConnectorServer(constructConnectorSettingsForConnie())));
     }
 
     LOGGER.info("\n" +
-      "\nSTARTING SINGLE-ACCOUNT 1-CONNECTOR_MODE TOPOLOGY" +
+      "\nSTARTING SINGLE-ACCOUNT 1-CONNECTOR TOPOLOGY" +
       "                                                 \n" +
       "          ┌───────────Setup──────────────┐       \n" +
       "          │                              │       \n" +

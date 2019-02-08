@@ -5,9 +5,14 @@ logging:
     ROOT: INFO
     com.sappenin: TRACE
     org.springframework: INFO
-    org.springframework.web.socket: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web.socket: INFO
 server:
-  port: 8080
+  #port: 8080
+  http2:
+    enabled: true
+  jetty:
+    max-http-post-size: 32767 # Max per ILP ASN.1
 spring:
   profiles:
     active: ${spring.profiles.active}
@@ -51,14 +56,32 @@ spring:
 # Configuration for a Mini-Connector. Uncomment any value to enable a particular setting.
 ilpv4:
   connector:
+    blast.enabled: true
+    btp.enabled: false
     enabledProtocols:
       pingProtocolEnabled: true
       echoProtocolEnabled: true
-    websocketServerEnabled: false
     ## ILP address of the connector.
     ## This property can be omitted if an account with relation=parent is configured under accounts.
-    nodeIlpAddress: test2.connie
+    nodeIlpAddress: test.connie
     # Global Routing Settings for this connector.
     globalRoutingSettings:
       # Seed used for generating routing table auth values.
       routingSecret: DocIHaveToTellYouSomethingAboutY
+    accounts:
+      - id: test.alice
+        description: Blast peer plugin
+        # The default relationship-type that this connector should view an account as.
+        relationship: PEER
+        # Type of the Plugin that should be used for this account.
+        pluginType: BlastPlugin
+        # Whether we should broadcast routes to this peer. Defaults to false for relation=child and true otherwise.
+        sendRoutes: false
+        # Whether we should receive and process route broadcasts from this peer. Defaults to false for relation=child and true otherwise.
+        receiveRoutes: false
+        customSettings:
+          blast.incoming.secret: 12345678912345678912345678912345
+          blast.outgoing.secret: 12345678912345678912345678912345
+          blast.outgoing.token_expiry: PT2M # See Duration.java for structure.
+          blast.outgoing.url: http://localhost:8080/ilp
+

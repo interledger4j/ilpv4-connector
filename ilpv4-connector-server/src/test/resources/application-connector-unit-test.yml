@@ -6,6 +6,8 @@ ilpv4:
     nodeIlpAddress: test.example
     # The global prefix. For production environments, this should be `g`. For test environments, consider `test`.
     globalPrefix: test
+    blast.enabled: true
+    btp.enabled: true
     # Which protocols this Connector supports
     enabledProtocols:
       pingProtocolEnabled: true

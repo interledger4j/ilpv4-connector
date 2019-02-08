@@ -26,24 +26,45 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.sappenin.ilpv4</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.sappenin.ilpv4</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-service-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.sappenin.ilpv4</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-service-impl</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.sappenin.ilpv4</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-routing-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.sappenin.ilpv4</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-routing-impl</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.auth0</groupId>
+      <artifactId>java-jwt</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.auth0</groupId>
+      <artifactId>auth0-spring-security-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.auth0</groupId>
+      <artifactId>jwks-rsa</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
@@ -94,12 +115,32 @@
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security.oauth.boot</groupId>
+      <artifactId>spring-security-oauth2-autoconfigure</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.immutables</groupId>
       <artifactId>value</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.zalando</groupId>
+      <artifactId>problem</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.zalando</groupId>
+      <artifactId>jackson-datatype-problem</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.zalando</groupId>
+      <artifactId>problem-spring-web</artifactId>
     </dependency>
   </dependencies>
 </project>

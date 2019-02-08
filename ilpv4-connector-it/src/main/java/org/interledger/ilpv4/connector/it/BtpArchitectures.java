@@ -82,7 +82,7 @@ public class BtpArchitectures {
   //
   //
   //    LOGGER.info("\n" +
-  //      "\n1-CONNECTOR_MODE ARCHITECTURE" +
+  //      "\n1-CONNECTOR ARCHITECTURE" +
   //      "\n" +
   //      "            ┌────────────────────────────Setup──────────────────────────┐       \n" +
   //      "            │                                                           │       \n" +

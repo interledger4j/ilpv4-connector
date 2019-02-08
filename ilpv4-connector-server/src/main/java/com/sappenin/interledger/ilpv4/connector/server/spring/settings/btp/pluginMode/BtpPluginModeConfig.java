@@ -6,17 +6,21 @@ import org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandlerRegis
 import org.interledger.plugin.lpiv2.btp2.subprotocols.auth.AuthBtpSubprotocolHandler;
 import org.interledger.plugin.lpiv2.btp2.subprotocols.auth.ClientAuthBtpSubprotocolHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 import java.util.function.Supplier;
 
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.BTP_ENABLED;
+
 /**
  * <p>Configures a BTP server for this connector.</p>
  */
 @Configuration
 @Profile(ConnectorProfile.PLUGIN_MODE) // PluginMode operates a single BTP Client.
+@ConditionalOnProperty(BTP_ENABLED)
 public class BtpPluginModeConfig {
 
   @Autowired

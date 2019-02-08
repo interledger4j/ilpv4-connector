@@ -1,7 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.accounts;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.sappenin.interledger.ilpv4.connector.Account;
 import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.plugins.connectivity.PingProtocolPlugin;
 import com.sappenin.interledger.ilpv4.connector.settings.AccountRelationship;
@@ -25,17 +24,14 @@ import java.util.function.Supplier;
 public class DefaultAccountSettingsResolver implements AccountSettingsResolver {
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final AccountIdResolver accountIdResolver;
-  private final AccountManager accountManager;
   private Logger logger = LoggerFactory.getLogger(this.getClass());
 
   public DefaultAccountSettingsResolver(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final AccountIdResolver accountIdResolver,
-    final AccountManager accountManager
+    final AccountIdResolver accountIdResolver
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
-    this.accountManager = Objects.requireNonNull(accountManager);
   }
 
   /**
@@ -54,41 +50,37 @@ public class DefaultAccountSettingsResolver implements AccountSettingsResolver {
 
     final AccountId accountId = accountIdResolver.resolveAccountId(plugin);
 
-    // 1. Pre-configured Accounts will exist in the AccountManager (though only if connected).
-    return accountManager.getAccount(accountId)
-      .map(Account::getAccountSettings)
+
+    // 1. Just in-case, check the connector-settings to see if perhaps the connector is not yet connected.
+    return connectorSettingsSupplier.get().getAccountSettings().stream()
+      .filter(accountSettings -> accountSettings.getId().equals(accountId))
+      .findFirst()
       .orElseGet(() -> {
-        // 2. Just in-case, check the connector-settings to see if perhaps the connector is not yet connected.
-        return connectorSettingsSupplier.get().getAccountSettings().stream()
-          .filter(accountSettings -> accountSettings.equals(accountId))
-          .findFirst()
+        // If we get here, it means no account with the above identifier was pre-defined, so look in the
+        // AccountProviders to find a dynamically generated instance.
+
+        // 3. Check for any internally-routed plugins, such as Ping, etc.
+        return this.resolveInternalAccountSettings(accountId, plugin)
           .orElseGet(() -> {
-            // If we get here, it means no account with the above identifier was pre-defined, so look in the
-            // AccountProviders to find a dynamically generated instance.
 
-            // 3. Check for any internally-routed plugins, such as Ping, etc.
-            return this.resolveInternalAccountSettings(accountId, plugin)
-              .orElseGet(() -> {
-
-                // 4. Check for AccountProviders.
-                /*
-                 * Implementation Note: What if we have a scenario where we have two Plugins of the same type, but we want some
-                 * connections to use AccountProvider1, and other connections to use AccountProvider2. In that world, we would
-                 * need some other signaling here to indicate such a thing. For example, we might set an attribute in the
-                 * Plugin that indicates the identifier of the accountProvider it should be using. This scenario is slightly
-                 * odd, however, because we would need two AccountProviders, each configured with a different AccountProvider
-                 * config and identifier, yet both serving requests on the same transport (like a BTP connection). So, in
-                 * order to pull this off, we would need pretty significant refactoring (or some other indicator in the
-                 * BTP or HTTP session to indicate the account-type).
-                 */
-                return connectorSettingsSupplier.get().getAccountProviderSettings().stream()
-                  .filter(aps -> aps.getPluginType().equals(plugin.getPluginSettings().getPluginType()))
-                  .findFirst()
-                  .map(accountProviderSettings -> AccountSettings.from(accountProviderSettings).id(accountId).build())
-                  .orElseThrow(() -> new RuntimeException(String.format(
-                    "Unable to locate an AccountSettings for PluginId: `%s`", plugin.getPluginId())
-                  ));
-              });
+            // 4. Check for AccountProviders.
+            /*
+             * Implementation Note: What if we have a scenario where we have two Plugins of the same type, but we want some
+             * connections to use AccountProvider1, and other connections to use AccountProvider2. In that world, we would
+             * need some other signaling here to indicate such a thing. For example, we might set an attribute in the
+             * Plugin that indicates the identifier of the accountProvider it should be using. This scenario is slightly
+             * odd, however, because we would need two AccountProviders, each configured with a different AccountProvider
+             * config and identifier, yet both serving requests on the same transport (like a BTP connection). So, in
+             * order to pull this off, we would need pretty significant refactoring (or some other indicator in the
+             * BTP or HTTP session to indicate the account-type).
+             */
+            return connectorSettingsSupplier.get().getAccountProviderSettings().stream()
+              .filter(aps -> aps.getPluginType().equals(plugin.getPluginSettings().getPluginType()))
+              .findFirst()
+              .map(accountProviderSettings -> AccountSettings.from(accountProviderSettings).id(accountId).build())
+              .orElseThrow(() -> new RuntimeException(String.format(
+                "Unable to locate an AccountSettings for PluginId: `%s`", plugin.getPluginId())
+              ));
           });
       });
   }

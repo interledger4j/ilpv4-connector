@@ -4,6 +4,7 @@ import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.accounts.BtpAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.ConnectorProfile;
+import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.btp.BtpResponsePacket;
 import org.interledger.btp.BtpSubProtocol;
@@ -20,6 +21,7 @@ import org.interledger.plugin.lpiv2.btp2.subprotocols.auth.AuthBtpSubprotocolHan
 import org.interledger.plugin.lpiv2.btp2.subprotocols.auth.ServerAuthBtpSubprotocolHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -31,6 +33,7 @@ import java.util.function.Supplier;
 
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.BTP;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.ILP;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.BTP_ENABLED;
 import static org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandlerRegistry.BTP_SUB_PROTOCOL_ILP;
 
 /**
@@ -39,6 +42,7 @@ import static org.interledger.plugin.lpiv2.btp2.subprotocols.BtpSubProtocolHandl
  */
 @Configuration
 @Profile(ConnectorProfile.CONNECTOR_MODE)
+@ConditionalOnProperty(BTP_ENABLED)
 @Import({SpringWebsocketServerConfig.class}) // Only run a websocket server in `CONNECTOR_MODE` mode.
 public class BtpConnectorModeConfig {
 

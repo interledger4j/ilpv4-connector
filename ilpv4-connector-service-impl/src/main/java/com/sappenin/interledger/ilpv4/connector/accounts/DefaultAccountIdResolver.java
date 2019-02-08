@@ -2,14 +2,12 @@ package com.sappenin.interledger.ilpv4.connector.accounts;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.sappenin.interledger.ilpv4.connector.AccountId;
-import com.sappenin.interledger.ilpv4.connector.plugins.connectivity.PingProtocolPlugin;
 import org.interledger.btp.BtpSession;
 import org.interledger.btp.BtpSessionCredentials;
-import org.interledger.plugin.lpiv2.LoopbackPlugin;
 import org.interledger.plugin.lpiv2.Plugin;
 import org.interledger.plugin.lpiv2.PluginId;
-import org.interledger.plugin.lpiv2.btp2.spring.AbstractBtpPlugin;
 
+import java.security.Principal;
 import java.util.Objects;
 
 /**
@@ -18,7 +16,7 @@ import java.util.Objects;
  *
  * TODO: Use Java SPI here so custom resolvers can be added.
  */
-public class DefaultAccountIdResolver implements BtpAccountIdResolver, AccountIdResolver {
+public class DefaultAccountIdResolver implements BtpAccountIdResolver, BlastAccountIdResolver, AccountIdResolver {
 
   @Override
   public AccountId resolveAccountId(final Plugin<?> plugin) {
@@ -35,23 +33,23 @@ public class DefaultAccountIdResolver implements BtpAccountIdResolver, AccountId
       // If a Plugin is disconnected, then throw an exception.
       throw new RuntimeException("Disconnected Plugins do not have an associated account!");
 
-//      if (plugin instanceof LoopbackPlugin) {
-//        // Connected Btp Plugins will have a BTP Session that can be used to get the accountId.
-//        final LoopbackPlugin loopbackPlugin = (LoopbackPlugin) plugin;
-//        return AccountId.of(loopbackPlugin.getPluginId().get().value());
-//      }
-//      if (plugin instanceof AbstractBtpPlugin) {
-//        // Connected Btp Plugins will have a BTP Session that can be used to get the accountId.
-//        final AbstractBtpPlugin abstractBtpPlugin = (AbstractBtpPlugin) plugin;
-//        return this.resolveAccountId(abstractBtpPlugin.getBtpSessionCredentials());
-//      }
-//      if (plugin instanceof PingProtocolPlugin) {
-//        // Connected Btp Plugins will have a BTP Session that can be used to get the accountId.
-//        final PingProtocolPlugin pingProtocolPlugin = (PingProtocolPlugin) plugin;
-//        return this.resolveAccountId(pingProtocolPlugin.getPluginId().get());
-//      } else {
-//        throw new RuntimeException("Unsupported Plugin Class: " + plugin.getClass());
-//      }
+      //      if (plugin instanceof LoopbackPlugin) {
+      //        // Connected Btp Plugins will have a BTP Session that can be used to get the accountId.
+      //        final LoopbackPlugin loopbackPlugin = (LoopbackPlugin) plugin;
+      //        return AccountId.of(loopbackPlugin.getPluginId().get().value());
+      //      }
+      //      if (plugin instanceof AbstractBtpPlugin) {
+      //        // Connected Btp Plugins will have a BTP Session that can be used to get the accountId.
+      //        final AbstractBtpPlugin abstractBtpPlugin = (AbstractBtpPlugin) plugin;
+      //        return this.resolveAccountId(abstractBtpPlugin.getBtpSessionCredentials());
+      //      }
+      //      if (plugin instanceof PingProtocolPlugin) {
+      //        // Connected Btp Plugins will have a BTP Session that can be used to get the accountId.
+      //        final PingProtocolPlugin pingProtocolPlugin = (PingProtocolPlugin) plugin;
+      //        return this.resolveAccountId(pingProtocolPlugin.getPluginId().get());
+      //      } else {
+      //        throw new RuntimeException("Unsupported Plugin Class: " + plugin.getClass());
+      //      }
     }
   }
 
@@ -118,5 +116,17 @@ public class DefaultAccountIdResolver implements BtpAccountIdResolver, AccountId
         //Route.HMAC(abstractBtpPlugin.getBtpSessionCredentials().getAuthToken());
         throw new RuntimeException("Not yet implemented!");
       });
+  }
+
+  /**
+   * Determine the {@link AccountId} for the supplied principal.
+   *
+   * @param principal The {@link Principal} to introspect to determine the accountId that it represents.
+   *
+   * @return The {@link AccountId} for the supplied request.
+   */
+  @Override
+  public AccountId resolveAccountId(Principal principal) {
+    return null;
   }
 }

@@ -1,12 +1,13 @@
-# See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
+# See https://docs.spring.io/spring-boot/docs/current/reference/html/common-application-properties.html
 logging:
   level:
     ROOT: INFO
-    com.sappenin: TRACE
-    org.springframework: INFO
-    org.springframework.web.socket: DEBUG
 server:
-  port: 8080
+  #port: 8080
+  http2:
+    enabled: true
+  jetty:
+    max-http-post-size: 32767 # Max per ILP ASN.1
 spring:
   profiles:
     # see https://stackoverflow.com/questions/37700352
@@ -18,8 +19,8 @@ spring:
     # MULTIPART (MultipartProperties)
     multipart:
       enabled: false
-      max-file-size: 2KB
-      max-request-size: 2KB
+      max-file-size: 32KB
+      max-request-size: 32KB
   # Database Settings
   datasource:
     url: jdbc:h2:mem:example-app;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
@@ -37,6 +38,17 @@ spring:
         show_sql: true
         use_sql_comments: true
         format_sql: true
+  mvc:
+    throw-exception-if-no-handler-found: true
+  resources:
+    add-mappings: false
+  servlet:
+    session:
+      persistent: false # Whether to persist session data between restarts.
+      timeout: 0 # Session timeout. If a duration suffix is not specified, seconds will be used.
+      tracking-modes: SSL # Session tracking modes.
+  session:
+    store-type: NONE
 
 # All values for this connector. Commented-out values are the default.
 ilpv4:
@@ -53,7 +65,7 @@ ilpv4:
 ###
 h2:
   console:
-    enabled: true
+    enabled: false
     path: /console
     settings:
       trace: false

@@ -39,6 +39,11 @@ public interface ConnectorSettings {
     return false;
   }
 
+  @Value.Default
+  default boolean blastEnabled() {
+    return false;
+  }
+
   /**
    * Which account should be used as the default route for all un-routed traffic. If empty, the default route is
    * disabled.

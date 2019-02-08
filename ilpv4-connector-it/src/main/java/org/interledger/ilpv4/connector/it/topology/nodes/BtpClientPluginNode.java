@@ -1,5 +1,6 @@
-package org.interledger.ilpv4.connector.it.topology;
+package org.interledger.ilpv4.connector.it.topology.nodes;
 
+import org.interledger.ilpv4.connector.it.topology.PluginNode;
 import org.interledger.plugin.lpiv2.btp2.spring.BtpClientPlugin;
 import org.interledger.plugin.lpiv2.btp2.spring.BtpClientPluginSettings;
 

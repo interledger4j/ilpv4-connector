@@ -1,8 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector;
 
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountIdResolver;
+import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountSettingsResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.PluginManager;
 import com.sappenin.interledger.ilpv4.connector.events.IlpNodeEvent;
 import com.sappenin.interledger.ilpv4.connector.events.IlpNodeEventHandler;
@@ -12,19 +11,14 @@ import com.sappenin.interledger.ilpv4.connector.plugins.connectivity.PingProtoco
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.InternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.Route;
+import com.sappenin.interledger.ilpv4.connector.settings.AccountRelationship;
 import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
-import org.interledger.plugin.lpiv2.ImmutablePluginSettings;
-import org.interledger.plugin.lpiv2.Plugin;
-import org.interledger.plugin.lpiv2.PluginSettings;
 import org.interledger.plugin.lpiv2.btp2.spring.factories.PluginFactoryProvider;
 import org.interledger.plugin.lpiv2.events.PluginConnectedEvent;
-import org.interledger.plugin.lpiv2.events.PluginDisconnectedEvent;
-import org.interledger.plugin.lpiv2.events.PluginErrorEvent;
-import org.interledger.plugin.lpiv2.events.PluginEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -33,7 +27,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
@@ -81,14 +74,13 @@ import java.util.function.Supplier;
  * the same {@link PluginConnectedEvent} events as above, and tracks or untracks each Account based upon what the
  * corresponding Plugin does.
  */
-public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListener {
+public class DefaultILPv4Connector implements ILPv4Connector {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
 
-  private final AccountIdResolver accountIdResolver;
-  private final AccountSettingsResolver accountSettingsResolver;
+  private final EventBus eventBus;
 
   // TODO: Consider placing the PluginManager back inside of the AccountManager.
   private final AccountManager accountManager;
@@ -100,23 +92,44 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
   // Handles all packet addresses.
   private final ILPv4PacketSwitch ilpPacketSwitch;
 
+  /**
+   * Required-args Constructor (minus an EventBus).
+   */
   public DefaultILPv4Connector(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final AccountIdResolver accountIdResolver,
-    final AccountSettingsResolver accountSettingsResolver,
+    final AccountManager accountManager,
+    final PluginManager pluginManager,
+    final InternalRoutingService internalRoutingService,
+    final ExternalRoutingService externalRoutingService,
+    final ILPv4PacketSwitch ilpPacketSwitch
+  ) {
+    this(
+      connectorSettingsSupplier,
+      accountManager,
+      pluginManager,
+      internalRoutingService,
+      externalRoutingService,
+      ilpPacketSwitch,
+      new EventBus()
+    );
+  }
+
+  public DefaultILPv4Connector(
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountManager accountManager,
     final PluginManager pluginManager,
     final InternalRoutingService internalRoutingService, final ExternalRoutingService externalRoutingService,
-    final ILPv4PacketSwitch ilpPacketSwitch
+    final ILPv4PacketSwitch ilpPacketSwitch,
+    final EventBus eventBus
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
-    this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
-    this.accountSettingsResolver = Objects.requireNonNull(accountSettingsResolver);
     this.accountManager = Objects.requireNonNull(accountManager);
     this.pluginManager = Objects.requireNonNull(pluginManager);
     this.internalRoutingService = Objects.requireNonNull(internalRoutingService);
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
     this.ilpPacketSwitch = Objects.requireNonNull(ilpPacketSwitch);
+    this.eventBus = Objects.requireNonNull(eventBus);
+    eventBus.register(this);
   }
 
   /**
@@ -124,6 +137,7 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
    */
   @PostConstruct
   private final void init() {
+
     // ^^ Preconfigurated Accounts ^^
     // For any pre-configured accounts, we need to construct their corresponding plugin and `connect` it so it will
     // be added to the AccountManager for proper tracking.
@@ -131,28 +145,7 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
       // Connect all plugins, regardless of type. Server-plugins won't be defined in here, and if there's a peer plugin
       // that this connector is a client of, then it will be connected here, if appropriate. Plugins that require an
       // incoming and outgoing connection will not emit a PluginConnectedEvent until both connections are connected.
-      //.filter(accountSettings -> accountSettings.getRelationship() == ? // PEER plugins might be of type 'client')
-      // For-each AccountSettings, get or create a corresponding client Plugin and try to connect to the remote. If
-      // successful, addAccount the account to the AccountManager for tracking.
-      .forEach(accountSettings -> {
-        final PluginSettings pluginSettings = PluginSettings.builder()
-          .pluginType(accountSettings.getPluginType())
-          .customSettings(accountSettings.getCustomSettings())
-          .operatorAddress(connectorSettingsSupplier.get().getOperatorAddress())
-          .build();
-        final Plugin<?> plugin = pluginManager.createPlugin(accountSettings.getId(), pluginSettings);
-        // Register the Connector as a PluginEvent Listener...
-        plugin.addPluginEventListener(UUID.randomUUID(), this);
-        try {
-          // Try to connect, but only wait 15 seconds. Don't let one connection failure block the other plugins from
-          // connecting.
-          plugin.connect().get(15, TimeUnit.SECONDS);
-        } catch (Exception e) {
-          throw new RuntimeException(
-            String.format("Unable to connect Plugin: %s", pluginSettings), e);
-        }
-      });
-
+      .forEach(accountManager::createAccount);
 
     ////////////////////////////////////////
     // Enable ILP and other Protocol Plugins
@@ -188,6 +181,11 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
   @Override
   public AccountManager getAccountManager() {
     return this.accountManager;
+  }
+
+  @Override
+  public PluginManager getPluginManager() {
+    return this.pluginManager;
   }
 
   @Override
@@ -303,7 +301,6 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
     ////////////////
     // PING PROTOCOL
     ////////////////
-
     final UUID pingAccountUuid = UUID.randomUUID();
     final AccountId accountId = AccountId.of(pingAccountUuid.toString());
 
@@ -315,14 +312,15 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
       .build();
     this.internalRoutingService.addRoute(internalRoute);
 
-    final PluginSettings pingProtocolPluginSettings = ImmutablePluginSettings.builder()
+    final AccountSettings accountSettings = AccountSettings.builder()
+      .id(accountId)
+      .isPreconfigured(true)
+      .relationship(AccountRelationship.CHILD)
+      .assetScale(9)
+      .assetCode("USD")
       .pluginType(PingProtocolPlugin.PLUGIN_TYPE)
-      .operatorAddress(connectorSettingsSupplier.get().getOperatorAddress())
       .build();
-    final Plugin pingProtocolPlugin = this.pluginManager.createPlugin(accountId, pingProtocolPluginSettings);
-    pingProtocolPlugin.addPluginEventListener(pingAccountUuid, this);
-    // Connecting this plugin will register it with the AccountManager.
-    pingProtocolPlugin.connect().join();
+    this.accountManager.createAccount(accountSettings);
   }
 
   private void initializePeerConfigProtocol() {
@@ -346,104 +344,91 @@ public class DefaultILPv4Connector implements ILPv4Connector, PluginEventListene
   // Plugin Event Listener
   ////////////////////////
 
-  /**
-   * When a {@link Plugin} connects, we need to begin tracking the associated account using the {@link
-   * #accountManager}.
-   *
-   * @param event A {@link PluginConnectedEvent}.
-   */
-  @Override
-  public void onConnect(final PluginConnectedEvent event) {
-    Objects.requireNonNull(event);
+  //  /**
+  //   * When a {@link Plugin} connects, we need to begin tracking the associated account using the {@link
+  //   * #accountManager}.
+  //   *
+  //   * @param event A {@link PluginConnectedEvent}.
+  //   */
+  //  @Override
+  //  @Subscribe
+  //  public void onConnect(final PluginConnectedEvent event) {
+  //    Objects.requireNonNull(event);
+  //
+  ////    final AccountSettings accountSettings = this.accountSettingsResolver.resolveAccountSettings(event.getPlugin());
+  ////    accountManager.addAccount(
+  ////      Account.builder()
+  ////        //.id(accountId) // Found in AccountSettings.
+  ////        .accountSettings(accountSettings)
+  ////        .plugin(event.getPlugin())
+  ////        .build()
+  ////    );
+  //
+  ////    // Register this account with the routing service...this won't work because the ExternalRoutingService won't start
+  ////    // tracking until the plugin connects, but by this point in time, the plugin has already connected!
+  ////    final AccountSettings accountSettings = this.accountSettingsResolver.resolveAccountSettings(event.getPlugin());
+  ////    externalRoutingService.registerAccount(accountSettings.getId());
+  //  }
 
-    final AccountSettings accountSettings = this.accountSettingsResolver.resolveAccountSettings(event.getPlugin());
-    accountManager.addAccount(
-      Account.builder()
-        //.id(accountId) // Found in AccountSettings.
-        .accountSettings(accountSettings)
-        .plugin(event.getPlugin())
-        .build()
-    );
-
-    // TODO: Make the AccountManager handle this connection? Currently, the ExternalRoutingService _has an_ AccountManager, so
-    // we don't really want to introduce a circular dependency here. However, it does seem natural that the
-    // AccountManager should choreograph everything in the ExternalRoutingService, rather than having any listeners in the
-    // Routing Service.
-
-    // Register this account with the routing service...this won't work because the ExternalRoutingService won't start
-    // tracking until the plugin connects, but by this point in time, the plugin has already connected!
-    externalRoutingService.registerAccount(accountSettings.getId());
-  }
-
-  /**
-   * Called to handle an {@link PluginDisconnectedEvent}. When a {@link Plugin} disconnects, we need to stop tracking
-   * the associated account using the {@link #accountManager}.
-   *
-   * @param event A {@link PluginDisconnectedEvent}.
-   */
-  @Override
-  public void onDisconnect(final PluginDisconnectedEvent event) {
-    Objects.requireNonNull(event);
-
-    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getPlugin());
-
-    // TODO: See comment above about merging Routing registration into AccountMangager.
-    // Remove the account from any other consideration.
-    // Unregister this account with the routing service...
-    //this.externalRoutingService.unregisterAccount(accountId);
-
-    this.accountManager.removeAccount(accountId);
-  }
-
-  /**
-   * Called to handle an {@link PluginErrorEvent}.
-   *
-   * @param event A {@link PluginErrorEvent}.
-   */
-  @Override
-  public void onError(final PluginErrorEvent event) {
-    Objects.requireNonNull(event);
-    logger.error("Plugin: {}; PluginError: {}", event.getPlugin(), event.getError());
-  }
+  //  /**
+  //   * Called to handle an {@link PluginDisconnectedEvent}. When a {@link Plugin} disconnects, we need to stop tracking
+  //   * the associated account using the {@link #accountManager}.
+  //   *
+  //   * @param event A {@link PluginDisconnectedEvent}.
+  //   */
+  //  @Override
+  //  @Subscribe
+  //  public void onDisconnect(final PluginDisconnectedEvent event) {
+  //    Objects.requireNonNull(event);
+  //
+  //    //final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getPlugin());
+  //
+  //    // TODO: See comment above about merging Routing registration into AccountMangager.
+  //    // Remove the account from any other consideration.
+  //    // Unregister this account with the routing service...
+  //    //this.externalRoutingService.unregisterAccount(accountId);
+  //
+  //    //this.accountManager.removeAccount(accountId);
+  //  }
 
 
-  private void updateConnectorSettings(final ConnectorSettings connectorSettings) {
-    Objects.requireNonNull(connectorSettings);
-
-    //    final ApplicationContext applicationContext = SpringContext.getApplicationContext();
-
-    //    applicationContext.getAutowireCapableBeanFactory()
-    //
-    //    if (applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME) != null) {
-    //      return () -> (ConnectorSettings) applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME);
-    //    } else {
-    //      // No override was detected, so return the normal variant that exists because of the EnableConfigurationProperties
-    //      // directive above.
-    //      return () -> applicationContext.getBean(ConnectorSettings.class);
-    //    }
-
-
-    //    this.connectorSettingsOverride.ifPresent(cso -> {
-    //      final BeanDefinitionRegistry registry = (
-    //        (BeanDefinitionRegistry) this.getContext().getAutowireCapableBeanFactory()
-    //      );
-    //
-    //      try {
-    //        registry.removeBeanDefinition(ConnectorSettingsFromPropertyFile.BEAN_NAME);
-    //      } catch (NoSuchBeanDefinitionException e) {
-    //        // Swallow...
-    //        logger.warn(e.getMessage(), e);
-    //      }
-    //
-    //      // Replace here...
-    //      this.getContext().getBeanFactory().registerSingleton(ConnectorSettings.BEAN_NAME, cso);
-    //    });
-
-
-    //    this.connectorSettingsOverride
-    //      .ifPresent(cso -> ((ApplicationPreparedEvent) event).getApplicationContext().getBeanFactory()
-    //        .registerSingleton(ConnectorSettings.OVERRIDE_BEAN_NAME, cso));
-  }
+  //  private void updateConnectorSettings(final ConnectorSettings connectorSettings) {
+  //    Objects.requireNonNull(connectorSettings);
+  //
+  //    //    final ApplicationContext applicationContext = SpringContext.getApplicationContext();
+  //
+  //    //    applicationContext.getAutowireCapableBeanFactory()
+  //    //
+  //    //    if (applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME) != null) {
+  //    //      return () -> (ConnectorSettings) applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME);
+  //    //    } else {
+  //    //      // No override was detected, so return the normal variant that exists because of the EnableConfigurationProperties
+  //    //      // directive above.
+  //    //      return () -> applicationContext.getBean(ConnectorSettings.class);
+  //    //    }
+  //
+  //
+  //    //    this.connectorSettingsOverride.ifPresent(cso -> {
+  //    //      final BeanDefinitionRegistry registry = (
+  //    //        (BeanDefinitionRegistry) this.getContext().getAutowireCapableBeanFactory()
+  //    //      );
+  //    //
+  //    //      try {
+  //    //        registry.removeBeanDefinition(ConnectorSettingsFromPropertyFile.BEAN_NAME);
+  //    //      } catch (NoSuchBeanDefinitionException e) {
+  //    //        // Swallow...
+  //    //        logger.warn(e.getMessage(), e);
+  //    //      }
+  //    //
+  //    //      // Replace here...
+  //    //      this.getContext().getBeanFactory().registerSingleton(ConnectorSettings.BEAN_NAME, cso);
+  //    //    });
+  //
+  //
+  //    //    this.connectorSettingsOverride
+  //    //      .ifPresent(cso -> ((ApplicationPreparedEvent) event).getApplicationContext().getBeanFactory()
+  //    //        .registerSingleton(ConnectorSettings.OVERRIDE_BEAN_NAME, cso));
+  //  }
 
 
 }

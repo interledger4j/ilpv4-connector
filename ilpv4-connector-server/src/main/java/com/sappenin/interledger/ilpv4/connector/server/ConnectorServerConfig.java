@@ -2,6 +2,7 @@ package com.sappenin.interledger.ilpv4.connector.server;
 
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.SpringConnectorConfig;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.annotation.Import;
 
@@ -10,7 +11,7 @@ import org.springframework.context.annotation.Import;
  */
 // A convenience annotation that adds all of the following:
 // @Configuration, @EnableAutoConfiguration, @EnableWebMvc,and @ComponentScan
-@SpringBootApplication
+@SpringBootApplication(exclude = ErrorMvcAutoConfiguration.class) // Excluded for `problems` support
 @Import({SpringConnectorConfig.class})
 public class ConnectorServerConfig {
 

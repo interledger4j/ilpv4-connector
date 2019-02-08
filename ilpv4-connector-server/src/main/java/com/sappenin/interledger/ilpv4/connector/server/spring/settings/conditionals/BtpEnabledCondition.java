@@ -12,8 +12,11 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
 
 /**
  * A Spring conditional that triggers when BTP is enabled via {@link ConnectorProperties#BTP_ENABLED}.
+ *
+ * @deprecated Just use @ConditionalOnProperty intstead?
  */
 @ConditionalOnProperty(BTP_ENABLED)
+@Deprecated
 public class BtpEnabledCondition implements Condition {
 
   /**

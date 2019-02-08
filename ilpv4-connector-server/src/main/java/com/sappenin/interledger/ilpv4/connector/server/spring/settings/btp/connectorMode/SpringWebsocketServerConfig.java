@@ -3,6 +3,7 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.settings.btp.conn
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.ConnectorProfile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
@@ -14,11 +15,14 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 
 import java.util.Arrays;
 
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.BTP_ENABLED;
+
 /**
  * Spring configuration for BTP over Websocket.
  */
 @Configuration
 @Profile(ConnectorProfile.CONNECTOR_MODE) // Only run a websocket server in `CONNECTOR_MODE` mode.
+@ConditionalOnProperty(BTP_ENABLED)
 @EnableWebSocket
 public class SpringWebsocketServerConfig implements WebSocketConfigurer {
 

@@ -2,7 +2,7 @@ package com.sappenin.interledger.ilpv4.connector.server.btp;
 
 import com.sappenin.interledger.ilpv4.connector.ImmutableAccount;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
-import com.sappenin.interledger.ilpv4.connector.server.spring.settings.SpringConnectorWebMvc;
+import com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.SpringConnectorWebMvc;
 import com.sappenin.interledger.ilpv4.connector.settings.ImmutableAccountSettings;
 import org.interledger.btp.BtpError;
 import org.interledger.btp.BtpMessage;

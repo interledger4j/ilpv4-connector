@@ -65,6 +65,26 @@ public interface AccountSettings {
   boolean isInternal();
 
   /**
+   * Determines if this account is preconfigured (i.e., details are determined at startup).  This is the opposite of
+   * {@link #isDynamic()}.
+   *
+   * @return {@code true} if this account is defined at startup; {@code false} otherwise.
+   */
+  default boolean isPreconfigured() {
+    return false;
+  }
+
+  /**
+   * Determines if this account is dynamic (i.e., details are not determined until an incoming connection is made). This
+   * is the opposite of {@link #isPreconfigured()}.
+   *
+   * @return {@code true} if this account is constructed when an incoming connection is made; {@code false} otherwise.
+   */
+  default boolean isDynamic() {
+    return !isPreconfigured();
+  }
+
+  /**
    * The segment that will be appended to the connector's ILP address to form this account's ILP address. Only
    * applicable to accounts with relation={@link AccountRelationship#CHILD}. By default, this will be the identifier of
    * the account, i.e. the key used in the accounts config object.
@@ -140,12 +160,26 @@ public interface AccountSettings {
   Map<String, Object> getCustomSettings();
 
   @Value.Immutable(intern = true)
+  @Value.Modifiable
   abstract class AbstractAccountSettings implements AccountSettings {
 
     @Override
     @Value.Default
     public boolean isInternal() {
       return false;
+    }
+
+    @Override
+    @Value.Default
+    public boolean isPreconfigured() {
+      // Default is false, but the AccountSettingsFromPropertyFile will set this to true.
+      return false;
+    }
+
+    @Override
+    @Value.Derived
+    public boolean isDynamic() {
+      return !isPreconfigured();
     }
 
     @Value.Default
