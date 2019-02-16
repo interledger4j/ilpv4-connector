@@ -1,6 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties;
 
-import com.sappenin.interledger.ilpv4.connector.settings.AccountBalanceSettings;
+import org.interledger.connector.accounts.AccountBalanceSettings;
 
 import java.math.BigInteger;
 import java.util.Optional;

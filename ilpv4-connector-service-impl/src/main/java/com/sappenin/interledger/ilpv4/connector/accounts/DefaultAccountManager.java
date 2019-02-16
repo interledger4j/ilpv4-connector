@@ -3,17 +3,17 @@ package com.sappenin.interledger.ilpv4.connector.accounts;
 import com.google.common.collect.Maps;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.sappenin.interledger.ilpv4.connector.Account;
-import com.sappenin.interledger.ilpv4.connector.AccountId;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountRelationship;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import org.interledger.connector.accounts.Account;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountRelationship;
+import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.link.Link;
+import org.interledger.connector.link.LinkSettings;
+import org.interledger.connector.link.events.LinkConnectedEvent;
+import org.interledger.connector.link.events.LinkDisconnectedEvent;
+import org.interledger.connector.link.events.LinkEventListener;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.plugin.lpiv2.Plugin;
-import org.interledger.plugin.lpiv2.PluginSettings;
-import org.interledger.plugin.lpiv2.events.PluginConnectedEvent;
-import org.interledger.plugin.lpiv2.events.PluginDisconnectedEvent;
-import org.interledger.plugin.lpiv2.events.PluginEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,17 +21,16 @@ import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
- * An implementation of {@link AccountManager} that supports multiple accounts, each with its own plugin.
+ * An implementation of {@link AccountManager} that supports multiple accounts, each with its own link.
  *
  * WARNING: This Account manager should never know anything about routing.
  */
-public class DefaultAccountManager implements AccountManager, PluginEventListener {
+public class DefaultAccountManager implements AccountManager, LinkEventListener {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -41,7 +40,7 @@ public class DefaultAccountManager implements AccountManager, PluginEventListene
 
   private final AccountIdResolver accountIdResolver;
   private final AccountSettingsResolver accountSettingsResolver;
-  private final PluginManager pluginManager;
+  private final LinkManager linkManager;
   private final EventBus eventBus;
 
   // A Connector can have multiple accounts of type `parent`, but only one can be the primary account, e.g., for
@@ -55,13 +54,13 @@ public class DefaultAccountManager implements AccountManager, PluginEventListene
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountIdResolver accountIdResolver,
     final AccountSettingsResolver accountSettingsResolver,
-    final PluginManager pluginManager,
+    final LinkManager linkManager,
     final EventBus eventBus
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
     this.accountSettingsResolver = Objects.requireNonNull(accountSettingsResolver);
-    this.pluginManager = Objects.requireNonNull(pluginManager);
+    this.linkManager = Objects.requireNonNull(linkManager);
     this.eventBus = Objects.requireNonNull(eventBus);
     this.eventBus.register(this);
   }
@@ -70,36 +69,51 @@ public class DefaultAccountManager implements AccountManager, PluginEventListene
   public void createAccount(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
 
-    final PluginSettings pluginSettings = PluginSettings.builder()
-      .pluginType(accountSettings.getPluginType())
+    //    final LinkSettings linkSettings = LinkSettings.builder()
+    //      .linkType(accountSettings.getLinkType())
+    //      .customSettings(accountSettings.getCustomSettings())
+    //      .operatorAddress(connectorSettingsSupplier.get().getOperatorAddress())
+    //      .build();
+    //    final Link<?> link = linkManager.createLink(accountSettings.getId(), linkSettings);
+    //    // Register the Connector as a LinkEvent Listener...
+    //    link.addLinkEventListener(UUID.randomUUID(), this);
+
+
+    // Create Data Link
+    final LinkSettings dataLinkSettings = LinkSettings.builder()
+      .linkType(accountSettings.getLinkType())
       .customSettings(accountSettings.getCustomSettings())
       .operatorAddress(connectorSettingsSupplier.get().getOperatorAddress())
       .build();
-    final Plugin<?> plugin = pluginManager.createPlugin(accountSettings.getId(), pluginSettings);
-    // Register the Connector as a PluginEvent Listener...
-    plugin.addPluginEventListener(UUID.randomUUID(), this);
+    final Link<?> link = linkManager.createLink(accountSettings.getId(), dataLinkSettings);
+    // Register the Connector as a LinkEvent Listener...
+    link.addLinkEventListener(this);
 
-    // Add the account, regardless of if the plugin is connected.
+
+    // TODO: Create Money Link
+
+
+    // Add the account, regardless of if the link is connected.
     this.addAccount(
       Account.builder()
         //.id(accountId) // Found in AccountSettings.
         .accountSettings(accountSettings)
-        .plugin(plugin)
+        .link(link)
         .build()
     );
 
     try {
-      // Try to connect, but only wait 15 seconds. Don't let one connection failure block the other plugins from
+      // Try to connect, but only wait 15 seconds. Don't let one connection failure block the other links from
       // connecting.
-      plugin.connect().get(15, TimeUnit.SECONDS);
+      link.connect().get(15, TimeUnit.SECONDS);
     } catch (Exception e) {
       if (accountSettings.isDynamic()) {
         // Remove the dynamic account...
         this.removeAccount(accountSettings.getId());
-        logger.error("Unable to connect Dynamic Plugin ({}): {}", pluginSettings, e.getMessage());
+        logger.error("Unable to connect Dynamic Link ({}): {}", dataLinkSettings, e.getMessage());
       } else {
         // Preconfigured accounts should not be removed...
-        logger.warn("Unable to connect Preconfigured Plugin({}): {}", pluginSettings, e.getMessage());
+        logger.warn("Unable to connect Preconfigured Link({}): {}", dataLinkSettings, e.getMessage());
       }
     }
   }
@@ -130,7 +144,7 @@ public class DefaultAccountManager implements AccountManager, PluginEventListene
 
       return account;
     } catch (Exception e) {
-      // If any exception is thrown, then removeEntry the peer and any plugins...
+      // If any exception is thrown, then removeEntry the peer and any links...
       this.removeAccount(account.getId());
       throw new RuntimeException(e);
     }
@@ -200,27 +214,27 @@ public class DefaultAccountManager implements AccountManager, PluginEventListene
   }
 
   ////////////////////////
-  // Plugin Event Listener
+  // Link Event Listener
   ////////////////////////
 
   /**
-   * When a multi-account plugin connects, we need to construct a new account in the AccountManager (if it doesn't
+   * When a multi-account link connects, we need to construct a new account in the AccountManager (if it doesn't
    * exist).
    */
   @Override
   @Subscribe
-  public void onConnect(final PluginConnectedEvent event) {
+  public void onConnect(final LinkConnectedEvent event) {
     Objects.requireNonNull(event);
 
-    final AccountId accountId = accountIdResolver.resolveAccountId(event.getPlugin());
+    final AccountId accountId = accountIdResolver.resolveAccountId(event.getLink());
     this.getAccount(accountId).orElseGet(() -> {
       // If we get here, there is no account, so we need to add one to the AccountManager.
-      final AccountSettings accountSettings = this.accountSettingsResolver.resolveAccountSettings(event.getPlugin());
+      final AccountSettings accountSettings = this.accountSettingsResolver.resolveAccountSettings(event.getLink());
       this.addAccount(
         Account.builder()
           //.id(accountId) // Found in AccountSettings.
           .accountSettings(accountSettings)
-          .plugin(event.getPlugin())
+          .link(event.getLink())
           .build()
       );
       // Ignore the result.
@@ -236,10 +250,10 @@ public class DefaultAccountManager implements AccountManager, PluginEventListene
    */
   @Override
   @Subscribe
-  public void onDisconnect(final PluginDisconnectedEvent event) {
+  public void onDisconnect(final LinkDisconnectedEvent event) {
     Objects.requireNonNull(event);
 
-    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getPlugin());
+    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getLink());
     this.getAccount(accountId).ifPresent(account -> {
       if (account.getAccountSettings().isDynamic()) {
         this.removeAccount(accountId);

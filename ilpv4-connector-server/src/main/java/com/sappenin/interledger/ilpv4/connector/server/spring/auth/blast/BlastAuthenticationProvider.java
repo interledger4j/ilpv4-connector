@@ -6,12 +6,12 @@ import com.auth0.spring.security.api.authentication.JwtAuthentication;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.sappenin.interledger.ilpv4.connector.Account;
-import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
-import org.interledger.lpiv2.blast.BlastPluginSettings;
-import org.interledger.plugin.lpiv2.Plugin;
+import org.interledger.connector.accounts.Account;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.Link;
+import org.interledger.connector.link.blast.BlastLinkSettings;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -21,12 +21,13 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import static org.interledger.lpiv2.blast.BlastHeaders.BLAST_AUDIENCE;
+import static org.interledger.connector.link.blast.BlastHeaders.BLAST_AUDIENCE;
 
 /**
  * An {@link AuthenticationProvider} that wraps an individual instance of {@link JwtAuthenticationProvider} for each
  * BLAST peer that authentication is required to be performed with.
  */
+// TODO: Need to separate Auth for sendMoney and sendPacket....
 public class BlastAuthenticationProvider implements AuthenticationProvider {
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
@@ -83,10 +84,10 @@ public class BlastAuthenticationProvider implements AuthenticationProvider {
     Objects.requireNonNull(accountId);
 
     return accountManager.getAccount(accountId)
-      .map(Account::getPlugin)
-      .map(Plugin::getPluginSettings)
-      .map(plugin -> (BlastPluginSettings) plugin)
-      .map(BlastPluginSettings::getIncomingSecret)
+      .map(Account::getLink)
+      .map(Link::getLinkSettings)
+      .map(link -> (BlastLinkSettings) link)
+      .map(BlastLinkSettings::getIncomingSecret)
       .orElseThrow(() -> new BadCredentialsException(
         String.format("No account found for `%s`", accountId.value())
       ));

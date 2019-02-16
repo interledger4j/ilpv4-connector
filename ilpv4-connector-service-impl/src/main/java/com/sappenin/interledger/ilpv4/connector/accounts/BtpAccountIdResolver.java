@@ -1,11 +1,11 @@
 package com.sappenin.interledger.ilpv4.connector.accounts;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
 import org.interledger.btp.BtpSession;
-import org.interledger.plugin.lpiv2.Plugin;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.Link;
 
 /**
- * Defines how to resolve AccountId for a given {@link Plugin}.
+ * Defines how to resolve AccountId for a given {@link Link}.
  */
 public interface BtpAccountIdResolver extends AccountIdResolver {
 

@@ -2,11 +2,13 @@ package com.sappenin.interledger.ilpv4.connector.routing;
 
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteControlRequest;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteUpdateRequest;
-import org.interledger.core.*;
+import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.core.InterledgerFulfillment;
+import org.interledger.core.InterledgerProtocolException;
+import org.interledger.core.InterledgerResponsePacket;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public interface CcpReceiver {
@@ -19,7 +21,7 @@ public interface CcpReceiver {
    *
    * @return A {@link List} of prefixes whose routes have changed.
    */
-  CompletableFuture<List<InterledgerAddressPrefix>> handleRouteUpdateRequest(CcpRouteUpdateRequest routeUpdateRequest)
+  List<InterledgerAddressPrefix> handleRouteUpdateRequest(CcpRouteUpdateRequest routeUpdateRequest)
     throws InterledgerProtocolException;
 
   /**
@@ -28,7 +30,7 @@ public interface CcpReceiver {
    * @return A completable future containing an instance of {@link InterledgerFulfillment}, that is the expected
    * success-response from the remote peer.
    */
-  CompletableFuture<Optional<InterledgerResponsePacket>> sendRouteControl();
+  Optional<InterledgerResponsePacket> sendRouteControl();
 
   /**
    * Perform the following action on each item in the routing table.

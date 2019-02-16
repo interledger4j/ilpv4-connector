@@ -1,14 +1,14 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 
 import java.util.Objects;
 import java.util.Optional;
 
 /**
- * An implementation of {@link ExternalRoutingService} that neither responds to nor issues routing requests, and assumes only a
- * single account exists for purposes of routing.
+ * An implementation of {@link ExternalRoutingService} that neither responds to nor issues routing requests, and assumes
+ * only a single account exists for purposes of routing.
  */
 public class NoOpExternalRoutingService implements ExternalRoutingService {
 

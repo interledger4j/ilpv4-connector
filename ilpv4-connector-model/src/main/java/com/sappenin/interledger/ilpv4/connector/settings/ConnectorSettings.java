@@ -1,6 +1,8 @@
 package com.sappenin.interledger.ilpv4.connector.settings;
 
 import org.immutables.value.Value;
+import org.interledger.connector.accounts.AccountProviderSettings;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 

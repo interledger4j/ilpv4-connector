@@ -6,22 +6,22 @@ import com.google.common.collect.Maps;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.hash.Hashing;
-import com.sappenin.interledger.ilpv4.connector.Account;
-import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.StaticRoute;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountRelationship;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import org.interledger.connector.accounts.Account;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountRelationship;
+import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.link.Link;
+import org.interledger.connector.link.events.LinkConnectedEvent;
+import org.interledger.connector.link.events.LinkDisconnectedEvent;
+import org.interledger.connector.link.events.LinkErrorEvent;
+import org.interledger.connector.link.events.LinkEventListener;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.interledger.plugin.lpiv2.Plugin;
-import org.interledger.plugin.lpiv2.events.PluginConnectedEvent;
-import org.interledger.plugin.lpiv2.events.PluginDisconnectedEvent;
-import org.interledger.plugin.lpiv2.events.PluginErrorEvent;
-import org.interledger.plugin.lpiv2.events.PluginEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +44,7 @@ import static com.sappenin.interledger.ilpv4.connector.routing.Route.HMAC;
  * between publicly accessible peers (i.e., other ILP nodes that we might want to forward public ILP network routing
  * information to).
  */
-public class InMemoryExternalRoutingService implements ExternalRoutingService, PluginEventListener {
+public class InMemoryExternalRoutingService implements ExternalRoutingService, LinkEventListener {
 
   private static final boolean SHOULD_SEND_ROUTES = true;
   private static final boolean SHOULD_NOT_SEND_ROUTES = false;
@@ -169,8 +169,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, P
   }
 
   /**
-   * Register this service to respond to connect/disconnect events that may be emitted from a {@link Plugin}, and then
-   * add the accountId to this service's internal machinery.
+   * Register this service to respond to connect/disconnect events that may be emitted from a {@link Link}, and then add
+   * the accountId to this service's internal machinery.
    */
   public void registerAccount(final AccountId accountId) {
     Objects.requireNonNull(accountId);
@@ -180,22 +180,22 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, P
       return;
     }
 
-    final Plugin<?> plugin = this.accountManager.safeGetAccount(accountId).getPlugin();
+    final Link<?> dataLink = this.accountManager.safeGetAccount(accountId).getLink();
 
     // When registering an accountId, we should remove any callbacks that might already exist.
-    this.unregisterAccountCallbacks.put(accountId, () -> plugin.removePluginEventListener(routingServiceListenerId));
+    this.unregisterAccountCallbacks.put(accountId, () -> dataLink.removeAllLinkEventListeners());
 
-    // Tracked accounts should not enter service until they connect. Additionally, if a tracked plugin disconnects, it
+    // Tracked accounts should not enter service until they connect. Additionally, if a tracked dataLink disconnects, it
     // should be removed from operation until it reconnects.
-    plugin.addPluginEventListener(routingServiceListenerId, new PluginEventListener() {
+    dataLink.addLinkEventListener(new LinkEventListener() {
       @Override
-      public void onConnect(PluginConnectedEvent pluginConnectedEvent) {
-        final AccountId accountId = AccountId.of(plugin.getPluginId().get().value());
-        if (!plugin.isConnected()) {
-          // some plugins don't set `isConnected() = true` before emitting the
+      public void onConnect(LinkConnectedEvent linkConnectedEvent) {
+        final AccountId accountId = AccountId.of(dataLink.getLinkId().get().value());
+        if (!dataLink.isConnected()) {
+          // some links don't set `isConnected() = true` before emitting the
           // connect event, setImmediate has a good chance of working.
           logger.error(
-            "Plugin emitted connect, but then returned false for isConnected, broken plugin. accountId={}",
+            "Link emitted connect, but then returned false for isConnected, broken dataLink. accountId={}",
             accountId
           );
         } else {
@@ -204,20 +204,20 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, P
       }
 
       @Override
-      public void onDisconnect(PluginDisconnectedEvent pluginDisconnectedEvent) {
-        final AccountId accountId = accountIdResolver.resolveAccountId(plugin);
+      public void onDisconnect(LinkDisconnectedEvent linkDisconnectedEvent) {
+        final AccountId accountId = accountIdResolver.resolveAccountId(dataLink);
         removeAccount(accountId);
       }
 
       @Override
-      public void onError(PluginErrorEvent pluginErrorEvent) {
-        logger.error(pluginErrorEvent.getError().getMessage(), pluginErrorEvent.getError());
+      public void onError(LinkErrorEvent linkErrorEvent) {
+        logger.error(linkErrorEvent.getError().getMessage(), linkErrorEvent.getError());
       }
     });
 
-    // If the plugin for the account above is already connected, then the account/plugin won't become eligible for
+    // If the dataLink for the account above is already connected, then the account/dataLink won't become eligible for
     // routing without this extra check.
-    if (plugin.isConnected()) {
+    if (dataLink.isConnected()) {
       this.addTrackedAccount(accountId);
     }
   }
@@ -232,7 +232,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, P
 
     Optional.ofNullable(this.unregisterAccountCallbacks.get(account))
       .ifPresent(untrackRunnable -> {
-        // Run the Runnable that was configured when the plugin was registered (see TrackAccount).
+        // Run the Runnable that was configured when the link was registered (see TrackAccount).
         untrackRunnable.run();
       });
   }
@@ -306,13 +306,13 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, P
       .orElseGet(() -> {
         // The Account in question did not have an existing peer in this routing service, so create a new Peer and
         // initialize it.
-        final Plugin<?> plugin = this.accountManager.safeGetAccount(accountId).getPlugin();
+        final Link<?> link = this.accountManager.safeGetAccount(accountId).getLink();
         logger.debug("Adding peer. accountId={} sendRoutes={} isReceiveRoutes={}", accountId, sendRoutes,
           receiveRoutes);
         final RoutableAccount newPeer = ImmutableRoutableAccount.builder()
           .account(account)
-          .ccpSender(constructCcpSender(account.getAccountSettings().getId(), plugin))
-          .ccpReceiver(constructCcpReceiver(account.getAccountSettings().getId(), plugin))
+          .ccpSender(constructCcpSender(account.getAccountSettings().getId(), link))
+          .ccpReceiver(constructCcpReceiver(account.getAccountSettings().getId(), link))
           .build();
         this.setTrackedAccount(newPeer);
 
@@ -320,7 +320,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, P
         newPeer.getCcpReceiver().sendRouteControl();
 
         // This is somewhat expensive, so only do this if the peer was newly constructed...in other words, we don't
-        // want to reload the local routing tables if a plugin merely disconnected and reconnected, but nothing
+        // want to reload the local routing tables if a link merely disconnected and reconnected, but nothing
         // intrinsically changed about the routing tables that wasn't handled by those listeners.
         this.reloadLocalRoutes();
 
@@ -328,30 +328,30 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, P
       });
   }
 
-  private CcpSender constructCcpSender(final AccountId peerAccountId, final Plugin plugin) {
+  private CcpSender constructCcpSender(final AccountId peerAccountId, final Link link) {
     Objects.requireNonNull(peerAccountId);
-    Objects.requireNonNull(plugin);
+    Objects.requireNonNull(link);
     return new DefaultCcpSender(
-      this.connectorSettingsSupplier, peerAccountId, plugin, this.outgoingRoutingTable, this.accountManager,
+      this.connectorSettingsSupplier, peerAccountId, link, this.outgoingRoutingTable, this.accountManager,
       this.ilpCodecContext
     );
   }
 
-  private CcpReceiver constructCcpReceiver(final AccountId peerAccountId, final Plugin plugin) {
+  private CcpReceiver constructCcpReceiver(final AccountId peerAccountId, final Link link) {
     Objects.requireNonNull(peerAccountId);
-    Objects.requireNonNull(plugin);
+    Objects.requireNonNull(link);
     return new DefaultCcpReceiver(
-      this.connectorSettingsSupplier, peerAccountId, plugin, this.incomingRoutingTable, this.ilpCodecContext
+      this.connectorSettingsSupplier, peerAccountId, link, this.incomingRoutingTable, this.ilpCodecContext
     );
   }
 
   /**
-   * Determines if the plugin configured for the account in {@code account} should send routes to the remote peer
+   * Determines if the link configured for the account in {@code account} should send routes to the remote peer
    * account.
    *
    * @param account An instance of {@link AccountSettings} for a remote peer account.
    *
-   * @return {@code true} if the plugin is configured to send routes, {@code false} otherwise.
+   * @return {@code true} if the link is configured to send routes, {@code false} otherwise.
    */
   private boolean shouldSendRoutes(final Account account) {
     Objects.requireNonNull(account);
@@ -363,12 +363,12 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, P
   }
 
   /**
-   * Determines if the plugin configured for the account in {@code account} should receive routes from the remote peer
+   * Determines if the link configured for the account in {@code account} should receive routes from the remote peer
    * account.
    *
    * @param account An instance of {@link AccountSettings} for a remote peer account.
    *
-   * @return {@code true} if the plugin is configured to receive routes, {@code false} otherwise.
+   * @return {@code true} if the link is configured to receive routes, {@code false} otherwise.
    */
   private boolean shouldReceiveRoutes(final Account account) {
     Objects.requireNonNull(account);
@@ -747,32 +747,32 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, P
   }
 
   ////////////////////////
-  // Plugin Event Listener
+  // Link Event Listener
   ////////////////////////
 
   /**
-   * Called to handle an {@link PluginConnectedEvent}.
+   * Called to handle an {@link LinkConnectedEvent}.
    *
-   * @param event A {@link PluginConnectedEvent}.
+   * @param event A {@link LinkConnectedEvent}.
    */
   @Override
   @Subscribe
-  public void onConnect(PluginConnectedEvent event) {
-    // Unregister the account (associated to the plugin that connected) with the routing service.
-    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getPlugin());
+  public void onConnect(LinkConnectedEvent event) {
+    // Unregister the account (associated to the link that connected) with the routing service.
+    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getLink());
     this.registerAccount(accountId);
   }
 
   /**
-   * Called to handle an {@link PluginDisconnectedEvent}.
+   * Called to handle an {@link LinkDisconnectedEvent}.
    *
-   * @param event A {@link PluginDisconnectedEvent}.
+   * @param event A {@link LinkDisconnectedEvent}.
    */
   @Override
   @Subscribe
-  public void onDisconnect(PluginDisconnectedEvent event) {
-    // Unregister the account (associated to the plugin that disconnected) from the routing service.
-    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getPlugin());
+  public void onDisconnect(LinkDisconnectedEvent event) {
+    // Unregister the account (associated to the link that disconnected) from the routing service.
+    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getLink());
     this.unregisterAccount(accountId);
   }
 

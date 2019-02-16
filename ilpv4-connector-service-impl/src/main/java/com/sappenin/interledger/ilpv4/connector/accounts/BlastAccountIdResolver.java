@@ -1,6 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.accounts;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
+import org.interledger.connector.accounts.AccountId;
 
 import java.security.Principal;
 

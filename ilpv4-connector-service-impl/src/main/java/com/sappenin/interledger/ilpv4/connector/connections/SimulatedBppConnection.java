@@ -35,7 +35,7 @@ public class SimulatedBppConnection {
 //  /**
 //   * Unregister the {@link Plugin} that was handling LPIv2 tasks for the account identified by {@code account}.
 //   *
-//   * @param accountAddress The address of the account to unregister plugins for.
+//   * @param accountAddress The address of the account to unregister links for.
 //   */
 //  @Override
 //  public void unregisterPlugin(InterledgerAddress accountAddress) {
@@ -54,7 +54,7 @@ public class SimulatedBppConnection {
 //      .map(BilateralReceiver::getDataHandler)
 //      .filter(Optional::isPresent)
 //      .map(Optional::get)
-//      .map(handler -> handler.handleIncomingData(preparePacket))
+//      .map(handler -> handler.handleIncomingPacket(preparePacket))
 //      .orElseThrow(() -> new RuntimeException("No DataHandler present!"));
 //  }
 //

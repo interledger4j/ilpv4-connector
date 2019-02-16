@@ -1,17 +1,17 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.controllers;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.BlastAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.LinkFactoryProvider;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketMapper;
-import org.interledger.plugin.lpiv2.btp2.spring.factories.PluginFactoryProvider;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,10 +22,9 @@ import org.zalando.problem.spring.common.MediaTypes;
 import java.security.Principal;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-import static org.interledger.lpiv2.blast.BlastHeaders.ILP_OCTET_STREAM_VALUE;
+import static org.interledger.connector.link.blast.BlastHeaders.ILP_OCTET_STREAM_VALUE;
 
 /**
  * A RESTful controller for handling ILP over HTTP request/response payloads.
@@ -44,18 +43,18 @@ public class IlpHttpController {
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final BlastAccountIdResolver accountIdResolver;
-  private final PluginFactoryProvider pluginFactoryProvider;
+  private final LinkFactoryProvider linkFactoryProvider;
   private final ILPv4PacketSwitch ilPv4PacketSwitch;
 
   public IlpHttpController(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final BlastAccountIdResolver accountIdResolver,
-    final PluginFactoryProvider pluginFactoryProvider,
+    final LinkFactoryProvider linkFactoryProvider,
     final ILPv4PacketSwitch ilPv4PacketSwitch
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
-    this.pluginFactoryProvider = Objects.requireNonNull(pluginFactoryProvider);
+    this.linkFactoryProvider = Objects.requireNonNull(linkFactoryProvider);
     this.ilPv4PacketSwitch = Objects.requireNonNull(ilPv4PacketSwitch);
   }
 
@@ -63,7 +62,7 @@ public class IlpHttpController {
    * This handler conforms to the RFC, accepting an OER-encoded payload in the body of the request. The {@code
    * accountId} is found via the {@link AccountIdResolver}.
    *
-   * @param preparePacket An {@link InterledgerPreparePacket} containing information about an ILP `sendData` request.
+   * @param preparePacket An {@link InterledgerPreparePacket} containing information about an ILP `sendPacket` request.
    *
    * @return All ILP Packets MUST be returned with the HTTP status code 200: OK. An endpoint MAY return standard HTTP
    * errors, including but not limited to: a malformed or unauthenticated request, rate limiting, or an unresponsive
@@ -80,8 +79,7 @@ public class IlpHttpController {
   ) {
 
     final AccountId accountId = this.accountIdResolver.resolveAccountId(principal);
-    CompletableFuture<Optional<InterledgerResponsePacket>> response =
-      this.ilPv4PacketSwitch.routeData(accountId, preparePacket);
+    Optional<InterledgerResponsePacket> response = this.ilPv4PacketSwitch.routeData(accountId, preparePacket);
 
     return response
       // If an error response...

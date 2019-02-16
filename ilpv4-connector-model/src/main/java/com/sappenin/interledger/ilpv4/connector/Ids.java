@@ -18,23 +18,4 @@ public class Ids {
 
   }
 
-  /**
-   * A wrapper that defines a unique identifier for an account.
-   */
-  @Value.Immutable
-  @Wrapped
-  static abstract class _AccountId extends Wrapper<String> {
-
-  }
-
-  /**
-   * A wrapper that defines a unique identifier for an account provider.
-   */
-  @Value.Immutable
-  @Wrapped
-  static abstract class _AccountProviderId extends Wrapper<String> {
-
-  }
-
-
 }

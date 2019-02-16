@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.function.Supplier;
 
-import static org.interledger.lpiv2.blast.BlastHeaders.ILP_OCTET_STREAM;
+import static org.interledger.connector.link.blast.BlastHeaders.ILP_OCTET_STREAM;
 
 @ControllerAdvice
 public class WebExceptionHandler {

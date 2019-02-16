@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;

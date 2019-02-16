@@ -9,7 +9,7 @@ public abstract class AbstractBilateralConnection {//<IT extends MultiplexedBila
   //  implements BilateralConnection<IT, OT, P> {
   //
   //  protected final Logger logger = LoggerFactory.getLogger(this.getClass());
-  //  //protected final Map<InterledgerAddress, P> plugins;
+  //  //protected final Map<InterledgerAddress, P> links;
   //
   //  private final UUID bilateralConnectionId = UUID.randomUUID();
   //  private final InterledgerAddress operatorAddress;
@@ -120,7 +120,7 @@ public abstract class AbstractBilateralConnection {//<IT extends MultiplexedBila
   //  //  //@Override
   //  //  public Optional<P> getPlugin(final InterledgerAddress account) {
   //  //    Objects.requireNonNull(account);
-  //  //    return Optional.ofNullable(this.plugins.get(account));
+  //  //    return Optional.ofNullable(this.links.get(account));
   //  //  }
   //
   //  //  @Override
@@ -139,7 +139,7 @@ public abstract class AbstractBilateralConnection {//<IT extends MultiplexedBila
   //  //      plugin.disconnect();
   //  //    });
   //  //
-  //  //    this.plugins.remove(account);
+  //  //    this.links.remove(account);
   //  //  }
   //
   //  /**
@@ -147,7 +147,7 @@ public abstract class AbstractBilateralConnection {//<IT extends MultiplexedBila
   //   */
   //  @Override
   //  public void onConnect(final PluginConnectedEvent event) {
-  //    // TODO: Determine how plugins should register. Seems like it shouldn't be event-driven since an inoming connection should
+  //    // TODO: Determine how links should register. Seems like it shouldn't be event-driven since an inoming connection should
   //    // construct a plugin, and then register it in this class.
   //
   //    // If there are any

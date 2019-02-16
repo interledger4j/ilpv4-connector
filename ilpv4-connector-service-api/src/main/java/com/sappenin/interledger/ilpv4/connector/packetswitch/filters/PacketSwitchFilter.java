@@ -1,11 +1,10 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * A filter is an object that performs filtering tasks on either the request to send money, or on the response from a
@@ -27,7 +26,7 @@ public interface PacketSwitchFilter {
    *
    * @return
    */
-  CompletableFuture<Optional<InterledgerResponsePacket>> doFilter(
+  Optional<InterledgerResponsePacket> doFilter(
     AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket, PacketSwitchFilterChain filterChain
   );
 

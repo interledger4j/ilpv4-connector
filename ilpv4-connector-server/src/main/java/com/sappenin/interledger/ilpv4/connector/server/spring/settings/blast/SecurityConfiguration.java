@@ -22,7 +22,7 @@ import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport;
 import java.util.Arrays;
 import java.util.function.Supplier;
 
-import static org.interledger.lpiv2.blast.BlastHeaders.BLAST_AUDIENCE;
+import static org.interledger.connector.link.blast.BlastHeaders.BLAST_AUDIENCE;
 
 @Configuration
 @EnableWebSecurity

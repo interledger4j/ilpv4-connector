@@ -14,9 +14,8 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Objects;
 
-import static org.interledger.lpiv2.blast.BlastHeaders.ILP_HEADER_OCTET_STREAM;
-import static org.interledger.lpiv2.blast.BlastHeaders.ILP_OCTET_STREAM;
-
+import static org.interledger.connector.link.blast.BlastHeaders.ILP_HEADER_OCTET_STREAM;
+import static org.interledger.connector.link.blast.BlastHeaders.ILP_OCTET_STREAM;
 
 /**
  * An {@link HttpMessageConverter} that handles instances of {@link InterledgerPreparePacket}.

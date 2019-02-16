@@ -16,18 +16,12 @@ public abstract class IlpNodeEventHandler {
   public final void handle(final IlpNodeEvent event) {
     Objects.requireNonNull(event);
 
-    if (PluginConstructedEvent.class.isAssignableFrom(event.getClass())) {
-      handlePluginConstructedEvent((PluginConstructedEvent) event);
-    } else {
-      throw new RuntimeException(String.format("Unsupported IlpNodeEvent Type: %s", event.getClass()));
-    }
+    //    if (PluginConstructedEvent.class.isAssignableFrom(event.getClass())) {
+    //      handlePluginConstructedEvent((PluginConstructedEvent) event);
+    //    } else {
+    throw new RuntimeException(String.format("Unsupported IlpNodeEvent Type: %s", event.getClass()));
+    //}
   }
 
-  /**
-   * Handle the event as a {@link PluginConstructedEvent}.
-   *
-   * @param event A  {@link PluginConstructedEvent} to be responded to.
-   */
-  protected abstract void handlePluginConstructedEvent(final PluginConstructedEvent event);
 
 }

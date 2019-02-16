@@ -1,7 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
 import com.google.common.collect.Lists;
-import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteControlRequest;
@@ -10,6 +9,12 @@ import com.sappenin.interledger.ilpv4.connector.ccp.CcpSyncMode;
 import com.sappenin.interledger.ilpv4.connector.ccp.codecs.CcpCodecs;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ImmutableConnectorSettings;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.AbstractLink;
+import org.interledger.connector.link.ImmutableLinkSettings;
+import org.interledger.connector.link.Link;
+import org.interledger.connector.link.LinkSettings;
+import org.interledger.connector.link.LinkType;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerFulfillPacket;
@@ -18,11 +23,6 @@ import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.interledger.plugin.lpiv2.AbstractPlugin;
-import org.interledger.plugin.lpiv2.ImmutablePluginSettings;
-import org.interledger.plugin.lpiv2.Plugin;
-import org.interledger.plugin.lpiv2.PluginSettings;
-import org.interledger.plugin.lpiv2.PluginType;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -40,7 +39,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
@@ -79,17 +77,16 @@ public class CcpSenderReceiverTest {
   private static final InterledgerAddress CONNECTOR_D_ADDRESS =
     InterledgerAddress.of(InterledgerAddressPrefix.TEST1.getValue() + "." + CONNECTOR_D_ACCOUNT.value());
 
-//  private static final InterledgerAddressPrefix CONNECTOR_A_PREFIX =
-//    InterledgerAddressPrefix.of(CONNECTOR_A_ADDRESS.getValue());
-//  private static final InterledgerAddressPrefix CONNECTOR_B_PREFIX =
-//    InterledgerAddressPrefix.of(CONNECTOR_B_ADDRESS.getValue());
+  //  private static final InterledgerAddressPrefix CONNECTOR_A_PREFIX =
+  //    InterledgerAddressPrefix.of(CONNECTOR_A_ADDRESS.getValue());
+  //  private static final InterledgerAddressPrefix CONNECTOR_B_PREFIX =
+  //    InterledgerAddressPrefix.of(CONNECTOR_B_ADDRESS.getValue());
 
   private static final InterledgerAddressPrefix CONNECTOR_C_PREFIX =
     InterledgerAddressPrefix.of(CONNECTOR_C_ADDRESS.getValue());
   private static final InterledgerAddressPrefix CONNECTOR_D_PREFIX =
     InterledgerAddressPrefix.of(CONNECTOR_D_ADDRESS.getValue());
 
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private CodecContext codecContext;
 
   /////////////
@@ -120,11 +117,11 @@ public class CcpSenderReceiverTest {
       .operatorAddress(CONNECTOR_B_ADDRESS)
       .build();
 
-    final PluginSettings pluginSettingsA = ImmutablePluginSettings.builder()
-      .pluginType(PluginType.of(IpcRouteHandlingPlugin.class.getSimpleName()))
+    final LinkSettings linkSettingsA = ImmutableLinkSettings.builder()
+      .linkType(LinkType.of(IpcRouteHandlingLink.class.getSimpleName()))
       .operatorAddress(CONNECTOR_A_ADDRESS)
       .build();
-    final IpcRouteHandlingPlugin pluginRunningOnA = new IpcRouteHandlingPlugin(pluginSettingsA, codecContext);
+    final IpcRouteHandlingLink linkRunningOnA = new IpcRouteHandlingLink(linkSettingsA, codecContext);
 
     {
       final ForwardingRoutingTable<RouteUpdate> routeUpdateForwardingRoutingTable =
@@ -132,19 +129,19 @@ public class CcpSenderReceiverTest {
       final ForwardingRoutingTable<IncomingRoute> incomingRouteForwardingRoutingTable =
         new InMemoryIncomingRouteForwardRoutingTable();
       final CcpSender ccpSender = new DefaultCcpSender(
-        () -> connectorA_ConnectorSettings, CONNECTOR_B_ACCOUNT, pluginRunningOnA,
+        () -> connectorA_ConnectorSettings, CONNECTOR_B_ACCOUNT, linkRunningOnA,
         routeUpdateForwardingRoutingTable, connectorAAccountManagerMock, codecContext
       );
       final CcpReceiver ccpReceiver =
-        new DefaultCcpReceiver(() -> connectorA_ConnectorSettings, CONNECTOR_B_ACCOUNT, pluginRunningOnA,
+        new DefaultCcpReceiver(() -> connectorA_ConnectorSettings, CONNECTOR_B_ACCOUNT, linkRunningOnA,
           incomingRouteForwardingRoutingTable,
           codecContext
         );
 
-      this.connectorA = new SimulatedConnector(CONNECTOR_A_ADDRESS, pluginRunningOnA, ccpSender, ccpReceiver);
+      this.connectorA = new SimulatedConnector(CONNECTOR_A_ADDRESS, linkRunningOnA, ccpSender, ccpReceiver);
     }
 
-    final IpcRouteHandlingPlugin pluginRunningOnB = new IpcRouteHandlingPlugin(pluginSettingsA, codecContext);
+    final IpcRouteHandlingLink linkRunningOnB = new IpcRouteHandlingLink(linkSettingsA, codecContext);
     {
       final ForwardingRoutingTable<RouteUpdate> routeUpdateForwardingRoutingTable =
         new InMemoryRouteUpdateForwardRoutingTable();
@@ -152,25 +149,25 @@ public class CcpSenderReceiverTest {
         new InMemoryIncomingRouteForwardRoutingTable();
       final CcpSender ccpSender = new DefaultCcpSender(
         () -> connectorB_ConnectorSettings,
-        CONNECTOR_A_ACCOUNT, pluginRunningOnB, routeUpdateForwardingRoutingTable,
+        CONNECTOR_A_ACCOUNT, linkRunningOnB, routeUpdateForwardingRoutingTable,
         connectorB_AccountManagerMock, codecContext
       );
       final CcpReceiver ccpReceiver =
-        new DefaultCcpReceiver(() -> connectorB_ConnectorSettings, CONNECTOR_A_ACCOUNT, pluginRunningOnB,
+        new DefaultCcpReceiver(() -> connectorB_ConnectorSettings, CONNECTOR_A_ACCOUNT, linkRunningOnB,
           incomingRouteForwardingRoutingTable,
           codecContext
         );
 
-      this.connectorB = new SimulatedConnector(CONNECTOR_B_ADDRESS, pluginRunningOnB, ccpSender, ccpReceiver);
+      this.connectorB = new SimulatedConnector(CONNECTOR_B_ADDRESS, linkRunningOnB, ccpSender, ccpReceiver);
     }
 
     // Rather than running HTTP or BTP over web-sockets between ConnectorA and ConnectorB, this arrangement simulates
     // something closer to IPC.
-    pluginRunningOnA.setConnectors(connectorA, connectorB);
-    pluginRunningOnB.setConnectors(connectorB, connectorA);
+    linkRunningOnA.setConnectors(connectorA, connectorB);
+    linkRunningOnB.setConnectors(connectorB, connectorA);
 
-    pluginRunningOnA.connect();
-    pluginRunningOnB.connect();
+    linkRunningOnA.connect();
+    linkRunningOnB.connect();
   }
 
   /**
@@ -208,7 +205,7 @@ public class CcpSenderReceiverTest {
     assertRoutingTableEpoch(0, connectorA, connectorB);
 
     // 2. NodeB sends a RouteControlRequest to move NodeB into SYNC mode.
-    this.connectorA.ccpReceiver.sendRouteControl().get(200, TimeUnit.MILLISECONDS);
+    this.connectorA.ccpReceiver.sendRouteControl();
     //assertRoutingTableIsNotExpired(connectorA, connectorB);
     assertSyncMode(CcpSyncMode.MODE_IDLE, connectorA);
     assertSyncMode(CcpSyncMode.MODE_SYNC, connectorB);
@@ -332,29 +329,29 @@ public class CcpSenderReceiverTest {
   private static class SimulatedConnector {
 
     private final InterledgerAddress address;
-    private final IpcRouteHandlingPlugin plugin;
+    private final IpcRouteHandlingLink link;
 
-    // Holds plugins for simulated nodes for C and D in this test...
-    private final List<IpcRouteHandlingPlugin> mockPlugins;
+    // Holds links for simulated nodes for C and D in this test...
+    private final List<IpcRouteHandlingLink> mockLinks;
 
     private final CcpSender ccpSender;
     private final CcpReceiver ccpReceiver;
 
     private SimulatedConnector(
-      final InterledgerAddress address, final IpcRouteHandlingPlugin plugin,
+      final InterledgerAddress address, final IpcRouteHandlingLink link,
       final CcpSender ccpSender, final CcpReceiver ccpReceiver,
-      final IpcRouteHandlingPlugin... mockPlugins
+      final IpcRouteHandlingLink... mockLinks
     ) {
       this.address = Objects.requireNonNull(address);
-      this.plugin = Objects.requireNonNull(plugin);
+      this.link = Objects.requireNonNull(link);
       this.ccpSender = Objects.requireNonNull(ccpSender);
       this.ccpReceiver = Objects.requireNonNull(ccpReceiver);
 
-      this.mockPlugins = Lists.newArrayList(mockPlugins);
+      this.mockLinks = Lists.newArrayList(mockLinks);
     }
 
-    public IpcRouteHandlingPlugin getPlugin() {
-      return plugin;
+    public IpcRouteHandlingLink getLink() {
+      return link;
     }
 
     // The address of this connector...
@@ -365,9 +362,9 @@ public class CcpSenderReceiverTest {
 
   /**
    * A lpi2 that directly connects ¬two Connectors via Inter-process Communication (IPC), for testing of getRoute
-   * control messages. Each Connector in a bilateral relationship will have an instance of this Plugin.
+   * control messages. Each Connector in a bilateral relationship will have an instance of this Link.
    */
-  private static class IpcRouteHandlingPlugin extends AbstractPlugin<PluginSettings> implements Plugin<PluginSettings> {
+  private static class IpcRouteHandlingLink extends AbstractLink<LinkSettings> implements Link<LinkSettings> {
 
     private static final String PEER_ROUTE = "peer.route";
 
@@ -379,16 +376,14 @@ public class CcpSenderReceiverTest {
     private SimulatedConnector localConnector;
     private SimulatedConnector remoteConnector;
 
-    private IpcRouteHandlingPlugin(final PluginSettings pluginSettings, final CodecContext codecContext) {
-      super(pluginSettings);
+    private IpcRouteHandlingLink(final LinkSettings linkSettings, final CodecContext codecContext) {
+      super(linkSettings);
       this.codecContext = Objects.requireNonNull(codecContext);
 
       /////////////////////////////
       // The stuff to do on an incoming prepare packet...
       /////////////////////////////
-      this.registerDataHandler((
-        //sourceAccountAddress,
-        sourcePreparePacket) -> {
+      this.registerLinkHandler((sourcePreparePacket) -> {
 
         if (sourcePreparePacket.getDestination().startsWith(PEER_ROUTE)) {
           switch (sourcePreparePacket.getDestination().getValue()) {
@@ -403,7 +398,7 @@ public class CcpSenderReceiverTest {
 
               logger
                 .debug("Received getRoute control message. sender={}, tableId={} getEpoch={} features={}",
-                  pluginSettings.getOperatorAddress(),
+                  linkSettings.getOperatorAddress(),
                   routeControlRequest.lastKnownRoutingTableId(), routeControlRequest.lastKnownEpoch(),
                   routeControlRequest.features());
 
@@ -412,10 +407,11 @@ public class CcpSenderReceiverTest {
               this.localConnector.ccpSender.handleRouteControlRequest(routeControlRequest);
 
               // If no exception, then return a fulfill response...
-              return CompletableFuture.supplyAsync(
-                () -> Optional.of((InterledgerResponsePacket) InterledgerFulfillPacket.builder()
-                  .fulfillment(CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT).build()))
-                .toCompletableFuture();
+              return Optional.of(
+                InterledgerFulfillPacket.builder()
+                  .fulfillment(CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT)
+                  .build()
+              );
             }
 
             case CcpConstants.CCP_UPDATE_DESTINATION: {
@@ -430,7 +426,7 @@ public class CcpSenderReceiverTest {
               logger
                 .debug("Received routes. sender={} speaker={} currentEpoch={} fromEpoch={} toEpoch={} newRoutes={} " +
                     "withdrawnRoutes={}",
-                  pluginSettings.getOperatorAddress(),
+                  linkSettings.getOperatorAddress(),
                   routeUpdateRequest.speaker(), routeUpdateRequest.currentEpochIndex(),
                   routeUpdateRequest.fromEpochIndex(), routeUpdateRequest.toEpochIndex(),
                   routeUpdateRequest.newRoutes().size(),
@@ -440,7 +436,7 @@ public class CcpSenderReceiverTest {
 
               // Normally, we would consult the AccountManager to getEntry the lpi2 for the sourceAccount. However, for
               // this test, it's hard-coded, so just use the sender directly...
-              final CompletableFuture<List<InterledgerAddressPrefix>> changedPrefixes =
+              final List<InterledgerAddressPrefix> changedPrefixes =
                 this.localConnector.ccpReceiver.handleRouteUpdateRequest(routeUpdateRequest);
 
               // TODO: In the real connector, we would update the local routing table via the following two calls in
@@ -451,11 +447,11 @@ public class CcpSenderReceiverTest {
               // But in this test we don't do that...
 
               // If no exception, then return a fulfill response...
-              return CompletableFuture.supplyAsync(
-                () -> Optional.of(
-                  (InterledgerResponsePacket) InterledgerFulfillPacket.builder()
-                    .fulfillment(CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT).build())
-              ).toCompletableFuture();
+              return Optional.of(
+                InterledgerFulfillPacket.builder()
+                  .fulfillment(CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT)
+                  .build()
+              );
             }
 
             default:
@@ -488,22 +484,11 @@ public class CcpSenderReceiverTest {
      * @param preparePacket
      */
     @Override
-    public CompletableFuture<Optional<InterledgerResponsePacket>> sendData(InterledgerPreparePacket preparePacket)
+    public Optional<InterledgerResponsePacket> sendPacket(InterledgerPreparePacket preparePacket)
       throws InterledgerProtocolException {
       // For simulation purposes, we simply reach through into the other connector directly and place the
       // preparePacket into it.
-      return this.remoteConnector.getPlugin().getDataHandler().get().handleIncomingData(preparePacket);
-    }
-
-    /**
-     * Perform the logic of settling with a remote peer.
-     *
-     * @param amount
-     */
-    @Override
-    public CompletableFuture<Void> sendMoney(final BigInteger amount) {
-      // No-op for routing purposes...
-      return CompletableFuture.completedFuture(null);
+      return this.remoteConnector.getLink().getLinkHandler().get().handleIncomingPacket(preparePacket);
     }
 
     public void setConnectors(final SimulatedConnector localConnector, final SimulatedConnector remoteConnector) {

@@ -19,11 +19,10 @@
   <description>The parent pom for this ILPv4 Connector.</description>
 
   <properties>
-    <!-- By default, we run in production mode, unless a different profile is specified. -->
-    <activeProfile>production</activeProfile>
+    <!-- By default, we run in prod mode, unless a different profile is specified. -->
+    <activeProfile>prod</activeProfile>
     <java.version>1.8</java.version>
     <ilp.version>0.15.0-SNAPSHOT</ilp.version>
-    <ilp-plugin.version>2.0.0-SNAPSHOT</ilp-plugin.version>
     <problem.version>0.22.0</problem.version>
     <problem-spring-web.version>0.24.0-RC.0</problem-spring-web.version>
 
@@ -31,10 +30,15 @@
     <protobuf.maven.plugin.version>0.6.1</protobuf.maven.plugin.version>
     <protoc.version>3.6.1</protoc.version>
     <protoc.gen.grpc.java.version>1.16.1</protoc.gen.grpc.java.version>
+
+    <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
   </properties>
 
   <modules>
     <module>ilpv4-api</module>
+    <module>ilpv4-connector-accounts</module>
+    <module>ilpv4-connector-link</module>
+    <module>ilpv4-connector-link-blast</module>
     <module>ilpv4-connector-model</module>
     <module>ilpv4-connector-routing-api</module>
     <module>ilpv4-connector-service-api</module>
@@ -54,6 +58,11 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>ilpv4-node</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-accounts</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -92,6 +101,16 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-link</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-link-blast</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.auth0</groupId>
         <artifactId>java-jwt</artifactId>
         <version>3.7.0</version>
@@ -122,25 +141,25 @@
         <version>3.12.1</version>
       </dependency>
       <!--<dependency>-->
-        <!--<groupId>io.grpc</groupId>-->
-        <!--<artifactId>grpc-netty-shaded</artifactId>-->
-        <!--<version>${grpc.version}</version>-->
+      <!--<groupId>io.grpc</groupId>-->
+      <!--<artifactId>grpc-netty-shaded</artifactId>-->
+      <!--<version>${grpc.version}</version>-->
       <!--</dependency>-->
       <!--<dependency>-->
-        <!--<groupId>io.grpc</groupId>-->
-        <!--<artifactId>grpc-protobuf</artifactId>-->
-        <!--<version>${grpc.version}</version>-->
+      <!--<groupId>io.grpc</groupId>-->
+      <!--<artifactId>grpc-protobuf</artifactId>-->
+      <!--<version>${grpc.version}</version>-->
       <!--</dependency>-->
       <!--<dependency>-->
-        <!--<groupId>io.grpc</groupId>-->
-        <!--<artifactId>grpc-stub</artifactId>-->
-        <!--<version>${grpc.version}</version>-->
+      <!--<groupId>io.grpc</groupId>-->
+      <!--<artifactId>grpc-stub</artifactId>-->
+      <!--<version>${grpc.version}</version>-->
       <!--</dependency>-->
       <!--<dependency>-->
-        <!--<groupId>io.grpc</groupId>-->
-        <!--<artifactId>grpc-testing</artifactId>-->
-        <!--<version>${grpc.version}</version>-->
-        <!--<scope>test</scope>-->
+      <!--<groupId>io.grpc</groupId>-->
+      <!--<artifactId>grpc-testing</artifactId>-->
+      <!--<version>${grpc.version}</version>-->
+      <!--<scope>test</scope>-->
       <!--</dependency>-->
       <dependency>
         <groupId>javax.inject</groupId>
@@ -172,7 +191,7 @@
       <dependency>
         <groupId>org.immutables</groupId>
         <artifactId>value</artifactId>
-        <version>2.6.3</version>
+        <version>2.7.5</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
@@ -184,26 +203,6 @@
         <groupId>org.interledger</groupId>
         <artifactId>ildcp-core</artifactId>
         <version>${ilp.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>ilp-plugin-core</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>ilp-plugin-btp</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>ilp-plugin-btp-springws</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>ilp-plugin-blast</artifactId>
-        <version>2.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.interledger</groupId>
@@ -272,8 +271,90 @@
         <version>1.6.1</version>
       </extension>
     </extensions>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>3.1.1</version>
+          <executions>
+            <execution>
+              <id>analyze</id>
+              <goals>
+                <goal>analyze-only</goal>
+              </goals>
+              <configuration>
+                <failOnWarning>true</failOnWarning>
+                <ignoredDependencies>
+                  <ignoredDependency>com.google.code.findbugs:jsr305</ignoredDependency>
+                  <ignoredDependency>com.google.code.findbugs:annotations</ignoredDependency>
+                  <ignoredDependency>com.google.errorprone:error_prone_annotations</ignoredDependency>
+                </ignoredDependencies>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.owasp</groupId>
+          <artifactId>dependency-check-maven</artifactId>
+          <version>3.1.2</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <failBuildOnAnyVulnerability>${failBuildOnAnyVulnerability}</failBuildOnAnyVulnerability>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>3.0.0</version>
+          <inherited>true</inherited>
+          <dependencies>
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>8.17</version>
+            </dependency>
+          </dependencies>
+          <executions>
+            <execution>
+              <phase>process-sources</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>analyze</id>
+            <goals>
+              <goal>analyze-only</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!--<plugin>-->
+      <!--<artifactId>maven-checkstyle-plugin</artifactId>-->
+      <!--</plugin>-->
+      <!--<plugin>-->
+      <!--<groupId>org.owasp</groupId>-->
+      <!--<artifactId>dependency-check-maven</artifactId>-->
+      <!--</plugin>-->
+    </plugins>
   </build>
 
+  <!-- TODO: Remove `connector-mode` -->
   <profiles>
     <!-- -->
     <profile>

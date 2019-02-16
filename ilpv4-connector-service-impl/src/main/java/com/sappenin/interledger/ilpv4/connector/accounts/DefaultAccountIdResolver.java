@@ -1,11 +1,11 @@
 package com.sappenin.interledger.ilpv4.connector.accounts;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.sappenin.interledger.ilpv4.connector.AccountId;
 import org.interledger.btp.BtpSession;
 import org.interledger.btp.BtpSessionCredentials;
-import org.interledger.plugin.lpiv2.Plugin;
-import org.interledger.plugin.lpiv2.PluginId;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.Link;
+import org.interledger.connector.link.LinkId;
 
 import java.security.Principal;
 import java.util.Objects;
@@ -19,36 +19,36 @@ import java.util.Objects;
 public class DefaultAccountIdResolver implements BtpAccountIdResolver, BlastAccountIdResolver, AccountIdResolver {
 
   @Override
-  public AccountId resolveAccountId(final Plugin<?> plugin) {
-    Objects.requireNonNull(plugin);
+  public AccountId resolveAccountId(final Link<?> link) {
+    Objects.requireNonNull(link);
 
     // The AccountId for a Connected Plugin MUST be the PluginId...but what about a BTP Server Plugin? If it's
     // connected, then
-    if (plugin.isConnected()) {
-      return plugin.getPluginId()
-        .map(PluginId::value)
+    if (link.isConnected()) {
+      return link.getLinkId()
+        .map(LinkId::value)
         .map(AccountId::of)
         .orElseThrow(() -> new RuntimeException("All connected Plugins MUST have a pluginId!"));
     } else {
       // If a Plugin is disconnected, then throw an exception.
       throw new RuntimeException("Disconnected Plugins do not have an associated account!");
 
-      //      if (plugin instanceof LoopbackPlugin) {
+      //      if (link instanceof LoopbackPlugin) {
       //        // Connected Btp Plugins will have a BTP Session that can be used to get the accountId.
-      //        final LoopbackPlugin loopbackPlugin = (LoopbackPlugin) plugin;
+      //        final LoopbackPlugin loopbackPlugin = (LoopbackPlugin) link;
       //        return AccountId.of(loopbackPlugin.getPluginId().get().value());
       //      }
-      //      if (plugin instanceof AbstractBtpPlugin) {
+      //      if (link instanceof AbstractBtpPlugin) {
       //        // Connected Btp Plugins will have a BTP Session that can be used to get the accountId.
-      //        final AbstractBtpPlugin abstractBtpPlugin = (AbstractBtpPlugin) plugin;
+      //        final AbstractBtpPlugin abstractBtpPlugin = (AbstractBtpPlugin) link;
       //        return this.resolveAccountId(abstractBtpPlugin.getBtpSessionCredentials());
       //      }
-      //      if (plugin instanceof PingProtocolPlugin) {
+      //      if (link instanceof PingProtocolPlugin) {
       //        // Connected Btp Plugins will have a BTP Session that can be used to get the accountId.
-      //        final PingProtocolPlugin pingProtocolPlugin = (PingProtocolPlugin) plugin;
+      //        final PingProtocolPlugin pingProtocolPlugin = (PingProtocolPlugin) link;
       //        return this.resolveAccountId(pingProtocolPlugin.getPluginId().get());
       //      } else {
-      //        throw new RuntimeException("Unsupported Plugin Class: " + plugin.getClass());
+      //        throw new RuntimeException("Unsupported Plugin Class: " + link.getClass());
       //      }
     }
   }
@@ -118,15 +118,8 @@ public class DefaultAccountIdResolver implements BtpAccountIdResolver, BlastAcco
       });
   }
 
-  /**
-   * Determine the {@link AccountId} for the supplied principal.
-   *
-   * @param principal The {@link Principal} to introspect to determine the accountId that it represents.
-   *
-   * @return The {@link AccountId} for the supplied request.
-   */
   @Override
   public AccountId resolveAccountId(Principal principal) {
-    return null;
+    throw new RuntimeException("Not yet implemented!");
   }
 }

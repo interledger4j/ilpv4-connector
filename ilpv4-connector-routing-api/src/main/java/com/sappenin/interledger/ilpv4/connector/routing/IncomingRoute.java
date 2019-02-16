@@ -1,7 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
 import org.immutables.value.Value;
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 
 import java.util.List;

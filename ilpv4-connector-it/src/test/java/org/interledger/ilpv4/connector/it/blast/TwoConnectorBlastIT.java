@@ -30,7 +30,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.sappenin.interledger.ilpv4.connector.plugins.connectivity.PingProtocolPlugin.PING_PROTOCOL_CONDITION;
+import static com.sappenin.interledger.ilpv4.connector.links.connectivity.PingProtocolPlugin.PING_PROTOCOL_CONDITION;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.ALICE_ADDRESS;

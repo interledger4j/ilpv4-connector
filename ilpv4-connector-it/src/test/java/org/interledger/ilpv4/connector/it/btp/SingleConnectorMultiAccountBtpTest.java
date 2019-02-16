@@ -138,7 +138,7 @@ public class SingleConnectorMultiAccountBtpTest {
 //    Objects.requireNonNull(destinationAddress);
 //
 //    final PluginNode<?> senderNode = getPluginNodeFromGraph(senderNodeAddress);
-//    final Plugin senderPlugin = senderNode.getPlugin(senderAddress); // Just in case the Node supports multiple plugins.
+//    final Plugin senderPlugin = senderNode.getPlugin(senderAddress); // Just in case the Node supports multiple links.
 //    assertThat(senderPlugin.getPluginSettings().getLocalNodeAddress(), is(senderAddress));
 //    assertThat(senderPlugin.isConnected(), is(true));
 //

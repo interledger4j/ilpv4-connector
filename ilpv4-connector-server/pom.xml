@@ -30,6 +30,14 @@
       <artifactId>ilpv4-api</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.sappenin.ilpv4</groupId>
+      <artifactId>ilpv4-connector-link</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.sappenin.ilpv4</groupId>
+      <artifactId>ilpv4-connector-link-blast</artifactId>
+    </dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-service-api</artifactId>
     </dependency>

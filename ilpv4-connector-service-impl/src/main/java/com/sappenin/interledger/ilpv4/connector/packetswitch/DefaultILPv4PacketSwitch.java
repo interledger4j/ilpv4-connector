@@ -2,8 +2,6 @@ package com.sappenin.interledger.ilpv4.connector.packetswitch;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
-import com.sappenin.interledger.ilpv4.connector.Account;
-import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.fx.ExchangeRateService;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.DefaultPacketSwitchFilterChain;
@@ -11,17 +9,19 @@ import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PacketSwitc
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PacketSwitchFilterChain;
 import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
 import com.sappenin.interledger.ilpv4.connector.routing.Route;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.immutables.value.Value;
+import org.interledger.connector.accounts.Account;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.link.Link;
+import org.interledger.connector.link.LinkSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.plugin.lpiv2.Plugin;
-import org.interledger.plugin.lpiv2.PluginSettings;
 import org.javamoney.moneta.Money;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +34,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 /**
@@ -75,7 +74,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   }
 
   @Override
-  public final CompletableFuture<Optional<InterledgerResponsePacket>> routeData(
+  public final Optional<InterledgerResponsePacket> routeData(
     final AccountId sourceAccountId, final InterledgerPreparePacket incomingSourcePreparePacket
   ) {
     Objects.requireNonNull(sourceAccountId);
@@ -89,11 +88,11 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
         !addressUtils.isDestinationAllowedFromAccount(sourceAccountId, incomingSourcePreparePacket.getDestination())
       ) {
         // REJECT!
-        return CompletableFuture.completedFuture(Optional.of(InterledgerRejectPacket.builder()
+        return Optional.of(InterledgerRejectPacket.builder()
           .code(InterledgerErrorCode.F02_UNREACHABLE)
           .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
           .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
-          .build()));
+          .build());
       } else {
 
         /////////////////
@@ -106,26 +105,16 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
         // TODO: Add ExchangeRate Update filter...
 
         // Create a new FilterChain, and use it to both filter the routeData call, as well as to make the actual call.
-        final Plugin<? extends PluginSettings> plugin =
-          this.accountManager.safeGetAccount(nextHopInfo.nextHopAccountId()).getPlugin();
+        final Link<? extends LinkSettings> link =
+          this.accountManager.safeGetAccount(nextHopInfo.nextHopAccountId()).getLink();
 
         final PacketSwitchFilterChain filterChain =
-          new DefaultPacketSwitchFilterChain(this.packetSwitchFilters, plugin);
-        return filterChain.doFilter(sourceAccountId, incomingSourcePreparePacket)
-          .exceptionally(error -> {
-            // Any rejections should be caught here, and returned as such....
-            if (error instanceof InterledgerProtocolException) {
-              final InterledgerProtocolException ilpError = (InterledgerProtocolException) error;
-              return Optional.of(ilpError.getInterledgerRejectPacket());
-            } else {
-              LOGGER.error(error.getMessage(), error);
-              return Optional.empty();
-            }
-          });
+          new DefaultPacketSwitchFilterChain(this.packetSwitchFilters, link);
+        return filterChain.doFilter(sourceAccountId, incomingSourcePreparePacket);
       }
     } catch (InterledgerProtocolException e) {
       // Any rejections should be caught here, and returned as such....
-      return CompletableFuture.completedFuture(Optional.of(e.getInterledgerRejectPacket()));
+      return Optional.of(e.getInterledgerRejectPacket());
     }
   }
 
@@ -138,7 +127,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
    * chain.
    *
    * @param sourceAccountId The {@link AccountId} of the peer who sent this packet into the Connector. This is typically
-   *                        the remote peer-address configured in a plugin.
+   *                        the remote peer-address configured in a link.
    * @param sourcePacket    The {@link InterledgerPreparePacket} that we received from the source address.
    *
    * @return A {@link InterledgerPreparePacket} that can be sent to the next-hop.

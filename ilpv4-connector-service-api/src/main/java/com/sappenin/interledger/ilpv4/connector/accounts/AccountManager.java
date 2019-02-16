@@ -1,8 +1,8 @@
 package com.sappenin.interledger.ilpv4.connector.accounts;
 
-import com.sappenin.interledger.ilpv4.connector.Account;
-import com.sappenin.interledger.ilpv4.connector.AccountId;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
+import org.interledger.connector.accounts.Account;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 
 import java.math.BigInteger;
@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 /**
  * <p>This manager contains all accounts this connector might use during its operations. Accounts are added to this
  * manager at startup (for preconfigured accounts, like a BTP client account) and are also be added to this manager by
- * server plugins whenever a new connection is initiated (e.g., a BTP Server plugin).</p>
+ * server links whenever a new connection is initiated (e.g., a BTP Server plugin).</p>
  *
  * <p>Even though an account has been added to this manager, is it not necessarily eligible to be used by the
  * Connector until it has been added to the `tracked accounts` collection. An account is only tracked when a plugin

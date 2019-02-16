@@ -1,7 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
-import com.sappenin.interledger.ilpv4.connector.Account;
 import org.immutables.value.Value;
+import org.interledger.connector.accounts.Account;
 
 /**
  * A container for holding information about the routing relationship that applies to a particular account (which is

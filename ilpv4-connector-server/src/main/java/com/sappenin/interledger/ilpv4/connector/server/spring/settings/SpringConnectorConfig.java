@@ -10,15 +10,17 @@ import com.sappenin.interledger.ilpv4.connector.accounts.BtpAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountSettingsResolver;
+import com.sappenin.interledger.ilpv4.connector.accounts.DefaultLinkManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultPluginManager;
+import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.PluginManager;
 import com.sappenin.interledger.ilpv4.connector.fx.DefaultExchangeRateService;
 import com.sappenin.interledger.ilpv4.connector.fx.ExchangeRateService;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.DefaultILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.InterledgerAddressUtils;
-import com.sappenin.interledger.ilpv4.connector.plugins.connectivity.PingProtocolPlugin;
-import com.sappenin.interledger.ilpv4.connector.plugins.connectivity.PingProtocolPluginFactory;
+import com.sappenin.interledger.ilpv4.connector.links.connectivity.PingProtocolPlugin;
+import com.sappenin.interledger.ilpv4.connector.links.connectivity.PingProtocolPluginFactory;
 import com.sappenin.interledger.ilpv4.connector.routing.DefaultInternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.InMemoryExternalRoutingService;
@@ -30,6 +32,7 @@ import com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.Spr
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.btp.SpringBtpConfig;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import org.interledger.connector.link.LinkFactoryProvider;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.plugin.lpiv2.LoopbackPlugin;
 import org.interledger.plugin.lpiv2.btp2.spring.factories.LoopbackPluginFactory;
@@ -132,13 +135,18 @@ public class SpringConnectorConfig {
   }
 
   @Bean
+  LinkManager linkManager(EventBus eventBus, LinkFactoryProvider linkFactoryProvider) {
+    return new DefaultLinkManager(eventBus, linkFactoryProvider);
+  }
+
+  @Bean
   AccountManager accountManager(
     Supplier<ConnectorSettings> connectorSettingsSupplier,
     AccountIdResolver accountIdResolver, AccountSettingsResolver accountSettingsResolver,
-    PluginManager pluginManager, EventBus eventBus
+    LinkManager linkManager, EventBus eventBus
   ) {
     return new DefaultAccountManager(connectorSettingsSupplier, accountIdResolver, accountSettingsResolver,
-      pluginManager, eventBus);
+      linkManager, eventBus);
   }
 
   @Bean
@@ -215,7 +223,7 @@ public class SpringConnectorConfig {
   ILPv4Connector ilpConnector(
     Supplier<ConnectorSettings> connectorSettingsSupplier,
     AccountManager accountManager,
-    PluginManager pluginManager,
+    LinkManager linkManager,
     InternalRoutingService internalRoutingService,
     ExternalRoutingService externalRoutingService,
     ILPv4PacketSwitch ilpPacketSwitch,
@@ -224,7 +232,7 @@ public class SpringConnectorConfig {
     return new DefaultILPv4Connector(
       connectorSettingsSupplier,
       accountManager,
-      pluginManager,
+      linkManager,
       internalRoutingService, externalRoutingService,
       ilpPacketSwitch,
       eventBus

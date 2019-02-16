@@ -3,8 +3,6 @@ package com.sappenin.interledger.ilpv4.connector.routing;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.sappenin.interledger.ilpv4.connector.Account;
-import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpNewRoute;
@@ -17,9 +15,11 @@ import com.sappenin.interledger.ilpv4.connector.ccp.ImmutableCcpRoutePathPart;
 import com.sappenin.interledger.ilpv4.connector.ccp.ImmutableCcpRouteUpdateRequest;
 import com.sappenin.interledger.ilpv4.connector.ccp.ImmutableCcpWithdrawnRoute;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import org.interledger.connector.accounts.Account;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.Link;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.interledger.plugin.lpiv2.Plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
@@ -56,7 +56,7 @@ public class DefaultCcpSender implements CcpSender {
   private final CodecContext codecContext;
 
   private final AccountId peerAccountId;
-  private final Plugin plugin;
+  private final Link link;
 
   private final AtomicInteger lastKnownEpoch;
   private final AtomicReference<CcpSyncMode> syncMode;
@@ -72,8 +72,8 @@ public class DefaultCcpSender implements CcpSender {
    */
   public DefaultCcpSender(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final AccountId peerAccountId, 
-    final Plugin plugin,
+    final AccountId peerAccountId,
+    final Link link,
     final ForwardingRoutingTable<RouteUpdate> forwardingRoutingTable,
     final AccountManager accountManager,
     final CodecContext codecContext
@@ -83,7 +83,7 @@ public class DefaultCcpSender implements CcpSender {
     this.accountManager = Objects.requireNonNull(accountManager);
     this.codecContext = codecContext;
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
-    this.plugin = Objects.requireNonNull(plugin);
+    this.link = Objects.requireNonNull(link);
 
     this.syncMode = new AtomicReference<>(CcpSyncMode.MODE_IDLE);
 
@@ -96,9 +96,9 @@ public class DefaultCcpSender implements CcpSender {
 
   @Override
   public void handleRouteControlRequest(final CcpRouteControlRequest routeControlRequest) {
-    Preconditions.checkNotNull(plugin, "Plugin must be assigned before using a CcpSender!");
+    Preconditions.checkNotNull(link, "Plugin must be assigned before using a CcpSender!");
 
-    //final InterledgerAddress peerAccountId = plugin.getPluginSettings().getpeerAddress();
+    //final InterledgerAddress peerAccountId = link.getPluginSettings().getpeerAddress();
 
     logger
       .debug("Peer `{}` sent CcpRouteControlRequest: {}", peerAccountId,
@@ -181,12 +181,12 @@ public class DefaultCcpSender implements CcpSender {
   // @Async -- No need to manage this thread via Spring because this operation is manually scheduled in
   // response to getRoute control requests and other inputs from the routing service.
   public void sendRouteUpdateRequest() {
-    Preconditions.checkNotNull(plugin, "Plugin must be assigned before using a CcpSender!");
+    Preconditions.checkNotNull(link, "Plugin must be assigned before using a CcpSender!");
 
     // Perform getRoute update, catch and log any exceptions...
     try {
-      if (!this.plugin.isConnected()) {
-        logger.warn("Cannot send routes, lpi2 not connected (yet). Plugin: {}", plugin);
+      if (!this.link.isConnected()) {
+        logger.warn("Cannot send routes, lpi2 not connected (yet). Plugin: {}", link);
         //return ImmutableRouteUpdateResults.builder().build();
         return;
       }
@@ -237,7 +237,7 @@ public class DefaultCcpSender implements CcpSender {
                 .orElse(false);
 
             if (thisPluginIsParent || nextHopRelationIsPeerOrParent) {
-              // If the current plugin is our parent; OR, if th next-hop is a peer or Parent, then withdraw the
+              // If the current link is our parent; OR, if th next-hop is a peer or Parent, then withdraw the
               // route. We only advertise routes to peers/children where the next-hop is a child.
               return null;
             } else {
@@ -302,7 +302,7 @@ public class DefaultCcpSender implements CcpSender {
       final int previousNextRequestedEpoch = this.lastKnownEpoch.get();
       this.lastKnownEpoch.compareAndSet(previousNextRequestedEpoch, toEpoch);
 
-      this.plugin.sendData(
+      this.link.sendPacket(
         InterledgerPreparePacket.builder()
           .amount(BigInteger.ZERO)
           .destination(CcpConstants.CCP_UPDATE_DESTINATION_ADDRESS)
@@ -313,18 +313,9 @@ public class DefaultCcpSender implements CcpSender {
           //          ))
           .data(serializeCcpPacket(ccpRouteUpdateRequest))
           .build()
-      ).handle((fulfillment, error) -> {
-        if (error != null) {
-          logger.error("Failed to broadcast getRoute information to peer. peer=`{}`: {}",
-            peerAccountId, error);
-        } else {
-          logger
-            .debug("Route update succeeded to peer: `{}`!", peerAccountId);
-        }
-        return null;
-      });
+      );
+      logger.debug("Route update succeeded to peer: `{}`!", peerAccountId);
 
-      //return ImmutableRouteUpdateResults.builder().build();
     } catch (RuntimeException e) {
       logger.error("Failed to broadcast getRoute information to peer. peer=`{}`", peerAccountId, e);
       throw e;

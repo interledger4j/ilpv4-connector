@@ -1,17 +1,17 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PacketSwitchFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PacketSwitchFilterChain;
 import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
 import com.sappenin.interledger.ilpv4.connector.routing.Route;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.Link;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
 import org.interledger.core.InterledgerResponsePacketMapper;
-import org.interledger.plugin.lpiv2.Plugin;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -22,10 +22,10 @@ import java.util.concurrent.CompletableFuture;
  * <p>A packet switch allows for one or more PacketHandlers to applied to every Packet that traverses this
  * switch's routing fabric.</p>
  *
- * <p>In the happy path, a packet will come into the connector from a particular {@link Plugin} and then will
- * be handed off to this switch to be routed to a (typically) different target {@link Plugin}. This call will result in
+ * <p>In the happy path, a packet will come into the connector from a particular {@link Link} and then will
+ * be handed off to this switch to be routed to a (typically) different target {@link Link}. This call will result in
  * either an {@link InterledgerFulfillPacket} or an {@link InterledgerRejectPacket}, which can then be returned back to
- * the original caller via the plugin that originated the {@link InterledgerPreparePacket}.</p>
+ * the original caller via the link that originated the {@link InterledgerPreparePacket}.</p>
  */
 public interface ILPv4PacketSwitch {
 
@@ -65,12 +65,12 @@ public interface ILPv4PacketSwitch {
    * @return A {@link CompletableFuture} that resolves to an optionally-present {@link InterledgerResponsePacket}, which
    * will be of concrete type {@link InterledgerFulfillPacket} or {@link InterledgerRejectPacket}, if present.
    */
-  CompletableFuture<Optional<InterledgerResponsePacket>> routeData(
+  Optional<InterledgerResponsePacket> routeData(
     AccountId accountId, InterledgerPreparePacket incomingPreparePacket
   );
 
   // NOTE: The ILP PacketSwitch layer doesn't expressly have a "sendMoney" handler because this action is a bilateral
-  // concern of an account/plugin, and not a Interledger-layer concern. It likewise does not have an onDataHandler
+  // concern of an account/link, and not a Interledger-layer concern. It likewise does not have an onDataHandler
   // because this switch always only sends data, and returns a response.
 
   boolean add(PacketSwitchFilter packetSwitchFilter);

@@ -1,6 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.junit.Before;

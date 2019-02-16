@@ -10,13 +10,25 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>ilpv4-connector-service-api</artifactId>
-  <name>ILPv4 :: Connector Services API</name>
+  <name>ILPv4 :: Connector :: Services API</name>
   <description>All service object interfaces for the ILPv4 Connector.</description>
 
   <dependencies>
     <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.sappenin.ilpv4</groupId>
       <artifactId>ilpv4-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.sappenin.ilpv4</groupId>
+      <artifactId>ilpv4-connector-link</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.sappenin.ilpv4</groupId>
+      <artifactId>ilpv4-connector-accounts</artifactId>
     </dependency>
     <dependency>
       <groupId>com.sappenin.ilpv4</groupId>
@@ -27,12 +39,12 @@
       <artifactId>ilpv4-connector-routing-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.interledger</groupId>
-      <artifactId>ilp-plugin-core</artifactId>
+      <groupId>javax.money</groupId>
+      <artifactId>money-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.javamoney</groupId>
-      <artifactId>moneta</artifactId>
+      <groupId>org.interledger</groupId>
+      <artifactId>ilp-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.immutables</groupId>

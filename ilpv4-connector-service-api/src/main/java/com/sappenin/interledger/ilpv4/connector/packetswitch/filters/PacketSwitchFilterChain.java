@@ -1,11 +1,10 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * This filter-chain provides the developer a view into the invocation chain of a filtered send-data request. Filters
@@ -16,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
  **/
 public interface PacketSwitchFilterChain {
 
-  CompletableFuture<Optional<InterledgerResponsePacket>> doFilter(
+  Optional<InterledgerResponsePacket> doFilter(
     AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket
   );
 

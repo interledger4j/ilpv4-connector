@@ -1,20 +1,20 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 
 /**
- * An implementation of {@link PacketSwitchFilter} for handling balances between two accounts/plugins in an ILP connector.
+ * An implementation of {@link PacketSwitchFilter} for handling balances between two accounts/links in an ILP
+ * connector.
  */
 public class BalanceIlpPacketFilter implements PacketSwitchFilter {
 
   @Override
-  public CompletableFuture<Optional<InterledgerResponsePacket>> doFilter(
+  public Optional<InterledgerResponsePacket> doFilter(
     final AccountId sourceAccountId,
     final InterledgerPreparePacket sourcePreparePacket,
     final PacketSwitchFilterChain filterChain

@@ -1,7 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.accounts;
 
-import com.sappenin.interledger.ilpv4.connector.Account;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
+import org.interledger.connector.accounts.Account;
+import org.interledger.connector.accounts.AccountSettings;
 
 /**
  * Provides new accounts for the connector to track.

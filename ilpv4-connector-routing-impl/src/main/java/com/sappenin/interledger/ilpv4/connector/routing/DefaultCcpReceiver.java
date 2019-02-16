@@ -3,7 +3,6 @@ package com.sappenin.interledger.ilpv4.connector.routing;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteControlRequest;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRoutePathPart;
@@ -12,13 +11,14 @@ import com.sappenin.interledger.ilpv4.connector.ccp.CcpSyncMode;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpWithdrawnRoute;
 import com.sappenin.interledger.ilpv4.connector.ccp.ImmutableCcpRouteControlRequest;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.Link;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.interledger.plugin.lpiv2.Plugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -48,25 +47,25 @@ public class DefaultCcpReceiver implements CcpReceiver {
 
   // The Plugin that can communicate to the remote peer.
   private final AccountId peerAccountId;
-  private final Plugin plugin;
+  private final Link link;
 
   // Contains the identifier used used by our peer. We'll reset the getEpoch to 0 if the identifier changes.
   private Instant routingTableExpiry = Instant.EPOCH;
 
   public DefaultCcpReceiver(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final AccountId peerAccountId, final Plugin plugin, final ForwardingRoutingTable<IncomingRoute> incomingRoutes,
+    final AccountId peerAccountId, final Link link, final ForwardingRoutingTable<IncomingRoute> incomingRoutes,
     final CodecContext codecContext
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.incomingRoutes = Objects.requireNonNull(incomingRoutes);
     this.codecContext = Objects.requireNonNull(codecContext);
     this.peerAccountId = peerAccountId;
-    this.plugin = Objects.requireNonNull(plugin);
+    this.link = Objects.requireNonNull(link);
   }
 
   @Override
-  public CompletableFuture<List<InterledgerAddressPrefix>> handleRouteUpdateRequest(
+  public List<InterledgerAddressPrefix> handleRouteUpdateRequest(
     final CcpRouteUpdateRequest routeUpdateRequest
   ) {
     Objects.requireNonNull(routeUpdateRequest);
@@ -90,7 +89,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
       logger.debug("Gap in routing updates. expectedEpoch={} actualFromEpoch={}",
         this.incomingRoutes.getCurrentEpoch(), routeUpdateRequest.fromEpochIndex()
       );
-      return CompletableFuture.completedFuture(Collections.emptyList());
+      return Collections.emptyList();
     }
 
     if (this.incomingRoutes.getCurrentEpoch() > routeUpdateRequest.toEpochIndex()) {
@@ -98,7 +97,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
       logger.debug("Old routing update, ignoring. expectedEpoch={} actualToEpoch={}",
         this.incomingRoutes.getCurrentEpoch(), routeUpdateRequest.toEpochIndex()
       );
-      return CompletableFuture.completedFuture(Collections.emptyList());
+      return Collections.emptyList();
     }
 
     // just a heartbeat
@@ -108,7 +107,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
       );
       this.incomingRoutes
         .compareAndSetCurrentEpoch(incomingRoutes.getCurrentEpoch(), routeUpdateRequest.toEpochIndex());
-      return CompletableFuture.completedFuture(Collections.emptyList());
+      return Collections.emptyList();
     }
 
 
@@ -154,11 +153,11 @@ public class DefaultCcpReceiver implements CcpReceiver {
     logger.debug("Applied getRoute update. changedPrefixesCount={} fromEpoch={} toEpoch={}",
       changedPrefixes.size(), routeUpdateRequest.fromEpochIndex(), routeUpdateRequest.toEpochIndex()
     );
-    return CompletableFuture.completedFuture(changedPrefixes);
+    return changedPrefixes;
   }
 
-  public CompletableFuture<Optional<InterledgerResponsePacket>> sendRouteControl() {
-    Preconditions.checkNotNull(plugin, "Plugin must be assigned before using a CcpReceiver!");
+  public Optional<InterledgerResponsePacket> sendRouteControl() {
+    Preconditions.checkNotNull(link, "Plugin must be assigned before using a CcpReceiver!");
 
     final ImmutableCcpRouteControlRequest request = ImmutableCcpRouteControlRequest.builder()
       .mode(CcpSyncMode.MODE_SYNC)
@@ -175,25 +174,22 @@ public class DefaultCcpReceiver implements CcpReceiver {
       .data(serializeCcpPacket(request))
       .build();
 
-    // Plugin handles retry, if any...
-    return this.plugin.sendData(preparePacket)
-      .handle((fulfillPacket, error) -> {
-        // Handle Errors/Rejects...
-        if (error != null) {
-          if (error instanceof InterledgerProtocolException) {
-            final InterledgerRejectPacket rejectPacket =
-              ((InterledgerProtocolException) error).getInterledgerRejectPacket();
-            logger.debug("Route control message was rejected. rejection={}", rejectPacket.getMessage());
-            Optional.of(rejectPacket);
-          } else {
-            logger.error("Unknown response fulfillPacket type. peer={}; error={}", peerAccountId, error);
-          }
-          return Optional.<InterledgerResponsePacket>empty();
-        } else {
-          logger.debug("Successfully sent getRoute control message. peer={}", peerAccountId);
-          return fulfillPacket;
-        }
-      });
+    // Link handles retry, if any...
+    try {
+      Optional<InterledgerResponsePacket> foo = this.link.sendPacket(preparePacket);
+      logger.debug("Successfully sent getRoute control message. peer={}", peerAccountId);
+      return foo;
+    } catch (Exception e) {
+      if (e instanceof InterledgerProtocolException) {
+        final InterledgerRejectPacket rejectPacket =
+          ((InterledgerProtocolException) e).getInterledgerRejectPacket();
+        logger.debug("Route control message was rejected. rejection={}", rejectPacket.getMessage());
+        Optional.of(rejectPacket);
+      } else {
+        logger.error("Unknown response fulfillPacket type. peer={}; error={}", peerAccountId, e);
+      }
+      return Optional.<InterledgerResponsePacket>empty();
+    }
   }
 
   @Override

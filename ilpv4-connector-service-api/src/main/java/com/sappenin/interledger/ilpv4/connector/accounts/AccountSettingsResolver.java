@@ -1,8 +1,8 @@
 package com.sappenin.interledger.ilpv4.connector.accounts;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
-import org.interledger.plugin.lpiv2.Plugin;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.link.Link;
 
 /**
  * Defines how to resolve Account settings for a given {@link AccountId}.
@@ -10,12 +10,12 @@ import org.interledger.plugin.lpiv2.Plugin;
 public interface AccountSettingsResolver {
 
   /**
-   * Determine the {@link AccountId} for the supplied plugin.
+   * Determine the {@link AccountId} for the supplied link.
    *
-   * @param plugin The Plugin to resolve Account Settings for.
+   * @param link The Plugin to resolve Account Settings for.
    *
    * @return An instance of {@link AccountSettings}.
    */
-  AccountSettings resolveAccountSettings(Plugin<?> plugin);
+  AccountSettings resolveAccountSettings(Link<?> link);
 
 }

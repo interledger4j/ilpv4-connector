@@ -1,10 +1,10 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties;
 
 import com.google.common.collect.Maps;
-import com.sappenin.interledger.ilpv4.connector.AccountProviderId;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountProviderSettings;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountRelationship;
-import org.interledger.plugin.lpiv2.PluginType;
+import org.interledger.connector.accounts.AccountProviderId;
+import org.interledger.connector.accounts.AccountProviderSettings;
+import org.interledger.connector.accounts.AccountRelationship;
+import org.interledger.connector.link.LinkType;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -26,7 +26,7 @@ public class AccountProviderSettingsFromPropertyFile implements AccountProviderS
   private String assetCode = "USD";
   private int assetScale = 2;
   private AccountBalanceSettingsFromPropertyFile balanceSettings = new AccountBalanceSettingsFromPropertyFile();
-  private PluginType pluginType;
+  private LinkType LinkType;
   private Map<String, Object> customSettings = Maps.newConcurrentMap();
   private Optional<BigInteger> maximumPacketAmount = Optional.empty();
 
@@ -112,12 +112,12 @@ public class AccountProviderSettingsFromPropertyFile implements AccountProviderS
   }
 
   @Override
-  public PluginType getPluginType() {
-    return pluginType;
+  public LinkType getLinkType() {
+    return LinkType;
   }
 
-  public void setPluginType(PluginType pluginType) {
-    this.pluginType = pluginType;
+  public void setLinkType(LinkType LinkType) {
+    this.LinkType = LinkType;
   }
 
   @Override

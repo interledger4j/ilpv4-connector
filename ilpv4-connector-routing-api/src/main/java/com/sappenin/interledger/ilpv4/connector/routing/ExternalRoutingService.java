@@ -1,8 +1,8 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.Link;
 import org.interledger.core.InterledgerAddressPrefix;
-import org.interledger.plugin.lpiv2.Plugin;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -26,8 +26,8 @@ public interface ExternalRoutingService extends PaymentRouter<Route> {
   void shutdown();
 
   /**
-   * Register this service to respond to connect/disconnect events that may be emitted from a {@link Plugin}, and then
-   * add the account to this service's internal machinery.
+   * Register this service to respond to connect/disconnect events that may be emitted from a {@link Link}, and then add
+   * the account to this service's internal machinery.
    *
    * @param account The address of a remote peer that can have packets routed to it.
    */

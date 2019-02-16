@@ -3,9 +3,9 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast;
 import com.sappenin.interledger.ilpv4.connector.accounts.BlastAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.ConnectorProfile;
-import org.interledger.lpiv2.blast.BlastPlugin;
-import org.interledger.lpiv2.blast.BlastPluginFactory;
-import org.interledger.plugin.lpiv2.btp2.spring.factories.PluginFactoryProvider;
+import org.interledger.connector.link.LinkFactoryProvider;
+import org.interledger.connector.link.blast.BlastLink;
+import org.interledger.connector.link.blast.BlastLinkFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -20,7 +20,7 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
 
 /**
  * <p>Configures BLAST for a Connector running in `connector-mode`. This type of Connector supports a single HTTP/2
- * Server endpoint in addition to multiple, statically configured, BLAST client plugins.</p>
+ * Server endpoint in addition to multiple, statically configured, BLAST client links.</p>
  */
 @Configuration
 @Profile(ConnectorProfile.CONNECTOR_MODE)
@@ -28,7 +28,7 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
 public class BlastConnectorModeConfig {
 
   @Autowired
-  PluginFactoryProvider pluginFactoryProvider;
+  LinkFactoryProvider linkFactoryProvider;
 
   @Autowired
   @Qualifier("blast")
@@ -48,6 +48,6 @@ public class BlastConnectorModeConfig {
 
   @PostConstruct
   public void startup() {
-    pluginFactoryProvider.registerPluginFactory(BlastPlugin.PLUGIN_TYPE, new BlastPluginFactory(blastRestTemplate));
+    linkFactoryProvider.registerLinkFactory(BlastLink.LINK_TYPE, new BlastLinkFactory(blastRestTemplate));
   }
 }
