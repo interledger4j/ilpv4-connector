@@ -27,8 +27,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * <p>A very simple topology that simulates a single ILP-over-HTTP (BLAST) connection between two Connectors.</p>
  *
- * <p>In this topology, Alice and Bob share a single XRP account (meaning Alice and Bob can owe
- * each other XRP).</p>
+ * <p>In this topology, Alice and Bob share a single XRP account (meaning Alice and Bob can owe each other XRP).</p>
  *
  * <p>Nodes in this topology are connected as follows:</p>
  *
@@ -81,7 +80,7 @@ public class TwoConnectorBlastTopology {
         try {
           {
             final Account bobAccount = aliceServerNode.getILPv4Connector().getAccountManager()
-              .getAccount(AccountId.of(BOB_ADDRESS.getValue())).get();
+              .getAccount(AccountId.of(BOB)).get();
 
             // Need to reach-into the AccountManager and adjust the outgoing URL for Bob, based upon the newly discovered
             // port in `bobBlastUrl`
@@ -96,7 +95,7 @@ public class TwoConnectorBlastTopology {
           }
           {
             final Account aliceAccount = bobServerNode.getILPv4Connector().getAccountManager()
-              .getAccount(AccountId.of(ALICE_ADDRESS.getValue())).get();
+              .getAccount(AccountId.of(ALICE)).get();
 
             // Need to reach-into the AccountManager and adjust the outgoing URL for Alice, based upon the newly
             // discovered port in `aliceBlastUrl`
@@ -151,15 +150,21 @@ public class TwoConnectorBlastTopology {
   public static ConnectorSettings constructConnectorSettingsForAlice() {
 
     final AccountSettings accountSettings = AccountSettings.builder()
-      .id(AccountId.of(BOB_ADDRESS.getValue()))
-      .description("Blast Peer account")
+      .id(AccountId.of(BOB))
+      .description("Blast account for Bob")
       .isPreconfigured(true)
       .relationship(AccountRelationship.PEER)
       .linkType(BlastLink.LINK_TYPE)
       .assetScale(9)
       .assetCode(XRP)
-      .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_SECRET, "12345678912345678912345678912345")
-      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_SECRET, "12345678912345678912345678912345")
+
+      .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_ACCOUNT_ID, BOB)
+      .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_ACCOUNT_SECRET, "12345678912345678912345678912345")
+      .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, BOB_ADDRESS.getValue())
+
+      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_ACCOUNT_ID, ALICE)
+      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_ACCOUNT_SECRET, "12345678912345678912345678912345")
+      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, ALICE_ADDRESS.getValue())
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, "PT2M")
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_URL, "http://example.com/set-after-topology-init")
       .build();
@@ -190,17 +195,24 @@ public class TwoConnectorBlastTopology {
   public static ConnectorSettings constructConnectorSettingsForBob() {
 
     final AccountSettings accountSettings = AccountSettings.builder()
-      .id(AccountId.of(ALICE_ADDRESS.getValue()))
-      .description("Blast Peer account")
+      .id(AccountId.of(ALICE))
+      .description("Blast account for Alice")
       .isPreconfigured(true)
       .relationship(AccountRelationship.PEER)
       .linkType(BlastLink.LINK_TYPE)
       .assetScale(9)
       .assetCode(XRP)
-      .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_SECRET, "12345678912345678912345678912345")
-      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_SECRET, "12345678912345678912345678912345")
+
+      .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_ACCOUNT_ID, ALICE)
+      .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_ACCOUNT_SECRET, "12345678912345678912345678912345")
+      .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, ALICE_ADDRESS.getValue())
+
+      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_ACCOUNT_ID, BOB)
+      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_ACCOUNT_SECRET, "12345678912345678912345678912345")
+      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, BOB_ADDRESS.getValue())
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, "PT2M")
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_URL, "http://example.com/set-after-topology-init")
+
       .build();
 
     return ImmutableConnectorSettings.builder()

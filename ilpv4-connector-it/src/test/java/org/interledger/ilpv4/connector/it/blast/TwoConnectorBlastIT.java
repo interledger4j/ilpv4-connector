@@ -26,9 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLink.PING_PROTOCOL_CONDITION;
 import static junit.framework.TestCase.fail;
@@ -48,13 +46,10 @@ public class TwoConnectorBlastIT {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorBlastIT.class);
   private static Topology topology = TwoConnectorBlastTopology.init();
-  private final int TIMEOUT = 10;
 
   @BeforeClass
   public static void setup() {
     System.setProperty("spring.profiles.active", ConnectorProfile.CONNECTOR_MODE + "," + ConnectorProfile.DEV);
-    System.setProperty(ConnectorProperties.BTP_ENABLED, "false");
-    System.setProperty(ConnectorProperties.WEBSOCKET_SERVER_ENABLED, "false");
     System.setProperty(ConnectorProperties.BLAST_ENABLED, "true");
 
     LOGGER.info("Starting test topology `{}`...", "TwoConnectorBlastTopology");
@@ -132,7 +127,7 @@ public class TwoConnectorBlastIT {
    * Alice and Connie should have an account with each other, so this ping should succeed.
    */
   @Test
-  public void testAlicePingsBob() throws InterruptedException, ExecutionException, TimeoutException {
+  public void testAlicePingsBob() throws InterruptedException {
     this.testPing(ALICE_ADDRESS, BOB_ADDRESS);
   }
 

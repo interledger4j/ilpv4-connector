@@ -29,36 +29,40 @@ public class BlastLink extends AbstractLink<BlastLinkSettings> implements Pingab
    * Required-args Constructor. Utilizes a default {@link LinkEventEmitter} that synchronously connects to any event
    * handlers.
    *
-   * @param linkSettings A {@link BlastLinkSettings} that specified ledger link options.
-   * @param restTemplate A {@link RestTemplate} used to communicate with the remote BLAST peer.
+   * @param blastLinkSettings A {@link BlastLinkSettings} that specified ledger link options.
+   * @param restTemplate      A {@link RestTemplate} used to communicate with the remote BLAST peer.
    */
-  public BlastLink(final BlastLinkSettings linkSettings, final RestTemplate restTemplate) {
-    super(linkSettings);
+  public BlastLink(final BlastLinkSettings blastLinkSettings, final RestTemplate restTemplate) {
+    super(blastLinkSettings);
     this.blastHttpSender = new BlastHttpSender(
-      linkSettings.getOperatorAddress(),
-      linkSettings.getOutgoingUrl().uri(),
+      blastLinkSettings.getOperatorAddress(),
+      blastLinkSettings.getOutgoingUrl().uri(),
       restTemplate,
-      () -> linkSettings.getOutgoingSecret().getBytes()
+      () -> blastLinkSettings.getOutgoingTokenIssuer(),
+      () -> blastLinkSettings.getOutgoingAccountId(),
+      () -> blastLinkSettings.getOutgoingAccountSecret().getBytes()
     );
   }
 
   /**
    * Required-args Constructor.
    *
-   * @param linkSettings     A {@link BlastLinkSettings} that specified ledger link options.
-   * @param linkEventEmitter A {@link LinkEventEmitter} that is used to emit events from this link.
+   * @param blastLinkSettings A {@link BlastLinkSettings} that specified ledger link options.
+   * @param linkEventEmitter  A {@link LinkEventEmitter} that is used to emit events from this link.
    */
   public BlastLink(
-    final BlastLinkSettings linkSettings,
+    final BlastLinkSettings blastLinkSettings,
     final RestTemplate restTemplate,
     final LinkEventEmitter linkEventEmitter
   ) {
-    super(linkSettings, linkEventEmitter);
+    super(blastLinkSettings, linkEventEmitter);
     this.blastHttpSender = new BlastHttpSender(
-      linkSettings.getOperatorAddress(),
-      linkSettings.getOutgoingUrl().uri(),
+      blastLinkSettings.getOperatorAddress(),
+      blastLinkSettings.getOutgoingUrl().uri(),
       restTemplate,
-      () -> linkSettings.getOutgoingSecret().getBytes());
+      () -> blastLinkSettings.getOutgoingTokenIssuer(),
+      () -> blastLinkSettings.getOutgoingAccountId(),
+      () -> blastLinkSettings.getOutgoingAccountSecret().getBytes());
   }
 
   /**
@@ -71,7 +75,9 @@ public class BlastLink extends AbstractLink<BlastLinkSettings> implements Pingab
       blastLinkSettings.getOperatorAddress(),
       blastLinkSettings.getOutgoingUrl().uri(),
       blastHttpSender.getRestTemplate(),
-      () -> blastLinkSettings.getOutgoingSecret().getBytes()
+      () -> blastLinkSettings.getOutgoingTokenIssuer(),
+      () -> blastLinkSettings.getOutgoingAccountId(),
+      () -> blastLinkSettings.getOutgoingAccountSecret().getBytes()
     );
   }
 

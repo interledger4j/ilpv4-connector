@@ -1,7 +1,10 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.accounts.BlastAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountIdResolver;
+import com.sappenin.interledger.ilpv4.connector.server.spring.converters.OerPreparePacketHttpMessageConverter;
 import org.interledger.connector.link.LinkFactoryProvider;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkFactory;
@@ -11,6 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
@@ -29,18 +33,26 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
 @Import({SpringConnectorWebMvc.class})
 public class BlastConfig {
 
+  public static final String BLAST = "blast";
+
   @Autowired
   LinkFactoryProvider linkFactoryProvider;
 
   @Autowired
-  @Qualifier("blast")
+  @Qualifier(BLAST)
   RestTemplate blastRestTemplate;
 
   @Bean
-  @Qualifier("blast")
-  RestTemplate restTemplate() {
-    // TODO: Configure this properly...
-    return new RestTemplate();
+  @Qualifier(BLAST)
+  RestTemplate restTemplate(
+    ObjectMapper objectMapper, OerPreparePacketHttpMessageConverter oerPreparePacketHttpMessageConverter
+  ) {
+    final MappingJackson2HttpMessageConverter httpMessageConverter =
+      new MappingJackson2HttpMessageConverter(objectMapper);
+
+    return new RestTemplate(
+      Lists.newArrayList(oerPreparePacketHttpMessageConverter, httpMessageConverter)
+    );
   }
 
   @Bean

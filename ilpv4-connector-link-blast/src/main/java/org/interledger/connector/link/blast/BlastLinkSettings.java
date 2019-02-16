@@ -20,12 +20,19 @@ public interface BlastLinkSettings extends LinkSettings {
   String OUTGOING = "outgoing";
   String INCOMING = "incoming";
 
-  String SECRET = "secret";
+  String TOKEN_ISSUER = "token_issuer";
+  String ACCOUNT_ID = "account_id";
+  String ACCOUNT_SECRET = "account_secret";
   String TOKEN_EXPIRY = "token_expiry";
   String URL = "url";
 
-  String BLAST_INCOMING_SECRET = BLAST + DOT + INCOMING + DOT + SECRET;
-  String BLAST_OUTGOING_SECRET = BLAST + DOT + OUTGOING + DOT + SECRET;
+  String BLAST_INCOMING_TOKEN_ISSUER = BLAST + DOT + INCOMING + DOT + TOKEN_ISSUER;
+  String BLAST_INCOMING_ACCOUNT_ID = BLAST + DOT + INCOMING + DOT + ACCOUNT_ID;
+  String BLAST_INCOMING_ACCOUNT_SECRET = BLAST + DOT + INCOMING + DOT + ACCOUNT_SECRET;
+
+  String BLAST_OUTGOING_TOKEN_ISSUER = BLAST + DOT + OUTGOING + DOT + TOKEN_ISSUER;
+  String BLAST_OUTGOING_ACCOUNT_ID = BLAST + DOT + OUTGOING + DOT + ACCOUNT_ID;
+  String BLAST_OUTGOING_ACCOUNT_SECRET = BLAST + DOT + OUTGOING + DOT + ACCOUNT_SECRET;
   String BLAST_OUTGOING_URL = BLAST + DOT + OUTGOING + DOT + URL;
   String BLAST_OUTGOING_TOKEN_EXPIRY = BLAST + DOT + OUTGOING + DOT + TOKEN_EXPIRY;
 
@@ -57,18 +64,35 @@ public interface BlastLinkSettings extends LinkSettings {
         Optional.ofNullable(blastSettings.get(INCOMING))
           .map(val -> (Map<String, Object>) val)
           .ifPresent(incomingSettings -> {
-            Optional.ofNullable(incomingSettings.get(SECRET))
+
+            Optional.ofNullable(incomingSettings.get(ACCOUNT_ID))
               .map(Object::toString)
-              .ifPresent(builder::incomingSecret);
+              .ifPresent(builder::incomingAccountId);
+
+            Optional.ofNullable(incomingSettings.get(ACCOUNT_SECRET))
+              .map(Object::toString)
+              .ifPresent(builder::incomingAccountSecret);
+
+            Optional.ofNullable(incomingSettings.get(TOKEN_ISSUER))
+              .map(Object::toString)
+              .ifPresent(builder::incomingTokenIssuer);
           });
 
         Optional.ofNullable(blastSettings.get(OUTGOING))
           .map(val -> (Map<String, Object>) val)
           .ifPresent(outgoingSettings -> {
 
-            Optional.ofNullable(outgoingSettings.get(SECRET))
+            Optional.ofNullable(outgoingSettings.get(TOKEN_ISSUER))
               .map(Object::toString)
-              .ifPresent(builder::outgoingSecret);
+              .ifPresent(builder::outgoingTokenIssuer);
+
+            Optional.ofNullable(outgoingSettings.get(ACCOUNT_ID))
+              .map(Object::toString)
+              .ifPresent(builder::outgoingAccountId);
+
+            Optional.ofNullable(outgoingSettings.get(ACCOUNT_SECRET))
+              .map(Object::toString)
+              .ifPresent(builder::outgoingAccountSecret);
 
             Optional.ofNullable(outgoingSettings.get(TOKEN_EXPIRY))
               .map(Object::toString)
@@ -83,13 +107,30 @@ public interface BlastLinkSettings extends LinkSettings {
           });
       });
 
-    Optional.ofNullable(customSettings.get(BLAST_INCOMING_SECRET))
+    Optional.ofNullable(customSettings.get(BLAST_INCOMING_TOKEN_ISSUER))
       .map(Object::toString)
-      .ifPresent(builder::incomingSecret);
+      .ifPresent(builder::incomingTokenIssuer);
 
-    Optional.ofNullable(customSettings.get(BLAST_OUTGOING_SECRET))
+    Optional.ofNullable(customSettings.get(BLAST_INCOMING_ACCOUNT_ID))
       .map(Object::toString)
-      .ifPresent(builder::outgoingSecret);
+      .ifPresent(builder::incomingAccountId);
+
+    Optional.ofNullable(customSettings.get(BLAST_INCOMING_ACCOUNT_SECRET))
+      .map(Object::toString)
+      .ifPresent(builder::incomingAccountSecret);
+
+
+    Optional.ofNullable(customSettings.get(BLAST_OUTGOING_TOKEN_ISSUER))
+      .map(Object::toString)
+      .ifPresent(builder::outgoingTokenIssuer);
+
+    Optional.ofNullable(customSettings.get(BLAST_OUTGOING_ACCOUNT_ID))
+      .map(Object::toString)
+      .ifPresent(builder::outgoingAccountId);
+
+    Optional.ofNullable(customSettings.get(BLAST_OUTGOING_ACCOUNT_SECRET))
+      .map(Object::toString)
+      .ifPresent(builder::outgoingAccountSecret);
 
     Optional.ofNullable(customSettings.get(BLAST_OUTGOING_TOKEN_EXPIRY))
       .map(Object::toString)
@@ -105,12 +146,33 @@ public interface BlastLinkSettings extends LinkSettings {
   }
 
   /**
+   * The unique identifier of the Account used to authenticate an incoming BLAST connection.
+   *
+   * @return
+   */
+  String getIncomingAccountId();
+
+  /**
    * A simple `secret` used to authenticate an incoming BLAST connection, useful for development purposes. For
    * production, a more advanced authentication mechanism should be used.
    *
    * @return
    */
-  String getIncomingSecret();
+  String getIncomingAccountSecret();
+
+  /**
+   * The expected `iss` value of the issuer of a Blast token presented on an incoming connection.
+   *
+   * @return
+   */
+  String getIncomingTokenIssuer();
+
+  /**
+   * The unique identifier of the Account used to authenticate an outgoing BLAST connection.
+   *
+   * @return
+   */
+  String getOutgoingAccountId();
 
   /**
    * A simple `secret` used to authenticate to the remote peer when making a BLAST connection, useful for development
@@ -118,7 +180,14 @@ public interface BlastLinkSettings extends LinkSettings {
    *
    * @return
    */
-  String getOutgoingSecret();
+  String getOutgoingAccountSecret();
+
+  /**
+   * The expected `iss` value of the issuer of a Blast token presented on an outgoing connection.
+   *
+   * @return
+   */
+  String getOutgoingTokenIssuer();
 
   /**
    * Determines how often to sign a new token for auth.

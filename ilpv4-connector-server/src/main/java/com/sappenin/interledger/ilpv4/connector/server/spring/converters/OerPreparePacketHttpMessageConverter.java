@@ -5,6 +5,7 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
+import org.springframework.http.MediaType;
 import org.springframework.http.converter.AbstractGenericHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -26,7 +27,7 @@ public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMes
   private final CodecContext ilpCodecContext;
 
   public OerPreparePacketHttpMessageConverter(final CodecContext ilpCodecContext) {
-    super(ILP_OCTET_STREAM, ILP_HEADER_OCTET_STREAM);
+    super(MediaType.APPLICATION_OCTET_STREAM, ILP_OCTET_STREAM, ILP_HEADER_OCTET_STREAM);
     this.ilpCodecContext = Objects.requireNonNull(ilpCodecContext);
   }
 

@@ -13,6 +13,8 @@ import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketMapper;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -24,7 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static org.interledger.connector.link.blast.BlastHeaders.ILP_OCTET_STREAM_VALUE;
+import static org.interledger.connector.link.blast.BlastHeaders.APPLICATION_ILP_OCTET_STREAM_VALUE;
 
 /**
  * A RESTful controller for handling ILP over HTTP request/response payloads.
@@ -68,13 +70,14 @@ public class IlpHttpController {
    */
   @RequestMapping(
     value = ILP_PATH, method = {RequestMethod.POST},
-    produces = {ILP_OCTET_STREAM_VALUE},
-    consumes = {ILP_OCTET_STREAM_VALUE, MediaType.APPLICATION_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE}
+    produces = {APPLICATION_ILP_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE},
+    consumes = {APPLICATION_ILP_OCTET_STREAM_VALUE, MediaType.APPLICATION_OCTET_STREAM_VALUE}
   )
   public InterledgerResponsePacket sendData(
-    final Principal principal, @RequestBody final InterledgerPreparePacket preparePacket
+    Authentication authentication, @AuthenticationPrincipal Principal principal,
+    @RequestBody final InterledgerPreparePacket preparePacket
   ) {
-    final AccountId accountId = this.accountIdResolver.resolveAccountId(principal);
+    final AccountId accountId = this.accountIdResolver.resolveAccountId(authentication);
     final Optional<InterledgerResponsePacket> response = this.ilPv4PacketSwitch.routeData(accountId, preparePacket);
 
     return new InterledgerResponsePacketMapper<InterledgerResponsePacket>() {
@@ -100,9 +103,10 @@ public class IlpHttpController {
 
   @RequestMapping(
     value = ILP_PATH, method = {RequestMethod.HEAD},
-    produces = {ILP_OCTET_STREAM_VALUE},
-    consumes = {ILP_OCTET_STREAM_VALUE, MediaType.APPLICATION_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE}
+    produces = {APPLICATION_ILP_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE},
+    consumes = {APPLICATION_ILP_OCTET_STREAM_VALUE, MediaType.APPLICATION_OCTET_STREAM_VALUE}
   )
   public void headData() {
+    // No-op.
   }
 }

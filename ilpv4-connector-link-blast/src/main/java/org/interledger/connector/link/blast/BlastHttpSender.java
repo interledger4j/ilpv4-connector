@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
@@ -40,14 +41,20 @@ public class BlastHttpSender {
   private final InterledgerAddress operatorAddress;
   private final URI uri;
   private final RestTemplate restTemplate;
-  private final Supplier<byte[]> secretSupplier;
+  private final Supplier<String> tokenIssuerSupplier;
+  private final Supplier<String> accountIdSupplier;
+  private final Supplier<byte[]> accountSecretSupplier;
 
   public BlastHttpSender(final InterledgerAddress operatorAddress, final URI uri, final RestTemplate restTemplate,
-                         Supplier<byte[]> secretSupplier) {
+                         final Supplier<String> tokenIssuerSupplier,
+                         final Supplier<String> accountIdSupplier,
+                         final Supplier<byte[]> accountSecretSupplier) {
     this.operatorAddress = Objects.requireNonNull(operatorAddress);
     this.uri = Objects.requireNonNull(uri);
     this.restTemplate = Objects.requireNonNull(restTemplate);
-    this.secretSupplier = Objects.requireNonNull(secretSupplier);
+    this.tokenIssuerSupplier = Objects.requireNonNull(tokenIssuerSupplier);
+    this.accountIdSupplier = accountIdSupplier;
+    this.accountSecretSupplier = Objects.requireNonNull(accountSecretSupplier);
   }
 
   /**
@@ -84,8 +91,11 @@ public class BlastHttpSender {
   }
 
   /**
-   * Check the `/ilp` endpoint for ping by making an HTTP Head request, and asserting the values returned are
-   * one of the supported content-types required for BLAST.
+   * <p>Check the `/ilp` endpoint for ping by making an HTTP Head request, and asserting the values returned are one of
+   * the supported content-types required for BLAST.</p>
+   *
+   * <p>If the endpoint does not support producing BLAST responses, we expect a 406 NOT_ACCEPTABLE response. If the
+   * endpoint does not support BLAST requests, then we expect a 415 UNSUPPORTED_MEDIA_TYPE.</p>
    */
   public void testConnection() {
     try {
@@ -112,17 +122,35 @@ public class BlastHttpSender {
             String.format("Remote peer `%s` DOES NOT support BLAST: %s", uri, response.getHeaders())
           );
         }
-      } else {
-        throw new HttpClientErrorException(
-          response.getStatusCode(),
-          String.format("Unable to connect to remote BLAST peer(`%s`): %s", uri)
-        );
+      } else if (response.getStatusCode().is4xxClientError()) {
+        if (response.getStatusCode().equals(HttpStatus.NOT_ACCEPTABLE)) {
+          throw new HttpClientErrorException(
+            response.getStatusCode(),
+            String.format("Remote BLAST endpoint(`%s`) does not support producing BLAST responses.", uri)
+          );
+        } else if (response.getStatusCode().equals(HttpStatus.UNSUPPORTED_MEDIA_TYPE)) {
+          throw new HttpClientErrorException(
+            response.getStatusCode(),
+            String.format("Remote BLAST endpoint(`%s`) does not support incoming BLAST requests.", uri)
+          );
+        } else {
+          throw new HttpClientErrorException(
+            response.getStatusCode(),
+            String.format("Unable to connect to remote BLAST endpoint(`%s`)", uri)
+          );
+        }
       }
     } catch (HttpClientErrorException e) {
-      throw new HttpClientErrorException(
-        e.getStatusCode(),
-        String.format("Unable to connect to remote BLAST peer(`%s`): %s", uri, e.getStatusText())
-      );
+      if (e.getStatusCode().equals(HttpStatus.NOT_FOUND)) {
+        logger.warn(String.format("Unable to connect to remote BLAST endpoint (`%s`): %s", uri, e.getMessage()));
+      } else {
+        throw new HttpClientErrorException(
+          e.getStatusCode(),
+          String.format("Unable to connect to remote BLAST peer(`%s`): %s", uri, e.getStatusText())
+        );
+      }
+    } catch (ResourceAccessException e) { // Remote endpoint is not serving...
+      logger.warn(String.format("Unable to connect to remote BLAST endpoint (`%s`): %s", uri, e.getMessage()));
     }
   }
 
@@ -147,9 +175,10 @@ public class BlastHttpSender {
   private String constructAuthToken() {
     return JWT.create()
       .withIssuedAt(new Date())
-      .withIssuer(operatorAddress.getValue())
+      .withIssuer(tokenIssuerSupplier.get())
+      .withSubject(accountIdSupplier.get()) // account identifier at the remote server.
       .withAudience(BLAST_AUDIENCE)
-      .sign(Algorithm.HMAC256(secretSupplier.get()));
+      .sign(Algorithm.HMAC256(accountSecretSupplier.get()));
   }
 
 }

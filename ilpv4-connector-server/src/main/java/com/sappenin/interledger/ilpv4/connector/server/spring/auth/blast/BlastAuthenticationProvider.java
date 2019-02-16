@@ -27,7 +27,6 @@ import static org.interledger.connector.link.blast.BlastHeaders.BLAST_AUDIENCE;
  * An {@link AuthenticationProvider} that wraps an individual instance of {@link JwtAuthenticationProvider} for each
  * BLAST peer that authentication is required to be performed with.
  */
-// TODO: Need to separate Auth for sendMoney and sendPacket....
 public class BlastAuthenticationProvider implements AuthenticationProvider {
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
@@ -50,9 +49,9 @@ public class BlastAuthenticationProvider implements AuthenticationProvider {
         new CacheLoader<AccountId, JwtAuthenticationProvider>() {
           public JwtAuthenticationProvider load(final AccountId accountId) {
             Objects.requireNonNull(accountId);
-
-            final byte[] secret = lookupBlastIncomingSecret(accountId).getBytes();
-            final String issuer = accountId.value(); // The issuer is the sender of the token.
+            final BlastLinkSettings blastLinkSettings = lookupBlastLinkSettings(accountId);
+            final byte[] secret = blastLinkSettings.getIncomingAccountSecret().getBytes();
+            final String issuer = blastLinkSettings.getIncomingTokenIssuer(); // The issuer is the sender of the token.
             return new JwtAuthenticationProvider(secret, issuer, BLAST_AUDIENCE);
           }
         });
@@ -62,7 +61,7 @@ public class BlastAuthenticationProvider implements AuthenticationProvider {
   public Authentication authenticate(final Authentication authentication) throws AuthenticationException {
     final String token = authentication.getCredentials().toString();
 
-    return jwtAuthenticationProviders.getUnchecked(AccountId.of(JWT.decode(token).getIssuer()))
+    return jwtAuthenticationProviders.getUnchecked(AccountId.of(JWT.decode(token).getSubject()))
       .authenticate(authentication);
   }
 
@@ -76,18 +75,17 @@ public class BlastAuthenticationProvider implements AuthenticationProvider {
    *
    * TODO: Get this from vault instead...
    *
-   * @param accountId
+   * @param accountId The {@link AccountId} to lookup account settings for.
    *
-   * @return
+   * @return An instance of {@link BlastLinkSettings}.
    */
-  private String lookupBlastIncomingSecret(final AccountId accountId) {
+  private BlastLinkSettings lookupBlastLinkSettings(final AccountId accountId) {
     Objects.requireNonNull(accountId);
 
     return accountManager.getAccount(accountId)
       .map(Account::getLink)
       .map(Link::getLinkSettings)
       .map(link -> (BlastLinkSettings) link)
-      .map(BlastLinkSettings::getIncomingSecret)
       .orElseThrow(() -> new BadCredentialsException(
         String.format("No account found for `%s`", accountId.value())
       ));

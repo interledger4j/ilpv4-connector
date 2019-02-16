@@ -6,8 +6,8 @@ import org.interledger.btp.BtpSessionCredentials;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkId;
+import org.springframework.security.core.Authentication;
 
-import java.security.Principal;
 import java.util.Objects;
 
 /**
@@ -22,8 +22,6 @@ public class DefaultAccountIdResolver implements BtpAccountIdResolver, BlastAcco
   public AccountId resolveAccountId(final Link<?> link) {
     Objects.requireNonNull(link);
 
-    // The AccountId for a Connected Plugin MUST be the PluginId...but what about a BTP Server Plugin? If it's
-    // connected, then
     if (link.isConnected()) {
       return link.getLinkId()
         .map(LinkId::value)
@@ -119,7 +117,8 @@ public class DefaultAccountIdResolver implements BtpAccountIdResolver, BlastAcco
   }
 
   @Override
-  public AccountId resolveAccountId(Principal principal) {
-    throw new RuntimeException("Not yet implemented!");
+  public AccountId resolveAccountId(final Authentication authentication) {
+    Objects.requireNonNull(authentication);
+    return AccountId.of(authentication.getPrincipal().toString());
   }
 }

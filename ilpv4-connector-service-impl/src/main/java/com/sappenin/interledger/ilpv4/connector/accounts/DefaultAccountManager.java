@@ -80,12 +80,12 @@ public class DefaultAccountManager implements AccountManager, LinkEventListener 
 
 
     // Create Data Link
-    final LinkSettings dataLinkSettings = LinkSettings.builder()
+    final LinkSettings linkSettings = LinkSettings.builder()
       .linkType(accountSettings.getLinkType())
       .customSettings(accountSettings.getCustomSettings())
       .operatorAddress(connectorSettingsSupplier.get().getOperatorAddress())
       .build();
-    final Link<?> link = linkManager.createLink(accountSettings.getId(), dataLinkSettings);
+    final Link<?> link = linkManager.createLink(accountSettings.getId(), linkSettings);
     // Register the Connector as a LinkEvent Listener...
     link.addLinkEventListener(this);
 
@@ -110,10 +110,10 @@ public class DefaultAccountManager implements AccountManager, LinkEventListener 
       if (accountSettings.isDynamic()) {
         // Remove the dynamic account...
         this.removeAccount(accountSettings.getId());
-        logger.error("Unable to connect Dynamic Link ({}): {}", dataLinkSettings, e.getMessage());
+        logger.error("Unable to connect Dynamic Link ({}): {}", linkSettings, e.getMessage());
       } else {
         // Preconfigured accounts should not be removed...
-        logger.warn("Unable to connect Preconfigured Link({}): {}", dataLinkSettings, e.getMessage());
+        logger.warn("Unable to connect Preconfigured Link({}): {}", linkSettings, e.getMessage());
       }
     }
   }
