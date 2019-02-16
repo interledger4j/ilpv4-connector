@@ -84,7 +84,7 @@ public class BlastHttpSender {
   }
 
   /**
-   * Check the `/ilp` endpoint for connectivity by making an HTTP Head request, and asserting the values returned are
+   * Check the `/ilp` endpoint for ping by making an HTTP Head request, and asserting the values returned are
    * one of the supported content-types required for BLAST.
    */
   public void testConnection() {

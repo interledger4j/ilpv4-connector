@@ -1,5 +1,5 @@
-# A Connector running in `plugin-mode` operates a single plugin, does not routing or balance tracking, and requires a
-# parent ILSP that all traffic will be forwarded to.
+# A Connector running in `single-account` mode operates a single link, does not do routing or balance tracking, and
+# requires a parent ILSP that all traffic will be forwarded to.
 logging:
   level:
     ROOT: INFO

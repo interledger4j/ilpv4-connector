@@ -1,14 +1,14 @@
 package org.interledger.ilpv4.connector.it.topology;
 
-import org.interledger.plugin.lpiv2.Plugin;
-import org.interledger.plugin.lpiv2.PluginSettings;
+import org.interledger.connector.link.Link;
+import org.interledger.connector.link.LinkSettings;
 
 /**
- * A node in a topology which exposes an instance of {@link Plugin} that can be used to interact with the Node.
+ * A node in a topology which exposes an instance of {@link Link} that can be used to interact with the Node.
  */
-public class PluginNode<PS extends PluginSettings, P extends Plugin<PS>> extends AbstractNode<P> implements Node<P> {
+public class LinkNode<PS extends LinkSettings, P extends Link<PS>> extends AbstractNode<P> implements Node<P> {
 
-  public PluginNode(final P contentObject) {
+  public LinkNode(final P contentObject) {
     super(contentObject);
   }
 

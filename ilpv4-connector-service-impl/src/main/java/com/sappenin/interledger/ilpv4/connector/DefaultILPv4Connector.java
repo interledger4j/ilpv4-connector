@@ -4,7 +4,7 @@ import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.events.IlpNodeEvent;
-import com.sappenin.interledger.ilpv4.connector.links.connectivity.PingProtocolLink;
+import com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLink;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.InternalRoutingService;

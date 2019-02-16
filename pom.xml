@@ -252,6 +252,11 @@
       </dependency>
       <dependency>
         <groupId>org.zalando</groupId>
+        <artifactId>problem-violations</artifactId>
+        <version>${problem-spring-web.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.zalando</groupId>
         <artifactId>jackson-datatype-problem</artifactId>
         <version>${problem.version}</version>
       </dependency>
@@ -289,6 +294,15 @@
                   <ignoredDependency>com.google.code.findbugs:jsr305</ignoredDependency>
                   <ignoredDependency>com.google.code.findbugs:annotations</ignoredDependency>
                   <ignoredDependency>com.google.errorprone:error_prone_annotations</ignoredDependency>
+
+                  <ignoredDependency>com.auth0:jwks-rsa</ignoredDependency>
+
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-web</ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-jetty</ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-websocket</ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-security</ignoredDependency>
+                  <ignoredDependency>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure</ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-test:jar</ignoredDependency>
                 </ignoredDependencies>
               </configuration>
             </execution>

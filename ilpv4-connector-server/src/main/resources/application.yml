@@ -56,7 +56,7 @@ ilpv4:
   connector:
     ## ILP address of the connector.
     ## This property can be omitted if an account with relation=parent is configured under accounts.
-    nodeIlpAddress: test2.connie
+    # nodeIlpAddress: test2.connie
     # The global prefix. For production environments, this should be `g`. For test environments, consider `test`.
     # globalPrefix: test3
 

@@ -1,4 +1,4 @@
-package com.sappenin.interledger.ilpv4.connector.links.connectivity;
+package com.sappenin.interledger.ilpv4.connector.links.ping;
 
 import com.sappenin.interledger.ilpv4.connector.links.InternallyRoutedLink;
 import org.interledger.connector.link.Link;
@@ -17,26 +17,23 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * <p>A {@link Link} that implements the <tt>PING</tt> protocol. The packet-switch will have routed packets
+ * <p>A {@link Link} that implements the <tt>PING</tt> protocol. The packet-switch will forward all incoming packets
  * addressed to this connector's operating address to this link (via an appropriate routing table entry). Once this link
- * is called, it will merely respond with fulfill packets containing a known response, and will also track the balance
- * of payments this connector has accrued due to incoming ping-payments.</p>
+ * is called to process a packet, this link will merely respond with fulfill packets containing a known response, and
+ * will also track the balance of payments this connector has accrued due to incoming ping-payments.</p>
  *
  * <p>Note that while this link is tracking payments related to ping requests, this account is actually between the
  * connector and itself, so unless it makes sense for tracking purposes, settling the account balance tracked by this
  * link is unnecessary.</p>
  *
- * // TODO: Add RFC link.
+ * TODO: Add RFC link.
  *
  * @see ""
  */
 public class PingProtocolLink extends InternallyRoutedLink implements Link<LinkSettings> {
 
-  public static final String LINK_TYPE_STRING = "PING_PROTOCOL_LINK";
+  public static final String LINK_TYPE_STRING = "PING_PROTOCOL";
   public static final LinkType LINK_TYPE = LinkType.of(LINK_TYPE_STRING);
-
-  //  public static final InterledgerAddress SELF_DOT_PING
-  //    = InterledgerAddress.of(InterledgerAddressPrefix.SELF.with("ping").getValue());
 
   public static final InterledgerFulfillment PING_PROTOCOL_FULFILLMENT = InterledgerFulfillment.of(new byte[32]);
   public static final InterledgerCondition PING_PROTOCOL_CONDITION = PING_PROTOCOL_FULFILLMENT.getCondition();

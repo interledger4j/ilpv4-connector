@@ -43,7 +43,7 @@ profile targeting a different use-case.
 ## Plugin Mode
 The simplest of connector profiles, this profile is meant to operate as an Interledger
 client operating a single plugin. This profile requires a connection to a parent connector
-that will provide more advanced functionality, such as routing, FX, and connectivity to the broader Interledger
+that will provide more advanced functionality, such as routing, FX, and ping to the broader Interledger
 network.
 
 ### Supported Functionality
@@ -58,7 +58,8 @@ in the parent/peer connector.
 * [ILDCP](https://github.com/interledger/rfcs/blob/master/0031-dynamic-configuration-protocol/0031-dynamic-configuration-protocol.md)
 is optionally supported.
 
-For an example configuration of a plugin-mode Connector, see [application-plugin-mode-connector.yml](FIXME).
+For an example configuration of a single-account Connector, see [application-single-account-connector.yml]
+(FIXME).
 
 ### Startup
 TODO

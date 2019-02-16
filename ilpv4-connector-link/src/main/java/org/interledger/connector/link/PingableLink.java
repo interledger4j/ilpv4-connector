@@ -14,14 +14,14 @@ import java.util.Optional;
 /**
  * Defines a "ping" mechanism on a particular {@link Link}.
  */
-public interface PingableLink extends Link {
+public interface PingableLink<LS extends LinkSettings> extends Link<LS> {
 
   InterledgerCondition PING_PROTOCOL_CONDITION =
     InterledgerCondition.of(Base64.getDecoder().decode("Zmh6rfhivXdsj8GLjp+OIAiXFIVu4jOzkCpZHQ1fKSU="));
 
   /**
    * Send a very-small value payment to the destination and expect an ILP fulfillment, which demonstrates this sender
-   * has send-data connectivity to the indicated destination address.
+   * has send-data ping to the indicated destination address.
    *
    * @param destinationAddress
    */

@@ -1,15 +1,15 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
+import com.sappenin.interledger.ilpv4.connector.links.loopback.LoopbackLink;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountBalanceSettings;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountProviderSettings;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.GlobalRoutingSettings;
+import org.interledger.connector.accounts.AccountBalanceSettings;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountProviderSettings;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
-import org.interledger.plugin.lpiv2.LoopbackPlugin;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,7 +77,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       final AccountSettings account = accounts.get(0);
       assertThat(account.getId().value(), is("alice"));
       assertThat(account.getDescription(), is("Alice's USD Account"));
-      assertThat(account.getPluginType(), is(LoopbackPlugin.PLUGIN_TYPE));
+      assertThat(account.getLinkType(), is(LoopbackLink.LINK_TYPE));
       assertThat(account.getAssetCode(), is("USD"));
       assertThat(account.getAssetScale(), is(8));
       assertThat(account.isSendRoutes(), is(false));
@@ -100,7 +100,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       final AccountSettings account = accounts.get(1);
       assertThat(account.getId().value(), is("bob"));
       assertThat(account.getDescription(), is("Bob's EUR Account"));
-      assertThat(account.getPluginType(), is(LoopbackPlugin.PLUGIN_TYPE));
+      assertThat(account.getLinkType(), is(LoopbackLink.LINK_TYPE));
       assertThat(account.getAssetCode(), is("EUR"));
       assertThat(account.getAssetScale(), is(3));
       assertThat(account.isSendRoutes(), is(true));
@@ -123,7 +123,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       final AccountSettings account = accounts.get(2);
       assertThat(account.getId().value(), is("empty"));
       assertThat(account.getDescription(), is(""));
-      assertThat(account.getPluginType(), is(nullValue()));
+      assertThat(account.getLinkType(), is(nullValue()));
       assertThat(account.getAssetCode(), is("USD"));
       assertThat(account.getAssetScale(), is(2));
       assertThat(account.isSendRoutes(), is(false));
@@ -145,7 +145,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       final AccountSettings account = accounts.get(3);
       assertThat(account.getId().value(), is("minimal.child"));
       assertThat(account.getDescription(), is("A child account with minimal settings."));
-      assertThat(account.getPluginType(), is(LoopbackPlugin.PLUGIN_TYPE));
+      assertThat(account.getLinkType(), is(LoopbackLink.LINK_TYPE));
       assertThat(account.getAssetCode(), is("USD"));
       assertThat(account.getAssetScale(), is(9));
       assertThat(account.isSendRoutes(), is(false));
@@ -170,7 +170,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       final AccountProviderSettings settings = accountProviders.get(0);
       assertThat(settings.getId().value(), is("testServer1"));
       assertThat(settings.getDescription(), is("The testServer1 AccountProvider"));
-      assertThat(settings.getPluginType(), is(LoopbackPlugin.PLUGIN_TYPE));
+      assertThat(settings.getLinkType(), is(LoopbackLink.LINK_TYPE));
       assertThat(settings.getAssetCode(), is("USD"));
       assertThat(settings.getAssetScale(), is(8));
       assertThat(settings.isSendRoutes(), is(false));
@@ -193,7 +193,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       final AccountProviderSettings settings = accountProviders.get(1);
       assertThat(settings.getId().value(), is("empty"));
       assertThat(settings.getDescription(), is(""));
-      assertThat(settings.getPluginType(), is(nullValue()));
+      assertThat(settings.getLinkType(), is(nullValue()));
       assertThat(settings.getAssetCode(), is("USD"));
       assertThat(settings.getAssetScale(), is(2));
       assertThat(settings.isSendRoutes(), is(false));
@@ -216,7 +216,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       final AccountProviderSettings settings = accountProviders.get(2);
       assertThat(settings.getId().value(), is("minimal.parent"));
       assertThat(settings.getDescription(), is("The minimal.parent AccountProvider"));
-      assertThat(settings.getPluginType(), is(LoopbackPlugin.PLUGIN_TYPE));
+      assertThat(settings.getLinkType(), is(LoopbackLink.LINK_TYPE));
       assertThat(settings.getAssetCode(), is("USD"));
       assertThat(settings.getAssetScale(), is(9));
       assertThat(settings.isSendRoutes(), is(false));

@@ -11,16 +11,14 @@ import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountIdResolve
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountSettingsResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultLinkManager;
-import com.sappenin.interledger.ilpv4.connector.accounts.DefaultPluginManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
-import com.sappenin.interledger.ilpv4.connector.accounts.PluginManager;
 import com.sappenin.interledger.ilpv4.connector.fx.DefaultExchangeRateService;
 import com.sappenin.interledger.ilpv4.connector.fx.ExchangeRateService;
+import com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLink;
+import com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLinkFactory;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.DefaultILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.InterledgerAddressUtils;
-import com.sappenin.interledger.ilpv4.connector.links.connectivity.PingProtocolPlugin;
-import com.sappenin.interledger.ilpv4.connector.links.connectivity.PingProtocolPluginFactory;
 import com.sappenin.interledger.ilpv4.connector.routing.DefaultInternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.InMemoryExternalRoutingService;
@@ -28,15 +26,11 @@ import com.sappenin.interledger.ilpv4.connector.routing.InternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.NoOpExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
 import com.sappenin.interledger.ilpv4.connector.routing.Route;
-import com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.SpringConnectorWebMvc;
-import com.sappenin.interledger.ilpv4.connector.server.spring.settings.btp.SpringBtpConfig;
+import com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.BlastConfig;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.connector.link.LinkFactoryProvider;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.interledger.plugin.lpiv2.LoopbackPlugin;
-import org.interledger.plugin.lpiv2.btp2.spring.factories.LoopbackPluginFactory;
-import org.interledger.plugin.lpiv2.btp2.spring.factories.PluginFactoryProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,15 +59,11 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.Co
 @Configuration
 @EnableConfigurationProperties({ConnectorSettingsFromPropertyFile.class})
 @ConditionalOnExpression
-@Import(
-  {
-    CodecContextConfig.class,
-    SpringConnectorWebMvc.class,
-    //SpringAsyncConfig.class
-
-    // Conditionally loaded if an account connector is running with one or more BTP profiles.
-    SpringBtpConfig.class,
-  })
+@Import({
+          CodecContextConfig.class,
+          // Link-Layer Support
+          BlastConfig.class
+        })
 public class SpringConnectorConfig {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -114,24 +104,19 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  PluginFactoryProvider pluginFactoryProvider(
+  LinkFactoryProvider linkFactoryProvider(
     @Qualifier(ILP) CodecContext ilpCodecContext
   ) {
-    final PluginFactoryProvider provider = new PluginFactoryProvider();
+    final LinkFactoryProvider provider = new LinkFactoryProvider();
 
     // Register known types...Spring will register proper known types based upon config...
-    provider.registerPluginFactory(LoopbackPlugin.PLUGIN_TYPE, new LoopbackPluginFactory());
-    provider.registerPluginFactory(PingProtocolPlugin.PLUGIN_TYPE, new PingProtocolPluginFactory(ilpCodecContext));
+    //provider.registerLinkFactory(LoopBackLink.LINK_TYPE, new LoopbackLinkFactory());
+    provider.registerLinkFactory(PingProtocolLink.LINK_TYPE, new PingProtocolLinkFactory(ilpCodecContext));
 
     // TODO: Register any SPI types..
     // See SPI as well as https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/io/support/SpringFactoriesLoader.html
 
     return provider;
-  }
-
-  @Bean
-  PluginManager pluginManager(EventBus eventBus, PluginFactoryProvider pluginFactoryProvider) {
-    return new DefaultPluginManager(eventBus, pluginFactoryProvider);
   }
 
   @Bean
@@ -178,7 +163,6 @@ public class SpringConnectorConfig {
 
   @Bean
   @Qualifier("externalPaymentRouter") // This is also a PaymentRouter
-  @Profile(ConnectorProfile.CONNECTOR_MODE)
   ExternalRoutingService connectorModeRoutingService(
     EventBus eventBus,
     @Qualifier(ILP) CodecContext ilpCodecContext,
@@ -192,8 +176,8 @@ public class SpringConnectorConfig {
 
   @Bean
   @Qualifier("externalPaymentRouter") // This is also a PaymentRouter
-  @Profile({ConnectorProfile.PLUGIN_MODE})
-  ExternalRoutingService pluginModePaymentRoutingService() {
+  @Profile({ConnectorProfile.SINGLE_ACCOUNT_MODE})
+  ExternalRoutingService linkModePaymentRoutingService() {
     return new NoOpExternalRoutingService();
   }
 

@@ -1,7 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties;
 
-import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.StaticRoute;
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddressPrefix;
 
 /**

@@ -1,4 +1,4 @@
-package com.sappenin.interledger.ilpv4.connector.links.connectivity;
+package com.sappenin.interledger.ilpv4.connector.links.ping;
 
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkFactory;
@@ -9,7 +9,7 @@ import org.interledger.encoding.asn.framework.CodecContext;
 import java.util.Objects;
 
 /**
- * An implementation of {@link LinkFactory} for creating BTP Links.
+ * An implementation of {@link LinkFactory} for creating Links that can handle the `Ping` protocol.
  */
 public class PingProtocolLinkFactory implements LinkFactory {
 
@@ -33,20 +33,10 @@ public class PingProtocolLinkFactory implements LinkFactory {
         link = new PingProtocolLink(linkSettings, ilpCodecContext);
         break;
       }
-      //      case EchoProtocolLink.LINK_TYPE_STRING: {
-      //        link = new LoopbackLink(linkSettings.getOperatorAddress());
-      //        break;
-      //      }
       default: {
-        link = null;
+        throw new RuntimeException(String.format("Invalid LinkType: %s", linkSettings.getLinkType()));
       }
     }
-
-    //        // Alert any link listeners that a new link was constructed...
-    //        eventPublisher.publishEvent(LinkConstructedEvent.builder()
-    //          .message(String.format("Link constructed for `%s`", linkSettings.getAccountAddress().getValue()))
-    //          .object(link)
-    //          .build());
 
     return link;
 

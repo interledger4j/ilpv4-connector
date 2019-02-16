@@ -1,7 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.accounts;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.sappenin.interledger.ilpv4.connector.links.connectivity.PingProtocolLink;
+import com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLink;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;

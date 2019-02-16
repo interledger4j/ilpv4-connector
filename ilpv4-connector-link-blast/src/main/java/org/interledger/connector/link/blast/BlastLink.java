@@ -2,8 +2,7 @@ package org.interledger.connector.link.blast;
 
 import org.interledger.connector.link.AbstractLink;
 import org.interledger.connector.link.LinkType;
-import org.interledger.connector.link.blast.BlastHttpSender;
-import org.interledger.connector.link.blast.BlastLinkSettings;
+import org.interledger.connector.link.PingableLink;
 import org.interledger.connector.link.events.LinkEventEmitter;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
@@ -18,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @see "https://github.com/interledger/rfcs/TODO"
  */
-public class BlastLink extends AbstractLink<BlastLinkSettings> {
+public class BlastLink extends AbstractLink<BlastLinkSettings> implements PingableLink<BlastLinkSettings> {
 
   public static final String LINK_TYPE_STRING = "BlastLink";
   public static final LinkType LINK_TYPE = LinkType.of(LINK_TYPE_STRING);

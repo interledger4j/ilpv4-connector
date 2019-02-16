@@ -25,7 +25,7 @@ public interface ConnectorProfile {
    * that can be used to obtain an ILP Account address using ILDCP (or one must be statically configured in a
    * property).
    */
-  String PLUGIN_MODE = "plugin-mode";
+  String SINGLE_ACCOUNT_MODE = "single-mode";
 
   /**
    * Operates as a fully-functional connector, supporting routing, packet-switching, etc.

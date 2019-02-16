@@ -1,24 +1,24 @@
 package org.interledger.ilpv4.connector.it.topologies.blast;
 
-import com.sappenin.interledger.ilpv4.connector.Account;
-import com.sappenin.interledger.ilpv4.connector.AccountId;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.IlpHttpController;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountRelationship;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.GlobalRoutingSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ImmutableConnectorSettings;
-import com.sappenin.interledger.ilpv4.connector.settings.ModifiableAccountSettings;
 import okhttp3.HttpUrl;
+import org.interledger.connector.accounts.Account;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountRelationship;
+import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.ModifiableAccountSettings;
+import org.interledger.connector.link.blast.BlastLink;
+import org.interledger.connector.link.blast.BlastLinkSettings;
+import org.interledger.connector.link.blast.ModifiableBlastLinkSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.interledger.ilpv4.connector.it.topology.nodes.ConnectorServerNode;
-import org.interledger.lpiv2.blast.BlastPlugin;
-import org.interledger.lpiv2.blast.BlastPluginSettings;
-import org.interledger.lpiv2.blast.ModifiableBlastPluginSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,13 +86,13 @@ public class TwoConnectorBlastTopology {
             // Need to reach-into the AccountManager and adjust the outgoing URL for Bob, based upon the newly discovered
             // port in `bobBlastUrl`
             final HttpUrl bobBlastUrl = HttpUrl.parse("http://localhost:" + bobPort + IlpHttpController.ILP_PATH);
-            final ModifiableBlastPluginSettings modifiableBlastPluginSettings = (ModifiableBlastPluginSettings)
-              bobAccount.getPlugin().getPluginSettings();
-            modifiableBlastPluginSettings.setOutgoingUrl(bobBlastUrl);
-            ((BlastPlugin) bobAccount.getPlugin()).reconfigure(modifiableBlastPluginSettings);
+            final ModifiableBlastLinkSettings modifiableBlastLinkSettings = (ModifiableBlastLinkSettings)
+              bobAccount.getLink().getLinkSettings();
+            modifiableBlastLinkSettings.setOutgoingUrl(bobBlastUrl);
+            ((BlastLink) bobAccount.getLink()).reconfigure(modifiableBlastLinkSettings);
 
-            // Try to re-connect the plugin...
-            bobAccount.getPlugin().connect().get(5, TimeUnit.SECONDS);
+            // Try to re-connect the link...
+            bobAccount.getLink().connect().get(5, TimeUnit.SECONDS);
           }
           {
             final Account aliceAccount = bobServerNode.getILPv4Connector().getAccountManager()
@@ -101,13 +101,13 @@ public class TwoConnectorBlastTopology {
             // Need to reach-into the AccountManager and adjust the outgoing URL for Alice, based upon the newly
             // discovered port in `aliceBlastUrl`
             final HttpUrl aliceBlastUrl = HttpUrl.parse("http://localhost:" + alicePort + IlpHttpController.ILP_PATH);
-            final ModifiableBlastPluginSettings modifiableBlastPluginSettings = (ModifiableBlastPluginSettings)
-              aliceAccount.getPlugin().getPluginSettings();
-            modifiableBlastPluginSettings.setOutgoingUrl(aliceBlastUrl);
-            ((BlastPlugin) aliceAccount.getPlugin()).reconfigure(modifiableBlastPluginSettings);
+            final ModifiableBlastLinkSettings modifiableBlastLinkSettings = (ModifiableBlastLinkSettings)
+              aliceAccount.getLink().getLinkSettings();
+            modifiableBlastLinkSettings.setOutgoingUrl(aliceBlastUrl);
+            ((BlastLink) aliceAccount.getLink()).reconfigure(modifiableBlastLinkSettings);
 
-            // Try to re-connect the plugin...
-            aliceAccount.getPlugin().connect().get(5, TimeUnit.SECONDS);
+            // Try to re-connect the link...
+            aliceAccount.getLink().connect().get(5, TimeUnit.SECONDS);
           }
         } catch (Exception e) {
           throw new RuntimeException(e);
@@ -155,13 +155,13 @@ public class TwoConnectorBlastTopology {
       .description("Blast Peer account")
       .isPreconfigured(true)
       .relationship(AccountRelationship.PEER)
-      .pluginType(BlastPlugin.PLUGIN_TYPE)
+      .linkType(BlastLink.LINK_TYPE)
       .assetScale(9)
       .assetCode(XRP)
-      .putCustomSettings(BlastPluginSettings.BLAST_INCOMING_SECRET, "12345678912345678912345678912345")
-      .putCustomSettings(BlastPluginSettings.BLAST_OUTGOING_SECRET, "12345678912345678912345678912345")
-      .putCustomSettings(BlastPluginSettings.BLAST_OUTGOING_TOKEN_EXPIRY, "PT2M")
-      .putCustomSettings(BlastPluginSettings.BLAST_OUTGOING_URL, "http://example.com/set-after-topology-init")
+      .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_SECRET, "12345678912345678912345678912345")
+      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_SECRET, "12345678912345678912345678912345")
+      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, "PT2M")
+      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_URL, "http://example.com/set-after-topology-init")
       .build();
 
     return ImmutableConnectorSettings.builder()
@@ -194,13 +194,13 @@ public class TwoConnectorBlastTopology {
       .description("Blast Peer account")
       .isPreconfigured(true)
       .relationship(AccountRelationship.PEER)
-      .pluginType(BlastPlugin.PLUGIN_TYPE)
+      .linkType(BlastLink.LINK_TYPE)
       .assetScale(9)
       .assetCode(XRP)
-      .putCustomSettings(BlastPluginSettings.BLAST_INCOMING_SECRET, "12345678912345678912345678912345")
-      .putCustomSettings(BlastPluginSettings.BLAST_OUTGOING_SECRET, "12345678912345678912345678912345")
-      .putCustomSettings(BlastPluginSettings.BLAST_OUTGOING_TOKEN_EXPIRY, "PT2M")
-      .putCustomSettings(BlastPluginSettings.BLAST_OUTGOING_URL, "http://example.com/set-after-topology-init")
+      .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_SECRET, "12345678912345678912345678912345")
+      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_SECRET, "12345678912345678912345678912345")
+      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, "PT2M")
+      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_URL, "http://example.com/set-after-topology-init")
       .build();
 
     return ImmutableConnectorSettings.builder()

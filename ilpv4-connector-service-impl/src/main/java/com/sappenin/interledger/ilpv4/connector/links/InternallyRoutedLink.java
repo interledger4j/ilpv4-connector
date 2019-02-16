@@ -18,21 +18,20 @@ import java.util.concurrent.CompletableFuture;
  * remote peer Connector.</p>
  *
  * <p>Examples of special addresses that should not be forwarded to a peer include <tt>`peer.config`</tt> and
- * any address starting with the <tt>self</tt> prefix.</p>
+ * any address starting with the <tt>`self`</tt> prefix.</p>
  *
  * <p>In the case of <tt>`peer.config`</tt>, the connector's routing-table is configured to forward all traffic for
- * such internally-routed destinations to specifically configured link that extends this base class. In the case of the
- * peer-config protocol, packets will come into the connector with that destination address, and the routing table will
- * forward to the appropriate link that can handle `peer.config` messages per the CCP routing protocol.</p>
+ * such internally-routed destinations to a specifically configured link that extends this base class. In the case of
+ * the peer-config protocol, packets will come into the connector with that destination address, and the routing table
+ * will forward to the appropriate link that can handle `peer.config` messages per the CCP routing protocol.</p>
  *
- * <p>In this way, links that extend this class can function like an sub-network internal to this connector.
- * Traffic is still routed using Interledger, but it does not exit the connector like a normally schemed packet would
- * .</p>
+ * <p>In this way, links that extend this class can function like a sub-network internal to this connector. Traffic
+ * is still routed using Interledger, but it does not exit the connector like a normally-schemed packet would.</p>
  *
  * <pre>
  *                                            ┌────────────┐             ┌────────────────┐
  *                ┌────────┐                  │ Connector  │             │   Internally   │
- * ───-sendPacket──▷│ Link   │──onIncomingData─▷│   Switch   │──routeData─▶│   Routed Link  │
+ * ──sendPacket──▷│ Link   │──onIncomingData─▷│   Switch   │──routeData─▶│   Routed Link  │
  *                └────────┘                  └────────────┘             └────────────────┘
  * </pre>
  */

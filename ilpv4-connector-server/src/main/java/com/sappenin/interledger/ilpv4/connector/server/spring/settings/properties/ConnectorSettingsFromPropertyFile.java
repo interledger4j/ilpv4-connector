@@ -1,11 +1,11 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties;
 
 import com.google.common.collect.Lists;
-import com.sappenin.interledger.ilpv4.connector.AccountId;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountProviderSettings;
-import com.sappenin.interledger.ilpv4.connector.settings.AccountSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.GlobalRoutingSettings;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountProviderSettings;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.springframework.boot.context.properties.ConfigurationProperties;

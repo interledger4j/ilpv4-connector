@@ -29,17 +29,14 @@ import static org.interledger.connector.link.blast.BlastHeaders.ILP_OCTET_STREAM
 /**
  * A RESTful controller for handling ILP over HTTP request/response payloads.
  *
- * TODO: Fix this ULR once spec if finalized.
+ * TODO: Fix this URL once spec if finalized.
  *
- * @see "https://github.com/interledger/rfcs/blob/30729b78fb554589f2e5202a8dfb7344b21090a0/0000-ilp-over-http.md"
+ * @see "https://github.com/interledger/rfcs/blob/26b7426fa437d5b7ad6c963454f4e9d98f8c3214/0000-ilp-over-http.md"
  */
 @RestController
 public class IlpHttpController {
 
   public static final String ILP_PATH = "/ilp";
-
-  //  public static final String ILP_OCTET_STREAM = "application/ilp+octet-stream";
-  //  public static final String ILP_HEADER_OCTET_STREAM = "application/ilp-header+octet-stream";
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final BlastAccountIdResolver accountIdResolver;
@@ -77,36 +74,28 @@ public class IlpHttpController {
   public InterledgerResponsePacket sendData(
     final Principal principal, @RequestBody final InterledgerPreparePacket preparePacket
   ) {
-
     final AccountId accountId = this.accountIdResolver.resolveAccountId(principal);
-    Optional<InterledgerResponsePacket> response = this.ilPv4PacketSwitch.routeData(accountId, preparePacket);
+    final Optional<InterledgerResponsePacket> response = this.ilPv4PacketSwitch.routeData(accountId, preparePacket);
 
-    return response
-      // If an error response...
-      .exceptionally((error) -> Optional.of(InterledgerRejectPacket.builder()
-        .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
-        .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
-        .build()))
-      // If valid response...
-      .thenApply(responsePacket -> new InterledgerResponsePacketMapper<InterledgerResponsePacket>() {
-        @Override
-        protected InterledgerResponsePacket mapFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-          return interledgerFulfillPacket;
-        }
+    return new InterledgerResponsePacketMapper<InterledgerResponsePacket>() {
+      @Override
+      protected InterledgerResponsePacket mapFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
+        return interledgerFulfillPacket;
+      }
 
-        @Override
-        protected InterledgerResponsePacket mapRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-          return interledgerRejectPacket;
-        }
+      @Override
+      protected InterledgerResponsePacket mapRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
+        return interledgerRejectPacket;
+      }
 
-        @Override
-        protected InterledgerResponsePacket mapExpiredPacket() {
-          return InterledgerRejectPacket.builder()
-            .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
-            .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
-            .build();
-        }
-      }.map(responsePacket)).join();
+      @Override
+      protected InterledgerResponsePacket mapExpiredPacket() {
+        return InterledgerRejectPacket.builder()
+          .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
+          .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
+          .build();
+      }
+    }.map(response);
   }
 
   @RequestMapping(

@@ -27,14 +27,18 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>ilpv4-api</artifactId>
+      <artifactId>ilpv4-connector-accounts</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.sappenin.ilpv4</groupId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ilpv4-connector-model</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-link</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.sappenin.ilpv4</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-link-blast</artifactId>
     </dependency>
     <dependency>
@@ -59,15 +63,31 @@
     </dependency>
     <dependency>
       <groupId>com.auth0</groupId>
-      <artifactId>auth0-spring-security-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.auth0</groupId>
       <artifactId>jwks-rsa</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>okhttp</artifactId>
+      <groupId>com.auth0</groupId>
+      <artifactId>auth0-spring-security-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jdk8</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
@@ -75,20 +95,58 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>ilp-core</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>ilp-core-codecs</artifactId>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
-      <artifactId>btp-core</artifactId>
+      <artifactId>codec-framework</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.interledger</groupId>
-      <artifactId>btp-core-codecs</artifactId>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-data-jpa</artifactId>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-aop</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-beans</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
@@ -96,13 +154,22 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-autoconfigure</artifactId>
     </dependency>
     <dependency>
-      <groupId>javax.money</groupId>
-      <artifactId>money-api</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-test</artifactId>
+      <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot</artifactId>
+    </dependency>
+    <!--<dependency>-->
+    <!--<groupId>org.springframework.boot</groupId>-->
+    <!--<artifactId>spring-boot-starter-data-jpa</artifactId>-->
+    <!--</dependency>-->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
@@ -126,6 +193,26 @@
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-config</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-core</artifactId>
+    </dependency>
+    <!--<dependency>-->
+    <!--<groupId>com.h2database</groupId>-->
+    <!--<artifactId>h2</artifactId>-->
+    <!--</dependency>-->
+    <!--<dependency>-->
+    <!--<groupId>javax.money</groupId>-->
+    <!--<artifactId>money-api</artifactId>-->
+    <!--</dependency>-->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.springframework.security.oauth.boot</groupId>
       <artifactId>spring-security-oauth2-autoconfigure</artifactId>
     </dependency>
@@ -138,9 +225,14 @@
       <groupId>org.immutables</groupId>
       <artifactId>value</artifactId>
     </dependency>
+    <!--<dependency>-->
+    <!--<groupId>org.zalando</groupId>-->
+    <!--<artifactId>problem</artifactId>-->
+    <!--</dependency>-->
     <dependency>
       <groupId>org.zalando</groupId>
-      <artifactId>problem</artifactId>
+      <artifactId>problem-violations</artifactId>
+      <version>0.24.0-RC.0</version>
     </dependency>
     <dependency>
       <groupId>org.zalando</groupId>

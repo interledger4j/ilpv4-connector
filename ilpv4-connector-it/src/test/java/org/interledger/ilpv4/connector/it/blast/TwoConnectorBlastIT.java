@@ -1,10 +1,11 @@
 package org.interledger.ilpv4.connector.it.blast;
 
-import com.sappenin.interledger.ilpv4.connector.Account;
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.ConnectorProfile;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
+import org.interledger.connector.accounts.Account;
+import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerErrorCode;
@@ -13,9 +14,8 @@ import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
 import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology;
-import org.interledger.ilpv4.connector.it.topology.PluginNode;
+import org.interledger.ilpv4.connector.it.topology.LinkNode;
 import org.interledger.ilpv4.connector.it.topology.Topology;
-import org.interledger.lpiv2.blast.BlastPlugin;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,7 +30,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.sappenin.interledger.ilpv4.connector.links.connectivity.PingProtocolPlugin.PING_PROTOCOL_CONDITION;
+import static com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLink.PING_PROTOCOL_CONDITION;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.ALICE_ADDRESS;
@@ -74,8 +74,8 @@ public class TwoConnectorBlastIT {
     final ILPv4Connector connector = getILPv4NodeFromGraph(ALICE_ADDRESS);
     assertThat(connector.getConnectorSettings().getOperatorAddress(), is(TwoConnectorBlastTopology.ALICE_ADDRESS));
 
-    final BlastPlugin blastPlugin = getBlastPluginFromGraph(ALICE_ADDRESS);
-    assertThat(blastPlugin.getPluginSettings().getOperatorAddress(), is(ALICE_ADDRESS));
+    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
+    assertThat(blastLink.getLinkSettings().getOperatorAddress(), is(ALICE_ADDRESS));
   }
 
   @Test
@@ -83,8 +83,8 @@ public class TwoConnectorBlastIT {
     final ILPv4Connector connector = getILPv4NodeFromGraph(BOB_ADDRESS);
     assertThat(connector.getConnectorSettings().getOperatorAddress(), is(TwoConnectorBlastTopology.BOB_ADDRESS));
 
-    final BlastPlugin blastPlugin = getBlastPluginFromGraph(BOB_ADDRESS);
-    assertThat(blastPlugin.getPluginSettings().getOperatorAddress(), is(TwoConnectorBlastTopology.BOB_ADDRESS));
+    final BlastLink blastLink = getBlastLinkFromGraph(BOB_ADDRESS);
+    assertThat(blastLink.getLinkSettings().getOperatorAddress(), is(TwoConnectorBlastTopology.BOB_ADDRESS));
   }
 
   /**
@@ -92,13 +92,14 @@ public class TwoConnectorBlastIT {
    * reject.
    */
   @Test
-  public void testAlicePingsAlice() throws InterruptedException, ExecutionException, TimeoutException {
-    final BlastPlugin blastPlugin = getBlastPluginFromGraph(ALICE_ADDRESS);
+  public void testAlicePingsAlice() throws InterruptedException {
+    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
 
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final Optional<InterledgerResponsePacket> responsePacket = blastPlugin.ping(ALICE_ADDRESS).get(TIMEOUT, TimeUnit.SECONDS);
+    final Optional<InterledgerResponsePacket> responsePacket =
+      blastLink.ping(ALICE_ADDRESS);
 
     new InterledgerResponsePacketHandler() {
       @Override
@@ -139,17 +140,16 @@ public class TwoConnectorBlastIT {
    * Random address should reject since it's not in the Connector's routing table.
    */
   @Test
-  public void testAlicePingsRandom() throws InterruptedException, ExecutionException, TimeoutException {
+  public void testAlicePingsRandom() throws InterruptedException {
     final InterledgerAddress randomDestination =
       InterledgerAddress.of(InterledgerAddressPrefix.TEST3.with(UUID.randomUUID().toString()).getValue());
 
-    final BlastPlugin blastPlugin = getBlastPluginFromGraph(ALICE_ADDRESS);
+    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
 
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final Optional<InterledgerResponsePacket> responsePacket =
-      blastPlugin.ping(randomDestination).get(TIMEOUT, TimeUnit.SECONDS);
+    final Optional<InterledgerResponsePacket> responsePacket = blastLink.ping(randomDestination);
 
     new InterledgerResponsePacketHandler() {
       @Override
@@ -197,18 +197,18 @@ public class TwoConnectorBlastIT {
   }
 
   /**
-   * Helper method to obtain an instance of {@link PluginNode} from the topology, based upon its Interledger Address.
+   * Helper method to obtain an instance of {@link LinkNode} from the topology, based upon its Interledger Address.
    *
    * @param interledgerAddress The unique key of the node to return.
    *
    * @return
    */
-  private BlastPlugin getBlastPluginFromGraph(final InterledgerAddress interledgerAddress) {
+  private BlastLink getBlastLinkFromGraph(final InterledgerAddress interledgerAddress) {
     Objects.requireNonNull(interledgerAddress);
-    return (BlastPlugin) getILPv4NodeFromGraph(interledgerAddress).getAccountManager().getAllAccounts()
-      .filter(account -> account.getAccountSettings().getPluginType().equals(BlastPlugin.PLUGIN_TYPE))
+    return (BlastLink) getILPv4NodeFromGraph(interledgerAddress).getAccountManager().getAllAccounts()
+      .filter(account -> account.getAccountSettings().getLinkType().equals(BlastLink.LINK_TYPE))
       .findFirst()
-      .map(Account::getPlugin)
+      .map(Account::getLink)
       .get();
   }
 
@@ -219,7 +219,7 @@ public class TwoConnectorBlastIT {
    * @param destinationAddress The {@link InterledgerAddress} to ping.
    */
   private void testPing(final InterledgerAddress senderNodeAddress, final InterledgerAddress destinationAddress)
-    throws InterruptedException, ExecutionException, TimeoutException {
+    throws InterruptedException {
 
     Objects.requireNonNull(senderNodeAddress);
     Objects.requireNonNull(destinationAddress);
@@ -227,9 +227,9 @@ public class TwoConnectorBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BlastPlugin blastPlugin = getBlastPluginFromGraph(ALICE_ADDRESS);
+    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
     final Optional<InterledgerResponsePacket> responsePacket =
-      blastPlugin.ping(destinationAddress).get(TIMEOUT, TimeUnit.SECONDS);
+      blastLink.ping(destinationAddress);
 
     new InterledgerResponsePacketHandler() {
       @Override

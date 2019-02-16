@@ -45,7 +45,7 @@ public interface Link<LS extends LinkSettings> extends LinkSender, Connectable {
    * Link#sendPacket(InterledgerPreparePacket)} does.</p>
    *
    * <p>If a data handler is already set, this method throws a {@link LinkHandlerAlreadyRegisteredException}. In order
-   * to change the data handler, the old handler must first be removed via {@link #unregisterDataHandler()}. This is to
+   * to change the data handler, the old handler must first be removed via {@link #unregisterLinkHandler()}. This is to
    * ensure that handlers are not overwritten by accident.</p>
    *
    * <p>If an incoming packet is received by the link, but no handler is registered, the link SHOULD respond with
