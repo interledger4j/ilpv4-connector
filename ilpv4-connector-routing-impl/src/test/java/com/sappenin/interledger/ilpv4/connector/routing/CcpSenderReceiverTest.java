@@ -39,8 +39,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -194,7 +192,7 @@ public class CcpSenderReceiverTest {
    * </pre>
    */
   @Test
-  public void testMessageFlow() throws ExecutionException, InterruptedException, TimeoutException {
+  public void testMessageFlow() throws InterruptedException {
     assertRoutingTableIsExpired(connectorA, connectorB);
     assertSyncMode(CcpSyncMode.MODE_IDLE, connectorA, connectorB);
     assertRoutingTableEpoch(0, connectorA, connectorB);

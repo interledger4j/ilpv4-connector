@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings;
 
+import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.DefaultILPv4Connector;
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
@@ -19,6 +20,12 @@ import com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLinkFacto
 import com.sappenin.interledger.ilpv4.connector.packetswitch.DefaultILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.InterledgerAddressUtils;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.BalanceIlpPacketFilter;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.ExpiryPacketFilter;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.MaxPacketAmountFilter;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PacketSwitchFilter;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.RateLimitIlpPacketFilter;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.ValidateFulfillmentPacketFilter;
 import com.sappenin.interledger.ilpv4.connector.routing.DefaultInternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.InMemoryExternalRoutingService;
@@ -45,6 +52,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import javax.annotation.PostConstruct;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
@@ -162,7 +170,8 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  @Qualifier("externalPaymentRouter") // This is also a PaymentRouter
+  @Qualifier("externalPaymentRouter")
+    // This is also a PaymentRouter
   ExternalRoutingService connectorModeRoutingService(
     EventBus eventBus,
     @Qualifier(ILP) CodecContext ilpCodecContext,
@@ -189,17 +198,31 @@ public class SpringConnectorConfig {
   }
 
   @Bean
+  List<PacketSwitchFilter> packetSwitchFilterList(AccountManager accountManager) {
+    return Lists.newArrayList(
+      new RateLimitIlpPacketFilter(), // Limits Data packets...
+      new ExpiryPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress()),
+      new MaxPacketAmountFilter(() -> connectorSettingsSupplier().get().getOperatorAddress(), accountManager),
+      new BalanceIlpPacketFilter(),
+      // Must be the last filter.
+      new ValidateFulfillmentPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress())
+      // TODO: Throughput for Money...
+    );
+  }
+
+  @Bean
   ILPv4PacketSwitch ilpPacketSwitch(
     Supplier<ConnectorSettings> connectorSettingsSupplier,
     @Qualifier("internalPaymentRouter") PaymentRouter<Route> internalPaymentRouter,
     @Qualifier("externalPaymentRouter") PaymentRouter<Route> externalPaymentRouter,
     ExchangeRateService exchangeRateService,
     AccountManager accountManager,
-    InterledgerAddressUtils interledgerAddressUtils
+    InterledgerAddressUtils interledgerAddressUtils,
+    List<PacketSwitchFilter> packetSwitchFilterList
   ) {
     return new DefaultILPv4PacketSwitch(
       connectorSettingsSupplier, internalPaymentRouter, externalPaymentRouter,
-      exchangeRateService, accountManager, interledgerAddressUtils
+      exchangeRateService, accountManager, interledgerAddressUtils, packetSwitchFilterList
     );
   }
 

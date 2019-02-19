@@ -1,7 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.fx.ExchangeRateService;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.DefaultPacketSwitchFilterChain;
@@ -62,7 +61,8 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     final PaymentRouter<Route> externalRoutingService,
     final ExchangeRateService exchangeRateService,
     final AccountManager accountManager,
-    final InterledgerAddressUtils addressUtils
+    final InterledgerAddressUtils addressUtils,
+    final List<PacketSwitchFilter> packetSwitchFilters
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.internalPaymentRouter = Objects.requireNonNull(internalPaymentRouter);
@@ -70,7 +70,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     this.exchangeRateService = Objects.requireNonNull(exchangeRateService);
     this.accountManager = Objects.requireNonNull(accountManager);
     this.addressUtils = Objects.requireNonNull(addressUtils);
-    this.packetSwitchFilters = Lists.newArrayList();
+    this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
   }
 
   @Override
@@ -94,22 +94,15 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
           .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
           .build());
       } else {
-
         /////////////////
         // If we get here, then route the packet according to whatever is in the routing table.
-        /////////////////
-
         final NextHopInfo nextHopInfo = getNextHopPacket(sourceAccountId, incomingSourcePreparePacket);
-
-        // TODO: Add Logging Filter...
-        // TODO: Add ExchangeRate Update filter...
 
         // Create a new FilterChain, and use it to both filter the routeData call, as well as to make the actual call.
         final Link<? extends LinkSettings> link =
           this.accountManager.safeGetAccount(nextHopInfo.nextHopAccountId()).getLink();
 
-        final PacketSwitchFilterChain filterChain =
-          new DefaultPacketSwitchFilterChain(this.packetSwitchFilters, link);
+        final PacketSwitchFilterChain filterChain = new DefaultPacketSwitchFilterChain(this.packetSwitchFilters, link);
         return filterChain.doFilter(sourceAccountId, incomingSourcePreparePacket);
       }
     } catch (InterledgerProtocolException e) {

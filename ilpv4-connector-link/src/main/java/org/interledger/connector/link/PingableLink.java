@@ -32,7 +32,7 @@ public interface PingableLink<LS extends LinkSettings> extends Link<LS> {
       .executionCondition(PING_PROTOCOL_CONDITION)
       // TODO: Make this timeout configurable!
       .expiresAt(Instant.now().plusSeconds(30))
-      .amount(BigInteger.ZERO)
+      .amount(BigInteger.valueOf(1L)) // Ping with the smallest unit...
       .destination(destinationAddress)
       .build();
 

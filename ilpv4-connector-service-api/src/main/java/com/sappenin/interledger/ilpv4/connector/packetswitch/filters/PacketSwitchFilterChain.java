@@ -15,6 +15,15 @@ import java.util.Optional;
  **/
 public interface PacketSwitchFilterChain {
 
+  /**
+   * Applies logic to an incoming Prepare packet, optionally preventing the packet from being processed by the packet
+   * switching framework.
+   *
+   * @param sourceAccountId     The source {@link AccountId} that this Prepare packet is being processed for.
+   * @param sourcePreparePacket The {@link InterledgerPreparePacket} about to be processed.
+   *
+   * @return An optionally-present ILP response packet.
+   */
   Optional<InterledgerResponsePacket> doFilter(
     AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket
   );

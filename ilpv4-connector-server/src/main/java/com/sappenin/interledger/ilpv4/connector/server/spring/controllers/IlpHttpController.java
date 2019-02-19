@@ -6,6 +6,7 @@ import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.LinkFactoryProvider;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
@@ -14,14 +15,12 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketMapper;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.spring.common.MediaTypes;
 
-import java.security.Principal;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -45,6 +44,8 @@ public class IlpHttpController {
   private final LinkFactoryProvider linkFactoryProvider;
   private final ILPv4PacketSwitch ilPv4PacketSwitch;
 
+  private final IlpResponsePacketMapper ilpResponsePacketMapper;
+
   public IlpHttpController(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final BlastAccountIdResolver accountIdResolver,
@@ -55,6 +56,8 @@ public class IlpHttpController {
     this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
     this.linkFactoryProvider = Objects.requireNonNull(linkFactoryProvider);
     this.ilPv4PacketSwitch = Objects.requireNonNull(ilPv4PacketSwitch);
+    this.ilpResponsePacketMapper =
+      new IlpResponsePacketMapper(() -> connectorSettingsSupplier.get().getOperatorAddress());
   }
 
   /**
@@ -77,29 +80,15 @@ public class IlpHttpController {
     Authentication authentication, @RequestBody final InterledgerPreparePacket preparePacket
   ) {
     final AccountId accountId = this.accountIdResolver.resolveAccountId(authentication);
+
     final Optional<InterledgerResponsePacket> response = this.ilPv4PacketSwitch.routeData(accountId, preparePacket);
 
-    return new InterledgerResponsePacketMapper<InterledgerResponsePacket>() {
-      @Override
-      protected InterledgerResponsePacket mapFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-        return interledgerFulfillPacket;
-      }
-
-      @Override
-      protected InterledgerResponsePacket mapRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-        return interledgerRejectPacket;
-      }
-
-      @Override
-      protected InterledgerResponsePacket mapExpiredPacket() {
-        return InterledgerRejectPacket.builder()
-          .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
-          .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
-          .build();
-      }
-    }.map(response);
+    return this.ilpResponsePacketMapper.map(response);
   }
 
+  /**
+   * Implemented specifically to returns HTTP headers to support content-negotiation.
+   */
   @RequestMapping(
     value = ILP_PATH, method = {RequestMethod.HEAD},
     produces = {APPLICATION_ILP_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE},
@@ -108,4 +97,38 @@ public class IlpHttpController {
   public void headData() {
     // No-op.
   }
+
+
+  /**
+   * An extension of {@link InterledgerResponsePacketMapper} that properly maps an instance of {@link
+   * InterledgerResponsePacket} to the appropriate response.
+   */
+  private static final class IlpResponsePacketMapper extends
+    InterledgerResponsePacketMapper<InterledgerResponsePacket> {
+
+    private final Supplier<InterledgerAddress> operatorAddressSupplier;
+
+    private IlpResponsePacketMapper(final Supplier<InterledgerAddress> operatorAddressSupplier) {
+      this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
+    }
+
+    @Override
+    protected InterledgerFulfillPacket mapFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
+      return interledgerFulfillPacket;
+    }
+
+    @Override
+    protected InterledgerRejectPacket mapRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
+      return interledgerRejectPacket;
+    }
+
+    @Override
+    protected InterledgerRejectPacket mapExpiredPacket() {
+      return InterledgerRejectPacket.builder()
+        .triggeredBy(operatorAddressSupplier.get())
+        .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
+        .build();
+    }
+  }
+
 }

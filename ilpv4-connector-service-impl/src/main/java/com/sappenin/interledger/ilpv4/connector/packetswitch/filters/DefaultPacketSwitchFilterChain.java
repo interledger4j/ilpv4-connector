@@ -13,7 +13,8 @@ import java.util.Optional;
 
 public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
 
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
+  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPacketSwitchFilterChain.class);
+
   private final List<PacketSwitchFilter> packetSwitchFilters;
   private final Link link;
   // The index of the filter to call next...
@@ -41,7 +42,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
     if (this._filterIndex < this.packetSwitchFilters.size()) {
       return packetSwitchFilters.get(_filterIndex++).doFilter(sourceAccountId, sourcePreparePacket, this);
     } else {
-      logger.debug(
+      LOGGER.debug(
         "Sending outbound ILP Prepare. sourceAccountId: `{}` link={} packet={}",
         sourceAccountId, link, sourcePreparePacket
       );
