@@ -10,7 +10,9 @@ import org.springframework.http.converter.AbstractGenericHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.util.StreamUtils;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Objects;
@@ -64,7 +66,10 @@ public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMes
   @Override
   protected InterledgerPacket readInternal(Class<? extends InterledgerPacket> clazz, HttpInputMessage inputMessage)
     throws IOException, HttpMessageNotReadableException {
-    return ilpCodecContext.read(InterledgerPreparePacket.class, inputMessage.getBody());
+
+    final byte[] bytes = StreamUtils.copyToByteArray(inputMessage.getBody());
+    final ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+    return ilpCodecContext.read(InterledgerPacket.class, is);
   }
 
   /**
@@ -85,6 +90,9 @@ public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMes
   @Override
   public InterledgerPacket read(Type type, Class<?> contextClass, HttpInputMessage inputMessage)
     throws IOException, HttpMessageNotReadableException {
-    return ilpCodecContext.read(InterledgerPacket.class, inputMessage.getBody());
+
+    final byte[] bytes = StreamUtils.copyToByteArray(inputMessage.getBody());
+    final ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+    return ilpCodecContext.read(InterledgerPacket.class, is);
   }
 }
