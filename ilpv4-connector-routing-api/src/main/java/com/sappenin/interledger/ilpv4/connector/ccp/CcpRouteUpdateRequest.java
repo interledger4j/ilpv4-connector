@@ -43,7 +43,7 @@ public interface CcpRouteUpdateRequest {
   int toEpochIndex();
 
   /**
-   * Reserved for the future, currently not used.
+   * Time in milliseconds for which the sending connector claims its routes to be fresh, without another heartbeat.
    *
    * @return
    */

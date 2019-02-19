@@ -74,8 +74,7 @@ public class IlpHttpController {
     consumes = {APPLICATION_ILP_OCTET_STREAM_VALUE, MediaType.APPLICATION_OCTET_STREAM_VALUE}
   )
   public InterledgerResponsePacket sendData(
-    Authentication authentication, @AuthenticationPrincipal Principal principal,
-    @RequestBody final InterledgerPreparePacket preparePacket
+    Authentication authentication, @RequestBody final InterledgerPreparePacket preparePacket
   ) {
     final AccountId accountId = this.accountIdResolver.resolveAccountId(authentication);
     final Optional<InterledgerResponsePacket> response = this.ilPv4PacketSwitch.routeData(accountId, preparePacket);

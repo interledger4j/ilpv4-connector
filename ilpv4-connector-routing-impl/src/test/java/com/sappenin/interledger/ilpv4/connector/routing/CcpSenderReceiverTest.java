@@ -8,6 +8,7 @@ import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteUpdateRequest;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpSyncMode;
 import com.sappenin.interledger.ilpv4.connector.ccp.codecs.CcpCodecs;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.GlobalRoutingSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ImmutableConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.AbstractLink;
@@ -111,9 +112,11 @@ public class CcpSenderReceiverTest {
 
     this.codecContext = CcpCodecs.register(InterledgerCodecContextFactory.oer());
     this.connectorA_ConnectorSettings = ImmutableConnectorSettings.builder()
+      .globalRoutingSettings(GlobalRoutingSettings.builder().routingSecret("shh").build())
       .operatorAddress(CONNECTOR_A_ADDRESS)
       .build();
     this.connectorB_ConnectorSettings = ImmutableConnectorSettings.builder()
+      .globalRoutingSettings(GlobalRoutingSettings.builder().routingSecret("shh").build())
       .operatorAddress(CONNECTOR_B_ADDRESS)
       .build();
 

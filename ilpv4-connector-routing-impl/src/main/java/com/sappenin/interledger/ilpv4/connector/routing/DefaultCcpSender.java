@@ -28,6 +28,7 @@ import javax.annotation.PreDestroy;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -284,11 +285,7 @@ public class DefaultCcpSender implements CcpSender {
       final CcpRouteUpdateRequest ccpRouteUpdateRequest = ImmutableCcpRouteUpdateRequest.builder()
         .speaker(this.connectorSettingsSupplier.get().getOperatorAddress())
         .routingTableId(this.forwardingRoutingTable.getRoutingTableId())
-        // TODO: FIXME!
-        //        .holdDownTime(
-        //          this.connectorSettingsSupplier.get().getRouteBroadcastSettings().getRouteExpiry()
-        //            .toMillis()
-        //        )
+        .holdDownTime(this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteExpiry().toMillis())
         .currentEpochIndex(this.forwardingRoutingTable.getCurrentEpoch())
         .fromEpochIndex(this.lastKnownEpoch.get())
         .toEpochIndex(toEpoch)
@@ -307,10 +304,10 @@ public class DefaultCcpSender implements CcpSender {
           .amount(BigInteger.ZERO)
           .destination(CcpConstants.CCP_UPDATE_DESTINATION_ADDRESS)
           .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
-          // TODO: FIXME!
-          //          .expiresAt(Instant.now().plus(
-          //            this.connectorSettingsSupplier.get().getRouteBroadcastSettings().getRouteExpiry()
-          //          ))
+          .expiresAt(Instant.now().plus(
+            // TODO: Verify this is correct. Should the packet just have a normal expiration?
+            this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteExpiry()
+          ))
           .data(serializeCcpPacket(ccpRouteUpdateRequest))
           .build()
       );

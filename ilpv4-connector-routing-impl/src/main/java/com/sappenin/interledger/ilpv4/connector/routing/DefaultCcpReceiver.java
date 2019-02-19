@@ -169,8 +169,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
       .amount(BigInteger.ZERO)
       .destination(CcpConstants.CCP_CONTROL_DESTINATION_ADDRESS)
       .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
-      // TODO: FIXME once routebroadcast settings are enabled.
-      //.expiresAt(Instant.now().plus(connectorSettingsSupplier.get().getRouteBroadcastSettings().getRouteExpiry()))
+      .expiresAt(Instant.now().plus(connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteExpiry()))
       .data(serializeCcpPacket(request))
       .build();
 
