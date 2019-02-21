@@ -30,7 +30,7 @@ public interface CcpReceiver {
    * @return A completable future containing an instance of {@link InterledgerFulfillment}, that is the expected
    * success-response from the remote peer.
    */
-  Optional<InterledgerResponsePacket> sendRouteControl();
+  InterledgerResponsePacket sendRouteControl();
 
   /**
    * Perform the following action on each item in the routing table.

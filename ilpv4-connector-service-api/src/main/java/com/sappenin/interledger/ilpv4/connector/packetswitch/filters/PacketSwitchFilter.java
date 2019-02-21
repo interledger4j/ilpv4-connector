@@ -4,8 +4,6 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 
-import java.util.Optional;
-
 /**
  * A filter is an object that performs filtering tasks on either the request to send money, or on the response from a
  * target plugin, or both.
@@ -26,7 +24,7 @@ public interface PacketSwitchFilter {
    *
    * @return An optionally-present ILP response packet.
    */
-  Optional<InterledgerResponsePacket> doFilter(
+  InterledgerResponsePacket doFilter(
     AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket, PacketSwitchFilterChain filterChain
   );
 

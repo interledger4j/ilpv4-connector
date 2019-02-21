@@ -65,7 +65,7 @@ public interface ILPv4PacketSwitch {
    * @return A {@link CompletableFuture} that resolves to an optionally-present {@link InterledgerResponsePacket}, which
    * will be of concrete type {@link InterledgerFulfillPacket} or {@link InterledgerRejectPacket}, if present.
    */
-  Optional<InterledgerResponsePacket> routeData(
+  InterledgerResponsePacket routeData(
     AccountId accountId, InterledgerPreparePacket incomingPreparePacket
   );
 

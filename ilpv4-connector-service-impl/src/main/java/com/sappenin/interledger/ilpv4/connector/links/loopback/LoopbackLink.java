@@ -14,7 +14,6 @@ import org.interledger.encoding.asn.framework.CodecContext;
 
 import java.math.BigInteger;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * <p>A {@link Link} that always responds with a Fulfillment, as long as the amount in the incoming prepare packet is
@@ -35,19 +34,19 @@ public class LoopbackLink extends InternallyRoutedLink implements Link<LinkSetti
   }
 
   @Override
-  public Optional<InterledgerResponsePacket> sendPacket(final InterledgerPreparePacket preparePacket) {
+  public InterledgerResponsePacket sendPacket(final InterledgerPreparePacket preparePacket) {
     Objects.requireNonNull(preparePacket);
 
     if (preparePacket.getAmount().equals(BigInteger.ZERO)) {
-      return Optional.of(InterledgerFulfillPacket.builder()
+      return InterledgerFulfillPacket.builder()
         .fulfillment(LOOPBACK_FULFILLMENT)
-        .build());
+        .build();
     } else {
-      return Optional.of(InterledgerRejectPacket.builder()
+      return InterledgerRejectPacket.builder()
         .code(InterledgerErrorCode.F00_BAD_REQUEST)
         .message("Loopback Packets MUST have an amount of 0")
         .triggeredBy(getLinkSettings().getOperatorAddress())
-        .build());
+        .build();
     }
   }
 }

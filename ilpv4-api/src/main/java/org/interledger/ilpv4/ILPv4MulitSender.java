@@ -45,7 +45,7 @@ public interface ILPv4MulitSender extends ILPv4Node {
    * @return A {@link CompletableFuture} that resolves to an optionally-present {@link InterledgerResponsePacket}, which
    * will be of concrete type {@link InterledgerFulfillPacket} or {@link InterledgerRejectPacket}, if present.
    */
-  CompletableFuture<Optional<InterledgerResponsePacket>> sendData(
+  CompletableFuture<InterledgerResponsePacket> sendData(
     InterledgerAddress sourceAddress, InterledgerPreparePacket sourcePreparePacket
   );
 

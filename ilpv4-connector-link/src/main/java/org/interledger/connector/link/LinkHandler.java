@@ -5,7 +5,6 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -23,5 +22,5 @@ public interface LinkHandler {
    * @return A {@link CompletableFuture} that resolves to an optionally-present {@link InterledgerResponsePacket}, which
    * will be of concrete type {@link InterledgerFulfillPacket} or {@link InterledgerRejectPacket}, if present.
    */
-  Optional<InterledgerResponsePacket> handleIncomingPacket(InterledgerPreparePacket incomingPreparePacket);
+  InterledgerResponsePacket handleIncomingPacket(InterledgerPreparePacket incomingPreparePacket);
 }

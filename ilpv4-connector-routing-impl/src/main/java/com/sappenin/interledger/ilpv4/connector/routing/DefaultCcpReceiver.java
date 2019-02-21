@@ -156,7 +156,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
     return changedPrefixes;
   }
 
-  public Optional<InterledgerResponsePacket> sendRouteControl() {
+  public InterledgerResponsePacket sendRouteControl() {
     Preconditions.checkNotNull(link, "Plugin must be assigned before using a CcpReceiver!");
 
     final ImmutableCcpRouteControlRequest request = ImmutableCcpRouteControlRequest.builder()
@@ -175,19 +175,19 @@ public class DefaultCcpReceiver implements CcpReceiver {
 
     // Link handles retry, if any...
     try {
-      Optional<InterledgerResponsePacket> foo = this.link.sendPacket(preparePacket);
+      InterledgerResponsePacket responsePacket = this.link.sendPacket(preparePacket);
       logger.debug("Successfully sent getRoute control message. peer={}", peerAccountId);
-      return foo;
+      return responsePacket;
     } catch (Exception e) {
       if (e instanceof InterledgerProtocolException) {
         final InterledgerRejectPacket rejectPacket =
           ((InterledgerProtocolException) e).getInterledgerRejectPacket();
         logger.debug("Route control message was rejected. rejection={}", rejectPacket.getMessage());
-        Optional.of(rejectPacket);
+        return rejectPacket;
       } else {
-        logger.error("Unknown response fulfillPacket type. peer={}; error={}", peerAccountId, e);
+        throw new RuntimeException(String.format("Unknown response fulfillPacket type. peer=`%s`; error=`%s`;",
+          peerAccountId, e.getMessage()), e);
       }
-      return Optional.<InterledgerResponsePacket>empty();
     }
   }
 

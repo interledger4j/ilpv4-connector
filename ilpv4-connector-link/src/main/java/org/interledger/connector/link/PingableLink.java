@@ -9,7 +9,6 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Defines a "ping" mechanism on a particular {@link Link}.
@@ -25,14 +24,14 @@ public interface PingableLink<LS extends LinkSettings> extends Link<LS> {
    *
    * @param destinationAddress
    */
-  default Optional<InterledgerResponsePacket> ping(final InterledgerAddress destinationAddress) {
+  default InterledgerResponsePacket ping(final InterledgerAddress destinationAddress, final BigInteger pingAmount) {
     Objects.requireNonNull(destinationAddress);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
       .executionCondition(PING_PROTOCOL_CONDITION)
       // TODO: Make this timeout configurable!
       .expiresAt(Instant.now().plusSeconds(30))
-      .amount(BigInteger.valueOf(1L)) // Ping with the smallest unit...
+      .amount(pingAmount)
       .destination(destinationAddress)
       .build();
 

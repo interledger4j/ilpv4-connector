@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 
@@ -28,37 +27,34 @@ public class ValidateFulfillmentPacketFilter implements PacketSwitchFilter {
   }
 
   @Override
-  public Optional<InterledgerResponsePacket> doFilter(
+  public InterledgerResponsePacket doFilter(
     final AccountId sourceAccountId,
     final InterledgerPreparePacket sourcePreparePacket,
     final PacketSwitchFilterChain filterChain
   ) {
-    final Optional<InterledgerResponsePacket> ilpResultPacket =
+    final InterledgerResponsePacket responsePacket =
       filterChain.doFilter(sourceAccountId, sourcePreparePacket);
 
-    return ilpResultPacket
-      // Only for a fulfill...
-      .filter(responsePacket -> InterledgerFulfillPacket.class.isAssignableFrom(responsePacket.getClass()))
-      .map(responsePacket -> (InterledgerFulfillPacket) responsePacket)
-      // Only if the conditions don't validate...
-      .filter(
-        fulfillPacket -> !fulfillPacket.getFulfillment().validateCondition(sourcePreparePacket.getExecutionCondition())
-      )
-      .map(incorrectFulfillPacket -> {
+    // Only for a fulfill...
+    if (InterledgerFulfillPacket.class.isAssignableFrom(responsePacket.getClass())) {
+      final InterledgerFulfillPacket fulfillPacket = (InterledgerFulfillPacket) responsePacket;
+      if (!fulfillPacket.getFulfillment().validateCondition(sourcePreparePacket.getExecutionCondition())) {
         logger.error(
           "Received incorrect fulfillment from account. " +
             "accountId=`{}` fulfillment=`{}` calculatedCondition=`{}` executionCondition=`{}`",
           sourceAccountId,
-          incorrectFulfillPacket.getFulfillment(),
-          incorrectFulfillPacket.getFulfillment().getCondition(),
+          fulfillPacket.getFulfillment(),
+          fulfillPacket.getFulfillment().getCondition(),
           sourcePreparePacket.getExecutionCondition()
         );
-        return Optional.<InterledgerResponsePacket>of(InterledgerRejectPacket.builder()
+        return InterledgerRejectPacket.builder()
           .code(InterledgerErrorCode.F05_WRONG_CONDITION)
           .triggeredBy(operatorAddressSupplier.get())
-          .message("Received incorrect fulfillment").build());
-      })
-      // If none of the above occur, then return the normal Response.
-      .orElse(ilpResultPacket);
+          .message("Received incorrect fulfillment").build();
+      }
+    }
+
+    // If none of the above occur, then return the normal Response.
+    return responsePacket;
   }
 }

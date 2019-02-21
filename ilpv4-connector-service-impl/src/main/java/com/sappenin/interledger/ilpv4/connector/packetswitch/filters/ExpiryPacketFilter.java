@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -33,12 +32,16 @@ public class ExpiryPacketFilter implements PacketSwitchFilter {
   }
 
   @Override
-  public Optional<InterledgerResponsePacket> doFilter(
+  public InterledgerResponsePacket doFilter(
     final AccountId sourceAccountId,
     final InterledgerPreparePacket sourcePreparePacket,
     final PacketSwitchFilterChain filterChain
   ) {
-    final Duration timeoutDuration = Duration.between(Instant.now(), sourcePreparePacket.getExpiresAt());
+
+    Duration timeoutDuration = Duration.between(Instant.now(), sourcePreparePacket.getExpiresAt());
+    if (timeoutDuration.isNegative()) {
+      timeoutDuration = timeoutDuration.withSeconds(0);
+    }
 
     try {
       return CompletableFuture
@@ -46,20 +49,18 @@ public class ExpiryPacketFilter implements PacketSwitchFilter {
         .get(timeoutDuration.getSeconds(), TimeUnit.SECONDS);
     } catch (InterruptedException | ExecutionException e) {
       logger.error(e.getMessage(), e);
-      return Optional.of(InterledgerRejectPacket.builder()
+      return InterledgerRejectPacket.builder()
         .code(InterledgerErrorCode.T00_INTERNAL_ERROR)
         .triggeredBy(operatorAddressSupplier.get())
         .message(String.format("Error Expiring Packet: %s", e.getMessage()))
-        .build()
-      );
+        .build();
     } catch (TimeoutException e) {
       logger.error(e.getMessage(), e);
-      return Optional.of(InterledgerRejectPacket.builder()
+      return InterledgerRejectPacket.builder()
         .code(InterledgerErrorCode.R00_TRANSFER_TIMED_OUT)
         .triggeredBy(operatorAddressSupplier.get())
         .message(String.format("Transfer Timed-out"))
-        .build()
-      );
+        .build();
     }
   }
 }

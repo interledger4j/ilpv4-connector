@@ -9,7 +9,6 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -106,12 +105,12 @@ public class BlastLink extends AbstractLink<BlastLinkSettings> implements Pingab
   }
 
   @Override
-  public Optional<InterledgerResponsePacket> sendPacket(final InterledgerPreparePacket preparePacket) {
+  public InterledgerResponsePacket sendPacket(final InterledgerPreparePacket preparePacket) {
     Objects.requireNonNull(preparePacket);
 
     // While this call to blastHttpSender appears to block, the @Async annotation in this method actually instructs
     // Spring to wrap the entire method in a Proxy that runs in a separate thread. Thus, this return is simply to
     // conform to the Java API.
-    return Optional.ofNullable(blastHttpSender.sendData(preparePacket));
+    return blastHttpSender.sendData(preparePacket);
   }
 }

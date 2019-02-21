@@ -89,10 +89,6 @@ public class DefaultAccountManager implements AccountManager, LinkEventListener 
     // Register the Connector as a LinkEvent Listener...
     link.addLinkEventListener(this);
 
-
-    // TODO: Create Money Link
-
-
     // Add the account, regardless of if the link is connected.
     this.addAccount(
       Account.builder()

@@ -4,8 +4,6 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 
-import java.util.Optional;
-
 /**
  * This filter-chain provides the developer a view into the invocation chain of a filtered send-data request. Filters
  * use the this contract to invoke the next filter in the chain, or if the calling filter is the last filter in the
@@ -24,8 +22,6 @@ public interface PacketSwitchFilterChain {
    *
    * @return An optionally-present ILP response packet.
    */
-  Optional<InterledgerResponsePacket> doFilter(
-    AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket
-  );
+  InterledgerResponsePacket doFilter(AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket);
 
 }

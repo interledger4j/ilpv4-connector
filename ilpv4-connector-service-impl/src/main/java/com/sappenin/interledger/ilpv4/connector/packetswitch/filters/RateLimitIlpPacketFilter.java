@@ -6,8 +6,6 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
-
 
 /**
  * An implementation of {@link PacketSwitchFilter} for limiting per-account traffic on this connector.
@@ -17,7 +15,7 @@ public class RateLimitIlpPacketFilter implements PacketSwitchFilter {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   @Override
-  public Optional<InterledgerResponsePacket> doFilter(
+  public InterledgerResponsePacket doFilter(
     final AccountId sourceAccountId,
     final InterledgerPreparePacket sourcePreparePacket,
     final PacketSwitchFilterChain filterChain

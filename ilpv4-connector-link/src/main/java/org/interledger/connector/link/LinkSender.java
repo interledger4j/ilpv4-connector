@@ -42,6 +42,6 @@ public interface LinkSender {
    * @return A {@link CompletableFuture} that resolves to an optionally-present {@link InterledgerResponsePacket}, which
    * will be of concrete type {@link InterledgerFulfillPacket} or {@link InterledgerRejectPacket}, if present.
    */
-  Optional<InterledgerResponsePacket> sendPacket(InterledgerPreparePacket preparePacket);
+  InterledgerResponsePacket sendPacket(InterledgerPreparePacket preparePacket);
 
 }

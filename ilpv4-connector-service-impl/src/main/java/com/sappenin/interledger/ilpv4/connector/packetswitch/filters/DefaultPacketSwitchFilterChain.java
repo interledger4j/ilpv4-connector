@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
 
@@ -32,7 +31,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
   }
 
   @Override
-  public Optional<InterledgerResponsePacket> doFilter(
+  public InterledgerResponsePacket doFilter(
     final AccountId sourceAccountId, final InterledgerPreparePacket sourcePreparePacket
   ) {
 

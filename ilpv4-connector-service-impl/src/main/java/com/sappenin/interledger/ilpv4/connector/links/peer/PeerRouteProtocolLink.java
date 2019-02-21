@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * <p>A LPIv2 {@link Link} that implements the ILP Peer Config sub-protocol, which allows two peers to exchange
@@ -49,7 +48,7 @@ public class PeerRouteProtocolLink extends InternallyRoutedLink implements Link<
   }
 
   @Override
-  public Optional<InterledgerResponsePacket> sendPacket(InterledgerPreparePacket preparePacket) {
+  public InterledgerResponsePacket sendPacket(InterledgerPreparePacket preparePacket) {
     // TODO
     throw new RuntimeException("FIXME!");
   }

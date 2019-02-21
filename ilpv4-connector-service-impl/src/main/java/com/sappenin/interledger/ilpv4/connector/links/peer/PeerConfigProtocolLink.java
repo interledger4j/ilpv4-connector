@@ -8,8 +8,6 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
 
-import java.util.Optional;
-
 /**
  * <p>A LPIv2 {@link Link} that implements the ILP Peer Config sub-protocol, which allows a Connector to support
  * IL-DCP in order to provide a child-link an Interledger address rooted in this Connector's namespace.</p>
@@ -32,7 +30,7 @@ public class PeerConfigProtocolLink extends InternallyRoutedLink implements Link
   }
 
   @Override
-  public Optional<InterledgerResponsePacket> sendPacket(InterledgerPreparePacket preparePacket) {
+  public InterledgerResponsePacket sendPacket(InterledgerPreparePacket preparePacket) {
     // TODO
     throw new RuntimeException("FIXME!");
   }

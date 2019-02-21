@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 
@@ -35,7 +34,7 @@ public class MaxPacketAmountFilter implements PacketSwitchFilter {
   }
 
   @Override
-  public Optional<InterledgerResponsePacket> doFilter(
+  public InterledgerResponsePacket doFilter(
     final AccountId sourceAccountId,
     final InterledgerPreparePacket sourcePreparePacket,
     final PacketSwitchFilterChain filterChain
@@ -59,12 +58,12 @@ public class MaxPacketAmountFilter implements PacketSwitchFilter {
           "Rejecting packet for exceeding max amount. accountId={} maxAmount={} actualAmount={}",
           sourceAccountId, maxPacketAmount, sourcePreparePacket.getAmount()
         );
-        return Optional.<InterledgerResponsePacket>of(InterledgerRejectPacket.builder()
-          .code(InterledgerErrorCode.T00_INTERNAL_ERROR)
+        return (InterledgerResponsePacket) InterledgerRejectPacket.builder()
+          .code(InterledgerErrorCode.F03_INVALID_AMOUNT)
           .triggeredBy(operatorAddressSupplier.get())
           .message(String.format("Packet size too large: maxAmount=%s actualAmount=%s", maxPacketAmount,
             sourcePreparePacket.getAmount()))
-          .build());
+          .build();
       })
       // Otherwise, the packet amount is fine...
       .orElseGet(() -> filterChain.doFilter(sourceAccountId, sourcePreparePacket));
