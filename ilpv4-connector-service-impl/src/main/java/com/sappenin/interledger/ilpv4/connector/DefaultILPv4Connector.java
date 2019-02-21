@@ -24,6 +24,7 @@ import org.springframework.context.event.EventListener;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.math.BigInteger;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -291,6 +292,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       .relationship(AccountRelationship.CHILD)
       .assetScale(9)
       .assetCode("USD")
+      .maximumPacketAmount(BigInteger.valueOf(1000000L)) // 1M NanoDollars is $0.001
       .linkType(PingProtocolLink.LINK_TYPE)
       .build();
     this.accountManager.createAccount(accountSettings);

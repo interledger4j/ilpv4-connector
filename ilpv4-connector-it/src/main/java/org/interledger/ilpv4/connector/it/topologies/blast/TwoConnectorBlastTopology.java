@@ -22,6 +22,7 @@ import org.interledger.ilpv4.connector.it.topology.nodes.ConnectorServerNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -154,6 +155,7 @@ public class TwoConnectorBlastTopology {
       .description("Blast account for Bob")
       .isPreconfigured(true)
       .relationship(AccountRelationship.PEER)
+      .maximumPacketAmount(BigInteger.valueOf(1000000L)) // 1M NanoDollars is $0.001
       .linkType(BlastLink.LINK_TYPE)
       .assetScale(9)
       .assetCode(XRP)
@@ -198,6 +200,7 @@ public class TwoConnectorBlastTopology {
       .id(AccountId.of(ALICE))
       .description("Blast account for Alice")
       .isPreconfigured(true)
+      .maximumPacketAmount(BigInteger.valueOf(1000000L)) // 1M NanoDollars is $0.001
       .relationship(AccountRelationship.PEER)
       .linkType(BlastLink.LINK_TYPE)
       .assetScale(9)

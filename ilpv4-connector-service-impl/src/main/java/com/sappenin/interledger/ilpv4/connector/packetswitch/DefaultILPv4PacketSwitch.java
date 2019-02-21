@@ -32,7 +32,6 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -74,40 +73,23 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   }
 
   @Override
-  public final Optional<InterledgerResponsePacket> routeData(
+  public final InterledgerResponsePacket routeData(
     final AccountId sourceAccountId, final InterledgerPreparePacket incomingSourcePreparePacket
   ) {
     Objects.requireNonNull(sourceAccountId);
     Objects.requireNonNull(incomingSourcePreparePacket);
 
     try {
+      final NextHopInfo nextHopInfo = this.getNextHopPacket(sourceAccountId, incomingSourcePreparePacket);
 
-      // Before packet-forwarding is engaged, this code ensures the incoming account/packet information is eligible
-      // to be packet-switched, considering the destination address as well as characteristics of the source account.
-      if (
-        !addressUtils.isDestinationAllowedFromAccount(sourceAccountId, incomingSourcePreparePacket.getDestination())
-      ) {
-        // REJECT!
-        return Optional.of(InterledgerRejectPacket.builder()
-          .code(InterledgerErrorCode.F02_UNREACHABLE)
-          .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
-          .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
-          .build());
-      } else {
-        /////////////////
-        // If we get here, then route the packet according to whatever is in the routing table.
-        final NextHopInfo nextHopInfo = getNextHopPacket(sourceAccountId, incomingSourcePreparePacket);
-
-        // Create a new FilterChain, and use it to both filter the routeData call, as well as to make the actual call.
-        final Link<? extends LinkSettings> link =
-          this.accountManager.safeGetAccount(nextHopInfo.nextHopAccountId()).getLink();
-
-        final PacketSwitchFilterChain filterChain = new DefaultPacketSwitchFilterChain(this.packetSwitchFilters, link);
-        return filterChain.doFilter(sourceAccountId, incomingSourcePreparePacket);
-      }
+      // Create a new FilterChain, and use it to both filter the routeData call, as well as to make the actual call.
+      final Link<? extends LinkSettings> link =
+        this.accountManager.safeGetAccount(nextHopInfo.nextHopAccountId()).getLink();
+      final PacketSwitchFilterChain filterChain = new DefaultPacketSwitchFilterChain(this.packetSwitchFilters, link);
+      return filterChain.doFilter(sourceAccountId, incomingSourcePreparePacket);
     } catch (InterledgerProtocolException e) {
       // Any rejections should be caught here, and returned as such....
-      return Optional.of(e.getInterledgerRejectPacket());
+      return e.getInterledgerRejectPacket();
     }
   }
 

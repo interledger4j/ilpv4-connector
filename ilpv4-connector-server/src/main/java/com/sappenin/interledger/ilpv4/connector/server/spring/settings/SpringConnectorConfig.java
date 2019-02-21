@@ -20,6 +20,7 @@ import com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLinkFacto
 import com.sappenin.interledger.ilpv4.connector.packetswitch.DefaultILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.InterledgerAddressUtils;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.AllowedDestinationPacketFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.BalanceIlpPacketFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.ExpiryPacketFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.MaxPacketAmountFilter;
@@ -198,11 +199,12 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  List<PacketSwitchFilter> packetSwitchFilterList(AccountManager accountManager) {
+  List<PacketSwitchFilter> packetSwitchFilterList(AccountManager accountManager, InterledgerAddressUtils addressUtils) {
     return Lists.newArrayList(
       new RateLimitIlpPacketFilter(), // Limits Data packets...
       new ExpiryPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress()),
       new MaxPacketAmountFilter(() -> connectorSettingsSupplier().get().getOperatorAddress(), accountManager),
+      new AllowedDestinationPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress(), addressUtils),
       new BalanceIlpPacketFilter(),
       // Must be the last filter.
       new ValidateFulfillmentPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress())

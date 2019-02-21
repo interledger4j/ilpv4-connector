@@ -148,9 +148,7 @@ public class DefaultCcpSender implements CcpSender {
       if (scheduledTask == null) {
         scheduledTask = this.scheduler.scheduleWithFixedDelay(
           this::sendRouteUpdateRequest,
-          // TODO: FIX this once Routebroadcast settings is the thing passed-in instead of connector settings.
-          //this.connectorSettingsSupplier.get().getRouteBroadcastSettings().getRouteBroadcastInterval()
-          null
+          this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteBroadcastInterval()
         );
       } else {
         // Do nothing. The getRoute-update has already been scheduled...

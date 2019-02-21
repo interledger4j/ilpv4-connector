@@ -37,7 +37,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
@@ -408,11 +407,9 @@ public class CcpSenderReceiverTest {
               this.localConnector.ccpSender.handleRouteControlRequest(routeControlRequest);
 
               // If no exception, then return a fulfill response...
-              return Optional.of(
-                InterledgerFulfillPacket.builder()
-                  .fulfillment(CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT)
-                  .build()
-              );
+              return InterledgerFulfillPacket.builder()
+                .fulfillment(CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT)
+                .build();
             }
 
             case CcpConstants.CCP_UPDATE_DESTINATION: {
@@ -448,11 +445,9 @@ public class CcpSenderReceiverTest {
               // But in this test we don't do that...
 
               // If no exception, then return a fulfill response...
-              return Optional.of(
-                InterledgerFulfillPacket.builder()
-                  .fulfillment(CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT)
-                  .build()
-              );
+              return InterledgerFulfillPacket.builder()
+                .fulfillment(CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT)
+                .build();
             }
 
             default:
@@ -485,7 +480,7 @@ public class CcpSenderReceiverTest {
      * @param preparePacket
      */
     @Override
-    public Optional<InterledgerResponsePacket> sendPacket(InterledgerPreparePacket preparePacket)
+    public InterledgerResponsePacket sendPacket(InterledgerPreparePacket preparePacket)
       throws InterledgerProtocolException {
       // For simulation purposes, we simply reach through into the other connector directly and place the
       // preparePacket into it.

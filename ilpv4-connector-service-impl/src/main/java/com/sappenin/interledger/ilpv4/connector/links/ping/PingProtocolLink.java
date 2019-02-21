@@ -14,7 +14,6 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * <p>A {@link Link} that implements the <tt>PING</tt> protocol. The packet-switch will forward all incoming packets
@@ -38,8 +37,6 @@ public class PingProtocolLink extends InternallyRoutedLink implements Link<LinkS
   public static final InterledgerFulfillment PING_PROTOCOL_FULFILLMENT = InterledgerFulfillment.of(new byte[32]);
   public static final InterledgerCondition PING_PROTOCOL_CONDITION = PING_PROTOCOL_FULFILLMENT.getCondition();
 
-  // TODO: Add balance tracking?
-
   /**
    * Required-args constructor.
    */
@@ -48,24 +45,20 @@ public class PingProtocolLink extends InternallyRoutedLink implements Link<LinkS
   }
 
   @Override
-  public Optional<InterledgerResponsePacket> sendPacket(final InterledgerPreparePacket preparePacket) {
-
+  public InterledgerResponsePacket sendPacket(final InterledgerPreparePacket preparePacket) {
     Objects.requireNonNull(preparePacket);
 
-    final InterledgerResponsePacket responsePacket;
     if (preparePacket.getExecutionCondition().equals(PING_PROTOCOL_CONDITION)) {
-      responsePacket = InterledgerFulfillPacket.builder()
+      return InterledgerFulfillPacket.builder()
         .fulfillment(PING_PROTOCOL_FULFILLMENT)
         .data(preparePacket.getData())
         .build();
     } else {
-      responsePacket = InterledgerRejectPacket.builder()
+      return InterledgerRejectPacket.builder()
         .code(InterledgerErrorCode.F00_BAD_REQUEST)
         .message("Invalid Ping Protocol Condition")
         .triggeredBy(getLinkSettings().getOperatorAddress())
         .build();
     }
-
-    return Optional.of(responsePacket);
   }
 }
