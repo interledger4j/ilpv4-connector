@@ -2,31 +2,63 @@ package com.sappenin.interledger.ilpv4.connector.balances;
 
 import org.immutables.value.Value;
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountSettings;
 
 import java.math.BigInteger;
+import java.util.UUID;
 
 @Value.Immutable
-public interface AccountBalance {
+public interface BalanceTransferResult {
+
+  static ImmutableBalanceTransferResult.Builder builder() {
+    return ImmutableBalanceTransferResult.builder();
+  }
+
+  UUID balanceTransferId();
 
   /**
-   * The {@link AccountId} for this account balance.
+   * The {@link AccountId} for source of funds.
    *
    * @return
    */
-  AccountId accountId();
+  AccountId sourceAccountId();
+
+  /**
+   * The {@link AccountId} for source of funds.
+   *
+   * @return
+   */
+  AccountId destinationAccountId();
 
   /**
    * The amount of units currently in this account balance.
    *
    * @return
    */
-  BigInteger getAmount();
+  BigInteger transferAmount();
+
+  BigInteger sourceAccountPreviousBalance();
+
+  BigInteger sourceAccountBalance();
+
+  BigInteger destinationAccountPreviousBalance();
+
+  BigInteger destinationAccountBalance();
 
   /**
-   * The settings associated with this account.
+   * The status of a balance transfer.
    *
    * @return
    */
-  AccountSettings getAccountSettings();
+  Status balanceTransferStatus();
+
+  /**
+   * Possible statuses of a balance transfer.
+   */
+  enum Status {
+    NOT_ATTEMPTED,
+    PREPARED,
+    EXECUTED,
+    FAILED
+  }
+
 }

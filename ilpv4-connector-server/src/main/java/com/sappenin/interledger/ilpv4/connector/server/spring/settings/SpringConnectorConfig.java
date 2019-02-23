@@ -9,12 +9,16 @@ import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountSettingsResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.BtpAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountIdResolver;
-import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountSettingsResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultLinkManager;
+import com.sappenin.interledger.ilpv4.connector.accounts.InMemoryAccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
+import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.fx.DefaultExchangeRateService;
 import com.sappenin.interledger.ilpv4.connector.fx.ExchangeRateService;
+import com.sappenin.interledger.ilpv4.connector.links.DefaultNextHopPacketMapper;
+import com.sappenin.interledger.ilpv4.connector.links.NextHopPacketMapper;
+import com.sappenin.interledger.ilpv4.connector.links.filters.LinkFilter;
 import com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLink;
 import com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLinkFactory;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.DefaultILPv4PacketSwitch;
@@ -139,7 +143,7 @@ public class SpringConnectorConfig {
     AccountIdResolver accountIdResolver, AccountSettingsResolver accountSettingsResolver,
     LinkManager linkManager, EventBus eventBus
   ) {
-    return new DefaultAccountManager(connectorSettingsSupplier, accountIdResolver, accountSettingsResolver,
+    return new InMemoryAccountManager(connectorSettingsSupplier, accountIdResolver, accountSettingsResolver,
       linkManager, eventBus);
   }
 
@@ -199,13 +203,20 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  List<PacketSwitchFilter> packetSwitchFilterList(AccountManager accountManager, InterledgerAddressUtils addressUtils) {
+  BalanceTracker balanceTracker(AccountManager accountManager) {
+    return new BalanceTracker.InMemoryBalanceTracker(accountManager);
+  }
+
+  @Bean
+  List<PacketSwitchFilter> packetSwitchFilters(
+    AccountManager accountManager, InterledgerAddressUtils addressUtils, BalanceTracker balanceTracker
+  ) {
     return Lists.newArrayList(
       new RateLimitIlpPacketFilter(), // Limits Data packets...
       new ExpiryPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress()),
       new MaxPacketAmountFilter(() -> connectorSettingsSupplier().get().getOperatorAddress(), accountManager),
       new AllowedDestinationPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress(), addressUtils),
-      new BalanceIlpPacketFilter(),
+      new BalanceIlpPacketFilter(balanceTracker),
       // Must be the last filter.
       new ValidateFulfillmentPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress())
       // TODO: Throughput for Money...
@@ -213,19 +224,42 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  ILPv4PacketSwitch ilpPacketSwitch(
-    Supplier<ConnectorSettings> connectorSettingsSupplier,
+  List<LinkFilter> linkFilters(
+    AccountManager accountManager, InterledgerAddressUtils addressUtils, BalanceTracker balanceTracker
+  ) {
+    return Lists.newArrayList();
+    //      new RateLimitIlpPacketFilter(), // Limits Data packets...
+    //      new ExpiryPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress()),
+    //      new MaxPacketAmountFilter(() -> connectorSettingsSupplier().get().getOperatorAddress(), accountManager),
+    //      new AllowedDestinationPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress(), addressUtils),
+    //      new BalanceIlpPacketFilter(balanceTracker),
+    //      // Must be the last filter.
+    //      new ValidateFulfillmentPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress())
+    //      // TODO: Throughput for Money...
+    //    );
+  }
+
+  @Bean
+  NextHopPacketMapper nextHopLinkMapper(
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
     @Qualifier("internalPaymentRouter") PaymentRouter<Route> internalPaymentRouter,
     @Qualifier("externalPaymentRouter") PaymentRouter<Route> externalPaymentRouter,
-    ExchangeRateService exchangeRateService,
-    AccountManager accountManager,
-    InterledgerAddressUtils interledgerAddressUtils,
-    List<PacketSwitchFilter> packetSwitchFilterList
+    final ExchangeRateService exchangeRateService,
+    final AccountManager accountManager,
+    final InterledgerAddressUtils addressUtils
   ) {
-    return new DefaultILPv4PacketSwitch(
-      connectorSettingsSupplier, internalPaymentRouter, externalPaymentRouter,
-      exchangeRateService, accountManager, interledgerAddressUtils, packetSwitchFilterList
+    return new DefaultNextHopPacketMapper(
+      connectorSettingsSupplier, internalPaymentRouter, externalPaymentRouter, exchangeRateService, accountManager,
+      addressUtils
     );
+  }
+
+  @Bean
+  ILPv4PacketSwitch ilpPacketSwitch(
+    List<PacketSwitchFilter> packetSwitchFilters, List<LinkFilter> linkFilters,
+    AccountManager accountManager, NextHopPacketMapper nextHopPacketMapper
+  ) {
+    return new DefaultILPv4PacketSwitch(packetSwitchFilters, linkFilters, accountManager, nextHopPacketMapper);
   }
 
   @Bean

@@ -17,11 +17,11 @@ public interface PacketSwitchFilterChain {
    * Applies logic to an incoming Prepare packet, optionally preventing the packet from being processed by the packet
    * switching framework.
    *
-   * @param sourceAccountId     The source {@link AccountId} that this Prepare packet is being processed for.
-   * @param sourcePreparePacket The {@link InterledgerPreparePacket} about to be processed.
+   * @param sourceAccountId The source {@link AccountId} that this Prepare packet is being processed for.
+   * @param preparePacket   The {@link InterledgerPreparePacket} that was accepted from an incoming account/link.
    *
    * @return An optionally-present ILP response packet.
    */
-  InterledgerResponsePacket doFilter(AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket);
+  InterledgerResponsePacket doFilter(AccountId sourceAccountId, InterledgerPreparePacket preparePacket);
 
 }

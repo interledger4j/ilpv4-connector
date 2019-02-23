@@ -216,7 +216,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   //  ) {
   //    Objects.requireNonNull(accountId);
   //    Objects.requireNonNull(preparePacket);
-  //    return this.ilpPacketSwitch.routeData(accountId, preparePacket);
+  //    return this.ilpPacketSwitch.switchPacket(accountId, preparePacket);
   //  }
 
   //  @Override

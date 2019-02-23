@@ -1,9 +1,5 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch;
 
-import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PacketSwitchFilter;
-import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PacketSwitchFilterChain;
-import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
-import com.sappenin.interledger.ilpv4.connector.routing.Route;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.Link;
 import org.interledger.core.InterledgerFulfillPacket;
@@ -65,7 +61,7 @@ public interface ILPv4PacketSwitch {
    * @return A {@link CompletableFuture} that resolves to an optionally-present {@link InterledgerResponsePacket}, which
    * will be of concrete type {@link InterledgerFulfillPacket} or {@link InterledgerRejectPacket}, if present.
    */
-  InterledgerResponsePacket routeData(
+  InterledgerResponsePacket switchPacket(
     AccountId accountId, InterledgerPreparePacket incomingPreparePacket
   );
 
@@ -73,13 +69,13 @@ public interface ILPv4PacketSwitch {
   // concern of an account/link, and not a Interledger-layer concern. It likewise does not have an onDataHandler
   // because this switch always only sends data, and returns a response.
 
-  boolean add(PacketSwitchFilter packetSwitchFilter);
+  //boolean add(PacketSwitchFilter packetSwitchFilter);
 
-  void addFirst(PacketSwitchFilter packetSwitchFilter);
+  //void addFirst(PacketSwitchFilter packetSwitchFilter);
 
-  PacketSwitchFilterChain getSendDataFilterChain();
-
-  PaymentRouter<Route> getInternalPaymentRouter();
-
-  PaymentRouter<Route> getExternalPaymentRouter();
+//  PacketSwitchFilterChain getSendDataFilterChain();
+//
+//  PaymentRouter<Route> getInternalPaymentRouter();
+//
+//  PaymentRouter<Route> getExternalPaymentRouter();
 }

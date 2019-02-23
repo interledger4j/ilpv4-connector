@@ -25,6 +25,7 @@ public interface PacketSwitchFilter {
    * @return An optionally-present ILP response packet.
    */
   InterledgerResponsePacket doFilter(
+    // TODO: Consider using AccountSettings instead of AccountId in this interface to avoid AccountManager lookups.
     AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket, PacketSwitchFilterChain filterChain
   );
 

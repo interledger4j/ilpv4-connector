@@ -28,9 +28,9 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * A default implementation of {@link NextHopLinkMapper}.
+ * A default implementation of {@link NextHopPacketMapper}.
  */
-public class DefaultNextHopLinkMapper implements NextHopLinkMapper {
+public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
 
   private static final String DESTINATION_ADDRESS_IS_UNREACHABLE = "Destination address is unreachable";
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -42,7 +42,7 @@ public class DefaultNextHopLinkMapper implements NextHopLinkMapper {
   private final AccountManager accountManager;
   private final InterledgerAddressUtils addressUtils;
 
-  public DefaultNextHopLinkMapper(
+  public DefaultNextHopPacketMapper(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final PaymentRouter<Route> internalPaymentRouter,
     final PaymentRouter<Route> externalRoutingService,

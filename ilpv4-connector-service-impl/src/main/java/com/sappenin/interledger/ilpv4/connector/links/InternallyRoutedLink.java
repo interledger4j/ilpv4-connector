@@ -29,10 +29,10 @@ import java.util.concurrent.CompletableFuture;
  * is still routed using Interledger, but it does not exit the connector like a normally-schemed packet would.</p>
  *
  * <pre>
- *                                            ┌────────────┐             ┌────────────────┐
- *                ┌────────┐                  │ Connector  │             │   Internally   │
- * ──sendPacket──▷│ Link   │──onIncomingData─▷│   Switch   │──routeData─▶│   Routed Link  │
- *                └────────┘                  └────────────┘             └────────────────┘
+ *                                                 ┌────────────┐                ┌────────────────┐
+ *                ┌───────┐                        │ Connector  │                │   Internally   │
+ * ──sendPacket──▷│ Link  │──handleIncomingPacket─▷│   Switch   │──switchPacket─▶│   Routed Link  │
+ *                └───────┘                        └────────────┘                └────────────────┘
  * </pre>
  */
 public abstract class InternallyRoutedLink extends AbstractLink<LinkSettings> implements Link<LinkSettings> {

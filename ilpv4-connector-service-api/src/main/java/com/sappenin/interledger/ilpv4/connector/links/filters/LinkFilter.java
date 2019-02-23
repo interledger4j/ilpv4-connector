@@ -1,4 +1,4 @@
-package com.sappenin.interledger.ilpv4.connector.linkfilter;
+package com.sappenin.interledger.ilpv4.connector.links.filters;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerPreparePacket;

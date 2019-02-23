@@ -6,7 +6,7 @@ import org.interledger.core.InterledgerPreparePacket;
 /**
  * Determines how to link one account to another for purposes of routing.
  */
-public interface NextHopLinkMapper {
+public interface NextHopPacketMapper {
 
   /**
    * Construct an instance of {@link NextHopInfo} that contains the <tt>next-hop</tt> ILP prepare packet (i.e., a new

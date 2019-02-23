@@ -59,7 +59,7 @@ public class IlpHttpController {
   ) {
     final AccountId accountId = this.accountIdResolver.resolveAccountId(authentication);
 
-    return this.ilPv4PacketSwitch.routeData(accountId, preparePacket);
+    return this.ilPv4PacketSwitch.switchPacket(accountId, preparePacket);
   }
 
   /**

@@ -25,12 +25,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker.TRACKING_ACCOUNT_SUFFIX;
+
 /**
- * An implementation of {@link AccountManager} that supports multiple accounts, each with its own link.
+ * An implementation of {@link AccountManager} that supports multiple accounts, each with its own link, storing all data
+ * in memory.
  *
  * WARNING: This Account manager should never know anything about routing.
  */
-public class DefaultAccountManager implements AccountManager, LinkEventListener {
+public class InMemoryAccountManager implements AccountManager, LinkEventListener {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -50,7 +53,7 @@ public class DefaultAccountManager implements AccountManager, LinkEventListener 
   /**
    * Required-args Constructor.
    */
-  public DefaultAccountManager(
+  public InMemoryAccountManager(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountIdResolver accountIdResolver,
     final AccountSettingsResolver accountSettingsResolver,
@@ -68,16 +71,6 @@ public class DefaultAccountManager implements AccountManager, LinkEventListener 
   @Override
   public void createAccount(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
-
-    //    final LinkSettings linkSettings = LinkSettings.builder()
-    //      .linkType(accountSettings.getLinkType())
-    //      .customSettings(accountSettings.getCustomSettings())
-    //      .operatorAddress(connectorSettingsSupplier.get().getOperatorAddress())
-    //      .build();
-    //    final Link<?> link = linkManager.createLink(accountSettings.getId(), linkSettings);
-    //    // Register the Connector as a LinkEvent Listener...
-    //    link.addLinkEventListener(UUID.randomUUID(), this);
-
 
     // Create Data Link
     final LinkSettings linkSettings = LinkSettings.builder()
@@ -98,6 +91,31 @@ public class DefaultAccountManager implements AccountManager, LinkEventListener 
         .build()
     );
 
+    ////////////////////////////
+    // Internal Tracking Account
+    ////////////////////////////
+
+    // Create an internal Connector tracking account for this account. This is used by the BalanceTracker for
+    // double-entry accounting purposes (i.e., BalanceTracker only ever transfers funds, so it needs two accounts in
+    // order to "deposite" or "withdrawal" from any given external account.
+    final AccountSettings trackingAccountSettings = AccountSettings.builder().from(accountSettings)
+      .id(AccountId.of(accountSettings.getId().value() + TRACKING_ACCOUNT_SUFFIX))
+      .isReceiveRoutes(false)
+      .isSendRoutes(false)
+      .isInternal(true)
+      .build();
+
+    // Add the account, regardless of if the link is connected.
+    this.addAccount(
+      Account.builder()
+        .accountSettings(trackingAccountSettings)
+        .link(link)
+        .build()
+    );
+
+    ////////////////////////////
+    // Connect the Link.
+    ////////////////////////////
     try {
       // Try to connect, but only wait 15 seconds. Don't let one connection failure block the other links from
       // connecting.

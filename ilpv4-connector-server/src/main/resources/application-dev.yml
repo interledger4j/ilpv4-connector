@@ -2,10 +2,12 @@
 logging:
   level:
     ROOT: INFO
-    com.sappenin: TRACE
+    com.sappenin: INFO
+    org.interledger: INFO
     org.springframework: INFO
-    org.springframework.security: TRACE
-    org.springframework.web.socket: INFO
+    org.springframework.security: ERROR
+    com.auth0: ERROR
+    org.springframework.web.socket: ERROR
 server:
   port: 8080
   http2:

@@ -1,6 +1,5 @@
-package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
+package com.sappenin.interledger.ilpv4.connector.links.filters;
 
-import com.sappenin.interledger.ilpv4.connector.linkfilter.LinkFilter;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.Link;
 import org.interledger.core.InterledgerPreparePacket;
@@ -11,58 +10,43 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Objects;
 
-public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
+public class DefaultLinkFilterChain implements LinkFilterChain {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPacketSwitchFilterChain.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultLinkFilterChain.class);
 
-  private final List<PacketSwitchFilter> packetSwitchFilters;
   private final List<LinkFilter> linkFilters;
   private final Link link;
-
-  // The index of the packet-switch filter to call next...
-  private int _packetSwitchFilterIndex;
-
-  // The index of the link-filter to call next...
-  private int _linkFilterIndex;
+  // The index of the filter to call next...
+  private int _filterIndex;
 
   /**
-   * A chain of filters that are applied to a routePacket request before forwarding the actual request to the link.
+   * A chain of filters that are applied to a packet request before sending the packet onto an outbound {@link Link}.
    *
-   * @param packetSwitchFilters
-   * @param link
+   * @param linkFilters
+   * @param outboundLink The {@link Link} that a Packet Switch will forward a packet onto (this link is the `next-hop`
+   *                     as determined by the routing table inside of the Packet Switch).
    */
-  public DefaultPacketSwitchFilterChain(
-    final List<PacketSwitchFilter> packetSwitchFilters, final List<LinkFilter> linkFilters, final Link link
-  ) {
-    this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
+  public DefaultLinkFilterChain(final List<LinkFilter> linkFilters, final Link outboundLink) {
     this.linkFilters = Objects.requireNonNull(linkFilters);
-    this.link = Objects.requireNonNull(link);
+    this.link = Objects.requireNonNull(outboundLink);
   }
 
   @Override
   public InterledgerResponsePacket doFilter(
-    final AccountId sourceAccountId, final InterledgerPreparePacket sourcePreparePacket
+    final AccountId destinationAccountId, final InterledgerPreparePacket preparePacket
   ) {
 
-    Objects.requireNonNull(sourceAccountId);
-    Objects.requireNonNull(sourcePreparePacket);
+    Objects.requireNonNull(destinationAccountId);
+    Objects.requireNonNull(preparePacket);
 
-    if (this._packetSwitchFilterIndex < this.packetSwitchFilters.size()) {
-      return packetSwitchFilters.get(_packetSwitchFilterIndex++).doFilter(sourceAccountId, sourcePreparePacket, this);
+    if (this._filterIndex < this.linkFilters.size()) {
+      return linkFilters.get(_filterIndex++).doFilter(destinationAccountId, preparePacket, this);
     } else {
       LOGGER.debug(
-        "Starting Outbound Link Filter Chain. sourceAccountId: `{}` link={} packet={}",
-        sourceAccountId, link, sourcePreparePacket
+        "Sending outbound ILP Prepare. destinationAccountId: `{}` link={} packet={}",
+        destinationAccountId, link, preparePacket
       );
-      if (this._linkFilterIndex < this.linkFilters.size()) {
-        return linkFilters.get(_linkFilterIndex++).doFilter(sourcePreparePacket, this);
-      } else {
-        LOGGER.debug(
-          "Sending outbound ILP Prepare. sourceAccountId: `{}` link={} packet={}",
-          sourceAccountId, link, sourcePreparePacket
-        );
-        return link.sendPacket(sourcePreparePacket);
-      }
+      return link.sendPacket(preparePacket);
     }
   }
 }
