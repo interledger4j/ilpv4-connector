@@ -1,6 +1,7 @@
 package org.interledger.ilpv4.connector.it.blast;
 
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
+import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.ConnectorProfile;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
@@ -29,12 +30,17 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLink.PING_PROTOCOL_CONDITION;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
+import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.ALICE;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.ALICE_ADDRESS;
+import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.BOB;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.BOB_ADDRESS;
 import static org.junit.Assert.assertThat;
 
@@ -172,7 +178,6 @@ public class TwoConnectorBlastIT {
    */
   @Test
   public void testAlicePingsBobWithExpiredPacket() throws InterruptedException {
-
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
@@ -291,6 +296,7 @@ public class TwoConnectorBlastIT {
     final long end = System.currentTimeMillis();
     LOGGER.info("Ping took {}ms", end - start);
   }
+
   /////////////////
   // Invalid Condition
   /////////////////
@@ -332,6 +338,83 @@ public class TwoConnectorBlastIT {
     latch.await(5, TimeUnit.SECONDS);
     final long end = System.currentTimeMillis();
     LOGGER.info("Ping took {}ms", end - start);
+  }
+
+  ///////////////////////
+  // Average Fulfill Time
+  ///////////////////////
+
+  /**
+   * Attempts to ping 100k packets (i.e., 100k fulfills) and measures the time it takes, failing if the time takes
+   * longer than some upper bound.
+   *
+   * Note: this upper-bound may be adjusted as the Connector implementation has perf improvements or degredations.
+   */
+  @Test
+  public void testPingPerf() throws InterruptedException {
+    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
+
+    final int numReps = 2000;
+    final int numThreads = 10;
+    final CountDownLatch latch = new CountDownLatch(numReps);
+
+    // Tracks total time spent in the Runnable so we can find an average.
+    AtomicInteger totalMillis = new AtomicInteger();
+
+    final Runnable runnable = () -> {
+      final long start = System.currentTimeMillis();
+      final InterledgerResponsePacket responsePacket = blastLink.ping(BOB_ADDRESS, BigInteger.ONE);
+
+      new InterledgerResponsePacketHandler() {
+        @Override
+        protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
+          assertThat(interledgerFulfillPacket.getFulfillment().validateCondition(PING_PROTOCOL_CONDITION), is(true));
+          latch.countDown();
+        }
+
+        @Override
+        protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
+          fail(String.format("Ping request rejected, but should have fulfilled: %s", interledgerRejectPacket));
+          latch.countDown();
+        }
+
+      }.handle(responsePacket);
+      final long end = System.currentTimeMillis();
+      totalMillis.getAndAdd((int) (end - start));
+    };
+
+    final ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+    final long start = System.currentTimeMillis();
+    for (int i = 0; i < numReps; i++) {
+      executor.submit(runnable);
+    }
+    latch.await(10, TimeUnit.SECONDS);
+    final long end = System.currentTimeMillis();
+
+    executor.shutdown();
+
+    double totalTime = (end - start);
+
+    double averageProcssingTime = ((double) (totalMillis.get()) / numReps);
+    double averageMsPerPing = totalTime / numReps;
+
+    LOGGER.info("[Pings Perf Test] Latch Count: {}", latch.getCount());
+    LOGGER.info("[Pings Perf Test] {} pings took {} ms", numReps, totalTime);
+    LOGGER.info("[Pings Perf Test] Each Ping spent {} ms processing, on Average", averageProcssingTime);
+    LOGGER.info("[Pings Perf Test] Average ms/ping: {} ms", averageMsPerPing);
+
+    assertThat(latch.getCount(), is(0L));
+    assertThat(averageProcssingTime < 50, is(true));
+    assertThat(averageMsPerPing < 5, is(true));
+
+    // Assert Account Balances in each connector.
+
+    this.getILPv4NodeFromGraph(ALICE_ADDRESS).getBalanceTracker(ALICE).getBalance();
+    this.getILPv4NodeFromGraph(ALICE_ADDRESS).getBalanceTracker(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX).getBalance();
+    this.getILPv4NodeFromGraph(BOB_ADDRESS).getBalanceTracker(ALICE).getBalance();
+    this.getILPv4NodeFromGraph(BOB_ADDRESS).getBalanceTracker(BOB + BalanceTracker.TRACKING_ACCOUNT_SUFFIX).getBalance();
+
+    // These top out at 1995, so need to determine why.
   }
 
   /////////////////

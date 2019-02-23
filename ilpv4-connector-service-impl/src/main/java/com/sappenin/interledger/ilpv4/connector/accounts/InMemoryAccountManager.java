@@ -200,7 +200,7 @@ public class DefaultAccountManager implements AccountManager, LinkEventListener 
   }
 
   public BigInteger getAccountBalance(InterledgerAddress accountAddress) {
-    throw new RuntimeException("Balance Tracker not yet implemented!");
+    throw new RuntimeException("AccountBalance Tracker not yet implemented!");
   }
 
   @Override
