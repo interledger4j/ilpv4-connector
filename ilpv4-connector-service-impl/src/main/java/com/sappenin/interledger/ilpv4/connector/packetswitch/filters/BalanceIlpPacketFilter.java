@@ -57,7 +57,7 @@ public class BalanceIlpPacketFilter implements PacketSwitchFilter {
         @Override
         protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
           // Refund on reject
-          decreaseAccountBalanceIncrease(
+          decreaseAccountBalance(
             sourceAccountId, sourcePreparePacket.getAmount(),
             "Incoming Prepare Packet refunded due to ilp Reject"
           );
@@ -71,7 +71,7 @@ public class BalanceIlpPacketFilter implements PacketSwitchFilter {
       return responsePacket;
     } catch (RuntimeException e) {
       // Refund on any kind of error...
-      this.decreaseAccountBalanceIncrease(
+      this.decreaseAccountBalance(
         sourceAccountId, sourcePreparePacket.getAmount(),
         String.format("Incoming PreparePacket refunded due to error (%s)", e.getMessage())
       );
@@ -88,6 +88,7 @@ public class BalanceIlpPacketFilter implements PacketSwitchFilter {
       // This account is the account the Connector uses to track interactions with the account represented by accountId.
       final AccountId connectorTrackingAccountId = AccountId.of(accountId.value() + TRACKING_ACCOUNT_SUFFIX);
 
+      // TODO: Move ConnectorTracking account into the balance tracker.
       // Increase balance of accountId on prepare
       final BalanceTransferResult balanceTransferResult = this.balanceTracker.transferUnits(
         UUID.randomUUID(), connectorTrackingAccountId, accountId, amount
@@ -101,7 +102,7 @@ public class BalanceIlpPacketFilter implements PacketSwitchFilter {
   }
 
   @VisibleForTesting
-  protected void decreaseAccountBalanceIncrease(AccountId accountId, BigInteger amount, String errorMessagePrefix) {
+  protected void decreaseAccountBalance(AccountId accountId, BigInteger amount, String errorMessagePrefix) {
     // Ignore 0-amount packets.
     if (amount.equals(BigInteger.ZERO)) {
       return;
@@ -109,6 +110,7 @@ public class BalanceIlpPacketFilter implements PacketSwitchFilter {
       // This account is the account the Connector uses to track interactions with the account represented by accountId.
       final AccountId connectorTrackingAccountId = AccountId.of(accountId.value() + TRACKING_ACCOUNT_SUFFIX);
 
+      // TODO: Move ConnectorTracking account into the balance tracker.
       // Decrease balance of accountId
       final BalanceTransferResult balanceTransferResult = this.balanceTracker.transferUnits(
         UUID.randomUUID(), accountId, connectorTrackingAccountId, amount
@@ -118,17 +120,6 @@ public class BalanceIlpPacketFilter implements PacketSwitchFilter {
       // this.stats.balance.setValue(account, {}, balance.getValue().toNumber())
       // this.stats.incomingDataPacketValue.increment(account, { result : 'failed' }, + amount)
     }
-  }
-
-  @VisibleForTesting
-  protected void onOutgoingData() {
-    //    // Ignore 0-amount packets.
-    //    if (sourcePreparePacket.getAmount().equals(BigInteger.ZERO)) {
-    //      return;
-    //    } else {
-    //
-    //    }
-
   }
 
 }

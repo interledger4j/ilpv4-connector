@@ -42,6 +42,7 @@ import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.ALICE;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.ALICE_ADDRESS;
+import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.BOB;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.BOB_ADDRESS;
 import static org.junit.Assert.assertThat;
 
@@ -424,16 +425,15 @@ public class TwoConnectorBlastIT {
     assertThat(averageMsPerPing < 2, is(true));
 
     // Assert Account Balances in each connector.
-
-    // TODO: Add incoming/outgoing balance tracking
-    //    assertThat(
-    //      this.getILPv4NodeFromGraph(ALICE_ADDRESS).getBalanceTracker().getBalance(AccountId.of(ALICE)),
-    //      is(BigInteger.valueOf(2000L))
-    //    );
-    //    assertThat(
-    //      this.getILPv4NodeFromGraph(ALICE_ADDRESS).getBalanceTracker().getBalance(AccountId.of(ALICE+ BalanceTracker.TRACKING_ACCOUNT_SUFFIX)),
-    //      is(BigInteger.valueOf(-2000L))
-    //    );
+    assertThat(
+      this.getILPv4NodeFromGraph(ALICE_ADDRESS).getBalanceTracker().getBalance(AccountId.of(BOB)).getAmount().get(),
+      is(BigInteger.valueOf(numReps * -1L))
+    );
+    assertThat(
+      this.getILPv4NodeFromGraph(ALICE_ADDRESS).getBalanceTracker()
+        .getBalance(AccountId.of(BOB + BalanceTracker.TRACKING_ACCOUNT_SUFFIX)).getAmount().get(),
+      is(BigInteger.valueOf(numReps))
+    );
 
     assertThat(
       String.format("Incorrect balance for `%s@%s`!", ALICE, BOB_ADDRESS.getValue()),

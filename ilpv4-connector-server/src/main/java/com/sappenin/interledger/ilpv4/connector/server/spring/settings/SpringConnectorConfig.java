@@ -19,6 +19,7 @@ import com.sappenin.interledger.ilpv4.connector.fx.ExchangeRateService;
 import com.sappenin.interledger.ilpv4.connector.links.DefaultNextHopPacketMapper;
 import com.sappenin.interledger.ilpv4.connector.links.NextHopPacketMapper;
 import com.sappenin.interledger.ilpv4.connector.links.filters.LinkFilter;
+import com.sappenin.interledger.ilpv4.connector.links.filters.OutgoingBalanceLinkFilter;
 import com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLink;
 import com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLinkFactory;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.DefaultILPv4PacketSwitch;
@@ -227,7 +228,9 @@ public class SpringConnectorConfig {
   List<LinkFilter> linkFilters(
     AccountManager accountManager, InterledgerAddressUtils addressUtils, BalanceTracker balanceTracker
   ) {
-    return Lists.newArrayList();
+    return Lists.newArrayList(
+      new OutgoingBalanceLinkFilter(balanceTracker)
+    );
     //      new RateLimitIlpPacketFilter(), // Limits Data packets...
     //      new ExpiryPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress()),
     //      new MaxPacketAmountFilter(() -> connectorSettingsSupplier().get().getOperatorAddress(), accountManager),
