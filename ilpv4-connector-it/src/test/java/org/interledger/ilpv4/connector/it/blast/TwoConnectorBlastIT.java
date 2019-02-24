@@ -84,8 +84,18 @@ public class TwoConnectorBlastIT {
     aliceConnector = this.getILPv4NodeFromGraph(ALICE_ADDRESS);
     bobConnector = this.getILPv4NodeFromGraph(BOB_ADDRESS);
 
+    // Reset all accounts on each connector...
+
+    final AccountId pingAccountId = bobConnector.getAccountManager().getPingAccountId().get();
+    bobConnector.getBalanceTracker().resetBalance(pingAccountId);
+    bobConnector.getBalanceTracker()
+      .resetBalance(AccountId.of(pingAccountId.value() + BalanceTracker.TRACKING_ACCOUNT_SUFFIX));
+
     bobConnector.getBalanceTracker().resetBalance(AccountId.of(ALICE));
     bobConnector.getBalanceTracker().resetBalance(AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX));
+
+    aliceConnector.getBalanceTracker().resetBalance(AccountId.of(BOB));
+    aliceConnector.getBalanceTracker().resetBalance(AccountId.of(BOB + BalanceTracker.TRACKING_ACCOUNT_SUFFIX));
   }
 
   @Test
@@ -437,7 +447,7 @@ public class TwoConnectorBlastIT {
     assertThat(latch.getCount(), is(0L));
     assertThat(averageProcssingTime < 20, is(true));
     assertThat(averageMsPerPing < 2, is(true));
-    
+
     // Assert the `ping` account balances in `test.alice`, which is paying for the pings.
     final AccountId alicePingAccountId = aliceConnector.getAccountManager().getPingAccountId().get();
     assertAccountBalance(aliceConnector, alicePingAccountId, BigInteger.valueOf(numReps));
