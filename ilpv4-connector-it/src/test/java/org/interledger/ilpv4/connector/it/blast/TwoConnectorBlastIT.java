@@ -58,8 +58,8 @@ public class TwoConnectorBlastIT {
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorBlastIT.class);
   private static Topology topology = TwoConnectorBlastTopology.init();
 
-  private BalanceTracker aliceNodeBalanceTracker;
-  private BalanceTracker bobNodeBalanceTracker;
+  private ILPv4Connector aliceConnector;
+  private ILPv4Connector bobConnector;
 
   @BeforeClass
   public static void setupClass() {
@@ -81,11 +81,11 @@ public class TwoConnectorBlastIT {
 
   @Before
   public void setup() {
-    aliceNodeBalanceTracker = this.getILPv4NodeFromGraph(ALICE_ADDRESS).getBalanceTracker();
-    bobNodeBalanceTracker = this.getILPv4NodeFromGraph(BOB_ADDRESS).getBalanceTracker();
+    aliceConnector = this.getILPv4NodeFromGraph(ALICE_ADDRESS);
+    bobConnector = this.getILPv4NodeFromGraph(BOB_ADDRESS);
 
-    bobNodeBalanceTracker.resetBalance(AccountId.of(ALICE));
-    bobNodeBalanceTracker.resetBalance(AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX));
+    bobConnector.getBalanceTracker().resetBalance(AccountId.of(ALICE));
+    bobConnector.getBalanceTracker().resetBalance(AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX));
   }
 
   @Test
@@ -146,6 +146,20 @@ public class TwoConnectorBlastIT {
   @Test
   public void testAlicePingsBob() throws InterruptedException {
     this.testPing(ALICE_ADDRESS, BOB_ADDRESS);
+
+    // Assert the `ping` account balances in `test.alice`, which is paying for the pings.
+    final AccountId alicePingAccountId = aliceConnector.getAccountManager().getPingAccountId().get();
+    assertAccountBalance(aliceConnector, alicePingAccountId, BigInteger.ZERO);
+
+    final AccountId bobPingAccount = bobConnector.getAccountManager().getPingAccountId().get();
+    assertAccountBalance(bobConnector, bobPingAccount, BigInteger.valueOf(1));
+
+    assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.ZERO);
+    assertAccountBalance(aliceConnector, AccountId.of(BOB + BalanceTracker.TRACKING_ACCOUNT_SUFFIX), BigInteger.ZERO);
+
+    assertAccountBalance(bobConnector, AccountId.of(ALICE), BigInteger.valueOf(1L));
+    assertAccountBalance(bobConnector, AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX),
+      BigInteger.valueOf(-1L));
   }
 
   /**
@@ -421,33 +435,22 @@ public class TwoConnectorBlastIT {
     LOGGER.info("[Pings Perf Test] Average ms/ping: {} ms", averageMsPerPing);
 
     assertThat(latch.getCount(), is(0L));
-    assertThat(averageProcssingTime < 20, is(true)); // TODO: Restore this with 2000 pings.
+    assertThat(averageProcssingTime < 20, is(true));
     assertThat(averageMsPerPing < 2, is(true));
+    
+    // Assert the `ping` account balances in `test.alice`, which is paying for the pings.
+    final AccountId alicePingAccountId = aliceConnector.getAccountManager().getPingAccountId().get();
+    assertAccountBalance(aliceConnector, alicePingAccountId, BigInteger.valueOf(numReps));
 
-    // Assert Account Balances in each connector.
-    assertThat(
-      this.getILPv4NodeFromGraph(ALICE_ADDRESS).getBalanceTracker().getBalance(AccountId.of(BOB)).getAmount().get(),
-      is(BigInteger.valueOf(numReps * -1L))
-    );
-    assertThat(
-      this.getILPv4NodeFromGraph(ALICE_ADDRESS).getBalanceTracker()
-        .getBalance(AccountId.of(BOB + BalanceTracker.TRACKING_ACCOUNT_SUFFIX)).getAmount().get(),
-      is(BigInteger.valueOf(numReps))
-    );
+    final AccountId bobPingAccount = bobConnector.getAccountManager().getPingAccountId().get();
+    assertAccountBalance(bobConnector, bobPingAccount, BigInteger.valueOf(numReps));
 
-    assertThat(
-      String.format("Incorrect balance for `%s@%s`!", ALICE, BOB_ADDRESS.getValue()),
-      BigInteger.valueOf(
-        this.getILPv4NodeFromGraph(BOB_ADDRESS).getBalanceTracker().getBalance(AccountId.of(ALICE)).getAmount().get()),
-      is(BigInteger.valueOf(numReps))
-    );
-    assertThat(
-      String.format("Incorrect balance for `%s@%s`!", ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX,
-        BOB_ADDRESS.getValue()),
-      BigInteger.valueOf(this.getILPv4NodeFromGraph(BOB_ADDRESS).getBalanceTracker()
-        .getBalance(AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX)).getAmount().get()),
-      is(BigInteger.valueOf(numReps * -1))
-    );
+    assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.ZERO);
+    assertAccountBalance(aliceConnector, AccountId.of(BOB + BalanceTracker.TRACKING_ACCOUNT_SUFFIX), BigInteger.ZERO);
+
+    assertAccountBalance(bobConnector, AccountId.of(ALICE), BigInteger.valueOf(numReps));
+    assertAccountBalance(bobConnector, AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX),
+      BigInteger.valueOf(numReps * -1));
   }
 
   /////////////////
@@ -520,5 +523,16 @@ public class TwoConnectorBlastIT {
     latch.await(5, TimeUnit.SECONDS);
     final long end = System.currentTimeMillis();
     LOGGER.info("Ping took {}ms", end - start);
+  }
+
+  private void assertAccountBalance(
+    final ILPv4Connector connector,
+    final AccountId accountId,
+    final BigInteger expectedAmount
+  ) {
+    assertThat(
+      String.format("Incorrect balance for `%s@%s`!", accountId, connector.getNodeIlpAddress().getValue()),
+      connector.getBalanceTracker().getBalance(accountId).getAmount().get(), is(expectedAmount.intValue())
+    );
   }
 }

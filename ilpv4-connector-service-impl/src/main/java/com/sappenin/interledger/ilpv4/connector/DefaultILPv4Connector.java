@@ -306,6 +306,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       .linkType(PingProtocolLink.LINK_TYPE)
       .build();
     this.accountManager.createAccount(accountSettings);
+    this.accountManager.setPingAccountId(accountId);
   }
 
   private void initializePeerConfigProtocol() {

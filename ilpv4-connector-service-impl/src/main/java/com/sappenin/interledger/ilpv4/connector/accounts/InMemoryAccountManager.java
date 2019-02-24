@@ -40,11 +40,12 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
 
   private final Map<AccountId, Account> accounts = Maps.newConcurrentMap();
-
   private final AccountIdResolver accountIdResolver;
   private final AccountSettingsResolver accountSettingsResolver;
   private final LinkManager linkManager;
   private final EventBus eventBus;
+
+  private Optional<AccountId> pingAccountId = Optional.empty();
 
   // A Connector can have multiple accounts of type `parent`, but only one can be the primary account, e.g., for
   // purposes of IL-DCP and other protocols.
@@ -69,7 +70,7 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
   }
 
   @Override
-  public void createAccount(final AccountSettings accountSettings) {
+  public Account createAccount(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
 
     // Create Data Link
@@ -106,6 +107,10 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
       .build();
 
     // Add the account, regardless of if the link is connected.
+    final Account newlyConstructedAccount = Account.builder()
+      .accountSettings(trackingAccountSettings)
+      .link(link)
+      .build();
     this.addAccount(
       Account.builder()
         .accountSettings(trackingAccountSettings)
@@ -130,6 +135,8 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
         logger.warn("Unable to connect Preconfigured Link({}): {}", linkSettings, e.getMessage());
       }
     }
+
+    return newlyConstructedAccount;
   }
 
   /**
@@ -210,6 +217,31 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
   @Override
   public Optional<Account> getAccount(AccountId accountId) {
     return Optional.ofNullable(this.accounts.get(accountId));
+  }
+
+  /**
+   * Return the {@link Account} that is used to pay for Ping requests that come from this Connector. This is an internal
+   * account that is used to pay for this Connector's pinging functionality. Note that when this connector proxies a
+   * Ping packet on behalf of another packet, then the account source of the ping packet will instead pay for the
+   * packet.
+   *
+   * @return
+   */
+  @Override
+  public Optional<AccountId> getPingAccountId() {
+    return this.pingAccountId;
+  }
+
+  @Override
+  public void setPingAccountId(final AccountId accountId) {
+    Objects.requireNonNull(accountId);
+
+    if (this.pingAccountId.isPresent()) {
+      throw new RuntimeException("Only a single Ping Account may be configured for a Connector!");
+    }
+
+    logger.info("Ping Account: {}", accountId);
+    this.pingAccountId = Optional.of(accountId);
   }
 
   @Override

@@ -39,9 +39,10 @@ public class BalanceIlpPacketFilter implements PacketSwitchFilter {
     final InterledgerPreparePacket sourcePreparePacket,
     final PacketSwitchFilterChain filterChain
   ) {
-    // Preemptively increase the account balance....
-    this.increaseAccountBalance(sourceAccountId, sourcePreparePacket.getAmount());
     try {
+      // Preemptively increase the account balance....
+      this.increaseAccountBalance(sourceAccountId, sourcePreparePacket.getAmount());
+
       final InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountId, sourcePreparePacket);
 
       // Handle Fulfill or Reject.

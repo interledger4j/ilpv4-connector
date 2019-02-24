@@ -31,7 +31,7 @@ public interface AccountManager {
    *
    * @param accountSettings
    */
-  void createAccount(final AccountSettings accountSettings);
+  Account createAccount(final AccountSettings accountSettings);
 
   /**
    * Add an account to this manager using configured settings appropriate for the account. If the account already
@@ -61,6 +61,24 @@ public interface AccountManager {
    * @return The requested {@link Account}, if present.
    */
   Optional<Account> getAccount(AccountId accountId);
+
+  /**
+   * Return the {@link Account} that is used to pay for Ping requests that come from this Connector. This is an internal
+   * account that is used to pay for this Connector's pinging functionality. Note that when this connector proxies a
+   * Ping packet on behalf of another packet, then the account source of the ping packet will instead pay for the
+   * packet.
+   *
+   * @return The optionally-present account used to fund <tt>ping</tt> requests emanating from this Connector. If `ping`
+   * is not enabled, then this account will be {@link Optional#empty()}.
+   */
+  Optional<AccountId> getPingAccountId();
+
+  /**
+   * Associate the account used for ping requests that emanate from this Connector.
+   *
+   * @param accountId The {@link AccountId} of the account that this connector should use for making `ping` requests.
+   */
+  void setPingAccountId(AccountId accountId);
 
   /**
    * Determines if the account represented by {@code accountId} is internal.
