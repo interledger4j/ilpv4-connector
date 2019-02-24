@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -22,6 +21,8 @@ public interface BalanceTracker {
   String TRACKING_ACCOUNT_SUFFIX = "-TrackingAccount";
 
   AccountBalance getBalance(AccountId accountId);
+
+  void resetBalance(AccountId accountId);
 
   // TODO: Consider putting all funds "on-hold" during the prepare step, and then either executing that transfer or
   //  rolling it back during the fufill/reject. This might be overkill in a Connector processing very small payments,
@@ -56,7 +57,7 @@ public interface BalanceTracker {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final AccountManager accountManager;
-    private final Map<AccountId, AccountBalance> balances;
+    private final Map<AccountId, AtomicInteger> balances;
 
     public InMemoryBalanceTracker(final AccountManager accountManager) {
       this.balances = Maps.newConcurrentMap();
@@ -65,35 +66,41 @@ public interface BalanceTracker {
 
     @Override
     public AccountBalance getBalance(AccountId accountId) {
-      return Optional.ofNullable(balances.get(accountId))
-        .orElseGet(() -> {
-          final AccountSettings accountSettings = accountManager.safeGetAccount(accountId).getAccountSettings();
-          // If no account, initialize a new one with a 0 balance.
-          balances.put(accountId,
-            AccountBalance.builder()
-              .accountId(accountId)
-              .amount(new AtomicInteger())
-              .assetCode(accountSettings.getAssetCode())
-              .assetScale(accountSettings.getAssetScale())
-              .build());
-          return balances.get(accountId);
-        });
+      final AccountSettings accountSettings = accountManager.safeGetAccount(accountId).getAccountSettings();
+
+      final AtomicInteger currentAmount = this.getBalanceNumber(accountId);
+
+      // TODO: For performance, use a Modifiable variant in a cache.
+      return AccountBalance.builder()
+        .accountId(accountId)
+        .amount(currentAmount)
+        .assetCode(accountSettings.getAssetCode())
+        .assetScale(accountSettings.getAssetScale())
+        .build();
+    }
+
+    @Override
+    public void resetBalance(AccountId accountId) {
+      synchronized (this) {
+        this.balances.put(accountId, new AtomicInteger());
+      }
     }
 
     @Override
     public BalanceTransferResult transferUnits(
       UUID transactionId, AccountId sourceAccountId, AccountId destinationAccountId, BigInteger amount
     ) {
-      int sourceAccountPreviousBalance = this.getBalance(sourceAccountId)
-        .getAmount()
-        .getAndAdd(amount.negate().intValue());
 
-      int currentSourceAccountBalance = sourceAccountPreviousBalance + amount.negate().intValue();
+      // If the balance isn't yet initialized, we need to initialize it in a thread-safe mannger.
 
-      int destinationAccountPreviousBalance = this.getBalance(destinationAccountId)
-        .getAmount()
-        .getAndAdd(amount.intValue());
-      int currentDestinationAccountBalance = destinationAccountPreviousBalance + amount.intValue();
+
+      final int sourceAccountPreviousBalance =
+        this.getBalanceNumber(sourceAccountId).getAndAdd(amount.negate().intValue());
+      final int currentSourceAccountBalance = sourceAccountPreviousBalance + amount.negate().intValue();
+
+      final int destinationAccountPreviousBalance =
+        this.getBalanceNumber(destinationAccountId).getAndAdd(amount.intValue());
+      final int currentDestinationAccountBalance = destinationAccountPreviousBalance + amount.intValue();
 
       final BalanceTransferResult balanceTransferResult = BalanceTransferResult.builder()
         .balanceTransferId(transactionId)
@@ -107,9 +114,35 @@ public interface BalanceTracker {
         .balanceTransferStatus(BalanceTransferResult.Status.EXECUTED)
         .build();
 
-      logger.info("BalanceTransferResult: {}", balanceTransferResult);
+      logger.trace("BalanceTransferResult: {}", balanceTransferResult);
       return balanceTransferResult;
     }
 
+    /**
+     * Get the balance, initializing it to 0 if required.
+     *
+     * @param accountId
+     *
+     * @return
+     */
+    private AtomicInteger getBalanceNumber(final AccountId accountId) {
+
+      // Initial check so we don't synchronize every happy-path call...
+      if (balances.get(accountId) == null) {
+        // If we get here, it means the account was not initialized. Under load, we must block multiple threads
+        // from creating the same balance and accidentally stepping on an existin balance.
+        synchronized (this) {
+          // Only allow 1 thread to set the balance...
+          if (balances.get(accountId) == null) {
+            // If no account, initialize a new one with a 0 balance.
+            final AtomicInteger zeroBalance = new AtomicInteger();
+            balances.put(accountId, zeroBalance);
+          }
+        }
+      }
+
+      // This will return the correct AtomicInteger...
+      return balances.get(accountId);
+    }
   }
 }

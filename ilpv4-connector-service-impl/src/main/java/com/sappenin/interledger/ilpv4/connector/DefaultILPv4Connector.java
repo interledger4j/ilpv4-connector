@@ -3,6 +3,7 @@ package com.sappenin.interledger.ilpv4.connector;
 import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
+import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.events.IlpNodeEvent;
 import com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLink;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
@@ -88,6 +89,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
 
   private final InternalRoutingService internalRoutingService;
   private final ExternalRoutingService externalRoutingService;
+  private final BalanceTracker balanceTracker;
 
   // Handles all packet addresses.
   private final ILPv4PacketSwitch ilpPacketSwitch;
@@ -101,8 +103,8 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     final LinkManager linkManager,
     final InternalRoutingService internalRoutingService,
     final ExternalRoutingService externalRoutingService,
-    final ILPv4PacketSwitch ilpPacketSwitch
-  ) {
+    final ILPv4PacketSwitch ilpPacketSwitch,
+    final BalanceTracker balanceTracker) {
     this(
       connectorSettingsSupplier,
       accountManager,
@@ -110,6 +112,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       internalRoutingService,
       externalRoutingService,
       ilpPacketSwitch,
+      balanceTracker,
       new EventBus()
     );
   }
@@ -120,6 +123,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     final LinkManager linkManager,
     final InternalRoutingService internalRoutingService, final ExternalRoutingService externalRoutingService,
     final ILPv4PacketSwitch ilpPacketSwitch,
+    final BalanceTracker balanceTracker,
     final EventBus eventBus
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
@@ -129,6 +133,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
     this.ilpPacketSwitch = Objects.requireNonNull(ilpPacketSwitch);
     this.eventBus = Objects.requireNonNull(eventBus);
+    this.balanceTracker = Objects.requireNonNull(balanceTracker);
     eventBus.register(this);
   }
 
@@ -196,6 +201,11 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   @Override
   public InternalRoutingService getInternalRoutingService() {
     return this.internalRoutingService;
+  }
+
+  @Override
+  public BalanceTracker getBalanceTracker() {
+    return this.balanceTracker;
   }
 
   @Override

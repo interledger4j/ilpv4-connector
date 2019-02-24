@@ -6,6 +6,7 @@ import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.ConnectorProfile;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import org.interledger.connector.accounts.Account;
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
@@ -20,6 +21,7 @@ import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopo
 import org.interledger.ilpv4.connector.it.topology.LinkNode;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -40,7 +42,6 @@ import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.ALICE;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.ALICE_ADDRESS;
-import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.BOB;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.BOB_ADDRESS;
 import static org.junit.Assert.assertThat;
 
@@ -56,8 +57,11 @@ public class TwoConnectorBlastIT {
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorBlastIT.class);
   private static Topology topology = TwoConnectorBlastTopology.init();
 
+  private BalanceTracker aliceNodeBalanceTracker;
+  private BalanceTracker bobNodeBalanceTracker;
+
   @BeforeClass
-  public static void setup() {
+  public static void setupClass() {
     System.setProperty("spring.profiles.active", ConnectorProfile.CONNECTOR_MODE + "," + ConnectorProfile.DEV);
     System.setProperty(ConnectorProperties.BLAST_ENABLED, "true");
 
@@ -67,10 +71,20 @@ public class TwoConnectorBlastIT {
   }
 
   @AfterClass
-  public static void shutdown() {
+  public static void shutdownClass() {
     LOGGER.info("Stopping test topology `{}`...", "TwoConnectorBlastTopology");
     topology.stop();
     LOGGER.info("Test topology `{}` stopped!", "TwoConnectorBlastTopology");
+  }
+
+
+  @Before
+  public void setup() {
+    aliceNodeBalanceTracker = this.getILPv4NodeFromGraph(ALICE_ADDRESS).getBalanceTracker();
+    bobNodeBalanceTracker = this.getILPv4NodeFromGraph(BOB_ADDRESS).getBalanceTracker();
+
+    bobNodeBalanceTracker.resetBalance(AccountId.of(ALICE));
+    bobNodeBalanceTracker.resetBalance(AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX));
   }
 
   @Test
@@ -352,9 +366,10 @@ public class TwoConnectorBlastIT {
    */
   @Test
   public void testPingPerf() throws InterruptedException {
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
+    final BlastLink aliceBlastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
 
     final int numReps = 2000;
+
     final int numThreads = 10;
     final CountDownLatch latch = new CountDownLatch(numReps);
 
@@ -363,7 +378,7 @@ public class TwoConnectorBlastIT {
 
     final Runnable runnable = () -> {
       final long start = System.currentTimeMillis();
-      final InterledgerResponsePacket responsePacket = blastLink.ping(BOB_ADDRESS, BigInteger.ONE);
+      final InterledgerResponsePacket responsePacket = aliceBlastLink.ping(BOB_ADDRESS, BigInteger.ONE);
 
       new InterledgerResponsePacketHandler() {
         @Override
@@ -388,10 +403,11 @@ public class TwoConnectorBlastIT {
     for (int i = 0; i < numReps; i++) {
       executor.submit(runnable);
     }
-    latch.await(10, TimeUnit.SECONDS);
+    latch.await(5, TimeUnit.SECONDS);
     final long end = System.currentTimeMillis();
 
     executor.shutdown();
+    executor.awaitTermination(10, TimeUnit.SECONDS);
 
     double totalTime = (end - start);
 
@@ -404,17 +420,34 @@ public class TwoConnectorBlastIT {
     LOGGER.info("[Pings Perf Test] Average ms/ping: {} ms", averageMsPerPing);
 
     assertThat(latch.getCount(), is(0L));
-    assertThat(averageProcssingTime < 50, is(true));
-    assertThat(averageMsPerPing < 5, is(true));
+    assertThat(averageProcssingTime < 20, is(true)); // TODO: Restore this with 2000 pings.
+    assertThat(averageMsPerPing < 2, is(true));
 
     // Assert Account Balances in each connector.
 
-    this.getILPv4NodeFromGraph(ALICE_ADDRESS).getBalanceTracker(ALICE).getBalance();
-    this.getILPv4NodeFromGraph(ALICE_ADDRESS).getBalanceTracker(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX).getBalance();
-    this.getILPv4NodeFromGraph(BOB_ADDRESS).getBalanceTracker(ALICE).getBalance();
-    this.getILPv4NodeFromGraph(BOB_ADDRESS).getBalanceTracker(BOB + BalanceTracker.TRACKING_ACCOUNT_SUFFIX).getBalance();
+    // TODO: Add incoming/outgoing balance tracking
+    //    assertThat(
+    //      this.getILPv4NodeFromGraph(ALICE_ADDRESS).getBalanceTracker().getBalance(AccountId.of(ALICE)),
+    //      is(BigInteger.valueOf(2000L))
+    //    );
+    //    assertThat(
+    //      this.getILPv4NodeFromGraph(ALICE_ADDRESS).getBalanceTracker().getBalance(AccountId.of(ALICE+ BalanceTracker.TRACKING_ACCOUNT_SUFFIX)),
+    //      is(BigInteger.valueOf(-2000L))
+    //    );
 
-    // These top out at 1995, so need to determine why.
+    assertThat(
+      String.format("Incorrect balance for `%s@%s`!", ALICE, BOB_ADDRESS.getValue()),
+      BigInteger.valueOf(
+        this.getILPv4NodeFromGraph(BOB_ADDRESS).getBalanceTracker().getBalance(AccountId.of(ALICE)).getAmount().get()),
+      is(BigInteger.valueOf(numReps))
+    );
+    assertThat(
+      String.format("Incorrect balance for `%s@%s`!", ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX,
+        BOB_ADDRESS.getValue()),
+      BigInteger.valueOf(this.getILPv4NodeFromGraph(BOB_ADDRESS).getBalanceTracker()
+        .getBalance(AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX)).getAmount().get()),
+      is(BigInteger.valueOf(numReps * -1))
+    );
   }
 
   /////////////////
