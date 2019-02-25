@@ -280,6 +280,13 @@
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+            <useSystemClassLoader>false</useSystemClassLoader>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
           <version>3.1.1</version>
           <executions>
@@ -301,7 +308,8 @@
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-jetty</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-websocket</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-security</ignoredDependency>
-                  <ignoredDependency>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure</ignoredDependency>
+                  <ignoredDependency>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure
+                  </ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-test:jar</ignoredDependency>
                 </ignoredDependencies>
               </configuration>

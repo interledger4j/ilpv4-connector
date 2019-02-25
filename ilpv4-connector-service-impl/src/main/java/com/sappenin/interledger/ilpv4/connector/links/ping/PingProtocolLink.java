@@ -13,6 +13,7 @@ import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
 
+import java.util.Base64;
 import java.util.Objects;
 
 /**
@@ -34,8 +35,10 @@ public class PingProtocolLink extends InternallyRoutedLink implements Link<LinkS
   public static final String LINK_TYPE_STRING = "PING_PROTOCOL";
   public static final LinkType LINK_TYPE = LinkType.of(LINK_TYPE_STRING);
 
-  public static final InterledgerFulfillment PING_PROTOCOL_FULFILLMENT = InterledgerFulfillment.of(new byte[32]);
-  public static final InterledgerCondition PING_PROTOCOL_CONDITION = PING_PROTOCOL_FULFILLMENT.getCondition();
+  public static final InterledgerFulfillment PING_PROTOCOL_FULFILLMENT =
+    InterledgerFulfillment.of(Base64.getDecoder().decode("cGluZ3BpbmdwaW5ncGluZ3BpbmdwaW5ncGluZ3Bpbmc="));
+  public static final InterledgerCondition PING_PROTOCOL_CONDITION = InterledgerCondition.of(
+    Base64.getDecoder().decode("jAC8DGFPZPfh4AtZpXuvXFe2oRmpDVSvSJg2oT+bx34="));
 
   /**
    * Required-args constructor.
