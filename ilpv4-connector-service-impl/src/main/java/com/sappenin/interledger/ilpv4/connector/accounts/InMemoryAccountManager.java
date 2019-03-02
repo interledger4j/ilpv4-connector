@@ -45,8 +45,6 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
   private final LinkManager linkManager;
   private final EventBus eventBus;
 
-  private Optional<AccountId> pingAccountId = Optional.empty();
-
   // A Connector can have multiple accounts of type `parent`, but only one can be the primary account, e.g., for
   // purposes of IL-DCP and other protocols.
   private Optional<Account> primaryParentAccount = Optional.empty();
@@ -219,40 +217,11 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
     return Optional.ofNullable(this.accounts.get(accountId));
   }
 
-  /**
-   * Return the {@link Account} that is used to pay for Ping requests that come from this Connector. This is an internal
-   * account that is used to pay for this Connector's pinging functionality. Note that when this connector proxies a
-   * Ping packet on behalf of another packet, then the account source of the ping packet will instead pay for the
-   * packet.
-   *
-   * @return
-   */
-  @Override
-  public Optional<AccountId> getPingAccountId() {
-    return this.pingAccountId;
-  }
-
-  @Override
-  public void setPingAccountId(final AccountId accountId) {
-    Objects.requireNonNull(accountId);
-
-    if (this.pingAccountId.isPresent()) {
-      throw new RuntimeException("Only a single Ping Account may be configured for a Connector!");
-    }
-
-    logger.info("Ping Account: {}", accountId);
-    this.pingAccountId = Optional.of(accountId);
-  }
-
   @Override
   public Stream<Account> getAllAccounts() {
     return accounts.values().stream();
   }
-
-  public BigInteger getAccountBalance(InterledgerAddress accountAddress) {
-    throw new RuntimeException("AccountBalance Tracker not yet implemented!");
-  }
-
+  
   @Override
   public InterledgerAddress toChildAddress(final AccountId accountId) {
     Objects.requireNonNull(accountId);

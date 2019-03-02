@@ -36,7 +36,6 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
-  private final PaymentRouter<Route> internalPaymentRouter;
   private final PaymentRouter<Route> externalRoutingService;
   private final ExchangeRateService exchangeRateService;
   private final AccountManager accountManager;
@@ -44,14 +43,12 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
 
   public DefaultNextHopPacketMapper(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final PaymentRouter<Route> internalPaymentRouter,
     final PaymentRouter<Route> externalRoutingService,
     final ExchangeRateService exchangeRateService,
     final AccountManager accountManager,
     final InterledgerAddressUtils addressUtils
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
-    this.internalPaymentRouter = Objects.requireNonNull(internalPaymentRouter);
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
     this.exchangeRateService = Objects.requireNonNull(exchangeRateService);
     this.accountManager = Objects.requireNonNull(accountManager);
@@ -83,22 +80,19 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       );
     }
 
-    // We first check the External routing table, because in the general case, _most_ packets will traverse this path.
-    // If there is no route here, fallback to the internal routing-table. If no route is found there, then reject.
     final InterledgerAddress destinationAddress = sourcePacket.getDestination();
 
     final Route nextHopRoute = this.externalRoutingService.findBestNexHop(destinationAddress)
-      .orElseGet(() -> this.internalPaymentRouter.findBestNexHop(destinationAddress)
-        .orElseThrow(() -> new InterledgerProtocolException(
-            InterledgerRejectPacket.builder()
-              .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
-              .code(InterledgerErrorCode.F02_UNREACHABLE)
-              .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
-              .build(),
-            String.format("No route found from accountId(`%s`) to destination(`%s`).", sourceAccountId,
-              destinationAddress.getValue())
-          )
-        ));
+      .orElseThrow(() -> new InterledgerProtocolException(
+          InterledgerRejectPacket.builder()
+            .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
+            .code(InterledgerErrorCode.F02_UNREACHABLE)
+            .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
+            .build(),
+          String.format("No route found from accountId(`%s`) to destination(`%s`).", sourceAccountId,
+            destinationAddress.getValue())
+        )
+      );
 
     if (logger.isDebugEnabled()) {
       logger.debug("Determined next hop: {}", nextHopRoute);

@@ -76,15 +76,15 @@ public class InterledgerAddressUtils {
     if (isPaymentNetworkAddress(destinationAddress)) {
       return ALLOWED;
     } else if (destinationAddress.startsWith(connectorSettingsSupplier.get().getOperatorAddress())) {
-      return ALLOWED;
+      return ALLOWED; // Ping allowed.
     } else if (destinationAddress.startsWith(InterledgerAddressPrefix.PRIVATE.getValue())) {
       // Only internal accounts can send to a `private` address prefix.
       return accountManager.isInternal(sourceAccountId).orElse(NOT_ALLOWED);
     } else if (destinationAddress.startsWith(InterledgerAddressPrefix.PEER.getValue())) {
-      // Only external accounts can send to a `peer` address prefix.
+      // Only external accounts can send to a `peer.` address prefix.
       return accountManager.isNotInternal(sourceAccountId).orElse(NOT_ALLOWED);
     } else if (destinationAddress.startsWith(InterledgerAddressPrefix.SELF.getValue())) {
-      // Only internal accounts can send to a `self` address prefix.
+      // Only internal accounts can send to a `self.` address prefix.
       return accountManager.isInternal(sourceAccountId).orElse(NOT_ALLOWED);
     } //else if (destinationAddress.startsWith(InterledgerAddressPrefix.LOCAL.getValue())) {
     //  REJECT: For now, this isn't supported.

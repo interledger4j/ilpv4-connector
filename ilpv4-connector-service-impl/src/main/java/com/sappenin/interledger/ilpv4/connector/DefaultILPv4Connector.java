@@ -5,29 +5,21 @@ import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.events.IlpNodeEvent;
-import com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLink;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.InternalRoutingService;
-import com.sappenin.interledger.ilpv4.connector.routing.Route;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountRelationship;
-import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.LinkFactoryProvider;
 import org.interledger.connector.link.events.LinkConnectedEvent;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.core.InterledgerAddressPrefix;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.math.BigInteger;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
@@ -155,19 +147,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     ////////////////////////////////////////
     // Enable ILP and other Protocol Links
     ////////////////////////////////////////
-    final EnabledProtocolSettings enabledProtocolSettings = connectorSettingsSupplier.get().getEnabledProtocols();
-
-    if (enabledProtocolSettings.isPingProtocolEnabled()) {
-      this.initializePingEchoProtocol();
-    }
-    // TODO: re-enable after RFC
-    //    if (enabledProtocolSettings.isPingProtocolEnabled()) {
-    //      this.enableEchoProtocol();
-    //    }
-
-    // TODO: Enable these.
-    //this.initializePeerConfigProtocol();
-    //this.initializePeerRouteProtocol();
   }
 
   @PreDestroy
@@ -213,43 +192,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     return this.ilpPacketSwitch;
   }
 
-  // TODO: Move this to an admin interface that this Connector _has_. Consider making this connector be part of a
-  //  ConnectoAdministrative service.
-  //  It should not be a part of the Connector's
-  //  business logic proper, because the only thing a Connector does is handle an administratively triggered packet.
-
-  // From the perspective of a Connector/Switch, it's only ever handling incoming data from an account, and then
-  // routing it to another account.
-  //  @Override
-  //  public CompletableFuture<Optional<InterledgerResponsePacket>> sendPacket(
-  //    final AccountId accountId, final InterledgerPreparePacket preparePacket
-  //  ) {
-  //    Objects.requireNonNull(accountId);
-  //    Objects.requireNonNull(preparePacket);
-  //    return this.ilpPacketSwitch.switchPacket(accountId, preparePacket);
-  //  }
-
-  //  @Override
-  //  public CompletableFuture<Optional<InterledgerResponsePacket>> handleIncomingPacket(
-  //    AccountId sourceAccountId, InterledgerPreparePacket incomingPreparePacket
-  //  ) {
-  //    Objects.requireNonNull(sourceAccountId);
-  //    Objects.requireNonNull(incomingPreparePacket);
-  //
-  //    // Generally, links running in this connector will be the original source of an incoming prepare packet.
-  //    // However, other systems (like a test-harness) might originate an incoming packet via this method.
-  //    // In the case of link-originated packets, this implementation (i.e., the Connector) will always be the
-  //    // registered handler for a link, which means incoming packets will show-up here. Thus, in the general case, this
-  //    // method bridges between the incoming link, and the rest of the connector routing fabric. This
-  //    // means we simply forward to the ilpPacketSwitch. However, in some cases, it might be the case that we route to
-  //    // other switches.
-  //
-  //    // NOTE: To handle packets addressed to _this_ node, the routing-table contains an entry for this connector, which
-  //    // routes it to one or more links mapped to a `self.` prefix. Additionally, to handle packets addressed to the
-  //    // `peer.` prefix, the routing-table contains entries for each supported peer-protocol.
-  //    return this.ilpPacketSwitch.sendPacket(sourceAccountId, incomingPreparePacket);
-  //  }
-
   @Override
   public InterledgerAddress getNodeIlpAddress() {
     return this.connectorSettingsSupplier.get().getOperatorAddress();
@@ -260,69 +202,11 @@ public class DefaultILPv4Connector implements ILPv4Connector {
    *
    * @param event the event to respond to.
    *
-   * @deprecated Determine if this method is necessary. It may be desirable to instead use the EventBus.
+   * @deprecated TODO Determine if this method is necessary. It may be desirable to instead use the EventBus.
    */
   @EventListener
   @Deprecated
   public void onApplicationEvent(final IlpNodeEvent event) {
-
-  }
-
-  /**
-   * <p>Enables support for the `PING` and `ECHO` protocols by installing entries into the internal routing table and
-   * configuring the account-manager properly.</p>
-   *
-   * <p>Internal routing of this type of packet works as follows:
-   * <ol>
-   * <li>A packet addressed to this Connector enters the switching fabric.</li>
-   * <li>The internal routing table has an entry that forwards the packet to a local account associated to an
-   * instance of the Ping Link.</li>
-   * <li>The Ping Link handles the packet appropriately.</li>
-   * </ol>
-   * </p>
-   */
-  private void initializePingEchoProtocol() {
-    ////////////////
-    // PING PROTOCOL
-    ////////////////
-    final UUID pingAccountUuid = UUID.randomUUID();
-    final AccountId accountId = AccountId.of(pingAccountUuid.toString());
-
-    final Route internalRoute = Route.builder()
-      // Never expires.
-      // No Auth needed (these routes are not propagated externally via CCP).
-      .routePrefix(InterledgerAddressPrefix.from(connectorSettingsSupplier.get().getOperatorAddress()))
-      .nextHopAccountId(accountId)
-      .build();
-    this.internalRoutingService.addRoute(internalRoute);
-
-    final AccountSettings accountSettings = AccountSettings.builder()
-      .id(accountId)
-      .isPreconfigured(true)
-      .relationship(AccountRelationship.CHILD)
-      .assetScale(9)
-      .assetCode("USD")
-      .maximumPacketAmount(BigInteger.valueOf(1000000L)) // 1M NanoDollars is $0.001
-      .linkType(PingProtocolLink.LINK_TYPE)
-      .build();
-    this.accountManager.createAccount(accountSettings);
-    this.accountManager.setPingAccountId(accountId);
-  }
-
-  private void initializePeerConfigProtocol() {
-
-    ////////////////
-    // `peer.config` PROTOCOL
-    ////////////////
-
-  }
-
-  private void initializePeerRouteProtocol() {
-    ////////////////
-    // `peer.route` PROTOCOL
-    ////////////////
-    // A connector should be able to speak CCP with its peers. To do this, we utilize an Internally-routed link,
-    // which handles all incoming traffic for the `peer.route` address.
 
   }
 

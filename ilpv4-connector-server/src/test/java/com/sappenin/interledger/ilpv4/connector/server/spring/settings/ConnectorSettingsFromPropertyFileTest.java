@@ -45,7 +45,8 @@ public class ConnectorSettingsFromPropertyFileTest {
 
     // Enabled Protocol Settings
     final EnabledProtocolSettings enabledProtocolSettings = connectorSettings.getEnabledProtocols();
-    assertThat(enabledProtocolSettings.isEchoProtocolEnabled(), is(true));
+    assertThat(enabledProtocolSettings.isPeerConfigEnabled(), is(true));
+    assertThat(enabledProtocolSettings.isPeerRoutingEnabled(), is(true));
     assertThat(enabledProtocolSettings.isPingProtocolEnabled(), is(true));
 
     // Global Routing Settings

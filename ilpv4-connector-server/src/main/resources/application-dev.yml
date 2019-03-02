@@ -56,7 +56,8 @@ ilpv4:
     btp.enabled: false
     enabledProtocols:
       pingProtocolEnabled: true
-      echoProtocolEnabled: true
+      peerConfigEnabled: true
+      peerRoutingEnabled: true
     ## ILP address of the connector.
     ## This property can be omitted if an account with relation=parent is configured under accounts.
     nodeIlpAddress: test2.connie

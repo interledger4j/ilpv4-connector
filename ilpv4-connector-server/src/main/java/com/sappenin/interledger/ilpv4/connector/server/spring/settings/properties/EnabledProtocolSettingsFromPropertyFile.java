@@ -8,7 +8,8 @@ import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings
 public class EnabledProtocolSettingsFromPropertyFile implements EnabledProtocolSettings {
 
   private boolean pingProtocolEnabled;
-  private boolean echoProtocolEnabled;
+  private boolean peerConfigEnabled;
+  private boolean peerRoutingEnabled;
 
   @Override
   public boolean isPingProtocolEnabled() {
@@ -20,11 +21,20 @@ public class EnabledProtocolSettingsFromPropertyFile implements EnabledProtocolS
   }
 
   @Override
-  public boolean isEchoProtocolEnabled() {
-    return echoProtocolEnabled;
+  public boolean isPeerConfigEnabled() {
+    return peerConfigEnabled;
   }
 
-  public void setEchoProtocolEnabled(boolean echoProtocolEnabled) {
-    this.echoProtocolEnabled = echoProtocolEnabled;
+  public void setPeerConfigEnabled(boolean peerConfigEnabled) {
+    this.peerConfigEnabled = peerConfigEnabled;
+  }
+
+  @Override
+  public boolean isPeerRoutingEnabled() {
+    return peerRoutingEnabled;
+  }
+
+  public void setPeerRoutingEnabled(boolean peerRoutingEnabled) {
+    this.peerRoutingEnabled = peerRoutingEnabled;
   }
 }

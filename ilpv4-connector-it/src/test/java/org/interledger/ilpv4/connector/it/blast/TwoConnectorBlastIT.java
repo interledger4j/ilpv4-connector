@@ -37,9 +37,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLink.PING_PROTOCOL_CONDITION;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
+import static org.interledger.connector.link.PingableLink.PING_PROTOCOL_CONDITION;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.ALICE;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.ALICE_ADDRESS;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.BOB;
@@ -85,12 +85,6 @@ public class TwoConnectorBlastIT {
     bobConnector = this.getILPv4NodeFromGraph(BOB_ADDRESS);
 
     // Reset all accounts on each connector...
-
-    final AccountId pingAccountId = bobConnector.getAccountManager().getPingAccountId().get();
-    bobConnector.getBalanceTracker().resetBalance(pingAccountId);
-    bobConnector.getBalanceTracker()
-      .resetBalance(AccountId.of(pingAccountId.value() + BalanceTracker.TRACKING_ACCOUNT_SUFFIX));
-
     bobConnector.getBalanceTracker().resetBalance(AccountId.of(ALICE));
     bobConnector.getBalanceTracker().resetBalance(AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX));
 
@@ -157,16 +151,11 @@ public class TwoConnectorBlastIT {
   public void testAlicePingsBob() throws InterruptedException {
     this.testPing(ALICE_ADDRESS, BOB_ADDRESS);
 
-    // Assert the `ping` account balances in `test.alice`, which is paying for the pings.
-    final AccountId alicePingAccountId = aliceConnector.getAccountManager().getPingAccountId().get();
-    assertAccountBalance(aliceConnector, alicePingAccountId, BigInteger.ZERO);
-
-    final AccountId bobPingAccount = bobConnector.getAccountManager().getPingAccountId().get();
-    assertAccountBalance(bobConnector, bobPingAccount, BigInteger.valueOf(1));
-
+    // ALICE
     assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.ZERO);
     assertAccountBalance(aliceConnector, AccountId.of(BOB + BalanceTracker.TRACKING_ACCOUNT_SUFFIX), BigInteger.ZERO);
 
+    // BOB
     assertAccountBalance(bobConnector, AccountId.of(ALICE), BigInteger.valueOf(1L));
     assertAccountBalance(bobConnector, AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX),
       BigInteger.valueOf(-1L));
@@ -449,11 +438,11 @@ public class TwoConnectorBlastIT {
     assertThat(averageMsPerPing < 2, is(true));
 
     // Assert the `ping` account balances in `test.alice`, which is paying for the pings.
-    final AccountId alicePingAccountId = aliceConnector.getAccountManager().getPingAccountId().get();
-    assertAccountBalance(aliceConnector, alicePingAccountId, BigInteger.valueOf(numReps));
+    //final AccountId alicePingAccountId = aliceConnector.getAccountManager().getPingAccountId().get();
+    //assertAccountBalance(aliceConnector, alicePingAccountId, BigInteger.valueOf(numReps));
 
-    final AccountId bobPingAccount = bobConnector.getAccountManager().getPingAccountId().get();
-    assertAccountBalance(bobConnector, bobPingAccount, BigInteger.valueOf(numReps));
+    //final AccountId bobPingAccount = bobConnector.getAccountManager().getPingAccountId().get();
+    //assertAccountBalance(bobConnector, bobPingAccount, BigInteger.valueOf(numReps));
 
     assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.ZERO);
     assertAccountBalance(aliceConnector, AccountId.of(BOB + BalanceTracker.TRACKING_ACCOUNT_SUFFIX), BigInteger.ZERO);

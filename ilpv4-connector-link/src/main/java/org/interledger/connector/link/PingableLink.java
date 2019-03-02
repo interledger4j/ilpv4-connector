@@ -16,7 +16,7 @@ import java.util.Objects;
 public interface PingableLink<LS extends LinkSettings> extends Link<LS> {
 
   InterledgerCondition PING_PROTOCOL_CONDITION =
-    InterledgerCondition.of(Base64.getDecoder().decode("Zmh6rfhivXdsj8GLjp+OIAiXFIVu4jOzkCpZHQ1fKSU="));
+    InterledgerCondition.of(Base64.getDecoder().decode("jAC8DGFPZPfh4AtZpXuvXFe2oRmpDVSvSJg2oT+bx34="));
 
   /**
    * Send a very-small value payment to the destination and expect an ILP fulfillment, which demonstrates this sender

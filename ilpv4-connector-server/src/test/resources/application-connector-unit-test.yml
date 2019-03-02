@@ -11,7 +11,8 @@ ilpv4:
     # Which protocols this Connector supports
     enabledProtocols:
       pingProtocolEnabled: true
-      echoProtocolEnabled: true
+      peerConfigEnabled: true
+      peerRoutingEnabled: true
     # Global Routing Settings for this connector.
     globalRoutingSettings:
       # Whether to broadcast known routes.

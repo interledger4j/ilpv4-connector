@@ -6,7 +6,10 @@ import javax.money.convert.CurrencyConversion;
 import javax.money.convert.MonetaryConversions;
 import java.util.Objects;
 
-public class DefaultExchangeRateService implements ExchangeRateService {
+/**
+ * An implementation of {@link ExchangeRateService} that sources all FX rates from Java Money.
+ */
+public class JavaMoneyExchangeRateService implements ExchangeRateService {
 
   /**
    * Computes the current exchange rate between the specified instances of {@link CurrencyUnit}.
@@ -27,7 +30,7 @@ public class DefaultExchangeRateService implements ExchangeRateService {
   }
 
   /**
-   *This method is called to allow statistics to be collected by the backend.
+   * This method is called to allow statistics to be collected by the backend.
    *
    * @param updateRatePaymentParams
    */

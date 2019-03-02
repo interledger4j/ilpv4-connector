@@ -21,11 +21,20 @@ public interface EnabledProtocolSettings {
   }
 
   /**
-   * Whether this Connector can handle `ECHO` packets per RFC-TODO.
+   * Whether this Connector can handle ILDCP Config packets addressed to `peer.config` per RFC-TODO.
    *
    * @see "RFC-LINK"
    */
-  default boolean isEchoProtocolEnabled() {
+  default boolean isPeerConfigEnabled() {
+    return true;
+  }
+
+  /**
+   * Whether this Connector can handle CCP Routing packets addressed to `peer.routing` per RFC-TODO.
+   *
+   * @see "RFC-LINK"
+   */
+  default boolean isPeerRoutingEnabled() {
     return false;
   }
 
@@ -40,7 +49,13 @@ public interface EnabledProtocolSettings {
 
     @Override
     @Value.Default
-    public boolean isEchoProtocolEnabled() {
+    public boolean isPeerConfigEnabled() {
+      return true;
+    }
+
+    @Override
+    @Value.Default
+    public boolean isPeerRoutingEnabled() {
       return false;
     }
 

@@ -1,57 +1,52 @@
-package com.sappenin.interledger.ilpv4.connector.links.peer;
+package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
-import com.sappenin.interledger.ilpv4.connector.links.InternallyRoutedLink;
-import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
-import org.interledger.connector.link.Link;
-import org.interledger.connector.link.LinkSettings;
-import org.interledger.connector.link.LinkType;
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.encoding.asn.framework.CodecContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
- * <p>A LPIv2 {@link Link} that implements the ILP Peer Config sub-protocol, which allows two peers to exchange
+ * <p>A {@link PacketSwitchFilter} that implements the ILP Peer Route sub-protocol, which allows two peers to exchange
  * routing information.</p>
  *
- * <p>This link functions like the PeerController in the Javascript implementation.</p>
+ * <p>Note: This link functions like the PeerController in the Javascript implementation.</p>
  */
-public class PeerRouteProtocolLink extends InternallyRoutedLink implements Link<LinkSettings> {
-
-  public static final String LINK_TYPE_STRING = "PEER_ROUTE_LINK";
-  public static final LinkType LINK_TYPE = LinkType.of(LINK_TYPE_STRING);
+public class PeerRouteFilter implements PacketSwitchFilter {
 
   public static final InterledgerAddress PEER_DOT_ROUTE = InterledgerAddress.of("peer.route");
   public static final InterledgerAddressPrefix PEER_DOT_ROUTE_PREFIX = InterledgerAddressPrefix.from(PEER_DOT_ROUTE);
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  private final ExternalRoutingService externalRoutingService;
+  private final Supplier<InterledgerAddress> nodeOperatorAddressSupplier;
 
   /**
    * Required-args Constructor.
-   *
-   * @param linkSettings    A {@link LinkSettings} that specifies all link options.
-   * @param oerCodecContext
    */
-  public PeerRouteProtocolLink(
-    final LinkSettings linkSettings, final CodecContext oerCodecContext, final ExternalRoutingService externalRoutingService
-  ) {
-    super(linkSettings, oerCodecContext);
-
-    this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
+  public PeerRouteFilter(final Supplier<InterledgerAddress> nodeOperatorAddressSupplier) {
+    this.nodeOperatorAddressSupplier = Objects.requireNonNull(nodeOperatorAddressSupplier);
   }
 
   @Override
-  public InterledgerResponsePacket sendPacket(InterledgerPreparePacket preparePacket) {
-    // TODO
-    throw new RuntimeException("FIXME!");
+  public InterledgerResponsePacket doFilter(
+    final AccountId sourceAccountId,
+    final InterledgerPreparePacket sourcePreparePacket,
+    final PacketSwitchFilterChain filterChain
+  ) {
+    Objects.requireNonNull(sourceAccountId);
+    Objects.requireNonNull(sourcePreparePacket);
+    Objects.requireNonNull(filterChain);
+
+    // TODO - FIXME!
+    return filterChain.doFilter(sourceAccountId, sourcePreparePacket);
   }
+
 
   //  @Override
   //  public CompletableFuture<Optional<InterledgerResponsePacket>> doSendData(InterledgerPreparePacket preparePacket) {
@@ -130,5 +125,4 @@ public class PeerRouteProtocolLink extends InternallyRoutedLink implements Link<
   //    });
 
   // }
-
 }

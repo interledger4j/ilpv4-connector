@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.DefaultILPv4Connector;
@@ -14,14 +15,12 @@ import com.sappenin.interledger.ilpv4.connector.accounts.DefaultLinkManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.InMemoryAccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
-import com.sappenin.interledger.ilpv4.connector.fx.DefaultExchangeRateService;
 import com.sappenin.interledger.ilpv4.connector.fx.ExchangeRateService;
+import com.sappenin.interledger.ilpv4.connector.fx.JavaMoneyExchangeRateService;
 import com.sappenin.interledger.ilpv4.connector.links.DefaultNextHopPacketMapper;
 import com.sappenin.interledger.ilpv4.connector.links.NextHopPacketMapper;
 import com.sappenin.interledger.ilpv4.connector.links.filters.LinkFilter;
 import com.sappenin.interledger.ilpv4.connector.links.filters.OutgoingBalanceLinkFilter;
-import com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLink;
-import com.sappenin.interledger.ilpv4.connector.links.ping.PingProtocolLinkFactory;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.DefaultILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.InterledgerAddressUtils;
@@ -30,6 +29,9 @@ import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.BalanceIlpP
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.ExpiryPacketFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.MaxPacketAmountFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PacketSwitchFilter;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PeerConfigFilter;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PeerRouteFilter;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PingProtocolFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.RateLimitIlpPacketFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.ValidateFulfillmentPacketFilter;
 import com.sappenin.interledger.ilpv4.connector.routing.DefaultInternalRoutingService;
@@ -42,7 +44,9 @@ import com.sappenin.interledger.ilpv4.connector.routing.Route;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.BlastConfig;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
 import org.interledger.connector.link.LinkFactoryProvider;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,14 +122,12 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  LinkFactoryProvider linkFactoryProvider(
-    @Qualifier(ILP) CodecContext ilpCodecContext
-  ) {
+  LinkFactoryProvider linkFactoryProvider(@Qualifier(ILP) CodecContext ilpCodecContext) {
     final LinkFactoryProvider provider = new LinkFactoryProvider();
 
     // Register known types...Spring will register proper known types based upon config...
     //provider.registerLinkFactory(LoopBackLink.LINK_TYPE, new LoopbackLinkFactory());
-    provider.registerLinkFactory(PingProtocolLink.LINK_TYPE, new PingProtocolLinkFactory(ilpCodecContext));
+    //provider.registerLinkFactory(PingProtocolLink.LINK_TYPE, new PingProtocolLinkFactory(ilpCodecContext));
 
     // TODO: Register any SPI types..
     // See SPI as well as https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/io/support/SpringFactoriesLoader.html
@@ -150,7 +152,7 @@ public class SpringConnectorConfig {
 
   @Bean
   ExchangeRateService exchangeRateService() {
-    return new DefaultExchangeRateService();
+    return new JavaMoneyExchangeRateService();
   }
 
   @Bean
@@ -212,32 +214,66 @@ public class SpringConnectorConfig {
   List<PacketSwitchFilter> packetSwitchFilters(
     AccountManager accountManager, InterledgerAddressUtils addressUtils, BalanceTracker balanceTracker
   ) {
-    return Lists.newArrayList(
-      new RateLimitIlpPacketFilter(), // Limits Data packets...
-      new ExpiryPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress()),
-      new MaxPacketAmountFilter(() -> connectorSettingsSupplier().get().getOperatorAddress(), accountManager),
-      new AllowedDestinationPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress(), addressUtils),
-      new BalanceIlpPacketFilter(balanceTracker),
-      // Must be the last filter.
-      new ValidateFulfillmentPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress())
-      // TODO: Throughput for Money...
-    );
+    final ConnectorSettings connectorSettings = connectorSettingsSupplier().get();
+    final Supplier<InterledgerAddress> operatorAddressSupplier = () -> connectorSettings.getOperatorAddress();
+
+    final ImmutableList.Builder<PacketSwitchFilter> filterList =
+      ImmutableList.<PacketSwitchFilter>builder().add(
+        new RateLimitIlpPacketFilter(), // Limits Data packets...
+        new AllowedDestinationPacketFilter(operatorAddressSupplier, addressUtils),
+        new ExpiryPacketFilter(operatorAddressSupplier),
+        new MaxPacketAmountFilter(operatorAddressSupplier, accountManager),
+        new BalanceIlpPacketFilter(balanceTracker),
+        new ValidateFulfillmentPacketFilter(operatorAddressSupplier)
+      );
+
+    // TODO: Throughput for Money...
+
+    final EnabledProtocolSettings enabledProtocolSettings = connectorSettings.getEnabledProtocols();
+    /////////////////////////////////////
+    // Ping Protocol
+    /////////////////////////////////////
+    if (enabledProtocolSettings.isPingProtocolEnabled()) {
+      filterList.add(new PingProtocolFilter(operatorAddressSupplier));
+    }
+
+    /////////////////////////////////////
+    // Non-routable destinations (peer.*)
+    /////////////////////////////////////
+    // CCP
+    if (enabledProtocolSettings.isPeerRoutingEnabled()) {
+      filterList.add(new PeerRouteFilter(operatorAddressSupplier));
+    }
+
+    // ILDCP
+    if (enabledProtocolSettings.isPeerConfigEnabled()) {
+      filterList.add(new PeerConfigFilter(operatorAddressSupplier));
+    }
+
+    /////////////////////////////////////
+    // Non-routable destinations (self.*)
+    /////////////////////////////////////
+
+    return filterList.build();
   }
 
   @Bean
   List<LinkFilter> linkFilters(
     AccountManager accountManager, InterledgerAddressUtils addressUtils, BalanceTracker balanceTracker
   ) {
+    //    final Supplier<InterledgerAddress> operatorAddressSupplier =
+    //      () -> connectorSettingsSupplier().get().getOperatorAddress();
+
     return Lists.newArrayList(
       new OutgoingBalanceLinkFilter(balanceTracker)
     );
     //      new RateLimitIlpPacketFilter(), // Limits Data packets...
-    //      new ExpiryPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress()),
-    //      new MaxPacketAmountFilter(() -> connectorSettingsSupplier().get().getOperatorAddress(), accountManager),
-    //      new AllowedDestinationPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress(), addressUtils),
+    //      new ExpiryPacketFilter(operatorAddressSupplier),
+    //      new MaxPacketAmountFilter(operatorAddressSupplier, accountManager),
+    //      new AllowedDestinationPacketFilter(operatorAddressSupplier, addressUtils),
     //      new BalanceIlpPacketFilter(balanceTracker),
     //      // Must be the last filter.
-    //      new ValidateFulfillmentPacketFilter(() -> connectorSettingsSupplier().get().getOperatorAddress())
+    //      new ValidateFulfillmentPacketFilter(operatorAddressSupplier)
     //      // TODO: Throughput for Money...
     //    );
   }
@@ -245,14 +281,14 @@ public class SpringConnectorConfig {
   @Bean
   NextHopPacketMapper nextHopLinkMapper(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    @Qualifier("internalPaymentRouter") PaymentRouter<Route> internalPaymentRouter,
+    //@Qualifier("internalPaymentRouter") PaymentRouter<Route> internalPaymentRouter,
     @Qualifier("externalPaymentRouter") PaymentRouter<Route> externalPaymentRouter,
     final ExchangeRateService exchangeRateService,
     final AccountManager accountManager,
     final InterledgerAddressUtils addressUtils
   ) {
     return new DefaultNextHopPacketMapper(
-      connectorSettingsSupplier, internalPaymentRouter, externalPaymentRouter, exchangeRateService, accountManager,
+      connectorSettingsSupplier, externalPaymentRouter, exchangeRateService, accountManager,
       addressUtils
     );
   }

@@ -34,7 +34,12 @@ import java.util.concurrent.CompletableFuture;
  * ──sendPacket──▷│ Link  │──handleIncomingPacket─▷│   Switch   │──switchPacket─▶│   Routed Link  │
  *                └───────┘                        └────────────┘                └────────────────┘
  * </pre>
+ *
+ * @deprecated This functionality will eventually be removed. Operations whose value accrue to the Connector should be
+ * implemented in a PacketSwitchFilter (i.e., not switched) and the concept of "local accounts" should just be an
+ * outgoing destination link that supports _many_ accounts (kind of like a mini-connector).
  */
+@Deprecated
 public abstract class InternallyRoutedLink extends AbstractLink<LinkSettings> implements Link<LinkSettings> {
 
   protected final Logger logger = LoggerFactory.getLogger(this.getClass());
