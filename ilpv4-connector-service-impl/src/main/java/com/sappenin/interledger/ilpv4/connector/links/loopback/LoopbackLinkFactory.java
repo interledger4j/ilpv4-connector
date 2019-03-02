@@ -4,7 +4,6 @@ import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkFactory;
 import org.interledger.connector.link.LinkSettings;
 import org.interledger.connector.link.LinkType;
-import org.interledger.encoding.asn.framework.CodecContext;
 
 import java.util.Objects;
 
@@ -12,12 +11,6 @@ import java.util.Objects;
  * An implementation of {@link LinkFactory} for creating Links that can handle the `Loopback` packets.
  */
 public class LoopbackLinkFactory implements LinkFactory {
-
-  private final CodecContext ilpCodecContext;
-
-  public LoopbackLinkFactory(final CodecContext ilpCodecContext) {
-    this.ilpCodecContext = Objects.requireNonNull(ilpCodecContext);
-  }
 
   /**
    * Construct a new instance of {@link Link} using the supplied inputs.
@@ -30,7 +23,7 @@ public class LoopbackLinkFactory implements LinkFactory {
     final Link<?> link;
     switch (linkSettings.getLinkType().value()) {
       case LoopbackLink.LINK_TYPE_STRING: {
-        link = new LoopbackLink(linkSettings, ilpCodecContext);
+        link = new LoopbackLink(linkSettings);
         break;
       }
       default: {
