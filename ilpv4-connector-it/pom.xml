@@ -32,10 +32,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>ilpv4-connector-service-impl</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-service-api</artifactId>
     </dependency>
     <dependency>
