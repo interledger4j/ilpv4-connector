@@ -17,7 +17,7 @@ To learn more about how this implementation is designed, see the [docs](./docs) 
 To learn more about how to contribute to this project, see the [docs/development](docs/development.md) folder.
 
 # Operating a Connector
-**Disclaimer**: This implementation is currently a prototype SHOULD NOT be used in a production deployment!**
+**Disclaimer: _This implementation is currently a prototype and SHOULD NOT be used in a production deployment!_**
 
 To configure this connector, see [Configuration](docs/configuration.md) in the docs folder.
 
