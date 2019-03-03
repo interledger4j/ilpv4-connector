@@ -1,0 +1,2 @@
+# JavaMoney fully-qualified provider names
+com.sappenin.interledger.javax.money.providers.XrpCurrencyProvider

@@ -16,12 +16,24 @@
 
   <dependencies>
     <dependency>
-      <groupId>javax.money</groupId>
-      <artifactId>money-api</artifactId>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
     <dependency>
       <groupId>org.immutables</groupId>
       <artifactId>value</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ilpv4-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ilpv4-connector-accounts</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ilpv4-connector-link</artifactId>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>

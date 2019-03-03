@@ -1,0 +1,95 @@
+# A Connector running in `single-account` mode operates a single link, does not do routing or balance tracking, and
+# requires a parent ILSP that all traffic will be forwarded to.
+logging:
+  level:
+    ROOT: INFO
+    com.sappenin: TRACE
+    org.springframework: INFO
+    org.springframework.web.socket: DEBUG
+server:
+  port: 8080
+spring:
+  profiles:
+    active: ${spring.profiles.active}
+  output:
+    ansi:
+      enabled: ALWAYS
+  http:
+    # MULTIPART (MultipartProperties)
+    multipart:
+      enabled: false
+      #max-file-size: 2KB
+      #max-request-size: 2KB
+  # Database Settings
+#  datasource:
+#    url: jdbc:h2:mem:example-app;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+#    platform: h2
+#    username: sa
+#    password:
+#    driverClassName: org.h2.Driver
+#  jpa:
+#    database-platform: org.hibernate.dialect.H2Dialect
+#    hibernate:
+#      ddl-auto: update
+#    open-in-view: false
+#    properties:
+#      hibernate:
+#        show_sql: true
+#        use_sql_comments: true
+#        format_sql: true
+
+###
+#   H2 Settings
+###
+#h2:
+#  console:
+#    enabled: true
+#    path: /console
+#    settings:
+#      trace: false
+#      web-allow-others: false
+# Configuration for a Mini-Connector. Uncomment any value to enable a particular setting.
+ilpv4:
+  connector:
+    ## ILP address of the connector.
+    ## This property can be omitted if an account with relation=parent is configured under accounts.
+    nodeIlpAddress: test.alice
+    # No Global Route Settings necessary because all packets are forwarded to the parent.
+
+    # Account Balance Settings
+    accounts:
+      - id: test
+        description: Test USD Account
+        # The default relationship-type that this connector should view an account as.
+        relationship: PARENT
+        # Type of the Plugin that should be used for this account.
+        pluginType: LoopbackPlugin
+        # Currency code or other asset identifier that will be used to select the correct rate for this account.
+        assetCode: USD
+        # Interledger amounts are integers, but most currencies are typically represented as
+        # fractional units, e.g. cents. This property defines how many Interledger units make
+        # up one regular unit. For dollars, this would usually be set to 9, so that Interledger
+        # amounts are expressed in nano-dollars.
+        assetScale: 2
+        # Optional. Maximum amount per packet for incoming prepare packets. ILPv4Connector will reject
+        # any incoming prepare packets from this account with a higher amount. Amount should be
+        # provided as an integer in a string (in atomic units).
+        maximumPacketAmount: 10000
+        # Balance Settings
+        balanceSettings:
+          # Optional. Minimum balance (in this account's indivisible base units) the connector
+          # must maintain. The connector will reject outgoing packets if they would putEntry it below
+          # this balance. The format is a string containing an integer (which may be prefixed with
+          # - to indicate a negative value).
+          minBalance: 1
+          # Maximum balance (in this account's indivisible base units) the connector will allow.
+          # The connector will reject incoming packets if they would putEntry it above this balance.
+          # The format is a string containing an integer (which may be prefixed with - to indicate
+          # a negative value).
+          maxBalance: 2
+          # Optional Balance (in this account's indivisible base units) numerically below which
+          # the connector will automatically initiate a settlement. The format is a string
+          # containing an integer (which may be prefixed with - to indicate a negative value).
+          settleThreshold: 10000001
+          # Optional Balance (in this account's indivisible base units) the connector will attempt to reach when settling.
+          settleTo: 3

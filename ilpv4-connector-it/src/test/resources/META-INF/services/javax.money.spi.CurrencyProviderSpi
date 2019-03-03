@@ -1,0 +1,3 @@
+# JavaMoney fully-qualified provider names
+com.sappenin.interledger.ilpv4.connector.javax.money.providers.GuinCurrencyProvider
+com.sappenin.interledger.ilpv4.connector.javax.money.providers.SabCurrencyProvider

@@ -1,10 +1,17 @@
-# See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
+# See https://docs.spring.io/spring-boot/docs/current/reference/html/common-application-properties.html
 logging:
-    level:
-      ROOT: INFO
-      com.sappenin: DEBUG
-      org.springframework: INFO
+  level:
+    ROOT: INFO
+server:
+  #port: 8080
+  http2:
+    enabled: true
+  jetty:
+    max-http-post-size: 32767 # Max per ILP ASN.1
 spring:
+  profiles:
+    # see https://stackoverflow.com/questions/37700352
+    active: ${spring.profiles.active}
   output:
     ansi:
       enabled: ALWAYS
@@ -12,8 +19,8 @@ spring:
     # MULTIPART (MultipartProperties)
     multipart:
       enabled: false
-      max-file-size: 2KB
-      max-request-size: 2KB
+      max-file-size: 32KB
+      max-request-size: 32KB
   # Database Settings
   datasource:
     url: jdbc:h2:mem:example-app;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
@@ -25,81 +32,40 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
+    open-in-view: false
     properties:
       hibernate:
         show_sql: true
         use_sql_comments: true
         format_sql: true
+  mvc:
+    throw-exception-if-no-handler-found: true
+  resources:
+    add-mappings: false
+  servlet:
+    session:
+      persistent: false # Whether to persist session data between restarts.
+      timeout: 0 # Session timeout. If a duration suffix is not specified, seconds will be used.
+      tracking-modes: SSL # Session tracking modes.
+  session:
+    store-type: NONE
 
+# All values for this connector. Commented-out values are the default.
 ilpv4:
+  # Defines all options available for configuring a Connector.
   connector:
-    secret: secret
-    # ILP address of the connector. This property can be omitted if an account with relation=parent
-    # is configured under accounts.
-    ilp_address: test.sappenin
-
-    peers:
-      - peer_id: 280e5139-8d42-4719-b420-5accff63dcd1
-        # Relationship between the connector and the counterparty that the account is with. Options are PARENT, PEER,
-        # and CHILD.
-        peerType: parent
-        accounts:
-          - account_id: 280e5139-8d42-4719-b420-5accff63dcd1
-            counter_party_name: USD Account
-            # Optional. Defines whether the connector should maintain and enforce a balance for this
-            # account. The balance is always from the connector's perspective. Therefore, a negative
-            # balance implies the connector owes money to the counterparty and a positive balance
-            # implies the counterparty owes money to the connector.
-            balance: 0
-            # Currency code or other asset identifier that will be used to select the correct rate
-            # for this account.
-            assetCode: USD
-            # Name of the ILP plugin that should be used for this account.
-            pluginId: "MockPlugin"
-
-#              # Interledger amounts are integers, but most currencies are typically represented as
-#              # fractional units, e.g. cents. This property defines how many Interledger units make
-#              # up one regular unit. For dollars, this would usually be set to 9, so that Interledger
-#              # amounts are expressed in nanodollars.
-#              assetScale: 9
-#              # Optional. Minimum balance (in this account's indivisible base units) the connector
-#              # must maintain. The connector will reject outgoing packets if they would put it below
-#              # this balance. The format is a string containing an integer (which may be prefixed with
-#              # - to indicate a negative value).
-#              minBalance: 0
-#              # Maximum balance (in this account's indivisible base units) the connector will allow.
-#              # The connector will reject incoming packets if they would put it above this balance.
-#              # The format is a string containing an integer (which may be prefixed with - to indicate
-#              # a negative value).
-#              maxBalance: 0
-#              # Optional. Maximum amount per packet for incoming prepare packets. Connector will reject
-#              # any incoming prepare packets from this account with a higher amount. Amount should be
-#              # provided as an integer in a string (in atomic units).
-#              maximumPacketAmount: 100000
-#              # Optional Balance (in this account's indivisible base units) numerically below which
-#              # the connector will automatically initiate a settlement. The format is a string
-#              # containing an integer (which may be prefixed with - to indicate a negative value).
-#              settleThreshold: 100
-
-            # TODO: rateLimit, throughput, routes, options.
-
-#        - account_id: 9408d80e-9d34-4fb5-88d7-c710b2df9793
-#          counter_party_name: Adrian
-#          balance: 0
-#          account_options:
-#            min_balance: 0
-#            max_balance: 0
-#            maximum_packet_amount: 100000
-#            settle_threshold: 100
-#            asset_code: USD
-#            relationship: peer
+    ## ILP address of the connector.
+    ## This property can be omitted if an account with relation=parent is configured under accounts.
+    # nodeIlpAddress: test2.connie
+    # The global prefix. For production environments, this should be `g`. For test environments, consider `test`.
+    # globalPrefix: test3
 
 ###
 #   H2 Settings
 ###
 h2:
   console:
-    enabled: true
+    enabled: false
     path: /console
     settings:
       trace: false

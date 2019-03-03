@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.0.3.RELEASE</version>
+    <version>2.1.2.RELEASE</version>
   </parent>
 
   <groupId>com.sappenin.ilpv4</groupId>
@@ -19,13 +19,31 @@
   <description>The parent pom for this ILPv4 Connector.</description>
 
   <properties>
+    <!-- By default, we run in prod mode, unless a different profile is specified. -->
+    <activeProfile>prod</activeProfile>
     <java.version>1.8</java.version>
+    <ilp.version>0.15.0-SNAPSHOT</ilp.version>
+    <problem.version>0.22.0</problem.version>
+    <problem-spring-web.version>0.24.0-RC.0</problem-spring-web.version>
+
+    <grpc.version>1.16.1</grpc.version>
+    <protobuf.maven.plugin.version>0.6.1</protobuf.maven.plugin.version>
+    <protoc.version>3.6.1</protoc.version>
+    <protoc.gen.grpc.java.version>1.16.1</protoc.gen.grpc.java.version>
+
+    <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
   </properties>
 
   <modules>
+    <module>ilpv4-api</module>
+    <module>ilpv4-connector-accounts</module>
+    <module>ilpv4-connector-link</module>
+    <module>ilpv4-connector-link-blast</module>
     <module>ilpv4-connector-model</module>
-    <module>ilpv4-connector-routing</module>
-    <module>ilpv4-connector-service</module>
+    <module>ilpv4-connector-routing-api</module>
+    <module>ilpv4-connector-service-api</module>
+    <module>ilpv4-connector-routing-impl</module>
+    <module>ilpv4-connector-service-impl</module>
     <module>ilpv4-connector-server</module>
     <module>ilpv4-connector-it</module>
   </modules>
@@ -34,17 +52,42 @@
     <dependencies>
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-node</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-accounts</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>ilpv4-connector-model</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-routing</artifactId>
+        <artifactId>ilpv4-connector-routing-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-service</artifactId>
+        <artifactId>ilpv4-connector-routing-impl</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-service-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-service-impl</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -52,11 +95,76 @@
         <artifactId>ilpv4-connector-server</artifactId>
         <version>${project.version}</version>
       </dependency>
-
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-it</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-link</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-link-blast</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.auth0</groupId>
+        <artifactId>java-jwt</artifactId>
+        <version>3.7.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.auth0</groupId>
+        <artifactId>jwks-rsa</artifactId>
+        <version>0.7.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.auth0</groupId>
+        <artifactId>auth0-spring-security-api</artifactId>
+        <version>1.2.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.spotify</groupId>
+        <artifactId>futures-extra</artifactId>
+        <version>4.1.1</version>
+      </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
-        <version>23.0</version>
+        <version>27.0.1-jre</version>
+      </dependency>
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp</artifactId>
+        <version>3.12.1</version>
+      </dependency>
+      <!--<dependency>-->
+      <!--<groupId>io.grpc</groupId>-->
+      <!--<artifactId>grpc-netty-shaded</artifactId>-->
+      <!--<version>${grpc.version}</version>-->
+      <!--</dependency>-->
+      <!--<dependency>-->
+      <!--<groupId>io.grpc</groupId>-->
+      <!--<artifactId>grpc-protobuf</artifactId>-->
+      <!--<version>${grpc.version}</version>-->
+      <!--</dependency>-->
+      <!--<dependency>-->
+      <!--<groupId>io.grpc</groupId>-->
+      <!--<artifactId>grpc-stub</artifactId>-->
+      <!--<version>${grpc.version}</version>-->
+      <!--</dependency>-->
+      <!--<dependency>-->
+      <!--<groupId>io.grpc</groupId>-->
+      <!--<artifactId>grpc-testing</artifactId>-->
+      <!--<version>${grpc.version}</version>-->
+      <!--<scope>test</scope>-->
+      <!--</dependency>-->
+      <dependency>
+        <groupId>javax.inject</groupId>
+        <artifactId>javax.inject</artifactId>
+        <version>1</version>
       </dependency>
       <dependency>
         <groupId>javax.money</groupId>
@@ -69,20 +177,10 @@
         <version>4.2</version>
       </dependency>
       <dependency>
-        <groupId>org.immutables</groupId>
-        <artifactId>value</artifactId>
-        <version>2.6.1</version>
-        <scope>provided</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>ilp-core</artifactId>
-        <version>0.10.0-SNAPSHOT</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>crypto-conditions</artifactId>
-        <version>0.7.0-SNAPSHOT</version>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>1.3.2</version>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.hamcrest</groupId>
@@ -91,9 +189,50 @@
         <scope>test</scope>
       </dependency>
       <dependency>
+        <groupId>org.immutables</groupId>
+        <artifactId>value</artifactId>
+        <version>2.7.5</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.interledger</groupId>
+        <artifactId>ilp-core</artifactId>
+        <version>${ilp.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.interledger</groupId>
+        <artifactId>ildcp-core</artifactId>
+        <version>${ilp.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.interledger</groupId>
+        <artifactId>codec-framework</artifactId>
+        <version>${ilp.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.interledger</groupId>
+        <artifactId>ilp-core-codecs</artifactId>
+        <version>${ilp.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.interledger</groupId>
+        <artifactId>ildcp-core-codecs</artifactId>
+        <version>${ilp.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.interledger</groupId>
+        <artifactId>btp-core</artifactId>
+        <version>${ilp.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.interledger</groupId>
+        <artifactId>btp-core-codecs</artifactId>
+        <version>${ilp.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.javamoney</groupId>
         <artifactId>moneta</artifactId>
-        <version>1.2.1</version>
+        <version>1.1</version>
       </dependency>
       <dependency>
         <groupId>org.mockito</groupId>
@@ -102,24 +241,190 @@
         <scope>test</scope>
       </dependency>
       <dependency>
-        <groupId>com.squareup.okhttp3</groupId>
-        <artifactId>okhttp</artifactId>
-        <version>3.11.0</version>
+        <groupId>org.springframework.security.oauth.boot</groupId>
+        <artifactId>spring-security-oauth2-autoconfigure</artifactId>
+        <version>2.1.2.RELEASE</version>
       </dependency>
       <dependency>
-        <groupId>javax.inject</groupId>
-        <artifactId>javax.inject</artifactId>
-        <version>1</version>
+        <groupId>org.zalando</groupId>
+        <artifactId>problem</artifactId>
+        <version>${problem.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.zalando</groupId>
+        <artifactId>problem-violations</artifactId>
+        <version>${problem-spring-web.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.zalando</groupId>
+        <artifactId>jackson-datatype-problem</artifactId>
+        <version>${problem.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.zalando</groupId>
+        <artifactId>problem-spring-web</artifactId>
+        <version>${problem-spring-web.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
 
+  <build>
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.6.1</version>
+      </extension>
+    </extensions>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+            <useSystemClassLoader>false</useSystemClassLoader>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>3.1.1</version>
+          <executions>
+            <execution>
+              <id>analyze</id>
+              <goals>
+                <goal>analyze-only</goal>
+              </goals>
+              <configuration>
+                <failOnWarning>true</failOnWarning>
+                <ignoredDependencies>
+                  <ignoredDependency>com.google.code.findbugs:jsr305</ignoredDependency>
+                  <ignoredDependency>com.google.code.findbugs:annotations</ignoredDependency>
+                  <ignoredDependency>com.google.errorprone:error_prone_annotations</ignoredDependency>
+
+                  <ignoredDependency>com.auth0:jwks-rsa</ignoredDependency>
+
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-web</ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-jetty</ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-websocket</ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-security</ignoredDependency>
+                  <ignoredDependency>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure
+                  </ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-test:jar</ignoredDependency>
+                </ignoredDependencies>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.owasp</groupId>
+          <artifactId>dependency-check-maven</artifactId>
+          <version>3.1.2</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <failBuildOnAnyVulnerability>${failBuildOnAnyVulnerability}</failBuildOnAnyVulnerability>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>3.0.0</version>
+          <inherited>true</inherited>
+          <dependencies>
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>8.17</version>
+            </dependency>
+          </dependencies>
+          <executions>
+            <execution>
+              <phase>process-sources</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>analyze</id>
+            <goals>
+              <goal>analyze-only</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!--<plugin>-->
+      <!--<artifactId>maven-checkstyle-plugin</artifactId>-->
+      <!--</plugin>-->
+      <!--<plugin>-->
+      <!--<groupId>org.owasp</groupId>-->
+      <!--<artifactId>dependency-check-maven</artifactId>-->
+      <!--</plugin>-->
+    </plugins>
+  </build>
+
+  <!-- TODO: Remove `connector-mode` -->
+  <profiles>
+    <!-- -->
+    <profile>
+      <id>dev</id>
+      <properties>
+        <spring.profiles.active>dev,connector-mode</spring.profiles.active>
+      </properties>
+    </profile>
+    <profile>
+      <id>test</id>
+      <properties>
+        <spring.profiles.active>test,connector-mode</spring.profiles.active>
+      </properties>
+    </profile>
+    <profile>
+      <id>prod</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <spring.profiles.active>prod,connector-mode</spring.profiles.active>
+      </properties>
+    </profile>
+  </profiles>
+
   <repositories>
+    <repository>
+      <id>ossrh-snapshots-interledger</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </repository>
     <repository>
       <id>spring-releases</id>
       <url>https://repo.spring.io/libs-release</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
     </repository>
   </repositories>
+
   <pluginRepositories>
     <pluginRepository>
       <id>spring-releases</id>

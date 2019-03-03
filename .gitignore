@@ -94,7 +94,7 @@ hs_err_pid*
 # CMake
 cmake-build-debug/
 
-# Mongo Explorer plugin:
+# Mongo Explorer link:
 .idea/**/mongoSettings.xml
 
 ## File-based project format:
@@ -105,16 +105,16 @@ cmake-build-debug/
 # IntelliJ
 out/
 
-# mpeltonen/sbt-idea plugin
+# mpeltonen/sbt-idea link
 .idea_modules/
 
-# JIRA plugin
-atlassian-ide-plugin.xml
+# JIRA link
+atlassian-ide-link.xml
 
-# Cursive Clojure plugin
+# Cursive Clojure link
 .idea/replstate.xml
 
-# Crashlytics plugin (for Android Studio and IntelliJ)
+# Crashlytics link (for Android Studio and IntelliJ)
 com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
@@ -152,13 +152,13 @@ local.properties
 # PDT-specific (PHP Development Tools)
 .buildpath
 
-# sbteclipse plugin
+# sbteclipse link
 .target
 
-# Tern plugin
+# Tern link
 .tern-project
 
-# TeXlipse plugin
+# TeXlipse link
 .texlipse
 
 # STS (Spring Tool Suite)
