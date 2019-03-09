@@ -1,4 +1,17 @@
-# Java ILPv4 Connector
+<img src="docs/interledger-logo.png" width="100" alt="Java ILPv4 Connector"/>
+
+# Java ILPv4 Connector [![Discuss][forum-image]][forum-url] 
+[![circle-ci][circle-image]][circle-url] [![codecov][codecov-image]][codecov-url] [![issues][github-issues-image]][github-issues-url]
+
+[forum-url]: https://forum.interledger.org/tags/java-ilpv4-connector
+[forum-image]: https://img.shields.io/badge/Discuss-Interledger%20Forum-blue.svg
+[circle-image]: https://circleci.com/gh/sappenin/java-ilpv4-connector.svg?style=shield
+[circle-url]: https://circleci.com/gh/sappenin/java-ilpv4-connector
+[codecov-image]: https://codecov.io/gh/sappenin/java-ilpv4-connector/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/sappenin/java-ilpv4-connector
+[github-issues-image]: https://img.shields.io/github/issues/sappenin/quilt.svg
+[github-issues-url]: https://github.com/sappenin/java-ilpv4-connector/issues
+
 A Java implementation of an [Interledger v4 Connector](https://github.com/interledger/rfcs/blob/master/0034-connector-requirements/0034-connector-requirements.md).
 
 # Supported Features
@@ -6,7 +19,7 @@ This Connector implementation is intended for operation as a server-based ILSP, 
 
 * **ILDCP**: Interledger Dynamic Configuration Protocol as specified in [IL-RFC-0031](https://github.com/interledger/rfcs/blob/master/0031-dynamic-configuration-protocol/0031-dynamic-configuration-protocol.md).
 
-* **ILP-over-HTTP**: Also known as BLAST (**B**i**L**ateral **A**synchronous **S**eder **T**ransport as defined in [IL-RFC-0030](https://github.com/interledger/rfcs/pull/504).
+* **ILP-over-HTTP**: Also known as BLAST (**B**i**L**ateral **A**synchronous **S**eder **T**ransport), defined in [IL-RFC-0030](https://github.com/interledger/rfcs/pull/504).
 
 * **Route Broadcast Protocol**: Defines how Connectors can exchange routing table updates as defined in [Route Broadcast Protocol](https://github.com/interledger/rfcs/pull/455).
 
