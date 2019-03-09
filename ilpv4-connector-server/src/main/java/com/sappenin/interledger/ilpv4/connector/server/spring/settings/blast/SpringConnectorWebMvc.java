@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.IlpHttpController;
 import com.sappenin.interledger.ilpv4.connector.server.spring.converters.OerPreparePacketHttpMessageConverter;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
@@ -37,6 +38,9 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
   @Qualifier(ILP)
   private CodecContext ilpCodecContext;
 
+  @Autowired
+  private ObjectMapper objectMapper;
+
   @Bean
   OerPreparePacketHttpMessageConverter oerPreparePacketHttpMessageConverter() {
     return new OerPreparePacketHttpMessageConverter(ilpCodecContext);
@@ -44,7 +48,7 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
 
   @Override
   public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-    //converters.add(ProblemConver)
+    converters.add(new MappingJackson2HttpMessageConverter(objectMapper));
     converters.add(oerPreparePacketHttpMessageConverter());
   }
 
@@ -52,8 +56,8 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
   public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
     converters.replaceAll(messageConverter -> {
       if (messageConverter instanceof MappingJackson2HttpMessageConverter) {
-        //return new MappingJackson2HttpMessageConverter(objectMapper);
-        return messageConverter;
+        return new MappingJackson2HttpMessageConverter(objectMapper);
+        //return messageConverter;
       } else {
         return messageConverter;
       }

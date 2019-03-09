@@ -281,7 +281,7 @@ public class DefaultCcpSender implements CcpSender {
 
       // Construct RouteUpdateRequest
       final CcpRouteUpdateRequest ccpRouteUpdateRequest = ImmutableCcpRouteUpdateRequest.builder()
-        .speaker(this.connectorSettingsSupplier.get().getOperatorAddress())
+        .speaker(this.connectorSettingsSupplier.get().getOperatorAddressSafe())
         .routingTableId(this.forwardingRoutingTable.getRoutingTableId())
         .holdDownTime(this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteExpiry().toMillis())
         .currentEpochIndex(this.forwardingRoutingTable.getCurrentEpoch())

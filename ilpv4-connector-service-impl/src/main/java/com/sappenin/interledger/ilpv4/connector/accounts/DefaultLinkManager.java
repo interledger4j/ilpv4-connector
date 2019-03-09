@@ -12,10 +12,13 @@ import org.interledger.connector.link.events.LinkConnectedEvent;
 import org.interledger.connector.link.events.LinkDisconnectedEvent;
 import org.interledger.connector.link.events.LinkErrorEvent;
 import org.interledger.connector.link.events.LinkEventListener;
+import org.interledger.core.InterledgerAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * A default implementation of {@link LinkManager} that stores all links in-memory.
@@ -23,13 +26,21 @@ import java.util.Objects;
 public class DefaultLinkManager implements LinkManager, LinkEventListener {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
+  private final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier;
+
   private final EventBus eventBus;
   private final LinkFactoryProvider linkFactoryProvider;
 
   /**
    * Required-args constructor.
    */
-  public DefaultLinkManager(final EventBus eventBus, final LinkFactoryProvider linkFactoryProvider) {
+  public DefaultLinkManager(
+    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
+    final EventBus eventBus,
+    final LinkFactoryProvider linkFactoryProvider
+  ) {
+    this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
     this.eventBus = Objects.requireNonNull(eventBus);
     this.eventBus.register(this);
     this.linkFactoryProvider = Objects.requireNonNull(linkFactoryProvider);
@@ -41,7 +52,7 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
 
     //Use the first linkFactory that supports the linkType...
     final Link<?> link = this.linkFactoryProvider.getLinkFactory(linkSettings.getLinkType())
-      .map(linkFactory -> linkFactory.constructLink(linkSettings))
+      .map(linkFactory -> linkFactory.constructLink(operatorAddressSupplier, linkSettings))
       .orElseThrow(() -> new RuntimeException(
         String.format("No registered LinkFactory supports: %s", linkSettings.getLinkType()))
       );

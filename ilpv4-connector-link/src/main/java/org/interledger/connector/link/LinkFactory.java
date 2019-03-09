@@ -1,5 +1,10 @@
 package org.interledger.connector.link;
 
+import org.interledger.core.InterledgerAddress;
+
+import java.util.Optional;
+import java.util.function.Supplier;
+
 /**
  * A factory for constructing instances of {@link Link} based upon configured settings.
  */
@@ -8,9 +13,13 @@ public interface LinkFactory {
   /**
    * Construct a new instance of {@link Link} using the supplied inputs.
    *
+   * @param operatorAddressSupplier A {@link Supplier} that supplies the ILP address of the Connector operating this
+   *                                link.
+   * @param linkSettings            An instance of {@link LinkSettings} to initialize this link from.
+   *
    * @return A newly constructed instance of {@link Link}.
    */
-  Link<?> constructLink(LinkSettings linkSettings);
+  Link<?> constructLink(Supplier<Optional<InterledgerAddress>> operatorAddressSupplier, LinkSettings linkSettings);
 
   /**
    * Helper method to apply custom settings on a per-link-type basis.
@@ -38,8 +47,8 @@ public interface LinkFactory {
    * @return A newly constructed instance of {@link Link}.
    */
   default <PS extends LinkSettings, P extends Link<PS>> P constructLink(
-    final Class<P> $, final PS linkSettings
+    final Class<P> $, Supplier<Optional<InterledgerAddress>> operatorAddressSupplier, final PS linkSettings
   ) {
-    return (P) this.constructLink(linkSettings);
+    return (P) this.constructLink(operatorAddressSupplier, linkSettings);
   }
 }

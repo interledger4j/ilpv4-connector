@@ -4,8 +4,11 @@ import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkFactory;
 import org.interledger.connector.link.LinkSettings;
 import org.interledger.connector.link.LinkType;
+import org.interledger.core.InterledgerAddress;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * An implementation of {@link LinkFactory} for creating Links that can handle the `Loopback` packets.
@@ -17,13 +20,15 @@ public class LoopbackLinkFactory implements LinkFactory {
    *
    * @return A newly constructed instance of {@link Link}.
    */
-  public Link<?> constructLink(final LinkSettings linkSettings) {
+  public Link<?> constructLink(
+    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier, final LinkSettings linkSettings
+  ) {
     Objects.requireNonNull(linkSettings);
 
     final Link<?> link;
     switch (linkSettings.getLinkType().value()) {
       case LoopbackLink.LINK_TYPE_STRING: {
-        link = new LoopbackLink(linkSettings);
+        link = new LoopbackLink(operatorAddressSupplier, linkSettings);
         break;
       }
       default: {

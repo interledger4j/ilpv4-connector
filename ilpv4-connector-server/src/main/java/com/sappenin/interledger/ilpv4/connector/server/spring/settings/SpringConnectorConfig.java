@@ -29,8 +29,7 @@ import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.BalanceIlpP
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.ExpiryPacketFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.MaxPacketAmountFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PacketSwitchFilter;
-import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PeerConfigFilter;
-import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PeerRouteFilter;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PeerProtocolPacketFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PingProtocolFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.RateLimitIlpPacketFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.ValidateFulfillmentPacketFilter;
@@ -52,7 +51,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -66,6 +64,8 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.CCP;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.ILDCP;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.ILP;
 
 /**
@@ -76,11 +76,10 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.Co
  */
 @Configuration
 @EnableConfigurationProperties({ConnectorSettingsFromPropertyFile.class})
-@ConditionalOnExpression
 @Import({
           CodecContextConfig.class,
           // Link-Layer Support
-          BlastConfig.class
+          BlastConfig.class,
         })
 public class SpringConnectorConfig {
 
@@ -91,6 +90,11 @@ public class SpringConnectorConfig {
 
   @PostConstruct
   public void onStartup() {
+    if (connectorSettingsSupplier().get().getOperatorAddress().isPresent()) {
+      logger.info("STARTED PEER/PARENT CONNECTOR: `{}`", connectorSettingsSupplier().get().getOperatorAddress().get());
+    } else {
+      logger.info("STARTED CHILD CONNECTOR: [Operator Address pending IL-DCP]");
+    }
   }
 
   @Bean
@@ -137,7 +141,11 @@ public class SpringConnectorConfig {
 
   @Bean
   LinkManager linkManager(EventBus eventBus, LinkFactoryProvider linkFactoryProvider) {
-    return new DefaultLinkManager(eventBus, linkFactoryProvider);
+    return new DefaultLinkManager(
+      () -> connectorSettingsSupplier().get().getOperatorAddress(),
+      eventBus,
+      linkFactoryProvider
+    );
   }
 
   @Bean
@@ -212,10 +220,13 @@ public class SpringConnectorConfig {
 
   @Bean
   List<PacketSwitchFilter> packetSwitchFilters(
-    AccountManager accountManager, InterledgerAddressUtils addressUtils, BalanceTracker balanceTracker
+    ExternalRoutingService externalRoutingService, AccountManager accountManager, InterledgerAddressUtils addressUtils,
+    BalanceTracker balanceTracker,
+    @Qualifier(CCP) CodecContext ccpCodecContext, @Qualifier(ILDCP) CodecContext ildcpCodecContext
   ) {
     final ConnectorSettings connectorSettings = connectorSettingsSupplier().get();
-    final Supplier<InterledgerAddress> operatorAddressSupplier = () -> connectorSettings.getOperatorAddress();
+    final Supplier<InterledgerAddress> operatorAddressSupplier =
+      () -> connectorSettingsSupplier().get().getOperatorAddressSafe();
 
     final ImmutableList.Builder<PacketSwitchFilter> filterList =
       ImmutableList.<PacketSwitchFilter>builder().add(
@@ -224,7 +235,12 @@ public class SpringConnectorConfig {
         new ExpiryPacketFilter(operatorAddressSupplier),
         new MaxPacketAmountFilter(operatorAddressSupplier, accountManager),
         new BalanceIlpPacketFilter(balanceTracker),
-        new ValidateFulfillmentPacketFilter(operatorAddressSupplier)
+        new ValidateFulfillmentPacketFilter(operatorAddressSupplier),
+        new PeerProtocolPacketFilter(
+          connectorSettingsSupplier().get().getEnabledProtocols(), operatorAddressSupplier,
+          externalRoutingService, accountManager,
+          ccpCodecContext, ildcpCodecContext
+        )
       );
 
     // TODO: Throughput for Money...
@@ -235,19 +251,6 @@ public class SpringConnectorConfig {
     /////////////////////////////////////
     if (enabledProtocolSettings.isPingProtocolEnabled()) {
       filterList.add(new PingProtocolFilter(operatorAddressSupplier));
-    }
-
-    /////////////////////////////////////
-    // Non-routable destinations (peer.*)
-    /////////////////////////////////////
-    // CCP
-    if (enabledProtocolSettings.isPeerRoutingEnabled()) {
-      filterList.add(new PeerRouteFilter(operatorAddressSupplier));
-    }
-
-    // ILDCP
-    if (enabledProtocolSettings.isPeerConfigEnabled()) {
-      filterList.add(new PeerConfigFilter(operatorAddressSupplier));
     }
 
     /////////////////////////////////////

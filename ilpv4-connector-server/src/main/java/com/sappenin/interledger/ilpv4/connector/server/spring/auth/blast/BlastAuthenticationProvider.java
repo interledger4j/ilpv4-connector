@@ -12,6 +12,8 @@ import org.interledger.connector.accounts.Account;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.blast.BlastLinkSettings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -28,6 +30,7 @@ import static org.interledger.connector.link.blast.BlastHeaders.BLAST_AUDIENCE;
  * BLAST peer that authentication is required to be performed with.
  */
 public class BlastAuthenticationProvider implements AuthenticationProvider {
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final AccountManager accountManager;
@@ -51,7 +54,7 @@ public class BlastAuthenticationProvider implements AuthenticationProvider {
             Objects.requireNonNull(accountId);
             final BlastLinkSettings blastLinkSettings = lookupBlastLinkSettings(accountId);
             final byte[] secret = blastLinkSettings.getIncomingAccountSecret().getBytes();
-            final String issuer = blastLinkSettings.getIncomingTokenIssuer(); // The issuer is the sender of the token.
+            final String issuer = connectorSettingsSupplier.get().getJwtTokenIssuer().toString();
             return new JwtAuthenticationProvider(secret, issuer, BLAST_AUDIENCE);
           }
         });
@@ -59,10 +62,15 @@ public class BlastAuthenticationProvider implements AuthenticationProvider {
 
   @Override
   public Authentication authenticate(final Authentication authentication) throws AuthenticationException {
-    final String token = authentication.getCredentials().toString();
-
-    return jwtAuthenticationProviders.getUnchecked(AccountId.of(JWT.decode(token).getSubject()))
-      .authenticate(authentication);
+    try {
+      final String token = authentication.getCredentials().toString();
+      return jwtAuthenticationProviders.getUnchecked(AccountId.of(JWT.decode(token).getSubject()))
+        .authenticate(authentication);
+    } catch (BadCredentialsException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new BadCredentialsException("Not a valid Token");
+    }
   }
 
   @Override

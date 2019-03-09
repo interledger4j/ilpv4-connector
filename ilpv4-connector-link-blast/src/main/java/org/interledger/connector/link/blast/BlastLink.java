@@ -4,12 +4,16 @@ import org.interledger.connector.link.AbstractLink;
 import org.interledger.connector.link.LinkType;
 import org.interledger.connector.link.PingableLink;
 import org.interledger.connector.link.events.LinkEventEmitter;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 /**
  * An {@link AbstractLink} that handles BLAST (aka, ILP over HTTP) connections.
@@ -31,10 +35,14 @@ public class BlastLink extends AbstractLink<BlastLinkSettings> implements Pingab
    * @param blastLinkSettings A {@link BlastLinkSettings} that specified ledger link options.
    * @param restTemplate      A {@link RestTemplate} used to communicate with the remote BLAST peer.
    */
-  public BlastLink(final BlastLinkSettings blastLinkSettings, final RestTemplate restTemplate) {
-    super(blastLinkSettings);
+  public BlastLink(
+    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
+    final BlastLinkSettings blastLinkSettings,
+    final RestTemplate restTemplate
+  ) {
+    super(operatorAddressSupplier, blastLinkSettings);
     this.blastHttpSender = new BlastHttpSender(
-      blastLinkSettings.getOperatorAddress(),
+      operatorAddressSupplier,
       blastLinkSettings.getOutgoingUrl().uri(),
       restTemplate,
       () -> blastLinkSettings.getOutgoingTokenIssuer(),
@@ -50,13 +58,14 @@ public class BlastLink extends AbstractLink<BlastLinkSettings> implements Pingab
    * @param linkEventEmitter  A {@link LinkEventEmitter} that is used to emit events from this link.
    */
   public BlastLink(
+    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
     final BlastLinkSettings blastLinkSettings,
     final RestTemplate restTemplate,
     final LinkEventEmitter linkEventEmitter
   ) {
-    super(blastLinkSettings, linkEventEmitter);
+    super(operatorAddressSupplier, blastLinkSettings, linkEventEmitter);
     this.blastHttpSender = new BlastHttpSender(
-      blastLinkSettings.getOperatorAddress(),
+      operatorAddressSupplier,
       blastLinkSettings.getOutgoingUrl().uri(),
       restTemplate,
       () -> blastLinkSettings.getOutgoingTokenIssuer(),
@@ -69,9 +78,11 @@ public class BlastLink extends AbstractLink<BlastLinkSettings> implements Pingab
    *
    * @param blastLinkSettings
    */
-  public void reconfigure(final BlastLinkSettings blastLinkSettings) {
+  public void reconfigure(
+    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier, final BlastLinkSettings blastLinkSettings
+  ) {
     this.blastHttpSender = new BlastHttpSender(
-      blastLinkSettings.getOperatorAddress(),
+      operatorAddressSupplier,
       blastLinkSettings.getOutgoingUrl().uri(),
       blastHttpSender.getRestTemplate(),
       () -> blastLinkSettings.getOutgoingTokenIssuer(),
@@ -112,5 +123,31 @@ public class BlastLink extends AbstractLink<BlastLinkSettings> implements Pingab
     // Spring to wrap the entire method in a Proxy that runs in a separate thread. Thus, this return is simply to
     // conform to the Java API.
     return blastHttpSender.sendData(preparePacket);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    BlastLink blastLink = (BlastLink) o;
+
+    return blastHttpSender.equals(blastLink.blastHttpSender);
+  }
+
+  @Override
+  public int hashCode() {
+    return blastHttpSender.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", BlastLink.class.getSimpleName() + "[", "]")
+      .add("blastHttpSender=" + blastHttpSender)
+      .toString();
   }
 }

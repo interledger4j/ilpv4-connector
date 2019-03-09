@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
  * └──────────────┘                     └──────────────┘
  * </pre>
  */
-public class TwoConnectorBlastTopology {
+public class TwoConnectorPeerBlastTopology {
 
   public static final String XRP = "XRP";
 
@@ -53,7 +53,10 @@ public class TwoConnectorBlastTopology {
   public static final InterledgerAddress ALICE_ADDRESS = InterledgerAddress.of("test." + ALICE);
   public static final InterledgerAddress BOB_ADDRESS = InterledgerAddress.of("test." + BOB);
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorBlastTopology.class);
+  public static final HttpUrl ALICE_TOKEN_ISSUER = HttpUrl.parse("https://" + ALICE + ".example.com");
+  public static final HttpUrl BOB_TOKEN_ISSUER = HttpUrl.parse("https://" + BOB + ".example.com");
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorPeerBlastTopology.class);
 
   static {
     // This is set to 0 so that the "port" value is used instead...
@@ -89,7 +92,10 @@ public class TwoConnectorBlastTopology {
             final ModifiableBlastLinkSettings modifiableBlastLinkSettings = (ModifiableBlastLinkSettings)
               bobAccount.getLink().getLinkSettings();
             modifiableBlastLinkSettings.setOutgoingUrl(bobBlastUrl);
-            ((BlastLink) bobAccount.getLink()).reconfigure(modifiableBlastLinkSettings);
+            ((BlastLink) bobAccount.getLink()).reconfigure(
+              () -> aliceServerNode.getILPv4Connector().getNodeIlpAddress(),
+              modifiableBlastLinkSettings
+            );
 
             // Try to re-connect the link...
             bobAccount.getLink().connect().get(5, TimeUnit.SECONDS);
@@ -104,7 +110,10 @@ public class TwoConnectorBlastTopology {
             final ModifiableBlastLinkSettings modifiableBlastLinkSettings = (ModifiableBlastLinkSettings)
               aliceAccount.getLink().getLinkSettings();
             modifiableBlastLinkSettings.setOutgoingUrl(aliceBlastUrl);
-            ((BlastLink) aliceAccount.getLink()).reconfigure(modifiableBlastLinkSettings);
+            ((BlastLink) aliceAccount.getLink()).reconfigure(
+              () -> bobServerNode.getILPv4Connector().getNodeIlpAddress(),
+              modifiableBlastLinkSettings
+            );
 
             // Try to re-connect the link...
             aliceAccount.getLink().connect().get(5, TimeUnit.SECONDS);
@@ -119,16 +128,16 @@ public class TwoConnectorBlastTopology {
     // Alice Connector Node
     ///////////////////
     {
-      topology
-        .addNode(ALICE_ADDRESS, new ConnectorServerNode(new ConnectorServer(constructConnectorSettingsForAlice())));
+      topology.addNode(ALICE_ADDRESS,
+        new ConnectorServerNode(ALICE, new ConnectorServer(constructConnectorSettingsForAlice())));
     }
 
     ///////////////////
     // Bob Connector Node
     ///////////////////
-
     {
-      topology.addNode(BOB_ADDRESS, new ConnectorServerNode(new ConnectorServer(constructConnectorSettingsForBob())));
+      topology
+        .addNode(BOB_ADDRESS, new ConnectorServerNode(BOB, new ConnectorServer(constructConnectorSettingsForBob())));
     }
 
     LOGGER.info("\n" +
@@ -162,19 +171,19 @@ public class TwoConnectorBlastTopology {
 
       .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_ACCOUNT_ID, BOB)
       .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_ACCOUNT_SECRET, "12345678912345678912345678912345")
-      .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, BOB_ADDRESS.getValue())
+      .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, BOB_TOKEN_ISSUER)
 
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_ACCOUNT_ID, ALICE)
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_ACCOUNT_SECRET, "12345678912345678912345678912345")
-      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, ALICE_ADDRESS.getValue())
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, "PT2M")
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_URL, "http://example.com/set-after-topology-init")
       .build();
 
     return ImmutableConnectorSettings.builder()
       .operatorAddress(ALICE_ADDRESS)
-      .blastEnabled(true)
+      .jwtTokenIssuer(ALICE_TOKEN_ISSUER)
       .enabledProtocols(EnabledProtocolSettings.builder()
+        .isBlastEnabled(true)
         .isPingProtocolEnabled(true)
         .isPeerRoutingEnabled(false)
         .isPeerConfigEnabled(true)
@@ -209,11 +218,10 @@ public class TwoConnectorBlastTopology {
 
       .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_ACCOUNT_ID, ALICE)
       .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_ACCOUNT_SECRET, "12345678912345678912345678912345")
-      .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, ALICE_ADDRESS.getValue())
+      .putCustomSettings(BlastLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, ALICE_TOKEN_ISSUER)
 
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_ACCOUNT_ID, BOB)
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_ACCOUNT_SECRET, "12345678912345678912345678912345")
-      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, BOB_ADDRESS.getValue())
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, "PT2M")
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_URL, "http://example.com/set-after-topology-init")
 
@@ -221,8 +229,9 @@ public class TwoConnectorBlastTopology {
 
     return ImmutableConnectorSettings.builder()
       .operatorAddress(BOB_ADDRESS)
-      .blastEnabled(true)
+      .jwtTokenIssuer(BOB_TOKEN_ISSUER)
       .enabledProtocols(EnabledProtocolSettings.builder()
+        .isBlastEnabled(true)
         .isPingProtocolEnabled(true)
         .isPeerConfigEnabled(true)
         .isPeerRoutingEnabled(false)

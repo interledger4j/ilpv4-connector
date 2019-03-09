@@ -40,7 +40,7 @@ public class WebExceptionHandler {
     final InterledgerRejectPacket rejectPacket = InterledgerRejectPacket.builder()
       .code(InterledgerErrorCode.F00_BAD_REQUEST)
       .message("Invalid ILP Prepare Packet")
-      .triggeredBy(connectorSettingsSupplier.get().getOperatorAddress())
+      .triggeredBy(connectorSettingsSupplier.get().getOperatorAddressSafe())
       .build();
 
     return ResponseEntity.badRequest()

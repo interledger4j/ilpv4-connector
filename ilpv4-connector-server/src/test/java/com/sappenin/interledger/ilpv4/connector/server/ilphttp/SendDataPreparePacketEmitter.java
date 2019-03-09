@@ -33,7 +33,7 @@ public class SendDataPreparePacketEmitter {
 
   private static void emitPreparePacketBytes() {
     final InterledgerCondition executionCondition = InterledgerCondition.of(new byte[32]);
-    final InterledgerPreparePacket.AbstractInterledgerPreparePacket packet = InterledgerPreparePacket.builder()
+    final InterledgerPreparePacket packet = InterledgerPreparePacket.builder()
       .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS))
       .destination(InterledgerAddress.of("test.foo"))
       .amount(BigInteger.TEN)

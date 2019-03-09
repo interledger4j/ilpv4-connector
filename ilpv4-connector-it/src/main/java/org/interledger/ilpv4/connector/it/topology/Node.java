@@ -6,6 +6,8 @@ package org.interledger.ilpv4.connector.it.topology;
  */
 public interface Node<T> {
 
+  String getId();
+
   /**
    * Start this node. Sometimes a node is started when the topology starts-up, but not always (e.g., a delayed start).
    */

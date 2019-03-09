@@ -17,15 +17,12 @@ import org.interledger.core.InterledgerAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-
-import static com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker.TRACKING_ACCOUNT_SUFFIX;
 
 /**
  * An implementation of {@link AccountManager} that supports multiple accounts, each with its own link, storing all data
@@ -75,14 +72,13 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
     final LinkSettings linkSettings = LinkSettings.builder()
       .linkType(accountSettings.getLinkType())
       .customSettings(accountSettings.getCustomSettings())
-      .operatorAddress(connectorSettingsSupplier.get().getOperatorAddress())
       .build();
     final Link<?> link = linkManager.createLink(accountSettings.getId(), linkSettings);
     // Register the Connector as a LinkEvent Listener...
     link.addLinkEventListener(this);
 
     // Add the account, regardless of if the link is connected.
-    this.addAccount(
+    final Account createdAccount = this.addAccount(
       Account.builder()
         //.id(accountId) // Found in AccountSettings.
         .accountSettings(accountSettings)
@@ -91,30 +87,26 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
     );
 
     ////////////////////////////
-    // Internal Tracking Account
+    // Internal Tracking Account?
     ////////////////////////////
 
-    // Create an internal Connector tracking account for this account. This is used by the BalanceTracker for
-    // double-entry accounting purposes (i.e., BalanceTracker only ever transfers funds, so it needs two accounts in
-    // order to "deposite" or "withdrawal" from any given external account.
-    final AccountSettings trackingAccountSettings = AccountSettings.builder().from(accountSettings)
-      .id(AccountId.of(accountSettings.getId().value() + TRACKING_ACCOUNT_SUFFIX))
-      .isReceiveRoutes(false)
-      .isSendRoutes(false)
-      .isInternal(true)
-      .build();
-
-    // Add the account, regardless of if the link is connected.
-    final Account newlyConstructedAccount = Account.builder()
-      .accountSettings(trackingAccountSettings)
-      .link(link)
-      .build();
-    this.addAccount(
-      Account.builder()
-        .accountSettings(trackingAccountSettings)
-        .link(link)
-        .build()
-    );
+    //    // Create an internal Connector tracking account for this account. This is used by the BalanceTracker for
+    //    // double-entry accounting purposes (i.e., BalanceTracker only ever transfers funds, so it needs two accounts in
+    //    // order to "deposite" or "withdrawal" from any given external account.
+    //    final AccountSettings trackingAccountSettings = AccountSettings.builder().from(accountSettings)
+    //      .id(AccountId.of(accountSettings.getId().value() + TRACKING_ACCOUNT_SUFFIX))
+    //      .isReceiveRoutes(false)
+    //      .isSendRoutes(false)
+    //      .isInternal(true)
+    //      .build();
+    //
+    //    // Add the account, regardless of if the link is connected.
+    //    final Account trackingAccount = this.addAccount(
+    //      Account.builder()
+    //        .accountSettings(trackingAccountSettings)
+    //        .link(link)
+    //        .build()
+    //    );
 
     ////////////////////////////
     // Connect the Link.
@@ -134,7 +126,7 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
       }
     }
 
-    return newlyConstructedAccount;
+    return createdAccount;
   }
 
   /**
@@ -151,7 +143,7 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
     // Set the primary parent-account, but only if it hasn't been set.
     if (account.isParentAccount() && !primaryParentAccount.isPresent()) {
       // Set the parent peer, if it exists.
-      this.setPrimaryParentAccount(account);
+      this.setPrimaryParentAccount(Optional.of(account));
     }
 
     try {
@@ -179,7 +171,7 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
 
       if (accountSettings.getAccountSettings().getRelationship() == AccountRelationship.PARENT) {
         // Set the parent peer, if it exists.
-        this.unsetPrimaryParentAccountSettings();
+        this.setPrimaryParentAccount(Optional.empty());
       }
     });
 
@@ -194,22 +186,23 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
   /**
    * Allows only a single thread to set a peer at a time, ensuring that only one will win.
    */
-  private synchronized void setPrimaryParentAccount(final Account account) {
+  private synchronized void setPrimaryParentAccount(final Optional<Account> account) {
     Objects.requireNonNull(account);
 
-    if (this.primaryParentAccount.isPresent()) {
-      throw new RuntimeException("Only a single Primary Parent Account may be configured for a Connector!");
+    if (account.isPresent()) {
+      if (this.primaryParentAccount.isPresent()) {
+        throw new RuntimeException("Only a single Primary Parent Account may be configured for a Connector!");
+      } else {
+        logger.info("PRIMARY PARENT ACCOUNT: `{}`", account.get().getId().value());
+        this.primaryParentAccount = account;
+      }
+    } else {
+      // Only log if present...
+      this.primaryParentAccount.ifPresent(
+        primaryParentAccount -> logger.warn("UN-SETTING PRIMARY PARENT ACCOUNT: `{}`", primaryParentAccount));
+      this.primaryParentAccount = Optional.empty();
     }
 
-    logger.info("Primary Parent Account: {}", account.getId());
-    this.primaryParentAccount = Optional.of(account);
-  }
-
-  /**
-   * Allows only a single thread to unset a peer at a time, ensuring that only one will win.
-   */
-  private synchronized void unsetPrimaryParentAccountSettings() {
-    this.primaryParentAccount = Optional.empty();
   }
 
   @Override
@@ -221,11 +214,11 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
   public Stream<Account> getAllAccounts() {
     return accounts.values().stream();
   }
-  
+
   @Override
   public InterledgerAddress toChildAddress(final AccountId accountId) {
     Objects.requireNonNull(accountId);
-    return this.connectorSettingsSupplier.get().getOperatorAddress().with(accountId.value());
+    return this.connectorSettingsSupplier.get().getOperatorAddressSafe().with(accountId.value());
   }
 
   ////////////////////////

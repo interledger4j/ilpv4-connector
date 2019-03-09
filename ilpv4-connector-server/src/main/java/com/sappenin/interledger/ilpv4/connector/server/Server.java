@@ -55,7 +55,7 @@ public abstract class Server implements ApplicationListener {
 
   public int getPort() {
     // Take the port out of the properties...
- //   return
+    //   return
     //Optional.ofNullable(this.properties.getProperty(ILP_SERVER_PORT))
     //.map(Integer::new)
     //.orElseGet(() -> {
@@ -65,5 +65,9 @@ public abstract class Server implements ApplicationListener {
       throw new IllegalStateException("Server not started!");
     }
     //});
+  }
+
+  public void setPort(int port) {
+    this.setProperty("server.port", port + "");
   }
 }

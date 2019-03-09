@@ -75,6 +75,7 @@ public interface BlastLinkSettings extends LinkSettings {
 
             Optional.ofNullable(incomingSettings.get(TOKEN_ISSUER))
               .map(Object::toString)
+              .map(HttpUrl::parse)
               .ifPresent(builder::incomingTokenIssuer);
           });
 
@@ -84,6 +85,7 @@ public interface BlastLinkSettings extends LinkSettings {
 
             Optional.ofNullable(outgoingSettings.get(TOKEN_ISSUER))
               .map(Object::toString)
+              .map(HttpUrl::parse)
               .ifPresent(builder::outgoingTokenIssuer);
 
             Optional.ofNullable(outgoingSettings.get(ACCOUNT_ID))
@@ -109,6 +111,7 @@ public interface BlastLinkSettings extends LinkSettings {
 
     Optional.ofNullable(customSettings.get(BLAST_INCOMING_TOKEN_ISSUER))
       .map(Object::toString)
+      .map(HttpUrl::parse)
       .ifPresent(builder::incomingTokenIssuer);
 
     Optional.ofNullable(customSettings.get(BLAST_INCOMING_ACCOUNT_ID))
@@ -119,9 +122,9 @@ public interface BlastLinkSettings extends LinkSettings {
       .map(Object::toString)
       .ifPresent(builder::incomingAccountSecret);
 
-
     Optional.ofNullable(customSettings.get(BLAST_OUTGOING_TOKEN_ISSUER))
       .map(Object::toString)
+      .map(HttpUrl::parse)
       .ifPresent(builder::outgoingTokenIssuer);
 
     Optional.ofNullable(customSettings.get(BLAST_OUTGOING_ACCOUNT_ID))
@@ -157,15 +160,19 @@ public interface BlastLinkSettings extends LinkSettings {
    * production, a more advanced authentication mechanism should be used.
    *
    * @return
+   * @deprecated This value should be transitioned to a service so that it doesn't have to live inside of a property.
    */
+  @Deprecated
   String getIncomingAccountSecret();
 
   /**
-   * The expected `iss` value of the issuer of a Blast token presented on an incoming connection.
+   * The expected `iss` value of the issuer of a Blast token presented on an incoming connection. This value should
+   * always be a URL so that it can be rooted in Internet PKI and compared against the TLS certificate issued by the
+   * other side of a blast connection (i.e., the remote peer).
    *
    * @return
    */
-  String getIncomingTokenIssuer();
+  HttpUrl getIncomingTokenIssuer();
 
   /**
    * The unique identifier of the Account used to authenticate an outgoing BLAST connection.
@@ -179,15 +186,20 @@ public interface BlastLinkSettings extends LinkSettings {
    * purposes. For production, a more advanced authentication mechanism should be used.
    *
    * @return
+   *
+   * @deprecated This value should be transitioned to a service so that it doesn't have to live inside of a property.
    */
+  @Deprecated
   String getOutgoingAccountSecret();
 
   /**
-   * The expected `iss` value of the issuer of a Blast token presented on an outgoing connection.
+   * The expected `iss` value of the issuer of a Blast token presented on an outgoing connection. This value should
+   * always be a URL so that it can be rooted in Internet PKI and compared against the TLS certificate issued by the
+   * other side of a blast connection (i.e., the remote peer).
    *
    * @return
    */
-  String getOutgoingTokenIssuer();
+  HttpUrl getOutgoingTokenIssuer();
 
   /**
    * Determines how often to sign a new token for auth.
@@ -227,5 +239,14 @@ public interface BlastLinkSettings extends LinkSettings {
       return Duration.of(1000, ChronoUnit.MILLIS);
     }
 
+    @Override
+    @Value.Redacted
+    @Deprecated
+    public abstract String getOutgoingAccountSecret();
+
+    @Override
+    @Value.Redacted
+    @Deprecated
+    public abstract String getIncomingAccountSecret();
   }
 }

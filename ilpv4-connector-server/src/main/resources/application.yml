@@ -50,16 +50,6 @@ spring:
   session:
     store-type: NONE
 
-# All values for this connector. Commented-out values are the default.
-ilpv4:
-  # Defines all options available for configuring a Connector.
-  connector:
-    ## ILP address of the connector.
-    ## This property can be omitted if an account with relation=parent is configured under accounts.
-    # nodeIlpAddress: test2.connie
-    # The global prefix. For production environments, this should be `g`. For test environments, consider `test`.
-    # globalPrefix: test3
-
 ###
 #   H2 Settings
 ###
@@ -70,3 +60,20 @@ h2:
     settings:
       trace: false
       web-allow-others: false
+
+ilpv4:
+  connector:
+    btp.enabled: false
+    jwtTokenIssuer: https://CHANGEME.example.com
+    enabledProtocols:
+      blastEnabled: true
+      pingProtocolEnabled: true
+      peerConfigEnabled: true
+      peerRoutingEnabled: true
+    ## ILP address of the connector.
+    ## This property can be omitted if an account with relation=parent is configured under accounts.
+    nodeIlpAddress: test1.connie
+    # Global Routing Settings for this connector.
+    globalRoutingSettings:
+      # Seed used for generating routing table auth values.
+      routingSecret: DocIHaveToTellYouSomethingAboutY

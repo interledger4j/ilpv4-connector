@@ -21,9 +21,7 @@ import static org.interledger.connector.link.blast.BlastHeaders.APPLICATION_ILP_
 /**
  * A RESTful controller for handling ILP over HTTP request/response payloads.
  *
- * TODO: Fix this URL once spec if finalized.
- *
- * @see "https://github.com/interledger/rfcs/blob/26b7426fa437d5b7ad6c963454f4e9d98f8c3214/0000-ilp-over-http.md"
+ * @see "https://github.com/interledger/rfcs/blob/master/0035-ilp-over-http/0035-ilp-over-http.md"
  */
 @RestController
 public class IlpHttpController {
@@ -60,18 +58,6 @@ public class IlpHttpController {
     final AccountId accountId = this.accountIdResolver.resolveAccountId(authentication);
 
     return this.ilPv4PacketSwitch.switchPacket(accountId, preparePacket);
-  }
-
-  /**
-   * Implemented specifically to returns HTTP headers to support content-negotiation.
-   */
-  @RequestMapping(
-    value = ILP_PATH, method = {RequestMethod.HEAD},
-    produces = {APPLICATION_ILP_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE},
-    consumes = {APPLICATION_ILP_OCTET_STREAM_VALUE, MediaType.APPLICATION_OCTET_STREAM_VALUE}
-  )
-  public void headData() {
-    // No-op.
   }
 
 }

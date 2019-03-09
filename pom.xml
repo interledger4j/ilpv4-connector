@@ -22,7 +22,7 @@
     <!-- By default, we run in prod mode, unless a different profile is specified. -->
     <activeProfile>prod</activeProfile>
     <java.version>1.8</java.version>
-    <ilp.version>0.15.0-SNAPSHOT</ilp.version>
+    <ilp.version>0.16.0-SNAPSHOT</ilp.version>
     <problem.version>0.22.0</problem.version>
     <problem-spring-web.version>0.24.0-RC.0</problem-spring-web.version>
 
@@ -32,6 +32,7 @@
     <protoc.gen.grpc.java.version>1.16.1</protoc.gen.grpc.java.version>
 
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
+    <spring-cloud.version>Greenwich.SR1</spring-cloud.version>
   </properties>
 
   <modules>
@@ -50,6 +51,13 @@
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-dependencies</artifactId>
+        <version>${spring-cloud.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>ilpv4-api</artifactId>
@@ -246,6 +254,11 @@
         <version>2.1.2.RELEASE</version>
       </dependency>
       <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-config-server</artifactId>
+        <version>2.1.1.RELEASE</version>
+      </dependency>
+      <dependency>
         <groupId>org.zalando</groupId>
         <artifactId>problem</artifactId>
         <version>${problem.version}</version>
@@ -308,8 +321,8 @@
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-jetty</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-websocket</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-security</ignoredDependency>
-                  <ignoredDependency>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure
-                  </ignoredDependency>
+                  <ignoredDependency>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure</ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-actuator</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-test:jar</ignoredDependency>
                 </ignoredDependencies>
               </configuration>
@@ -382,13 +395,13 @@
     <profile>
       <id>dev</id>
       <properties>
-        <spring.profiles.active>dev,connector-mode</spring.profiles.active>
+        <spring.profiles.active>dev</spring.profiles.active>
       </properties>
     </profile>
     <profile>
       <id>test</id>
       <properties>
-        <spring.profiles.active>test,connector-mode</spring.profiles.active>
+        <spring.profiles.active>test</spring.profiles.active>
       </properties>
     </profile>
     <profile>
@@ -397,7 +410,7 @@
         <activeByDefault>true</activeByDefault>
       </activation>
       <properties>
-        <spring.profiles.active>prod,connector-mode</spring.profiles.active>
+        <spring.profiles.active>prod</spring.profiles.active>
       </properties>
     </profile>
   </profiles>

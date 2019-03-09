@@ -9,10 +9,23 @@ import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.InternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
-import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.ModifiableConnectorSettings;
+import org.interledger.connector.accounts.Account;
+import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.ModifiableAccountSettings;
 import org.interledger.connector.link.LinkFactoryProvider;
 import org.interledger.connector.link.events.LinkConnectedEvent;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerFulfillPacket;
+import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerRejectPacket;
+import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.core.InterledgerResponsePacketMapper;
+import org.interledger.ildcp.IldcpFetcher;
+import org.interledger.ildcp.IldcpRequest;
+import org.interledger.ildcp.IldcpRequestPacket;
+import org.interledger.ildcp.IldcpResponse;
+import org.interledger.ildcp.IldcpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -20,6 +33,8 @@ import org.springframework.context.event.EventListener;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 /**
@@ -96,7 +111,8 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     final InternalRoutingService internalRoutingService,
     final ExternalRoutingService externalRoutingService,
     final ILPv4PacketSwitch ilpPacketSwitch,
-    final BalanceTracker balanceTracker) {
+    final BalanceTracker balanceTracker
+  ) {
     this(
       connectorSettingsSupplier,
       accountManager,
@@ -134,19 +150,12 @@ public class DefaultILPv4Connector implements ILPv4Connector {
    */
   @PostConstruct
   private final void init() {
-
-    // ^^ Preconfigurated Accounts ^^
-    // For any pre-configured accounts, we need to construct their corresponding link and `connect` it so it will
-    // be added to the AccountManager for proper tracking.
-    this.connectorSettingsSupplier.get().getAccountSettings().stream()
-      // Connect all links, regardless of type. Server-links won't be defined in here, and if there's a peer link
-      // that this connector is a client of, then it will be connected here, if appropriate. Links that require an
-      // incoming and outgoing connection will not emit a LinkConnectedEvent until both connections are connected.
-      .forEach(accountManager::createAccount);
-
-    ////////////////////////////////////////
-    // Enable ILP and other Protocol Links
-    ////////////////////////////////////////
+    // If an operator address is specified, then we use that. Otherwise, attempt to use IL-DCP.
+    if (connectorSettingsSupplier.get().getOperatorAddress().isPresent()) {
+      this.configureAccounts();
+    } else {
+      this.configureAccountsUsingIldcp();
+    }
   }
 
   @PreDestroy
@@ -193,7 +202,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   }
 
   @Override
-  public InterledgerAddress getNodeIlpAddress() {
+  public Optional<InterledgerAddress> getNodeIlpAddress() {
     return this.connectorSettingsSupplier.get().getOperatorAddress();
   }
 
@@ -210,95 +219,131 @@ public class DefaultILPv4Connector implements ILPv4Connector {
 
   }
 
-  ////////////////////////
-  // Link Event Listener
-  ////////////////////////
-
-  //  /**
-  //   * When a {@link Link} connects, we need to begin tracking the associated account using the {@link
-  //   * #accountManager}.
-  //   *
-  //   * @param event A {@link LinkConnectedEvent}.
-  //   */
-  //  @Override
-  //  @Subscribe
-  //  public void onConnect(final LinkConnectedEvent event) {
-  //    Objects.requireNonNull(event);
-  //
-  ////    final AccountSettings accountSettings = this.accountSettingsResolver.resolveAccountSettings(event.getLink());
-  ////    accountManager.addAccount(
-  ////      Account.builder()
-  ////        //.id(accountId) // Found in AccountSettings.
-  ////        .accountSettings(accountSettings)
-  ////        .link(event.getLink())
-  ////        .build()
-  ////    );
-  //
-  ////    // Register this account with the routing service...this won't work because the ExternalRoutingService won't start
-  ////    // tracking until the link connects, but by this point in time, the link has already connected!
-  ////    final AccountSettings accountSettings = this.accountSettingsResolver.resolveAccountSettings(event.getLink());
-  ////    externalRoutingService.registerAccount(accountSettings.getId());
-  //  }
-
-  //  /**
-  //   * Called to handle an {@link LinkDisconnectedEvent}. When a {@link Link} disconnects, we need to stop tracking
-  //   * the associated account using the {@link #accountManager}.
-  //   *
-  //   * @param event A {@link LinkDisconnectedEvent}.
-  //   */
-  //  @Override
-  //  @Subscribe
-  //  public void onDisconnect(final LinkDisconnectedEvent event) {
-  //    Objects.requireNonNull(event);
-  //
-  //    //final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getLink());
-  //
-  //    // TODO: See comment above about merging Routing registration into AccountMangager.
-  //    // Remove the account from any other consideration.
-  //    // Unregister this account with the routing service...
-  //    //this.externalRoutingService.unregisterAccount(accountId);
-  //
-  //    //this.accountManager.removeAccount(accountId);
-  //  }
+  private void configureAccountsUsingIldcp() {
+    /////////////////////////////////
+    // ^^ Parent Account ^^
+    /////////////////////////////////
+    // If this Connector is starting in `child` mode, it will not have an operator address. We need to find the first
+    // account of type `parent` and use IL-DCP to get the operating account for this Connector.
+    CompletableFuture.supplyAsync(() -> {
+      // If there's no Operator Address, use IL-DCP to try to get one. Only try this once. If this fails, then the
+      // Connector shoudl not startup.
+      final AccountSettings firstParentAccountSettings = this.findParentAccountSettings();
+      // Throws an exception if IL-DCP doesn't work.
+      return initializeParentAccount(firstParentAccountSettings);
+    })
+      // Only after we have obtained a parent-account should we attempt to initialize the other accounts...
+      .thenAccept(firstParentAccount -> {
+        /////////////////////////////////
+        // ^^ Preconfigurated Accounts ^^
+        /////////////////////////////////
+        configureAccounts(firstParentAccount);
+        logger.info(
+          "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().getOperatorAddress().get()
+        );
+      })
+      .exceptionally(error -> {
+        logger.error("Unable to initialize this Connector using IL-DCP: " + error.getMessage(), error);
+        return null;
+      });
+  }
 
 
-  //  private void updateConnectorSettings(final ConnectorSettings connectorSettings) {
-  //    Objects.requireNonNull(connectorSettings);
-  //
-  //    //    final ApplicationContext applicationContext = SpringContext.getApplicationContext();
-  //
-  //    //    applicationContext.getAutowireCapableBeanFactory()
-  //    //
-  //    //    if (applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME) != null) {
-  //    //      return () -> (ConnectorSettings) applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME);
-  //    //    } else {
-  //    //      // No override was detected, so return the normal variant that exists because of the EnableConfigurationProperties
-  //    //      // directive above.
-  //    //      return () -> applicationContext.getBean(ConnectorSettings.class);
-  //    //    }
-  //
-  //
-  //    //    this.connectorSettingsOverride.ifPresent(cso -> {
-  //    //      final BeanDefinitionRegistry registry = (
-  //    //        (BeanDefinitionRegistry) this.getContext().getAutowireCapableBeanFactory()
-  //    //      );
-  //    //
-  //    //      try {
-  //    //        registry.removeBeanDefinition(ConnectorSettingsFromPropertyFile.BEAN_NAME);
-  //    //      } catch (NoSuchBeanDefinitionException e) {
-  //    //        // Swallow...
-  //    //        logger.warn(e.getMessage(), e);
-  //    //      }
-  //    //
-  //    //      // Replace here...
-  //    //      this.getContext().getBeanFactory().registerSingleton(ConnectorSettings.BEAN_NAME, cso);
-  //    //    });
-  //
-  //
-  //    //    this.connectorSettingsOverride
-  //    //      .ifPresent(cso -> ((ApplicationPreparedEvent) event).getApplicationContext().getBeanFactory()
-  //    //        .registerSingleton(ConnectorSettings.OVERRIDE_BEAN_NAME, cso));
-  //  }
+  /**
+   * If there's a parent account, then assume it has already been configured via IL-DCP. Otherwise, assume no parent
+   * account, and configure all accounts.
+   */
+  private void configureAccounts() {
+    this.connectorSettingsSupplier.get().getAccountSettings().stream()
+      // Connect all links, regardless of type. Server-links won't be defined in here, and if there's a peer link
+      // that this connector is a client of, then it will be connected here, if appropriate. Links that require an
+      // incoming and outgoing connection will not emit a LinkConnectedEvent until both connections are connected.
+      .forEach(accountManager::createAccount);
+  }
 
+  /**
+   * If there's a parent account, then assume it has already been configured via IL-DCP. Otherwise, assume no parent
+   * account, and configure all accounts.
+   *
+   * @param firstParentAccount
+   */
+  private void configureAccounts(final Account firstParentAccount) {
+    this.connectorSettingsSupplier.get().getAccountSettings().stream()
+      // Don't use the parent account that was chosen above...
+      .filter(accountSettings -> accountSettings.getId().equals(firstParentAccount.getId()) == false)
+      // Connect all links, regardless of type. Server-links won't be defined in here, and if there's a peer link
+      // that this connector is a client of, then it will be connected here, if appropriate. Links that require an
+      // incoming and outgoing connection will not emit a LinkConnectedEvent until both connections are connected.
+      .forEach(accountManager::createAccount);
+  }
+
+  /**
+   * Helper to find the first account that should be used for IL-DCP.
+   *
+   * @return
+   */
+  private AccountSettings findParentAccountSettings() {
+    return this.connectorSettingsSupplier.get().getAccountSettings().stream()
+      .filter(accountSettings -> accountSettings.isParentAccount())
+      .findFirst()
+      .orElseThrow(() -> new RuntimeException(
+        "At least one `parent` account must be defined if no operator address is specified at startup!"
+      ));
+  }
+
+  /**
+   * Helper method to initialize the parent account using IL-DCP. If this Connector is starting in `child` mode, it will
+   * not have an operator address when it starts up, so this method finds the first account of type `parent` and use
+   * IL-DCP to get the operating address for this Connector.
+   *
+   * @return The newly created parent {@link Account}.
+   */
+  private Account initializeParentAccount(final AccountSettings firstParentAccountSettings) {
+    Objects.requireNonNull(firstParentAccountSettings);
+
+    // Create the account to gain access to its Link.
+    final Account createdParentAccount = accountManager.createAccount(firstParentAccountSettings);
+    final IldcpResponse ildcpResponse = ((IldcpFetcher) ildcpRequest -> {
+      Objects.requireNonNull(ildcpRequest);
+
+      final IldcpRequestPacket ildcpRequestPacket = IldcpRequestPacket.builder().build();
+      final InterledgerPreparePacket preparePacket =
+        InterledgerPreparePacket.builder().from(ildcpRequestPacket).build();
+      final InterledgerResponsePacket response = createdParentAccount.getLink().sendPacket(preparePacket);
+      return new InterledgerResponsePacketMapper<IldcpResponse>() {
+        @Override
+        protected IldcpResponse mapFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
+          return IldcpUtils.toIldcpResponse(interledgerFulfillPacket);
+        }
+
+        @Override
+        protected IldcpResponse mapRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
+          throw new RuntimeException(String.format("IL-DCP negotiation failed! Reject: %s", interledgerRejectPacket));
+        }
+      }.map(response);
+
+    }).fetch(IldcpRequest.builder().build());
+
+    //////////////////////////////////
+    // Update the ConnectorSettings...
+    //////////////////////////////////
+
+    // Update the Operator address
+    ((ModifiableConnectorSettings) connectorSettingsSupplier.get())
+      .setOperatorAddress(ildcpResponse.getClientAddress());
+    // Update the Account Settings
+    ((ModifiableAccountSettings) firstParentAccountSettings).setAssetCode(ildcpResponse.getAssetCode());
+    ((ModifiableAccountSettings) firstParentAccountSettings).setAssetScale(ildcpResponse.getAssetScale());
+
+    // Modify Account Settings by removing and re-creating the parent account.
+    accountManager.removeAccount(createdParentAccount.getId());
+
+    // Replace the AccountSettings with the values from IL-DCP.
+    //    final AccountSettings updatedAccountSettings = AccountSettings.builder().from(firstParentAccountSettings)
+    //      .assetScale(ildcpResponse.getAssetScale())
+    //      .assetCode(ildcpResponse.getAssetCode())
+    //      .build();
+    return accountManager.createAccount(firstParentAccountSettings);
+  }
 
 }

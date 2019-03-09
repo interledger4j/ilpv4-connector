@@ -4,6 +4,7 @@ import com.sappenin.interledger.ilpv4.connector.links.loopback.LoopbackLink;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.GlobalRoutingSettings;
+import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountProviderSettings;
@@ -40,14 +41,19 @@ public class ConnectorSettingsFromPropertyFileTest {
 
   @Test
   public void testConfig() {
-    assertThat(connectorSettings.getOperatorAddress(), is(InterledgerAddress.of("test.example")));
+    assertThat(connectorSettings.getOperatorAddress().get(), is(InterledgerAddress.of("test.example")));
+    assertThat(connectorSettings.getOperatorAddressSafe(), is(InterledgerAddress.of("test.example")));
     assertThat(connectorSettings.getGlobalPrefix(), is(InterledgerAddressPrefix.of("test")));
+
+    assertThat(connectorSettings.getJwtTokenIssuer(), is(HttpUrl.parse("https://example.com")));
 
     // Enabled Protocol Settings
     final EnabledProtocolSettings enabledProtocolSettings = connectorSettings.getEnabledProtocols();
+    assertThat(enabledProtocolSettings.isBlastEnabled(), is(true));
     assertThat(enabledProtocolSettings.isPeerConfigEnabled(), is(true));
     assertThat(enabledProtocolSettings.isPeerRoutingEnabled(), is(true));
     assertThat(enabledProtocolSettings.isPingProtocolEnabled(), is(true));
+    assertThat(enabledProtocolSettings.isIldcpEnabled(), is(true));
 
     // Global Routing Settings
     final GlobalRoutingSettings globalRoutingSettings = connectorSettings.getGlobalRoutingSettings();

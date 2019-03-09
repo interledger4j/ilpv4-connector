@@ -6,13 +6,15 @@ ilpv4:
     nodeIlpAddress: test.example
     # The global prefix. For production environments, this should be `g`. For test environments, consider `test`.
     globalPrefix: test
-    blast.enabled: true
     btp.enabled: true
+    jwtTokenIssuer: https://example.com
     # Which protocols this Connector supports
     enabledProtocols:
+      blastEnabled: true
       pingProtocolEnabled: true
       peerConfigEnabled: true
       peerRoutingEnabled: true
+      ildcpEnabled: true
     # Global Routing Settings for this connector.
     globalRoutingSettings:
       # Whether to broadcast known routes.

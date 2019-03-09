@@ -4,9 +4,12 @@ import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkFactory;
 import org.interledger.connector.link.LinkSettings;
 import org.interledger.connector.link.LinkType;
+import org.interledger.core.InterledgerAddress;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * An implementation of {@link LinkFactory} for creating BTP Links.
@@ -24,7 +27,9 @@ public class BlastLinkFactory implements LinkFactory {
    *
    * @return A newly constructed instance of {@link Link}.
    */
-  public Link<?> constructLink(final LinkSettings linkSettings) {
+  public Link<?> constructLink(
+    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier, final LinkSettings linkSettings
+  ) {
     Objects.requireNonNull(linkSettings);
 
     if (!this.supports(linkSettings.getLinkType())) {
@@ -39,6 +44,7 @@ public class BlastLinkFactory implements LinkFactory {
       BlastLinkSettings.applyCustomSettings(builder, linkSettings.getCustomSettings()).build();
 
     final BlastLink blastLink = new BlastLink(
+      operatorAddressSupplier,
       ModifiableBlastLinkSettings.create().from(blastLinkSettings), // Modifiable for testing
       restTemplate
     );

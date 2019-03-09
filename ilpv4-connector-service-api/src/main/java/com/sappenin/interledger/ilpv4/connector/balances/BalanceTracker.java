@@ -18,6 +18,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public interface BalanceTracker {
 
+  // TODO: Remove the tracking account. We always know the other side because it's the negation of the real account.
+  @Deprecated
   String TRACKING_ACCOUNT_SUFFIX = "-TrackingAccount";
 
   AccountBalance getBalance(AccountId accountId);
