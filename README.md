@@ -9,7 +9,7 @@
 [circle-url]: https://circleci.com/gh/sappenin/java-ilpv4-connector
 [codecov-image]: https://codecov.io/gh/sappenin/java-ilpv4-connector/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/sappenin/java-ilpv4-connector
-[github-issues-image]: https://img.shields.io/github/issues/sappenin/quilt.svg
+[github-issues-image]: https://img.shields.io/github/issues/sappenin/java-ilpv4-connector.svg
 [github-issues-url]: https://github.com/sappenin/java-ilpv4-connector/issues
 
 A Java implementation of an [Interledger v4 Connector](https://github.com/interledger/rfcs/blob/master/0034-connector-requirements/0034-connector-requirements.md).
