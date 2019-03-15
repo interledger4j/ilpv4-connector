@@ -49,7 +49,7 @@ public class IlpHttpController {
    */
   @RequestMapping(
     value = ILP_PATH, method = {RequestMethod.POST},
-    produces = {APPLICATION_ILP_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE},
+    produces = {APPLICATION_ILP_OCTET_STREAM_VALUE, MediaType.APPLICATION_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE},
     consumes = {APPLICATION_ILP_OCTET_STREAM_VALUE, MediaType.APPLICATION_OCTET_STREAM_VALUE}
   )
   public InterledgerResponsePacket sendData(

@@ -7,7 +7,6 @@ import org.interledger.connector.link.events.LinkEventEmitter;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -18,77 +17,32 @@ import java.util.function.Supplier;
 /**
  * An {@link AbstractLink} that handles BLAST (aka, ILP over HTTP) connections.
  *
- * @see "https://github.com/interledger/rfcs/TODO"
+ * @see "https://github.com/interledger/rfcs/blob/master/0035-ilp-over-http/0035-ilp-over-http.md"
  */
 public class BlastLink extends AbstractLink<BlastLinkSettings> implements PingableLink<BlastLinkSettings> {
 
   public static final String LINK_TYPE_STRING = "BlastLink";
   public static final LinkType LINK_TYPE = LinkType.of(LINK_TYPE_STRING);
 
-  // This RestTemplate is shared between all links...
+  // Note: The RestTemplate in this ender is shared between all links...
   private BlastHttpSender blastHttpSender;
-
-  /**
-   * Required-args Constructor. Utilizes a default {@link LinkEventEmitter} that synchronously connects to any event
-   * handlers.
-   *
-   * @param blastLinkSettings A {@link BlastLinkSettings} that specified ledger link options.
-   * @param restTemplate      A {@link RestTemplate} used to communicate with the remote BLAST peer.
-   */
-  public BlastLink(
-    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
-    final BlastLinkSettings blastLinkSettings,
-    final RestTemplate restTemplate
-  ) {
-    super(operatorAddressSupplier, blastLinkSettings);
-    this.blastHttpSender = new BlastHttpSender(
-      operatorAddressSupplier,
-      blastLinkSettings.getOutgoingUrl().uri(),
-      restTemplate,
-      () -> blastLinkSettings.getOutgoingTokenIssuer(),
-      () -> blastLinkSettings.getOutgoingAccountId(),
-      () -> blastLinkSettings.getOutgoingAccountSecret().getBytes()
-    );
-  }
 
   /**
    * Required-args Constructor.
    *
    * @param blastLinkSettings A {@link BlastLinkSettings} that specified ledger link options.
    * @param linkEventEmitter  A {@link LinkEventEmitter} that is used to emit events from this link.
+   * @param blastHttpSender   A {@link BlastHttpSender} used to send messages with the remote BLAST peer.
+   * @param linkEventEmitter  A {@link LinkEventEmitter}.
    */
   public BlastLink(
     final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
     final BlastLinkSettings blastLinkSettings,
-    final RestTemplate restTemplate,
+    final BlastHttpSender blastHttpSender,
     final LinkEventEmitter linkEventEmitter
   ) {
     super(operatorAddressSupplier, blastLinkSettings, linkEventEmitter);
-    this.blastHttpSender = new BlastHttpSender(
-      operatorAddressSupplier,
-      blastLinkSettings.getOutgoingUrl().uri(),
-      restTemplate,
-      () -> blastLinkSettings.getOutgoingTokenIssuer(),
-      () -> blastLinkSettings.getOutgoingAccountId(),
-      () -> blastLinkSettings.getOutgoingAccountSecret().getBytes());
-  }
-
-  /**
-   * Reconfigure this link with a new {@link BlastLinkSettings}.
-   *
-   * @param blastLinkSettings
-   */
-  public void reconfigure(
-    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier, final BlastLinkSettings blastLinkSettings
-  ) {
-    this.blastHttpSender = new BlastHttpSender(
-      operatorAddressSupplier,
-      blastLinkSettings.getOutgoingUrl().uri(),
-      blastHttpSender.getRestTemplate(),
-      () -> blastLinkSettings.getOutgoingTokenIssuer(),
-      () -> blastLinkSettings.getOutgoingAccountId(),
-      () -> blastLinkSettings.getOutgoingAccountSecret().getBytes()
-    );
+    this.blastHttpSender = Objects.requireNonNull(blastHttpSender);
   }
 
   /**

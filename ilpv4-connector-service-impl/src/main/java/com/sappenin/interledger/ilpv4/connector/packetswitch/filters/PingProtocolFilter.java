@@ -7,10 +7,7 @@ import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerFulfillment;
 import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Base64;
 import java.util.Objects;
@@ -23,20 +20,18 @@ import java.util.function.Supplier;
  * are the Connector's units, whereas units that accrue to an internally-routed account are not the Connector's units,
  * but are instead the property of the owner of the locally-routed account.
  */
-public class PingProtocolFilter implements PacketSwitchFilter {
+public class PingProtocolFilter extends AbstractPacketFilter implements PacketSwitchFilter {
 
   public static final InterledgerFulfillment PING_PROTOCOL_FULFILLMENT =
     InterledgerFulfillment.of(Base64.getDecoder().decode("cGluZ3BpbmdwaW5ncGluZ3BpbmdwaW5ncGluZ3Bpbmc="));
   public static final InterledgerCondition PING_PROTOCOL_CONDITION = InterledgerCondition.of(
     Base64.getDecoder().decode("jAC8DGFPZPfh4AtZpXuvXFe2oRmpDVSvSJg2oT+bx34="));
 
-  private final Supplier<InterledgerAddress> nodeOperatorAddressSupplier;
-
   /**
    * Required-args Constructor.
    */
-  public PingProtocolFilter(final Supplier<InterledgerAddress> nodeOperatorAddressSupplier) {
-    this.nodeOperatorAddressSupplier = Objects.requireNonNull(nodeOperatorAddressSupplier);
+  public PingProtocolFilter(final Supplier<InterledgerAddress> operatorAddressSupplier) {
+    super(operatorAddressSupplier);
   }
 
   @Override
@@ -50,20 +45,23 @@ public class PingProtocolFilter implements PacketSwitchFilter {
     Objects.requireNonNull(sourcePreparePacket);
     Objects.requireNonNull(filterChain);
 
-    if (sourcePreparePacket.getExecutionCondition().equals(PING_PROTOCOL_CONDITION)) {
-      return InterledgerFulfillPacket.builder()
-        .fulfillment(PING_PROTOCOL_FULFILLMENT)
-        .data(sourcePreparePacket.getData())
-        .build();
+    // TODO: Consider how Ping should work. If we want to allow any account on this Connector to be "ping'd" then
+    //  this check should inspect the condition first, and then accept or not. However, if only the Connector itself
+    //  can be pinged (current functionality) then gating this on the operatorAddress is more appropriate.
+    if (sourcePreparePacket.getDestination().equals(operatorAddressSupplier.get())) {
+      if (sourcePreparePacket.getExecutionCondition().equals(PING_PROTOCOL_CONDITION)) {
+        return InterledgerFulfillPacket.builder()
+          .fulfillment(PING_PROTOCOL_FULFILLMENT)
+          .data(sourcePreparePacket.getData())
+          .build();
+      } else {
+        return reject(
+          sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST, "Invalid Ping Protocol Condition"
+        );
+      }
     } else {
-      return InterledgerRejectPacket.builder()
-        .code(InterledgerErrorCode.F00_BAD_REQUEST)
-        .message("Invalid Ping Protocol Condition")
-        .triggeredBy(nodeOperatorAddressSupplier.get())
-        .build();
+      // Not a ping packet, so continue processing.
+      return filterChain.doFilter(sourceAccountId, sourcePreparePacket);
     }
-
-
   }
-
 }

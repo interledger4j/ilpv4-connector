@@ -86,16 +86,17 @@ public class TwoConnectorPeerBlastTopology {
             final Account bobAccount = aliceServerNode.getILPv4Connector().getAccountManager()
               .getAccount(AccountId.of(BOB)).get();
 
+            // TODO: Remove this and use static ports...
             // Need to reach-into the AccountManager and adjust the outgoing URL for Bob, based upon the newly discovered
             // port in `bobBlastUrl`
-            final HttpUrl bobBlastUrl = HttpUrl.parse("http://localhost:" + bobPort + IlpHttpController.ILP_PATH);
-            final ModifiableBlastLinkSettings modifiableBlastLinkSettings = (ModifiableBlastLinkSettings)
-              bobAccount.getLink().getLinkSettings();
-            modifiableBlastLinkSettings.setOutgoingUrl(bobBlastUrl);
-            ((BlastLink) bobAccount.getLink()).reconfigure(
-              () -> aliceServerNode.getILPv4Connector().getNodeIlpAddress(),
-              modifiableBlastLinkSettings
-            );
+            //final HttpUrl bobBlastUrl = HttpUrl.parse("http://localhost:" + bobPort + IlpHttpController.ILP_PATH);
+//            final ModifiableBlastLinkSettings modifiableBlastLinkSettings = (ModifiableBlastLinkSettings)
+//              bobAccount.getLink().getLinkSettings();
+//            modifiableBlastLinkSettings.setOutgoingUrl(bobBlastUrl);
+//            ((BlastLink) bobAccount.getLink()).reconfigure(
+//              () -> aliceServerNode.getILPv4Connector().getNodeIlpAddress(),
+//              modifiableBlastLinkSettings
+//            );
 
             // Try to re-connect the link...
             bobAccount.getLink().connect().get(5, TimeUnit.SECONDS);
@@ -104,16 +105,17 @@ public class TwoConnectorPeerBlastTopology {
             final Account aliceAccount = bobServerNode.getILPv4Connector().getAccountManager()
               .getAccount(AccountId.of(ALICE)).get();
 
+            // TODO: Remove this and use static ports...
             // Need to reach-into the AccountManager and adjust the outgoing URL for Alice, based upon the newly
             // discovered port in `aliceBlastUrl`
-            final HttpUrl aliceBlastUrl = HttpUrl.parse("http://localhost:" + alicePort + IlpHttpController.ILP_PATH);
-            final ModifiableBlastLinkSettings modifiableBlastLinkSettings = (ModifiableBlastLinkSettings)
-              aliceAccount.getLink().getLinkSettings();
-            modifiableBlastLinkSettings.setOutgoingUrl(aliceBlastUrl);
-            ((BlastLink) aliceAccount.getLink()).reconfigure(
-              () -> bobServerNode.getILPv4Connector().getNodeIlpAddress(),
-              modifiableBlastLinkSettings
-            );
+//            final HttpUrl aliceBlastUrl = HttpUrl.parse("http://localhost:" + alicePort + IlpHttpController.ILP_PATH);
+//            final ModifiableBlastLinkSettings modifiableBlastLinkSettings = (ModifiableBlastLinkSettings)
+//              aliceAccount.getLink().getLinkSettings();
+//            modifiableBlastLinkSettings.setOutgoingUrl(aliceBlastUrl);
+//            ((BlastLink) aliceAccount.getLink()).reconfigure(
+//              () -> bobServerNode.getILPv4Connector().getNodeIlpAddress(),
+//              modifiableBlastLinkSettings
+//            );
 
             // Try to re-connect the link...
             aliceAccount.getLink().connect().get(5, TimeUnit.SECONDS);

@@ -113,10 +113,10 @@ public class InterledgerAddressUtils {
       // if this doesn't blow up somewhere else, the routing-table won't accept it.
       destinationAddress.startsWith(InterledgerAddressPrefix.GLOBAL.getValue()) ||
         // Do full equality checks here because performance is less important (we don't expect may TEST packets).
-        destinationAddress.getAllocationScheme().equals(InterledgerAddressPrefix.TEST.getValue()) ||
-        destinationAddress.getAllocationScheme().equals(InterledgerAddressPrefix.TEST1.getValue()) ||
-        destinationAddress.getAllocationScheme().equals(InterledgerAddressPrefix.TEST2.getValue()) ||
-        destinationAddress.getAllocationScheme().equals(InterledgerAddressPrefix.TEST3.getValue());
+        destinationAddress.getAllocationScheme().equals(InterledgerAddress.AllocationScheme.TEST) ||
+        destinationAddress.getAllocationScheme().equals(InterledgerAddress.AllocationScheme.TEST1) ||
+        destinationAddress.getAllocationScheme().equals(InterledgerAddress.AllocationScheme.TEST2) ||
+        destinationAddress.getAllocationScheme().equals(InterledgerAddress.AllocationScheme.TEST3);
   }
 
 }

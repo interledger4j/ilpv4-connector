@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -57,9 +56,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
 
   private final EventBus eventBus;
 
-  private final UUID routingServiceListenerId;
-
-  private final CodecContext ilpCodecContext;
+  private final CodecContext ccpCodecContext;
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
 
@@ -92,13 +89,15 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
    */
   public InMemoryExternalRoutingService(
     final EventBus eventBus,
-    final CodecContext ilpCodecContext,
+    final CodecContext ccpCodecContext,
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountManager accountManager,
     final AccountIdResolver accountIdResolver
   ) {
     this.eventBus = Objects.requireNonNull(eventBus);
-    this.ilpCodecContext = Objects.requireNonNull(ilpCodecContext);
+    this.eventBus.register(this); // Required in order to add/remove routes on Link Connect/Disconnects
+
+    this.ccpCodecContext = Objects.requireNonNull(ccpCodecContext);
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
 
     this.localRoutingTable = new InMemoryRoutingTable();
@@ -110,7 +109,6 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     this.trackedAccounts = Maps.newConcurrentMap();
     this.unregisterAccountCallbacks = Maps.newConcurrentMap();
     this.routingTableEntryComparator = new RoutingTableEntryComparator(accountManager);
-    this.routingServiceListenerId = UUID.randomUUID();
   }
 
   /**
@@ -119,7 +117,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
   @VisibleForTesting
   protected InMemoryExternalRoutingService(
     final EventBus eventBus,
-    final CodecContext ilpCodecContext,
+    final CodecContext ccpCodecContext,
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final RoutingTable<Route> localRoutingTable,
     final ForwardingRoutingTable<IncomingRoute> incomingRoutingTable,
@@ -130,7 +128,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     this.eventBus = Objects.requireNonNull(eventBus);
     this.eventBus.register(this);
 
-    this.ilpCodecContext = Objects.requireNonNull(ilpCodecContext);
+    this.ccpCodecContext = Objects.requireNonNull(ccpCodecContext);
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.localRoutingTable = Objects.requireNonNull(localRoutingTable);
     this.incomingRoutingTable = Objects.requireNonNull(incomingRoutingTable);
@@ -141,7 +139,6 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     this.unregisterAccountCallbacks = Maps.newConcurrentMap();
     this.trackedAccounts = Maps.newConcurrentMap();
     this.routingTableEntryComparator = new RoutingTableEntryComparator(accountManager);
-    this.routingServiceListenerId = UUID.randomUUID();
   }
 
   @Override
@@ -182,12 +179,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
 
     final Link<?> dataLink = this.accountManager.safeGetAccount(accountId).getLink();
 
-    // When registering an accountId, we should remove any callbacks that might already exist.
-    this.unregisterAccountCallbacks.put(accountId, () -> dataLink.removeAllLinkEventListeners());
-
-    // Tracked accounts should not enter service until they connect. Additionally, if a tracked dataLink disconnects, it
-    // should be removed from operation until it reconnects.
-    dataLink.addLinkEventListener(new LinkEventListener() {
+    final LinkEventListener dataLinkEventListener = new LinkEventListener() {
       @Override
       public void onConnect(LinkConnectedEvent linkConnectedEvent) {
         final AccountId accountId = AccountId.of(dataLink.getLinkId().get().value());
@@ -213,7 +205,14 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
       public void onError(LinkErrorEvent linkErrorEvent) {
         logger.error(linkErrorEvent.getError().getMessage(), linkErrorEvent.getError());
       }
-    });
+    };
+
+    // When registering an accountId, we should remove any callbacks that might already exist.
+    this.unregisterAccountCallbacks.put(accountId, () -> dataLink.removeLinkEventListener(dataLinkEventListener));
+
+    // Tracked accounts should not enter service until they connect. Additionally, if a tracked dataLink disconnects, it
+    // should be removed from operation until it reconnects.
+    dataLink.addLinkEventListener(dataLinkEventListener);
 
     // If the dataLink for the account above is already connected, then the account/dataLink won't become eligible for
     // routing without this extra check.
@@ -333,7 +332,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     Objects.requireNonNull(link);
     return new DefaultCcpSender(
       this.connectorSettingsSupplier, peerAccountId, link, this.outgoingRoutingTable, this.accountManager,
-      this.ilpCodecContext
+      this.ccpCodecContext
     );
   }
 
@@ -341,7 +340,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     Objects.requireNonNull(peerAccountId);
     Objects.requireNonNull(link);
     return new DefaultCcpReceiver(
-      this.connectorSettingsSupplier, peerAccountId, link, this.incomingRoutingTable, this.ilpCodecContext
+      this.connectorSettingsSupplier, peerAccountId, link, this.incomingRoutingTable, this.ccpCodecContext
     );
   }
 
@@ -660,9 +659,6 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     Objects.requireNonNull(addressPrefix);
 
     // configured routes have highest priority
-
-    // then find the configuredNextBestPeerRoute
-    //final Optional<Route> configuredNextBestPeerRoute =
     return Optional.ofNullable(
       connectorSettingsSupplier.get().getGlobalRoutingSettings().getStaticRoutes().stream()
         .filter(staticRoute -> staticRoute.getTargetPrefix().equals(addressPrefix))
@@ -678,6 +674,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
           // Otherwise, if the account exists, then we should return a new route to the peer.
           final Route route = ImmutableRoute.builder()
             .path(Collections.emptyList())
+            .routePrefix(addressPrefix)
             .nextHopAccountId(accountSettings.getAccountSettings().getId())
             .auth(HMAC(connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret(), addressPrefix))
             .build();

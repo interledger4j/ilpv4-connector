@@ -155,7 +155,7 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
 
       return account;
     } catch (Exception e) {
-      // If any exception is thrown, then removeEntry the peer and any links...
+      // If any exception is thrown, then remove the peer and any links...
       this.removeAccount(account.getId());
       throw new RuntimeException(e);
     }
@@ -167,7 +167,7 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
 
     this.getAccount(accountId).ifPresent(accountSettings -> {
       // Disconnect the account...
-      //this.disconnectAccount(accountSettings.getAccountAddress());
+      // this.disconnectAccount(accountSettings.getAccountAddress());
 
       if (accountSettings.getAccountSettings().getRelationship() == AccountRelationship.PARENT) {
         // Set the parent peer, if it exists.

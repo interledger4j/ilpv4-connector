@@ -1,6 +1,6 @@
 package org.interledger.connector.link;
 
-import com.google.common.collect.Sets;
+import com.google.common.eventbus.EventBus;
 import org.interledger.connector.link.events.LinkConnectedEvent;
 import org.interledger.connector.link.events.LinkDisconnectedEvent;
 import org.interledger.connector.link.events.LinkErrorEvent;
@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -42,18 +41,6 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
 
   // Non-final for late-binding...
   private LinkId linkId;
-
-  /**
-   * Required-args Constructor which utilizes a default {@link LinkEventEmitter} that synchronously connects to any
-   * event handlers.
-   *
-   * @param dataLinkSettings A {@link LS} that specified ledger link options.
-   */
-  protected AbstractLink(
-    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier, final LS dataLinkSettings
-  ) {
-    this(operatorAddressSupplier, dataLinkSettings, new SyncLinkEventEmitter());
-  }
 
   /**
    * Required-args Constructor.
@@ -114,9 +101,10 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
                 this.operatorAddressSupplier.get(), this.getLinkId());
             } else {
               this.connected.set(NOT_CONNECTED);
-              final String errorMessage = String.format("[%s] `%s` error while trying to connect to `%s`",
+              final String errorMessage = String.format("[%s] `%s` was unable to connect to Link: `%s`",
                 this.linkSettings.getLinkType(),
-                this.operatorAddressSupplier.get(), this.getLinkId()
+                this.operatorAddressSupplier.get().map(InterledgerAddress::getValue).orElse("uninitialized"),
+                this.getLinkId().map(LinkId::value).orElse("uninitialized")
               );
               logger.error(errorMessage, error);
             }
@@ -230,23 +218,15 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
     this.linkEventEmitter.removeLinkEventListener(linkEventListener);
   }
 
-  @Override
-  public void removeAllLinkEventListeners() {
-    this.linkEventEmitter.removeAllLinkEventListeners();
-  }
-
   /**
-   * An example {@link LinkEventEmitter} that allows events to be synchronously emitted into a {@link Link}.
-   *
-   * @deprecated Transition this to EventBus.
+   * An example {@link LinkEventEmitter} that allows Link-related events to be emitted into an EventBus.
    */
-  @Deprecated
-  public static class SyncLinkEventEmitter implements org.interledger.connector.link.events.LinkEventEmitter {
+  public static class EventBusEventEmitter implements LinkEventEmitter {
 
-    private final Set<LinkEventListener> dataLinkEventListeners;
+    private final EventBus eventBus;
 
-    public SyncLinkEventEmitter() {
-      this.dataLinkEventListeners = Sets.newHashSet();
+    public EventBusEventEmitter(final EventBus eventBus) {
+      this.eventBus = Objects.requireNonNull(eventBus);
     }
 
     /////////////////
@@ -255,37 +235,29 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
 
     @Override
     public void emitEvent(final LinkConnectedEvent event) {
-      this.dataLinkEventListeners.stream().forEach(handler -> handler.onConnect(event));
+      eventBus.post(event);
     }
 
     @Override
     public void emitEvent(final LinkDisconnectedEvent event) {
-      this.dataLinkEventListeners.stream().forEach(handler -> handler.onDisconnect(event));
+      eventBus.post(event);
     }
 
     @Override
     public void emitEvent(final LinkErrorEvent event) {
-      this.dataLinkEventListeners.stream().forEach(handler -> handler.onError(event));
+      eventBus.post(event);
     }
 
     @Override
     public void addLinkEventListener(final LinkEventListener linkEventListener) {
       Objects.requireNonNull(linkEventListener);
-      this.dataLinkEventListeners.add(linkEventListener);
+      eventBus.register(linkEventListener);
     }
 
     @Override
     public void removeLinkEventListener(final LinkEventListener linkEventListener) {
       Objects.requireNonNull(linkEventListener);
-      this.dataLinkEventListeners.remove(linkEventListener);
-    }
-
-    /**
-     * Removes all event listeners registered with this emitter.
-     */
-    @Override
-    public void removeAllLinkEventListeners() {
-      this.dataLinkEventListeners.clear();
+      eventBus.unregister(linkEventListener);
     }
   }
 }

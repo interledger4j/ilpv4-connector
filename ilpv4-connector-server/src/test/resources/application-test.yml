@@ -119,6 +119,7 @@ ilpv4:
           blast.incoming.account_secret: 12345678912345678912345678912345
           blast.incoming.token_expiry: PT2M # See Duration.java for structure.
           # Outgoing
+          blast.outgoing.auth_type: JWT
           blast.outgoing.token_issuer: https://alice.example.com # The JWT issuer of the outgoing token.
           blast.outgoing.account_id: alice # The accountId held at the remote server.
           blast.outgoing.account_secret: 12345678912345678912345678912345

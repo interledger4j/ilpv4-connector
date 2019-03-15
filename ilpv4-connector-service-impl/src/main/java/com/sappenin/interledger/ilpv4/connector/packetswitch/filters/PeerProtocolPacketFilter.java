@@ -20,8 +20,6 @@ import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
 import org.interledger.ildcp.IldcpResponsePacket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -38,29 +36,26 @@ import static com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants.PEER_PRO
  * An implementation of {@link PacketSwitchFilter} for all packets whose destination starts with the <tt>peer.</tt>
  * allocation scheme.
  */
-public class PeerProtocolPacketFilter implements PacketSwitchFilter {
+public class PeerProtocolPacketFilter extends AbstractPacketFilter implements PacketSwitchFilter {
 
   public static final InterledgerAddress PEER_DOT_ROUTE = InterledgerAddress.of("peer.route");
 
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
   private final EnabledProtocolSettings enabledProtocolSettings;
-  private final Supplier<InterledgerAddress> operatorAddressSupplier;
   private final ExternalRoutingService externalRoutingService;
   private final AccountManager accountManager;
   private final CodecContext ccpCodecContext;
   private final CodecContext ildcpCodecContext;
 
   public PeerProtocolPacketFilter(
-    final EnabledProtocolSettings enabledProtocolSettings,
     final Supplier<InterledgerAddress> operatorAddressSupplier,
+    final EnabledProtocolSettings enabledProtocolSettings,
     final ExternalRoutingService externalRoutingService,
     final AccountManager accountManager,
     final CodecContext ccpCodecContext,
     final CodecContext ildcpCodecContext
   ) {
+    super(operatorAddressSupplier);
     this.enabledProtocolSettings = Objects.requireNonNull(enabledProtocolSettings);
-    this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
     this.accountManager = Objects.requireNonNull(accountManager);
 
@@ -83,7 +78,8 @@ public class PeerProtocolPacketFilter implements PacketSwitchFilter {
         if (enabledProtocolSettings.isPeerConfigEnabled()) {
           return this.handleIldcpRequest(sourceAccountId, sourcePreparePacket);
         } else {
-          return reject(InterledgerErrorCode.F00_BAD_REQUEST, "IL-DCP is not supported by this node.");
+          return reject(sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
+            "IL-DCP is not supported by this Connector.");
         }
       }
 
@@ -94,14 +90,17 @@ public class PeerProtocolPacketFilter implements PacketSwitchFilter {
           return handlePeerRouting(sourceAccountId, sourcePreparePacket);
         } else {
           // Reject.
-          return reject(InterledgerErrorCode.F00_BAD_REQUEST, "CCP routing protocol is not supported by this node.");
+          return reject(sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
+            "CCP routing protocol is not supported by this node.");
         }
       }
 
       // Unsupported `peer.` request...
       else {
         // Reject.
-        return reject(InterledgerErrorCode.F01_INVALID_PACKET, "unknown peer protocol.");
+        return reject(
+          sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F01_INVALID_PACKET, "unknown peer protocol."
+        );
       }
     }
 
@@ -152,7 +151,7 @@ public class PeerProtocolPacketFilter implements PacketSwitchFilter {
           .data(os.toByteArray())
           .build();
       })
-      .orElseGet(() -> reject(InterledgerErrorCode.F00_BAD_REQUEST,
+      .orElseGet(() -> reject(sourceAccountId, ildcpRequestPacket, InterledgerErrorCode.F00_BAD_REQUEST,
         String.format("Invalid Source Account: `%s`", sourceAccountId.value()))
       );
   }
@@ -164,7 +163,7 @@ public class PeerProtocolPacketFilter implements PacketSwitchFilter {
     try {
       if (!sourcePreparePacket.getDestination().startsWith(PEER_DOT_ROUTE)) {
         return this.reject(
-          InterledgerErrorCode.F02_UNREACHABLE,
+          sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F02_UNREACHABLE,
           String.format("Unsupported Peer address: `%s`", PEER_DOT_ROUTE.getValue())
         );
       }
@@ -212,6 +211,7 @@ public class PeerProtocolPacketFilter implements PacketSwitchFilter {
 
       } else {
         return reject(
+          sourceAccountId, sourcePreparePacket,
           InterledgerErrorCode.F00_BAD_REQUEST,
           String.format("Unrecognized CCP message. destination=`%s`.", sourcePreparePacket.getDestination().getValue())
         );
@@ -221,16 +221,5 @@ public class PeerProtocolPacketFilter implements PacketSwitchFilter {
     }
   }
 
-  private InterledgerResponsePacket reject(final InterledgerErrorCode errorCode, final String errorMessage) {
-    Objects.requireNonNull(errorCode);
-    Objects.requireNonNull(errorMessage);
-
-    // Reject.
-    return InterledgerRejectPacket.builder()
-      .triggeredBy(operatorAddressSupplier.get())
-      .code(errorCode)
-      .message(errorMessage)
-      .build();
-  }
 
 }

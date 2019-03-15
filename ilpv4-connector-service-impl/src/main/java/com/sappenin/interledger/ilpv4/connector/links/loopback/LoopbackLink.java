@@ -5,6 +5,7 @@ import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkHandler;
 import org.interledger.connector.link.LinkSettings;
 import org.interledger.connector.link.LinkType;
+import org.interledger.connector.link.events.LinkEventEmitter;
 import org.interledger.connector.link.exceptions.LinkHandlerAlreadyRegisteredException;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
@@ -36,9 +37,10 @@ public class LoopbackLink extends AbstractLink<LinkSettings> implements Link<Lin
    */
   public LoopbackLink(
     final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
-    final LinkSettings linkSettings
+    final LinkSettings linkSettings,
+    final LinkEventEmitter linkEventEmitter
   ) {
-    super(operatorAddressSupplier, linkSettings);
+    super(operatorAddressSupplier, linkSettings, linkEventEmitter);
   }
 
   @Override

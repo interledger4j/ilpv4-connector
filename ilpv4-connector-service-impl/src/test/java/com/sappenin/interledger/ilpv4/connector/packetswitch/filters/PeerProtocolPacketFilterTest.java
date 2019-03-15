@@ -71,8 +71,8 @@ public class PeerProtocolPacketFilterTest {
   public void setup() {
     MockitoAnnotations.initMocks(this);
     this.filter = new PeerProtocolPacketFilter(
-      enabledProtocolSettingsMock,
       () -> OPERATOR_ADDRESS,
+      enabledProtocolSettingsMock,
       externalRoutingServiceMock,
       accountManagerMock,
       CcpCodecContextFactory.oer(),

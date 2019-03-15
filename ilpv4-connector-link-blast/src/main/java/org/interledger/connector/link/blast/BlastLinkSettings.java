@@ -22,18 +22,20 @@ public interface BlastLinkSettings extends LinkSettings {
 
   String TOKEN_ISSUER = "token_issuer";
   String ACCOUNT_ID = "account_id";
+  String AUTH_TYPE = "auth_type";
   String ACCOUNT_SECRET = "account_secret";
   String TOKEN_EXPIRY = "token_expiry";
   String URL = "url";
 
-  String BLAST_INCOMING_TOKEN_ISSUER = BLAST + DOT + INCOMING + DOT + TOKEN_ISSUER;
   String BLAST_INCOMING_ACCOUNT_ID = BLAST + DOT + INCOMING + DOT + ACCOUNT_ID;
   String BLAST_INCOMING_ACCOUNT_SECRET = BLAST + DOT + INCOMING + DOT + ACCOUNT_SECRET;
+  String BLAST_INCOMING_TOKEN_ISSUER = BLAST + DOT + INCOMING + DOT + TOKEN_ISSUER;
 
-  String BLAST_OUTGOING_TOKEN_ISSUER = BLAST + DOT + OUTGOING + DOT + TOKEN_ISSUER;
-  String BLAST_OUTGOING_ACCOUNT_ID = BLAST + DOT + OUTGOING + DOT + ACCOUNT_ID;
-  String BLAST_OUTGOING_ACCOUNT_SECRET = BLAST + DOT + OUTGOING + DOT + ACCOUNT_SECRET;
   String BLAST_OUTGOING_URL = BLAST + DOT + OUTGOING + DOT + URL;
+  String BLAST_OUTGOING_ACCOUNT_ID = BLAST + DOT + OUTGOING + DOT + ACCOUNT_ID;
+  String BLAST_OUTGOING_AUTH_TYPE = BLAST + DOT + OUTGOING + DOT + AUTH_TYPE;
+  String BLAST_OUTGOING_ACCOUNT_SECRET = BLAST + DOT + OUTGOING + DOT + ACCOUNT_SECRET;
+  String BLAST_OUTGOING_TOKEN_ISSUER = BLAST + DOT + OUTGOING + DOT + TOKEN_ISSUER;
   String BLAST_OUTGOING_TOKEN_EXPIRY = BLAST + DOT + OUTGOING + DOT + TOKEN_EXPIRY;
 
   static ImmutableBlastLinkSettings.Builder builder() {
@@ -83,14 +85,20 @@ public interface BlastLinkSettings extends LinkSettings {
           .map(val -> (Map<String, Object>) val)
           .ifPresent(outgoingSettings -> {
 
+            Optional.ofNullable(outgoingSettings.get(ACCOUNT_ID))
+              .map(Object::toString)
+              .ifPresent(builder::outgoingAccountId);
+
             Optional.ofNullable(outgoingSettings.get(TOKEN_ISSUER))
               .map(Object::toString)
               .map(HttpUrl::parse)
               .ifPresent(builder::outgoingTokenIssuer);
 
-            Optional.ofNullable(outgoingSettings.get(ACCOUNT_ID))
+            Optional.ofNullable(outgoingSettings.get(AUTH_TYPE))
               .map(Object::toString)
-              .ifPresent(builder::outgoingAccountId);
+              .map(String::toUpperCase)
+              .map(AuthType::valueOf)
+              .ifPresent(builder::outgoingAuthType);
 
             Optional.ofNullable(outgoingSettings.get(ACCOUNT_SECRET))
               .map(Object::toString)
@@ -127,6 +135,12 @@ public interface BlastLinkSettings extends LinkSettings {
       .map(HttpUrl::parse)
       .ifPresent(builder::outgoingTokenIssuer);
 
+    Optional.ofNullable(customSettings.get(BLAST_OUTGOING_AUTH_TYPE))
+      .map(Object::toString)
+      .map(String::toUpperCase)
+      .map(AuthType::valueOf)
+      .ifPresent(builder::outgoingAuthType);
+
     Optional.ofNullable(customSettings.get(BLAST_OUTGOING_ACCOUNT_ID))
       .map(Object::toString)
       .ifPresent(builder::outgoingAccountId);
@@ -160,6 +174,7 @@ public interface BlastLinkSettings extends LinkSettings {
    * production, a more advanced authentication mechanism should be used.
    *
    * @return
+   *
    * @deprecated This value should be transitioned to a service so that it doesn't have to live inside of a property.
    */
   @Deprecated
@@ -173,6 +188,13 @@ public interface BlastLinkSettings extends LinkSettings {
    * @return
    */
   HttpUrl getIncomingTokenIssuer();
+
+  /**
+   * The type of Auth to support for outgoing HTTP connections.
+   *
+   * @return
+   */
+  AuthType getOutgoingAuthType();
 
   /**
    * The unique identifier of the Account used to authenticate an outgoing BLAST connection.
@@ -227,6 +249,17 @@ public interface BlastLinkSettings extends LinkSettings {
    */
   default Duration getMinMessageWindow() {
     return Duration.of(1000, ChronoUnit.MILLIS);
+  }
+
+  enum AuthType {
+    /**
+     * The incoming and outgoing secrets are used as Bearer tokens in an HTTP Authorization header.
+     */
+    SIMPLE,
+    /**
+     * The incoming and outgoing secrets are used in to create a JWT token using the HMAC_SHA256 algorithm.
+     */
+    JWT
   }
 
   @Value.Immutable

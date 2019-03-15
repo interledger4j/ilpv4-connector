@@ -112,9 +112,4 @@ public interface Link<LS extends LinkSettings> extends LinkSender, Connectable {
    */
   void removeLinkEventListener(LinkEventListener eventListener);
 
-  /**
-   * Removes an event handler from the collection of handlers registered with this ledger link.
-   */
-  void removeAllLinkEventListeners();
-
 }

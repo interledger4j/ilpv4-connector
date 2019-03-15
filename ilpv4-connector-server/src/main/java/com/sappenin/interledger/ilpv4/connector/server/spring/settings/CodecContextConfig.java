@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings;
 
+import com.sappenin.interledger.ilpv4.connector.ccp.codecs.CcpCodecContextFactory;
 import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.ildcp.asn.framework.IldcpCodecContextFactory;
@@ -30,7 +31,7 @@ public class CodecContextConfig {
   @Bean
   @Qualifier(CCP)
   CodecContext ccpCodecContext() {
-    return IldcpCodecContextFactory.oer();
+    return CcpCodecContextFactory.oer();
   }
 
   //  @Bean

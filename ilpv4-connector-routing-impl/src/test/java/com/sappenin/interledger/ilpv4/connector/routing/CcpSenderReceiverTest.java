@@ -1,6 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
 import com.google.common.collect.Lists;
+import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteControlRequest;
@@ -16,6 +17,7 @@ import org.interledger.connector.link.ImmutableLinkSettings;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkSettings;
 import org.interledger.connector.link.LinkType;
+import org.interledger.connector.link.events.LinkEventEmitter;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerFulfillPacket;
@@ -87,6 +89,7 @@ public class CcpSenderReceiverTest {
   private static final InterledgerAddressPrefix CONNECTOR_D_PREFIX =
     InterledgerAddressPrefix.of(CONNECTOR_D_ADDRESS.getValue());
 
+  private EventBus eventBus;
   private CodecContext codecContext;
 
   /////////////
@@ -109,6 +112,8 @@ public class CcpSenderReceiverTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
 
+    this.eventBus = new EventBus();
+
     this.codecContext = CcpCodecContextFactory.register(InterledgerCodecContextFactory.oer());
     this.connectorA_ConnectorSettings = ImmutableConnectorSettings.builder()
       .globalRoutingSettings(GlobalRoutingSettings.builder().routingSecret("shh").build())
@@ -123,7 +128,8 @@ public class CcpSenderReceiverTest {
       .linkType(LinkType.of(IpcRouteHandlingLink.class.getSimpleName()))
       .build();
     final IpcRouteHandlingLink linkRunningOnA = new IpcRouteHandlingLink(
-      () -> Optional.of(CONNECTOR_A_ADDRESS), linkSettingsA, codecContext
+      () -> Optional.of(CONNECTOR_A_ADDRESS), linkSettingsA, codecContext,
+      new AbstractLink.EventBusEventEmitter(eventBus)
     );
 
     {
@@ -145,8 +151,10 @@ public class CcpSenderReceiverTest {
     }
 
     final IpcRouteHandlingLink linkRunningOnB = new IpcRouteHandlingLink(
-      () -> Optional.of(CONNECTOR_B_ADDRESS), linkSettingsA, codecContext
+      () -> Optional.of(CONNECTOR_B_ADDRESS), linkSettingsA, codecContext,
+      new AbstractLink.EventBusEventEmitter(eventBus)
     );
+
     {
       final ForwardingRoutingTable<RouteUpdate> routeUpdateForwardingRoutingTable =
         new InMemoryRouteUpdateForwardRoutingTable();
@@ -378,14 +386,20 @@ public class CcpSenderReceiverTest {
     // The receiver on the other side of this simulated lpi2 relationship...
     private final CodecContext codecContext;
 
+    private final LinkEventEmitter linkEventEmitter;
+
     private SimulatedConnector localConnector;
     private SimulatedConnector remoteConnector;
 
     private IpcRouteHandlingLink(
       final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
-      final LinkSettings linkSettings, final CodecContext codecContext) {
-      super(operatorAddressSupplier, linkSettings);
+      final LinkSettings linkSettings,
+      final CodecContext codecContext,
+      final LinkEventEmitter linkEventEmitter
+    ) {
+      super(operatorAddressSupplier, linkSettings, linkEventEmitter);
       this.codecContext = Objects.requireNonNull(codecContext);
+      this.linkEventEmitter = Objects.requireNonNull(linkEventEmitter);
 
       /////////////////////////////
       // The stuff to do on an incoming prepare packet...

@@ -150,10 +150,15 @@ public class DefaultILPv4Connector implements ILPv4Connector {
    */
   @PostConstruct
   private final void init() {
+
+    ////////////////////////////////
+    // ^^ Pre-Configured Accounts ^^
+    ////////////////////////////////
     // If an operator address is specified, then we use that. Otherwise, attempt to use IL-DCP.
     if (connectorSettingsSupplier.get().getOperatorAddress().isPresent()) {
       this.configureAccounts();
     } else {
+      // ^^ IL-DCP ^^
       this.configureAccountsUsingIldcp();
     }
   }

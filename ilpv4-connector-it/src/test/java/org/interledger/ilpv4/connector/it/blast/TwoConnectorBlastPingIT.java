@@ -1,7 +1,6 @@
 package org.interledger.ilpv4.connector.it.blast;
 
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
-import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.ConnectorProfile;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
@@ -86,10 +85,7 @@ public class TwoConnectorBlastPingIT {
 
     // Reset all accounts on each connector...
     bobConnector.getBalanceTracker().resetBalance(AccountId.of(ALICE));
-    bobConnector.getBalanceTracker().resetBalance(AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX));
-
     aliceConnector.getBalanceTracker().resetBalance(AccountId.of(BOB));
-    aliceConnector.getBalanceTracker().resetBalance(AccountId.of(BOB + BalanceTracker.TRACKING_ACCOUNT_SUFFIX));
   }
 
   @Test
@@ -155,12 +151,9 @@ public class TwoConnectorBlastPingIT {
 
     // ALICE
     assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.ZERO);
-    assertAccountBalance(aliceConnector, AccountId.of(BOB + BalanceTracker.TRACKING_ACCOUNT_SUFFIX), BigInteger.ZERO);
 
     // BOB
     assertAccountBalance(bobConnector, AccountId.of(ALICE), BigInteger.valueOf(1L));
-    assertAccountBalance(bobConnector, AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX),
-      BigInteger.valueOf(-1L));
   }
 
   /**
@@ -439,19 +432,8 @@ public class TwoConnectorBlastPingIT {
     assertThat(averageProcssingTime < 20, is(true));
     assertThat(averageMsPerPing < 2, is(true));
 
-    // Assert the `ping` account balances in `test.alice`, which is paying for the pings.
-    //final AccountId alicePingAccountId = aliceConnector.getAccountManager().getPingAccountId().get();
-    //assertAccountBalance(aliceConnector, alicePingAccountId, BigInteger.valueOf(numReps));
-
-    //final AccountId bobPingAccount = bobConnector.getAccountManager().getPingAccountId().get();
-    //assertAccountBalance(bobConnector, bobPingAccount, BigInteger.valueOf(numReps));
-
     assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.ZERO);
-    assertAccountBalance(aliceConnector, AccountId.of(BOB + BalanceTracker.TRACKING_ACCOUNT_SUFFIX), BigInteger.ZERO);
-
     assertAccountBalance(bobConnector, AccountId.of(ALICE), BigInteger.valueOf(numReps));
-    assertAccountBalance(bobConnector, AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX),
-      BigInteger.valueOf(numReps * -1));
   }
 
   /////////////////

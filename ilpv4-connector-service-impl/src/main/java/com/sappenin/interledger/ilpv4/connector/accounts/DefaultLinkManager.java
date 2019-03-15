@@ -29,7 +29,6 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
 
   private final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier;
 
-  private final EventBus eventBus;
   private final LinkFactoryProvider linkFactoryProvider;
 
   /**
@@ -41,8 +40,7 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
     final LinkFactoryProvider linkFactoryProvider
   ) {
     this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
-    this.eventBus = Objects.requireNonNull(eventBus);
-    this.eventBus.register(this);
+    Objects.requireNonNull(eventBus).register(this);
     this.linkFactoryProvider = Objects.requireNonNull(linkFactoryProvider);
   }
 

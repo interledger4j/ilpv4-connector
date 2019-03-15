@@ -26,20 +26,23 @@ import java.util.function.Supplier;
 import static org.interledger.connector.link.blast.BlastHeaders.BLAST_AUDIENCE;
 
 /**
- * An {@link AuthenticationProvider} that wraps an individual instance of {@link JwtAuthenticationProvider} for each
- * BLAST peer that authentication is required to be performed with.
+ * <p>An {@link AuthenticationProvider} that accepts a JWT Bearer token (as configured in Link settings) for a
+ * particular account.</p>
+ *
+ * <p>Note that this implementation wraps an individual instance of {@link JwtAuthenticationProvider} for each
+ * BLAST peer that authentication is required to be performed with.</p>
  */
 public class BlastAuthenticationProvider implements AuthenticationProvider {
+
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final AccountManager accountManager;
   private final LoadingCache<AccountId, JwtAuthenticationProvider> jwtAuthenticationProviders;
 
   public BlastAuthenticationProvider(
     final Supplier<ConnectorSettings> connectorSettingsSupplier, final AccountManager accountManager
   ) {
-    this.connectorSettingsSupplier = connectorSettingsSupplier;
+    Objects.requireNonNull(connectorSettingsSupplier);
     this.accountManager = Objects.requireNonNull(accountManager);
 
     // TODO: For a client-mode, we probably don't want to construct new instances of JwtVerifier, but for now we

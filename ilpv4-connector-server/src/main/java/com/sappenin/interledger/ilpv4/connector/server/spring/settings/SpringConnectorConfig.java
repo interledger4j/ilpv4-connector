@@ -15,6 +15,7 @@ import com.sappenin.interledger.ilpv4.connector.accounts.DefaultLinkManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.InMemoryAccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
+import com.sappenin.interledger.ilpv4.connector.balances.InMemoryBalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.fx.ExchangeRateService;
 import com.sappenin.interledger.ilpv4.connector.fx.JavaMoneyExchangeRateService;
 import com.sappenin.interledger.ilpv4.connector.links.DefaultNextHopPacketMapper;
@@ -44,7 +45,9 @@ import com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.Bla
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
+import org.interledger.connector.link.AbstractLink;
 import org.interledger.connector.link.LinkFactoryProvider;
+import org.interledger.connector.link.events.LinkEventEmitter;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.slf4j.Logger;
@@ -140,6 +143,11 @@ public class SpringConnectorConfig {
   }
 
   @Bean
+  LinkEventEmitter linkEventEmitter(EventBus eventBus) {
+    return new AbstractLink.EventBusEventEmitter(eventBus);
+  }
+
+  @Bean
   LinkManager linkManager(EventBus eventBus, LinkFactoryProvider linkFactoryProvider) {
     return new DefaultLinkManager(
       () -> connectorSettingsSupplier().get().getOperatorAddress(),
@@ -190,12 +198,12 @@ public class SpringConnectorConfig {
     // This is also a PaymentRouter
   ExternalRoutingService connectorModeRoutingService(
     EventBus eventBus,
-    @Qualifier(ILP) CodecContext ilpCodecContext,
+    @Qualifier(CCP) CodecContext ccpCodecContext,
     Supplier<ConnectorSettings> connectorSettingsSupplier,
     AccountManager accountManager,
     AccountIdResolver accountIdResolver
   ) {
-    return new InMemoryExternalRoutingService(eventBus, ilpCodecContext, connectorSettingsSupplier, accountManager,
+    return new InMemoryExternalRoutingService(eventBus, ccpCodecContext, connectorSettingsSupplier, accountManager,
       accountIdResolver);
   }
 
@@ -215,7 +223,7 @@ public class SpringConnectorConfig {
 
   @Bean
   BalanceTracker balanceTracker(AccountManager accountManager) {
-    return new BalanceTracker.InMemoryBalanceTracker(accountManager);
+    return new InMemoryBalanceTracker(accountManager);
   }
 
   @Bean
@@ -230,14 +238,15 @@ public class SpringConnectorConfig {
 
     final ImmutableList.Builder<PacketSwitchFilter> filterList =
       ImmutableList.<PacketSwitchFilter>builder().add(
-        new RateLimitIlpPacketFilter(), // Limits Data packets...
+        new RateLimitIlpPacketFilter(operatorAddressSupplier), // Limits Data packets...
         new AllowedDestinationPacketFilter(operatorAddressSupplier, addressUtils),
         new ExpiryPacketFilter(operatorAddressSupplier),
         new MaxPacketAmountFilter(operatorAddressSupplier, accountManager),
-        new BalanceIlpPacketFilter(balanceTracker),
+        new BalanceIlpPacketFilter(operatorAddressSupplier, balanceTracker),
         new ValidateFulfillmentPacketFilter(operatorAddressSupplier),
         new PeerProtocolPacketFilter(
-          connectorSettingsSupplier().get().getEnabledProtocols(), operatorAddressSupplier,
+          operatorAddressSupplier,
+          connectorSettingsSupplier().get().getEnabledProtocols(),
           externalRoutingService, accountManager,
           ccpCodecContext, ildcpCodecContext
         )
@@ -264,11 +273,11 @@ public class SpringConnectorConfig {
   List<LinkFilter> linkFilters(
     AccountManager accountManager, InterledgerAddressUtils addressUtils, BalanceTracker balanceTracker
   ) {
-    //    final Supplier<InterledgerAddress> operatorAddressSupplier =
-    //      () -> connectorSettingsSupplier().get().getOperatorAddress();
+    final Supplier<InterledgerAddress> operatorAddressSupplier =
+      () -> connectorSettingsSupplier().get().getOperatorAddress().get();
 
     return Lists.newArrayList(
-      new OutgoingBalanceLinkFilter(balanceTracker)
+      new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker)
     );
     //      new RateLimitIlpPacketFilter(), // Limits Data packets...
     //      new ExpiryPacketFilter(operatorAddressSupplier),
