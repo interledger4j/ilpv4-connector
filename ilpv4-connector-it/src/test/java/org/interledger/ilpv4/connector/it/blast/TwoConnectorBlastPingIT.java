@@ -77,7 +77,6 @@ public class TwoConnectorBlastPingIT {
     LOGGER.info("Test topology `{}` stopped!", "TwoConnectorPeerBlastTopology");
   }
 
-
   @Before
   public void setup() {
     aliceConnector = this.getILPv4NodeFromGraph(ALICE_ADDRESS);
@@ -91,7 +90,10 @@ public class TwoConnectorBlastPingIT {
   @Test
   public void testAliceNodeSettings() {
     final ILPv4Connector connector = getILPv4NodeFromGraph(ALICE_ADDRESS);
-    assertThat(connector.getConnectorSettings().getOperatorAddress(), is(TwoConnectorPeerBlastTopology.ALICE_ADDRESS));
+    assertThat(
+      connector.getConnectorSettings().getOperatorAddress().get(),
+      is(TwoConnectorPeerBlastTopology.ALICE_ADDRESS)
+    );
 
     final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
     assertThat(blastLink.getLinkSettings().getOutgoingAccountId(), is(ALICE));
@@ -101,7 +103,10 @@ public class TwoConnectorBlastPingIT {
   @Test
   public void testBobNodeSettings() {
     final ILPv4Connector connector = getILPv4NodeFromGraph(BOB_ADDRESS);
-    assertThat(connector.getConnectorSettings().getOperatorAddress(), is(TwoConnectorPeerBlastTopology.BOB_ADDRESS));
+    assertThat(
+      connector.getConnectorSettings().getOperatorAddress().get(),
+      is(TwoConnectorPeerBlastTopology.BOB_ADDRESS)
+    );
 
     final BlastLink blastLink = getBlastLinkFromGraph(BOB_ADDRESS);
     assertThat(blastLink.getLinkSettings().getOutgoingAccountId(), is(BOB));
@@ -132,7 +137,8 @@ public class TwoConnectorBlastPingIT {
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
         assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
         assertThat(interledgerRejectPacket.getMessage(), is("Destination address is unreachable"));
-        assertThat(interledgerRejectPacket.getTriggeredBy(), is(BOB_ADDRESS));
+        assertThat(interledgerRejectPacket.getTriggeredBy().isPresent(), is(true));
+        assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(BOB_ADDRESS));
         latch.countDown();
       }
     }.handle(responsePacket);
@@ -182,7 +188,8 @@ public class TwoConnectorBlastPingIT {
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
         assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
         assertThat(interledgerRejectPacket.getMessage(), is("Destination address is unreachable"));
-        assertThat(interledgerRejectPacket.getTriggeredBy(), is(BOB_ADDRESS));
+        assertThat(interledgerRejectPacket.getTriggeredBy().isPresent(), is(true));
+        assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(BOB_ADDRESS));
         latch.countDown();
       }
     }.handle(responsePacket);
@@ -266,7 +273,7 @@ public class TwoConnectorBlastPingIT {
 
       @Override
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-        assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F03_INVALID_AMOUNT));
+        assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE));
         latch.countDown();
       }
 

@@ -50,7 +50,6 @@ public class TwoConnectorParentChildBlastTopology {
   public static final int ALICE_PORT = 8080;
   public static final int BOB_PORT = 8081;
 
-
   public static final InterledgerAddress ALICE_ADDRESS = InterledgerAddress.of("test." + ALICE);
   public static final InterledgerAddress BOB_ADDRESS = ALICE_ADDRESS.with(BOB);
 
@@ -137,9 +136,11 @@ public class TwoConnectorParentChildBlastTopology {
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_ACCOUNT_SECRET, "12345678912345678912345678912345")
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, "PT2M")
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, BOB_TOKEN_ISSUER)
+      .putCustomSettings(
+        BlastLinkSettings.BLAST_OUTGOING_URL,
+        "http://localhost:" + BOB_PORT + IlpHttpController.ILP_PATH
+      )
 
-      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_URL,
-        "http://localhost:" + BOB_PORT + IlpHttpController.ILP_PATH)
       .build();
 
     final ConnectorSettings connectorSettings = ImmutableConnectorSettings.builder()
