@@ -2,10 +2,12 @@ package org.interledger.connector.link;
 
 import org.interledger.connector.link.events.LinkEventListener;
 import org.interledger.connector.link.exceptions.LinkHandlerAlreadyRegisteredException;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerPreparePacket;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
  * <p>An abstraction for communicating with a remote Interledger peer using a single account.</p>
@@ -32,6 +34,14 @@ public interface Link<LS extends LinkSettings> extends LinkSender, Connectable {
    * @return A {@link LinkId}.
    */
   Optional<LinkId> getLinkId();
+
+  /**
+   * A supplier for the ILP address of this node operator. This value may be empty, for example, in cases where the Link
+   * obtains its address from a parent node using IL-DCP.
+   *
+   * @return A {@link Supplier} of an optioanally-present {@link InterledgerAddress}.
+   */
+  Supplier<Optional<InterledgerAddress>> getOperatorAddressSupplier();
 
   /**
    * The settings for this Link.
@@ -101,10 +111,5 @@ public interface Link<LS extends LinkSettings> extends LinkSender, Connectable {
    * @param eventListener A {@link LinkEventListener} representing the listener to remove.
    */
   void removeLinkEventListener(LinkEventListener eventListener);
-
-  /**
-   * Removes an event handler from the collection of handlers registered with this ledger link.
-   */
-  void removeAllLinkEventListeners();
 
 }

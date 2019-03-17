@@ -5,10 +5,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -18,18 +15,16 @@ import java.util.function.Supplier;
  * An implementation of {@link PacketSwitchFilter} that enforces allowed-destination logic, preventing a particular
  * account from sending to disallowed destinations (e.g., internally routed addresses like `self.foo`).
  */
-public class AllowedDestinationPacketFilter implements PacketSwitchFilter {
+public class AllowedDestinationPacketFilter extends AbstractPacketFilter implements PacketSwitchFilter {
 
   private static final String DESTINATION_ADDRESS_IS_UNREACHABLE = "Destination address is unreachable";
 
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
-  private final Supplier<InterledgerAddress> operatorAddressSupplier;
   private final InterledgerAddressUtils addressUtils;
 
   public AllowedDestinationPacketFilter(
-    final Supplier<InterledgerAddress> operatorAddressSupplier, final InterledgerAddressUtils addressUtils) {
-    this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
+    final Supplier<InterledgerAddress> operatorAddressSupplier, final InterledgerAddressUtils addressUtils
+  ) {
+    super(operatorAddressSupplier);
     this.addressUtils = Objects.requireNonNull(addressUtils);
   }
 
@@ -46,14 +41,12 @@ public class AllowedDestinationPacketFilter implements PacketSwitchFilter {
     ) {
       logger.error(
         "AccountId `{}` is not allowed to send to destination address `{}`",
-        sourceAccountId, sourcePreparePacket.getDestination()
+        sourceAccountId.value(), sourcePreparePacket.getDestination().getValue()
       );
       // REJECT!
-      return InterledgerRejectPacket.builder()
-        .code(InterledgerErrorCode.F02_UNREACHABLE)
-        .triggeredBy(operatorAddressSupplier.get())
-        .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
-        .build();
+      return reject(
+        sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F02_UNREACHABLE, DESTINATION_ADDRESS_IS_UNREACHABLE
+      );
     } else {
       return filterChain.doFilter(sourceAccountId, sourcePreparePacket);
     }

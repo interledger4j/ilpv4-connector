@@ -25,6 +25,9 @@ import java.util.Base64;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 /**
  * Unit tests for {@link PingProtocolFilter}.
@@ -83,7 +86,7 @@ public class PingProtocolFilterTest {
     final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
       .amount(BigInteger.TEN)
       .executionCondition(InterledgerCondition.of(new byte[32]))
-      .destination(InterledgerAddress.of("example.foo"))
+      .destination(TARGET_ADDRESS)
       .expiresAt(Instant.now())
       .build();
     InterledgerResponsePacket response = pingProtocolFilter.doFilter(
@@ -101,9 +104,27 @@ public class PingProtocolFilterTest {
       @Override
       protected void handleRejectPacket(final InterledgerRejectPacket interledgerRejectPacket) {
         assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
-        assertThat(interledgerRejectPacket.getTriggeredBy(), is(TARGET_ADDRESS));
+        assertThat(interledgerRejectPacket.getTriggeredBy().isPresent(), is(true));
+        assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(TARGET_ADDRESS));
       }
     }.handle(response);
+    verifyZeroInteractions(filterChainMock);
+  }
+
+  @Test
+  public void sendPacketWithInvalidAddress() {
+    final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
+      .amount(BigInteger.TEN)
+      .executionCondition(pingProtocolFilter.PING_PROTOCOL_CONDITION)
+      .destination(InterledgerAddress.of("example.foo"))
+      .expiresAt(Instant.now())
+      .build();
+    pingProtocolFilter.doFilter(
+      AccountId.of("alice"), preparePacket, filterChainMock
+    );
+
+    // Not a ping packet, so verify processing continues.
+    verify(filterChainMock).doFilter(any(), any());
   }
 
   @Test
@@ -111,7 +132,7 @@ public class PingProtocolFilterTest {
     final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
       .amount(BigInteger.TEN)
       .executionCondition(pingProtocolFilter.PING_PROTOCOL_CONDITION)
-      .destination(InterledgerAddress.of("example.foo"))
+      .destination(TARGET_ADDRESS)
       .expiresAt(Instant.now())
       .build();
     InterledgerResponsePacket response = pingProtocolFilter.doFilter(
@@ -131,5 +152,7 @@ public class PingProtocolFilterTest {
         fail("Expected a Fulfill!");
       }
     }.handle(response);
+
+    verifyZeroInteractions(filterChainMock);
   }
 }

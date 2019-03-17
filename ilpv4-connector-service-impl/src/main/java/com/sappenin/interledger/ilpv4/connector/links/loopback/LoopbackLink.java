@@ -5,7 +5,9 @@ import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkHandler;
 import org.interledger.connector.link.LinkSettings;
 import org.interledger.connector.link.LinkType;
+import org.interledger.connector.link.events.LinkEventEmitter;
 import org.interledger.connector.link.exceptions.LinkHandlerAlreadyRegisteredException;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerFulfillment;
@@ -15,7 +17,9 @@ import org.interledger.core.InterledgerResponsePacket;
 
 import java.math.BigInteger;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 /**
  * <p>A {@link Link} that always responds with a Fulfillment, as long as the amount in the incoming prepare packet is
@@ -31,10 +35,13 @@ public class LoopbackLink extends AbstractLink<LinkSettings> implements Link<Lin
   /**
    * Required-args constructor.
    */
-  public LoopbackLink(final LinkSettings linkSettings) {
-    super(linkSettings);
+  public LoopbackLink(
+    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
+    final LinkSettings linkSettings,
+    final LinkEventEmitter linkEventEmitter
+  ) {
+    super(operatorAddressSupplier, linkSettings, linkEventEmitter);
   }
-
 
   @Override
   public CompletableFuture<Void> doConnect() {
@@ -67,7 +74,7 @@ public class LoopbackLink extends AbstractLink<LinkSettings> implements Link<Lin
       return InterledgerRejectPacket.builder()
         .code(InterledgerErrorCode.F00_BAD_REQUEST)
         .message("Loopback Packets MUST have an amount of 0")
-        .triggeredBy(getLinkSettings().getOperatorAddress())
+        .triggeredBy(getOperatorAddressSupplier().get().get()) // We expect the address to have been populated.
         .build();
     }
   }

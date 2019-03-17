@@ -4,18 +4,24 @@ import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkFactory;
 import org.interledger.connector.link.LinkSettings;
 import org.interledger.connector.link.LinkType;
+import org.interledger.connector.link.events.LinkEventEmitter;
+import org.interledger.core.InterledgerAddress;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * An implementation of {@link LinkFactory} for creating BTP Links.
  */
 public class BlastLinkFactory implements LinkFactory {
 
+  private final LinkEventEmitter linkEventEmitter;
   private final RestTemplate restTemplate;
 
-  public BlastLinkFactory(final RestTemplate restTemplate) {
+  public BlastLinkFactory(final LinkEventEmitter linkEventEmitter, final RestTemplate restTemplate) {
+    this.linkEventEmitter = Objects.requireNonNull(linkEventEmitter);
     this.restTemplate = Objects.requireNonNull(restTemplate);
   }
 
@@ -24,7 +30,9 @@ public class BlastLinkFactory implements LinkFactory {
    *
    * @return A newly constructed instance of {@link Link}.
    */
-  public Link<?> constructLink(final LinkSettings linkSettings) {
+  public Link<?> constructLink(
+    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier, final LinkSettings linkSettings
+  ) {
     Objects.requireNonNull(linkSettings);
 
     if (!this.supports(linkSettings.getLinkType())) {
@@ -38,9 +46,31 @@ public class BlastLinkFactory implements LinkFactory {
     final BlastLinkSettings blastLinkSettings =
       BlastLinkSettings.applyCustomSettings(builder, linkSettings.getCustomSettings()).build();
 
+    final BlastHttpSender blastHttpSender;
+    if (blastLinkSettings.getOutgoingAuthType().equals(BlastLinkSettings.AuthType.SIMPLE)) {
+      blastHttpSender = new SimpleBearerBlastHttpSender(
+        operatorAddressSupplier,
+        blastLinkSettings.getOutgoingUrl().uri(),
+        restTemplate,
+        () -> blastLinkSettings.getOutgoingAccountId(),
+        () -> blastLinkSettings.getOutgoingAccountSecret().getBytes()
+      );
+    } else {
+      blastHttpSender = new JwtBlastHttpSender(
+        operatorAddressSupplier,
+        blastLinkSettings.getOutgoingUrl().uri(),
+        restTemplate,
+        () -> blastLinkSettings.getOutgoingAccountId(),
+        () -> blastLinkSettings.getOutgoingTokenIssuer(),
+        () -> blastLinkSettings.getOutgoingAccountSecret().getBytes()
+      );
+    }
+
     final BlastLink blastLink = new BlastLink(
+      operatorAddressSupplier,
       ModifiableBlastLinkSettings.create().from(blastLinkSettings), // Modifiable for testing
-      restTemplate
+      blastHttpSender,
+      linkEventEmitter
     );
 
     // TODO

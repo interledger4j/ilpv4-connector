@@ -43,7 +43,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
 
   private final ForwardingRoutingTable<IncomingRoute> incomingRoutes;
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
-  private final CodecContext codecContext;
+  private final CodecContext ccpCodecContext;
 
   // The Plugin that can communicate to the remote peer.
   private final AccountId peerAccountId;
@@ -55,11 +55,11 @@ public class DefaultCcpReceiver implements CcpReceiver {
   public DefaultCcpReceiver(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountId peerAccountId, final Link link, final ForwardingRoutingTable<IncomingRoute> incomingRoutes,
-    final CodecContext codecContext
+    final CodecContext ccpCodecContext
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.incomingRoutes = Objects.requireNonNull(incomingRoutes);
-    this.codecContext = Objects.requireNonNull(codecContext);
+    this.ccpCodecContext = Objects.requireNonNull(ccpCodecContext);
     this.peerAccountId = peerAccountId;
     this.link = Objects.requireNonNull(link);
   }
@@ -230,7 +230,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
 
     try {
       ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-      codecContext.write(ccpRouteControlRequest, outputStream);
+      ccpCodecContext.write(ccpRouteControlRequest, outputStream);
       return outputStream.toByteArray();
     } catch (Exception e) {
       throw new RuntimeException(e);

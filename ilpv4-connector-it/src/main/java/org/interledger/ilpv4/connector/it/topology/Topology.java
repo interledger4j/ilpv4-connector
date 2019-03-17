@@ -1,9 +1,12 @@
 package org.interledger.ilpv4.connector.it.topology;
 
+import com.google.common.collect.Lists;
 import org.interledger.core.InterledgerAddress;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,20 +65,15 @@ public class Topology {
     return (T) nodes.get(key);
   }
 
-//  public ServerNode getNodeAsServer(String key) {
-//    return (ServerNode) getNode(key);
-//  }
-//
-//  public ServerNode getNodeAsServer(InterledgerAddress key) {
-//    return (ServerNode) getNode(key);
-//  }
-
   public Collection<Node> getNodeValues() {
     return nodes.values();
   }
 
   public Topology start() {
-    for (Node node : nodes.values()) {
+    List<Node> nodeList = Lists.newArrayList(nodes.values());
+    Collections.sort(nodeList, Comparator.comparing(Node::getId));
+
+    for (Node node : nodeList) {
       node.start();
     }
 
@@ -83,7 +81,7 @@ public class Topology {
       edge.connect(this);
     }
 
-    // Noitify the listener...
+    // Notify the listener...
     postConstructListener.afterTopologyStartup(this);
 
     return this;

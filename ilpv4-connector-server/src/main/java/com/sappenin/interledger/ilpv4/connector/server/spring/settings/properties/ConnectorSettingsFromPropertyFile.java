@@ -3,6 +3,7 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.settings.properti
 import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.GlobalRoutingSettings;
+import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountProviderSettings;
 import org.interledger.connector.accounts.AccountSettings;
@@ -27,7 +28,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   public static final String BEAN_NAME = "ilpv4.connector-com.sappenin.interledger.ilpv4.connector.server.spring" +
     ".settings.properties.ConnectorSettingsFromPropertyFile";
 
-  private InterledgerAddress nodeIlpAddress;
+  private Optional<InterledgerAddress> nodeIlpAddress;
 
   private EnabledProtocolSettingsFromPropertyFile enabledProtocols =
     new EnabledProtocolSettingsFromPropertyFile();
@@ -35,6 +36,8 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   private boolean websocketServerEnabled;
 
   private boolean blastEnabled;
+
+  private String jwtTokenIssuer;
 
   private InterledgerAddressPrefix globalPrefix = InterledgerAddressPrefix.TEST;
 
@@ -44,15 +47,21 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   private List<AccountProviderSettingsFromPropertyFile> accountProviders = Lists.newArrayList();
 
-  public InterledgerAddress getOperatorAddress() {
+  @Override
+  public Optional<InterledgerAddress> getOperatorAddress() {
     return nodeIlpAddress;
   }
 
-  public InterledgerAddress getNodeIlpAddress() {
+  @Override
+  public InterledgerAddress getOperatorAddressSafe() {
+    return nodeIlpAddress.get();
+  }
+
+  public Optional<InterledgerAddress> getNodeIlpAddress() {
     return nodeIlpAddress;
   }
 
-  public void setNodeIlpAddress(InterledgerAddress nodeIlpAddress) {
+  public void setNodeIlpAddress(Optional<InterledgerAddress> nodeIlpAddress) {
     this.nodeIlpAddress = nodeIlpAddress;
   }
 
@@ -86,8 +95,12 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   }
 
   @Override
-  public boolean blastEnabled() {
-    return isBlastEnabled();
+  public HttpUrl getJwtTokenIssuer() {
+    return jwtTokenIssuer == null ? null : HttpUrl.parse(jwtTokenIssuer);
+  }
+
+  public void setJwtTokenIssuer(String jwtTokenIssuer) {
+    this.jwtTokenIssuer = jwtTokenIssuer;
   }
 
   public boolean isBlastEnabled() {

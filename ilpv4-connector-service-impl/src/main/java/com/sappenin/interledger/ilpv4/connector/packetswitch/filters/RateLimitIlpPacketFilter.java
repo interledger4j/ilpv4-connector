@@ -1,18 +1,21 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.function.Supplier;
 
 
 /**
  * An implementation of {@link PacketSwitchFilter} for limiting per-account traffic on this connector.
  */
-public class RateLimitIlpPacketFilter implements PacketSwitchFilter {
+public class RateLimitIlpPacketFilter extends AbstractPacketFilter implements PacketSwitchFilter {
 
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
+  public RateLimitIlpPacketFilter(final Supplier<InterledgerAddress> operatorAddressSupplier) {
+    super(operatorAddressSupplier);
+  }
 
   @Override
   public InterledgerResponsePacket doFilter(

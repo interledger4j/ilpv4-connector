@@ -3,7 +3,7 @@ package com.sappenin.interledger.ilpv4.connector.routing;
 import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
-import com.sappenin.interledger.ilpv4.connector.ccp.codecs.CcpCodecs;
+import com.sappenin.interledger.ilpv4.connector.ccp.codecs.CcpCodecContextFactory;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ImmutableConnectorSettings;
 import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
@@ -48,7 +48,7 @@ public class InMemoryExternalRoutingServiceTest {
     this.incomingRoutingTable = new InMemoryIncomingRouteForwardRoutingTable();
     this.outgoingRoutingTable = new InMemoryRouteUpdateForwardRoutingTable();
 
-    this.codecContext = CcpCodecs.register(InterledgerCodecContextFactory.oer());
+    this.codecContext = CcpCodecContextFactory.register(InterledgerCodecContextFactory.oer());
 
     this.externalRoutingService = new InMemoryExternalRoutingService(
       eventBus,

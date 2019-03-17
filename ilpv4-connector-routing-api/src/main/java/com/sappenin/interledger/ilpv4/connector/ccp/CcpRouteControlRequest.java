@@ -15,6 +15,10 @@ import java.util.UUID;
 @Value.Immutable
 public interface CcpRouteControlRequest {
 
+  static ImmutableCcpRouteControlRequest.Builder builder() {
+    return ImmutableCcpRouteControlRequest.builder();
+  }
+
   /**
    * The state that the node wants the counterpart node to be in.
    *

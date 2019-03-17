@@ -8,6 +8,7 @@ import com.sappenin.interledger.ilpv4.connector.server.spring.converters.OerPrep
 import org.interledger.connector.link.LinkFactoryProvider;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkFactory;
+import org.interledger.connector.link.events.LinkEventEmitter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -36,6 +37,9 @@ public class BlastConfig {
   public static final String BLAST = "blast";
 
   @Autowired
+  LinkEventEmitter linkEventEmitter;
+
+  @Autowired
   LinkFactoryProvider linkFactoryProvider;
 
   @Autowired
@@ -62,6 +66,8 @@ public class BlastConfig {
 
   @PostConstruct
   public void startup() {
-    linkFactoryProvider.registerLinkFactory(BlastLink.LINK_TYPE, new BlastLinkFactory(blastRestTemplate));
+    linkFactoryProvider.registerLinkFactory(
+      BlastLink.LINK_TYPE, new BlastLinkFactory(linkEventEmitter, blastRestTemplate)
+    );
   }
 }

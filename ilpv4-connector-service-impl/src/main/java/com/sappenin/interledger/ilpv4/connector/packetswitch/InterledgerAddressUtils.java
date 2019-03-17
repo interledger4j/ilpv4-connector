@@ -42,7 +42,8 @@ public class InterledgerAddressUtils {
     Objects.requireNonNull(destinationAddress);
 
     // Must check the operating address first since it likely will be a PaymentNetwork address.
-    if (destinationAddress.startsWith(connectorSettingsSupplier.get().getOperatorAddress())) {
+    if (connectorSettingsSupplier.get().getOperatorAddress().isPresent() &&
+      destinationAddress.startsWith(connectorSettingsSupplier.get().getOperatorAddressSafe())) {
       return EXTERNAL_FORWARDING_NOT_ALLOWED;
     } else if (
       // Short-circuit on the happy path using startsWith for performance reasons. Even if someone uses "goo.foo", and
@@ -75,7 +76,10 @@ public class InterledgerAddressUtils {
   ) {
     if (isPaymentNetworkAddress(destinationAddress)) {
       return ALLOWED;
-    } else if (destinationAddress.startsWith(connectorSettingsSupplier.get().getOperatorAddress())) {
+    } else if (
+      connectorSettingsSupplier.get().getOperatorAddress().isPresent() &&
+        destinationAddress.startsWith(connectorSettingsSupplier.get().getOperatorAddressSafe())
+    ) {
       return ALLOWED; // Ping allowed.
     } else if (destinationAddress.startsWith(InterledgerAddressPrefix.PRIVATE.getValue())) {
       // Only internal accounts can send to a `private` address prefix.
@@ -109,10 +113,10 @@ public class InterledgerAddressUtils {
       // if this doesn't blow up somewhere else, the routing-table won't accept it.
       destinationAddress.startsWith(InterledgerAddressPrefix.GLOBAL.getValue()) ||
         // Do full equality checks here because performance is less important (we don't expect may TEST packets).
-        destinationAddress.getAllocationScheme().equals(InterledgerAddressPrefix.TEST.getValue()) ||
-        destinationAddress.getAllocationScheme().equals(InterledgerAddressPrefix.TEST1.getValue()) ||
-        destinationAddress.getAllocationScheme().equals(InterledgerAddressPrefix.TEST2.getValue()) ||
-        destinationAddress.getAllocationScheme().equals(InterledgerAddressPrefix.TEST3.getValue());
+        destinationAddress.getAllocationScheme().equals(InterledgerAddress.AllocationScheme.TEST) ||
+        destinationAddress.getAllocationScheme().equals(InterledgerAddress.AllocationScheme.TEST1) ||
+        destinationAddress.getAllocationScheme().equals(InterledgerAddress.AllocationScheme.TEST2) ||
+        destinationAddress.getAllocationScheme().equals(InterledgerAddress.AllocationScheme.TEST3);
   }
 
 }

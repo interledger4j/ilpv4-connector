@@ -46,9 +46,4 @@ public interface LinkEventEmitter {
    * @param eventlistener A {@link UUID} representing the unique identifier of the listener, as seen by this emitter.
    */
   void removeLinkEventListener(LinkEventListener eventlistener);
-
-  /**
-   * Removes all event listeners registered with this emitter.
-   */
-  void removeAllLinkEventListeners();
 }
