@@ -1,7 +1,6 @@
 package org.interledger.ilpv4.connector.it.blast;
 
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
-import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.ConnectorProfile;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
@@ -17,7 +16,7 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
-import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology;
+import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology;
 import org.interledger.ilpv4.connector.it.topology.LinkNode;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.AfterClass;
@@ -40,10 +39,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.connector.link.PingableLink.PING_PROTOCOL_CONDITION;
-import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.ALICE;
-import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.ALICE_ADDRESS;
-import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.BOB;
-import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorBlastTopology.BOB_ADDRESS;
+import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.ALICE;
+import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.ALICE_ADDRESS;
+import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.BOB;
+import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.BOB_ADDRESS;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -53,10 +52,10 @@ import static org.junit.Assert.assertThat;
  */
 // TODO: Once the PING protocol is specified via RFC, extract the PING tests into an abstract super-class. Every IT
 //  should excercise PING functionality as a baseline, and thus far both BTP and BLAST duplicate the same PING tests.
-public class TwoConnectorBlastIT {
+public class TwoConnectorBlastPingIT {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorBlastIT.class);
-  private static Topology topology = TwoConnectorBlastTopology.init();
+  private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorBlastPingIT.class);
+  private static Topology topology = TwoConnectorPeerBlastTopology.init();
 
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
@@ -66,18 +65,17 @@ public class TwoConnectorBlastIT {
     System.setProperty("spring.profiles.active", ConnectorProfile.CONNECTOR_MODE + "," + ConnectorProfile.DEV);
     System.setProperty(ConnectorProperties.BLAST_ENABLED, "true");
 
-    LOGGER.info("Starting test topology `{}`...", "TwoConnectorBlastTopology");
+    LOGGER.info("Starting test topology `{}`...", "TwoConnectorPeerBlastTopology");
     topology.start();
-    LOGGER.info("Test topology `{}` started!", "TwoConnectorBlastTopology");
+    LOGGER.info("Test topology `{}` started!", "TwoConnectorPeerBlastTopology");
   }
 
   @AfterClass
   public static void shutdownClass() {
-    LOGGER.info("Stopping test topology `{}`...", "TwoConnectorBlastTopology");
+    LOGGER.info("Stopping test topology `{}`...", "TwoConnectorPeerBlastTopology");
     topology.stop();
-    LOGGER.info("Test topology `{}` stopped!", "TwoConnectorBlastTopology");
+    LOGGER.info("Test topology `{}` stopped!", "TwoConnectorPeerBlastTopology");
   }
-
 
   @Before
   public void setup() {
@@ -86,28 +84,33 @@ public class TwoConnectorBlastIT {
 
     // Reset all accounts on each connector...
     bobConnector.getBalanceTracker().resetBalance(AccountId.of(ALICE));
-    bobConnector.getBalanceTracker().resetBalance(AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX));
-
     aliceConnector.getBalanceTracker().resetBalance(AccountId.of(BOB));
-    aliceConnector.getBalanceTracker().resetBalance(AccountId.of(BOB + BalanceTracker.TRACKING_ACCOUNT_SUFFIX));
   }
 
   @Test
   public void testAliceNodeSettings() {
     final ILPv4Connector connector = getILPv4NodeFromGraph(ALICE_ADDRESS);
-    assertThat(connector.getConnectorSettings().getOperatorAddress(), is(TwoConnectorBlastTopology.ALICE_ADDRESS));
+    assertThat(
+      connector.getConnectorSettings().getOperatorAddress().get(),
+      is(TwoConnectorPeerBlastTopology.ALICE_ADDRESS)
+    );
 
     final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
-    assertThat(blastLink.getLinkSettings().getOperatorAddress(), is(ALICE_ADDRESS));
+    assertThat(blastLink.getLinkSettings().getOutgoingAccountId(), is(ALICE));
+    assertThat(blastLink.getLinkSettings().getIncomingAccountId(), is(BOB));
   }
 
   @Test
   public void testBobNodeSettings() {
     final ILPv4Connector connector = getILPv4NodeFromGraph(BOB_ADDRESS);
-    assertThat(connector.getConnectorSettings().getOperatorAddress(), is(TwoConnectorBlastTopology.BOB_ADDRESS));
+    assertThat(
+      connector.getConnectorSettings().getOperatorAddress().get(),
+      is(TwoConnectorPeerBlastTopology.BOB_ADDRESS)
+    );
 
     final BlastLink blastLink = getBlastLinkFromGraph(BOB_ADDRESS);
-    assertThat(blastLink.getLinkSettings().getOperatorAddress(), is(TwoConnectorBlastTopology.BOB_ADDRESS));
+    assertThat(blastLink.getLinkSettings().getOutgoingAccountId(), is(BOB));
+    assertThat(blastLink.getLinkSettings().getIncomingAccountId(), is(ALICE));
   }
 
   /**
@@ -134,7 +137,8 @@ public class TwoConnectorBlastIT {
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
         assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
         assertThat(interledgerRejectPacket.getMessage(), is("Destination address is unreachable"));
-        assertThat(interledgerRejectPacket.getTriggeredBy(), is(BOB_ADDRESS));
+        assertThat(interledgerRejectPacket.getTriggeredBy().isPresent(), is(true));
+        assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(BOB_ADDRESS));
         latch.countDown();
       }
     }.handle(responsePacket);
@@ -153,12 +157,9 @@ public class TwoConnectorBlastIT {
 
     // ALICE
     assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.ZERO);
-    assertAccountBalance(aliceConnector, AccountId.of(BOB + BalanceTracker.TRACKING_ACCOUNT_SUFFIX), BigInteger.ZERO);
 
     // BOB
     assertAccountBalance(bobConnector, AccountId.of(ALICE), BigInteger.valueOf(1L));
-    assertAccountBalance(bobConnector, AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX),
-      BigInteger.valueOf(-1L));
   }
 
   /**
@@ -187,7 +188,8 @@ public class TwoConnectorBlastIT {
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
         assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
         assertThat(interledgerRejectPacket.getMessage(), is("Destination address is unreachable"));
-        assertThat(interledgerRejectPacket.getTriggeredBy(), is(BOB_ADDRESS));
+        assertThat(interledgerRejectPacket.getTriggeredBy().isPresent(), is(true));
+        assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(BOB_ADDRESS));
         latch.countDown();
       }
     }.handle(responsePacket);
@@ -271,7 +273,7 @@ public class TwoConnectorBlastIT {
 
       @Override
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-        assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F03_INVALID_AMOUNT));
+        assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE));
         latch.countDown();
       }
 
@@ -437,19 +439,8 @@ public class TwoConnectorBlastIT {
     assertThat(averageProcssingTime < 20, is(true));
     assertThat(averageMsPerPing < 2, is(true));
 
-    // Assert the `ping` account balances in `test.alice`, which is paying for the pings.
-    //final AccountId alicePingAccountId = aliceConnector.getAccountManager().getPingAccountId().get();
-    //assertAccountBalance(aliceConnector, alicePingAccountId, BigInteger.valueOf(numReps));
-
-    //final AccountId bobPingAccount = bobConnector.getAccountManager().getPingAccountId().get();
-    //assertAccountBalance(bobConnector, bobPingAccount, BigInteger.valueOf(numReps));
-
     assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.ZERO);
-    assertAccountBalance(aliceConnector, AccountId.of(BOB + BalanceTracker.TRACKING_ACCOUNT_SUFFIX), BigInteger.ZERO);
-
     assertAccountBalance(bobConnector, AccountId.of(ALICE), BigInteger.valueOf(numReps));
-    assertAccountBalance(bobConnector, AccountId.of(ALICE + BalanceTracker.TRACKING_ACCOUNT_SUFFIX),
-      BigInteger.valueOf(numReps * -1));
   }
 
   /////////////////
@@ -530,7 +521,7 @@ public class TwoConnectorBlastIT {
     final BigInteger expectedAmount
   ) {
     assertThat(
-      String.format("Incorrect balance for `%s@%s`!", accountId, connector.getNodeIlpAddress().getValue()),
+      String.format("Incorrect balance for `%s@%s`!", accountId, connector.getNodeIlpAddress().get().getValue()),
       connector.getBalanceTracker().getBalance(accountId).getAmount().get(), is(expectedAmount.intValue())
     );
   }

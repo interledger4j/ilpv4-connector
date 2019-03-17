@@ -9,11 +9,14 @@ import org.interledger.ilpv4.connector.it.topology.AbstractServerNode;
  */
 public class ConnectorServerNode extends AbstractServerNode<ConnectorServer> {
 
+  private final String id;
+
   /**
    * Required-args Constructor.
    */
-  public ConnectorServerNode(final ConnectorServer server) {
+  public ConnectorServerNode(final String id, final ConnectorServer server) {
     super(server, "ws", "localhost");
+    this.id = id;
   }
 
   @Override
@@ -27,5 +30,10 @@ public class ConnectorServerNode extends AbstractServerNode<ConnectorServer> {
    */
   public ILPv4Connector getILPv4Connector() {
     return this.getServer().getContext().getBean(ILPv4Connector.class);
+  }
+
+  @Override
+  public String getId() {
+    return this.id;
   }
 }

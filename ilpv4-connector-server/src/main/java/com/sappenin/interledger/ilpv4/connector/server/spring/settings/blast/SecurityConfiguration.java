@@ -73,35 +73,44 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     JwtWebSecurityConfigurer
       .forHS256(
         BLAST_AUDIENCE,
-        connectorSettingsSupplier.get().getOperatorAddress().getValue(),
+        connectorSettingsSupplier.get().getJwtTokenIssuer().toString(),
         blastAuthenticationProvider()
       )
       .configure(http)
       .authorizeRequests()
       .antMatchers(HttpMethod.HEAD, IlpHttpController.ILP_PATH).authenticated()
       .antMatchers(HttpMethod.POST, IlpHttpController.ILP_PATH).authenticated()
+      //.antMatchers(HttpMethod.POST, IlpHttpController.ILP_PATH).hasAuthority("read:messages");
+      //.antMatchers(HttpMethod.GET, "/actuator/**").permitAll()
+      //.antMatchers(HttpMethod.POST, "/actuator/**").permitAll()
       .anyRequest().denyAll();
-    //.antMatchers(HttpMethod.POST, IlpHttpController.ILP_PATH).hasAuthority("read:messages");
 
     http
       .addFilter(securityContextHolderAwareRequestFilter())
       .cors()
       .and()
-        .httpBasic().disable()
-        .formLogin().disable()
-        .logout().disable()
-        .anonymous().disable()
-        .jee().disable()
-        .authorizeRequests().anyRequest().denyAll()
+      .httpBasic().disable()
+      .formLogin().disable()
+      .logout().disable()
+      .anonymous().disable()
+      .jee().disable()
+      .authorizeRequests().anyRequest().denyAll()
+      //.authorizeRequests()
+      //.antMatchers(HttpMethod.GET, "/actuator").permitAll()
+      //.antMatchers(HttpMethod.GET, "/actuator/**").permitAll()
+      //.antMatchers(HttpMethod.POST, "/actuator/**").permitAll()
+      //.antMatchers(HttpMethod.GET, "/config").permitAll()
+      //.antMatchers(HttpMethod.GET, "/config/**").permitAll()
+      //.anyRequest().denyAll()
       .and()
-        .csrf().disable()
-        .sessionManagement()
-        .sessionCreationPolicy(SessionCreationPolicy.NEVER)
-        .enableSessionUrlRewriting(false)
+      .csrf().disable()
+      .sessionManagement()
+      .sessionCreationPolicy(SessionCreationPolicy.NEVER)
+      .enableSessionUrlRewriting(false)
       .and()
-        .exceptionHandling()
-        .authenticationEntryPoint(problemSupport)
-        .accessDeniedHandler(problemSupport);
+      .exceptionHandling()
+      .authenticationEntryPoint(problemSupport)
+      .accessDeniedHandler(problemSupport);
   }
 
 }

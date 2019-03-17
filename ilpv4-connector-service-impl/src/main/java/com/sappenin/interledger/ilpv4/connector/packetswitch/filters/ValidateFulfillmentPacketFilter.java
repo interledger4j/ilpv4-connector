@@ -5,25 +5,18 @@ import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
 import java.util.function.Supplier;
 
 
 /**
  * An implementation of {@link PacketSwitchFilter} for validating the fulfillment of an ILP packet.
  */
-public class ValidateFulfillmentPacketFilter implements PacketSwitchFilter {
-
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
-  private final Supplier<InterledgerAddress> operatorAddressSupplier;
+public class ValidateFulfillmentPacketFilter extends AbstractPacketFilter implements PacketSwitchFilter {
 
   public ValidateFulfillmentPacketFilter(final Supplier<InterledgerAddress> operatorAddressSupplier) {
-    this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
+    super(operatorAddressSupplier);
   }
 
   @Override
@@ -47,10 +40,10 @@ public class ValidateFulfillmentPacketFilter implements PacketSwitchFilter {
           fulfillPacket.getFulfillment().getCondition(),
           sourcePreparePacket.getExecutionCondition()
         );
-        return InterledgerRejectPacket.builder()
-          .code(InterledgerErrorCode.F05_WRONG_CONDITION)
-          .triggeredBy(operatorAddressSupplier.get())
-          .message("Received incorrect fulfillment").build();
+        return reject(
+          sourceAccountId, sourcePreparePacket,
+          InterledgerErrorCode.F05_WRONG_CONDITION, "Received incorrect fulfillment"
+        );
       }
     }
 

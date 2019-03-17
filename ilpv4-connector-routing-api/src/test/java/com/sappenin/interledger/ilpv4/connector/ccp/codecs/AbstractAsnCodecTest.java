@@ -25,7 +25,7 @@ public abstract class AbstractAsnCodecTest<T> {
 
   static {
     // Register the codec to be tested...
-    codecContext = CcpCodecs.register(InterledgerCodecContextFactory.oer());
+    codecContext = CcpCodecContextFactory.register(InterledgerCodecContextFactory.oer());
   }
 
   private final T expectedObject;

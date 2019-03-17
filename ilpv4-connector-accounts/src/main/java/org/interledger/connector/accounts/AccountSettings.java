@@ -118,6 +118,7 @@ public interface AccountSettings {
    *
    * @return
    */
+  // TODO: Make this a short or a byte?! It's limited to Uint8 per IL-DCP.
   int getAssetScale();
 
   /**
@@ -154,6 +155,45 @@ public interface AccountSettings {
    * Additional, custom settings that any plugin can define.
    */
   Map<String, Object> getCustomSettings();
+
+  /**
+   * Determines if this account is a `parent` account. If <tt>true</tt>, then the remote counterparty for this account
+   * is the {@link AccountRelationship#PARENT}, and the operator of this node is the {@link AccountRelationship#CHILD}.
+   *
+   * @return {@code true} if this is a `parent` account; {@code false} otherwise.
+   */
+  default boolean isParentAccount() {
+    return this.getRelationship() == AccountRelationship.PARENT;
+  }
+
+  /**
+   * Determines if this account is a `child` account. If <tt>true</tt>, then the remote counterparty for this account is
+   * the {@link AccountRelationship#CHILD}, and the operator of this node is the {@link AccountRelationship#PARENT}.
+   *
+   * @return {@code true} if this is a `parent` account; {@code false} otherwise.
+   */
+  default boolean isChildAccount() {
+    return this.getRelationship() == AccountRelationship.CHILD;
+  }
+
+  /**
+   * Determines if this account is a `peer` account. If <tt>true</tt>, then the remote counterparty for this account is
+   * a {@link AccountRelationship#PEER}, and the operator of this node is also a {@link AccountRelationship#PEER}.
+   *
+   * @return {@code true} if this is a `parent` account; {@code false} otherwise.
+   */
+  default boolean isPeerAccount() {
+    return this.getRelationship() == AccountRelationship.PEER;
+  }
+
+  /**
+   * Determines if this account is either a `peer` OR a 'parent` account.
+   *
+   * @return {@code true} if this is a `peer` OR a 'parent` account; {@code false} otherwise.
+   */
+  default boolean isPeerOrParentAccount() {
+    return this.isPeerAccount() || this.isParentAccount();
+  }
 
   @Value.Immutable(intern = true)
   @Value.Modifiable

@@ -4,80 +4,45 @@ import org.interledger.connector.link.AbstractLink;
 import org.interledger.connector.link.LinkType;
 import org.interledger.connector.link.PingableLink;
 import org.interledger.connector.link.events.LinkEventEmitter;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 /**
  * An {@link AbstractLink} that handles BLAST (aka, ILP over HTTP) connections.
  *
- * @see "https://github.com/interledger/rfcs/TODO"
+ * @see "https://github.com/interledger/rfcs/blob/master/0035-ilp-over-http/0035-ilp-over-http.md"
  */
 public class BlastLink extends AbstractLink<BlastLinkSettings> implements PingableLink<BlastLinkSettings> {
 
   public static final String LINK_TYPE_STRING = "BlastLink";
   public static final LinkType LINK_TYPE = LinkType.of(LINK_TYPE_STRING);
 
-  // This RestTemplate is shared between all links...
+  // Note: The RestTemplate in this ender is shared between all links...
   private BlastHttpSender blastHttpSender;
-
-  /**
-   * Required-args Constructor. Utilizes a default {@link LinkEventEmitter} that synchronously connects to any event
-   * handlers.
-   *
-   * @param blastLinkSettings A {@link BlastLinkSettings} that specified ledger link options.
-   * @param restTemplate      A {@link RestTemplate} used to communicate with the remote BLAST peer.
-   */
-  public BlastLink(final BlastLinkSettings blastLinkSettings, final RestTemplate restTemplate) {
-    super(blastLinkSettings);
-    this.blastHttpSender = new BlastHttpSender(
-      blastLinkSettings.getOperatorAddress(),
-      blastLinkSettings.getOutgoingUrl().uri(),
-      restTemplate,
-      () -> blastLinkSettings.getOutgoingTokenIssuer(),
-      () -> blastLinkSettings.getOutgoingAccountId(),
-      () -> blastLinkSettings.getOutgoingAccountSecret().getBytes()
-    );
-  }
 
   /**
    * Required-args Constructor.
    *
    * @param blastLinkSettings A {@link BlastLinkSettings} that specified ledger link options.
    * @param linkEventEmitter  A {@link LinkEventEmitter} that is used to emit events from this link.
+   * @param blastHttpSender   A {@link BlastHttpSender} used to send messages with the remote BLAST peer.
+   * @param linkEventEmitter  A {@link LinkEventEmitter}.
    */
   public BlastLink(
+    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
     final BlastLinkSettings blastLinkSettings,
-    final RestTemplate restTemplate,
+    final BlastHttpSender blastHttpSender,
     final LinkEventEmitter linkEventEmitter
   ) {
-    super(blastLinkSettings, linkEventEmitter);
-    this.blastHttpSender = new BlastHttpSender(
-      blastLinkSettings.getOperatorAddress(),
-      blastLinkSettings.getOutgoingUrl().uri(),
-      restTemplate,
-      () -> blastLinkSettings.getOutgoingTokenIssuer(),
-      () -> blastLinkSettings.getOutgoingAccountId(),
-      () -> blastLinkSettings.getOutgoingAccountSecret().getBytes());
-  }
-
-  /**
-   * Reconfigure this link with a new {@link BlastLinkSettings}.
-   *
-   * @param blastLinkSettings
-   */
-  public void reconfigure(final BlastLinkSettings blastLinkSettings) {
-    this.blastHttpSender = new BlastHttpSender(
-      blastLinkSettings.getOperatorAddress(),
-      blastLinkSettings.getOutgoingUrl().uri(),
-      blastHttpSender.getRestTemplate(),
-      () -> blastLinkSettings.getOutgoingTokenIssuer(),
-      () -> blastLinkSettings.getOutgoingAccountId(),
-      () -> blastLinkSettings.getOutgoingAccountSecret().getBytes()
-    );
+    super(operatorAddressSupplier, blastLinkSettings, linkEventEmitter);
+    this.blastHttpSender = Objects.requireNonNull(blastHttpSender);
   }
 
   /**
@@ -112,5 +77,31 @@ public class BlastLink extends AbstractLink<BlastLinkSettings> implements Pingab
     // Spring to wrap the entire method in a Proxy that runs in a separate thread. Thus, this return is simply to
     // conform to the Java API.
     return blastHttpSender.sendData(preparePacket);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    BlastLink blastLink = (BlastLink) o;
+
+    return blastHttpSender.equals(blastLink.blastHttpSender);
+  }
+
+  @Override
+  public int hashCode() {
+    return blastHttpSender.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", BlastLink.class.getSimpleName() + "[", "]")
+      .add("blastHttpSender=" + blastHttpSender)
+      .toString();
   }
 }

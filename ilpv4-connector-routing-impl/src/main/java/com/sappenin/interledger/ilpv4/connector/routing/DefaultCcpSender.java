@@ -54,7 +54,7 @@ public class DefaultCcpSender implements CcpSender {
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final ForwardingRoutingTable<RouteUpdate> forwardingRoutingTable;
   private final AccountManager accountManager;
-  private final CodecContext codecContext;
+  private final CodecContext ccpCodecContext;
 
   private final AccountId peerAccountId;
   private final Link link;
@@ -77,12 +77,12 @@ public class DefaultCcpSender implements CcpSender {
     final Link link,
     final ForwardingRoutingTable<RouteUpdate> forwardingRoutingTable,
     final AccountManager accountManager,
-    final CodecContext codecContext
+    final CodecContext ccpCodecContext
   ) {
     this.peerAccountId = Objects.requireNonNull(peerAccountId);
     this.forwardingRoutingTable = Objects.requireNonNull(forwardingRoutingTable);
     this.accountManager = Objects.requireNonNull(accountManager);
-    this.codecContext = codecContext;
+    this.ccpCodecContext = Objects.requireNonNull(ccpCodecContext);
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.link = Objects.requireNonNull(link);
 
@@ -281,7 +281,7 @@ public class DefaultCcpSender implements CcpSender {
 
       // Construct RouteUpdateRequest
       final CcpRouteUpdateRequest ccpRouteUpdateRequest = ImmutableCcpRouteUpdateRequest.builder()
-        .speaker(this.connectorSettingsSupplier.get().getOperatorAddress())
+        .speaker(this.connectorSettingsSupplier.get().getOperatorAddressSafe())
         .routingTableId(this.forwardingRoutingTable.getRoutingTableId())
         .holdDownTime(this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteExpiry().toMillis())
         .currentEpochIndex(this.forwardingRoutingTable.getCurrentEpoch())
@@ -323,7 +323,7 @@ public class DefaultCcpSender implements CcpSender {
 
     try {
       ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-      codecContext.write(ccpRouteUpdateRequest, outputStream);
+      ccpCodecContext.write(ccpRouteUpdateRequest, outputStream);
       return outputStream.toByteArray();
     } catch (IOException e) {
       throw new RuntimeException(e.getMessage(), e);

@@ -1,35 +1,33 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
-import com.google.common.annotations.VisibleForTesting;
+import com.sappenin.interledger.ilpv4.connector.balances.BalanceChangeResult;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
-import com.sappenin.interledger.ilpv4.connector.balances.BalanceTransferResult;
+import com.sappenin.interledger.ilpv4.connector.balances.BalanceTrackerException;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
 import java.util.Objects;
 import java.util.UUID;
-
-import static com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker.TRACKING_ACCOUNT_SUFFIX;
+import java.util.function.Supplier;
 
 
 /**
  * An implementation of {@link PacketSwitchFilter} for handling balances between two accounts/links in an ILP connector.
  * Only processes fulfillment responses.
  */
-public class BalanceIlpPacketFilter implements PacketSwitchFilter {
-
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
+public class BalanceIlpPacketFilter extends AbstractPacketFilter implements PacketSwitchFilter {
 
   private final BalanceTracker balanceTracker;
 
-  public BalanceIlpPacketFilter(final BalanceTracker balanceTracker) {
+  public BalanceIlpPacketFilter(
+    final Supplier<InterledgerAddress> operatorAddressSupplier, final BalanceTracker balanceTracker
+  ) {
+    super(operatorAddressSupplier);
     this.balanceTracker = Objects.requireNonNull(balanceTracker);
   }
 
@@ -39,9 +37,11 @@ public class BalanceIlpPacketFilter implements PacketSwitchFilter {
     final InterledgerPreparePacket sourcePreparePacket,
     final PacketSwitchFilterChain filterChain
   ) {
+
+    final UUID balanceAdjustmentTxId = UUID.randomUUID();
     try {
-      // Preemptively increase the account balance....
-      this.increaseAccountBalance(sourceAccountId, sourcePreparePacket.getAmount());
+      // Preemptively decrease the account balance....
+      this.balanceTracker.adjustBalance(balanceAdjustmentTxId, sourceAccountId, sourcePreparePacket.getAmount());
 
       final InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountId, sourcePreparePacket);
 
@@ -49,6 +49,8 @@ public class BalanceIlpPacketFilter implements PacketSwitchFilter {
       new InterledgerResponsePacketHandler() {
         @Override
         protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
+          // The Receiver's balance is always adjusted in the outgoing filter.
+
           // TODO: Enable Settle
           //this.maybeSettle(account);
           // TODO: Stats
@@ -57,11 +59,14 @@ public class BalanceIlpPacketFilter implements PacketSwitchFilter {
 
         @Override
         protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-          // Refund on reject
-          decreaseAccountBalance(
-            sourceAccountId, sourcePreparePacket.getAmount(),
-            "Incoming Prepare Packet refunded due to ilp Reject"
+          // Reverse the receiver on reject. The sender will be reversed in the Packet filter.
+          final BalanceChangeResult balanceChangeResult = balanceTracker.adjustBalance(
+            balanceAdjustmentTxId, sourceAccountId, sourcePreparePacket.getAmount().negate()
           );
+
+          // TODO: If we're unable to apply the reversal, then the receiver has money that it shouldn't have, so this
+          //  should trigger some sort of reconcilation.
+
           // TODO: Stats
           // this.stats.balance.setValue(account, {}, balance.getValue().toNumber())
           // this.stats.incomingDataPacketValue.increment(account, {result :'rejected' },+amount)
@@ -70,57 +75,21 @@ public class BalanceIlpPacketFilter implements PacketSwitchFilter {
 
       // Return the response...
       return responsePacket;
-    } catch (RuntimeException e) {
+    } catch (BalanceTrackerException e) {
       // Refund on any kind of error...
-      this.decreaseAccountBalance(
-        sourceAccountId, sourcePreparePacket.getAmount(),
-        String.format("Incoming PreparePacket refunded due to error (%s)", e.getMessage())
+      BalanceChangeResult balanceChangeResult = balanceTracker.adjustBalance(
+        balanceAdjustmentTxId, sourceAccountId, sourcePreparePacket.getAmount().negate()
       );
+      logger.error(
+        "Incoming Prepare Packet refunded (due to Internal Error ) with BalanceChangeResult: {}, {}",
+        balanceChangeResult, e
+      );
+      // TODO: Stats
+      // this.stats.balance.setValue(account, {}, balance.getValue().toNumber())
+      // this.stats.incomingDataPacketValue.increment(account, {result :'rejected' },+amount)
+
+      // TODO: Is this correct? If the BalanceTracker is offline, then what will this manifest as to the sender?
       throw e;
     }
   }
-
-  @VisibleForTesting
-  protected void increaseAccountBalance(AccountId accountId, BigInteger amount) {
-    // Ignore 0-amount packets.
-    if (amount.equals(BigInteger.ZERO)) {
-      return;
-    } else {
-      // This account is the account the Connector uses to track interactions with the account represented by accountId.
-      final AccountId connectorTrackingAccountId = AccountId.of(accountId.value() + TRACKING_ACCOUNT_SUFFIX);
-
-      // TODO: Move ConnectorTracking account into the balance tracker.
-      // Increase balance of accountId on prepare
-      final BalanceTransferResult balanceTransferResult = this.balanceTracker.transferUnits(
-        UUID.randomUUID(), connectorTrackingAccountId, accountId, amount
-      );
-      logger.debug(
-        "Account balance increased due to incoming ilp prepare. BalanceTransferResult: {}", balanceTransferResult
-      );
-      // TODO: Log stats....
-      //this.stats.balance.setValue(account, {}, balance.getValue().toNumber())
-    }
-  }
-
-  @VisibleForTesting
-  protected void decreaseAccountBalance(AccountId accountId, BigInteger amount, String errorMessagePrefix) {
-    // Ignore 0-amount packets.
-    if (amount.equals(BigInteger.ZERO)) {
-      return;
-    } else {
-      // This account is the account the Connector uses to track interactions with the account represented by accountId.
-      final AccountId connectorTrackingAccountId = AccountId.of(accountId.value() + TRACKING_ACCOUNT_SUFFIX);
-
-      // TODO: Move ConnectorTracking account into the balance tracker.
-      // Decrease balance of accountId
-      final BalanceTransferResult balanceTransferResult = this.balanceTracker.transferUnits(
-        UUID.randomUUID(), accountId, connectorTrackingAccountId, amount
-      );
-      logger.debug("{}; BalanceTransferResult: {}", errorMessagePrefix, balanceTransferResult);
-      // TODO: Log stats....
-      // this.stats.balance.setValue(account, {}, balance.getValue().toNumber())
-      // this.stats.incomingDataPacketValue.increment(account, { result : 'failed' }, + amount)
-    }
-  }
-
 }

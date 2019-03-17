@@ -43,7 +43,7 @@ public interface Account {
    */
   @Value.Derived
   default boolean isParentAccount() {
-    return this.getAccountSettings().getRelationship() == AccountRelationship.PARENT;
+    return this.getAccountSettings().isParentAccount();
   }
 
   /**
@@ -54,7 +54,7 @@ public interface Account {
    */
   @Value.Derived
   default boolean isChildAccount() {
-    return this.getAccountSettings().getRelationship() == AccountRelationship.CHILD;
+    return this.getAccountSettings().isChildAccount();
   }
 
   /**
@@ -65,7 +65,7 @@ public interface Account {
    */
   @Value.Derived
   default boolean isPeerAccount() {
-    return this.getAccountSettings().getRelationship() == AccountRelationship.PEER;
+    return this.getAccountSettings().isPeerAccount();
   }
 
   /**

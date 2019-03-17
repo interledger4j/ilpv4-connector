@@ -1,7 +1,6 @@
 package org.interledger.connector.link;
 
 import org.immutables.value.Value;
-import org.interledger.core.InterledgerAddress;
 
 import java.util.Map;
 
@@ -18,11 +17,6 @@ public interface LinkSettings {
    * The type of this ledger link.
    */
   LinkType getLinkType();
-
-  /**
-   * The ILP address of the ILP Node operating this link.
-   */
-  InterledgerAddress getOperatorAddress();
 
   /**
    * Additional, custom settings that any link can define.

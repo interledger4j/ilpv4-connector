@@ -10,6 +10,7 @@ public class EnabledProtocolSettingsFromPropertyFile implements EnabledProtocolS
   private boolean pingProtocolEnabled;
   private boolean peerConfigEnabled;
   private boolean peerRoutingEnabled;
+  private boolean ildcpEnabled;
 
   @Override
   public boolean isPingProtocolEnabled() {
@@ -36,5 +37,14 @@ public class EnabledProtocolSettingsFromPropertyFile implements EnabledProtocolS
 
   public void setPeerRoutingEnabled(boolean peerRoutingEnabled) {
     this.peerRoutingEnabled = peerRoutingEnabled;
+  }
+
+  @Override
+  public boolean isIldcpEnabled() {
+    return ildcpEnabled;
+  }
+
+  public void setIldcpEnabled(boolean ildcpEnabled) {
+    this.ildcpEnabled = ildcpEnabled;
   }
 }

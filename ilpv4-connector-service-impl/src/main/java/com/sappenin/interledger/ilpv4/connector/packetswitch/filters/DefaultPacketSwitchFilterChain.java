@@ -18,7 +18,7 @@ import java.util.Objects;
 
 public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultPacketSwitchFilterChain.class);
+  protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final List<PacketSwitchFilter> packetSwitchFilters;
 
@@ -35,15 +35,12 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
   /**
    * A chain of filters that are applied to a switchPacket request before attempting to determine the `next-hop` {@link
    * Link} to forward the packet onto.
-   *
-   * @param packetSwitchFilters
-   * @param linkFilters
-   * @param accountManager
-   * @param nextHopPacketMapper
    */
   public DefaultPacketSwitchFilterChain(
-    final List<PacketSwitchFilter> packetSwitchFilters, final List<LinkFilter> linkFilters,
-    final AccountManager accountManager, final NextHopPacketMapper nextHopPacketMapper
+    final List<PacketSwitchFilter> packetSwitchFilters,
+    final List<LinkFilter> linkFilters,
+    final AccountManager accountManager,
+    final NextHopPacketMapper nextHopPacketMapper
   ) {
     this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
     this.linkFilters = Objects.requireNonNull(linkFilters);
@@ -62,7 +59,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
     if (this._filterIndex < this.packetSwitchFilters.size()) {
       return packetSwitchFilters.get(_filterIndex++).doFilter(sourceAccountId, preparePacket, this);
     } else {
-      LOGGER.debug("Sending outbound ILP Prepare: sourceAccountId: `{}` packet={}", sourceAccountId, preparePacket);
+      logger.debug("Sending outbound ILP Prepare: sourceAccountId: `{}` packet={}", sourceAccountId, preparePacket);
 
       // Here, use the link-mapper to get the `next-hop`, create a LinkFilterChain, and then send.
       final NextHopInfo nextHopInfo =
@@ -71,7 +68,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
       final Link<? extends LinkSettings> link =
         this.accountManager.safeGetAccount(nextHopInfo.nextHopAccountId()).getLink();
 
-      LOGGER.debug(
+      logger.debug(
         "Sending outbound ILP Prepare: sourceAccountId: `{}` link={} packet={}",
         sourceAccountId, link, preparePacket
       );

@@ -9,8 +9,6 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -19,17 +17,14 @@ import java.util.function.Supplier;
 /**
  * An implementation of {@link PacketSwitchFilter} for enforcing a maximum packet account for any given ILP packet.
  */
-public class MaxPacketAmountFilter implements PacketSwitchFilter {
-
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
-  private final Supplier<InterledgerAddress> operatorAddressSupplier;
+public class MaxPacketAmountFilter extends AbstractPacketFilter implements PacketSwitchFilter {
 
   private final AccountManager accountManager;
 
   public MaxPacketAmountFilter(
     final Supplier<InterledgerAddress> operatorAddressSupplier, final AccountManager accountManager
   ) {
-    this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
+    super(operatorAddressSupplier);
     this.accountManager = Objects.requireNonNull(accountManager);
   }
 
@@ -40,26 +35,22 @@ public class MaxPacketAmountFilter implements PacketSwitchFilter {
     final PacketSwitchFilterChain filterChain
   ) {
     final Account account = accountManager.getAccount(sourceAccountId)
-      .orElseThrow(() ->
-        // REJECT due to no account...
-        new InterledgerProtocolException(InterledgerRejectPacket.builder()
-          .code(InterledgerErrorCode.T00_INTERNAL_ERROR)
-          .triggeredBy(operatorAddressSupplier.get())
-          .message(String.format("No Account found!"))
-          .build())
-      );
+      // REJECT due to no account...
+      .orElseThrow(() -> new InterledgerProtocolException(
+        reject(sourceAccountId, sourcePreparePacket, InterledgerErrorCode.T00_INTERNAL_ERROR,
+          String.format("No Account found: `%s`", sourceAccountId))));
 
     // If the max packet amount is present...
     return account.getAccountSettings().getMaximumPacketAmount()
       //  if Packet amount is greater-than `maxPacketAmount`, then Reject.
-      .filter(maxPacketAmount -> sourcePreparePacket.getAmount().compareTo(maxPacketAmount) > 0)
+      .filter(maxPacketAmount -> sourcePreparePacket.getAmount().compareTo(maxPacketAmount) >= 0)
       .map(maxPacketAmount -> {
         logger.error(
           "Rejecting packet for exceeding max amount. accountId={} maxAmount={} actualAmount={}",
           sourceAccountId, maxPacketAmount, sourcePreparePacket.getAmount()
         );
         return (InterledgerResponsePacket) InterledgerRejectPacket.builder()
-          .code(InterledgerErrorCode.F03_INVALID_AMOUNT)
+          .code(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE)
           .triggeredBy(operatorAddressSupplier.get())
           .message(String.format("Packet size too large: maxAmount=%s actualAmount=%s", maxPacketAmount,
             sourcePreparePacket.getAmount()))

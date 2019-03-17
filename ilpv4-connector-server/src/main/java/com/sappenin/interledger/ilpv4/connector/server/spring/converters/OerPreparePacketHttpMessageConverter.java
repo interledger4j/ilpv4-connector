@@ -67,6 +67,7 @@ public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMes
   protected InterledgerPacket readInternal(Class<? extends InterledgerPacket> clazz, HttpInputMessage inputMessage)
     throws IOException, HttpMessageNotReadableException {
 
+    // This line is necessary in order to fully consume the message body...
     final byte[] bytes = StreamUtils.copyToByteArray(inputMessage.getBody());
     final ByteArrayInputStream is = new ByteArrayInputStream(bytes);
     return ilpCodecContext.read(InterledgerPacket.class, is);
@@ -91,6 +92,7 @@ public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMes
   public InterledgerPacket read(Type type, Class<?> contextClass, HttpInputMessage inputMessage)
     throws IOException, HttpMessageNotReadableException {
 
+    // This line is necessary in order to fully consume the message body...
     final byte[] bytes = StreamUtils.copyToByteArray(inputMessage.getBody());
     final ByteArrayInputStream is = new ByteArrayInputStream(bytes);
     return ilpCodecContext.read(InterledgerPacket.class, is);

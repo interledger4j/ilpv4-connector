@@ -22,7 +22,7 @@ public class ConnectorProperties {
    */
   public static final String BTP_ENABLED = "btp.enabled";
 
-  public static final String BLAST_ENABLED = "blast.enabled";
+  public static final String BLAST_ENABLED = "blastEnabled";
 
   private static final String DOT = ".";
   private static final String SPRING_PROFILES_ACTIVE = "spring.profiles.active";

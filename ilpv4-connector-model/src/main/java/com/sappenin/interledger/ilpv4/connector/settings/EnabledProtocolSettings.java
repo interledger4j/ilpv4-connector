@@ -12,6 +12,15 @@ public interface EnabledProtocolSettings {
   }
 
   /**
+   * Whether this Connector can handle `ILP-over-HTTP` packets per IL-RFC-35.
+   *
+   * @see "https://github.com/interledger/rfcs/blob/master/0035-ilp-over-http/0035-ilp-over-http.md"
+   */
+  default boolean isBlastEnabled() {
+    return true;
+  }
+
+  /**
    * Whether this Connector can handle `PING` packets per RFC-TODO.
    *
    * @see "RFC-LINK"
@@ -30,6 +39,15 @@ public interface EnabledProtocolSettings {
   }
 
   /**
+   * Whether this Connector can supports IL-DCP in order to obtain its operator address.
+   *
+   * @see "https://github.com/interledger/rfcs/blob/master/0031-dynamic-configuration-protocol/0031-dynamic-configuration-protocol.md"
+   */
+  default boolean isIldcpEnabled() {
+    return false;
+  }
+
+  /**
    * Whether this Connector can handle CCP Routing packets addressed to `peer.routing` per RFC-TODO.
    *
    * @see "RFC-LINK"
@@ -40,6 +58,12 @@ public interface EnabledProtocolSettings {
 
   @Value.Immutable(intern = true)
   abstract class AbstractEnabledProtocolSettings implements EnabledProtocolSettings {
+
+    @Override
+    @Value.Default
+    public boolean isBlastEnabled() {
+      return true;
+    }
 
     @Override
     @Value.Default
@@ -59,7 +83,11 @@ public interface EnabledProtocolSettings {
       return false;
     }
 
-
+    @Override
+    @Value.Default
+    public boolean isIldcpEnabled() {
+      return false;
+    }
   }
 
 }
