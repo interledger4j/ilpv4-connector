@@ -20,6 +20,7 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
+import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponsePacket;
 import org.interledger.ildcp.asn.framework.IldcpCodecContextFactory;
 import org.junit.Before;
@@ -113,7 +114,7 @@ public class PeerProtocolPacketFilterTest {
   @Test
   public void doFilterForPeerDotConfigWhenDisabled() {
     when(enabledProtocolSettingsMock.isPeerConfigEnabled()).thenReturn(false);
-    final InterledgerPreparePacket preparePacket = this.constructPreparePacket(InterledgerAddress.of("peer.config"));
+    final InterledgerPreparePacket preparePacket = this.constructPreparePacket(IldcpRequestPacket.PEER_DOT_CONFIG);
 
     final InterledgerResponsePacket result = filter.doFilter(ACCOUNT_ID, preparePacket, filterChainMock);
 
@@ -127,7 +128,7 @@ public class PeerProtocolPacketFilterTest {
       @Override
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
         assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
-        assertThat(interledgerRejectPacket.getMessage(), is("IL-DCP is not supported by this node."));
+        assertThat(interledgerRejectPacket.getMessage(), is("IL-DCP is not supported by this Connector."));
       }
     }.handle(result);
   }
@@ -135,7 +136,7 @@ public class PeerProtocolPacketFilterTest {
   @Test
   public void doFilterForPeerDotConfigWhenEnabledWithNoAccount() {
     when(enabledProtocolSettingsMock.isPeerConfigEnabled()).thenReturn(true);
-    final InterledgerPreparePacket preparePacket = this.constructPreparePacket(InterledgerAddress.of("peer.config"));
+    final InterledgerPreparePacket preparePacket = this.constructPreparePacket(IldcpRequestPacket.PEER_DOT_CONFIG);
 
     final InterledgerResponsePacket result = filter.doFilter(AccountId.of("foo"), preparePacket, filterChainMock);
 
@@ -157,7 +158,7 @@ public class PeerProtocolPacketFilterTest {
   @Test
   public void doFilterForPeerDotConfigWhenEnabled() {
     when(enabledProtocolSettingsMock.isPeerConfigEnabled()).thenReturn(true);
-    final InterledgerPreparePacket preparePacket = this.constructPreparePacket(InterledgerAddress.of("peer.config"));
+    final InterledgerPreparePacket preparePacket = this.constructPreparePacket(IldcpRequestPacket.PEER_DOT_CONFIG);
 
     final InterledgerResponsePacket result = filter.doFilter(ACCOUNT_ID, preparePacket, filterChainMock);
 
