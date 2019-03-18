@@ -8,6 +8,9 @@ ilpv4:
     globalPrefix: test
     btp.enabled: true
     jwtTokenIssuer: https://example.com
+    # Which features are enabled.
+    enabledFeatures:
+      rateLimitingEnabled: true
     # Which protocols this Connector supports
     enabledProtocols:
       blastEnabled: true
@@ -63,6 +66,10 @@ ilpv4:
         # any incoming prepare packets from this account with a higher amount. Amount should be
         # provided as an integer in a string (in atomic units).
         maximumPacketAmount: 100001
+        # RateLimit Settings
+        rateLimitSettings:
+          # Optioanl. Maximum rate of incoming packets.
+          maxPacketsPerSecond: 5000
         # Balance Settings
         balanceSettings:
           # Optional. Minimum balance (in this account's indivisible base units) the connector
@@ -105,6 +112,9 @@ ilpv4:
         # any incoming prepare packets from this account with a higher amount. Amount should be
         # provided as an integer in a string (in atomic units).
         maximumPacketAmount: 100002
+        # RateLimit Settings
+        rateLimitSettings:
+          maxPacketsPerSecond: 1
         # Balance Settings
         balanceSettings:
           # Optional. Minimum balance (in this account's indivisible base units) the connector
@@ -162,6 +172,9 @@ ilpv4:
         # any incoming prepare packets from this account with a higher amount. Amount should be
         # provided as an integer in a string (in atomic units).
         maximumPacketAmount: 100001
+        # RateLimit Settings
+        rateLimitSettings:
+          maxPacketsPerSecond: 5000
         # Balance Settings
         balanceSettings:
           # Optional. Minimum balance (in this account's indivisible base units) the connector

@@ -51,6 +51,11 @@ public interface ConnectorSettings {
   }
 
   @Value.Default
+  default EnabledFeatureSettings getEnabledFeatures() {
+    return EnabledFeatureSettings.builder().build();
+  }
+
+  @Value.Default
   default boolean websocketServerEnabled() {
     return false;
   }

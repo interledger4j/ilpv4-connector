@@ -9,6 +9,7 @@ import com.sappenin.interledger.ilpv4.connector.settings.ImmutableConnectorSetti
 import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.Account;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ModifiableAccountSettings;
@@ -142,6 +143,7 @@ public class TwoConnectorPeerBlastTopology {
       .description("Blast account for Bob")
       .isPreconfigured(true)
       .relationship(AccountRelationship.PEER)
+      .rateLimitSettings(AccountRateLimitSettings.builder().maxPacketsPerSecond(5000).build())
       .maximumPacketAmount(BigInteger.valueOf(1000000L)) // 1M NanoDollars is $0.001
       .linkType(BlastLink.LINK_TYPE)
       .assetScale(9)
@@ -194,6 +196,7 @@ public class TwoConnectorPeerBlastTopology {
       .id(AccountId.of(ALICE))
       .description("Blast account for Alice")
       .isPreconfigured(true)
+      .rateLimitSettings(AccountRateLimitSettings.builder().maxPacketsPerSecond(5000).build())
       .maximumPacketAmount(BigInteger.valueOf(1000000L)) // 1M NanoDollars is $0.001
       .relationship(AccountRelationship.PEER)
       .linkType(BlastLink.LINK_TYPE)

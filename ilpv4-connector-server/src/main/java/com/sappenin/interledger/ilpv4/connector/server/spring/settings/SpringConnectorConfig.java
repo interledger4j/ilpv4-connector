@@ -236,21 +236,27 @@ public class SpringConnectorConfig {
     final Supplier<InterledgerAddress> operatorAddressSupplier =
       () -> connectorSettingsSupplier().get().getOperatorAddressSafe();
 
-    final ImmutableList.Builder<PacketSwitchFilter> filterList =
-      ImmutableList.<PacketSwitchFilter>builder().add(
-        new RateLimitIlpPacketFilter(operatorAddressSupplier), // Limits Data packets...
-        new AllowedDestinationPacketFilter(operatorAddressSupplier, addressUtils),
-        new ExpiryPacketFilter(operatorAddressSupplier),
-        new MaxPacketAmountFilter(operatorAddressSupplier, accountManager),
-        new BalanceIlpPacketFilter(operatorAddressSupplier, balanceTracker),
-        new ValidateFulfillmentPacketFilter(operatorAddressSupplier),
-        new PeerProtocolPacketFilter(
-          operatorAddressSupplier,
-          connectorSettingsSupplier().get().getEnabledProtocols(),
-          externalRoutingService, accountManager,
-          ccpCodecContext, ildcpCodecContext
-        )
-      );
+    final ImmutableList.Builder<PacketSwitchFilter> filterList = ImmutableList.<PacketSwitchFilter>builder();
+
+    if (connectorSettings.getEnabledFeatures().isRateLimitingEnabled()) {
+      filterList.add(new RateLimitIlpPacketFilter(operatorAddressSupplier, accountManager));// Limits Data packets...
+    }
+
+    // TODO: Enable/Disable MaxPacketAmount, expiry, allowedDest, Balance
+
+    filterList.add(
+      new AllowedDestinationPacketFilter(operatorAddressSupplier, addressUtils),
+      new ExpiryPacketFilter(operatorAddressSupplier),
+      new MaxPacketAmountFilter(operatorAddressSupplier, accountManager),
+      new BalanceIlpPacketFilter(operatorAddressSupplier, balanceTracker),
+      new ValidateFulfillmentPacketFilter(operatorAddressSupplier),
+      new PeerProtocolPacketFilter(
+        operatorAddressSupplier,
+        connectorSettingsSupplier().get().getEnabledProtocols(),
+        externalRoutingService, accountManager,
+        ccpCodecContext, ildcpCodecContext
+      )
+    );
 
     // TODO: Throughput for Money...
 

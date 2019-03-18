@@ -15,6 +15,7 @@ public class AccountBalanceSettingsFromPropertyFile implements AccountBalanceSet
   private Optional<BigInteger> settleThreshold = Optional.empty();
   private Optional<BigInteger> settleTo = Optional.empty();
 
+  @Override
   public Optional<BigInteger> getMinBalance() {
     return minBalance;
   }
@@ -23,6 +24,7 @@ public class AccountBalanceSettingsFromPropertyFile implements AccountBalanceSet
     this.minBalance = minBalance;
   }
 
+  @Override
   public Optional<BigInteger> getMaxBalance() {
     return maxBalance;
   }
@@ -31,6 +33,7 @@ public class AccountBalanceSettingsFromPropertyFile implements AccountBalanceSet
     this.maxBalance = maxBalance;
   }
 
+  @Override
   public Optional<BigInteger> getSettleThreshold() {
     return settleThreshold;
   }
@@ -39,6 +42,7 @@ public class AccountBalanceSettingsFromPropertyFile implements AccountBalanceSet
     this.settleThreshold = settleThreshold;
   }
 
+  @Override
   public Optional<BigInteger> getSettleTo() {
     return settleTo;
   }
