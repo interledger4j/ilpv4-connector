@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.links.loopback;
 
+import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkFactory;
 import org.interledger.connector.link.LinkSettings;
@@ -17,9 +18,14 @@ import java.util.function.Supplier;
 public class LoopbackLinkFactory implements LinkFactory {
 
   private final LinkEventEmitter linkEventEmitter;
+  private final PacketRejector packetRejector;
 
-  public LoopbackLinkFactory(final LinkEventEmitter linkEventEmitter) {
+  /**
+   * Required-args Constructor.
+   */
+  public LoopbackLinkFactory(final LinkEventEmitter linkEventEmitter, final PacketRejector packetRejector) {
     this.linkEventEmitter = Objects.requireNonNull(linkEventEmitter);
+    this.packetRejector = Objects.requireNonNull(packetRejector);
   }
 
   /**
@@ -38,7 +44,7 @@ public class LoopbackLinkFactory implements LinkFactory {
       );
     }
 
-    return new LoopbackLink(operatorAddressSupplier, linkSettings, linkEventEmitter);
+    return new LoopbackLink(operatorAddressSupplier, linkSettings, linkEventEmitter, packetRejector);
   }
 
   @Override

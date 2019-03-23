@@ -136,11 +136,16 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  LinkFactoryProvider linkFactoryProvider(LinkEventEmitter linkEventEmitter) {
+  LoopbackLinkFactory loopbackLinkFactory(LinkEventEmitter linkEventEmitter, PacketRejector packetRejector) {
+    return new LoopbackLinkFactory(linkEventEmitter, packetRejector);
+  }
+
+  @Bean
+  LinkFactoryProvider linkFactoryProvider(LoopbackLinkFactory loopbackLinkFactory) {
     final LinkFactoryProvider provider = new LinkFactoryProvider();
 
     // Register known types...Spring will register proper known types based upon config...
-    provider.registerLinkFactory(LoopbackLink.LINK_TYPE, new LoopbackLinkFactory(linkEventEmitter));
+    provider.registerLinkFactory(LoopbackLink.LINK_TYPE, loopbackLinkFactory);
 
     // TODO: Register any SPI types...?
     // See https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/io/support/SpringFactoriesLoader.html
@@ -157,8 +162,7 @@ public class SpringConnectorConfig {
   LinkManager linkManager(EventBus eventBus, LinkFactoryProvider linkFactoryProvider) {
     return new DefaultLinkManager(
       () -> connectorSettingsSupplier().get().getOperatorAddress(),
-      eventBus,
-      linkFactoryProvider
+      linkFactoryProvider, eventBus
     );
   }
 

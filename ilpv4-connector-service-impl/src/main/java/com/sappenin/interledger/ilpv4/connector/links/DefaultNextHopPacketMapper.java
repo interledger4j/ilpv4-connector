@@ -169,6 +169,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       );
   }
 
+  // TODO: Unit test this!
   @VisibleForTesting
   protected Instant determineDestinationExpiresAt(
     final Instant sourceExpiry, final InterledgerAddress destinationAddress
@@ -192,20 +193,21 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
         );
       }
 
+      ////////////////////
       // We will set the next transfer's expiry based on the source expiry and our minMessageWindow, but cap it at our
       // maxHoldTime.
-
-      final int minMessageWindow = 5000; //TODO: Enable this --> connectorSettingsSupplier.get().getMinMessageWindow();
-      final int maxHoldTime = 5000; //TODO: Enable this --> connectorSettingsSupplier.get().getMaxHoldTime();
+      ////////////////////
+      final int minMessageWindow = 5000; //TODO: Enable this --> accountSettings.get().getMinMessageWindow();
+      final int maxHoldTime = 5000; //TODO: Enable this --> accountSettings.get().getMaxHoldTime();
 
       // The expiry of the packet, reduced by the minMessageWindow, which is "the minimum time the connector wants to
       // budget for getting a message to the accounts its trading on. In milliseconds."
       final Instant adjustedSourceExpiryInstant = sourceExpiry.minusMillis(minMessageWindow);
-
       // The point in time after which this Connector will not wait around for a fulfillment.
       final Instant maxHoldInstant = nowTime.plusMillis(maxHoldTime);
-
       final Instant destinationExpiryTime = lesser(adjustedSourceExpiryInstant, maxHoldInstant);
+
+      // One final check for a "too soon" expiry...
       if (destinationExpiryTime.minusMillis(minMessageWindow).isBefore(nowTime)) {
         throw new InterledgerProtocolException(
           InterledgerRejectPacket.builder()
