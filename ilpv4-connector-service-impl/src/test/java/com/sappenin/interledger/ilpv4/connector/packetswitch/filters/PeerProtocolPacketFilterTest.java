@@ -4,6 +4,7 @@ import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteControlRequest;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpSyncMode;
 import com.sappenin.interledger.ilpv4.connector.ccp.codecs.CcpCodecContextFactory;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import com.sappenin.interledger.ilpv4.connector.routing.CcpSender;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.RoutableAccount;
@@ -25,6 +26,7 @@ import org.interledger.ildcp.IldcpResponsePacket;
 import org.interledger.ildcp.asn.framework.IldcpCodecContextFactory;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -43,7 +45,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -53,6 +57,15 @@ public class PeerProtocolPacketFilterTest {
 
   private static final AccountId ACCOUNT_ID = AccountId.of("test-account");
   private static final InterledgerAddress OPERATOR_ADDRESS = InterledgerAddress.of("example.foo");
+
+  private static final InterledgerRejectPacket REJECT_PACKET = InterledgerRejectPacket.builder()
+    .triggeredBy(InterledgerAddress.of("test.conn"))
+    .code(InterledgerErrorCode.F00_BAD_REQUEST)
+    .message("error message")
+    .build();
+
+  @Mock
+  private PacketRejector packetRejectorMock;
 
   @Mock
   private EnabledProtocolSettings enabledProtocolSettingsMock;
@@ -71,8 +84,11 @@ public class PeerProtocolPacketFilterTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+
+    when(packetRejectorMock.reject(any(), any(), any(), any())).thenReturn(REJECT_PACKET);
+
     this.filter = new PeerProtocolPacketFilter(
-      () -> OPERATOR_ADDRESS,
+      packetRejectorMock,
       enabledProtocolSettingsMock,
       externalRoutingServiceMock,
       accountManagerMock,
@@ -127,8 +143,14 @@ public class PeerProtocolPacketFilterTest {
 
       @Override
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-        assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
-        assertThat(interledgerRejectPacket.getMessage(), is("IL-DCP is not supported by this Connector."));
+        final ArgumentCaptor<InterledgerErrorCode> errorCodeArgumentCaptor =
+          ArgumentCaptor.forClass(InterledgerErrorCode.class);
+        final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
+        verify(packetRejectorMock)
+          .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
+
+        assertThat(errorCodeArgumentCaptor.getValue(), is(InterledgerErrorCode.F00_BAD_REQUEST));
+        assertThat(errorMessageCaptor.getValue(), is("IL-DCP is not supported by this Connector."));
       }
     }.handle(result);
   }
@@ -149,8 +171,14 @@ public class PeerProtocolPacketFilterTest {
 
       @Override
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-        assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
-        assertThat(interledgerRejectPacket.getMessage(), is("Invalid Source Account: `foo`"));
+        final ArgumentCaptor<InterledgerErrorCode> errorCodeArgumentCaptor =
+          ArgumentCaptor.forClass(InterledgerErrorCode.class);
+        final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
+        verify(packetRejectorMock)
+          .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
+
+        assertThat(errorCodeArgumentCaptor.getValue(), is(InterledgerErrorCode.F00_BAD_REQUEST));
+        assertThat(errorMessageCaptor.getValue(), is("Invalid Source Account: `foo`"));
       }
     }.handle(result);
   }
@@ -196,8 +224,14 @@ public class PeerProtocolPacketFilterTest {
 
       @Override
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-        assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
-        assertThat(interledgerRejectPacket.getMessage(), is("CCP routing protocol is not supported by this node."));
+        final ArgumentCaptor<InterledgerErrorCode> errorCodeArgumentCaptor =
+          ArgumentCaptor.forClass(InterledgerErrorCode.class);
+        final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
+        verify(packetRejectorMock)
+          .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
+
+        assertThat(errorCodeArgumentCaptor.getValue(), is(InterledgerErrorCode.F00_BAD_REQUEST));
+        assertThat(errorMessageCaptor.getValue(), is("CCP routing protocol is not supported by this node."));
       }
     }.handle(result);
   }
@@ -258,8 +292,14 @@ public class PeerProtocolPacketFilterTest {
 
       @Override
       protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-        assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F01_INVALID_PACKET));
-        assertThat(interledgerRejectPacket.getMessage(), is("unknown peer protocol."));
+        final ArgumentCaptor<InterledgerErrorCode> errorCodeArgumentCaptor =
+          ArgumentCaptor.forClass(InterledgerErrorCode.class);
+        final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
+        verify(packetRejectorMock)
+          .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
+
+        assertThat(errorCodeArgumentCaptor.getValue(), is(InterledgerErrorCode.F01_INVALID_PACKET));
+        assertThat(errorMessageCaptor.getValue(), is("unknown peer protocol."));
       }
     }.handle(result);
   }

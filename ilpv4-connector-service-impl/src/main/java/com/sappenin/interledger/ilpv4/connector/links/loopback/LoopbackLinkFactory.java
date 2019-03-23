@@ -32,19 +32,13 @@ public class LoopbackLinkFactory implements LinkFactory {
   ) {
     Objects.requireNonNull(linkSettings);
 
-    final Link<?> link;
-    switch (linkSettings.getLinkType().value()) {
-      case LoopbackLink.LINK_TYPE_STRING: {
-        link = new LoopbackLink(operatorAddressSupplier, linkSettings, linkEventEmitter);
-        break;
-      }
-      default: {
-        throw new RuntimeException(String.format("Invalid LinkType: %s", linkSettings.getLinkType()));
-      }
+    if (!this.supports(linkSettings.getLinkType())) {
+      throw new RuntimeException(
+        String.format("LinkType `%s` not supported by this factory!", linkSettings.getLinkType())
+      );
     }
 
-    return link;
-
+    return new LoopbackLink(operatorAddressSupplier, linkSettings, linkEventEmitter);
   }
 
   @Override

@@ -691,6 +691,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
                 return trackedAccounts.values().stream()
                   .map(RoutableAccount::getCcpReceiver)
                   .map(ccpReceiver -> ccpReceiver.getRouteForPrefix(addressPrefix).orElse(null))
+                  .filter(route -> route != null)
                   .sorted(routingTableEntryComparator)
                   .collect(Collectors.toList()).stream()
                   .findFirst()

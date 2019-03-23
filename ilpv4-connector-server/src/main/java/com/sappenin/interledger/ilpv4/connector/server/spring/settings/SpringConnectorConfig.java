@@ -3,6 +3,7 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.settings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
+import com.sappenin.interledger.ilpv4.connector.ConnectorExceptionHandler;
 import com.sappenin.interledger.ilpv4.connector.DefaultILPv4Connector;
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountIdResolver;
@@ -16,15 +17,17 @@ import com.sappenin.interledger.ilpv4.connector.accounts.InMemoryAccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.balances.InMemoryBalanceTracker;
-import com.sappenin.interledger.ilpv4.connector.fx.ExchangeRateService;
-import com.sappenin.interledger.ilpv4.connector.fx.JavaMoneyExchangeRateService;
+import com.sappenin.interledger.ilpv4.connector.fx.JavaMoneyUtils;
 import com.sappenin.interledger.ilpv4.connector.links.DefaultNextHopPacketMapper;
 import com.sappenin.interledger.ilpv4.connector.links.NextHopPacketMapper;
 import com.sappenin.interledger.ilpv4.connector.links.filters.LinkFilter;
 import com.sappenin.interledger.ilpv4.connector.links.filters.OutgoingBalanceLinkFilter;
+import com.sappenin.interledger.ilpv4.connector.links.loopback.LoopbackLink;
+import com.sappenin.interledger.ilpv4.connector.links.loopback.LoopbackLinkFactory;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.DefaultILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.InterledgerAddressUtils;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.AllowedDestinationPacketFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.BalanceIlpPacketFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.ExpiryPacketFilter;
@@ -42,6 +45,7 @@ import com.sappenin.interledger.ilpv4.connector.routing.NoOpExternalRoutingServi
 import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
 import com.sappenin.interledger.ilpv4.connector.routing.Route;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.BlastConfig;
+import com.sappenin.interledger.ilpv4.connector.server.spring.settings.javamoney.JavaMoneyConfig;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
@@ -69,7 +73,6 @@ import java.util.function.Supplier;
 
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.CCP;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.ILDCP;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.ILP;
 
 /**
  * <p>Primary configuration for the ILPv4 Connector.</p>
@@ -80,6 +83,7 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.Co
 @Configuration
 @EnableConfigurationProperties({ConnectorSettingsFromPropertyFile.class})
 @Import({
+          JavaMoneyConfig.class,
           CodecContextConfig.class,
           // Link-Layer Support
           BlastConfig.class,
@@ -94,12 +98,15 @@ public class SpringConnectorConfig {
   @PostConstruct
   public void onStartup() {
     if (connectorSettingsSupplier().get().getOperatorAddress().isPresent()) {
-      logger.info("STARTED PEER/PARENT CONNECTOR: `{}`", connectorSettingsSupplier().get().getOperatorAddress().get());
+      logger.info("STARTED ILPV4 CONNECTOR: `{}`", connectorSettingsSupplier().get().getOperatorAddress().get());
     } else {
-      logger.info("STARTED CHILD CONNECTOR: [Operator Address pending IL-DCP]");
+      logger.info("STARTED ILPV4 identityRateProviderCHILD CONNECTOR: [Operator Address pending IL-DCP]");
     }
   }
 
+  /**
+   * All internal Connector events propagate locally in this JVM using this EventBus.
+   */
   @Bean
   EventBus eventBus() {
     return new EventBus();
@@ -129,15 +136,14 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  LinkFactoryProvider linkFactoryProvider(@Qualifier(ILP) CodecContext ilpCodecContext) {
+  LinkFactoryProvider linkFactoryProvider(LinkEventEmitter linkEventEmitter) {
     final LinkFactoryProvider provider = new LinkFactoryProvider();
 
     // Register known types...Spring will register proper known types based upon config...
-    //provider.registerLinkFactory(LoopBackLink.LINK_TYPE, new LoopbackLinkFactory());
-    //provider.registerLinkFactory(PingProtocolLink.LINK_TYPE, new PingProtocolLinkFactory(ilpCodecContext));
+    provider.registerLinkFactory(LoopbackLink.LINK_TYPE, new LoopbackLinkFactory(linkEventEmitter));
 
-    // TODO: Register any SPI types..
-    // See SPI as well as https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/io/support/SpringFactoriesLoader.html
+    // TODO: Register any SPI types...?
+    // See https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/io/support/SpringFactoriesLoader.html
 
     return provider;
   }
@@ -164,11 +170,6 @@ public class SpringConnectorConfig {
   ) {
     return new InMemoryAccountManager(connectorSettingsSupplier, accountIdResolver, accountSettingsResolver,
       linkManager, eventBus);
-  }
-
-  @Bean
-  ExchangeRateService exchangeRateService() {
-    return new JavaMoneyExchangeRateService();
   }
 
   @Bean
@@ -227,30 +228,43 @@ public class SpringConnectorConfig {
   }
 
   @Bean
+  PacketRejector packetRejector(final Supplier<ConnectorSettings> connectorSettingsSupplier) {
+    final Supplier<InterledgerAddress> operatorAddressSupplier =
+      () -> connectorSettingsSupplier.get().getOperatorAddressSafe();
+    return new PacketRejector(operatorAddressSupplier);
+  }
+
+  @Bean
   List<PacketSwitchFilter> packetSwitchFilters(
     ExternalRoutingService externalRoutingService, AccountManager accountManager, InterledgerAddressUtils addressUtils,
-    BalanceTracker balanceTracker,
+    BalanceTracker balanceTracker, PacketRejector packetRejector,
     @Qualifier(CCP) CodecContext ccpCodecContext, @Qualifier(ILDCP) CodecContext ildcpCodecContext
   ) {
     final ConnectorSettings connectorSettings = connectorSettingsSupplier().get();
     final Supplier<InterledgerAddress> operatorAddressSupplier =
       () -> connectorSettingsSupplier().get().getOperatorAddressSafe();
 
-    final ImmutableList.Builder<PacketSwitchFilter> filterList =
-      ImmutableList.<PacketSwitchFilter>builder().add(
-        new RateLimitIlpPacketFilter(operatorAddressSupplier), // Limits Data packets...
-        new AllowedDestinationPacketFilter(operatorAddressSupplier, addressUtils),
-        new ExpiryPacketFilter(operatorAddressSupplier),
-        new MaxPacketAmountFilter(operatorAddressSupplier, accountManager),
-        new BalanceIlpPacketFilter(operatorAddressSupplier, balanceTracker),
-        new ValidateFulfillmentPacketFilter(operatorAddressSupplier),
-        new PeerProtocolPacketFilter(
-          operatorAddressSupplier,
-          connectorSettingsSupplier().get().getEnabledProtocols(),
-          externalRoutingService, accountManager,
-          ccpCodecContext, ildcpCodecContext
-        )
-      );
+    final ImmutableList.Builder<PacketSwitchFilter> filterList = ImmutableList.<PacketSwitchFilter>builder();
+
+    if (connectorSettings.getEnabledFeatures().isRateLimitingEnabled()) {
+      filterList.add(new RateLimitIlpPacketFilter(packetRejector, accountManager));// Limits Data packets...
+    }
+
+    // TODO: Enable/Disable MaxPacketAmount, expiry, allowedDest, Balance
+
+    filterList.add(
+      new AllowedDestinationPacketFilter(packetRejector, addressUtils),
+      new ExpiryPacketFilter(packetRejector),
+      new MaxPacketAmountFilter(packetRejector, accountManager),
+      new BalanceIlpPacketFilter(packetRejector, balanceTracker),
+      new ValidateFulfillmentPacketFilter(packetRejector),
+      new PeerProtocolPacketFilter(
+        packetRejector,
+        connectorSettingsSupplier().get().getEnabledProtocols(),
+        externalRoutingService, accountManager,
+        ccpCodecContext, ildcpCodecContext
+      )
+    );
 
     // TODO: Throughput for Money...
 
@@ -259,7 +273,7 @@ public class SpringConnectorConfig {
     // Ping Protocol
     /////////////////////////////////////
     if (enabledProtocolSettings.isPingProtocolEnabled()) {
-      filterList.add(new PingProtocolFilter(operatorAddressSupplier));
+      filterList.add(new PingProtocolFilter(packetRejector, operatorAddressSupplier));
     }
 
     /////////////////////////////////////
@@ -270,47 +284,43 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  List<LinkFilter> linkFilters(
-    AccountManager accountManager, InterledgerAddressUtils addressUtils, BalanceTracker balanceTracker
-  ) {
+  List<LinkFilter> linkFilters(BalanceTracker balanceTracker) {
     final Supplier<InterledgerAddress> operatorAddressSupplier =
       () -> connectorSettingsSupplier().get().getOperatorAddress().get();
 
     return Lists.newArrayList(
+      //      // TODO: Throughput for Money...
       new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker)
     );
-    //      new RateLimitIlpPacketFilter(), // Limits Data packets...
-    //      new ExpiryPacketFilter(operatorAddressSupplier),
-    //      new MaxPacketAmountFilter(operatorAddressSupplier, accountManager),
-    //      new AllowedDestinationPacketFilter(operatorAddressSupplier, addressUtils),
-    //      new BalanceIlpPacketFilter(balanceTracker),
-    //      // Must be the last filter.
-    //      new ValidateFulfillmentPacketFilter(operatorAddressSupplier)
-    //      // TODO: Throughput for Money...
-    //    );
   }
 
   @Bean
   NextHopPacketMapper nextHopLinkMapper(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    //@Qualifier("internalPaymentRouter") PaymentRouter<Route> internalPaymentRouter,
     @Qualifier("externalPaymentRouter") PaymentRouter<Route> externalPaymentRouter,
-    final ExchangeRateService exchangeRateService,
     final AccountManager accountManager,
-    final InterledgerAddressUtils addressUtils
+    final InterledgerAddressUtils addressUtils,
+    final JavaMoneyUtils javaMoneyUtils
   ) {
     return new DefaultNextHopPacketMapper(
-      connectorSettingsSupplier, externalPaymentRouter, exchangeRateService, accountManager,
-      addressUtils
+      connectorSettingsSupplier, externalPaymentRouter, accountManager, addressUtils, javaMoneyUtils
     );
+  }
+
+  @Bean
+  ConnectorExceptionHandler connectorExceptionHandler(PacketRejector packetRejector) {
+    return new ConnectorExceptionHandler(packetRejector);
   }
 
   @Bean
   ILPv4PacketSwitch ilpPacketSwitch(
     List<PacketSwitchFilter> packetSwitchFilters, List<LinkFilter> linkFilters,
-    AccountManager accountManager, NextHopPacketMapper nextHopPacketMapper
+    AccountManager accountManager, NextHopPacketMapper nextHopPacketMapper,
+    ConnectorExceptionHandler connectorExceptionHandler
   ) {
-    return new DefaultILPv4PacketSwitch(packetSwitchFilters, linkFilters, accountManager, nextHopPacketMapper);
+    return new DefaultILPv4PacketSwitch(
+      packetSwitchFilters, linkFilters, accountManager, nextHopPacketMapper, connectorExceptionHandler
+    );
   }
 
   @Bean

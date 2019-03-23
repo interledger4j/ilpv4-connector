@@ -30,6 +30,9 @@ public class IlpPacketEmitter {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(IlpPacketEmitter.class);
 
+  private static final InterledgerAddress DESTINATION = InterledgerAddress.of("test.bob");
+  private static final InterledgerAddress OPERATOR = InterledgerAddress.of("test.connie");
+
   private static final CodecContext ILP_CONTEXT = InterledgerCodecContextFactory.oer();
 
   public static void main(String[] args) {
@@ -37,11 +40,12 @@ public class IlpPacketEmitter {
   }
 
   private static void emitPreparePacketBytes() {
-    final InterledgerCondition executionCondition = InterledgerCondition.of(new byte[32]);
+    final InterledgerFulfillment fulfillment = InterledgerFulfillment.of(new byte[32]);
+    final InterledgerCondition executionCondition = fulfillment.getCondition();
     final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
-      .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS))
-      .destination(InterledgerAddress.of("test.foo"))
-      .amount(BigInteger.TEN)
+      .expiresAt(Instant.now().plus(365, ChronoUnit.DAYS))
+      .destination(DESTINATION)
+      .amount(BigInteger.valueOf(1L))
       .executionCondition(executionCondition)
       .build();
 
@@ -49,7 +53,7 @@ public class IlpPacketEmitter {
 
     final InterledgerRejectPacket rejectPacket = InterledgerRejectPacket.builder()
       .code(InterledgerErrorCode.F02_UNREACHABLE)
-      .triggeredBy(InterledgerAddress.of("test.foo"))
+      .triggeredBy(OPERATOR)
       .message("")
       .build();
     emitPacketToFile("/tmp/testRejectPacket.bin", rejectPacket);

@@ -2,12 +2,14 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.settings;
 
 import com.sappenin.interledger.ilpv4.connector.links.loopback.LoopbackLink;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
+import com.sappenin.interledger.ilpv4.connector.settings.EnabledFeatureSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.GlobalRoutingSettings;
 import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountProviderSettings;
+import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
@@ -55,6 +57,10 @@ public class ConnectorSettingsFromPropertyFileTest {
     assertThat(enabledProtocolSettings.isPingProtocolEnabled(), is(true));
     assertThat(enabledProtocolSettings.isIldcpEnabled(), is(true));
 
+    // Enabled Features
+    final EnabledFeatureSettings enabledFeatureSettings = connectorSettings.getEnabledFeatures();
+    assertThat(enabledFeatureSettings.isRateLimitingEnabled(), is(true));
+
     // Global Routing Settings
     final GlobalRoutingSettings globalRoutingSettings = connectorSettings.getGlobalRoutingSettings();
     assertThat(globalRoutingSettings.getDefaultRoute().get(), is(AccountId.of("self.internal")));
@@ -98,6 +104,9 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(balanceSettings.getMaxBalance(), is(Optional.of(BigInteger.valueOf(2L))));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.of(BigInteger.valueOf(10000001L))));
       assertThat(balanceSettings.getSettleTo(), is(Optional.of(BigInteger.valueOf(3L))));
+
+      final AccountRateLimitSettings rateLimitSettings = account.getRateLimitSettings();
+      assertThat(rateLimitSettings.getMaxPacketsPerSecond().get(), is(5000));
     }
 
     /////////////////////////
@@ -121,6 +130,9 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(balanceSettings.getMaxBalance(), is(Optional.of(BigInteger.valueOf(-3L))));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.of(BigInteger.valueOf(-10000001L))));
       assertThat(balanceSettings.getSettleTo(), is(Optional.of(BigInteger.valueOf(54L))));
+
+      final AccountRateLimitSettings rateLimitSettings = account.getRateLimitSettings();
+      assertThat(rateLimitSettings.getMaxPacketsPerSecond().get(), is(1));
     }
 
     /////////////////////////
@@ -143,6 +155,9 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleTo(), is(Optional.empty()));
+
+      final AccountRateLimitSettings rateLimitSettings = account.getRateLimitSettings();
+      assertThat(rateLimitSettings.getMaxPacketsPerSecond(), is(Optional.empty()));
     }
 
     /////////////////////////
@@ -165,6 +180,9 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleTo(), is(Optional.empty()));
+
+      final AccountRateLimitSettings rateLimitSettings = account.getRateLimitSettings();
+      assertThat(rateLimitSettings.getMaxPacketsPerSecond(), is(Optional.empty()));
     }
 
     final List<AccountProviderSettings> accountProviders = connectorSettings.getAccountProviderSettings();
@@ -191,6 +209,9 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(balanceSettings.getMaxBalance(), is(Optional.of(BigInteger.valueOf(2L))));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.of(BigInteger.valueOf(10000001L))));
       assertThat(balanceSettings.getSettleTo(), is(Optional.of(BigInteger.valueOf(3L))));
+
+      final AccountRateLimitSettings rateLimitSettings = settings.getRateLimitSettings();
+      assertThat(rateLimitSettings.getMaxPacketsPerSecond().get(), is(5000));
     }
 
     /////////////////////////
@@ -213,6 +234,9 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleTo(), is(Optional.empty()));
+
+      final AccountRateLimitSettings rateLimitSettings = settings.getRateLimitSettings();
+      assertThat(rateLimitSettings.getMaxPacketsPerSecond(), is(Optional.empty()));
     }
 
     /////////////////////////
@@ -236,6 +260,9 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleTo(), is(Optional.empty()));
+
+      final AccountRateLimitSettings rateLimitSettings = settings.getRateLimitSettings();
+      assertThat(rateLimitSettings.getMaxPacketsPerSecond(), is(Optional.empty()));
     }
   }
 

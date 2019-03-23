@@ -26,6 +26,18 @@ public class Ids {
   @Wrapped
   static abstract class _LinkType extends Wrapper<String> {
 
-  }
+    /**
+     * Always normalize Link-type String values to full uppercase to avoid casing ambiguity in properties files.
+     */
+    @Value.Check
+    public _LinkType normalize() {
+      final String linkTypeString = this.value();
+      if (!linkTypeString.toUpperCase().equals(linkTypeString)) {
+        return LinkType.of(linkTypeString.toUpperCase());
+      } else {
+        return this;
+      }
+    }
 
+  }
 }

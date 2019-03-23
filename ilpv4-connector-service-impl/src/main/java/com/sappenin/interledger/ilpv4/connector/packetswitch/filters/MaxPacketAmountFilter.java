@@ -1,17 +1,15 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import org.interledger.connector.accounts.Account;
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
-import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 
 import java.util.Objects;
-import java.util.function.Supplier;
 
 
 /**
@@ -21,10 +19,8 @@ public class MaxPacketAmountFilter extends AbstractPacketFilter implements Packe
 
   private final AccountManager accountManager;
 
-  public MaxPacketAmountFilter(
-    final Supplier<InterledgerAddress> operatorAddressSupplier, final AccountManager accountManager
-  ) {
-    super(operatorAddressSupplier);
+  public MaxPacketAmountFilter(final PacketRejector packetRejector, final AccountManager accountManager) {
+    super(packetRejector);
     this.accountManager = Objects.requireNonNull(accountManager);
   }
 
@@ -49,12 +45,11 @@ public class MaxPacketAmountFilter extends AbstractPacketFilter implements Packe
           "Rejecting packet for exceeding max amount. accountId={} maxAmount={} actualAmount={}",
           sourceAccountId, maxPacketAmount, sourcePreparePacket.getAmount()
         );
-        return (InterledgerResponsePacket) InterledgerRejectPacket.builder()
-          .code(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE)
-          .triggeredBy(operatorAddressSupplier.get())
-          .message(String.format("Packet size too large: maxAmount=%s actualAmount=%s", maxPacketAmount,
-            sourcePreparePacket.getAmount()))
-          .build();
+        return (InterledgerResponsePacket) reject(
+          sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F08_AMOUNT_TOO_LARGE,
+          String.format(
+            "Packet size too large: maxAmount=%s actualAmount=%s", maxPacketAmount, sourcePreparePacket.getAmount())
+        );
       })
       // Otherwise, the packet amount is fine...
       .orElseGet(() -> filterChain.doFilter(sourceAccountId, sourcePreparePacket));

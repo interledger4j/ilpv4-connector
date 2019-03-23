@@ -32,5 +32,21 @@ public interface LinkSettings {
     @Value.Redacted
     public abstract Map<String, Object> getCustomSettings();
 
+    /**
+     * Always normalize Link-type String values to full uppercase to avoid casing ambiguity in properties files.
+     */
+    @Value.Check
+    public AbstractLinkSettings normalize() {
+      final String linkTypeString = this.getLinkType().value();
+      if (!linkTypeString.toUpperCase().equals(linkTypeString)) {
+        return ImmutableLinkSettings.builder()
+          .from(this)
+          .linkType(LinkType.of(linkTypeString.toUpperCase()))
+          .build();
+      } else {
+        return this;
+      }
+    }
+
   }
 }

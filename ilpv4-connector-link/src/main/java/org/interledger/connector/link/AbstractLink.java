@@ -97,7 +97,7 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
               // Emit a connected event...
               this.linkEventEmitter.emitEvent(LinkConnectedEvent.of(this));
 
-              logger.debug("[{}] `{}` connected to `{}`", this.getLinkSettings().getLinkType(),
+              logger.info("[{}] `{}` connected to `{}`", this.getLinkSettings().getLinkType(),
                 this.operatorAddressSupplier.get(), this.getLinkId());
             } else {
               this.connected.set(NOT_CONNECTED);
