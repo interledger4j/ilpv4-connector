@@ -1,6 +1,6 @@
 package com.sappenin.interledger.javax.money.providers;
 
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableSet;
 import org.javamoney.moneta.CurrencyUnitBuilder;
 
 import javax.money.CurrencyQuery;
@@ -14,15 +14,19 @@ import java.util.Set;
  */
 public class XrpCurrencyProvider implements CurrencyProviderSpi {
 
+  public static final String DROP = "DROP";
   public static final String XRP = "XRP";
+
   private Set<CurrencyUnit> currencyUnits;
 
   public XrpCurrencyProvider() {
-    currencyUnits = Sets.newHashSet();
-    currencyUnits.add(CurrencyUnitBuilder.of(XRP, "XrpCurrencyBuilder")
-      .setDefaultFractionDigits(2)
-      .build());
-    currencyUnits = Collections.unmodifiableSet(currencyUnits);
+    this.currencyUnits = ImmutableSet.<CurrencyUnit>builder()
+      .add(
+        CurrencyUnitBuilder.of(XRP, "XrpCurrencyProvider")
+          .setDefaultFractionDigits(3) // XRP is generally modelled in the thousanths (but rounding is to the millionth)
+          .build()
+      )
+      .build();
   }
 
   /**

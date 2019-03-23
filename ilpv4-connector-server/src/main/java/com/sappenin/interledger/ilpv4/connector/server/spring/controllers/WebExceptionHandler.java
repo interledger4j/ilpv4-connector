@@ -15,6 +15,10 @@ import java.util.function.Supplier;
 
 import static org.interledger.connector.link.blast.BlastHeaders.ILP_OCTET_STREAM;
 
+/**
+ * WARNING: Only handle HTTP-related exceptions here. General Connector exceptions MUST be handled in the PacketSwitch
+ * in order to work with an Link type.
+ */
 @ControllerAdvice
 public class WebExceptionHandler {
 
@@ -26,16 +30,13 @@ public class WebExceptionHandler {
   /**
    * This exception is emitted if an invalid ILP prepare packet is sent into the `/ilp` endpoint to support ILP over
    * HTTP.
-   *
-   * @param e
-   *
-   * @return
    */
   @ExceptionHandler
   public ResponseEntity<InterledgerRejectPacket> handleHttpMessageNotReadableException(
     final HttpMessageNotReadableException e
   ) {
-    logger.error(e.getMessage(), e);
+    // Only warn here because this might be a regular occurence.
+    logger.warn(e.getMessage(), e);
 
     final InterledgerRejectPacket rejectPacket = InterledgerRejectPacket.builder()
       .code(InterledgerErrorCode.F00_BAD_REQUEST)

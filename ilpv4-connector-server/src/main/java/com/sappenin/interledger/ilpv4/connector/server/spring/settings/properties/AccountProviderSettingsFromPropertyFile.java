@@ -25,7 +25,10 @@ public class AccountProviderSettingsFromPropertyFile implements AccountProviderS
 
   private String assetCode = "USD";
   private int assetScale = 2;
+
   private AccountBalanceSettingsFromPropertyFile balanceSettings = new AccountBalanceSettingsFromPropertyFile();
+  private AccountRateLimitSettingsFromPropertyFile rateLimitSettings = new AccountRateLimitSettingsFromPropertyFile();
+
   private LinkType LinkType;
   private Map<String, Object> customSettings = Maps.newConcurrentMap();
   private Optional<BigInteger> maximumPacketAmount = Optional.empty();
@@ -109,6 +112,15 @@ public class AccountProviderSettingsFromPropertyFile implements AccountProviderS
 
   public void setBalanceSettings(AccountBalanceSettingsFromPropertyFile balanceSettings) {
     this.balanceSettings = balanceSettings;
+  }
+
+  @Override
+  public AccountRateLimitSettingsFromPropertyFile getRateLimitSettings() {
+    return rateLimitSettings;
+  }
+
+  public void setRateLimitSettings(AccountRateLimitSettingsFromPropertyFile rateLimitSettings) {
+    this.rateLimitSettings = rateLimitSettings;
   }
 
   @Override

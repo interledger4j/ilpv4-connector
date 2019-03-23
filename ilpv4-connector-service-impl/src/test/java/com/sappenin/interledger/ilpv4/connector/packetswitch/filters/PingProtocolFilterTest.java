@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
+import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
@@ -28,6 +29,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link PingProtocolFilter}.
@@ -35,7 +37,16 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 public class PingProtocolFilterTest {
 
   private static final InterledgerAddress TARGET_ADDRESS = InterledgerAddress.of("example.target");
+  private static final InterledgerRejectPacket REJECT_PACKET = InterledgerRejectPacket.builder()
+    .triggeredBy(InterledgerAddress.of("test.conn"))
+    .code(InterledgerErrorCode.F00_BAD_REQUEST)
+    .message("error message")
+    .build();
+
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
+  @Mock
+  PacketRejector packetRejectorMock;
 
   @Mock
   PacketSwitchFilterChain filterChainMock;
@@ -45,7 +56,8 @@ public class PingProtocolFilterTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    this.pingProtocolFilter = new PingProtocolFilter(() -> TARGET_ADDRESS);
+    when(packetRejectorMock.reject(any(), any(), any(), any())).thenReturn(REJECT_PACKET);
+    this.pingProtocolFilter = new PingProtocolFilter(packetRejectorMock, () -> TARGET_ADDRESS);
   }
 
   @Test
@@ -105,7 +117,7 @@ public class PingProtocolFilterTest {
       protected void handleRejectPacket(final InterledgerRejectPacket interledgerRejectPacket) {
         assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
         assertThat(interledgerRejectPacket.getTriggeredBy().isPresent(), is(true));
-        assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(TARGET_ADDRESS));
+        assertThat(interledgerRejectPacket.getTriggeredBy(), is(REJECT_PACKET.getTriggeredBy()));
       }
     }.handle(response);
     verifyZeroInteractions(filterChainMock);

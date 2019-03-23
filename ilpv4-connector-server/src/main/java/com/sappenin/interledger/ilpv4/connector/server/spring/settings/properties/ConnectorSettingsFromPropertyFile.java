@@ -33,6 +33,8 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   private EnabledProtocolSettingsFromPropertyFile enabledProtocols =
     new EnabledProtocolSettingsFromPropertyFile();
 
+  private EnabledFeatureSettingsFromPropertyFile enabledFeatures = new EnabledFeatureSettingsFromPropertyFile();
+
   private boolean websocketServerEnabled;
 
   private boolean blastEnabled;
@@ -65,6 +67,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     this.nodeIlpAddress = nodeIlpAddress;
   }
 
+  @Override
   public InterledgerAddressPrefix getGlobalPrefix() {
     return globalPrefix;
   }
@@ -73,12 +76,22 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     this.globalPrefix = globalPrefix;
   }
 
+  @Override
   public EnabledProtocolSettingsFromPropertyFile getEnabledProtocols() {
     return enabledProtocols;
   }
 
   public void setEnabledProtocols(EnabledProtocolSettingsFromPropertyFile enabledProtocols) {
     this.enabledProtocols = enabledProtocols;
+  }
+
+  @Override
+  public EnabledFeatureSettingsFromPropertyFile getEnabledFeatures() {
+    return enabledFeatures;
+  }
+
+  public void setEnabledFeatures(EnabledFeatureSettingsFromPropertyFile enabledFeatures) {
+    this.enabledFeatures = enabledFeatures;
   }
 
   @Override

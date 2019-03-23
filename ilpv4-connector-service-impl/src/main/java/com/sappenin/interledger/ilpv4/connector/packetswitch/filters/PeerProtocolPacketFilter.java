@@ -5,6 +5,7 @@ import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteControlRequest;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteUpdateRequest;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.RoutableAccount;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
@@ -14,7 +15,6 @@ import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
-import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.ildcp.IldcpRequestPacket;
@@ -25,7 +25,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import static com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants.CCP_CONTROL_DESTINATION_ADDRESS;
 import static com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants.CCP_UPDATE_DESTINATION_ADDRESS;
@@ -47,14 +46,14 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
   private final CodecContext ildcpCodecContext;
 
   public PeerProtocolPacketFilter(
-    final Supplier<InterledgerAddress> operatorAddressSupplier,
+    final PacketRejector packetRejector,
     final EnabledProtocolSettings enabledProtocolSettings,
     final ExternalRoutingService externalRoutingService,
     final AccountManager accountManager,
     final CodecContext ccpCodecContext,
     final CodecContext ildcpCodecContext
   ) {
-    super(operatorAddressSupplier);
+    super(packetRejector);
     this.enabledProtocolSettings = Objects.requireNonNull(enabledProtocolSettings);
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
     this.accountManager = Objects.requireNonNull(accountManager);
@@ -169,11 +168,10 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
       }
 
       if (!PEER_PROTOCOL_EXECUTION_CONDITION.equals(sourcePreparePacket.getExecutionCondition())) {
-        return InterledgerRejectPacket.builder()
-          .message("Packet does not contain correct condition for a peer protocol request.")
-          .triggeredBy(operatorAddressSupplier.get())
-          .code(InterledgerErrorCode.F01_INVALID_PACKET)
-          .build();
+        return reject(
+          sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F01_INVALID_PACKET,
+          "Packet does not contain correct condition for a peer protocol request."
+        );
       }
 
       if (sourcePreparePacket.getDestination().equals(CCP_CONTROL_DESTINATION_ADDRESS)) {

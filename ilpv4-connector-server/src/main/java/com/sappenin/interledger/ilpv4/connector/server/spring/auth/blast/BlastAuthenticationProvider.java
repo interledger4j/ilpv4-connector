@@ -1,6 +1,8 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.auth.blast;
 
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.exceptions.InvalidClaimException;
+import com.auth0.jwt.exceptions.SignatureVerificationException;
 import com.auth0.spring.security.api.JwtAuthenticationProvider;
 import com.auth0.spring.security.api.authentication.JwtAuthentication;
 import com.google.common.cache.CacheBuilder;
@@ -70,9 +72,20 @@ public class BlastAuthenticationProvider implements AuthenticationProvider {
       return jwtAuthenticationProviders.getUnchecked(AccountId.of(JWT.decode(token).getSubject()))
         .authenticate(authentication);
     } catch (BadCredentialsException e) {
-      throw e;
+      if (InvalidClaimException.class.isAssignableFrom(e.getCause().getClass()) ||
+        SignatureVerificationException.class.isAssignableFrom(e.getCause().getClass())) {
+        throw new BadCredentialsException(String.format("Not a valid token (%s)", e.getCause().getMessage()), e);
+      } else {
+        throw e;
+      }
     } catch (Exception e) {
-      throw new BadCredentialsException("Not a valid Token");
+      if (BadCredentialsException.class.isAssignableFrom(e.getCause().getClass())) {
+        throw e;
+      }
+      //else if()
+      else {
+        throw new BadCredentialsException("Not a valid Token");
+      }
     }
   }
 

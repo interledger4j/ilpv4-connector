@@ -1,0 +1,15 @@
+[
+  {
+    "alg": "HS256",
+    "typ": "JWT"
+  },
+  {
+    "sub": "alice",
+    "iat": 1516239022,
+    "iss": "https://connie.example.com/",
+    "aud": "urn:ilpv4:blast"
+  },
+  {
+    "secret": "somesecrettoken"
+  }
+]

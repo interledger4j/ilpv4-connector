@@ -3,6 +3,7 @@ package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceChangeResult;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTrackerException;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerFulfillPacket;
@@ -25,9 +26,9 @@ public class BalanceIlpPacketFilter extends AbstractPacketFilter implements Pack
   private final BalanceTracker balanceTracker;
 
   public BalanceIlpPacketFilter(
-    final Supplier<InterledgerAddress> operatorAddressSupplier, final BalanceTracker balanceTracker
+    final PacketRejector packetRejector, final BalanceTracker balanceTracker
   ) {
-    super(operatorAddressSupplier);
+    super(packetRejector);
     this.balanceTracker = Objects.requireNonNull(balanceTracker);
   }
 

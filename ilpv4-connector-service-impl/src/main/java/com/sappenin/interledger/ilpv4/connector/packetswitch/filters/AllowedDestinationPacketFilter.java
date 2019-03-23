@@ -1,10 +1,12 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
 import com.sappenin.interledger.ilpv4.connector.packetswitch.InterledgerAddressUtils;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerResponsePacket;
 
 import java.util.Objects;
@@ -22,9 +24,9 @@ public class AllowedDestinationPacketFilter extends AbstractPacketFilter impleme
   private final InterledgerAddressUtils addressUtils;
 
   public AllowedDestinationPacketFilter(
-    final Supplier<InterledgerAddress> operatorAddressSupplier, final InterledgerAddressUtils addressUtils
+    final PacketRejector packetRejector, final InterledgerAddressUtils addressUtils
   ) {
-    super(operatorAddressSupplier);
+    super(packetRejector);
     this.addressUtils = Objects.requireNonNull(addressUtils);
   }
 
@@ -44,7 +46,7 @@ public class AllowedDestinationPacketFilter extends AbstractPacketFilter impleme
         sourceAccountId.value(), sourcePreparePacket.getDestination().getValue()
       );
       // REJECT!
-      return reject(
+      return packetRejector.reject(
         sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F02_UNREACHABLE, DESTINATION_ADDRESS_IS_UNREACHABLE
       );
     } else {

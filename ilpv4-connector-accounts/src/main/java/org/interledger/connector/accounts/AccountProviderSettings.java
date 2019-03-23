@@ -83,6 +83,13 @@ public interface AccountProviderSettings {
   AccountBalanceSettings getBalanceSettings();
 
   /**
+   * Defines any rate-limiting in effect for this account.
+   *
+   * @return The parameters for rate-limiting this account.
+   */
+  AccountRateLimitSettings getRateLimitSettings();
+
+  /**
    * Whether this account should receive and process route broadcasts from this peer. Defaults to `false` for {@link
    * AccountRelationship#CHILD} and `true` otherwise.
    */
