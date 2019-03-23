@@ -1,13 +1,11 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
+import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
-
-import java.util.function.Supplier;
 
 
 /**
@@ -15,8 +13,8 @@ import java.util.function.Supplier;
  */
 public class ValidateFulfillmentPacketFilter extends AbstractPacketFilter implements PacketSwitchFilter {
 
-  public ValidateFulfillmentPacketFilter(final Supplier<InterledgerAddress> operatorAddressSupplier) {
-    super(operatorAddressSupplier);
+  public ValidateFulfillmentPacketFilter(final PacketRejector packetRejector) {
+    super(packetRejector);
   }
 
   @Override

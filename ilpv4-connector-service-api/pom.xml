@@ -39,10 +39,6 @@
       <artifactId>ilpv4-connector-routing-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>javax.money</groupId>
-      <artifactId>money-api</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>ilp-core</artifactId>
     </dependency>

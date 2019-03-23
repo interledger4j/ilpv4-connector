@@ -1,7 +1,8 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
@@ -9,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.function.Supplier;
 
 
 /**
@@ -19,20 +19,13 @@ public abstract class AbstractPacketFilter implements PacketSwitchFilter {
 
   protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  protected final Supplier<InterledgerAddress> operatorAddressSupplier;
+  protected final PacketRejector packetRejector;
 
-  public AbstractPacketFilter(final Supplier<InterledgerAddress> operatorAddressSupplier) {
-    this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
+  public AbstractPacketFilter(final PacketRejector packetRejector) {
+    this.packetRejector = Objects.requireNonNull(packetRejector);
   }
 
-  /**
-   * Helper-method to reject an incoming request.
-   *
-   * @param errorCode
-   * @param errorMessage
-   *
-   * @return
-   */
+  @VisibleForTesting
   protected InterledgerRejectPacket reject(
     final AccountId sourceAccountId, final InterledgerPreparePacket preparePacket,
     final InterledgerErrorCode errorCode, final String errorMessage
@@ -40,14 +33,7 @@ public abstract class AbstractPacketFilter implements PacketSwitchFilter {
     Objects.requireNonNull(errorCode);
     Objects.requireNonNull(errorMessage);
 
-    // Reject.
-    final InterledgerRejectPacket rejectPacket = InterledgerRejectPacket.builder()
-      .triggeredBy(operatorAddressSupplier.get())
-      .code(errorCode)
-      .message(errorMessage)
-      .build();
-
-    logger.warn("Rejecting Prepare Packet from `{}`: {} {}", sourceAccountId, preparePacket, rejectPacket);
-    return rejectPacket;
+    logger.warn("Rejecting from {}", this.getClass().getName());
+    return this.packetRejector.reject(sourceAccountId, preparePacket, errorCode, errorMessage);
   }
 }

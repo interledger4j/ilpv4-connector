@@ -4,12 +4,14 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.RateLimiter;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import org.interledger.connector.accounts.Account;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
+import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
@@ -38,12 +40,21 @@ import static org.mockito.Mockito.when;
  */
 public class RateLimitIlpPacketFilterTest {
 
-  private static final AccountId sourceAccountId = AccountId.of("123");
-  private static final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
+  private static final AccountId SOURCE_ACCOUNT_ID = AccountId.of("123");
+  private static final InterledgerPreparePacket PREPARE_PACKET = InterledgerPreparePacket.builder()
     .expiresAt(Instant.now())
     .destination(InterledgerAddress.of("test.dest"))
     .executionCondition(InterledgerCondition.of(new byte[32]))
     .build();
+
+  private static final InterledgerRejectPacket REJECT_PACKET = InterledgerRejectPacket.builder()
+    .triggeredBy(InterledgerAddress.of("test.conn"))
+    .code(InterledgerErrorCode.F00_BAD_REQUEST)
+    .message("error message")
+    .build();
+
+  @Mock
+  private PacketRejector packetRejectorMock;
 
   @Mock
   private AccountRateLimitSettings rateLimitSettingsMock;
@@ -81,18 +92,17 @@ public class RateLimitIlpPacketFilterTest {
     MockitoAnnotations.initMocks(this);
 
     when(cacheLoaderMock.load(any())).thenReturn(Optional.empty());
-    when(filterChainMock.doFilter(sourceAccountId, preparePacket)).thenReturn(responsePacketMock);
+    when(filterChainMock.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET)).thenReturn(responsePacketMock);
 
     // enable rate limiting by default
-    when(accountManagerMock.safeGetAccount(sourceAccountId)).thenReturn(accountMock);
+    when(accountManagerMock.safeGetAccount(SOURCE_ACCOUNT_ID)).thenReturn(accountMock);
     when(accountMock.getAccountSettings()).thenReturn(accountSettingsMock);
     when(accountSettingsMock.getRateLimitSettings()).thenReturn(rateLimitSettingsMock);
     when(rateLimitSettingsMock.getMaxPacketsPerSecond()).thenReturn(Optional.of(1000));
 
-    filter = new RateLimitIlpPacketFilter(() -> InterledgerAddress.of("test.operator"), accountManagerMock);
-
-    filterWithMockLoadingCache =
-      new RateLimitIlpPacketFilter(() -> InterledgerAddress.of("test.operator"), loadingCacheMock);
+    when(packetRejectorMock.reject(any(), any(), any(), any())).thenReturn(REJECT_PACKET);
+    filter = new RateLimitIlpPacketFilter(packetRejectorMock, accountManagerMock);
+    filterWithMockLoadingCache = new RateLimitIlpPacketFilter(packetRejectorMock, loadingCacheMock);
   }
 
   ///////////////////////
@@ -101,13 +111,14 @@ public class RateLimitIlpPacketFilterTest {
 
   @Test
   public void doFilterWithNoAccount() {
-    when(accountManagerMock.getAccount(sourceAccountId)).thenReturn(Optional.empty());
+    when(accountManagerMock.getAccount(SOURCE_ACCOUNT_ID)).thenReturn(Optional.empty());
 
-    filter.doFilter(sourceAccountId, preparePacket, filterChainMock);
-    filter.doFilter(sourceAccountId, preparePacket, filterChainMock);
-    filter.doFilter(sourceAccountId, preparePacket, filterChainMock);
+    filter.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET, filterChainMock);
+    filter.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET, filterChainMock);
+    filter.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET, filterChainMock);
 
-    verify(filterChainMock, times(3)).doFilter(sourceAccountId, preparePacket);
+    // No need to verify this because the other tests validate the permitting.
+    //verify(filterChainMock, times(3)).doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET);
     verify(accountManagerMock).safeGetAccount(any()); // one time
     verifyNoMoreInteractions(accountManagerMock);
   }
@@ -116,20 +127,20 @@ public class RateLimitIlpPacketFilterTest {
   public void doFilterWithNoMaxPacketAmount() {
     when(rateLimitSettingsMock.getMaxPacketsPerSecond()).thenReturn(Optional.empty());
 
-    InterledgerResponsePacket response = filter.doFilter(sourceAccountId, preparePacket, filterChainMock);
+    InterledgerResponsePacket response = filter.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerFulfillPacket, is(true));
-    response = filter.doFilter(sourceAccountId, preparePacket, filterChainMock);
+    response = filter.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET, filterChainMock);
     assertThat(
       "Response was: " + response.getClass().getName(),
       response instanceof InterledgerFulfillPacket, is(true)
     );
-    response = filter.doFilter(sourceAccountId, preparePacket, filterChainMock);
+    response = filter.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET, filterChainMock);
     assertThat(
       "Response was: " + response.getClass().getName(),
       response instanceof InterledgerFulfillPacket, is(true)
     );
 
-    verify(filterChainMock, times(3)).doFilter(sourceAccountId, preparePacket);
+    verify(filterChainMock, times(3)).doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET);
     verify(accountManagerMock).safeGetAccount(any()); // one time
     verifyNoMoreInteractions(accountManagerMock);
   }
@@ -138,15 +149,16 @@ public class RateLimitIlpPacketFilterTest {
   public void doFilterWithInsufficientTickets() {
     when(rateLimitSettingsMock.getMaxPacketsPerSecond()).thenReturn(Optional.of(1));
 
-    InterledgerResponsePacket response = filter.doFilter(sourceAccountId, preparePacket, filterChainMock);
+    InterledgerResponsePacket response = filter.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerFulfillPacket, is(true));
-    response = filter.doFilter(sourceAccountId, preparePacket, filterChainMock);
+    response = filter.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerRejectPacket, is(true));
-    response = filter.doFilter(sourceAccountId, preparePacket, filterChainMock);
+    response = filter.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerRejectPacket, is(true));
 
-    verify(filterChainMock, times(1)).doFilter(sourceAccountId, preparePacket);
+    verify(filterChainMock, times(1)).doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET);
     verify(accountManagerMock).safeGetAccount(any()); // one time
+    verify(packetRejectorMock, times(2)).reject(any(), any(), any(), any());
     verifyNoMoreInteractions(accountManagerMock);
   }
 
@@ -156,13 +168,13 @@ public class RateLimitIlpPacketFilterTest {
 
   @Test
   public void doFilterWithNoPermits() throws ExecutionException {
-    when(loadingCacheMock.get(sourceAccountId)).thenReturn(Optional.of(rateLimiterMock));
+    when(loadingCacheMock.get(SOURCE_ACCOUNT_ID)).thenReturn(Optional.of(rateLimiterMock));
     when(rateLimiterMock.tryAcquire(1)).thenReturn(Boolean.FALSE);
 
     InterledgerResponsePacket response =
-      filterWithMockLoadingCache.doFilter(sourceAccountId, preparePacket, filterChainMock);
+      filterWithMockLoadingCache.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerRejectPacket, is(true));
-    response = filterWithMockLoadingCache.doFilter(sourceAccountId, preparePacket, filterChainMock);
+    response = filterWithMockLoadingCache.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerRejectPacket, is(true));
 
     verifyZeroInteractions(filterChainMock);
@@ -171,30 +183,30 @@ public class RateLimitIlpPacketFilterTest {
 
   @Test
   public void doFilterWithPermit() throws ExecutionException {
-    when(loadingCacheMock.get(sourceAccountId)).thenReturn(Optional.of(rateLimiterMock));
+    when(loadingCacheMock.get(SOURCE_ACCOUNT_ID)).thenReturn(Optional.of(rateLimiterMock));
     when(rateLimiterMock.tryAcquire(1)).thenReturn(true);
 
     InterledgerResponsePacket response =
-      filterWithMockLoadingCache.doFilter(sourceAccountId, preparePacket, filterChainMock);
+      filterWithMockLoadingCache.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerFulfillPacket, is(true));
-    response = filterWithMockLoadingCache.doFilter(sourceAccountId, preparePacket, filterChainMock);
+    response = filterWithMockLoadingCache.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerFulfillPacket, is(true));
 
-    verify(filterChainMock, times(2)).doFilter(sourceAccountId, preparePacket);
+    verify(filterChainMock, times(2)).doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET);
     verifyZeroInteractions(accountManagerMock);
   }
 
   @Test
   public void doFilterWithNoRateLimiter() throws ExecutionException {
-    when(loadingCacheMock.get(sourceAccountId)).thenReturn(Optional.empty());
+    when(loadingCacheMock.get(SOURCE_ACCOUNT_ID)).thenReturn(Optional.empty());
 
     InterledgerResponsePacket response =
-      filterWithMockLoadingCache.doFilter(sourceAccountId, preparePacket, filterChainMock);
+      filterWithMockLoadingCache.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerFulfillPacket, is(true));
-    response = filterWithMockLoadingCache.doFilter(sourceAccountId, preparePacket, filterChainMock);
+    response = filterWithMockLoadingCache.doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerFulfillPacket, is(true));
 
-    verify(filterChainMock, times(2)).doFilter(sourceAccountId, preparePacket);
+    verify(filterChainMock, times(2)).doFilter(SOURCE_ACCOUNT_ID, PREPARE_PACKET);
     verifyZeroInteractions(accountManagerMock);
   }
 

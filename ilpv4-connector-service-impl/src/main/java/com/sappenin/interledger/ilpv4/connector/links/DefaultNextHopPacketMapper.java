@@ -2,7 +2,7 @@ package com.sappenin.interledger.ilpv4.connector.links;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
-import com.sappenin.interledger.ilpv4.connector.fx.ExchangeRateService;
+import com.sappenin.interledger.ilpv4.connector.fx.JavaMoneyUtils;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.InterledgerAddressUtils;
 import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
 import com.sappenin.interledger.ilpv4.connector.routing.Route;
@@ -15,13 +15,14 @@ import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
-import org.javamoney.moneta.Money;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.money.CurrencyUnit;
 import javax.money.Monetary;
 import javax.money.MonetaryAmount;
+import javax.money.convert.CurrencyConversion;
+import javax.money.convert.MonetaryConversions;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Objects;
@@ -37,22 +38,22 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final PaymentRouter<Route> externalRoutingService;
-  private final ExchangeRateService exchangeRateService;
   private final AccountManager accountManager;
   private final InterledgerAddressUtils addressUtils;
+  private final JavaMoneyUtils javaMoneyUtils;
 
   public DefaultNextHopPacketMapper(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final PaymentRouter<Route> externalRoutingService,
-    final ExchangeRateService exchangeRateService,
     final AccountManager accountManager,
-    final InterledgerAddressUtils addressUtils
+    final InterledgerAddressUtils addressUtils,
+    final JavaMoneyUtils javaMoneyUtils
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
-    this.exchangeRateService = Objects.requireNonNull(exchangeRateService);
     this.accountManager = Objects.requireNonNull(accountManager);
     this.addressUtils = Objects.requireNonNull(addressUtils);
+    this.javaMoneyUtils = Objects.requireNonNull(javaMoneyUtils);
   }
 
   /**
@@ -110,7 +111,10 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       );
     }
 
-    final BigInteger nextAmount = this.determineNextAmount(sourceAccountId, sourcePacket);
+    final BigInteger nextAmount = this.determineNextAmount(
+      sourceAccountId, nextHopRoute.getNextHopAccountId(), sourcePacket
+    );
+
     return NextHopInfo.builder()
       .nextHopAccountId(nextHopRoute.getNextHopAccountId())
       .nextHopPacket(
@@ -133,25 +137,36 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
    */
   @VisibleForTesting
   protected BigInteger determineNextAmount(
-    final AccountId sourceAccountId, final InterledgerPreparePacket sourcePacket
+    final AccountId sourceAccountId, final AccountId destinationAccountId, final InterledgerPreparePacket sourcePacket
   ) {
     Objects.requireNonNull(sourcePacket);
 
     if (!this.addressUtils.isExternalForwardingAllowed(sourcePacket.getDestination())) {
       return sourcePacket.getAmount();
     } else {
+      // TODO: Consider a cache here for the source/dest conversion?
+      final AccountSettings sourceAccountSettings = loadAccountSettings(sourceAccountId);
+      final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.getAssetCode());
+      final int sourceScale = sourceAccountSettings.getAssetScale();
+      final MonetaryAmount sourceAmount =
+        javaMoneyUtils.toMonetaryAmount(sourceCurrencyUnit, sourcePacket.getAmount(), sourceScale);
 
-      final CurrencyUnit sourceCurrencyUnit = this.accountManager
-        .getAccount(sourceAccountId)
-        .map(Account::getAccountSettings)
-        .map(AccountSettings::getAssetCode)
-        .map(Monetary::getCurrency)
-        .orElseThrow(
-          () -> new RuntimeException(String.format("No Source Account for AccountId: `%s`", sourceAccountId)));
-      final MonetaryAmount sourceAmount = Money.of(sourcePacket.getAmount(), sourceCurrencyUnit);
-      return this.exchangeRateService.convert(sourceAmount, sourceCurrencyUnit).getNumber()
-        .numberValue(BigInteger.class);
+      final AccountSettings destinationAccountSettings = loadAccountSettings(destinationAccountId);
+      final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAccountSettings.getAssetCode());
+      final int destinationScale = destinationAccountSettings.getAssetScale();
+      final CurrencyConversion destCurrencyConversion = MonetaryConversions.getConversion(destinationCurrencyUnit);
+
+      return javaMoneyUtils.toInterledgerAmount(sourceAmount.with(destCurrencyConversion), destinationScale);
     }
+  }
+
+  @VisibleForTesting
+  protected AccountSettings loadAccountSettings(final AccountId accountId) {
+    return this.accountManager
+      .getAccount(accountId)
+      .map(Account::getAccountSettings).orElseThrow(
+        () -> new RuntimeException(String.format("No Account for AccountId: `%s`", accountId))
+      );
   }
 
   @VisibleForTesting

@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
+import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
@@ -27,11 +28,17 @@ public class PingProtocolFilter extends AbstractPacketFilter implements PacketSw
   public static final InterledgerCondition PING_PROTOCOL_CONDITION = InterledgerCondition.of(
     Base64.getDecoder().decode("jAC8DGFPZPfh4AtZpXuvXFe2oRmpDVSvSJg2oT+bx34="));
 
+  private final Supplier<InterledgerAddress> operatorAddressSupplier;
+
   /**
    * Required-args Constructor.
    */
-  public PingProtocolFilter(final Supplier<InterledgerAddress> operatorAddressSupplier) {
-    super(operatorAddressSupplier);
+  public PingProtocolFilter(
+    final PacketRejector packetRejector,
+    final Supplier<InterledgerAddress> operatorAddressSupplier
+  ) {
+    super(packetRejector);
+    this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
   }
 
   @Override

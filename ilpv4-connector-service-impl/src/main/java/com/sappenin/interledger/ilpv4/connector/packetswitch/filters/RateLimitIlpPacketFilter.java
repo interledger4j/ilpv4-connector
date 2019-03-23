@@ -6,8 +6,8 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.RateLimiter;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
+import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
@@ -16,7 +16,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 
 /**
@@ -36,10 +35,10 @@ public class RateLimitIlpPacketFilter extends AbstractPacketFilter implements Pa
    * Required-args Constructor.
    */
   public RateLimitIlpPacketFilter(
-    final Supplier<InterledgerAddress> operatorAddressSupplier,
+    final PacketRejector packetRejector,
     final AccountManager accountManager
   ) {
-    this(operatorAddressSupplier, CacheBuilder.newBuilder()
+    this(packetRejector, CacheBuilder.newBuilder()
       //.maximumSize(100) // Not enabled for now in order to support many accounts.
       .expireAfterAccess(30, TimeUnit.SECONDS)
       .build(new CacheLoader<AccountId, Optional<RateLimiter>>() {
@@ -58,10 +57,10 @@ public class RateLimitIlpPacketFilter extends AbstractPacketFilter implements Pa
    */
   @VisibleForTesting
   RateLimitIlpPacketFilter(
-    final Supplier<InterledgerAddress> operatorAddressSupplier,
+    final PacketRejector packetRejector,
     final LoadingCache<AccountId, Optional<RateLimiter>> loadingCache
   ) {
-    super(operatorAddressSupplier);
+    super(packetRejector);
     this.rateLimiters = Objects.requireNonNull(loadingCache);
   }
 

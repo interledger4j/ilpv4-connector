@@ -54,7 +54,7 @@ ilpv4:
         # The default relationship-type that this connector should view an account as.
         relationship: PARENT
         # Type of the Link that should be used for this account.
-        linkType: LOOP_BACK
+        linkType: Loopback # capitalization is purposeful for testing
         # Currency code or other asset identifier that will be used to select the correct rate for this account.
         assetCode: USD
         # Interledger amounts are integers, but most currencies are typically represented as
@@ -100,7 +100,7 @@ ilpv4:
         # The default relationship-type that this connector should view an account as.
         relationship: PEER
         # Type of the Link that should be used for this account.
-        linkType: LOOP_BACK
+        linkType: LOOPBACK # capitalization is purposeful for testing
         # Currency code or other asset identifier that will be used to select the correct rate for this account.
         assetCode: EUR
         # Interledger amounts are integers, but most currencies are typically represented as
@@ -146,7 +146,7 @@ ilpv4:
         # The default relationship-type that this connector should view an account as.
         relationship: CHILD
         # Type of the Link that should be used for this account.
-        linkType: LOOP_BACK
+        linkType: loopback # capitalization is purposeful for testing
         # Currency code or other asset identifier that will be used to select the correct rate for this account.
         assetCode: USD
         # Interledger amounts are integers, but most currencies are typically represented as
@@ -160,7 +160,7 @@ ilpv4:
         # The default relationship-type that this connector should view an account as.
         relationship: PEER
         # Type of the Link that should be used for this account.
-        linkType: LOOP_BACK
+        linkType: LOOPBACK # capitalization is purposeful for testing
         # Currency code or other asset identifier that will be used to select the correct rate for this account.
         assetCode: USD
         # Interledger amounts are integers, but most currencies are typically represented as
@@ -206,7 +206,7 @@ ilpv4:
         # The default relationship-type that this connector should view an account as.
         relationship: PARENT
         # Type of the Link that should be used for this account.
-        linkType: LOOP_BACK
+        linkType: LoopbacK # capitalization is purposeful for testing
         # Currency code or other asset identifier that will be used to select the correct rate for this account.
         assetCode: USD
         # Interledger amounts are integers, but most currencies are typically represented as
