@@ -87,6 +87,7 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.Co
           CodecContextConfig.class,
           // Link-Layer Support
           BlastConfig.class,
+          ResiliencyConfig.class
         })
 public class SpringConnectorConfig {
 

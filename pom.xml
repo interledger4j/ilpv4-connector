@@ -319,9 +319,7 @@
                   <ignoredDependency>com.google.code.findbugs:jsr305</ignoredDependency>
                   <ignoredDependency>com.google.code.findbugs:annotations</ignoredDependency>
                   <ignoredDependency>com.google.errorprone:error_prone_annotations</ignoredDependency>
-
                   <ignoredDependency>com.auth0:jwks-rsa</ignoredDependency>
-
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-web</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-jetty</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-websocket</ignoredDependency>
@@ -330,6 +328,8 @@
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-actuator</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-test:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-configuration-processor:jar</ignoredDependency>
+                  <!-- TODO Remove once #66 is fixed -->
+                  <ignoredDependency>org.springframework.cloud:spring-cloud-netflix-hystrix-dashboard:jar</ignoredDependency>
                 </ignoredDependencies>
               </configuration>
             </execution>

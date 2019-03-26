@@ -84,6 +84,9 @@ public class LoopbackLink extends AbstractLink<LinkSettings> implements Link<Lin
           }
           return packetRejector.reject(AccountId.of(getLinkId().get().value()), preparePacket,
             InterledgerErrorCode.T03_CONNECTOR_BUSY, "Loopback set to exceed timeout via simulate_timeout=T03");
+        }
+        if (value.equals("T99")) {
+          throw new RuntimeException("T99 APPLICATION ERROR");
         } else {
           return InterledgerFulfillPacket.builder()
             .fulfillment(LOOPBACK_FULFILLMENT)

@@ -80,27 +80,30 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .authorizeRequests()
       .antMatchers(HttpMethod.HEAD, IlpHttpController.ILP_PATH).authenticated()
       .antMatchers(HttpMethod.POST, IlpHttpController.ILP_PATH).authenticated()
+      .anyRequest().permitAll();
       //.antMatchers(HttpMethod.POST, IlpHttpController.ILP_PATH).hasAuthority("read:messages");
       //.antMatchers(HttpMethod.GET, "/actuator/**").permitAll()
       //.antMatchers(HttpMethod.POST, "/actuator/**").permitAll()
-      .anyRequest().denyAll();
+      //.anyRequest().denyAll();
 
     http
       .addFilter(securityContextHolderAwareRequestFilter())
-      .cors()
-      .and()
+      //.cors()
+      //.and()
       .httpBasic().disable()
       .formLogin().disable()
       .logout().disable()
-      .anonymous().disable()
+      //.anonymous().disable()
       .jee().disable()
-      .authorizeRequests().anyRequest().denyAll()
-      //.authorizeRequests()
-      //.antMatchers(HttpMethod.GET, "/actuator").permitAll()
-      //.antMatchers(HttpMethod.GET, "/actuator/**").permitAll()
-      //.antMatchers(HttpMethod.POST, "/actuator/**").permitAll()
-      //.antMatchers(HttpMethod.GET, "/config").permitAll()
-      //.antMatchers(HttpMethod.GET, "/config/**").permitAll()
+
+      //.authorizeRequests().anyRequest().denyAll()
+      .authorizeRequests()
+      .antMatchers(HttpMethod.GET, "/actuator").permitAll()
+      .antMatchers(HttpMethod.GET, "/actuator/**").permitAll()
+      .antMatchers(HttpMethod.POST, "/actuator/**").permitAll()
+      .antMatchers(HttpMethod.GET, "/config").permitAll()
+      .antMatchers(HttpMethod.GET, "/config/**").permitAll()
+
       //.anyRequest().denyAll()
       .and()
       .csrf().disable()

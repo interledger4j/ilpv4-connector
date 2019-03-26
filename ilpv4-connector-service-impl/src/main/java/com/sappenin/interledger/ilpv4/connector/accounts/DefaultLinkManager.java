@@ -63,7 +63,7 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
     // Wrap the Link in a CircuitBreaker.
     // TODO: Once Issue https://github.com/sappenin/java-ilpv4-connector/issues/64 is fixed, this should be
     //  configurable from the account settings, which in this case should propagate to the link settings.
-    return new CircuitBreakingLink(() -> 5000, link);
+    return new CircuitBreakingLink(() -> 3000, link);
   }
 
   @Override
