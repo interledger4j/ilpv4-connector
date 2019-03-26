@@ -33,6 +33,9 @@
 
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
     <spring-cloud.version>Greenwich.SR1</spring-cloud.version>
+
+    <!-- org.jacoco:jacoc-maven-plugin -->
+    <jacoco.propertyName>argLine</jacoco.propertyName>
   </properties>
 
   <modules>
@@ -387,6 +390,27 @@
       <!--<groupId>org.owasp</groupId>-->
       <!--<artifactId>dependency-check-maven</artifactId>-->
       <!--</plugin>-->
+
+      <!-- org.jacoco:jacoc-maven-plugin -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <version>0.8.3</version>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
@@ -413,6 +437,31 @@
       <properties>
         <spring.profiles.active>prod</spring.profiles.active>
       </properties>
+
+      <reporting>
+        <plugins>
+
+          <!-- org.jacoco:jacoc-maven-plugin -->
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <inherited>false</inherited>
+            <reportSets>
+              <reportSet>
+                <reports>
+                  <report>report</report>
+                </reports>
+              </reportSet>
+            </reportSets>
+          </plugin>
+
+          <!-- org.apache.maven.plugins:maven-javadoc-plugin -->
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+          </plugin>
+
+        </plugins>
+      </reporting>
     </profile>
   </profiles>
 
