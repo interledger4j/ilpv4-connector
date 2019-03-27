@@ -34,6 +34,9 @@
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
     <spring-cloud.version>Greenwich.SR1</spring-cloud.version>
     <resilience4j.version>0.13.2</resilience4j.version>
+
+    <!-- org.jacoco:jacoc-maven-plugin -->
+    <jacoco.propertyName>argLine</jacoco.propertyName>
   </properties>
 
   <modules>
@@ -133,11 +136,6 @@
         <groupId>com.auth0</groupId>
         <artifactId>auth0-spring-security-api</artifactId>
         <version>1.2.1</version>
-      </dependency>
-      <dependency>
-        <groupId>com.netflix.hystrix</groupId>
-        <artifactId>hystrix-core</artifactId>
-        <version>1.5.18</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -338,8 +336,6 @@
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-actuator</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-test:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-configuration-processor:jar</ignoredDependency>
-                  <!-- TODO Remove once #66 is fixed -->
-                  <ignoredDependency>org.springframework.cloud:spring-cloud-netflix-hystrix-dashboard:jar</ignoredDependency>
                 </ignoredDependencies>
               </configuration>
             </execution>
@@ -402,6 +398,27 @@
       <!--<groupId>org.owasp</groupId>-->
       <!--<artifactId>dependency-check-maven</artifactId>-->
       <!--</plugin>-->
+
+      <!-- org.jacoco:jacoc-maven-plugin -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <version>0.8.3</version>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
@@ -428,6 +445,31 @@
       <properties>
         <spring.profiles.active>prod</spring.profiles.active>
       </properties>
+
+      <reporting>
+        <plugins>
+
+          <!-- org.jacoco:jacoc-maven-plugin -->
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <inherited>false</inherited>
+            <reportSets>
+              <reportSet>
+                <reports>
+                  <report>report</report>
+                </reports>
+              </reportSet>
+            </reportSets>
+          </plugin>
+
+          <!-- org.apache.maven.plugins:maven-javadoc-plugin -->
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+          </plugin>
+
+        </plugins>
+      </reporting>
     </profile>
   </profiles>
 
