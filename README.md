@@ -1,7 +1,7 @@
 <img src="docs/interledger-logo.png" width="100" alt="Java ILPv4 Connector"/>
 
 # Java ILPv4 Connector [![Discuss][forum-image]][forum-url] 
-[![circle-ci][circle-image]][circle-url] [![codecov][codecov-image]][codecov-url] [![issues][github-issues-image]][github-issues-url]
+[![circle-ci][circle-image]][circle-url] [![codecov][codecov-image]][codecov-url] [![codacy][codacy-image]][codacy-url] [![issues][github-issues-image]][github-issues-url]
 
 [forum-url]: https://forum.interledger.org/tags/java-ilpv4-connector
 [forum-image]: https://img.shields.io/badge/Discuss-Interledger%20Forum-blue.svg
@@ -9,6 +9,8 @@
 [circle-url]: https://circleci.com/gh/sappenin/java-ilpv4-connector
 [codecov-image]: https://codecov.io/gh/sappenin/java-ilpv4-connector/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/sappenin/java-ilpv4-connector
+[codacy-image]: https://api.codacy.com/project/badge/Grade/49e43210600d462f861e1813230d855d
+[codacy-url]: https://www.codacy.com/app/sappenin/java-ilpv4-connector?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=sappenin/java-ilpv4-connector&amp;utm_campaign=Badge_Grade
 [github-issues-image]: https://img.shields.io/github/issues/sappenin/java-ilpv4-connector.svg
 [github-issues-url]: https://github.com/sappenin/java-ilpv4-connector/issues
 
