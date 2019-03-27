@@ -2,6 +2,7 @@ package com.sappenin.interledger.ilpv4.connector.accounts;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.AbstractLink;
 import org.interledger.connector.link.CircuitBreakingLink;
@@ -32,16 +33,19 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
 
   private final LinkFactoryProvider linkFactoryProvider;
 
+  private final CircuitBreakerConfig defaultCircuitBreakerConfig;
+
   /**
    * Required-args constructor.
    */
   public DefaultLinkManager(
     final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
     final LinkFactoryProvider linkFactoryProvider,
-    final EventBus eventBus
+    CircuitBreakerConfig defaultCircuitBreakerConfig, final EventBus eventBus
   ) {
     this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
     this.linkFactoryProvider = Objects.requireNonNull(linkFactoryProvider);
+    this.defaultCircuitBreakerConfig = Objects.requireNonNull(defaultCircuitBreakerConfig);
     Objects.requireNonNull(eventBus).register(this);
   }
 
@@ -60,10 +64,10 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
     // accountId that a given link should use.
     ((AbstractLink) link).setLinkId(LinkId.of(accountId.value()));
 
-    // Wrap the Link in a CircuitBreaker.
     // TODO: Once Issue https://github.com/sappenin/java-ilpv4-connector/issues/64 is fixed, this should be
     //  configurable from the account settings, which in this case should propagate to the link settings.
-    return new CircuitBreakingLink(() -> 3000, link);
+    // Wrap the Link in a CircuitBreaker.
+    return new CircuitBreakingLink(link, defaultCircuitBreakerConfig);
   }
 
   @Override

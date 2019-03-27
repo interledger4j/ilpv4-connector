@@ -49,6 +49,7 @@ import com.sappenin.interledger.ilpv4.connector.server.spring.settings.javamoney
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.interledger.connector.link.AbstractLink;
 import org.interledger.connector.link.LinkFactoryProvider;
 import org.interledger.connector.link.events.LinkEventEmitter;
@@ -160,10 +161,10 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  LinkManager linkManager(EventBus eventBus, LinkFactoryProvider linkFactoryProvider) {
+  LinkManager linkManager(EventBus eventBus, LinkFactoryProvider linkFactoryProvider, CircuitBreakerConfig circuitBreakerConfig) {
     return new DefaultLinkManager(
       () -> connectorSettingsSupplier().get().getOperatorAddress(),
-      linkFactoryProvider, eventBus
+      linkFactoryProvider, circuitBreakerConfig, eventBus
     );
   }
 

@@ -39,6 +39,7 @@ public class ConnectorExceptionHandler {
         sourceAccountId, preparePacket, InterledgerErrorCode.F03_INVALID_AMOUNT, e.getMessage()
       );
     } else {
+      logger.error(e.getMessage(), e);
       return this.packetRejector.reject(
         sourceAccountId, preparePacket, InterledgerErrorCode.T00_INTERNAL_ERROR, "Internal Error"
       );

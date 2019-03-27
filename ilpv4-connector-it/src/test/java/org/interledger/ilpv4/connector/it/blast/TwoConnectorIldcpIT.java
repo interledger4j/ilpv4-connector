@@ -6,6 +6,7 @@ import com.sappenin.interledger.ilpv4.connector.server.spring.settings.Connector
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import org.interledger.connector.accounts.Account;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.CircuitBreakingLink;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerFulfillPacket;
@@ -146,11 +147,13 @@ public class TwoConnectorIldcpIT {
    */
   private BlastLink getBlastLinkFromGraph(final InterledgerAddress interledgerAddress) {
     Objects.requireNonNull(interledgerAddress);
-    return (BlastLink) getILPv4NodeFromGraph(interledgerAddress).getAccountManager().getAllAccounts()
-      .filter(account -> account.getAccountSettings().getLinkType().equals(BlastLink.LINK_TYPE))
-      .findFirst()
-      .map(Account::getLink)
-      .get();
+    final CircuitBreakingLink circuitBreakingLink =
+      (CircuitBreakingLink) getILPv4NodeFromGraph(interledgerAddress).getAccountManager().getAllAccounts()
+        .filter(account -> account.getAccountSettings().getLinkType().equals(BlastLink.LINK_TYPE))
+        .findFirst()
+        .map(Account::getLink)
+        .get();
+    return (BlastLink) circuitBreakingLink.getLinkDelegate();
   }
 
   /**

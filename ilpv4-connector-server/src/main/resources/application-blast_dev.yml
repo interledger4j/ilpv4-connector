@@ -137,7 +137,8 @@ ilpv4:
         assetScale: 6
         # Whether we should broadcast routes to this peer.
         # Whether we should receive and process route broadcasts from this peer.
-        receiveRoutes: true
+        receiveRoutes: false
+        sendRoutes: false
         maximumPacketAmount: 100
-        #customSettings:
-        #  simulateTimeout: T02 # T03 will make the Loopback Link sleep for 1 min (60000ms), whereas T02 will reject
+        customSettings:
+          simulateTimeout: T99 # T03 will make the Loopback Link sleep for 1 min (60000ms), whereas T02 will reject

@@ -134,6 +134,7 @@ public class TwoConnectorParentChildBlastTopology {
 
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_ACCOUNT_ID, ALICE)
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_ACCOUNT_SECRET, "12345678912345678912345678912345")
+      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_AUTH_TYPE, "JWT")
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, "PT2M")
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, BOB_TOKEN_ISSUER)
       .putCustomSettings(
@@ -189,6 +190,7 @@ public class TwoConnectorParentChildBlastTopology {
 
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_ACCOUNT_ID, BOB)
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_ACCOUNT_SECRET, "12345678912345678912345678912345")
+      .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_AUTH_TYPE, "JWT")
       // This is used by the BLAST Sender in order to assemble the JWT properly...Bob must sign the token and make
       // himself the issuer.
       .putCustomSettings(BlastLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, ALICE_TOKEN_ISSUER) // Replaced by
