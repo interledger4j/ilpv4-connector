@@ -2,8 +2,10 @@ package com.sappenin.interledger.ilpv4.connector.accounts;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.AbstractLink;
+import org.interledger.connector.link.CircuitBreakingLink;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkFactoryProvider;
 import org.interledger.connector.link.LinkId;
@@ -31,17 +33,20 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
 
   private final LinkFactoryProvider linkFactoryProvider;
 
+  private final CircuitBreakerConfig defaultCircuitBreakerConfig;
+
   /**
    * Required-args constructor.
    */
   public DefaultLinkManager(
     final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
-    final EventBus eventBus,
-    final LinkFactoryProvider linkFactoryProvider
+    final LinkFactoryProvider linkFactoryProvider,
+    CircuitBreakerConfig defaultCircuitBreakerConfig, final EventBus eventBus
   ) {
     this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
-    Objects.requireNonNull(eventBus).register(this);
     this.linkFactoryProvider = Objects.requireNonNull(linkFactoryProvider);
+    this.defaultCircuitBreakerConfig = Objects.requireNonNull(defaultCircuitBreakerConfig);
+    Objects.requireNonNull(eventBus).register(this);
   }
 
   public Link<?> createLink(final AccountId accountId, final LinkSettings linkSettings) {
@@ -55,14 +60,14 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
         String.format("No registered LinkFactory supports: %s", linkSettings.getLinkType()))
       );
 
-    // TODO: Refactor Link to require a linkId. We shouldn't construct a link (client or server) if we don't
-    //  know the Account, which is the LinkId.
-
     // Set the LinkId to match the AccountId...this way the Link can always use this value to represent the
     // accountId that a given link should use.
     ((AbstractLink) link).setLinkId(LinkId.of(accountId.value()));
 
-    return link;
+    // TODO: Once Issue https://github.com/sappenin/java-ilpv4-connector/issues/64 is fixed, this should be
+    //  configurable from the account settings, which in this case should propagate to the link settings.
+    // Wrap the Link in a CircuitBreaker.
+    return new CircuitBreakingLink(link, defaultCircuitBreakerConfig);
   }
 
   @Override

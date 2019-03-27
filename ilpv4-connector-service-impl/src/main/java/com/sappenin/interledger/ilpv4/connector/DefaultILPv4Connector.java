@@ -13,7 +13,6 @@ import com.sappenin.interledger.ilpv4.connector.settings.ModifiableConnectorSett
 import org.interledger.connector.accounts.Account;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ModifiableAccountSettings;
-import org.interledger.connector.link.LinkFactory;
 import org.interledger.connector.link.LinkFactoryProvider;
 import org.interledger.connector.link.events.LinkConnectedEvent;
 import org.interledger.core.InterledgerAddress;
@@ -29,7 +28,6 @@ import org.interledger.ildcp.IldcpResponse;
 import org.interledger.ildcp.IldcpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 
 import javax.annotation.PostConstruct;
@@ -164,6 +162,8 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       // ^^ IL-DCP ^^
       this.configureAccountsUsingIldcp();
     }
+
+    this.getExternalRoutingService().start();
   }
 
   @PreDestroy

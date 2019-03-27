@@ -114,6 +114,7 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
     try {
       // Try to connect, but only wait 15 seconds. Don't let one connection failure block the other links from
       // connecting.
+      // TODO: No need to make this have a timeout. The Hystrix command will limit the amount of time this can take.
       link.connect().get(15, TimeUnit.SECONDS);
     } catch (Exception e) {
       if (accountSettings.isDynamic()) {

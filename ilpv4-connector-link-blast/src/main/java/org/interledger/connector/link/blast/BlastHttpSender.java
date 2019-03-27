@@ -17,7 +17,7 @@ public interface BlastHttpSender {
   InterledgerPreparePacket UNFULFILLABLE_PACKET = InterledgerPreparePacket.builder()
     .executionCondition(PING_PROTOCOL_CONDITION)
     .expiresAt(Instant.now().plusSeconds(30))
-    .destination(InterledgerAddress.of("peer.ping"))
+    .destination(InterledgerAddress.of("peer.this_should_reject"))
     .build();
 
   /**
