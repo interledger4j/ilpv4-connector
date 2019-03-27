@@ -1,6 +1,9 @@
 <img src="docs/interledger-logo.png" width="100" alt="Java ILPv4 Connector"/>
 
 # Java ILPv4 Connector [![Discuss][forum-image]][forum-url] 
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/e521b65d9a68477eadba67a76c0353a4)](https://app.codacy.com/app/sappenin/java-ilpv4-connector?utm_source=github.com&utm_medium=referral&utm_content=sappenin/java-ilpv4-connector&utm_campaign=Badge_Grade_Settings)
+
 [![circle-ci][circle-image]][circle-url] [![codecov][codecov-image]][codecov-url] [![issues][github-issues-image]][github-issues-url]
 
 [forum-url]: https://forum.interledger.org/tags/java-ilpv4-connector
