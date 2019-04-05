@@ -37,6 +37,7 @@
 
     <!-- org.jacoco:jacoc-maven-plugin -->
     <jacoco.propertyName>argLine</jacoco.propertyName>
+    <start-class>com.sappenin.interledger.ilpv4.connector.server.ConnectorApplication</start-class>
   </properties>
 
   <modules>
