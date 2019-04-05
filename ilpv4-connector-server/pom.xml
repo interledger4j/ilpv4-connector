@@ -27,15 +27,12 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
-        <configuration>
-          <mainClass>${start-class}</mainClass>
-          <layout>ZIP</layout>
-        </configuration>
         <executions>
           <execution>
-            <goals>
-              <goal>repackage</goal>
-            </goals>
+            <id>repackage</id>
+            <configuration>
+              <classifier>exec</classifier>
+            </configuration>
           </execution>
         </executions>
       </plugin>
