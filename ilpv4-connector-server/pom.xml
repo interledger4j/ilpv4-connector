@@ -36,6 +36,18 @@
           </execution>
         </executions>
       </plugin>
+
+      <!-- Appengine -->
+      <plugin>
+        <groupId>com.google.cloud.tools</groupId>
+        <artifactId>appengine-maven-plugin</artifactId>
+        <version>1.3.2</version>
+        <configuration>
+          <!-- deploy configuration -->
+          <artifact>${project.build.directory}/${project.build.finalName}-exec.${project.packaging}</artifact>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 

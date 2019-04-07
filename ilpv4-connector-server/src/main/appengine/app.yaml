@@ -1,0 +1,44 @@
+runtime: java
+env: flex
+
+resources:
+  cpu: 2
+  memory_gb: 2.3
+  disk_size_gb: 10
+  volumes:
+    - name: ramdisk1
+      volume_type: tmpfs
+      size_gb: 0.5
+
+env_variables:
+  SPRING_PROFILES_ACTIVE: "blast_dev,gcp"
+  blastEnabled: true
+
+liveness_check:
+  path: "/actuator/health"
+  check_interval_sec: 30
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 2
+
+readiness_check:
+  path: "/actuator/health"
+  check_interval_sec: 5
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 2
+  app_start_timeout_sec: 15
+
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 2
+  cool_down_period_sec: 180
+  cpu_utilization:
+    target_utilization: 0.6
+
+handlers:
+  - url: /ilp
+    script: this field is required, but ignored
+  - url: /.*
+    script: this field is required, but ignored
+    login: admin
