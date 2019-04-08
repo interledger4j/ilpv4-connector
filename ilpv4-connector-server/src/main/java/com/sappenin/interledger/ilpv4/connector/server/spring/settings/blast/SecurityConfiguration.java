@@ -3,6 +3,7 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast;
 import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.server.spring.auth.blast.BlastAuthenticationProvider;
+import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.HealthController;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.IlpHttpController;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,33 +81,23 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .authorizeRequests()
       .antMatchers(HttpMethod.HEAD, IlpHttpController.ILP_PATH).authenticated()
       .antMatchers(HttpMethod.POST, IlpHttpController.ILP_PATH).authenticated()
-      .anyRequest().permitAll();
+      .antMatchers(HttpMethod.GET, HealthController.SLASH_AH_SLASH_HEALTH).permitAll()
       //.antMatchers(HttpMethod.POST, IlpHttpController.ILP_PATH).hasAuthority("read:messages");
-      //.antMatchers(HttpMethod.GET, "/actuator/**").permitAll()
-      //.antMatchers(HttpMethod.POST, "/actuator/**").permitAll()
-      //.anyRequest().denyAll();
+      .anyRequest().denyAll();
 
     http
       .addFilter(securityContextHolderAwareRequestFilter())
-      //.cors()
-      //.and()
+      .cors()
+      .and()
       .httpBasic().disable()
       .formLogin().disable()
       .logout().disable()
       //.anonymous().disable()
       .jee().disable()
-
-      //.authorizeRequests().anyRequest().denyAll()
       .authorizeRequests()
-      .antMatchers(HttpMethod.GET, "/actuator").permitAll()
-      .antMatchers(HttpMethod.GET, "/actuator/**").permitAll()
-      .antMatchers(HttpMethod.POST, "/actuator/**").permitAll()
-      .antMatchers(HttpMethod.GET, "/config").permitAll()
-      .antMatchers(HttpMethod.GET, "/config/**").permitAll()
-
-      //.anyRequest().denyAll()
+      //.antMatchers(HttpMethod.GET, HealthController.SLASH_AH_SLASH_HEALTH).permitAll()
+      .anyRequest().denyAll()
       .and()
-      .csrf().disable()
       .sessionManagement()
       .sessionCreationPolicy(SessionCreationPolicy.NEVER)
       .enableSessionUrlRewriting(false)

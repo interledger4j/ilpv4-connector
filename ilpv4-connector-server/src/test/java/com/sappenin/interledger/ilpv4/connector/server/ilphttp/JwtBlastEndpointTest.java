@@ -7,11 +7,8 @@ import org.interledger.connector.link.blast.JwtBlastHttpSender;
 import org.interledger.core.InterledgerAddress;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.actuate.autoconfigure.web.server.LocalManagementPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
@@ -45,9 +42,6 @@ public class JwtBlastEndpointTest {
   @LocalServerPort
   int randomServerPort;
 
-  @LocalManagementPort
-  int randomManagementPort;
-
   @Autowired
   @Qualifier(BLAST)
   RestTemplate blastRestTemplate;
@@ -71,7 +65,7 @@ public class JwtBlastEndpointTest {
       blastRestTemplate,
       () -> "bob",
       () -> HttpUrl.parse("https://alice.example.com/"),
-      () -> "12345678912345678912345678912345" .getBytes()
+      () -> "12345678912345678912345678912345".getBytes()
     );
   }
 
