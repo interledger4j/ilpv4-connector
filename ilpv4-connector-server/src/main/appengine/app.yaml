@@ -2,8 +2,8 @@ runtime: java
 env: flex
 
 resources:
-  cpu: 2
-  memory_gb: 2.3
+  cpu: 4
+  memory_gb: 3.6
   disk_size_gb: 10
   volumes:
     - name: ramdisk1
@@ -37,8 +37,5 @@ automatic_scaling:
     target_utilization: 0.6
 
 handlers:
-  - url: /ilp
-    script: this field is required, but ignored
   - url: /.*
     script: this field is required, but ignored
-    login: admin
