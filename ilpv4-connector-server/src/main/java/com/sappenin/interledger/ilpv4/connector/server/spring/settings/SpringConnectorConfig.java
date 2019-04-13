@@ -41,7 +41,6 @@ import com.sappenin.interledger.ilpv4.connector.routing.DefaultInternalRoutingSe
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.InMemoryExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.InternalRoutingService;
-import com.sappenin.interledger.ilpv4.connector.routing.NoOpExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
 import com.sappenin.interledger.ilpv4.connector.routing.Route;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.BlastConfig;
@@ -64,7 +63,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import javax.annotation.PostConstruct;
@@ -84,6 +82,7 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.Co
 @Configuration
 @EnableConfigurationProperties({ConnectorSettingsFromPropertyFile.class})
 @Import({
+          SecretsConfig.class,
           JavaMoneyConfig.class,
           CodecContextConfig.class,
           // Link-Layer Support
@@ -212,13 +211,6 @@ public class SpringConnectorConfig {
   ) {
     return new InMemoryExternalRoutingService(eventBus, ccpCodecContext, connectorSettingsSupplier, accountManager,
       accountIdResolver);
-  }
-
-  @Bean
-  @Qualifier("externalPaymentRouter") // This is also a PaymentRouter
-  @Profile({ConnectorProfile.SINGLE_ACCOUNT_MODE})
-  ExternalRoutingService linkModePaymentRoutingService() {
-    return new NoOpExternalRoutingService();
   }
 
   @Bean

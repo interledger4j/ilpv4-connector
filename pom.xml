@@ -46,6 +46,7 @@
     <module>ilpv4-connector-link</module>
     <module>ilpv4-connector-link-blast</module>
     <module>ilpv4-connector-model</module>
+    <module>ilpv4-connector-secrets</module>
     <module>ilpv4-connector-routing-api</module>
     <module>ilpv4-connector-service-api</module>
     <module>ilpv4-connector-routing-impl</module>
@@ -81,6 +82,11 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>ilpv4-connector-model</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-secrets</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -137,6 +143,11 @@
         <groupId>com.auth0</groupId>
         <artifactId>auth0-spring-security-api</artifactId>
         <version>1.2.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.cloud</groupId>
+        <artifactId>google-cloud-kms</artifactId>
+        <version>1.2.0</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>

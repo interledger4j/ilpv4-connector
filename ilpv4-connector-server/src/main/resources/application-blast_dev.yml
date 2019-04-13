@@ -84,7 +84,7 @@ ilpv4:
     # Global Routing Settings for this connector.
     globalRoutingSettings:
       # Seed used for generating routing table auth values.
-      routingSecret: DocIHaveToTellYouSomethingAboutY
+      #sroutingSecret: DocIHaveToTellYouSomethingAboutY
       # Static Routes
       staticRoutes:
         # ILP address prefix that this static route applies to. Configured routes take precedence over the same or
@@ -118,13 +118,12 @@ ilpv4:
           blast.incoming.auth_type: JWT
           blast.incoming.token_issuer: https://connie.example.com # The JWT issuer of the incoming token.
           blast.incoming.account_id: alice # The accountId held at this connector.
-          blast.incoming.account_secret: somesecrettoken
-          blast.incoming.token_expiry: PT2M # See Duration.java for structure.
+          blast.incoming.account_secret: shhh
           # Outgoing
           blast.outgoing.auth_type: simple
           blast.outgoing.token_issuer: https://connie.example.com # The JWT issuer of the outgoing token.
           blast.outgoing.account_id: alice # The accountId held at the remote server.
-          blast.outgoing.account_secret: somesecrettoken
+          blast.outgoing.account_secret: shhh
           blast.outgoing.token_expiry: PT2M # See Duration.java for structure.
           blast.outgoing.url: http://localhost:8080/ilp
       - id: bob

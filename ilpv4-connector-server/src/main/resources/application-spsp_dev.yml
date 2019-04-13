@@ -108,18 +108,14 @@ ilpv4:
         receiveRoutes: false
         maximumPacketAmount: 10
         customSettings:
-          # Incoming
+          # Incoming Channel
           blast.incoming.auth_type: SIMPLE
-          blast.incoming.token_issuer: https://sender.example.com # The JWT issuer of the incoming token.
           blast.incoming.account_id: sender # The accountId held at this connector.
           blast.incoming.account_secret: somesecrettoken
-          blast.incoming.token_expiry: PT2M # See Duration.java for structure.
-          # Outgoing
+          # Outgoing Channel
           blast.outgoing.auth_type: simple
-          blast.outgoing.token_issuer: https://alice.example.com # The JWT issuer of the outgoing token.
           blast.outgoing.account_id: sender # The accountId held at the remote server.
           blast.outgoing.account_secret: somesecrettoken
-          blast.outgoing.token_expiry: PT2M # See Duration.java for structure.
           blast.outgoing.url: http://localhost:3000/ilp
       - id: receiver
         description: The SPSP receiver Account.
@@ -135,16 +131,12 @@ ilpv4:
         receiveRoutes: true
         maximumPacketAmount: 100
         customSettings:
-          # Incoming
+          # Incoming Channel
           blast.incoming.auth_type: SIMPLE
-          blast.incoming.token_issuer: https://example.com # Unused. Receiver only responds on outgoing
           blast.incoming.account_id: receiver # Unused. Receiver only responds on outgoing
           blast.incoming.account_secret: na # Unused. Receiver only responds on outgoing
-          #blast.incoming.token_expiry: PT2M # Unused. Receiver only responds on outgoing
-          # Outgoing
+          # Outgoing Channel
           blast.outgoing.auth_type: SIMPLE
-          blast.outgoing.token_issuer: https://alice.example.com # Unused due to SIMPLE.
           blast.outgoing.account_id: receiver # The accountId held at the remote server.
           blast.outgoing.account_secret: somesecrettoken
-          blast.outgoing.token_expiry: PT2M # 2 Mins
           blast.outgoing.url: http://localhost:3000/ilp # The SPSP receiver

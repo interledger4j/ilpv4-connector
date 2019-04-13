@@ -58,7 +58,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
   @BeforeClass
   public static void setupClass() {
-    System.setProperty("spring.profiles.active", ConnectorProfile.CONNECTOR_MODE + "," + ConnectorProfile.DEV);
+    System.setProperty("spring.profiles.active", ConnectorProfile.DEV);
     System.setProperty(ConnectorProperties.BLAST_ENABLED, "true");
 
     LOGGER.info("Starting test topology `{}`...", "TwoConnectorPeerBlastTopology");
