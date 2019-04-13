@@ -1,7 +1,7 @@
 package org.interledger.ilpv4.connector.it.blast;
 
+import com.sappenin.interledger.ilpv4.connector.ConnectorProfiles;
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
-import com.sappenin.interledger.ilpv4.connector.server.spring.settings.ConnectorProfile;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.blast.BlastLink;
@@ -58,7 +58,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
   @BeforeClass
   public static void setupClass() {
-    System.setProperty("spring.profiles.active", ConnectorProfile.DEV);
+    System.setProperty("spring.profiles.active", ConnectorProfiles.DEV);
     System.setProperty(ConnectorProperties.BLAST_ENABLED, "true");
 
     LOGGER.info("Starting test topology `{}`...", "TwoConnectorPeerBlastTopology");

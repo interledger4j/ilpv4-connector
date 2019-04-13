@@ -82,7 +82,6 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.Co
 @Configuration
 @EnableConfigurationProperties({ConnectorSettingsFromPropertyFile.class})
 @Import({
-          SecretsConfig.class,
           JavaMoneyConfig.class,
           CodecContextConfig.class,
           // Link-Layer Support
