@@ -45,7 +45,7 @@ public class RuntimeUtilsTest {
   public void testGcpProfileEnabled() {
     when(environmentMock.getActiveProfiles()).thenReturn(new String[]{"foo", "bar"});
     assertThat(RuntimeUtils.gcpProfileEnabled(environmentMock), is(false));
-    when(environmentMock.getActiveProfiles()).thenReturn(new String[]{ConnectorProfiles.GCP});
+    when(environmentMock.getActiveProfiles()).thenReturn(new String[]{RuntimeProperties.Runtimes.GCP});
     assertThat(RuntimeUtils.gcpProfileEnabled(environmentMock), is(true));
   }
 

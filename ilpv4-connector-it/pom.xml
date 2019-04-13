@@ -10,7 +10,7 @@
   </parent>
 
   <artifactId>ilpv4-connector-it</artifactId>
-  <name>ILPv4 :: Integration Tests</name>
+  <name>ILPv4 :: Connector :: Integration Tests</name>
   <description>Integration Tests for the ILPv4 Connectors.</description>
 
   <dependencies>

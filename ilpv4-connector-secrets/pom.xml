@@ -11,7 +11,7 @@
 
   <artifactId>ilpv4-connector-secrets</artifactId>
 
-  <name>ILPv4 :: Connector Secrets</name>
+  <name>ILPv4 :: Connector :: Secrets</name>
   <description>Determines how to encrypt and decrypt secrets using various underlying key-stores.</description>
 
   <dependencies>

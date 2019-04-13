@@ -11,15 +11,11 @@ package com.sappenin.interledger.ilpv4.connector;
  *     <li>Via Maven: </li>
  *   </ul>
  * </pre>
+ *
+ * @deprecated Use {@link RuntimeProperties} instead.
  */
+@Deprecated
 public interface ConnectorProfiles {
-  // Developer modes...
+  @Deprecated
   String DEV = "dev";
-  String TEST = "test";
-  String PROD = "prod";
-
-  /**
-   * Add this profile if running in GCP.
-   */
-  String GCP = "gcp";
 }

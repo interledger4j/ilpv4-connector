@@ -11,7 +11,7 @@
 
   <artifactId>ilpv4-connector-model</artifactId>
 
-  <name>ILPv4 :: Connector Model</name>
+  <name>ILPv4 :: Connector :: Model</name>
   <description>Model objects for the ILPv4 Connectors.</description>
 
   <dependencies>

@@ -22,7 +22,7 @@ public class RuntimeUtils {
 
     // If GAE profile is enabled, add those secrets...
     final boolean runningInGcp = Arrays.stream(environment.getActiveProfiles())
-      .filter(profile -> ConnectorProfiles.GCP.equals(profile))
+      .filter(profile -> RuntimeProperties.Runtimes.GCP.equals(profile))
       .findAny().map($ -> true).orElse(false);
     return runningInGcp;
   }
