@@ -25,7 +25,7 @@ public interface Account {
    */
   @Value.Derived
   default AccountId getId() {
-    return getAccountSettings().getId();
+    return getAccountSettings().getAccountId();
   }
 
   /**

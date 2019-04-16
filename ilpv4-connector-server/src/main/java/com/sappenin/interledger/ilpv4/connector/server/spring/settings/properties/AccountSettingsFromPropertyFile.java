@@ -35,7 +35,7 @@ public class AccountSettingsFromPropertyFile implements AccountSettings {
   private Optional<BigInteger> maximumPacketAmount = Optional.empty();
 
   @Override
-  public AccountId getId() {
+  public AccountId getAccountId() {
     return id;
   }
 

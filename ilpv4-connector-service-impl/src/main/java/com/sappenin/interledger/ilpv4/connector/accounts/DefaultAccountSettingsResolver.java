@@ -48,7 +48,7 @@ public class DefaultAccountSettingsResolver implements AccountSettingsResolver {
 
     // 1. Just in-case, check the connector-settings to see if perhaps the connector is not yet connected.
     return connectorSettingsSupplier.get().getAccountSettings().stream()
-      .filter(accountSettings -> accountSettings.getId().equals(accountId))
+      .filter(accountSettings -> accountSettings.getAccountId().equals(accountId))
       .findFirst()
       .orElseGet(() -> {
         // If we get here, it means no account with the above identifier was pre-defined, so look in the
@@ -68,7 +68,7 @@ public class DefaultAccountSettingsResolver implements AccountSettingsResolver {
         return connectorSettingsSupplier.get().getAccountProviderSettings().stream()
           .filter(aps -> aps.getLinkType().equals(link.getLinkSettings().getLinkType()))
           .findFirst()
-          .map(accountProviderSettings -> AccountSettings.from(accountProviderSettings).id(accountId).build())
+          .map(accountProviderSettings -> AccountSettings.from(accountProviderSettings).accountId(accountId).build())
           .orElseThrow(() -> new RuntimeException(String.format(
             "Unable to locate an AccountSettings for LinkId: `%s`", link.getLinkId())
           ));

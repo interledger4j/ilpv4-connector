@@ -88,7 +88,7 @@ public class ConnectorSettingsFromPropertyFileTest {
     /////////////////////////
     {
       final AccountSettings account = accounts.get(0);
-      assertThat(account.getId().value(), is("alice"));
+      assertThat(account.getAccountId().value(), is("alice"));
       assertThat(account.getDescription(), is("Alice's USD Account"));
       assertThat(account.getLinkType(), is(LoopbackLink.LINK_TYPE));
       assertThat(account.getAssetCode(), is("USD"));
@@ -114,7 +114,7 @@ public class ConnectorSettingsFromPropertyFileTest {
     /////////////////////////
     {
       final AccountSettings account = accounts.get(1);
-      assertThat(account.getId().value(), is("bob"));
+      assertThat(account.getAccountId().value(), is("bob"));
       assertThat(account.getDescription(), is("Bob's EUR Account"));
       assertThat(account.getLinkType(), is(LoopbackLink.LINK_TYPE));
       assertThat(account.getAssetCode(), is("EUR"));
@@ -140,7 +140,7 @@ public class ConnectorSettingsFromPropertyFileTest {
     /////////////////////////
     {
       final AccountSettings account = accounts.get(2);
-      assertThat(account.getId().value(), is("empty"));
+      assertThat(account.getAccountId().value(), is("empty"));
       assertThat(account.getDescription(), is(""));
       assertThat(account.getLinkType(), is(nullValue()));
       assertThat(account.getAssetCode(), is("USD"));
@@ -165,7 +165,7 @@ public class ConnectorSettingsFromPropertyFileTest {
     /////////////////////////
     {
       final AccountSettings account = accounts.get(3);
-      assertThat(account.getId().value(), is("minimal.child"));
+      assertThat(account.getAccountId().value(), is("minimal.child"));
       assertThat(account.getDescription(), is("A child account with minimal settings."));
       assertThat(account.getLinkType(), is(LoopbackLink.LINK_TYPE));
       assertThat(account.getAssetCode(), is("USD"));

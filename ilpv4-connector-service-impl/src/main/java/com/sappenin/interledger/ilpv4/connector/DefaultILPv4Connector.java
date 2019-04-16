@@ -278,7 +278,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   private void configureAccounts(final Account firstParentAccount) {
     this.connectorSettingsSupplier.get().getAccountSettings().stream()
       // Don't use the parent account that was chosen above...
-      .filter(accountSettings -> accountSettings.getId().equals(firstParentAccount.getId()) == false)
+      .filter(accountSettings -> accountSettings.getAccountId().equals(firstParentAccount.getId()) == false)
       // Connect all links, regardless of type. Server-links won't be defined in here, and if there's a peer link
       // that this connector is a client of, then it will be connected here, if appropriate. Links that require an
       // incoming and outgoing connection will not emit a LinkConnectedEvent until both connections are connected.

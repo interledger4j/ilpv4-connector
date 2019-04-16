@@ -50,7 +50,7 @@ public interface AccountSettings {
    *
    * @see {@link #getIlpAddressSegment()}.
    */
-  AccountId getId();
+  AccountId getAccountId();
 
   /**
    * Determines if this account is <tt>internal</tt> or <tt>external</tt>. Internal accounts are allowed to process

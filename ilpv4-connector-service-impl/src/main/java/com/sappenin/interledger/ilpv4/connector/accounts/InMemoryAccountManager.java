@@ -73,7 +73,7 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
       .linkType(accountSettings.getLinkType())
       .customSettings(accountSettings.getCustomSettings())
       .build();
-    final Link<?> link = linkManager.createLink(accountSettings.getId(), linkSettings);
+    final Link<?> link = linkManager.createLink(accountSettings.getAccountId(), linkSettings);
     // Register the Connector as a LinkEvent Listener...
     link.addLinkEventListener(this);
 
@@ -94,7 +94,7 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
     //    // double-entry accounting purposes (i.e., BalanceTracker only ever transfers funds, so it needs two accounts in
     //    // order to "deposite" or "withdrawal" from any given external account.
     //    final AccountSettings trackingAccountSettings = AccountSettings.builder().from(accountSettings)
-    //      .id(AccountId.of(accountSettings.getId().value() + TRACKING_ACCOUNT_SUFFIX))
+    //      .id(AccountId.of(accountSettings.getAccountId().value() + TRACKING_ACCOUNT_SUFFIX))
     //      .isReceiveRoutes(false)
     //      .isSendRoutes(false)
     //      .isInternal(true)
@@ -119,7 +119,7 @@ public class InMemoryAccountManager implements AccountManager, LinkEventListener
     } catch (Exception e) {
       if (accountSettings.isDynamic()) {
         // Remove the dynamic account...
-        this.removeAccount(accountSettings.getId());
+        this.removeAccount(accountSettings.getAccountId());
         logger.error("Unable to connect Dynamic Link ({}): {}", linkSettings, e.getMessage());
       } else {
         // Preconfigured accounts should not be removed...

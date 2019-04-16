@@ -152,7 +152,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     this.accountManager.getAllAccounts()
       .map(Account::getAccountSettings)
       .filter(accountSettings -> accountSettings.isInternal() == false)
-      .map(AccountSettings::getId)
+      .map(AccountSettings::getAccountId)
       .forEach(this::registerAccount);
   }
 
@@ -161,7 +161,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
   public void shutdown() {
     this.accountManager.getAllAccounts()
       .map(Account::getAccountSettings)
-      .map(AccountSettings::getId)
+      .map(AccountSettings::getAccountId)
       .forEach(this::unregisterAccount);
   }
 
@@ -281,11 +281,11 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     // parent account, and its the primary parent account, then add a global route for this account).
     if (
       account.isParentAccount() &&
-        this.accountManager.getPrimaryParentAccount().get().getAccountSettings().getId()
-          .equals(account.getAccountSettings().getId())
+        this.accountManager.getPrimaryParentAccount().get().getAccountSettings().getAccountId()
+          .equals(account.getAccountSettings().getAccountId())
     ) {
       // Add a default global route for this account...
-      this.setDefaultRoute(account.getAccountSettings().getId());
+      this.setDefaultRoute(account.getAccountSettings().getAccountId());
     }
 
     final boolean sendRoutes = this.shouldSendRoutes(account);
@@ -310,8 +310,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
           receiveRoutes);
         final RoutableAccount newPeer = ImmutableRoutableAccount.builder()
           .account(account)
-          .ccpSender(constructCcpSender(account.getAccountSettings().getId(), link))
-          .ccpReceiver(constructCcpReceiver(account.getAccountSettings().getId(), link))
+          .ccpSender(constructCcpSender(account.getAccountSettings().getAccountId(), link))
+          .ccpReceiver(constructCcpReceiver(account.getAccountSettings().getAccountId(), link))
           .build();
         this.setTrackedAccount(newPeer);
 
@@ -596,7 +596,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
         .filter(account -> account.isParentAccount())
         .findFirst()
         .map(Account::getAccountSettings)
-        .map(AccountSettings::getId)
+        .map(AccountSettings::getAccountId)
         .map(Optional::of)
         .orElseThrow(() -> new RuntimeException("Connector was configured to use the Parent account " +
           "as the nextHop for the default route, but no Parent Account was configured!"));
@@ -628,11 +628,11 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
       .filter(Account::isChildAccount)
       .forEach(account -> {
         final InterledgerAddressPrefix childAddressAsPrefix =
-          InterledgerAddressPrefix.from(accountManager.toChildAddress(account.getAccountSettings().getId()));
+          InterledgerAddressPrefix.from(accountManager.toChildAddress(account.getAccountSettings().getAccountId()));
         localRoutingTable.addRoute(
           ImmutableRoute.builder()
             .routePrefix(childAddressAsPrefix)
-            .nextHopAccountId(account.getAccountSettings().getId())
+            .nextHopAccountId(account.getAccountSettings().getAccountId())
             // No Path
             .auth(HMAC(
               this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret(), childAddressAsPrefix)
@@ -675,7 +675,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
           final Route route = ImmutableRoute.builder()
             .path(Collections.emptyList())
             .routePrefix(addressPrefix)
-            .nextHopAccountId(accountSettings.getAccountSettings().getId())
+            .nextHopAccountId(accountSettings.getAccountSettings().getAccountId())
             .auth(HMAC(connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret(), addressPrefix))
             .build();
           return route;
@@ -714,11 +714,11 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     Objects.requireNonNull(routableAccount);
 
     if (
-      trackedAccounts.putIfAbsent(routableAccount.getAccount().getAccountSettings().getId(), routableAccount) != null
+      trackedAccounts.putIfAbsent(routableAccount.getAccount().getAccountSettings().getAccountId(), routableAccount) != null
     ) {
       throw new RuntimeException(String.format(
         "AccountId `%s` is already being tracked for routing purposes",
-        routableAccount.getAccount().getAccountSettings().getId()
+        routableAccount.getAccount().getAccountSettings().getAccountId()
       ));
     }
   }
