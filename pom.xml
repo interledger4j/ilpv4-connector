@@ -365,6 +365,7 @@
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-websocket</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-security</ignoredDependency>
                   <ignoredDependency>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure</ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-jpa:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-test:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-configuration-processor:jar</ignoredDependency>
                 </ignoredDependencies>
