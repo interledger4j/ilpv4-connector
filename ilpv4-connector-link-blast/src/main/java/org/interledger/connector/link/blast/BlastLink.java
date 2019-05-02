@@ -24,7 +24,7 @@ public class BlastLink extends AbstractLink<BlastLinkSettings> implements Pingab
   public static final String LINK_TYPE_STRING = "BlastLink";
   public static final LinkType LINK_TYPE = LinkType.of(LINK_TYPE_STRING);
 
-  // Note: The RestTemplate in this ender is shared between all links...
+  // Note: The RestTemplate in this sender is shared between all links...
   private BlastHttpSender blastHttpSender;
 
   /**

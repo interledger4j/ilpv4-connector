@@ -33,11 +33,19 @@
     </dependency>
     <dependency>
       <groupId>com.sappenin.ilpv4</groupId>
+      <artifactId>ilpv4-connector-persistence</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.sappenin.ilpv4</groupId>
       <artifactId>ilpv4-connector-service-api</artifactId>
     </dependency>
     <dependency>
       <groupId>com.sappenin.ilpv4</groupId>
       <artifactId>ilpv4-connector-routing-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

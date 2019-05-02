@@ -2,12 +2,13 @@ package com.sappenin.interledger.ilpv4.connector.routing;
 
 import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountIdResolver;
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
+import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.ccp.codecs.CcpCodecContextFactory;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ImmutableConnectorSettings;
 import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.junit.Before;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -24,7 +25,10 @@ public class InMemoryExternalRoutingServiceTest {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   @Mock
-  private AccountManager accountManagerMock;
+  private AccountSettingsRepository accountSettingsRepositoryMock;
+
+  @Mock
+  private LinkManager linkManagerMock;
 
   @Mock
   private AccountIdResolver accountIdResolverMock;
@@ -57,8 +61,9 @@ public class InMemoryExternalRoutingServiceTest {
       localRoutingTable,
       incomingRoutingTable,
       outgoingRoutingTable,
-      accountManagerMock,
-      accountIdResolverMock
+      accountIdResolverMock,
+      accountSettingsRepositoryMock,
+      linkManagerMock
     );
   }
 

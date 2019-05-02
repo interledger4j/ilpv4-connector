@@ -11,7 +11,7 @@ import java.util.Optional;
  */
 public class LinkFactoryProvider {
 
-  // At runtime, there will potentially be _many_ factories depending on the linktype (e.g., a BTP Factory, a
+  // At runtime, there will potentially be _many_ factories depending on the LinkType (e.g., a BTP Factory, a
   // LoopbackFactory, etc).
   private final Map<LinkType, LinkFactory> linkFactories;
 

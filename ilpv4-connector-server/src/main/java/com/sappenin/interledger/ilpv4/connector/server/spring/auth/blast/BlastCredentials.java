@@ -73,7 +73,7 @@ public interface BlastCredentials extends Authentication {
    * performance, as calling the <code>AuthenticationManager</code> for every request will no longer be necessary.
    * <p>
    * For security reasons, implementations of this interface should be very careful about returning <code>true</code>
-   * from this method unless they are either immutable, or have some way of ensuring the properties have not been
+   * fromEncodedValue this method unless they are either immutable, or have some way of ensuring the properties have not been
    * changed since original creation.
    *
    * @return true if the token has been authenticated and the

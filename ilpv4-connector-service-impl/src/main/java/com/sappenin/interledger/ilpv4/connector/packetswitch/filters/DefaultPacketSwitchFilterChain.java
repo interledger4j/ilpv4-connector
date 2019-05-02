@@ -1,6 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
+import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.links.NextHopInfo;
 import com.sappenin.interledger.ilpv4.connector.links.NextHopPacketMapper;
 import com.sappenin.interledger.ilpv4.connector.links.filters.DefaultLinkFilterChain;
@@ -8,7 +8,10 @@ import com.sappenin.interledger.ilpv4.connector.links.filters.LinkFilter;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkSettings;
+import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerProtocolException;
+import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +28,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
   // The outbound filter-chain that will be applied to the outgoing packet...
   private final List<LinkFilter> linkFilters;
 
-  private final AccountManager accountManager;
+  private final LinkManager linkManager;
 
   private final NextHopPacketMapper nextHopPacketMapper;
 
@@ -39,12 +42,12 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
   public DefaultPacketSwitchFilterChain(
     final List<PacketSwitchFilter> packetSwitchFilters,
     final List<LinkFilter> linkFilters,
-    final AccountManager accountManager,
+    final LinkManager linkManager,
     final NextHopPacketMapper nextHopPacketMapper
   ) {
     this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
     this.linkFilters = Objects.requireNonNull(linkFilters);
-    this.accountManager = Objects.requireNonNull(accountManager);
+    this.linkManager = Objects.requireNonNull(linkManager);
     this.nextHopPacketMapper = nextHopPacketMapper;
   }
 
@@ -62,16 +65,14 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
       logger.debug("Sending outbound ILP Prepare: sourceAccountId: `{}` packet={}", sourceAccountId, preparePacket);
 
       // Here, use the link-mapper to get the `next-hop`, create a LinkFilterChain, and then send.
-      final NextHopInfo nextHopInfo =
-        this.nextHopPacketMapper.getNextHopPacket(sourceAccountId, preparePacket);
-
-      final Link<? extends LinkSettings> link =
-        this.accountManager.safeGetAccount(nextHopInfo.nextHopAccountId()).getLink();
+      final NextHopInfo nextHopInfo = this.nextHopPacketMapper.getNextHopPacket(sourceAccountId, preparePacket);
+      final Link<? extends LinkSettings> link = this.linkManager.getConnectedLinkSafe(nextHopInfo.nextHopAccountId());
 
       logger.debug(
         "Sending outbound ILP Prepare: sourceAccountId: `{}` link={} packet={}",
         sourceAccountId, link, preparePacket
       );
+
       // The final operation in the filter-chain is `link.sendPacket(newPreparePacket)`.
       return new DefaultLinkFilterChain(linkFilters, link)
         .doFilter(nextHopInfo.nextHopAccountId(), nextHopInfo.nextHopPacket());

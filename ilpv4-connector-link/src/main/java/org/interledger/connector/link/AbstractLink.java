@@ -107,6 +107,7 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
                 this.getLinkId().map(LinkId::value).orElse("uninitialized")
               );
               logger.error(errorMessage, error);
+              this.linkEventEmitter.emitEvent(LinkErrorEvent.of(this, error));
             }
           });
       } else {

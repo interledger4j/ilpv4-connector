@@ -2,15 +2,25 @@ package org.interledger.connector.link.blast;
 
 import okhttp3.HttpUrl;
 import org.immutables.value.Value;
-import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Modifiable;
 import org.interledger.connector.link.LinkSettings;
 
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+
+import static org.interledger.connector.link.blast.IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET;
+import static org.interledger.connector.link.blast.IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE;
+import static org.interledger.connector.link.blast.IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE;
+import static org.interledger.connector.link.blast.IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER;
+import static org.interledger.connector.link.blast.IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT;
+import static org.interledger.connector.link.blast.OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE;
+import static org.interledger.connector.link.blast.OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET;
+import static org.interledger.connector.link.blast.OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE;
+import static org.interledger.connector.link.blast.OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY;
+import static org.interledger.connector.link.blast.OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER;
+import static org.interledger.connector.link.blast.OutgoingLinkSettings.BLAST_OUTGOING_URL;
 
 public interface BlastLinkSettings extends LinkSettings {
 
@@ -20,26 +30,31 @@ public interface BlastLinkSettings extends LinkSettings {
   String OUTGOING = "outgoing";
   String INCOMING = "incoming";
 
-  String TOKEN_ISSUER = "token_issuer";
-  String ACCOUNT_ID = "account_id";
   String AUTH_TYPE = "auth_type";
-  String ACCOUNT_SECRET = "account_secret";
+
+  String TOKEN_ISSUER = "token_issuer";
+  String TOKEN_AUDIENCE = "token_audience";
+  String TOKEN_SUBJECT = "token_subject";
   String TOKEN_EXPIRY = "token_expiry";
+
+  // Used to grab the auth credential from custom settings...
+  String SHARED_SECRET = "shared_secret";
   String URL = "url";
-
-  String BLAST_INCOMING_ACCOUNT_ID = BLAST + DOT + INCOMING + DOT + ACCOUNT_ID;
-  String BLAST_INCOMING_ACCOUNT_SECRET = BLAST + DOT + INCOMING + DOT + ACCOUNT_SECRET;
-  String BLAST_INCOMING_TOKEN_ISSUER = BLAST + DOT + INCOMING + DOT + TOKEN_ISSUER;
-
-  String BLAST_OUTGOING_URL = BLAST + DOT + OUTGOING + DOT + URL;
-  String BLAST_OUTGOING_ACCOUNT_ID = BLAST + DOT + OUTGOING + DOT + ACCOUNT_ID;
-  String BLAST_OUTGOING_AUTH_TYPE = BLAST + DOT + OUTGOING + DOT + AUTH_TYPE;
-  String BLAST_OUTGOING_ACCOUNT_SECRET = BLAST + DOT + OUTGOING + DOT + ACCOUNT_SECRET;
-  String BLAST_OUTGOING_TOKEN_ISSUER = BLAST + DOT + OUTGOING + DOT + TOKEN_ISSUER;
-  String BLAST_OUTGOING_TOKEN_EXPIRY = BLAST + DOT + OUTGOING + DOT + TOKEN_EXPIRY;
 
   static ImmutableBlastLinkSettings.Builder builder() {
     return ImmutableBlastLinkSettings.builder();
+  }
+
+  /**
+   * Constructs a new builder with the correct custom settings, as found in {@code customSettings}.
+   *
+   * @param customSettings
+   *
+   * @return
+   */
+  static ImmutableBlastLinkSettings.Builder fromCustomSettings(final Map<String, Object> customSettings) {
+    Objects.requireNonNull(customSettings);
+    return applyCustomSettings(BlastLinkSettings.builder(), customSettings);
   }
 
   /**
@@ -56,6 +71,9 @@ public interface BlastLinkSettings extends LinkSettings {
     Objects.requireNonNull(builder);
     Objects.requireNonNull(customSettings);
 
+    final ImmutableIncomingLinkSettings.Builder incomingLinkSettingsBuilder = IncomingLinkSettings.builder();
+    final ImmutableOutgoingLinkSettings.Builder outgoingLinkSettingsBuilder = OutgoingLinkSettings.builder();
+
     // When loaded from a properties file, the properties are hierarchical in a Map. However, in Java, they are not, so
     // consider both options. Generally only one will be present, but if for some reason both are present, the String
     // values will win.
@@ -65,191 +83,93 @@ public interface BlastLinkSettings extends LinkSettings {
 
         Optional.ofNullable(blastSettings.get(INCOMING))
           .map(val -> (Map<String, Object>) val)
-          .ifPresent(incomingSettings -> {
-
-            Optional.ofNullable(incomingSettings.get(ACCOUNT_ID))
-              .map(Object::toString)
-              .ifPresent(builder::incomingAccountId);
-
-            Optional.ofNullable(incomingSettings.get(ACCOUNT_SECRET))
-              .map(Object::toString)
-              .ifPresent(builder::incomingAccountSecret);
-
-            Optional.ofNullable(incomingSettings.get(TOKEN_ISSUER))
-              .map(Object::toString)
-              .map(HttpUrl::parse)
-              .ifPresent(builder::incomingTokenIssuer);
-          });
+          .ifPresent($ -> IncomingLinkSettings.applyCustomSettings(incomingLinkSettingsBuilder, customSettings));
 
         Optional.ofNullable(blastSettings.get(OUTGOING))
           .map(val -> (Map<String, Object>) val)
-          .ifPresent(outgoingSettings -> {
+          .ifPresent($ -> OutgoingLinkSettings.applyCustomSettings(outgoingLinkSettingsBuilder, customSettings));
 
-            Optional.ofNullable(outgoingSettings.get(ACCOUNT_ID))
-              .map(Object::toString)
-              .ifPresent(builder::outgoingAccountId);
-
-            Optional.ofNullable(outgoingSettings.get(TOKEN_ISSUER))
-              .map(Object::toString)
-              .map(HttpUrl::parse)
-              .ifPresent(builder::outgoingTokenIssuer);
-
-            Optional.ofNullable(outgoingSettings.get(AUTH_TYPE))
-              .map(Object::toString)
-              .map(String::toUpperCase)
-              .map(AuthType::valueOf)
-              .ifPresent(builder::outgoingAuthType);
-
-            Optional.ofNullable(outgoingSettings.get(ACCOUNT_SECRET))
-              .map(Object::toString)
-              .ifPresent(builder::outgoingAccountSecret);
-
-            Optional.ofNullable(outgoingSettings.get(TOKEN_EXPIRY))
-              .map(Object::toString)
-              .map(Duration::parse)
-              .ifPresent(builder::outingTokenExpiry);
-
-            Optional.ofNullable(outgoingSettings.get(URL))
-              .map(Object::toString)
-              .map(HttpUrl::parse)
-              .ifPresent(builder::outgoingUrl);
-
-          });
       });
+
+    // Flattened Incoming settings...
+    Optional.ofNullable(customSettings.get(BLAST_INCOMING_AUTH_TYPE))
+      .map(Object::toString)
+      .map(String::toUpperCase)
+      .map(BlastLinkSettings.AuthType::valueOf)
+      .ifPresent(incomingLinkSettingsBuilder::authType);
 
     Optional.ofNullable(customSettings.get(BLAST_INCOMING_TOKEN_ISSUER))
       .map(Object::toString)
       .map(HttpUrl::parse)
-      .ifPresent(builder::incomingTokenIssuer);
+      .ifPresent(incomingLinkSettingsBuilder::tokenIssuer);
 
-    Optional.ofNullable(customSettings.get(BLAST_INCOMING_ACCOUNT_ID))
+    Optional.ofNullable(customSettings.get(BLAST_INCOMING_TOKEN_AUDIENCE))
       .map(Object::toString)
-      .ifPresent(builder::incomingAccountId);
+      .ifPresent(incomingLinkSettingsBuilder::tokenAudience);
 
-    Optional.ofNullable(customSettings.get(BLAST_INCOMING_ACCOUNT_SECRET))
+    Optional.ofNullable(customSettings.get(BLAST_INCOMING_TOKEN_SUBJECT))
       .map(Object::toString)
-      .ifPresent(builder::incomingAccountSecret);
+      .ifPresent(incomingLinkSettingsBuilder::tokenSubject);
 
+    Optional.ofNullable(customSettings.get(BLAST_INCOMING_SHARED_SECRET))
+      .map(Object::toString)
+      .ifPresent(incomingLinkSettingsBuilder::encryptedTokenSharedSecret);
+
+    // Flattened Outgoing Settings
     Optional.ofNullable(customSettings.get(BLAST_OUTGOING_TOKEN_ISSUER))
       .map(Object::toString)
       .map(HttpUrl::parse)
-      .ifPresent(builder::outgoingTokenIssuer);
+      .ifPresent(outgoingLinkSettingsBuilder::tokenIssuer);
+
+    Optional.ofNullable(customSettings.get(BLAST_OUTGOING_TOKEN_AUDIENCE))
+      .map(Object::toString)
+      .ifPresent(outgoingLinkSettingsBuilder::tokenAudience);
 
     Optional.ofNullable(customSettings.get(BLAST_OUTGOING_AUTH_TYPE))
       .map(Object::toString)
       .map(String::toUpperCase)
-      .map(AuthType::valueOf)
-      .ifPresent(builder::outgoingAuthType);
+      .map(BlastLinkSettings.AuthType::valueOf)
+      .ifPresent(outgoingLinkSettingsBuilder::authType);
 
-    Optional.ofNullable(customSettings.get(BLAST_OUTGOING_ACCOUNT_ID))
+    Optional.ofNullable(customSettings.get(BLAST_INCOMING_TOKEN_SUBJECT))
       .map(Object::toString)
-      .ifPresent(builder::outgoingAccountId);
+      .ifPresent(outgoingLinkSettingsBuilder::tokenSubject);
 
-    Optional.ofNullable(customSettings.get(BLAST_OUTGOING_ACCOUNT_SECRET))
+    Optional.ofNullable(customSettings.get(BLAST_OUTGOING_SHARED_SECRET))
       .map(Object::toString)
-      .ifPresent(builder::outgoingAccountSecret);
+      .ifPresent(outgoingLinkSettingsBuilder::encryptedTokenSharedSecret);
 
     Optional.ofNullable(customSettings.get(BLAST_OUTGOING_TOKEN_EXPIRY))
       .map(Object::toString)
       .map(Duration::parse)
-      .ifPresent(builder::outingTokenExpiry);
+      .ifPresent(outgoingLinkSettingsBuilder::tokenExpiry);
 
     Optional.ofNullable(customSettings.get(BLAST_OUTGOING_URL))
       .map(Object::toString)
       .map(HttpUrl::parse)
-      .ifPresent(builder::outgoingUrl);
+      .ifPresent(outgoingLinkSettingsBuilder::url);
+
+    builder.customSettings(customSettings);
+
+    builder.incomingBlastLinkSettings(incomingLinkSettingsBuilder.build());
+    builder.outgoingBlastLinkSettings(outgoingLinkSettingsBuilder.build());
 
     return builder;
   }
 
   /**
-   * The unique identifier of the Account used to authenticate an incoming BLAST connection.
+   * Link settings for the incoming BLAST link.
    *
-   * @return
+   * @return A {@link IncomingLinkSettings}.
    */
-  String getIncomingAccountId();
+  IncomingLinkSettings incomingBlastLinkSettings();
 
   /**
-   * A simple `secret` used to authenticate an incoming BLAST connection, useful for development purposes. For
-   * production, a more advanced authentication mechanism should be used.
+   * Link settings for the outgoing BLAST link.
    *
-   * @return
-   *
-   * @deprecated This value should be transitioned to a service so that it doesn't have to live inside of a property.
+   * @return A {@link OutgoingLinkSettings}.
    */
-  @Deprecated
-  String getIncomingAccountSecret();
-
-  /**
-   * The expected `iss` value of the issuer of a Blast token presented on an incoming connection. This value should
-   * always be a URL so that it can be rooted in Internet PKI and compared against the TLS certificate issued by the
-   * other side of a blast connection (i.e., the remote peer).
-   *
-   * @return
-   */
-  HttpUrl getIncomingTokenIssuer();
-
-  /**
-   * The type of Auth to support for outgoing HTTP connections.
-   *
-   * @return
-   */
-  AuthType getOutgoingAuthType();
-
-  /**
-   * The unique identifier of the Account used to authenticate an outgoing BLAST connection.
-   *
-   * @return
-   */
-  String getOutgoingAccountId();
-
-  /**
-   * A simple `secret` used to authenticate to the remote peer when making a BLAST connection, useful for development
-   * purposes. For production, a more advanced authentication mechanism should be used.
-   *
-   * @return
-   *
-   * @deprecated This value should be transitioned to a service so that it doesn't have to live inside of a property.
-   */
-  @Deprecated
-  String getOutgoingAccountSecret();
-
-  /**
-   * The expected `iss` value of the issuer of a Blast token presented on an outgoing connection. This value should
-   * always be a URL so that it can be rooted in Internet PKI and compared against the TLS certificate issued by the
-   * other side of a blast connection (i.e., the remote peer).
-   *
-   * @return
-   */
-  HttpUrl getOutgoingTokenIssuer();
-
-  /**
-   * Determines how often to sign a new token for auth.
-   *
-   * @return
-   */
-  Duration getOutingTokenExpiry();
-
-  /**
-   * endpoint to POST packets to. If url contains a percent and the link is in `multi` mode, then the segment after this
-   * link's own address will be filled where the `%` is  when routing packets.
-   *
-   * @return
-   */
-  HttpUrl getOutgoingUrl();
-
-  /**
-   * <p>The minimum amount of time (in milliseconds) to budget for receiving a response message from an account.</p>
-   *
-   * <p>Especially useful for ILP packets, if a packet expires in 30 seconds, then a link should only wait 29 seconds
-   * before timing out so that it can generally be sure to reject the request (as opposed to merely allowing a timeout
-   * to occur, because timeouts are ambiguous).</p>
-   *
-   * @return A {@link Duration}.
-   */
-  default Duration getMinMessageWindow() {
-    return Duration.of(1000, ChronoUnit.MILLIS);
-  }
+  OutgoingLinkSettings outgoingBlastLinkSettings();
 
   enum AuthType {
     /**
@@ -257,29 +177,18 @@ public interface BlastLinkSettings extends LinkSettings {
      */
     SIMPLE,
     /**
-     * The incoming and outgoing secrets are used in to create a JWT token using the HMAC_SHA256 algorithm.
+     * Use shared-secret symmetric keys to create and verify JWT_HS_256 tokens.
      */
-    JWT
+    JWT_HS_256,
+    /**
+     * Use RSA asymmetric keys to create aand verify JWT_RS_256 tokens.
+     */
+    JWT_RS_256
   }
 
   @Value.Immutable
   @Modifiable
   abstract class AbstractBlastLinkSettings implements BlastLinkSettings {
 
-    @Override
-    @Default
-    public Duration getMinMessageWindow() {
-      return Duration.of(1000, ChronoUnit.MILLIS);
-    }
-
-    @Override
-    @Value.Redacted
-    @Deprecated
-    public abstract String getOutgoingAccountSecret();
-
-    @Override
-    @Value.Redacted
-    @Deprecated
-    public abstract String getIncomingAccountSecret();
   }
 }

@@ -9,6 +9,7 @@ import org.interledger.connector.accounts.AccountProviderSettings;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
@@ -19,6 +20,10 @@ import java.util.stream.Collectors;
 /**
  * Pojo class for automatic mapping of configuration properties via Spring's {@link ConfigurationProperties}
  * annotation.
+ *
+ * Note that this class supports adding Accounts from a properties file, although these accounts are not accessible from
+ * {@link ConnectorSettings}. Instead, all accounts should be accessed via the {@link AccountSettingsRepository}
+ * instead.
  */
 @ConfigurationProperties(prefix = "ilpv4.connector")
 @SuppressWarnings("unused")
@@ -47,6 +52,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   private List<AccountSettingsFromPropertyFile> accounts = Lists.newArrayList();
 
+  @Deprecated
   private List<AccountProviderSettingsFromPropertyFile> accountProviders = Lists.newArrayList();
 
   @Override
@@ -133,7 +139,6 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     this.globalRoutingSettings = globalRoutingSettings;
   }
 
-  @Override
   public List<AccountSettings> getAccountSettings() {
     return accounts.stream()
       .map(accountSettings -> (AccountSettings) accountSettings)
@@ -144,13 +149,14 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     this.accounts = accounts;
   }
 
-  @Override
+  @Deprecated
   public List<AccountProviderSettings> getAccountProviderSettings() {
     return accountProviders.stream()
       .map(accountSettings -> (AccountProviderSettings) accountSettings)
       .collect(Collectors.toList());
   }
 
+  @Deprecated
   public void setAccountProviders(List<AccountProviderSettingsFromPropertyFile> accountProviders) {
     this.accountProviders = accountProviders;
   }

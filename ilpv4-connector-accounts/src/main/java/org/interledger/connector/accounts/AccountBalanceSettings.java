@@ -1,5 +1,7 @@
 package org.interledger.connector.accounts;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 import java.math.BigInteger;
@@ -54,6 +56,8 @@ public interface AccountBalanceSettings {
 
   @Value.Immutable(intern = true)
   @Value.Modifiable
+  @JsonSerialize(as = ImmutableAccountBalanceSettings.class)
+  @JsonDeserialize(as = ImmutableAccountBalanceSettings.class)
   abstract class AbstractAccountBalanceSettings implements AccountBalanceSettings {
 
   }

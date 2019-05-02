@@ -28,6 +28,10 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>ilpv4-connector-persistence</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-link-blast</artifactId>
     </dependency>
     <dependency>

@@ -38,7 +38,8 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
   @BeforeClass
   public static void setupClass() {
     System.setProperty("spring.profiles.active", ConnectorProfiles.DEV);
-    System.setProperty(ConnectorProperties.BLAST_ENABLED, "true");
+    // Required to get the conditional-config to work for this topology...
+    System.setProperty(ConnectorProperties.ENABLED_PROTOCOLS + "." + ConnectorProperties.BLAST_ENABLED, "true");
 
     LOGGER.info("Starting test topology `{}`...", "TwoConnectorPeerBlastTopology");
     topology.start();
@@ -71,8 +72,8 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
     );
 
     final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
-    assertThat(blastLink.getLinkSettings().getOutgoingAccountId(), is(ALICE));
-    assertThat(blastLink.getLinkSettings().getIncomingAccountId(), is(BOB));
+    assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(ALICE));
+    assertThat(blastLink.getLinkSettings().incomingBlastLinkSettings().tokenSubject(), is(BOB));
   }
 
   @Test
@@ -88,8 +89,8 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
     );
 
     final BlastLink blastLink = getBlastLinkFromGraph(BOB_ADDRESS);
-    assertThat(blastLink.getLinkSettings().getOutgoingAccountId(), is(BOB));
-    assertThat(blastLink.getLinkSettings().getIncomingAccountId(), is(ALICE));
+    assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(BOB));
+    assertThat(blastLink.getLinkSettings().incomingBlastLinkSettings().tokenSubject(), is(ALICE));
   }
 
   /**

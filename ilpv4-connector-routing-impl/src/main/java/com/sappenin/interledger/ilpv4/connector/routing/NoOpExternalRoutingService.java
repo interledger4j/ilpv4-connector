@@ -1,6 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.Link;
 import org.interledger.core.InterledgerAddress;
 
 import java.util.Objects;
@@ -26,17 +27,8 @@ public class NoOpExternalRoutingService implements ExternalRoutingService {
     this.routeRoutingTable.reset();
   }
 
-  /**
-   * Shutdown the Routing Service.
-   */
   @Override
-  public void shutdown() {
-    // Not technically necessary, but just in-case...
-    this.routeRoutingTable.reset();
-  }
-
-  @Override
-  public void registerAccount(AccountId accountId) {
+  public void registerAccountWithDataLink(AccountId accountId, Link<?> link) {
     // No-op. Routing is disabled in this implementation, so no need to track any accounts.
   }
 

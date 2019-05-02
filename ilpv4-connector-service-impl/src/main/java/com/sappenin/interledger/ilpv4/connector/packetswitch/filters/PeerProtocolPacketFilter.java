@@ -1,14 +1,13 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteControlRequest;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteUpdateRequest;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.RoutableAccount;
-import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
+import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
@@ -20,11 +19,13 @@ import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
 import org.interledger.ildcp.IldcpResponsePacket;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import static com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants.CCP_CONTROL_DESTINATION_ADDRESS;
 import static com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants.CCP_UPDATE_DESTINATION_ADDRESS;
@@ -39,24 +40,24 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
   public static final InterledgerAddress PEER_DOT_ROUTE = InterledgerAddress.of("peer.route");
 
-  private final EnabledProtocolSettings enabledProtocolSettings;
+  private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final ExternalRoutingService externalRoutingService;
-  private final AccountManager accountManager;
+  private final AccountSettingsRepository accountSettingsRepository;
   private final CodecContext ccpCodecContext;
   private final CodecContext ildcpCodecContext;
 
   public PeerProtocolPacketFilter(
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final PacketRejector packetRejector,
-    final EnabledProtocolSettings enabledProtocolSettings,
     final ExternalRoutingService externalRoutingService,
-    final AccountManager accountManager,
+    final AccountSettingsRepository accountSettingsRepository,
     final CodecContext ccpCodecContext,
     final CodecContext ildcpCodecContext
   ) {
     super(packetRejector);
-    this.enabledProtocolSettings = Objects.requireNonNull(enabledProtocolSettings);
+    this.connectorSettingsSupplier = connectorSettingsSupplier;
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
-    this.accountManager = Objects.requireNonNull(accountManager);
+    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
 
     this.ccpCodecContext = Objects.requireNonNull(ccpCodecContext);
     this.ildcpCodecContext = Objects.requireNonNull(ildcpCodecContext);
@@ -74,7 +75,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
       // `peer.config`
       if (sourcePreparePacket.getDestination().equals(IldcpRequestPacket.PEER_DOT_CONFIG)) {
-        if (enabledProtocolSettings.isPeerConfigEnabled()) {
+        if (connectorSettingsSupplier.get().getEnabledProtocols().isPeerConfigEnabled()) {
           return this.handleIldcpRequest(sourceAccountId, sourcePreparePacket);
         } else {
           return reject(sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
@@ -84,7 +85,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
       // `peer.routing`
       else if (sourcePreparePacket.getDestination().startsWith(PEER_DOT_ROUTE)) {
-        if (enabledProtocolSettings.isPeerRoutingEnabled()) {
+        if (connectorSettingsSupplier.get().getEnabledProtocols().isPeerRoutingEnabled()) {
           //CCP via `peer.routing`
           return handlePeerRouting(sourceAccountId, sourcePreparePacket);
         } else {
@@ -126,15 +127,15 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
     Objects.requireNonNull(sourceAccountId);
     Objects.requireNonNull(ildcpRequestPacket);
 
-    return this.accountManager.getAccount(sourceAccountId)
-      .map(account -> {
-        final InterledgerAddress childAddress = accountManager.toChildAddress(sourceAccountId);
+    return this.accountSettingsRepository.findByAccountId(sourceAccountId)
+      .map(accountSettingsEntity -> {
+        final InterledgerAddress childAddress = connectorSettingsSupplier.get().toChildAddress(sourceAccountId);
 
         // Convert IldcpResponse to bytes...
         final IldcpResponse ildcpResponse = IldcpResponse.builder()
           // TODO: Remove the short-cast once assetscale is converted to byte.
-          .assetScale((short) account.getAccountSettings().getAssetScale())
-          .assetCode(account.getAccountSettings().getAssetCode())
+          .assetScale((short) accountSettingsEntity.getAssetScale())
+          .assetCode(accountSettingsEntity.getAssetCode())
           .clientAddress(childAddress)
           .build();
 

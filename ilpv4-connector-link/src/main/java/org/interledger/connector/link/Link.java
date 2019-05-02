@@ -25,8 +25,6 @@ import java.util.function.Supplier;
  */
 public interface Link<LS extends LinkSettings> extends LinkSender, Connectable {
 
-  // Ping: Ping the Link for various purposes.
-
   /**
    * A unique identifier for this {@link Link}. This value is generally set only once, (e.g., in a Connector to
    * correlate a Link to an account identifier) so that the same link can be referenced across requests.
@@ -36,7 +34,7 @@ public interface Link<LS extends LinkSettings> extends LinkSender, Connectable {
   Optional<LinkId> getLinkId();
 
   /**
-   * A supplier for the ILP address of this node operator. This value may be empty, for example, in cases where the Link
+   * A supplier fori the ILP address of this node operator. This value may be empty, for example, in cases where the Link
    * obtains its address from a parent node using IL-DCP.
    *
    * @return A {@link Supplier} of an optioanally-present {@link InterledgerAddress}.

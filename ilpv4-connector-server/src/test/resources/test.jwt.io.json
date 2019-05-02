@@ -5,11 +5,11 @@
   },
   {
     "sub": "alice",
-    "iat": 1516239022,
-    "iss": "https://connie.example.com/",
-    "aud": "urn:ilpv4:blast"
+    "aud": "https://connie.example.com/",
+    "iss": "https://alice.example.com/",
+    "iat": 1556751813
   },
   {
-    "secret": "somesecrettoken"
+    "secret": "shh"
   }
 ]

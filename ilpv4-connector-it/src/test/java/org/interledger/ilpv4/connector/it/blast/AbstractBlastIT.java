@@ -1,9 +1,10 @@
 package org.interledger.ilpv4.connector.it.blast;
 
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
+import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
-import org.interledger.connector.accounts.Account;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.CircuitBreakingLink;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.core.InterledgerAddress;
@@ -19,6 +20,7 @@ import java.math.BigInteger;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
 
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
@@ -74,8 +76,8 @@ public abstract class AbstractBlastIT {
   }
 
   /**
-   * Helper method to obtain an instance of {@link ILPv4Connector} from the topology, based upon its Interledger
-   * Address.
+   * Helper method to obtain an instance of {@link ILPv4Connector} fromEncodedValue the topology, based upon its
+   * Interledger Address.
    *
    * @param interledgerAddress
    *
@@ -88,7 +90,8 @@ public abstract class AbstractBlastIT {
   }
 
   /**
-   * Helper method to obtain an instance of {@link LinkNode} from the topology, based upon its Interledger Address.
+   * Helper method to obtain an instance of {@link LinkNode} fromEncodedValue the topology, based upon its Interledger
+   * Address.
    *
    * @param interledgerAddress The unique key of the node to return.
    *
@@ -96,12 +99,16 @@ public abstract class AbstractBlastIT {
    */
   protected BlastLink getBlastLinkFromGraph(final InterledgerAddress interledgerAddress) {
     Objects.requireNonNull(interledgerAddress);
-    final CircuitBreakingLink circuitBreakingLink =
-      (CircuitBreakingLink) getILPv4NodeFromGraph(interledgerAddress).getAccountManager().getAllAccounts()
-        .filter(account -> account.getAccountSettings().getLinkType().equals(BlastLink.LINK_TYPE))
-        .findFirst()
-        .map(Account::getLink)
-        .get();
+
+    final LinkManager linkManager = getILPv4NodeFromGraph(interledgerAddress).getLinkManager();
+
+    final CircuitBreakingLink circuitBreakingLink = (CircuitBreakingLink) StreamSupport
+      .stream(getILPv4NodeFromGraph(interledgerAddress).getAccountSettingsRepository().findAll().spliterator(), false)
+      .filter(accountSettingsEntity -> accountSettingsEntity.getLinkType().equals(BlastLink.LINK_TYPE))
+      .findFirst()
+      .map(AccountSettings::getAccountId)
+      .map(linkManager::getConnectedLinkSafe)
+      .get();
     return (BlastLink) circuitBreakingLink.getLinkDelegate();
   }
 

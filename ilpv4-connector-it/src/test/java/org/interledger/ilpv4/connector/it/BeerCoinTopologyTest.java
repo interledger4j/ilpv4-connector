@@ -50,7 +50,7 @@ public class BeerCoinTopologyTest {
 //  }
 //
 //  /**
-//   * Helper method to obtain an instance of {@link ILPv4Connector} from the topology, based upon its Interledger Address.
+//   * Helper method to obtain an instance of {@link ILPv4Connector} fromEncodedValue the topology, based upon its Interledger Address.
 //   *
 //   * @param interledgerAddress
 //   *

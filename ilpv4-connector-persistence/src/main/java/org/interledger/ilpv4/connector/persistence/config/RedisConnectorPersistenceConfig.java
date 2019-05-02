@@ -1,6 +1,5 @@
 package org.interledger.ilpv4.connector.persistence.config;
 
-import com.sappenin.interledger.ilpv4.connector.RuntimeProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,9 +9,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 
 @Configuration
-@ConditionalOnProperty(name = RuntimeProperties.DB, havingValue = RuntimeProperties.Databases.H2)
-@EnableRedisRepositories(basePackages = "org.interledger.ilpv4.connector.persistence.repository")
+@ConditionalOnProperty(name = "spring.data.redis.repositories.enabled", havingValue = "true")
+@EnableRedisRepositories(basePackages = "org.interledger.ilpv4.connector.persistence.repositories")
 public class RedisConnectorPersistenceConfig {
+
+  // TODO: Require JacksonConfig
 
   @Bean
   JedisConnectionFactory jedisConnectionFactory() {

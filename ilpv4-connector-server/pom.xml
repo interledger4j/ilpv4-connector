@@ -13,7 +13,7 @@
   <artifactId>ilpv4-connector-server</artifactId>
 
   <name>ILPv4 :: Connector :: Server</name>
-  <description>A Spring Server runtime for an ILPv4 Connector.</description>
+  <description>A Spring Boot server runtime for an ILPv4 Connector.</description>
 
   <build>
     <resources>
@@ -35,6 +35,18 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <configuration>
+          <!-- specify UTF-8, ISO-8859-1 or any other file encoding -->
+          <encoding>UTF-8</encoding>
+          <nonFilteredFileExtensions>
+            <nonFilteredFileExtension>p12</nonFilteredFileExtension>
+          </nonFilteredFileExtensions>
+        </configuration>
       </plugin>
 
     </plugins>
@@ -64,6 +76,14 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>ilpv4-connector-jackson</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ilpv4-connector-persistence</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-link</artifactId>
     </dependency>
     <dependency>
@@ -72,7 +92,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>ilpv4-connector-secrets</artifactId>
+      <artifactId>ilpv4-connector-crypto</artifactId>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -104,19 +124,11 @@
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
+      <artifactId>jackson-annotations</artifactId>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <artifactId>jackson-datatype-jdk8</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <artifactId>jackson-datatype-jsr310</artifactId>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -257,6 +269,28 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.springframework.hateoas</groupId>
+      <artifactId>spring-hateoas</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-web</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-beans</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-core</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.plugin</groupId>
+      <artifactId>spring-plugin-core</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-config</artifactId>
     </dependency>
@@ -274,11 +308,7 @@
     </dependency>
     <dependency>
       <groupId>org.zalando</groupId>
-      <artifactId>problem-violations</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.zalando</groupId>
-      <artifactId>jackson-datatype-problem</artifactId>
+      <artifactId>problem</artifactId>
     </dependency>
     <dependency>
       <groupId>org.zalando</groupId>

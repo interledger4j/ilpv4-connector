@@ -1,5 +1,7 @@
 package org.interledger.connector.accounts;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 import java.util.Optional;
@@ -29,6 +31,8 @@ public interface AccountRateLimitSettings {
 
   @Value.Immutable(intern = true)
   @Value.Modifiable
+  @JsonSerialize(as = ImmutableAccountRateLimitSettings.class)
+  @JsonDeserialize(as = ImmutableAccountRateLimitSettings.class)
   abstract class AbstractAccountRateLimitSettings implements AccountRateLimitSettings {
 
   }

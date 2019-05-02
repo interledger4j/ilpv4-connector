@@ -224,9 +224,9 @@ public class SingleConnectorMultiAccountBtpTopology {
   //  //   * Construct an {@link AccountSettings} object to represent Alice's account inside of Connie.
   //  //   *
   //  //   * @param topology             The {@link Topology} that contains nodes.
-  //  //   * @param accountAddress    The {@link InterledgerAddress} that identifies the bilateral account from the perspective
+  //  //   * @param accountAddress    The {@link InterledgerAddress} that identifies the bilateral account fromEncodedValue the perspective
   //  //   *                          of the client.
-  //  //   * @param remoteNodeAddress The {@link InterledgerAddress} of the remote peer, from the perspective of the topology.
+  //  //   * @param remoteNodeAddress The {@link InterledgerAddress} of the remote peer, fromEncodedValue the perspective of the topology.
   //  //   */
   //  //  private static ClientWebsocketBtpPlugin constructBtpWsClientPlugin(
   //  //    final Topology topology,

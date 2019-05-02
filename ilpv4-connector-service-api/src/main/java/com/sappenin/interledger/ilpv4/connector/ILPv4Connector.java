@@ -10,6 +10,7 @@ import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.ilpv4.ILPv4Node;
 import org.interledger.ilpv4.ILPv4Receiver;
 import org.interledger.ilpv4.ILPv4Sender;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 
 /**
  * <p>When two parties want to exchange value online, the one who sends money is the sender and the one who gets
@@ -37,13 +38,12 @@ public interface ILPv4Connector extends ILPv4Node {
 
   ILPv4PacketSwitch getIlpPacketSwitch();
 
-  //TODO: Consider how the notion of an Account fits into the ILP Connector stack. Accounts exist between two
-  // Interledger nodes, so since a Connector is a node, it makes sense for it to hold accounts. However, there is a
-  // case that all nodes should hold at least one account, possibly more, so perhaps this method belongs at the node
-  // level.
-  AccountManager getAccountManager();
 
   LinkManager getLinkManager();
+
+  AccountManager getAccountManager();
+
+  AccountSettingsRepository getAccountSettingsRepository();
 
   ExternalRoutingService getExternalRoutingService();
 

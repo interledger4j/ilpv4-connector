@@ -6,6 +6,7 @@ import org.interledger.connector.link.LinkSettings;
 import org.interledger.connector.link.LinkType;
 import org.interledger.connector.link.events.LinkEventEmitter;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.crypto.Decryptor;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Objects;
@@ -13,16 +14,20 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * An implementation of {@link LinkFactory} for creating BTP Links.
+ * An implementation of {@link LinkFactory} for creating Ilp-over-Http Links.
  */
 public class BlastLinkFactory implements LinkFactory {
 
   private final LinkEventEmitter linkEventEmitter;
   private final RestTemplate restTemplate;
+  private final Decryptor decryptor;
 
-  public BlastLinkFactory(final LinkEventEmitter linkEventEmitter, final RestTemplate restTemplate) {
+  public BlastLinkFactory(
+    final LinkEventEmitter linkEventEmitter, final RestTemplate restTemplate, final Decryptor decryptor
+  ) {
     this.linkEventEmitter = Objects.requireNonNull(linkEventEmitter);
     this.restTemplate = Objects.requireNonNull(restTemplate);
+    this.decryptor = decryptor;
   }
 
   /**
@@ -47,22 +52,13 @@ public class BlastLinkFactory implements LinkFactory {
       BlastLinkSettings.applyCustomSettings(builder, linkSettings.getCustomSettings()).build();
 
     final BlastHttpSender blastHttpSender;
-    if (blastLinkSettings.getOutgoingAuthType().equals(BlastLinkSettings.AuthType.SIMPLE)) {
+    if (blastLinkSettings.outgoingBlastLinkSettings().authType().equals(BlastLinkSettings.AuthType.SIMPLE)) {
       blastHttpSender = new SimpleBearerBlastHttpSender(
-        operatorAddressSupplier,
-        blastLinkSettings.getOutgoingUrl().uri(),
-        restTemplate,
-        () -> blastLinkSettings.getOutgoingAccountId(),
-        () -> blastLinkSettings.getOutgoingAccountSecret().getBytes()
+        operatorAddressSupplier, restTemplate, blastLinkSettings.outgoingBlastLinkSettings(), decryptor
       );
     } else {
       blastHttpSender = new JwtBlastHttpSender(
-        operatorAddressSupplier,
-        blastLinkSettings.getOutgoingUrl().uri(),
-        restTemplate,
-        () -> blastLinkSettings.getOutgoingAccountId(),
-        () -> blastLinkSettings.getOutgoingTokenIssuer(),
-        () -> blastLinkSettings.getOutgoingAccountSecret().getBytes()
+        operatorAddressSupplier, restTemplate, blastLinkSettings.outgoingBlastLinkSettings(), decryptor
       );
     }
 

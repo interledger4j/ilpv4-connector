@@ -8,9 +8,8 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.hash.Hashing;
 import com.sappenin.interledger.ilpv4.connector.StaticRoute;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountIdResolver;
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
+import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
-import org.interledger.connector.accounts.Account;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
@@ -22,10 +21,10 @@ import org.interledger.connector.link.events.LinkEventListener;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.encoding.asn.framework.CodecContext;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PreDestroy;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +69,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
   private final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable;
 
   private final AccountIdResolver accountIdResolver;
-  private final AccountManager accountManager;
+  private final AccountSettingsRepository accountSettingsRepository;
+  private final LinkManager linkManager;
 
   // A Map of addresses to all RoutableAccounts that are currently being tracked by this routing service.
   private final Map<AccountId, RoutableAccount> trackedAccounts;
@@ -91,8 +91,9 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     final EventBus eventBus,
     final CodecContext ccpCodecContext,
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final AccountManager accountManager,
-    final AccountIdResolver accountIdResolver
+    final AccountIdResolver accountIdResolver,
+    final AccountSettingsRepository accountSettingsRepository,
+    final LinkManager linkManager
   ) {
     this.eventBus = Objects.requireNonNull(eventBus);
     this.eventBus.register(this); // Required in order to add/remove routes on Link Connect/Disconnects
@@ -103,12 +104,14 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     this.localRoutingTable = new InMemoryRoutingTable();
     this.incomingRoutingTable = new InMemoryIncomingRouteForwardRoutingTable();
     this.outgoingRoutingTable = new InMemoryRouteUpdateForwardRoutingTable();
-    this.accountManager = Objects.requireNonNull(accountManager);
+
+    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
+    this.linkManager = Objects.requireNonNull(linkManager);
     this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
 
     this.trackedAccounts = Maps.newConcurrentMap();
     this.unregisterAccountCallbacks = Maps.newConcurrentMap();
-    this.routingTableEntryComparator = new RoutingTableEntryComparator(accountManager);
+    this.routingTableEntryComparator = new RoutingTableEntryComparator(accountSettingsRepository);
   }
 
   /**
@@ -122,8 +125,9 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     final RoutingTable<Route> localRoutingTable,
     final ForwardingRoutingTable<IncomingRoute> incomingRoutingTable,
     final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
-    final AccountManager accountManager,
-    final AccountIdResolver accountIdResolver
+    final AccountIdResolver accountIdResolver,
+    final AccountSettingsRepository accountSettingsRepository,
+    final LinkManager linkManager
   ) {
     this.eventBus = Objects.requireNonNull(eventBus);
     this.eventBus.register(this);
@@ -134,50 +138,41 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     this.incomingRoutingTable = Objects.requireNonNull(incomingRoutingTable);
     this.outgoingRoutingTable = Objects.requireNonNull(outgoingRoutingTable);
 
-    this.accountManager = Objects.requireNonNull(accountManager);
+    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
+    this.linkManager = Objects.requireNonNull(linkManager);
     this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
+
     this.unregisterAccountCallbacks = Maps.newConcurrentMap();
     this.trackedAccounts = Maps.newConcurrentMap();
-    this.routingTableEntryComparator = new RoutingTableEntryComparator(accountManager);
+    this.routingTableEntryComparator = new RoutingTableEntryComparator(accountSettingsRepository);
   }
 
   @Override
   public void start() {
     this.reloadLocalRoutes();
 
-    // Add each non-internal account to this service so that each can be tracked. For example, if a lpi2 for a given
-    // account disconnects, then we want this ExternalRoutingService to know about it so that payments aren't routed through a
-    // disconencted lpi2.
+    // Add each non-internal account to this service so that each can be tracked in the external routing table.
+    // For example, if a Link for a given account disconnects, then we want this ExternalRoutingService to know about
+    // it so that payments aren't routed through a disconnected Link.
 
-    this.accountManager.getAllAccounts()
-      .map(Account::getAccountSettings)
-      .filter(accountSettings -> accountSettings.isInternal() == false)
-      .map(AccountSettings::getAccountId)
-      .forEach(this::registerAccount);
+    // TODO: For a system with _many_ accounts, the structure of this service is inefficient. Instead, account/link
+    //  queries should be executed only when a particular account's information is required by the router. That way,
+    //  we can take the expensive task of loading once, cache that information for some amount of time, and then
+    //    StreamSupport.stream(accountSettingsRepository.findAll().spliterator(), false)
+    //      .filter(accountSettings -> accountSettings.isInternal() == false)
+    //      .map(AccountSettings::getAccountId)
+    //      .forEach(accountId -> this.registerAccountWithDataLink(accountId, );
   }
 
   @Override
-  @PreDestroy
-  public void shutdown() {
-    this.accountManager.getAllAccounts()
-      .map(Account::getAccountSettings)
-      .map(AccountSettings::getAccountId)
-      .forEach(this::unregisterAccount);
-  }
-
-  /**
-   * Register this service to respond to connect/disconnect events that may be emitted from a {@link Link}, and then add
-   * the accountId to this service's internal machinery.
-   */
-  public void registerAccount(final AccountId accountId) {
+  public void registerAccountWithDataLink(final AccountId accountId, final Link<?> dataLink) {
     Objects.requireNonNull(accountId);
+    Objects.requireNonNull(dataLink);
 
     if (this.unregisterAccountCallbacks.containsKey(accountId)) {
       logger.warn("Peer Account `{}` was already tracked!", accountId);
       return;
     }
-
-    final Link<?> dataLink = this.accountManager.safeGetAccount(accountId).getLink();
 
     final LinkEventListener dataLinkEventListener = new LinkEventListener() {
       @Override
@@ -222,14 +217,14 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
   }
 
   /**
-   * Untrack a peer account address from participating in Routing.
+   * Untrack a peer accountId address from participating in Routing.
    *
-   * @param account The address of a remote peer that can have packets routed to it.
+   * @param accountId The address of a remote peer that can have packets routed to it.
    */
-  public void unregisterAccount(final AccountId account) {
-    this.removeAccount(account);
+  public void unregisterAccount(final AccountId accountId) {
+    this.removeAccount(accountId);
 
-    Optional.ofNullable(this.unregisterAccountCallbacks.get(account))
+    Optional.ofNullable(this.unregisterAccountCallbacks.get(accountId))
       .ifPresent(untrackRunnable -> {
         // Run the Runnable that was configured when the link was registered (see TrackAccount).
         untrackRunnable.run();
@@ -272,7 +267,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
   protected void addTrackedAccount(final AccountId accountId) {
     Objects.requireNonNull(accountId);
 
-    final Account account = this.accountManager.getAccount(accountId)
+    final AccountSettings accountSettings = accountSettingsRepository.findByAccountId(accountId)
       // TODO: This condition never happens, so RuntimeException is probably sufficient. However, consider an
       // InterledgerException instead?
       .orElseThrow(() -> new RuntimeException("Account not found!"));
@@ -280,16 +275,17 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     // Check if this account is a parent account. If so, update the routing table appropriately (e.g., if this is a
     // parent account, and its the primary parent account, then add a global route for this account).
     if (
-      account.isParentAccount() &&
-        this.accountManager.getPrimaryParentAccount().get().getAccountSettings().getAccountId()
-          .equals(account.getAccountSettings().getAccountId())
+      accountSettings.isParentAccount() &&
+        accountSettingsRepository.findPrimaryParentAccountSettings().isPresent() &&
+        accountSettingsRepository.findPrimaryParentAccountSettings().get().getAccountId()
+          .equals(accountSettings.getAccountId())
     ) {
       // Add a default global route for this account...
-      this.setDefaultRoute(account.getAccountSettings().getAccountId());
+      this.setDefaultRoute(accountSettings.getAccountId());
     }
 
-    final boolean sendRoutes = this.shouldSendRoutes(account);
-    final boolean receiveRoutes = this.shouldReceiveRoutes(account);
+    final boolean sendRoutes = this.shouldSendRoutes(accountSettings);
+    final boolean receiveRoutes = this.shouldReceiveRoutes(accountSettings);
     if (!sendRoutes && !receiveRoutes) {
       logger.warn("Not sending nor receiving routes for peer. accountId={}", accountId);
       return;
@@ -305,25 +301,28 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
       .orElseGet(() -> {
         // The Account in question did not have an existing peer in this routing service, so create a new Peer and
         // initialize it.
-        final Link<?> link = this.accountManager.safeGetAccount(accountId).getLink();
-        logger.debug("Adding peer. accountId={} sendRoutes={} isReceiveRoutes={}", accountId, sendRoutes,
-          receiveRoutes);
-        final RoutableAccount newPeer = ImmutableRoutableAccount.builder()
-          .account(account)
-          .ccpSender(constructCcpSender(account.getAccountSettings().getAccountId(), link))
-          .ccpReceiver(constructCcpReceiver(account.getAccountSettings().getAccountId(), link))
-          .build();
-        this.setTrackedAccount(newPeer);
+        linkManager.getConnectedLink(accountId)
+          .ifPresent(link -> {
+            logger.debug(
+              "Adding peer. accountId={} sendRoutes={} isReceiveRoutes={}", accountId, sendRoutes, receiveRoutes
+            );
+            final RoutableAccount newPeer = ImmutableRoutableAccount.builder()
+              .accountId(accountId)
+              .ccpSender(constructCcpSender(accountSettings.getAccountId(), link))
+              .ccpReceiver(constructCcpReceiver(accountSettings.getAccountId(), link))
+              .build();
+            this.setTrackedAccount(newPeer);
 
-        // Always send a new RoutControl request to the remote peer, but only if it's connected.
-        newPeer.getCcpReceiver().sendRouteControl();
+            // Always send a new RoutControl request to the remote peer, but only if it's connected.
+            newPeer.getCcpReceiver().sendRouteControl();
 
-        // This is somewhat expensive, so only do this if the peer was newly constructed...in other words, we don't
-        // want to reload the local routing tables if a link merely disconnected and reconnected, but nothing
-        // intrinsically changed about the routing tables that wasn't handled by those listeners.
-        this.reloadLocalRoutes();
-
-        return newPeer;
+            // This is somewhat expensive, so only do this if the peer was newly constructed...in other words, we don't
+            // want to reload the local routing tables if a link merely disconnected and reconnected, but nothing
+            // intrinsically changed about the routing tables that wasn't handled by those listeners.
+            this.reloadLocalRoutes();
+          });
+        // To placate Streams...
+        return null;
       });
   }
 
@@ -331,8 +330,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     Objects.requireNonNull(peerAccountId);
     Objects.requireNonNull(link);
     return new DefaultCcpSender(
-      this.connectorSettingsSupplier, peerAccountId, link, this.outgoingRoutingTable, this.accountManager,
-      this.ccpCodecContext
+      connectorSettingsSupplier, peerAccountId, link, outgoingRoutingTable, accountSettingsRepository, ccpCodecContext
     );
   }
 
@@ -340,41 +338,41 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     Objects.requireNonNull(peerAccountId);
     Objects.requireNonNull(link);
     return new DefaultCcpReceiver(
-      this.connectorSettingsSupplier, peerAccountId, link, this.incomingRoutingTable, this.ccpCodecContext
+      connectorSettingsSupplier, peerAccountId, link, incomingRoutingTable, ccpCodecContext
     );
   }
 
   /**
-   * Determines if the link configured for the account in {@code account} should send routes to the remote peer
-   * account.
+   * Determines if the link configured for the accountSettings in {@code accountSettings} should send routes to the
+   * remote peer accountSettings.
    *
-   * @param account An instance of {@link AccountSettings} for a remote peer account.
+   * @param accountSettings An instance of {@link AccountSettings} for a remote peer accountSettings.
    *
    * @return {@code true} if the link is configured to send routes, {@code false} otherwise.
    */
-  private boolean shouldSendRoutes(final Account account) {
-    Objects.requireNonNull(account);
-    if (account.isChildAccount()) {
+  private boolean shouldSendRoutes(final AccountSettings accountSettings) {
+    Objects.requireNonNull(accountSettings);
+    if (accountSettings.isChildAccount()) {
       return SHOULD_NOT_SEND_ROUTES;
     } else {
-      return account.getAccountSettings().isSendRoutes();
+      return accountSettings.isSendRoutes();
     }
   }
 
   /**
-   * Determines if the link configured for the account in {@code account} should receive routes from the remote peer
-   * account.
+   * Determines if the link configured for the accountSettings in {@code accountSettings} should receive routes from the
+   * remote peer accountSettings.
    *
-   * @param account An instance of {@link AccountSettings} for a remote peer account.
+   * @param accountSettings An instance of {@link AccountSettings} for a remote peer accountSettings.
    *
    * @return {@code true} if the link is configured to receive routes, {@code false} otherwise.
    */
-  private boolean shouldReceiveRoutes(final Account account) {
-    Objects.requireNonNull(account);
-    if (account.isChildAccount()) {
+  private boolean shouldReceiveRoutes(final AccountSettings accountSettings) {
+    Objects.requireNonNull(accountSettings);
+    if (accountSettings.isChildAccount()) {
       return SHOULD_NOT_RECEIVE_ROUTES;
     } else {
-      return account.getAccountSettings().isReceiveRoutes();
+      return accountSettings.isReceiveRoutes();
     }
   }
 
@@ -396,9 +394,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
           updatePrefix(incomingRoute.getRoutePrefix());
         });
 
-        this.accountManager.getAccount(accountId)
-          .map(Account::getAccountSettings)
-          .map(AccountSettings::getRelationship)
+        this.accountSettingsRepository.findByAccountId(accountId)
+          .map(AccountSettings::getAccountRelationship)
           .filter(accountRelationship -> accountRelationship.equals(AccountRelationship.CHILD))
           // Only do this if the relationship is CHILD...
           .ifPresent($ -> {
@@ -592,14 +589,13 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     // Determine the default Route, and add it to the local routing table.
     final Optional<AccountId> nextHopForDefaultRoute;
     if (connectorSettingsSupplier.get().getGlobalRoutingSettings().isUseParentForDefaultRoute()) {
-      nextHopForDefaultRoute = this.accountManager.getAllAccounts()
-        .filter(account -> account.isParentAccount())
-        .findFirst()
-        .map(Account::getAccountSettings)
+      nextHopForDefaultRoute = this.accountSettingsRepository.findFirstByAccountRelationship(AccountRelationship.PARENT)
         .map(AccountSettings::getAccountId)
         .map(Optional::of)
-        .orElseThrow(() -> new RuntimeException("Connector was configured to use the Parent account " +
-          "as the nextHop for the default route, but no Parent Account was configured!"));
+        .orElseThrow(() -> new RuntimeException(
+          "Connector was configured to use a Parent account as the nextHop for the default route, but no Parent " +
+            "Account was configured!"
+        ));
     } else if (connectorSettingsSupplier.get().getGlobalRoutingSettings().getDefaultRoute().isPresent()) {
       nextHopForDefaultRoute = connectorSettingsSupplier.get().getGlobalRoutingSettings().getDefaultRoute()
         .map(Optional::of)
@@ -624,15 +620,16 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
 
     // TODO: FIX THIS block per the JS impl...
     // For each local account that is a child...
-    this.accountManager.getAllAccounts()
-      .filter(Account::isChildAccount)
-      .forEach(account -> {
+    this.accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.CHILD)
+      .forEach(accountSettings -> {
+        final AccountId accountId = accountSettings.getAccountId();
         final InterledgerAddressPrefix childAddressAsPrefix =
-          InterledgerAddressPrefix.from(accountManager.toChildAddress(account.getAccountSettings().getAccountId()));
+          InterledgerAddressPrefix.from(connectorSettingsSupplier.get().toChildAddress(accountId));
+
         localRoutingTable.addRoute(
           ImmutableRoute.builder()
             .routePrefix(childAddressAsPrefix)
-            .nextHopAccountId(account.getAccountSettings().getAccountId())
+            .nextHopAccountId(accountId)
             // No Path
             .auth(HMAC(
               this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret(), childAddressAsPrefix)
@@ -664,7 +661,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
         .filter(staticRoute -> staticRoute.getTargetPrefix().equals(addressPrefix))
         .findFirst()
         // If there's a static route, then try to find the account that exists for that route...
-        .map(staticRoute -> accountManager.getAccount(staticRoute.getPeerAccountId()).orElseGet(() -> {
+        .map(staticRoute -> accountSettingsRepository.findByAccountId(staticRoute.getPeerAccountId()).orElseGet(() -> {
           logger.warn("Ignoring configured route, account does not exist. prefix={} accountId={}",
             staticRoute.getTargetPrefix(), staticRoute.getPeerAccountId());
           return null;
@@ -675,7 +672,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
           final Route route = ImmutableRoute.builder()
             .path(Collections.emptyList())
             .routePrefix(addressPrefix)
-            .nextHopAccountId(accountSettings.getAccountSettings().getAccountId())
+            .nextHopAccountId(accountSettings.getAccountId())
             .auth(HMAC(connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret(), addressPrefix))
             .build();
           return route;
@@ -713,13 +710,10 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
   public void setTrackedAccount(final RoutableAccount routableAccount) {
     Objects.requireNonNull(routableAccount);
 
-    if (
-      trackedAccounts.putIfAbsent(routableAccount.getAccount().getAccountSettings().getAccountId(), routableAccount) != null
-    ) {
-      throw new RuntimeException(String.format(
-        "AccountId `%s` is already being tracked for routing purposes",
-        routableAccount.getAccount().getAccountSettings().getAccountId()
-      ));
+    if (trackedAccounts.putIfAbsent(routableAccount.getAccountId(), routableAccount) != null) {
+      throw new RuntimeException(
+        String.format("AccountId `%s` is already being tracked for routing purposes", routableAccount.getAccountId())
+      );
     }
   }
 
@@ -758,7 +752,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
   public void onConnect(LinkConnectedEvent event) {
     // Unregister the account (associated to the link that connected) with the routing service.
     final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getLink());
-    this.registerAccount(accountId);
+    this.registerAccountWithDataLink(accountId, event.getLink());
   }
 
   /**

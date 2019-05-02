@@ -89,6 +89,15 @@ h2:
 
 ilpv4:
   connector:
+    keystore:
+      jks:
+        filename: crypto/crypto.p12
+        password: password
+        secret0_alias: secret0
+        secret0_password: password
+        # This property validates that JKS encryption is working properly via the configured startup. This value
+        # represents the plaintext value of `shh`, encrypted with the above details.
+        secret0_test: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
     #jwtTokenIssuer: https://connie.example.com
     enabledProtocols:
       blastEnabled: false
@@ -112,7 +121,7 @@ ilpv4:
         assetScale: 6
         # Whether we should broadcast routes to this peer.
         sendRoutes: true
-        # Whether we should receive and process route broadcasts from this peer.
+        # Whether we should receive and process route broadcasts fromEncodedValue this peer.
         receiveRoutes: true
         maximumPacketAmount: 10
       - id: bob
@@ -125,6 +134,6 @@ ilpv4:
         assetScale: 2
         # Whether we should broadcast routes to this peer.
         sendRoutes: true
-        # Whether we should receive and process route broadcasts from this peer.
+        # Whether we should receive and process route broadcasts fromEncodedValue this peer.
         receiveRoutes: true
         maximumPacketAmount: 100

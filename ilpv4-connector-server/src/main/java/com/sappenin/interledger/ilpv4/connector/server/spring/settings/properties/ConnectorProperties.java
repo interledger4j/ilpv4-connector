@@ -38,7 +38,9 @@ public class ConnectorProperties {
 
   public static final String NODE_ILP_ADDRESS = ILPV4_CONNECTOR_PREFIX + "nodeIlpAddress";
   public static final String GLOBAL_PREFIX = ILPV4_CONNECTOR_PREFIX + "globalPrefix";
+  public static final String ENABLED_PROTOCOLS = ILPV4_CONNECTOR_PREFIX + "enabledProtocols";
 
+  public static final String BLAST_INCOMING_AUTH_CREDENTIAL = "blast.incoming.auth_credential";
   /**
    * @deprecated This is no longer necessary because the WebSocket server config doens't engage unless BTP is enabled.
    */

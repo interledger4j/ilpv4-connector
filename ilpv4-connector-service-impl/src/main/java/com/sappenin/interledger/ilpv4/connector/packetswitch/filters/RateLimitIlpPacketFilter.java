@@ -5,12 +5,14 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.RateLimiter;
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountRateLimitSettings;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -36,16 +38,19 @@ public class RateLimitIlpPacketFilter extends AbstractPacketFilter implements Pa
    */
   public RateLimitIlpPacketFilter(
     final PacketRejector packetRejector,
-    final AccountManager accountManager
+    final AccountSettingsRepository accountSettingsRepository
   ) {
     this(packetRejector, CacheBuilder.newBuilder()
       //.maximumSize(100) // Not enabled for now in order to support many accounts.
       .expireAfterAccess(30, TimeUnit.SECONDS)
       .build(new CacheLoader<AccountId, Optional<RateLimiter>>() {
         public Optional<RateLimiter> load(final AccountId accountId) {
-          return accountManager
-            .safeGetAccount(accountId)
-            .getAccountSettings().getRateLimitSettings().getMaxPacketsPerSecond()
+          return accountSettingsRepository
+            .findByAccountId(accountId)
+            .map(AccountSettings::getRateLimitSettings)
+            .map(AccountRateLimitSettings::getMaxPacketsPerSecond)
+            .filter(Optional::isPresent)
+            .map(Optional::get)
             .map(packetsPerSecond -> RateLimiter.create(packetsPerSecond));
         }
       })

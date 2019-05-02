@@ -30,7 +30,7 @@ public class BalanceTrackerRepositoryTest {
   //  public void testSaveBob() {
   //    final AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity();
   //
-  //    accountSettingsEntity.setRelationship(AccountRelationship.PEER);
+  //    accountSettingsEntity.setAccountRelationship(AccountRelationship.PEER);
   //    accountSettingsRepository.save(accountSettingsEntity);
   //
   //    final AccountSettingsEntity retrievedAccountSettingsEntity = accountSettingsRepository.findById("foo").get();

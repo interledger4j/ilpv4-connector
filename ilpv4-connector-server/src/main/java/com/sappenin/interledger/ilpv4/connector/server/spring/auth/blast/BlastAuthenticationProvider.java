@@ -8,12 +8,15 @@ import com.auth0.spring.security.api.authentication.JwtAuthentication;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
-import org.interledger.connector.accounts.Account;
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.link.Link;
 import org.interledger.connector.link.blast.BlastLinkSettings;
+import org.interledger.connector.link.blast.IncomingLinkSettings;
+import org.interledger.connector.link.blast.tokenSettings.SharedSecretTokenSettings;
+import org.interledger.crypto.Decryptor;
+import org.interledger.crypto.EncryptedSecret;
+import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -22,13 +25,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import static org.interledger.connector.link.blast.BlastHeaders.BLAST_AUDIENCE;
-
 /**
- * <p>An {@link AuthenticationProvider} that accepts a JWT Bearer token (as configured in Link settings) for a
+ * <p>An {@link AuthenticationProvider} that accepts a JWT_HS_256 Bearer token (as configured in Link settings) for a
  * particular account.</p>
  *
  * <p>Note that this implementation wraps an individual instance of {@link JwtAuthenticationProvider} for each
@@ -38,29 +40,51 @@ public class BlastAuthenticationProvider implements AuthenticationProvider {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  private final AccountManager accountManager;
+  private final Decryptor decryptor;
   private final LoadingCache<AccountId, JwtAuthenticationProvider> jwtAuthenticationProviders;
 
   public BlastAuthenticationProvider(
-    final Supplier<ConnectorSettings> connectorSettingsSupplier, final AccountManager accountManager
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final Decryptor decryptor,
+    final AccountSettingsRepository accountSettingsRepository
   ) {
-    Objects.requireNonNull(connectorSettingsSupplier);
-    this.accountManager = Objects.requireNonNull(accountManager);
 
-    // TODO: For a client-mode, we probably don't want to construct new instances of JwtVerifier, but for now we
+    Objects.requireNonNull(connectorSettingsSupplier);
+    this.decryptor = Objects.requireNonNull(decryptor);
+
+    // TODO: We don't want to construct new instances of JwtVerifier for every account connection, but for now we
     //  don't want to replicate all the logic of the underlying library, so we just use a cache to help reduce
     //  instantiations.
     jwtAuthenticationProviders = CacheBuilder.newBuilder()
-      .maximumSize(100)
-      .expireAfterWrite(10, TimeUnit.MINUTES)
+      .maximumSize(500)
+      .expireAfterWrite(5, TimeUnit.MINUTES)
       .build(
         new CacheLoader<AccountId, JwtAuthenticationProvider>() {
           public JwtAuthenticationProvider load(final AccountId accountId) {
             Objects.requireNonNull(accountId);
-            final BlastLinkSettings blastLinkSettings = lookupBlastLinkSettings(accountId);
-            final byte[] secret = blastLinkSettings.getIncomingAccountSecret().getBytes();
-            final String issuer = connectorSettingsSupplier.get().getJwtTokenIssuer().toString();
-            return new JwtAuthenticationProvider(secret, issuer, BLAST_AUDIENCE);
+            final AccountSettingsEntity accountSettings = accountSettingsRepository.safeFindByAccountId(accountId);
+
+            // Discover the BlastSettings
+            final BlastLinkSettings blastLinkSettings = BlastLinkSettings
+              .fromCustomSettings(accountSettings.getCustomSettings())
+              .linkType(accountSettings.getLinkType())
+              .build();
+
+            final BlastLinkSettings.AuthType authType = blastLinkSettings.incomingBlastLinkSettings().authType();
+            if (BlastLinkSettings.AuthType.JWT_HS_256.equals(authType)) {
+              final IncomingLinkSettings incomingLinkSettings = blastLinkSettings.incomingBlastLinkSettings();
+              return new JwtAuthenticationProvider(
+                // secret
+                determineSharedSecret(incomingLinkSettings),
+                // The issuer of the token is generally the URL of the remote connector.
+                incomingLinkSettings.tokenIssuer().toString(),
+                // The audience of the token is generally _this_ connector.
+                incomingLinkSettings.tokenAudience()
+              );
+
+            } else {
+              throw new RuntimeException("Unsupported AuthType: " + authType);
+            }
           }
         });
   }
@@ -81,10 +105,8 @@ public class BlastAuthenticationProvider implements AuthenticationProvider {
     } catch (Exception e) {
       if (BadCredentialsException.class.isAssignableFrom(e.getCause().getClass())) {
         throw e;
-      }
-      //else if()
-      else {
-        throw new BadCredentialsException("Not a valid Token");
+      } else {
+        throw new BadCredentialsException("Not a valid Token", e);
       }
     }
   }
@@ -95,23 +117,22 @@ public class BlastAuthenticationProvider implements AuthenticationProvider {
   }
 
   /**
-   * Finds the BLAST shared secret for the specified accountId.
+   * Load the shared-secret by decrypting it using the currently configured {@link Decryptor}.
    *
-   * TODO: Get this from vault instead...
+   * @param sharedSecretTokenSettings The {@link SharedSecretTokenSettings} to lookup the shared secret.
    *
-   * @param accountId The {@link AccountId} to lookup account settings for.
-   *
-   * @return An instance of {@link BlastLinkSettings}.
-   */
-  private BlastLinkSettings lookupBlastLinkSettings(final AccountId accountId) {
-    Objects.requireNonNull(accountId);
+   * @return A {@link String} representing the encoded secret that contains an encrypted shared-secret.
+   **/
+  private byte[] determineSharedSecret(final SharedSecretTokenSettings sharedSecretTokenSettings) {
+    Objects.requireNonNull(sharedSecretTokenSettings);
 
-    return accountManager.getAccount(accountId)
-      .map(Account::getLink)
-      .map(Link::getLinkSettings)
-      .map(link -> (BlastLinkSettings) link)
+    return Optional.of(sharedSecretTokenSettings)
+      //.map(BlastLinkSettings::incomingBlastLinkSettings)
+      .map(SharedSecretTokenSettings::encryptedTokenSharedSecret)
+      .map(EncryptedSecret::fromEncodedValue)
+      .map(decryptor::decrypt)
       .orElseThrow(() -> new BadCredentialsException(
-        String.format("No account found for `%s`", accountId.value())
+        String.format("No account found for `%s`", sharedSecretTokenSettings.tokenSubject())
       ));
   }
 }

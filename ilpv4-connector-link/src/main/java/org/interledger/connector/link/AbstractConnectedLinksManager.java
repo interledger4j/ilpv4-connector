@@ -15,7 +15,11 @@ import java.util.stream.Stream;
 /**
  * An abstract implementation of {@link ConnectedLinksManager} that holds onto a link as long as its connected, and
  * removes the link upon a disconnect.
+ *
+ * @deprecated Consider Link tracking in more detail. There's an argument that we don't need to track Link connections,
+ * instead just rejecting if a send fails. In that world, this manager could go away.
  */
+@Deprecated
 public abstract class AbstractConnectedLinksManager implements ConnectedLinksManager, LinkEventListener {
 
   protected final Logger logger = LoggerFactory.getLogger(this.getClass());

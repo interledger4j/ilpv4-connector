@@ -7,10 +7,10 @@ import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.LinkType;
+import org.interledger.ilpv4.connector.persistence.AccountRelationshipConverter;
 import org.interledger.ilpv4.connector.persistence.HashMapConverter;
 import org.interledger.ilpv4.connector.persistence.LinkTypeConverter;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
-import org.springframework.data.redis.core.RedisHash;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -20,23 +20,25 @@ import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.Table;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 
-import static org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity.ACCOUNT_SETTINGS;
+import static org.interledger.ilpv4.connector.persistence.entities.DataConstants.ColumnNames.ACCOUNT_RELATIONSHIP;
+import static org.interledger.ilpv4.connector.persistence.entities.DataConstants.IndexNames.ACCT_REL_IDX;
+import static org.interledger.ilpv4.connector.persistence.entities.DataConstants.TableNames.ACCOUNT_SETTINGS;
 
 @Entity
 @EnableJpaAuditing
 @Access(AccessType.FIELD)
-@Table(name = ACCOUNT_SETTINGS)
-@RedisHash(ACCOUNT_SETTINGS)
+@Table(name = ACCOUNT_SETTINGS, indexes = {
+  @Index(name = ACCT_REL_IDX, columnList = ACCOUNT_RELATIONSHIP)
+})
+//@RedisHash(ACCOUNT_SETTINGS)
 public class AccountSettingsEntity implements AccountSettings {
-
-  public static final String ACCOUNT_SETTINGS = "ACCOUNT_SETTINGS";
 
   @Id
   @GeneratedValue
@@ -45,16 +47,21 @@ public class AccountSettingsEntity implements AccountSettings {
 
   @NaturalId
   @Column(name = "NATURAL_ID")
-  private UUID naturalId;
+  private String naturalId;
 
   private String description;
+
   private boolean internal;
-  private boolean preconfigured;
+
+  @Column(name = "CONNECTION_INITIATOR")
+  private boolean connectionInitiator;
 
   @Column(name = "ILP_ADDR_SEGMENT")
   private String ilpAddressSegment;
 
-  private AccountRelationship relationship;
+  @Column(name = "ACCOUNT_RELATIONSHIP")
+  @Convert(converter = AccountRelationshipConverter.class)
+  private AccountRelationship accountRelationship;
 
   @Column(name = "LINK_TYPE")
   @Convert(converter = LinkTypeConverter.class)
@@ -79,6 +86,7 @@ public class AccountSettingsEntity implements AccountSettings {
   private boolean receiveRoutes;
 
   @Convert(converter = HashMapConverter.class)
+  @Column(name = "CUSTOM_SETTINGS", length = 8196)
   private Map<String, Object> customSettings;
 
   /**
@@ -90,14 +98,12 @@ public class AccountSettingsEntity implements AccountSettings {
   public AccountSettingsEntity(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
 
-    // TODO: Consider making AccountId a UUID, or else make naturalId a String.
-    this.naturalId = UUID.fromString(accountSettings.getAccountId().value());
-
+    this.naturalId = accountSettings.getAccountId().value();
     this.description = accountSettings.getDescription();
     this.internal = accountSettings.isInternal();
-    this.preconfigured = accountSettings.isPreconfigured();
+    this.connectionInitiator = accountSettings.isConnectionInitiator();
     this.ilpAddressSegment = accountSettings.getIlpAddressSegment().orElse(null);
-    this.relationship = accountSettings.getRelationship();
+    this.accountRelationship = accountSettings.getAccountRelationship();
     this.linkType = accountSettings.getLinkType();
     this.assetCode = accountSettings.getAssetCode();
     this.assetScale = accountSettings.getAssetScale();
@@ -111,14 +117,14 @@ public class AccountSettingsEntity implements AccountSettings {
 
   @Override
   public AccountId getAccountId() {
-    return AccountId.of(getNaturalId().toString());
+    return AccountId.of(getNaturalId());
   }
 
   public Long getId() {
     return this.id;
   }
 
-  public UUID getNaturalId() {
+  public String getNaturalId() {
     return naturalId;
   }
 
@@ -141,12 +147,12 @@ public class AccountSettingsEntity implements AccountSettings {
   }
 
   @Override
-  public boolean isPreconfigured() {
-    return preconfigured;
+  public boolean isConnectionInitiator() {
+    return connectionInitiator;
   }
 
-  public void setPreconfigured(boolean preconfigured) {
-    this.preconfigured = preconfigured;
+  public void setConnectionInitiator(boolean connectionInitiator) {
+    this.connectionInitiator = connectionInitiator;
   }
 
   @Override
@@ -159,12 +165,12 @@ public class AccountSettingsEntity implements AccountSettings {
   }
 
   @Override
-  public AccountRelationship getRelationship() {
-    return relationship;
+  public AccountRelationship getAccountRelationship() {
+    return accountRelationship;
   }
 
-  public void setRelationship(AccountRelationship relationship) {
-    this.relationship = relationship;
+  public void setAccountRelationship(AccountRelationship accountRelationship) {
+    this.accountRelationship = accountRelationship;
   }
 
   @Override
@@ -212,6 +218,10 @@ public class AccountSettingsEntity implements AccountSettings {
     this.balanceSettings = balanceSettings;
   }
 
+  public AccountBalanceSettingsEntity getBalanceSettingsEntity() {
+    return balanceSettings;
+  }
+
   @Override
   public AccountRateLimitSettings getRateLimitSettings() {
     return rateLimitSettings;
@@ -219,6 +229,10 @@ public class AccountSettingsEntity implements AccountSettings {
 
   public void setRateLimitSettings(AccountRateLimitSettingsEntity rateLimitSettings) {
     this.rateLimitSettings = rateLimitSettings;
+  }
+
+  public AccountRateLimitSettingsEntity getRateLimitSettingsEntity() {
+    return rateLimitSettings;
   }
 
   @Override

@@ -1,7 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -10,10 +10,10 @@ import java.util.Objects;
  * A {@link Comparator} for comparing two instances of {@link IncomingRoute}.
  */
 class RoutingTableEntryComparator implements Comparator<IncomingRoute> {
-  private final AccountManager accountManager;
+  private final AccountSettingsRepository accountSettingsRepository;
 
-  public RoutingTableEntryComparator(final AccountManager accountManager) {
-    this.accountManager = Objects.requireNonNull(accountManager);
+  public RoutingTableEntryComparator(final AccountSettingsRepository accountSettingsRepository) {
+    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
   }
 
   @Override
@@ -59,10 +59,10 @@ class RoutingTableEntryComparator implements Comparator<IncomingRoute> {
   @Deprecated
   @VisibleForTesting
   protected int getWeight(final IncomingRoute route) {
-    return this.accountManager.getAccount(route.getPeerAccountId())
+    return this.accountSettingsRepository.findByAccountId(route.getPeerAccountId())
       .orElseThrow(() -> new RuntimeException(
         String.format("Account should have existed: %s", route.getPeerAccountId())
       ))
-      .getAccountSettings().getRelationship().getWeight();
+      .getAccountRelationship().getWeight();
   }
 }

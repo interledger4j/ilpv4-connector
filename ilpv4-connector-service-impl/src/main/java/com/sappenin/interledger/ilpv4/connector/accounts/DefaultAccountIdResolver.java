@@ -26,7 +26,7 @@ public class DefaultAccountIdResolver implements BtpAccountIdResolver, BlastAcco
       return link.getLinkId()
         .map(LinkId::value)
         .map(AccountId::of)
-        .orElseThrow(() -> new RuntimeException("All connected Plugins MUST have a pluginId!"));
+        .orElseThrow(() -> new RuntimeException("All connected Plugins MUST have a LinkId!"));
     } else {
       // If a Plugin is disconnected, then throw an exception.
       throw new RuntimeException("Disconnected Plugins do not have an associated account!");

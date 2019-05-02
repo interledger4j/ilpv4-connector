@@ -2,7 +2,6 @@ package com.sappenin.interledger.ilpv4.connector.routing;
 
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteControlRequest;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteUpdateRequest;
@@ -26,6 +25,7 @@ import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -96,7 +96,7 @@ public class CcpSenderReceiverTest {
   // connectorB
   /////////////
   @Mock
-  private AccountManager connectorAAccountManagerMock;
+  private AccountSettingsRepository connectorA_AccountSettingsRepository;
   private ConnectorSettings connectorA_ConnectorSettings;
   private SimulatedConnector connectorA;
 
@@ -104,7 +104,7 @@ public class CcpSenderReceiverTest {
   // ConnectorB
   /////////////
   @Mock
-  private AccountManager connectorB_AccountManagerMock;
+  private AccountSettingsRepository connectorB_AccountSettingsRepository;
   private ConnectorSettings connectorB_ConnectorSettings;
   private SimulatedConnector connectorB;
 
@@ -139,7 +139,8 @@ public class CcpSenderReceiverTest {
         new InMemoryIncomingRouteForwardRoutingTable();
       final CcpSender ccpSender = new DefaultCcpSender(
         () -> connectorA_ConnectorSettings, CONNECTOR_B_ACCOUNT, linkRunningOnA,
-        routeUpdateForwardingRoutingTable, connectorAAccountManagerMock, codecContext
+        routeUpdateForwardingRoutingTable, connectorA_AccountSettingsRepository,
+        codecContext
       );
       final CcpReceiver ccpReceiver =
         new DefaultCcpReceiver(() -> connectorA_ConnectorSettings, CONNECTOR_B_ACCOUNT, linkRunningOnA,
@@ -161,9 +162,8 @@ public class CcpSenderReceiverTest {
       final ForwardingRoutingTable<IncomingRoute> incomingRouteForwardingRoutingTable =
         new InMemoryIncomingRouteForwardRoutingTable();
       final CcpSender ccpSender = new DefaultCcpSender(
-        () -> connectorB_ConnectorSettings,
-        CONNECTOR_A_ACCOUNT, linkRunningOnB, routeUpdateForwardingRoutingTable,
-        connectorB_AccountManagerMock, codecContext
+        () -> connectorB_ConnectorSettings, CONNECTOR_A_ACCOUNT, linkRunningOnB, routeUpdateForwardingRoutingTable,
+        connectorB_AccountSettingsRepository, codecContext
       );
       final CcpReceiver ccpReceiver =
         new DefaultCcpReceiver(() -> connectorB_ConnectorSettings, CONNECTOR_A_ACCOUNT, linkRunningOnB,

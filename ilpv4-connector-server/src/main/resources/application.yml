@@ -63,6 +63,8 @@ h2:
 
 ilpv4:
   connector:
+    keystore:
+      platform: jks
     btp.enabled: false
     jwtTokenIssuer: https://CHANGEME.example.com
     enabledProtocols:

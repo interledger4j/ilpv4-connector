@@ -1,10 +1,10 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch;
 
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -21,13 +21,13 @@ public class InterledgerAddressUtils {
   private static final boolean NOT_ALLOWED = false;
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
-  private final AccountManager accountManager;
+  private final AccountSettingsRepository accountSettingsRepository;
 
   public InterledgerAddressUtils(
-    final Supplier<ConnectorSettings> connectorSettingsSupplier, final AccountManager accountManager
+    final Supplier<ConnectorSettings> connectorSettingsSupplier, final AccountSettingsRepository accountSettingsRepository
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
-    this.accountManager = Objects.requireNonNull(accountManager);
+    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
   }
 
   /**
@@ -83,13 +83,13 @@ public class InterledgerAddressUtils {
       return ALLOWED; // Ping allowed.
     } else if (destinationAddress.startsWith(InterledgerAddressPrefix.PRIVATE.getValue())) {
       // Only internal accounts can send to a `private` address prefix.
-      return accountManager.isInternal(sourceAccountId).orElse(NOT_ALLOWED);
+      return accountSettingsRepository.isInternal(sourceAccountId).orElse(NOT_ALLOWED);
     } else if (destinationAddress.startsWith(InterledgerAddressPrefix.PEER.getValue())) {
       // Only external accounts can send to a `peer.` address prefix.
-      return accountManager.isNotInternal(sourceAccountId).orElse(NOT_ALLOWED);
+      return accountSettingsRepository.isNotInternal(sourceAccountId).orElse(NOT_ALLOWED);
     } else if (destinationAddress.startsWith(InterledgerAddressPrefix.SELF.getValue())) {
       // Only internal accounts can send to a `self.` address prefix.
-      return accountManager.isInternal(sourceAccountId).orElse(NOT_ALLOWED);
+      return accountSettingsRepository.isInternal(sourceAccountId).orElse(NOT_ALLOWED);
     } //else if (destinationAddress.startsWith(InterledgerAddressPrefix.LOCAL.getValue())) {
     //  REJECT: For now, this isn't supported.
     //}

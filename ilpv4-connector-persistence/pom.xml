@@ -17,10 +17,6 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>ilpv4-connector-model</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-accounts</artifactId>
     </dependency>
     <dependency>
@@ -29,30 +25,37 @@
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
+      <artifactId>jackson-core</artifactId>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
+      <artifactId>jackson-databind</artifactId>
     </dependency>
+    <!--    <dependency>-->
+    <!--      <groupId>com.fasterxml.jackson.datatype</groupId>-->
+    <!--      <artifactId>jackson-datatype-jdk8</artifactId>-->
+    <!--    </dependency>-->
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
-<!--    <dependency>-->
-<!--      <groupId>com.h2database</groupId>-->
-<!--      <artifactId>h2</artifactId>-->
-<!--      <scope>runtime</scope>-->
-<!--    </dependency>-->
+    <!-- Database (H2) -->
     <dependency>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <artifactId>jackson-datatype-jdk8</artifactId>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
     </dependency>
-<!--    <dependency>-->
-<!--      <groupId>com.github.kstyrc</groupId>-->
-<!--      <artifactId>embedded-redis</artifactId>-->
-<!--      <scope>test</scope>-->
-<!--    </dependency>-->
+    <!-- DataSource (HikariCP) -->
+    <!-- TODO Enable Hikari-->
+    <!--    <dependency>-->
+    <!--      <groupId>com.zaxxer</groupId>-->
+    <!--      <artifactId>HikariCP</artifactId>-->
+    <!--    </dependency>-->
+
+    <!-- JPA Provider (Hibernate)-->
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-entitymanager</artifactId>
+    </dependency>
     <dependency>
       <groupId>javax.persistence</groupId>
       <artifactId>javax.persistence-api</artifactId>
@@ -99,10 +102,6 @@
       <artifactId>spring-data-commons</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.springframework.data</groupId>
-      <artifactId>spring-data-redis</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-beans</artifactId>
     </dependency>
@@ -115,35 +114,18 @@
       <artifactId>spring-boot-starter-data-redis</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.springframework.data</groupId>
+      <artifactId>spring-data-redis</artifactId>
+    </dependency>
+    <!--    <dependency>-->
+    <!--      <groupId>com.github.kstyrc</groupId>-->
+    <!--      <artifactId>embedded-redis</artifactId>-->
+    <!--      <scope>test</scope>-->
+    <!--    </dependency>-->
+    <dependency>
       <groupId>redis.clients</groupId>
       <artifactId>jedis</artifactId>
     </dependency>
   </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.1.1</version>
-        <executions>
-          <execution>
-            <id>analyze</id>
-            <goals>
-              <goal>analyze-only</goal>
-            </goals>
-            <configuration>
-              <failOnWarning>true</failOnWarning>
-              <ignoredDependencies>
-                <ignoredDependency>${project.groupId}:ilpv4-connector-model</ignoredDependency>
-                <ignoredDependency>org.springframework.boot:spring-boot-starter-data-redis</ignoredDependency>
-                <ignoredDependency>redis.clients:jedis</ignoredDependency>
-              </ignoredDependencies>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 
 </project>

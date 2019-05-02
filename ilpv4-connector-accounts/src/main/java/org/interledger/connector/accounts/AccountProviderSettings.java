@@ -11,7 +11,7 @@ import java.util.Optional;
 /**
  * Tracks settings for a given Connector <tt>account provider</tt>, which allows a Connector to define Account
  * attributes on-the-fly for any new incoming connection that supports. Examples of an AccountProvider include a BTP
- * server, where connecting to a new account requires settings and other default information that very account sould
+ * server, where connecting to a new account requires settings and other default information that every account should
  * support.
  */
 public interface AccountProviderSettings {

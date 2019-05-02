@@ -1,9 +1,9 @@
 package com.sappenin.interledger.ilpv4.connector.balances;
 
 import com.google.common.collect.Maps;
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,17 +24,20 @@ public class InMemoryBalanceTracker implements BalanceTracker {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  private final AccountManager accountManager;
+  private final AccountSettingsRepository accountSettingsRepository;
+  //private final AccountManager accountManager;
   private final Map<AccountId, AtomicInteger> balances;
 
-  public InMemoryBalanceTracker(final AccountManager accountManager) {
+  public InMemoryBalanceTracker(final AccountSettingsRepository accountSettingsRepository) {
     this.balances = Maps.newConcurrentMap();
-    this.accountManager = Objects.requireNonNull(accountManager);
+    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
   }
 
   @Override
-  public AccountBalance getBalance(AccountId accountId) {
-    final AccountSettings accountSettings = accountManager.safeGetAccount(accountId).getAccountSettings();
+  public AccountBalance getBalance(final AccountId accountId) {
+    Objects.requireNonNull(accountId);
+
+    final AccountSettings accountSettings = accountSettingsRepository.safeFindByAccountId(accountId);
 
     final AtomicInteger currentAmount = this.getBalanceNumber(accountId);
 

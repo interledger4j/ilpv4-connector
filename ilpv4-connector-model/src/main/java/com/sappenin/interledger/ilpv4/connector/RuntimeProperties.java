@@ -1,5 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector;
 
+import org.interledger.crypto.KeyStoreType;
+
 public interface RuntimeProperties {
 
   String DB = "db";
@@ -31,6 +33,12 @@ public interface RuntimeProperties {
 
     //Add this profile if running in Google Cloud Platform.
     String GCP = "gcp";
+  }
+
+  interface Keystores {
+    String GCP_KMS = KeyStoreType.GCP.getKeystoreId();
+    String JAVA_KEY_STORE = KeyStoreType.JKS.getKeystoreId();
+    String VAULT = KeyStoreType.VAULT.getKeystoreId();
   }
 
   interface Databases {
