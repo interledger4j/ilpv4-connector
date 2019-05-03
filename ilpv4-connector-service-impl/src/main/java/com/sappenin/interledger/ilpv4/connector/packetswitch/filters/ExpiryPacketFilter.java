@@ -48,8 +48,8 @@ public class ExpiryPacketFilter extends AbstractPacketFilter implements PacketSw
       throw (RuntimeException) e.getCause();
     } catch (TimeoutException e) {
       logger.error(e.getMessage(), e);
-      return reject(sourceAccountId, sourcePreparePacket,
-        InterledgerErrorCode.R00_TRANSFER_TIMED_OUT, "Transfer Timed-out"
+      return reject(
+        sourceAccountId, sourcePreparePacket, InterledgerErrorCode.R00_TRANSFER_TIMED_OUT, "Transfer Timed-out"
       );
     }
   }

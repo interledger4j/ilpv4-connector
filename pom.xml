@@ -44,11 +44,11 @@
   <modules>
     <module>ilpv4-api</module>
     <module>ilpv4-connector-core</module>
+    <module>ilpv4-connector-crypto</module>
+    <module>ilpv4-connector-crypto/connector-crypto-cli</module>
     <module>ilpv4-connector-accounts</module>
     <module>ilpv4-connector-link</module>
     <module>ilpv4-connector-link-blast</module>
-    <module>ilpv4-connector-crypto</module>
-    <module>ilpv4-connector-crypto/connector-crypto-cli</module>
     <module>ilpv4-connector-model</module>
     <module>ilpv4-connector-jackson</module>
     <module>ilpv4-connector-routing-api</module>

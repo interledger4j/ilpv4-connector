@@ -13,12 +13,14 @@ import com.sappenin.interledger.ilpv4.connector.accounts.BtpAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountSettingsResolver;
-import com.sappenin.interledger.ilpv4.connector.accounts.DefaultLinkManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.balances.InMemoryBalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.fx.JavaMoneyUtils;
+import com.sappenin.interledger.ilpv4.connector.links.DefaultLinkManager;
+import com.sappenin.interledger.ilpv4.connector.links.DefaultLinkSettingsFactory;
 import com.sappenin.interledger.ilpv4.connector.links.DefaultNextHopPacketMapper;
+import com.sappenin.interledger.ilpv4.connector.links.LinkSettingsFactory;
 import com.sappenin.interledger.ilpv4.connector.links.NextHopPacketMapper;
 import com.sappenin.interledger.ilpv4.connector.links.filters.LinkFilter;
 import com.sappenin.interledger.ilpv4.connector.links.filters.OutgoingBalanceLinkFilter;
@@ -158,18 +160,30 @@ public class SpringConnectorConfig {
   }
 
   @Bean
+  LinkSettingsFactory linkSettingsFactory() {
+    return new DefaultLinkSettingsFactory();
+  }
+
+  @Bean
   LinkEventEmitter linkEventEmitter(EventBus eventBus) {
     return new AbstractLink.EventBusEventEmitter(eventBus);
   }
 
   @Bean
   LinkManager linkManager(
-    EventBus eventBus, LinkFactoryProvider linkFactoryProvider, AccountIdResolver accountIdResolver,
+    EventBus eventBus,
+    LinkSettingsFactory linkSettingsFactory,
+    LinkFactoryProvider linkFactoryProvider,
+    AccountIdResolver accountIdResolver,
     CircuitBreakerConfig circuitBreakerConfig
   ) {
     return new DefaultLinkManager(
       () -> connectorSettingsSupplier().get().getOperatorAddress(),
-      linkFactoryProvider, accountIdResolver, circuitBreakerConfig, eventBus
+      linkSettingsFactory,
+      linkFactoryProvider,
+      accountIdResolver,
+      accountSettingsRepository, circuitBreakerConfig,
+      eventBus
     );
   }
 
@@ -189,7 +203,8 @@ public class SpringConnectorConfig {
     AccountSettingsRepository accountSettingsRepository,
     LinkManager linkManager
   ) {
-    return new DefaultAccountManager(connectorSettingsSupplier, accountSettingsRepository, linkManager);
+    return new DefaultAccountManager(connectorSettingsSupplier, accountSettingsRepository, linkManager,
+      conversionService);
   }
 
   @Bean
@@ -235,9 +250,7 @@ public class SpringConnectorConfig {
 
   @Bean
   PacketRejector packetRejector(final Supplier<ConnectorSettings> connectorSettingsSupplier) {
-    final Supplier<InterledgerAddress> operatorAddressSupplier =
-      () -> connectorSettingsSupplier.get().getOperatorAddressSafe();
-    return new PacketRejector(operatorAddressSupplier);
+    return new PacketRejector(() -> connectorSettingsSupplier.get().getOperatorAddress());
   }
 
   @Bean
@@ -253,7 +266,7 @@ public class SpringConnectorConfig {
     final Supplier<InterledgerAddress> operatorAddressSupplier =
       () -> connectorSettingsSupplier().get().getOperatorAddressSafe();
 
-    final ImmutableList.Builder<PacketSwitchFilter> filterList = ImmutableList.<PacketSwitchFilter>builder();
+    final ImmutableList.Builder<PacketSwitchFilter> filterList = ImmutableList.builder();
 
     if (connectorSettings.getEnabledFeatures().isRateLimitingEnabled()) {
       filterList.add(new RateLimitIlpPacketFilter(packetRejector, accountSettingsRepository));// Limits Data packets...
@@ -344,6 +357,7 @@ public class SpringConnectorConfig {
     ExternalRoutingService externalRoutingService,
     ILPv4PacketSwitch ilpPacketSwitch,
     BalanceTracker balanceTracker,
+    LinkSettingsFactory linkSettingsFactory,
     EventBus eventBus
   ) {
     return new DefaultILPv4Connector(
@@ -355,6 +369,7 @@ public class SpringConnectorConfig {
       externalRoutingService,
       ilpPacketSwitch,
       balanceTracker,
+      linkSettingsFactory,
       eventBus
     );
   }

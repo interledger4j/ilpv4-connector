@@ -1,10 +1,13 @@
-package com.sappenin.interledger.ilpv4.connector.accounts;
+package com.sappenin.interledger.ilpv4.connector.links;
 
 import com.google.common.collect.Maps;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.sappenin.interledger.ilpv4.connector.accounts.AccountIdResolver;
+import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.AbstractLink;
 import org.interledger.connector.link.CircuitBreakingLink;
 import org.interledger.connector.link.Link;
@@ -16,9 +19,7 @@ import org.interledger.connector.link.events.LinkDisconnectedEvent;
 import org.interledger.connector.link.events.LinkErrorEvent;
 import org.interledger.connector.link.events.LinkEventListener;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.core.InterledgerErrorCode;
-import org.interledger.core.InterledgerProtocolException;
-import org.interledger.core.InterledgerRejectPacket;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,11 +39,16 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final AccountIdResolver accountIdResolver;
-  private final Map<AccountId, Link<?>> connectedLinks = Maps.newConcurrentMap();
+  // Note that HTTP links don't "connect" per-se (meaning they don't strictly need to be tracked) but Websocket
+  // client-links _do_ need to be tracked so we know if a remote client has connected to us (this manager won't be
+  // able to initiate that type of connection).
+  private final Map<AccountId, Link<? extends LinkSettings>> connectedLinks = Maps.newConcurrentMap();
 
   private final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier;
 
   private final LinkFactoryProvider linkFactoryProvider;
+  private final LinkSettingsFactory linkSettingsFactory;
+  private final AccountSettingsRepository accountSettingsRepository;
 
   private final CircuitBreakerConfig defaultCircuitBreakerConfig;
 
@@ -51,20 +57,39 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
    */
   public DefaultLinkManager(
     final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
+    final LinkSettingsFactory linkSettingsFactory,
     final LinkFactoryProvider linkFactoryProvider,
     final AccountIdResolver accountIdResolver,
-    final CircuitBreakerConfig defaultCircuitBreakerConfig,
+    AccountSettingsRepository accountSettingsRepository, final CircuitBreakerConfig defaultCircuitBreakerConfig,
     final EventBus eventBus
   ) {
     this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
+    this.linkSettingsFactory = Objects.requireNonNull(linkSettingsFactory);
     this.linkFactoryProvider = Objects.requireNonNull(linkFactoryProvider);
-    this.accountIdResolver = accountIdResolver;
+    this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
+    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.defaultCircuitBreakerConfig = Objects.requireNonNull(defaultCircuitBreakerConfig);
     Objects.requireNonNull(eventBus).register(this);
   }
 
   @Override
-  public Link<?> createLink(final AccountId accountId, final LinkSettings linkSettings, final boolean connect) {
+  public Link<? extends LinkSettings> getOrCreateLink(final AccountId accountId) {
+    return Optional.ofNullable(this.connectedLinks.get(accountId))
+      .orElseGet(() -> {
+        final AccountSettings accountSettings = accountSettingsRepository.safeFindByAccountId(accountId);
+        return this.getOrCreateLink(accountSettings);
+      });
+  }
+
+  @Override
+  public Link<? extends LinkSettings> getOrCreateLink(final AccountSettings accountSettings) {
+    Objects.requireNonNull(accountSettings);
+    final LinkSettings linkSettings = linkSettingsFactory.construct(accountSettings);
+    return this.getOrCreateLink(accountSettings.getAccountId(), linkSettings);
+  }
+
+  @Override
+  public Link<? extends LinkSettings> getOrCreateLink(final AccountId accountId, final LinkSettings linkSettings) {
     Objects.requireNonNull(accountId);
     Objects.requireNonNull(linkSettings);
 
@@ -86,32 +111,14 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
     //  configurable from the account settings, which in this case should propagate to the link settings.
     // Wrap the Link in a CircuitBreaker.
     final CircuitBreakingLink circuitBreakingLink = new CircuitBreakingLink(link, defaultCircuitBreakerConfig);
-    if (connect) {
-      try {
-        circuitBreakingLink.connect().get();
-        return circuitBreakingLink;
-      } catch (InterruptedException | ExecutionException e) {
-        throw new RuntimeException(e);
-      }
+    try {
+      circuitBreakingLink.connect().get();
+      return circuitBreakingLink;
+    } catch (InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
     }
-    return circuitBreakingLink;
   }
 
-  @Override
-  public Optional<Link<?>> getConnectedLink(AccountId accountId) {
-    return Optional.ofNullable(this.connectedLinks.get(accountId));
-  }
-
-  @Override
-  public Link<?> getConnectedLinkSafe(AccountId accountId) {
-    return Optional.ofNullable(this.connectedLinks.get(accountId))
-      .orElseThrow(() -> new InterledgerProtocolException(
-        InterledgerRejectPacket.builder()
-          .triggeredBy(operatorAddressSupplier.get())
-          .code(InterledgerErrorCode.T01_PEER_UNREACHABLE)
-          .build()
-      ));
-  }
 
   @Override
   public Set<Link<?>> getAllConnectedLinks() {

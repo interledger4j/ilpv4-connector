@@ -21,7 +21,7 @@ import java.util.function.Supplier;
  */
 public class BlastLink extends AbstractLink<BlastLinkSettings> implements PingableLink<BlastLinkSettings> {
 
-  public static final String LINK_TYPE_STRING = "BlastLink";
+  public static final String LINK_TYPE_STRING = "BLAST";
   public static final LinkType LINK_TYPE = LinkType.of(LINK_TYPE_STRING);
 
   // Note: The RestTemplate in this sender is shared between all links...

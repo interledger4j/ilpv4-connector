@@ -47,8 +47,6 @@ public class ConnectorSettingsFromPropertyFileTest {
     assertThat(connectorSettings.getOperatorAddressSafe(), is(InterledgerAddress.of("test.example")));
     assertThat(connectorSettings.getGlobalPrefix(), is(InterledgerAddressPrefix.of("test")));
 
-    assertThat(connectorSettings.getJwtTokenIssuer(), is(HttpUrl.parse("https://example.com")));
-
     // Enabled Protocol Settings
     final EnabledProtocolSettings enabledProtocolSettings = connectorSettings.getEnabledProtocols();
     assertThat(enabledProtocolSettings.isBlastEnabled(), is(true));

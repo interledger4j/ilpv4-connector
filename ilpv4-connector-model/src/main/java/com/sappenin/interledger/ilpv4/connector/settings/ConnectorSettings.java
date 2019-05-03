@@ -1,14 +1,10 @@
 package com.sappenin.interledger.ilpv4.connector.settings;
 
-import okhttp3.HttpUrl;
 import org.immutables.value.Value;
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountProviderSettings;
-import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -19,7 +15,6 @@ import java.util.Optional;
 public interface ConnectorSettings {
 
   String OVERRIDE_BEAN_NAME = "ilpv4.connector.connectorSettingsOverride";
-  String BEAN_NAME = "ilpv4.connector.connectorSettings";
 
   /**
    * The ILP Address of this connector. Note that this may be `empty` during startup, in which case the Connector will
@@ -60,22 +55,7 @@ public interface ConnectorSettings {
   default boolean websocketServerEnabled() {
     return false;
   }
-
-  /**
-   * The JWT token issuer used for all HTTP endpoints.
-   *
-   * @return
-   *
-   * @deprecated This value will be removed in a future release and moved into an HTTP settings object.
-   */
-  @Deprecated
-  @Value.Default
-  default HttpUrl getJwtTokenIssuer() {
-    // This is fine as a default. If BLAST is enabled, then this will be set overtly. If BLAST is disabled, then this
-    // setting is unused.
-    return HttpUrl.parse("https://example.com");
-  }
-
+  
   /**
    * Which account should be used as the default route for all un-routed traffic. If empty, the default route is
    * disabled.

@@ -23,7 +23,7 @@ public class IncomingBlastLinkSettingsTest extends AbstractBlastLinkTest {
     final IncomingLinkSettings incomingLinksettings = IncomingLinkSettings.fromCustomSettings(customSettings).build();
 
     assertThat(incomingLinksettings.authType(), is(BlastLinkSettings.AuthType.JWT_HS_256));
-    assertThat(incomingLinksettings.tokenIssuer(), is(HttpUrl.parse("https://incoming-issuer.example.com/")));
+    assertThat(incomingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://incoming-issuer.example.com/")));
     assertThat(incomingLinksettings.tokenAudience(), is("https://incoming-audience.example.com/"));
     assertThat(incomingLinksettings.tokenSubject(), is("incoming-subject"));
     assertThat(incomingLinksettings.encryptedTokenSharedSecret(), is("incoming-credential"));
@@ -39,7 +39,7 @@ public class IncomingBlastLinkSettingsTest extends AbstractBlastLinkTest {
     final IncomingLinkSettings incomingLinksettings = IncomingLinkSettings.fromCustomSettings(customSettings).build();
 
     assertThat(incomingLinksettings.authType(), is(BlastLinkSettings.AuthType.JWT_HS_256));
-    assertThat(incomingLinksettings.tokenIssuer(), is(HttpUrl.parse("https://incoming-issuer.example.com/")));
+    assertThat(incomingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://incoming-issuer.example.com/")));
     assertThat(incomingLinksettings.tokenAudience(), is("https://incoming-audience.example.com/"));
     assertThat(incomingLinksettings.tokenSubject(), is("incoming-subject"));
     assertThat(incomingLinksettings.encryptedTokenSharedSecret(), is("incoming-credential"));
@@ -60,7 +60,7 @@ public class IncomingBlastLinkSettingsTest extends AbstractBlastLinkTest {
 
 
     assertThat(incomingLinksettings.authType(), is(BlastLinkSettings.AuthType.SIMPLE));
-    assertThat(incomingLinksettings.tokenIssuer(), is(HttpUrl.parse("https://incoming-issuer.example.com/")));
+    assertThat(incomingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://incoming-issuer.example.com/")));
     assertThat(incomingLinksettings.tokenAudience(), is("https://incoming-audience.example.com/"));
     assertThat(incomingLinksettings.tokenSubject(), is("incoming-subject"));
     assertThat(incomingLinksettings.encryptedTokenSharedSecret(), is("shh"));

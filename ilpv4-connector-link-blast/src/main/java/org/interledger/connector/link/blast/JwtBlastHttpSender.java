@@ -2,12 +2,14 @@ package org.interledger.connector.link.blast;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import okhttp3.HttpUrl;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Date;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -31,7 +33,7 @@ public class JwtBlastHttpSender extends AbstractBlastHttpSender implements Blast
     super(operatorAddressSupplier, restTemplate, outgoingLinkSettings);
     final EncryptedSecret encryptedSecret =
       EncryptedSecret.fromEncodedValue(getOutgoingLinkSettings().encryptedTokenSharedSecret());
-    this.sharedSecret = decryptor.decrypt(encryptedSecret);
+    this.sharedSecret = Objects.requireNonNull(decryptor).decrypt(encryptedSecret);
   }
 
   // TODO: For performance reasons, we probably want to cache the outgoing token for some amount of time less than
@@ -40,7 +42,11 @@ public class JwtBlastHttpSender extends AbstractBlastHttpSender implements Blast
   protected String constructAuthToken() {
     return JWT.create()
       .withIssuedAt(new Date())
-      .withIssuer(getOutgoingLinkSettings().tokenIssuer().toString())
+      .withIssuer(getOutgoingLinkSettings()
+        .tokenIssuer()
+        .map(HttpUrl::toString)
+        .orElseThrow(() -> new RuntimeException("JWT Blast Senders require an Outgoing Issuer!"))
+      )
       .withSubject(getOutgoingLinkSettings().tokenSubject()) // account identifier at the remote server.
       .withAudience(getOutgoingLinkSettings().tokenAudience())
       .sign(Algorithm.HMAC256(sharedSecret));

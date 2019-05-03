@@ -19,6 +19,7 @@ import org.interledger.crypto.Decryptor;
 import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,22 +44,22 @@ import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYST
 /**
  * Ensures that the API endpoints for BLAST (i.e., `/ilp`) returns the correct values when a
  */
-@RunWith(SpringRunner.class)
-@SpringBootTest(
-  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  classes = {ConnectorServerConfig.class}
-)
-@ActiveProfiles({"test"}) // Maps to `application-test.yml`
-@TestPropertySource(
-  properties = {
-    ConnectorProperties.ENABLED_PROTOCOLS + "." + ConnectorProperties.BLAST_ENABLED + "=true",
-    ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME + "=crypto/crypto.p12",
-    ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD + "=password",
-    ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS + "=secret0",
-    ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD + "=password",
-  }
-)
-public class SimpleBearerBlastEndpointTest {
+//@RunWith(SpringRunner.class)
+//@SpringBootTest(
+//  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+//  classes = {ConnectorServerConfig.class}
+//)
+//@ActiveProfiles({"test"}) // Maps to `application-test.yml`
+//@TestPropertySource(
+//  properties = {
+//    ConnectorProperties.ENABLED_PROTOCOLS + "." + ConnectorProperties.BLAST_ENABLED + "=true",
+//    ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME + "=crypto/crypto.p12",
+//    ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD + "=password",
+//    ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS + "=secret0",
+//    ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD + "=password",
+//  }
+//)
+public class SimpleBearerBlastEndpointTest extends AbstractEndpointTest {
 
   @LocalServerPort
   int randomServerPort;
@@ -79,48 +80,22 @@ public class SimpleBearerBlastEndpointTest {
   @Before
   public void setup() {
     // Add the Bob Account to the Connector.
-
-
-    //    id: bob-jwt
-    //    description: BLAST account for Bob
-    //        # The default relationship-type that this connector should view an account as.
-    //    relationship: PEER
-    //        # Type of the Link that should be used for this account.
-    //      linkType: BlastLink
-    //        # Whether we should broadcast routes to this peer. Defaults to false for relation=child and true otherwise.
-    //      sendRoutes: false
-    //        # Whether we should receive and process route broadcasts fromEncodedValue this peer. Defaults to false for relation=child and true otherwise.
-    //      receiveRoutes: false
-    //    customSettings:
-
-
-    //          #Incoming
-    //    blast.incoming.auth_type: JWT_HS_256
-    //    blast.incoming.auth_subject: bob # The accountId held at this connector.
-    //          # Maps to `shh` using the crypto/crypto.p12 JKS
-    //    blast.incoming.auth_credential: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
-    //      blast.incoming.token_issuer: https://bob.example.com # The JWT_HS_256 issuer of the incoming token.
-    //    blast.incoming.url: http://localhost:8080/ilp
-
-
-    //          # Outgoing
-    //    blast.outgoing.auth_type: JWT_HS_256
-    //    blast.outgoing.auth_subject: alice # The accountId held at the remote connector.
-    //      blast.outgoing.auth_credential: unused
-    //    blast.outgoing.token_issuer: https://alice.example.com # The JWT_HS_256 issuer of the outgoing token.
-    //    blast.outgoing.token_expiry: PT2M # See Duration.java for structure.
-    //      blast.outgoing.url: http://localhost:8081/ilp
-
     final Map<String, Object> customSettings = Maps.newHashMap();
-    customSettings.put(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256.name());
-    customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, "https://alice.example.com/");
-    customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, HttpUrl.parse("https://bob.example.com/"));
-    customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT, "bob-simple");
-    customSettings.put(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET,
-      "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=");
+    customSettings.put(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.SIMPLE.name());
+    customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, "https://bob.example.com/");
+    customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
+    customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT, "bob");
+    customSettings.put(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH);
+
+    customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.SIMPLE.name());
+    customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
+    customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, "https://bob.example.com/");
+    customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, "connie");
+    customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH);
+    customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_URL, "https://bob.example.com");
 
     final AccountSettings accountSettings = AccountSettings.builder()
-      .accountId(AccountId.of("bob-simple"))
+      .accountId(AccountId.of("bob"))
       .description("BLAST account for Bob using a simple shared-secret")
       .accountRelationship(AccountRelationship.PEER)
       .linkType(BlastLink.LINK_TYPE)
@@ -135,6 +110,7 @@ public class SimpleBearerBlastEndpointTest {
    * Validate the "test connection" method in the IL-DCP requestor.
    */
   @Test
+  @Ignore // Simple auth is not yet enabled in the code-base.
   public void ildcpTestConnection() {
     final BlastHttpSender blastHttpSender = simpleBearerBlastHttpSender();
     blastHttpSender.testConnection();
@@ -144,25 +120,16 @@ public class SimpleBearerBlastEndpointTest {
 
     final OutgoingLinkSettings outgoingLinkSettings = ImmutableOutgoingLinkSettings.builder()
       .authType(BlastLinkSettings.AuthType.JWT_HS_256)
-      .tokenSubject("bob-simple")
+      .tokenSubject("bob")
       .tokenIssuer(HttpUrl.parse("https://bob.example.com/"))
-      .tokenAudience("https://alice.example.com/")
+      .tokenAudience("n/a")
       .url(HttpUrl.parse(template.getRootUri() + "/ilp"))
       // The is the encrypted variant of `shh`
-      .encryptedTokenSharedSecret(
-        "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=")
+      .encryptedTokenSharedSecret(ENCRYPTED_SHH)
       .build();
 
-    // Assemble a JWT_HS_256 Bearer token that can be supplied directly to the BlastSender.
-    //    final String bearerToken = JWT.create()
-    //      .withIssuedAt(new Date())
-    //      .withIssuer("https://alice.example.com/")
-    //      .withSubject("bob") // account identifier at the remote server.
-    //      .withAudience("https://bob.exmaple.com")
-    //      .sign(Algorithm.HMAC256("12345678912345678912345678912345"));
-
     return new SimpleBearerBlastHttpSender(
-      () -> Optional.of(InterledgerAddress.of("example.blastClient")),
+      () -> Optional.of(InterledgerAddress.of("test.bob")),
       blastRestTemplate,
       outgoingLinkSettings,
       decryptor

@@ -7,7 +7,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * A provider of link factories scoped by type.
+ * A provider of {@link LinkFactory} scoped by type.
  */
 public class LinkFactoryProvider {
 

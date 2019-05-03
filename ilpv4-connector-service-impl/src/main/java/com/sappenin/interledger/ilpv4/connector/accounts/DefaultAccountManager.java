@@ -2,9 +2,9 @@ package com.sappenin.interledger.ilpv4.connector.accounts;
 
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ModifiableConnectorSettings;
+import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.Link;
-import org.interledger.connector.link.LinkSettings;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
@@ -19,6 +19,7 @@ import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntit
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.convert.ConversionService;
 
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -33,6 +34,7 @@ public class DefaultAccountManager implements AccountManager {
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final AccountSettingsRepository accountSettingsRepository;
   private final LinkManager linkManager;
+  private final ConversionService conversionService;
 
   /**
    * Required-args Constructor.
@@ -40,11 +42,13 @@ public class DefaultAccountManager implements AccountManager {
   public DefaultAccountManager(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountSettingsRepository accountSettingsRepository,
-    final LinkManager linkManager
+    final LinkManager linkManager,
+    final ConversionService conversionService
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.linkManager = Objects.requireNonNull(linkManager);
+    this.conversionService = Objects.requireNonNull(conversionService);
   }
 
   @Override
@@ -57,17 +61,39 @@ public class DefaultAccountManager implements AccountManager {
     return linkManager;
   }
 
+  /**
+   * Create a new account in this connector.
+   *
+   * @param accountSettings The {@link AccountSettings} for this account.
+   *
+   * @return The newly-created settings.
+   */
+  @Override
+  public AccountSettings createAccount(final AccountSettings accountSettings) {
+    Objects.requireNonNull(accountSettings);
+
+    final AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity(accountSettings);
+    final AccountSettings returnableAccountSettings = this.conversionService.convert(
+      this.accountSettingsRepository.save(accountSettingsEntity), AccountSettings.class
+    );
+
+    // It is _not_ a requirement that a Connector startup with any accounts configured. Thus, the first account added
+    // to the connector with a relationhip type `PARENT` should trigger IL-DCP, but only if the operator address has
+    // not already been populated.
+    if (AccountRelationship.PARENT.equals(accountSettings.getAccountRelationship())) {
+      if (!connectorSettingsSupplier.get().getOperatorAddress().isPresent()) {
+        this.initializeParentAccountSettingsViaIlDcp(accountSettings);
+      }
+    }
+
+    return returnableAccountSettings;
+  }
+
   @Override
   public AccountSettings initializeParentAccountSettingsViaIlDcp(final AccountSettings primaryParentAccountSettings) {
     Objects.requireNonNull(primaryParentAccountSettings);
 
-    final LinkSettings parentLinkSettings = LinkSettings.builder()
-      .linkType(primaryParentAccountSettings.getLinkType())
-      .customSettings(primaryParentAccountSettings.getCustomSettings())
-      .build();
-    final Link<?> link = this.getLinkManager().createLink(
-      primaryParentAccountSettings.getAccountId(), parentLinkSettings, true
-    );
+    final Link<?> link = this.getLinkManager().createLink(primaryParentAccountSettings, true);
 
     final IldcpResponse ildcpResponse = ((IldcpFetcher) ildcpRequest -> {
       Objects.requireNonNull(ildcpRequest);

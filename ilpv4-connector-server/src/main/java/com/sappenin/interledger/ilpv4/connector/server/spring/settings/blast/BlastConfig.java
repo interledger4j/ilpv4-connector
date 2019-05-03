@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.accounts.BlastAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.converters.OerPreparePacketHttpMessageConverter;
+import okhttp3.HttpUrl;
 import org.interledger.connector.link.LinkFactoryProvider;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkFactory;
@@ -15,12 +16,15 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
+import java.util.Optional;
 
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.BLAST_ENABLED;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DEFAULT_JWT_TOKEN_ISSUER;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ENABLED_PROTOCOLS;
 
 /**
@@ -35,6 +39,9 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
 public class BlastConfig {
 
   public static final String BLAST = "blast";
+
+  @Autowired
+  Environment environment;
 
   @Autowired
   LinkEventEmitter linkEventEmitter;
@@ -60,6 +67,13 @@ public class BlastConfig {
     return new RestTemplate(
       Lists.newArrayList(oerPreparePacketHttpMessageConverter, httpMessageConverter)
     );
+  }
+
+  @Bean
+  HttpUrl defaultJwtTokenIssuer() {
+    return Optional.ofNullable(environment.getProperty(DEFAULT_JWT_TOKEN_ISSUER))
+      .map(HttpUrl::parse)
+      .orElseThrow(() -> new IllegalStateException("Property `" + DEFAULT_JWT_TOKEN_ISSUER + "` must be defined!"));
   }
 
   @Bean

@@ -90,7 +90,7 @@ h2:
 ilpv4:
   connector:
     admin_password: password
-    jwtTokenIssuer: https://connie.example.com
+    defaultJwtTokenIssuer: https://connie.example.com
     enabledProtocols:
       blastEnabled: true
       pingProtocolEnabled: true

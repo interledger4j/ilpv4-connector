@@ -1,7 +1,9 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings.web;
 
 import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
+import com.sappenin.interledger.ilpv4.connector.links.LinkSettingsFactory;
 import com.sappenin.interledger.ilpv4.connector.server.spring.auth.blast.BlastAuthenticationProvider;
+import com.sappenin.interledger.ilpv4.connector.server.spring.auth.blast.JwtBlastAuthenticationProvider;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.HealthController;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.IlpHttpController;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.admin.AccountsController;
@@ -31,6 +33,7 @@ import java.util.Arrays;
 import java.util.function.Supplier;
 
 import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.admin.AccountsController.SLASH_ACCOUNT_ID;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
 
 @Configuration
 @EnableWebSecurity
@@ -48,11 +51,15 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   @Autowired
   EncryptionService encryptionService;
+
+  @Autowired
+  LinkSettingsFactory linkSettingsFactory;
+
   /**
    * Will be removed once a formal authentication mechanism is added for admin API calls.
    */
   @Deprecated
-  @Value("${ilpv4.connector.admin_password}")
+  @Value("${" + ADMIN_PASSWORD + "}")
   private String adminPassword;
 
   /////////////////
@@ -66,7 +73,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   @Bean
   BlastAuthenticationProvider blastAuthenticationProvider() {
-    return new BlastAuthenticationProvider(connectorSettingsSupplier, encryptionService, accountSettingsRepository);
+    return new JwtBlastAuthenticationProvider(
+      connectorSettingsSupplier, encryptionService, accountSettingsRepository, linkSettingsFactory
+    );
   }
 
   /**

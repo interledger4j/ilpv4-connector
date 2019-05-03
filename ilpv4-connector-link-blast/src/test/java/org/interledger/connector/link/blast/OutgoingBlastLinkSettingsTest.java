@@ -23,7 +23,7 @@ public class OutgoingBlastLinkSettingsTest extends AbstractBlastLinkTest {
     final OutgoingLinkSettings outgoingLinksettings = OutgoingLinkSettings.fromCustomSettings(customSettings).build();
 
     assertThat(outgoingLinksettings.authType(), is(BlastLinkSettings.AuthType.SIMPLE));
-    assertThat(outgoingLinksettings.tokenIssuer(), is(HttpUrl.parse("https://outgoing-issuer.example.com/")));
+    assertThat(outgoingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://outgoing-issuer.example.com/")));
     assertThat(outgoingLinksettings.tokenAudience(), is("https://outgoing-audience.example.com/"));
     assertThat(outgoingLinksettings.tokenSubject(), is("outgoing-subject"));
     assertThat(outgoingLinksettings.encryptedTokenSharedSecret(), is("outgoing-credential"));
@@ -40,7 +40,7 @@ public class OutgoingBlastLinkSettingsTest extends AbstractBlastLinkTest {
     final OutgoingLinkSettings outgoingLinksettings = OutgoingLinkSettings.fromCustomSettings(customSettings).build();
 
     assertThat(outgoingLinksettings.authType(), is(BlastLinkSettings.AuthType.SIMPLE));
-    assertThat(outgoingLinksettings.tokenIssuer(), is(HttpUrl.parse("https://outgoing-issuer.example.com/")));
+    assertThat(outgoingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://outgoing-issuer.example.com/")));
     assertThat(outgoingLinksettings.tokenAudience(), is("https://outgoing-audience.example.com/"));
     assertThat(outgoingLinksettings.tokenSubject(), is("outgoing-subject"));
     assertThat(outgoingLinksettings.encryptedTokenSharedSecret(), is("outgoing-credential"));
@@ -62,7 +62,7 @@ public class OutgoingBlastLinkSettingsTest extends AbstractBlastLinkTest {
         .build();
 
     assertThat(outgoingLinksettings.authType(), is(BlastLinkSettings.AuthType.SIMPLE));
-    assertThat(outgoingLinksettings.tokenIssuer(), is(HttpUrl.parse("https://outgoing-issuer.example.com")));
+    assertThat(outgoingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://outgoing-issuer.example.com")));
     assertThat(outgoingLinksettings.tokenAudience(), is("https://outgoing-audience.example.com"));
     assertThat(outgoingLinksettings.tokenSubject(), is("outgoing-subject"));
     assertThat(outgoingLinksettings.tokenExpiry().get(), is(Duration.ofMillis(30)));

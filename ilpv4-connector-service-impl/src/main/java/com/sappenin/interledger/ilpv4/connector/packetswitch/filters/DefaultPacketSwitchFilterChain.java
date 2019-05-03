@@ -8,10 +8,7 @@ import com.sappenin.interledger.ilpv4.connector.links.filters.LinkFilter;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkSettings;
-import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerProtocolException;
-import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +63,8 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
 
       // Here, use the link-mapper to get the `next-hop`, create a LinkFilterChain, and then send.
       final NextHopInfo nextHopInfo = this.nextHopPacketMapper.getNextHopPacket(sourceAccountId, preparePacket);
-      final Link<? extends LinkSettings> link = this.linkManager.getConnectedLinkSafe(nextHopInfo.nextHopAccountId());
+      final Link<? extends LinkSettings> link =
+        this.linkManager.getOrCreateLink(nextHopInfo.nextHopAccountId());
 
       logger.debug(
         "Sending outbound ILP Prepare: sourceAccountId: `{}` link={} packet={}",

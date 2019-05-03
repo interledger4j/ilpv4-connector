@@ -75,7 +75,7 @@ h2:
 
 ilpv4:
   connector:
-    admin_password: password
+    adminPassword: password
     # SecretStore configuration.
     keystore:
       jks:
@@ -86,7 +86,7 @@ ilpv4:
         # This property validates that JKS encryption is working properly via the configured startup. This value
         # represents the plaintext value of `shh`, encrypted with the above details.
         secret0_test: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
-    jwtTokenIssuer: https://connie.example.com
+    defaultJwtTokenIssuer: https://connie.example.com
     enabledProtocols:
       blastEnabled: true
       pingProtocolEnabled: true

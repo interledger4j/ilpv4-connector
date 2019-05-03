@@ -11,12 +11,10 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.link.LinkSettings;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkSettings;
 import org.interledger.connector.link.blast.IncomingLinkSettings;
 import org.interledger.connector.link.blast.OutgoingLinkSettings;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.interledger.ilpv4.connector.it.topology.nodes.ConnectorServerNode;
@@ -42,30 +40,9 @@ import java.math.BigInteger;
  * └──────────────┘                     └──────────────┘
  * </pre>
  */
-public class TwoConnectorPeerBlastTopology {
-
-  public static final String XRP = "XRP";
-
-  public static final String ALICE = "alice";
-  public static final String BOB = "bob";
-
-  public static final int ALICE_PORT = 8080;
-  public static final int BOB_PORT = 8081;
-
-  public static final InterledgerAddress ALICE_ADDRESS = InterledgerAddress.of("test." + ALICE);
-  public static final InterledgerAddress BOB_ADDRESS = InterledgerAddress.of("test." + BOB);
-
-  public static final HttpUrl ALICE_TOKEN_ISSUER = HttpUrl.parse("https://" + ALICE + ".example.com");
-  public static final HttpUrl BOB_TOKEN_ISSUER = HttpUrl.parse("https://" + BOB + ".example.com");
+public class TwoConnectorPeerBlastTopology extends AbstractTopology {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorPeerBlastTopology.class);
-
-  static {
-    // This is set to 0 so that the "port" value is used instead...
-    System.setProperty("server.port", "0");
-    System.setProperty("spring.jmx.enabled", "false");
-    System.setProperty("spring.application.admin.enabled", "false");
-  }
 
   /**
    * In this topology, each Connector starts-up with an Account for the other connector. During initialization,
@@ -93,22 +70,10 @@ public class TwoConnectorPeerBlastTopology {
           bobServerNode.getILPv4Connector().getAccountSettingsRepository().save(aliceAccountSettingsAtBob);
 
           // Try to connect the bob account...
-          aliceServerNode.getILPv4Connector().getLinkManager().createLink(
-            bobAccountSettingsAtAlice.getAccountId(),
-            LinkSettings.builder()
-              .linkType(bobAccountSettingsAtAlice.getLinkType())
-              .customSettings(bobAccountSettingsAtAlice.getCustomSettings())
-              .build()
-          );
+          aliceServerNode.getILPv4Connector().getLinkManager().createLink(bobAccountSettingsAtAlice);
 
           // Try to connect the alice account...
-          bobServerNode.getILPv4Connector().getLinkManager().createLink(
-            aliceAccountSettingsAtBob.getAccountId(),
-            LinkSettings.builder()
-              .linkType(aliceAccountSettingsAtBob.getLinkType())
-              .customSettings(aliceAccountSettingsAtBob.getCustomSettings())
-              .build()
-          );
+          bobServerNode.getILPv4Connector().getLinkManager().createLink(aliceAccountSettingsAtBob);
 
         } catch (Exception e) {
           throw new RuntimeException(e);
@@ -167,21 +132,21 @@ public class TwoConnectorPeerBlastTopology {
 
         // Incoming
         .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT, BOB)
-        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, "shh")
         .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, BOB_TOKEN_ISSUER)
-        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, ALICE_TOKEN_ISSUER)
+        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT, BOB)
+        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, ALICE)
+        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
         //        .putCustomSettings(
         //          IncomingLinkSettings., "http://localhost:" + alicePort + IlpHttpController.ILP_PATH
         //        )
 
         // Outgoing
         .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, ALICE)
-        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, "shh")
-        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, "PT2M")
         .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, ALICE_TOKEN_ISSUER)
-        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, BOB_TOKEN_ISSUER)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, ALICE)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, BOB)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, EXPIRY_2MIN)
         .putCustomSettings(
           OutgoingLinkSettings.BLAST_OUTGOING_URL, "http://localhost:" + bobPort + IlpHttpController.ILP_PATH
         )
@@ -196,7 +161,6 @@ public class TwoConnectorPeerBlastTopology {
   public static ConnectorSettings constructConnectorSettingsForAlice() {
     return ImmutableConnectorSettings.builder()
       .operatorAddress(ALICE_ADDRESS)
-      .jwtTokenIssuer(ALICE_TOKEN_ISSUER)
       .enabledProtocols(EnabledProtocolSettings.builder()
         .isBlastEnabled(true)
         .isPingProtocolEnabled(true)
@@ -230,21 +194,21 @@ public class TwoConnectorPeerBlastTopology {
 
         // Incoming
         .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT, ALICE)
-        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, "shh")
         .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, ALICE_TOKEN_ISSUER)
-        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, BOB_TOKEN_ISSUER)
+        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT, ALICE)
+        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, BOB)
+        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
         //        .putCustomSettings(
         //          IncomingLinkSettings., "http://localhost:" + alicePort + IlpHttpController.ILP_PATH
         //        )
 
         // Outgoing
         .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, BOB)
-        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, "shh")
-        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, "PT2M")
         .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, BOB_TOKEN_ISSUER)
-        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, ALICE_TOKEN_ISSUER)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, BOB)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, ALICE)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, EXPIRY_2MIN)
         .putCustomSettings(
           OutgoingLinkSettings.BLAST_OUTGOING_URL, "http://localhost:" + alicePort + IlpHttpController.ILP_PATH
         )
@@ -259,7 +223,6 @@ public class TwoConnectorPeerBlastTopology {
   public static ConnectorSettings constructConnectorSettingsForBob() {
     return ImmutableConnectorSettings.builder()
       .operatorAddress(BOB_ADDRESS)
-      .jwtTokenIssuer(BOB_TOKEN_ISSUER)
       .enabledProtocols(EnabledProtocolSettings.builder()
         .isBlastEnabled(true)
         .isPingProtocolEnabled(true)

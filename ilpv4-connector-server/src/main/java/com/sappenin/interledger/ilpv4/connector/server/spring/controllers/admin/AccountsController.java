@@ -1,12 +1,11 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.controllers.admin;
 
+import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.model.problems.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.ilpv4.connector.persistence.entities.AccountBalanceSettingsEntity;
 import org.interledger.ilpv4.connector.persistence.entities.AccountRateLimitSettingsEntity;
-import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
-import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.PagedResources;
@@ -43,15 +42,12 @@ public class AccountsController {
   public static final String SLASH_ACCOUNTS = "/accounts";
   public static final String SLASH_ACCOUNT_ID = "/{accountId}";
 
+  private final AccountManager accountManager;
   private final ConversionService conversionService;
-  private final AccountSettingsRepository accountSettingsRepository;
 
-  public AccountsController(
-    final ConversionService conversionService,
-    final AccountSettingsRepository accountSettingsRepository
-  ) {
-    this.conversionService = conversionService;
-    this.accountSettingsRepository = accountSettingsRepository;
+  public AccountsController(final AccountManager accountManager, final ConversionService conversionService) {
+    this.accountManager = Objects.requireNonNull(accountManager);
+    this.conversionService = Objects.requireNonNull(conversionService);
   }
 
   /**
@@ -71,22 +67,13 @@ public class AccountsController {
   ) {
     Objects.requireNonNull(accountSettings);
 
-    AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity(accountSettings);
-
-    final AccountSettings returnableAccountSettings = this.conversionService.convert(
-      this.accountSettingsRepository.save(accountSettingsEntity), AccountSettings.class
-    );
-
+    final AccountSettings returnableAccountSettings = this.accountManager.createAccount(accountSettings);
     final Link selfLink =
       linkTo(methodOn(AccountsController.class).getAccount(returnableAccountSettings.getAccountId())).withSelfRel();
+    final Resource resource = new Resource(returnableAccountSettings, selfLink);
 
-    final Resource resource = new Resource(
-      returnableAccountSettings,
-      selfLink
-    );
-
-    HttpHeaders headers = new HttpHeaders();
-    Link selfRel = linkTo(AccountsController.class).slash(accountSettings.getAccountId().value()).withSelfRel();
+    final HttpHeaders headers = new HttpHeaders();
+    final Link selfRel = linkTo(AccountsController.class).slash(accountSettings.getAccountId().value()).withSelfRel();
     headers.setLocation(URI.create(selfRel.getHref()));
 
     return new ResponseEntity(resource, headers, HttpStatus.CREATED);
@@ -102,7 +89,7 @@ public class AccountsController {
 
     // TODO: Add paging.
     final List<Resource<AccountSettings>> resources =
-      StreamSupport.stream(this.accountSettingsRepository.findAll().spliterator(), false)
+      StreamSupport.stream(this.accountManager.getAccountSettingsRepository().findAll().spliterator(), false)
         .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
         .map(this::toResource)
         .collect(Collectors.toList());
@@ -129,7 +116,7 @@ public class AccountsController {
   public Resource<AccountSettings> getAccount(
     @PathVariable("accountId") final AccountId accountId
   ) {
-    return accountSettingsRepository.findByAccountId(accountId)
+    return accountManager.getAccountSettingsRepository().findByAccountId(accountId)
       .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
       .map(this::toResource)
       .orElseThrow(() -> new AccountNotFoundProblem(accountId));
@@ -149,7 +136,7 @@ public class AccountsController {
     @RequestBody final AccountSettings.AbstractAccountSettings accountSettings
   ) {
 
-    return accountSettingsRepository.findByAccountId(accountId)
+    return accountManager.getAccountSettingsRepository().findByAccountId(accountId)
       .map(entity -> {
 
         // Ignore update accountId
@@ -173,7 +160,7 @@ public class AccountsController {
         entity.setReceiveRoutes(accountSettings.isReceiveRoutes());
         entity.setSendRoutes(accountSettings.isSendRoutes());
 
-        return accountSettingsRepository.save(entity);
+        return accountManager.getAccountSettingsRepository().save(entity);
       })
       .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
       .map(this::toResource)

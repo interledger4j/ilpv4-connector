@@ -107,7 +107,7 @@ public abstract class AbstractBlastIT {
       .filter(accountSettingsEntity -> accountSettingsEntity.getLinkType().equals(BlastLink.LINK_TYPE))
       .findFirst()
       .map(AccountSettings::getAccountId)
-      .map(linkManager::getConnectedLinkSafe)
+      .map(linkManager::getOrCreateLink)
       .get();
     return (BlastLink) circuitBreakingLink.getLinkDelegate();
   }

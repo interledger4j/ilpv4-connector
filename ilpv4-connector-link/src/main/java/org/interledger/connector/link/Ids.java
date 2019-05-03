@@ -12,9 +12,13 @@ public class Ids {
   /**
    * A unique identifier for a {@link Link}. This value is generally only set once, (e.g., in a Connector to correlate a
    * {@link Link} to an account identifier) so that a link can be referenced across requests.
+   *
+   * @deprecated In the current model, a LinkId _is_ an AccountId (there is a one-to-one mapping) so we this Id class
+   * will go away in a future release.
    */
   @Value.Immutable
   @Wrapped
+  @Deprecated
   static abstract class _LinkId extends Wrapper<String> {
 
   }

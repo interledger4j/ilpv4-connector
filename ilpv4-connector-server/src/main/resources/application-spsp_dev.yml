@@ -71,7 +71,6 @@ h2:
 
 ilpv4:
   connector:
-    jwtTokenIssuer: https://alice.example.com
     enabledProtocols:
       blastEnabled: true
       pingProtocolEnabled: true

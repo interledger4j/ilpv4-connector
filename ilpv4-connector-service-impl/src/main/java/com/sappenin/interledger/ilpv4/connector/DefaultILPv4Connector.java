@@ -5,6 +5,7 @@ import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.events.IlpNodeEvent;
+import com.sappenin.interledger.ilpv4.connector.links.LinkSettingsFactory;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.InternalRoutingService;
@@ -61,11 +62,10 @@ public class DefaultILPv4Connector implements ILPv4Connector {
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
 
-  private final EventBus eventBus;
-
   private final AccountManager accountManager;
   private final AccountSettingsRepository accountSettingsRepository;
   private final LinkManager linkManager;
+  private final LinkSettingsFactory linkSettingsFactory;
 
   private final InternalRoutingService internalRoutingService;
   private final ExternalRoutingService externalRoutingService;
@@ -85,7 +85,8 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     final InternalRoutingService internalRoutingService,
     final ExternalRoutingService externalRoutingService,
     final ILPv4PacketSwitch ilpPacketSwitch,
-    final BalanceTracker balanceTracker
+    final BalanceTracker balanceTracker,
+    final LinkSettingsFactory linkSettingsFactory
   ) {
     this(
       connectorSettingsSupplier,
@@ -96,6 +97,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       externalRoutingService,
       ilpPacketSwitch,
       balanceTracker,
+      linkSettingsFactory,
       new EventBus()
     );
   }
@@ -109,6 +111,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     final ExternalRoutingService externalRoutingService,
     final ILPv4PacketSwitch ilpPacketSwitch,
     final BalanceTracker balanceTracker,
+    final LinkSettingsFactory linkSettingsFactory,
     final EventBus eventBus
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
@@ -118,9 +121,9 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     this.internalRoutingService = Objects.requireNonNull(internalRoutingService);
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
     this.ilpPacketSwitch = Objects.requireNonNull(ilpPacketSwitch);
-    this.eventBus = Objects.requireNonNull(eventBus);
     this.balanceTracker = Objects.requireNonNull(balanceTracker);
-    eventBus.register(this);
+    this.linkSettingsFactory = Objects.requireNonNull(linkSettingsFactory);
+    Objects.requireNonNull(eventBus).register(this);
   }
 
   /**
@@ -235,10 +238,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     // connection will emit a LinkConnectedEvent when the incoming connection is connected.
     this.accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrue().stream()
       .forEach(accountSettings -> {
-        final LinkSettings linkSettings = LinkSettings.builder()
-          .linkType(accountSettings.getLinkType())
-          .customSettings(accountSettings.getCustomSettings())
-          .build();
+        final LinkSettings linkSettings = linkSettingsFactory.construct(accountSettings);
         final Link<?> link = linkManager.createLink(accountSettings.getAccountId(), linkSettings);
 
         ////////////////////////////

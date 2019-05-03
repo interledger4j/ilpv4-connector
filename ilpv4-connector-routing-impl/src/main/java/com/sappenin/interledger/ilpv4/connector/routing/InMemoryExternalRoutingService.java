@@ -299,30 +299,28 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
         return existingPeer;
       })
       .orElseGet(() -> {
-        // The Account in question did not have an existing peer in this routing service, so create a new Peer and
+        // The Account in question did not have an existing link in this routing service, so create a new link and
         // initialize it.
-        linkManager.getConnectedLink(accountId)
-          .ifPresent(link -> {
-            logger.debug(
-              "Adding peer. accountId={} sendRoutes={} isReceiveRoutes={}", accountId, sendRoutes, receiveRoutes
-            );
-            final RoutableAccount newPeer = ImmutableRoutableAccount.builder()
-              .accountId(accountId)
-              .ccpSender(constructCcpSender(accountSettings.getAccountId(), link))
-              .ccpReceiver(constructCcpReceiver(accountSettings.getAccountId(), link))
-              .build();
-            this.setTrackedAccount(newPeer);
+        final Link<?> link = linkManager.getOrCreateLink(accountId);
+        logger.debug(
+          "Adding peer. accountId={} sendRoutes={} isReceiveRoutes={}", accountId, sendRoutes, receiveRoutes
+        );
+        final RoutableAccount newPeerAccount = ImmutableRoutableAccount.builder()
+          .accountId(accountId)
+          .ccpSender(constructCcpSender(accountSettings.getAccountId(), link))
+          .ccpReceiver(constructCcpReceiver(accountSettings.getAccountId(), link))
+          .build();
+        this.setTrackedAccount(newPeerAccount);
 
-            // Always send a new RoutControl request to the remote peer, but only if it's connected.
-            newPeer.getCcpReceiver().sendRouteControl();
+        // Always send a new RoutControl request to the remote peer, but only if it's connected.
+        newPeerAccount.getCcpReceiver().sendRouteControl();
 
-            // This is somewhat expensive, so only do this if the peer was newly constructed...in other words, we don't
-            // want to reload the local routing tables if a link merely disconnected and reconnected, but nothing
-            // intrinsically changed about the routing tables that wasn't handled by those listeners.
-            this.reloadLocalRoutes();
-          });
-        // To placate Streams...
-        return null;
+        // This is somewhat expensive, so only do this if the peer was newly constructed...in other words, we don't
+        // want to reload the local routing tables if a link merely disconnected and reconnected, but nothing
+        // intrinsically changed about the routing tables that wasn't handled by those listeners.
+        this.reloadLocalRoutes();
+
+        return newPeerAccount;
       });
   }
 

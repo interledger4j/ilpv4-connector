@@ -3,7 +3,6 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.settings.properti
 import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.GlobalRoutingSettings;
-import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountProviderSettings;
 import org.interledger.connector.accounts.AccountSettings;
@@ -43,8 +42,6 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   private boolean websocketServerEnabled;
 
   private boolean blastEnabled;
-
-  private String jwtTokenIssuer;
 
   private InterledgerAddressPrefix globalPrefix = InterledgerAddressPrefix.TEST;
 
@@ -111,15 +108,6 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   public void setWebsocketServerEnabled(boolean websocketServerEnabled) {
     this.websocketServerEnabled = websocketServerEnabled;
-  }
-
-  @Override
-  public HttpUrl getJwtTokenIssuer() {
-    return jwtTokenIssuer == null ? null : HttpUrl.parse(jwtTokenIssuer);
-  }
-
-  public void setJwtTokenIssuer(String jwtTokenIssuer) {
-    this.jwtTokenIssuer = jwtTokenIssuer;
   }
 
   public boolean isBlastEnabled() {

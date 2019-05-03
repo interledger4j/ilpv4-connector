@@ -26,6 +26,15 @@ public interface AccountManager {
   LinkManager getLinkManager();
 
   /**
+   * Create a new account in this connector.
+   *
+   * @param accountSettings The {@link AccountSettings} for this account.
+   *
+   * @return The newly-created settings.
+   */
+  AccountSettings createAccount(AccountSettings accountSettings);
+
+  /**
    * Helper method to initialize the parent account using IL-DCP. If this Connector is starting in `child` mode, it will
    * not have an operator address when it starts up, so this method finds the first account of type `parent` and uses
    * IL-DCP to get the operating address for this Connector.

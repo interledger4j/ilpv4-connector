@@ -7,7 +7,7 @@ ilpv4:
     # The global prefix. For production environments, this should be `g`. For test environments, consider `test`.
     globalPrefix: test
     btp.enabled: true
-    jwtTokenIssuer: https://example.com
+    defaultJwtTokenIssuer: https://example.com
     # Which features are enabled.
     enabledFeatures:
       rateLimitingEnabled: true
