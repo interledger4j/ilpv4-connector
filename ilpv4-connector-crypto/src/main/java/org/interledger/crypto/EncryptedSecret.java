@@ -36,12 +36,12 @@ public interface EncryptedSecret {
 
     final ImmutableKeyMetadata.Builder keyMetadataBuilder = ImmutableKeyMetadata.builder();
     try {
-      keyMetadataBuilder.platformIdentifier(encodedValues[1]);
+      keyMetadataBuilder.platformIdentifier(encodedValues[1].toLowerCase());
     } catch (ArrayIndexOutOfBoundsException e) {
       throw new IllegalStateException("Invalid platformIdentifier!", e);
     }
     try {
-      keyMetadataBuilder.keyringIdentifier(encodedValues[2]);
+      keyMetadataBuilder.keyringIdentifier(encodedValues[2].toLowerCase());
     } catch (ArrayIndexOutOfBoundsException e) {
       throw new IllegalStateException("Invalid keyringIdentifier!", e);
     }
@@ -53,14 +53,14 @@ public interface EncryptedSecret {
     }
 
     try {
-      keyMetadataBuilder.keyVersion(encodedValues[4]);
+      keyMetadataBuilder.keyVersion(encodedValues[4].toLowerCase());
     } catch (ArrayIndexOutOfBoundsException e) {
       throw new IllegalStateException("Invalid keyVersion!", e);
     }
 
     final EncryptionAlgorithm encryptionAlgorithm;
     try {
-      encryptionAlgorithm = EncryptionAlgorithm.fromEncodedValue(encodedValues[5]);
+      encryptionAlgorithm = EncryptionAlgorithm.fromEncodedValue(encodedValues[5].toLowerCase());
     } catch (ArrayIndexOutOfBoundsException e) {
       throw new IllegalStateException("Invalid encryptionAlgorithm!", e);
     }

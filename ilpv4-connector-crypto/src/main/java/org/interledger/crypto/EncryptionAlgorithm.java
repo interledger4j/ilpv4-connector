@@ -16,7 +16,7 @@ public enum EncryptionAlgorithm {
   }
 
   static EncryptionAlgorithm fromEncodedValue(final String encodedValue) {
-    switch (encodedValue) {
+    switch (encodedValue.toLowerCase()) {
       case CryptoConstants.GOOGLE_SYMMETRIC: {
         return GOOGLE_SYMMETRIC;
       }

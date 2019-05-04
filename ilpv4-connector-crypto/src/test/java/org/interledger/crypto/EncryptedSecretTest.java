@@ -44,17 +44,18 @@ public class EncryptedSecretTest {
   public static Collection<Object[]> secretValues() {
     return ImmutableList.of(
       new Object[]{
-        EncryptedSecret.ENCODING_PREFIX + ":gcpkms:kr1:foo_password:1:GS:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=",
+        // Try upper-case to ensure normalization...
+        EncryptedSecret.ENCODING_PREFIX + ":GCPKMS:KR1:Foo_password:1:GS:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=",
         "gcpkms",
         "kr1",
         EncryptionAlgorithm.GOOGLE_SYMMETRIC,
-        "foo_password",
+        "Foo_password",
         "1",
         "VGhpcyBpcyBhIHRoZSBzZWNyZXQ="
       },
       new Object[]{
         EncryptedSecret.ENCODING_PREFIX +
-          ":gcpkms:kr2:foo_pw:1:GS:CiQAUCbpRzRVsJV5zlnAGelriEXxwW7KBF1_WjukiQeTNx-vcIISQgDt51s4dnxxSB8oxHTDehlfAEDp2WbqOoui2yv92wIdnFT2SSbLQgpDWWOxeuTPNTOmUR30G6BdJpBoB2hQXrFa7A==",
+          ":gcpkms:kr2:foo_pw:1:gs:CiQAUCbpRzRVsJV5zlnAGelriEXxwW7KBF1_WjukiQeTNx-vcIISQgDt51s4dnxxSB8oxHTDehlfAEDp2WbqOoui2yv92wIdnFT2SSbLQgpDWWOxeuTPNTOmUR30G6BdJpBoB2hQXrFa7A==",
         "gcpkms",
         "kr2",
         EncryptionAlgorithm.GOOGLE_SYMMETRIC,
@@ -92,7 +93,7 @@ public class EncryptedSecretTest {
   @Test(expected = IllegalStateException.class)
   public void testEncodedValueWithNoCipherText() {
     try {
-      EncryptedSecret.fromEncodedValue("enc:gcpkms:kr1:foo_password:1:GS:");
+      EncryptedSecret.fromEncodedValue("enc:gcpkms:kr1:foo_password:1:gs:");
       fail();
     } catch (IllegalStateException e) {
       assertThat(e.getMessage(), is("Invalid ciphertext!"));
@@ -103,7 +104,7 @@ public class EncryptedSecretTest {
   @Test(expected = IllegalArgumentException.class)
   public void testEncodedValueWithNoPrefix() {
     try {
-      EncryptedSecret.fromEncodedValue("gcpkms:kr1:foo_password:1:GS:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
+      EncryptedSecret.fromEncodedValue("gcpkms:kr1:foo_password:1:gs:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
       fail();
     } catch (IllegalArgumentException e) {
       assertThat(e.getMessage(), is("encodedValue must start with `enc` prefix"));
@@ -114,7 +115,7 @@ public class EncryptedSecretTest {
   @Test(expected = IllegalArgumentException.class)
   public void testEncodedValueWithEmptyPrefix() {
     try {
-      EncryptedSecret.fromEncodedValue(":gcpkms:kr1:GS:foo_password:1:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
+      EncryptedSecret.fromEncodedValue(":gcpkms:kr1:gs:foo_password:1:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
       fail();
     } catch (IllegalArgumentException e) {
       assertThat(e.getMessage(), is("encodedValue must start with `enc` prefix"));
@@ -125,7 +126,7 @@ public class EncryptedSecretTest {
   @Test(expected = IllegalArgumentException.class)
   public void testEncodedValueWithInvalidPrefix() {
     try {
-      EncryptedSecret.fromEncodedValue("enc2:gcpkms:kr1:GS:foo_password:1:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
+      EncryptedSecret.fromEncodedValue("enc2:gcpkms:kr1:gs:foo_password:1:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
       fail();
     } catch (IllegalArgumentException e) {
       assertThat(e.getMessage(), is("encodedValue must start with `enc` prefix"));
@@ -136,7 +137,7 @@ public class EncryptedSecretTest {
   @Test(expected = IllegalArgumentException.class)
   public void testEncodedValueWithNoKeyIdentifier() {
     try {
-      EncryptedSecret.fromEncodedValue(EncryptedSecret.ENCODING_PREFIX + ":gcpkms:kr1::1:GS:ct");
+      EncryptedSecret.fromEncodedValue(EncryptedSecret.ENCODING_PREFIX + ":gcpkms:kr1::1:gs:ct");
       fail();
     } catch (IllegalArgumentException e) {
       assertThat(e.getMessage(), is("keyIdentifier must not be empty"));
@@ -149,7 +150,7 @@ public class EncryptedSecretTest {
   public void testEncodedValueWithNoKeyringId() {
     try {
       EncryptedSecret.fromEncodedValue(
-        EncryptedSecret.ENCODING_PREFIX + ":gcpkms::foo_password:1:GS:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=)"
+        EncryptedSecret.ENCODING_PREFIX + ":gcpkms::foo_password:1:gs:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=)"
       );
       fail();
     } catch (IllegalStateException e) {
@@ -174,7 +175,7 @@ public class EncryptedSecretTest {
   @Test(expected = IllegalArgumentException.class)
   public void testEncodedValueWithNoKeyId() {
     try {
-      EncryptedSecret.fromEncodedValue(EncryptedSecret.ENCODING_PREFIX + ":gcpkms:kr1::1:GS:ciphertext");
+      EncryptedSecret.fromEncodedValue(EncryptedSecret.ENCODING_PREFIX + ":gcpkms:kr1::1:gs:ciphertext");
       fail();
     } catch (IllegalArgumentException e) {
       assertThat(e.getMessage(), is("keyIdentifier must not be empty"));
@@ -198,7 +199,7 @@ public class EncryptedSecretTest {
   @Test
   public void testEncodedString() {
     final String actualEncodedValue = EncryptedSecret.ENCODING_PREFIX
-      + ":gcpkms:kr1:foo_password:1:GS:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=";
+      + ":gcpkms:kr1:foo_password:1:gs:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=";
     final EncryptedSecret gcpEncodedSecret = EncryptedSecret.fromEncodedValue(actualEncodedValue);
 
     assertThat(gcpEncodedSecret.keyMetadata().platformIdentifier(), is("gcpkms"));
