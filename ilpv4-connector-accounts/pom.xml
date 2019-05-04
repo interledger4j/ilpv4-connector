@@ -12,7 +12,7 @@
   <artifactId>ilpv4-connector-accounts</artifactId>
   <name>ILPv4 :: Connector :: Accounts</name>
   <description>
-    A bilateral accounting accountRelationship between the two Interledger parties.
+    A bilateral accounting relationship between the two Interledger parties.
   </description>
 
   <dependencies>
