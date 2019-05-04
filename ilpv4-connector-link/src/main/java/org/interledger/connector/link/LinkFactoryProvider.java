@@ -23,8 +23,9 @@ public class LinkFactoryProvider {
     this.linkFactories = Objects.requireNonNull(linkFactories);
   }
 
-  public Optional<LinkFactory> getLinkFactory(final LinkType linkType) {
-    return Optional.ofNullable(this.linkFactories.get(linkType));
+  public LinkFactory getLinkFactory(final LinkType linkType) {
+    return Optional.ofNullable(this.linkFactories.get(linkType))
+      .orElseThrow(() -> new RuntimeException("No registered LinkFactory supports:" + linkType));
   }
 
   public LinkFactory registerLinkFactory(final LinkType linkType, final LinkFactory linkFactory) {

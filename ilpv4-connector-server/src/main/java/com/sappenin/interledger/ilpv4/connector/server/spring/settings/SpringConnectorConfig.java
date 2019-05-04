@@ -13,13 +13,13 @@ import com.sappenin.interledger.ilpv4.connector.accounts.BtpAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountSettingsResolver;
-import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.balances.InMemoryBalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.fx.JavaMoneyUtils;
 import com.sappenin.interledger.ilpv4.connector.links.DefaultLinkManager;
 import com.sappenin.interledger.ilpv4.connector.links.DefaultLinkSettingsFactory;
 import com.sappenin.interledger.ilpv4.connector.links.DefaultNextHopPacketMapper;
+import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.links.LinkSettingsFactory;
 import com.sappenin.interledger.ilpv4.connector.links.NextHopPacketMapper;
 import com.sappenin.interledger.ilpv4.connector.links.filters.LinkFilter;
@@ -68,6 +68,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import javax.annotation.PostConstruct;
@@ -172,6 +173,7 @@ public class SpringConnectorConfig {
   @Bean
   LinkManager linkManager(
     EventBus eventBus,
+    AccountSettingsRepository accountSettingsRepository,
     LinkSettingsFactory linkSettingsFactory,
     LinkFactoryProvider linkFactoryProvider,
     AccountIdResolver accountIdResolver,
@@ -179,10 +181,11 @@ public class SpringConnectorConfig {
   ) {
     return new DefaultLinkManager(
       () -> connectorSettingsSupplier().get().getOperatorAddress(),
+      accountSettingsRepository,
       linkSettingsFactory,
       linkFactoryProvider,
       accountIdResolver,
-      accountSettingsRepository, circuitBreakerConfig,
+      circuitBreakerConfig,
       eventBus
     );
   }
@@ -201,10 +204,12 @@ public class SpringConnectorConfig {
   AccountManager accountManager(
     Supplier<ConnectorSettings> connectorSettingsSupplier,
     AccountSettingsRepository accountSettingsRepository,
-    LinkManager linkManager
+    LinkManager linkManager,
+    ConversionService conversionService
   ) {
-    return new DefaultAccountManager(connectorSettingsSupplier, accountSettingsRepository, linkManager,
-      conversionService);
+    return new DefaultAccountManager(
+      connectorSettingsSupplier, conversionService, accountSettingsRepository, linkManager
+      );
   }
 
   @Bean
@@ -294,7 +299,7 @@ public class SpringConnectorConfig {
 
     final EnabledProtocolSettings enabledProtocolSettings = connectorSettings.getEnabledProtocols();
     /////////////////////////////////////
-    // Ping Protocol
+    // Ping Protocol (must be after the above filters so that pre-filtering is performed properly, even for pings).
     /////////////////////////////////////
     if (enabledProtocolSettings.isPingProtocolEnabled()) {
       filterList.add(new PingProtocolFilter(packetRejector, operatorAddressSupplier));

@@ -5,7 +5,6 @@ import org.interledger.btp.BtpSession;
 import org.interledger.btp.BtpSessionCredentials;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.Link;
-import org.interledger.connector.link.LinkId;
 import org.springframework.security.core.Authentication;
 
 import java.util.Objects;
@@ -23,10 +22,7 @@ public class DefaultAccountIdResolver implements BtpAccountIdResolver, BlastAcco
     Objects.requireNonNull(link);
 
     if (link.isConnected()) {
-      return link.getLinkId()
-        .map(LinkId::value)
-        .map(AccountId::of)
-        .orElseThrow(() -> new RuntimeException("All connected Plugins MUST have a LinkId!"));
+      return AccountId.of(link.getLinkId().value());
     } else {
       // If a Plugin is disconnected, then throw an exception.
       throw new RuntimeException("Disconnected Plugins do not have an associated account!");

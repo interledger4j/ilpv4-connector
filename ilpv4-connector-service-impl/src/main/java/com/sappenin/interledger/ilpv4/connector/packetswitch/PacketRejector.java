@@ -17,8 +17,8 @@ import java.util.function.Supplier;
  */
 public class PacketRejector {
 
-  private static final InterledgerAddress UNSET_SELF_ADDRESS =
-    InterledgerAddress.of(InterledgerAddress.AllocationScheme.SELF.getValue() + ".unset");
+  private static final InterledgerAddress UNSET_OPERATOR_ADDRESS =
+    InterledgerAddress.of(InterledgerAddress.AllocationScheme.PRIVATE.getValue() + ".unset-operator-address");
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -48,7 +48,7 @@ public class PacketRejector {
 
     // Reject.
     final InterledgerRejectPacket rejectPacket = InterledgerRejectPacket.builder()
-      .triggeredBy(operatorAddressSupplier.get().orElse(UNSET_SELF_ADDRESS))
+      .triggeredBy(operatorAddressSupplier.get().orElse(UNSET_OPERATOR_ADDRESS))
       .code(errorCode)
       .message(errorMessage)
       .build();

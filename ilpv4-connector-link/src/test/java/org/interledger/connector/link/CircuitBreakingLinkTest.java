@@ -19,7 +19,6 @@ import org.mockito.MockitoAnnotations;
 
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -59,7 +58,7 @@ public class CircuitBreakingLinkTest {
   public void setup() {
     MockitoAnnotations.initMocks(this);
 
-    when(linkMock.getLinkId()).thenReturn(Optional.of(LinkId.of(LINK_ID)));
+    when(linkMock.getLinkId()).thenReturn(LinkId.of(LINK_ID));
     when(linkMock.sendPacket(PREPARE_PACKET)).thenReturn(reject(InterledgerErrorCode.T03_CONNECTOR_BUSY));
 
     this.link = new CircuitBreakingLink(linkMock, CONFIG);

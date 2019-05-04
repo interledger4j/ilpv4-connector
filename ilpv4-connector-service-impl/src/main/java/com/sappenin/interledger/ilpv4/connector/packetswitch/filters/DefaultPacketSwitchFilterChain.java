@@ -1,6 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
-import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
+import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.links.NextHopInfo;
 import com.sappenin.interledger.ilpv4.connector.links.NextHopPacketMapper;
 import com.sappenin.interledger.ilpv4.connector.links.filters.DefaultLinkFilterChain;
@@ -63,6 +63,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
 
       // Here, use the link-mapper to get the `next-hop`, create a LinkFilterChain, and then send.
       final NextHopInfo nextHopInfo = this.nextHopPacketMapper.getNextHopPacket(sourceAccountId, preparePacket);
+
       final Link<? extends LinkSettings> link =
         this.linkManager.getOrCreateLink(nextHopInfo.nextHopAccountId());
 

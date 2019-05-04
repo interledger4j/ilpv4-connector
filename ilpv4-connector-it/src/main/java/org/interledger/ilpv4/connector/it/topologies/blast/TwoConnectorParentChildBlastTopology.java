@@ -7,7 +7,6 @@ import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings
 import com.sappenin.interledger.ilpv4.connector.settings.GlobalRoutingSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ImmutableConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ModifiableConnectorSettings;
-import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
@@ -15,6 +14,7 @@ import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkSettings;
 import org.interledger.connector.link.blast.IncomingLinkSettings;
 import org.interledger.connector.link.blast.OutgoingLinkSettings;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.interledger.ilpv4.connector.it.topology.nodes.ConnectorServerNode;
@@ -43,6 +43,8 @@ import java.math.BigInteger;
  */
 public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
 
+  public static final InterledgerAddress ALICE_ADDRESS = InterledgerAddress.of(TEST + DOT + ALICE);
+  public static final InterledgerAddress BOB_AT_ALICE_ADDRESS = ALICE_ADDRESS.with(BOB);
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorParentChildBlastTopology.class);
 
   /**
@@ -60,23 +62,17 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
 
         final ConnectorServerNode aliceServerNode = g.getNode(ALICE_ADDRESS.getValue(), ConnectorServerNode.class);
         final int alicePort = aliceServerNode.getPort();
-        final ConnectorServerNode bobServerNode = g.getNode(BOB_ADDRESS.getValue(), ConnectorServerNode.class);
+        final ConnectorServerNode bobServerNode = g.getNode(BOB_AT_ALICE_ADDRESS.getValue(), ConnectorServerNode.class);
         final int bobPort = bobServerNode.getPort();
 
         // Add Bob's account on Alice...
-        final AccountSettingsEntity bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(alicePort);
-        aliceServerNode.getILPv4Connector().getAccountSettingsRepository().save(bobAccountSettingsAtAlice);
+        final AccountSettingsEntity bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort);
+        aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
 
         // Add Alice's account on Bob...
-        final AccountSettingsEntity aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(bobPort);
-        bobServerNode.getILPv4Connector().getAccountSettingsRepository().save(aliceAccountSettingsAtBob);
-        bobServerNode.getILPv4Connector().getAccountManager().initializeParentAccountSettingsViaIlDcp(aliceAccountSettingsAtBob);
-
-        // Try to connect the bob account...
-        aliceServerNode.getILPv4Connector().getLinkManager().createLink(bobAccountSettingsAtAlice);
-
-        // Try to connect the alice account...
-        bobServerNode.getILPv4Connector().getLinkManager().createLink(aliceAccountSettingsAtBob);
+        final AccountSettingsEntity aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort);
+        // Will perform IL-DCP since the type is `PARENT`
+        bobServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
       }
     });
 
@@ -96,7 +92,7 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
     {
       final ConnectorServer bobServer = new ConnectorServer(constructConnectorSettingsForBob());
       bobServer.setPort(BOB_PORT);
-      topology.addNode(BOB_ADDRESS, new ConnectorServerNode(BOB, bobServer));
+      topology.addNode(BOB_AT_ALICE_ADDRESS, new ConnectorServerNode(BOB, bobServer));
     }
 
     LOGGER.info("\n" +
@@ -130,6 +126,7 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
         .routingSecret("DocIHaveToTellYouSomethingAboutY")
         .build()
       )
+
       .build();
 
     // Must be modifiable to support IL-DCP

@@ -2,7 +2,7 @@ package com.sappenin.interledger.ilpv4.connector.routing;
 
 import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountIdResolver;
-import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
+import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.ccp.codecs.CcpCodecContextFactory;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ImmutableConnectorSettings;

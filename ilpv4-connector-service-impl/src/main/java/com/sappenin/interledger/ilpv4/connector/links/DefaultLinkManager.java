@@ -1,10 +1,10 @@
 package com.sappenin.interledger.ilpv4.connector.links;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountIdResolver;
-import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
@@ -18,7 +18,9 @@ import org.interledger.connector.link.events.LinkConnectedEvent;
 import org.interledger.connector.link.events.LinkDisconnectedEvent;
 import org.interledger.connector.link.events.LinkErrorEvent;
 import org.interledger.connector.link.events.LinkEventListener;
+import org.interledger.connector.link.exceptions.LinkNotConnectedException;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,9 +48,9 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
 
   private final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier;
 
-  private final LinkFactoryProvider linkFactoryProvider;
-  private final LinkSettingsFactory linkSettingsFactory;
   private final AccountSettingsRepository accountSettingsRepository;
+  private final LinkSettingsFactory linkSettingsFactory;
+  private final LinkFactoryProvider linkFactoryProvider;
 
   private final CircuitBreakerConfig defaultCircuitBreakerConfig;
 
@@ -57,35 +59,44 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
    */
   public DefaultLinkManager(
     final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
+    final AccountSettingsRepository accountSettingsRepository,
     final LinkSettingsFactory linkSettingsFactory,
     final LinkFactoryProvider linkFactoryProvider,
     final AccountIdResolver accountIdResolver,
-    AccountSettingsRepository accountSettingsRepository, final CircuitBreakerConfig defaultCircuitBreakerConfig,
+    final CircuitBreakerConfig defaultCircuitBreakerConfig,
     final EventBus eventBus
   ) {
     this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
+    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.linkSettingsFactory = Objects.requireNonNull(linkSettingsFactory);
     this.linkFactoryProvider = Objects.requireNonNull(linkFactoryProvider);
     this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
-    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.defaultCircuitBreakerConfig = Objects.requireNonNull(defaultCircuitBreakerConfig);
     Objects.requireNonNull(eventBus).register(this);
   }
 
+  // Required for efficient Link-lookup-by-AccountId in the PacketSwitch.
   @Override
   public Link<? extends LinkSettings> getOrCreateLink(final AccountId accountId) {
+    Objects.requireNonNull(accountId);
     return Optional.ofNullable(this.connectedLinks.get(accountId))
       .orElseGet(() -> {
-        final AccountSettings accountSettings = accountSettingsRepository.safeFindByAccountId(accountId);
-        return this.getOrCreateLink(accountSettings);
+        // Convert to LinkSettings...
+        final AccountSettingsEntity accountSettings = accountSettingsRepository.safeFindByAccountId(accountId);
+        return (Link) getOrCreateLink(accountSettings);
       });
   }
 
   @Override
   public Link<? extends LinkSettings> getOrCreateLink(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
-    final LinkSettings linkSettings = linkSettingsFactory.construct(accountSettings);
-    return this.getOrCreateLink(accountSettings.getAccountId(), linkSettings);
+    final AccountId accountId = accountSettings.getAccountId();
+    return Optional.ofNullable(this.connectedLinks.get(accountId))
+      .orElseGet(() -> {
+        // Convert to LinkSettings...
+        final LinkSettings linkSettings = linkSettingsFactory.construct(accountSettings);
+        return createLink(accountId, linkSettings);
+      });
   }
 
   @Override
@@ -93,12 +104,19 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
     Objects.requireNonNull(accountId);
     Objects.requireNonNull(linkSettings);
 
+    return Optional.ofNullable(this.connectedLinks.get(accountId))
+      .orElseGet(() -> createLink(accountId, linkSettings));
+  }
+
+  @VisibleForTesting
+  protected Link createLink(final AccountId accountId, final LinkSettings linkSettings) {
+    Objects.requireNonNull(accountId);
+    Objects.requireNonNull(linkSettings);
+
     //Use the first linkFactory that supports the linkType...
-    final Link<?> link = this.linkFactoryProvider.getLinkFactory(linkSettings.getLinkType())
-      .map(linkFactory -> linkFactory.constructLink(operatorAddressSupplier, linkSettings))
-      .orElseThrow(() -> new RuntimeException(
-        String.format("No registered LinkFactory supports: %s", linkSettings.getLinkType()))
-      );
+    final Link<?> link = this.linkFactoryProvider
+      .getLinkFactory(linkSettings.getLinkType())
+      .constructLink(operatorAddressSupplier, linkSettings);
 
     // Set the LinkId to match the AccountId...this way the Link can always use this value to represent the
     // accountId that a given link should use.
@@ -112,13 +130,13 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
     // Wrap the Link in a CircuitBreaker.
     final CircuitBreakingLink circuitBreakingLink = new CircuitBreakingLink(link, defaultCircuitBreakerConfig);
     try {
+      // Wait for this link to connect...
       circuitBreakingLink.connect().get();
       return circuitBreakingLink;
     } catch (InterruptedException | ExecutionException e) {
-      throw new RuntimeException(e);
+      throw new LinkNotConnectedException(e.getMessage(), e, circuitBreakingLink.getLinkId());
     }
   }
-
 
   @Override
   public Set<Link<?>> getAllConnectedLinks() {

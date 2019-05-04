@@ -1,15 +1,9 @@
 package com.sappenin.interledger.ilpv4.connector.accounts;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
+import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.Account;
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountRelationship;
-import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.link.events.LinkConnectedEvent;
-import org.interledger.connector.link.events.LinkDisconnectedEvent;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 /**
  * An implementation of {@link AccountManager} that stores account-related information into a persistent datastore, such

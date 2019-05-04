@@ -21,10 +21,12 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DOT;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.SPRING_PROFILES_ACTIVE;
 import static org.hamcrest.CoreMatchers.is;
+import static org.interledger.ilpv4.connector.it.topologies.blast.AbstractTopology.ALICE_ACCOUNT;
+import static org.interledger.ilpv4.connector.it.topologies.blast.AbstractTopology.BOB_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.ALICE;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.ALICE_ADDRESS;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.BOB;
-import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.BOB_ADDRESS;
+import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.BOB_AT_ALICE_ADDRESS;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -35,7 +37,6 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorIldcpTestIT.class);
   private static Topology topology = TwoConnectorParentChildBlastTopology.init();
-
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
 
@@ -62,7 +63,7 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
   @Before
   public void setup() {
     aliceConnector = this.getILPv4NodeFromGraph(ALICE_ADDRESS);
-    bobConnector = this.getILPv4NodeFromGraph(BOB_ADDRESS);
+    bobConnector = this.getILPv4NodeFromGraph(BOB_AT_ALICE_ADDRESS);
 
     // Reset all accounts on each connector...
     bobConnector.getBalanceTracker().resetBalance(AccountId.of(ALICE));
@@ -77,7 +78,7 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
       is(ALICE_ADDRESS)
     );
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
+    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS, BOB_ACCOUNT);
     assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(ALICE));
     assertThat(blastLink.getLinkSettings().incomingBlastLinkSettings().tokenSubject(), is(BOB));
   }
@@ -87,14 +88,14 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
     // Give time for IL-DCP to work...
     Thread.sleep(2000);
 
-    final ILPv4Connector connector = getILPv4NodeFromGraph(BOB_ADDRESS);
+    final ILPv4Connector connector = getILPv4NodeFromGraph(BOB_AT_ALICE_ADDRESS);
     assertThat(connector.getConnectorSettings().getOperatorAddress().isPresent(), is(true));
     assertThat(
       connector.getConnectorSettings().getOperatorAddress().get(),
-      is(BOB_ADDRESS)
+      is(BOB_AT_ALICE_ADDRESS)
     );
 
-    final BlastLink blastLink = getBlastLinkFromGraph(BOB_ADDRESS);
+    final BlastLink blastLink = getBlastLinkFromGraph(BOB_AT_ALICE_ADDRESS, ALICE_ACCOUNT);
     assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(BOB));
     assertThat(blastLink.getLinkSettings().incomingBlastLinkSettings().tokenSubject(), is(ALICE));
   }
@@ -104,13 +105,28 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
    */
   @Test
   public void testAlicePingsBob() throws InterruptedException {
-    this.testPing(ALICE_ADDRESS, BOB_ADDRESS);
+    this.testPing(ALICE_ADDRESS, BOB_ACCOUNT, BOB_AT_ALICE_ADDRESS);
 
     // ALICE
-    assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.ZERO);
+    assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.valueOf(-1));
 
     // BOB
     assertAccountBalance(bobConnector, AccountId.of(ALICE), BigInteger.valueOf(1L));
+  }
+
+  /**
+   * Alice and Connie should have an account with each other, so this ping should succeed.
+   */
+  @Test
+  public void testBobPingsAlice() throws InterruptedException {
+    this.testPing(BOB_AT_ALICE_ADDRESS, ALICE_ACCOUNT, ALICE_ADDRESS);
+
+    // ALICE (Balance will be 1 from the previous test. TODO: Reset balances on each run)
+    assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.valueOf(1L));
+
+    // BOB
+    // TODO: Currently, pinging doesn't cost a connector any money on any actual account. Instead,
+    assertAccountBalance(bobConnector, AccountId.of(ALICE), BigInteger.ZERO);
   }
 
   /////////////////
@@ -126,6 +142,5 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
   protected Topology getTopology() {
     return topology;
   }
-
 
 }

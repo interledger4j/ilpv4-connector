@@ -1,7 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector;
 
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
-import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
+import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
@@ -37,7 +37,6 @@ public interface ILPv4Connector extends ILPv4Node {
   ConnectorSettings getConnectorSettings();
 
   ILPv4PacketSwitch getIlpPacketSwitch();
-
 
   LinkManager getLinkManager();
 

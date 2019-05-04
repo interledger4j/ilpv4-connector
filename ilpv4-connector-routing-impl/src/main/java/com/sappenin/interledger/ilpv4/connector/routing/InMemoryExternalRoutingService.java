@@ -8,7 +8,7 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.hash.Hashing;
 import com.sappenin.interledger.ilpv4.connector.StaticRoute;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountIdResolver;
-import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
+import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
@@ -177,7 +177,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     final LinkEventListener dataLinkEventListener = new LinkEventListener() {
       @Override
       public void onConnect(LinkConnectedEvent linkConnectedEvent) {
-        final AccountId accountId = AccountId.of(dataLink.getLinkId().get().value());
+        final AccountId accountId = AccountId.of(dataLink.getLinkId().value());
         if (!dataLink.isConnected()) {
           // some links don't set `isConnected() = true` before emitting the
           // connect event, setImmediate has a good chance of working.
@@ -288,14 +288,29 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     final boolean receiveRoutes = this.shouldReceiveRoutes(accountSettings);
     if (!sendRoutes && !receiveRoutes) {
       logger.warn("Not sending nor receiving routes for peer. accountId={}", accountId);
+
+      logger.debug("Checking to see if Account {} has a static-route...", accountId);
+      // Update the local-routing table for the newly added account, but only if it exists in the static-routing
+      // configuration.
+      this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getStaticRoutes().stream()
+        .filter(staticRoute -> staticRoute.getPeerAccountId().equals(accountId))
+        .findFirst() // There should only be one static route defined per-account, but just in case pick the first one.
+        .map(staticRoute -> Route.builder()  // Map to route.
+          .nextHopAccountId(staticRoute.getPeerAccountId())
+          .routePrefix(staticRoute.getTargetPrefix())
+          .build()
+        )
+        .ifPresent(localRoutingTable::addRoute);
       return;
     }
 
     this.getTrackedAccount(accountId)
       .map(existingPeer -> {
         // Every time we reconnect, we'll send a new route control message to make sure they are still sending us
-        // routes.
-        existingPeer.getCcpReceiver().sendRouteControl();
+        // routes, but only as long as receiving is enabled.
+        if (receiveRoutes) {
+          existingPeer.getCcpReceiver().sendRouteControl();
+        }
         return existingPeer;
       })
       .orElseGet(() -> {
@@ -303,13 +318,15 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
         // initialize it.
         final Link<?> link = linkManager.getOrCreateLink(accountId);
         logger.debug(
-          "Adding peer. accountId={} sendRoutes={} isReceiveRoutes={}", accountId, sendRoutes, receiveRoutes
+          "Adding Link to trackedAccounts. accountId={} sendRoutes={} isReceiveRoutes={}",
+          accountId, sendRoutes, receiveRoutes
         );
         final RoutableAccount newPeerAccount = ImmutableRoutableAccount.builder()
           .accountId(accountId)
           .ccpSender(constructCcpSender(accountSettings.getAccountId(), link))
           .ccpReceiver(constructCcpReceiver(accountSettings.getAccountId(), link))
           .build();
+
         this.setTrackedAccount(newPeerAccount);
 
         // Always send a new RoutControl request to the remote peer, but only if it's connected.
@@ -456,9 +473,6 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
   ) {
     Objects.requireNonNull(addressPrefix);
     Objects.requireNonNull(newBestLocalRoute);
-
-    // If newBestLocalRoute is defined, then map it to itself or empty, depending on various checks.
-    // Only if the newBestLocalRoute is present...
 
     // Given an optionally-present newBestLocalRoute, compute the best next hop address...
     final Optional<AccountId> newBestNextHop = newBestLocalRoute
@@ -677,7 +691,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
         })
         .orElseGet(() -> {
             //...then look in the receiver.
-            // If we getEntry here, there was no statically-configured route, _or_, there was a statically configured route
+            // If we get here, there was no statically-configured route, _or_, there was a statically configured route
             // but no account existed. Either way, look for a local route.
             return localRoutingTable.getRouteByPrefix(addressPrefix)
               .orElseGet(() -> {

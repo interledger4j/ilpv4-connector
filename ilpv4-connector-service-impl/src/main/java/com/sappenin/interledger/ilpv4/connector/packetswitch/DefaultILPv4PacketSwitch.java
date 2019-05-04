@@ -1,7 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch;
 
 import com.sappenin.interledger.ilpv4.connector.ConnectorExceptionHandler;
-import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
+import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.links.NextHopPacketMapper;
 import com.sappenin.interledger.ilpv4.connector.links.filters.LinkFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.DefaultPacketSwitchFilterChain;

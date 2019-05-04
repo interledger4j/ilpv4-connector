@@ -2,9 +2,9 @@ package com.sappenin.interledger.ilpv4.connector;
 
 import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
-import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.events.IlpNodeEvent;
+import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.links.LinkSettingsFactory;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
@@ -12,7 +12,6 @@ import com.sappenin.interledger.ilpv4.connector.routing.InternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkFactoryProvider;
-import org.interledger.connector.link.LinkSettings;
 import org.interledger.connector.link.events.LinkConnectedEvent;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
@@ -220,7 +219,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     if (primaryParentAccountSettings.isPresent()) {
       // If there's no Operator Address, use IL-DCP to try to get one. Only try this once. If this fails, then the
       // Connector should not startup.
-      this.accountManager.initializeParentAccountSettingsViaIlDcp(primaryParentAccountSettings.get());
+      this.accountManager.initializeParentAccountSettingsViaIlDcp(primaryParentAccountSettings.get().getAccountId());
       logger.info(
         "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().getOperatorAddress().get()
       );
@@ -237,18 +236,8 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     // Connect any Links for accounts that are the connection initiator. Links that require an incoming and outgoing
     // connection will emit a LinkConnectedEvent when the incoming connection is connected.
     this.accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrue().stream()
-      .forEach(accountSettings -> {
-        final LinkSettings linkSettings = linkSettingsFactory.construct(accountSettings);
-        final Link<?> link = linkManager.createLink(accountSettings.getAccountId(), linkSettings);
-
-        ////////////////////////////
-        // Connect the Link.
-        ////////////////////////////
-        // Don't allow one link to block another link from connecting. The internal connection logic of each link
-        // will employ a timeout, so no need to use CompletableFuture timeouts here. Also, Link connection errors
-        // will be caught an emitted by any listeners.
-        link.connect();
-      });
+      .map(linkManager::getOrCreateLink)
+      .forEach(Link::connect);
   }
 
 }

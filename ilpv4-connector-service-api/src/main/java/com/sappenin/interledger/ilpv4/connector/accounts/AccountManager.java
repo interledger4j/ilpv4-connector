@@ -1,5 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.accounts;
 
+import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 
@@ -39,10 +41,10 @@ public interface AccountManager {
    * not have an operator address when it starts up, so this method finds the first account of type `parent` and uses
    * IL-DCP to get the operating address for this Connector.
    *
-   * @param primaryParentAccountSettings The {@link AccountSettings} for the parent account to use IL-DCP with.
+   * @param primaryParentAccountId The {@link AccountId} for the parent account to use IL-DCP with.
    *
    * @return The newly created parent {@link AccountSettings}.
    */
-  AccountSettings initializeParentAccountSettingsViaIlDcp(AccountSettings primaryParentAccountSettings);
+  AccountSettings initializeParentAccountSettingsViaIlDcp(AccountId primaryParentAccountId);
 
 }

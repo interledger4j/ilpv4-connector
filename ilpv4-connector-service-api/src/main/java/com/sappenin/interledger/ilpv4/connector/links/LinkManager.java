@@ -1,9 +1,10 @@
-package com.sappenin.interledger.ilpv4.connector.accounts;
+package com.sappenin.interledger.ilpv4.connector.links;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkSettings;
+import org.interledger.connector.link.exceptions.LinkNotConnectedException;
 
 import java.util.Set;
 
@@ -15,11 +16,13 @@ public interface LinkManager {
   /**
    * Gets or creates the Link that the account is currently connected to this Connector via.
    *
-   * @param accountId The {@link AccountId} of the links to retrieve.
+   * @param accountId The {@link AccountId} corresponding to the link to create.
    *
-   * @return A {@link Link} that is currently connected for a particular accountId.
+   * @return A newly constructed instance of {@link Link}.
+   *
+   * @throws LinkNotConnectedException if the link cannot be created (e.g., a Websocket client link).
    */
-  Link<? extends LinkSettings> getOrCreateLink(AccountId accountId);
+  Link<? extends LinkSettings> getOrCreateLink(AccountId accountId) throws LinkNotConnectedException;
 
   /**
    * Gets or creates the Link that the account is currently connected to this Connector via.
@@ -28,11 +31,9 @@ public interface LinkManager {
    *
    * @return A newly constructed instance of {@link Link}.
    *
-   * // TODO: Create typed problem here...
-   *
-   * @throws RuntimeException if the link already exists.
+   * @throws LinkNotConnectedException if the link cannot be created (e.g., a Websocket client link).
    */
-  Link<? extends LinkSettings> getOrCreateLink(AccountSettings accountSettings);
+  Link<? extends LinkSettings> getOrCreateLink(AccountSettings accountSettings) throws LinkNotConnectedException;
 
   /**
    * Gets or creates the Link that the account is currently connected to this Connector via.
@@ -42,9 +43,9 @@ public interface LinkManager {
    *
    * @return A newly constructed instance of {@link Link}.
    *
-   * @throws RuntimeException if the link already exists.
+   * @throws LinkNotConnectedException if the link cannot be created (e.g., a Websocket client link).
    */
-  Link<? extends LinkSettings> getOrCreateLink(AccountId accountId, LinkSettings linkSettings);
+  Link<? extends LinkSettings> getOrCreateLink(AccountId accountId, LinkSettings linkSettings) throws LinkNotConnectedException;
 
   /**
    * Accessor for any links that are currently connected to this Connector.

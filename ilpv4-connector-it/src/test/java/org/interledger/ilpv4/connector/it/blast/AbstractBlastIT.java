@@ -1,18 +1,16 @@
 package org.interledger.ilpv4.connector.it.blast;
 
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
-import com.sappenin.interledger.ilpv4.connector.accounts.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.CircuitBreakingLink;
+import org.interledger.connector.link.Link;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
-import org.interledger.ilpv4.connector.it.topology.LinkNode;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.slf4j.Logger;
 
@@ -20,12 +18,10 @@ import java.math.BigInteger;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.StreamSupport;
 
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.connector.link.PingableLink.PING_PROTOCOL_CONDITION;
-import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.ALICE_ADDRESS;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -43,16 +39,21 @@ public abstract class AbstractBlastIT {
    * @param senderNodeAddress  The {@link InterledgerAddress} for the node initiating the ILP ping.
    * @param destinationAddress The {@link InterledgerAddress} to ping.
    */
-  protected void testPing(final InterledgerAddress senderNodeAddress, final InterledgerAddress destinationAddress)
+  protected void testPing(
+    final InterledgerAddress senderNodeAddress,
+    final AccountId senderAccountId,
+    final InterledgerAddress destinationAddress
+  )
     throws InterruptedException {
 
     Objects.requireNonNull(senderNodeAddress);
+    Objects.requireNonNull(senderAccountId);
     Objects.requireNonNull(destinationAddress);
 
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
+    final BlastLink blastLink = getBlastLinkFromGraph(senderNodeAddress, senderAccountId);
     final InterledgerResponsePacket responsePacket = blastLink.ping(destinationAddress, BigInteger.ONE);
 
     new InterledgerResponsePacketHandler() {
@@ -90,26 +91,31 @@ public abstract class AbstractBlastIT {
   }
 
   /**
-   * Helper method to obtain an instance of {@link LinkNode} fromEncodedValue the topology, based upon its Interledger
-   * Address.
+   * Helper method to obtain an instance of {@link Link} from the topology, based upon its Interledger Address.
    *
-   * @param interledgerAddress The unique key of the node to return.
+   * @param nodeAddress The {@link InterledgerAddress} of the node in the graph to obtain a Link from.
+   * @param accountId   The unique account identifier for the Link to return.*
    *
-   * @return
+   * @return A {@link BlastLink} in the Topology that corresponds to the supplied inputs.
    */
-  protected BlastLink getBlastLinkFromGraph(final InterledgerAddress interledgerAddress) {
-    Objects.requireNonNull(interledgerAddress);
+  protected BlastLink getBlastLinkFromGraph(final InterledgerAddress nodeAddress, final AccountId accountId) {
+    Objects.requireNonNull(nodeAddress);
+    Objects.requireNonNull(accountId);
 
-    final LinkManager linkManager = getILPv4NodeFromGraph(interledgerAddress).getLinkManager();
+    final Link link = getILPv4NodeFromGraph(nodeAddress).getLinkManager()
+      .getOrCreateLink(accountId);
 
-    final CircuitBreakingLink circuitBreakingLink = (CircuitBreakingLink) StreamSupport
-      .stream(getILPv4NodeFromGraph(interledgerAddress).getAccountSettingsRepository().findAll().spliterator(), false)
-      .filter(accountSettingsEntity -> accountSettingsEntity.getLinkType().equals(BlastLink.LINK_TYPE))
-      .findFirst()
-      .map(AccountSettings::getAccountId)
-      .map(linkManager::getOrCreateLink)
-      .get();
-    return (BlastLink) circuitBreakingLink.getLinkDelegate();
+    if (BlastLink.LINK_TYPE.equals(link.getLinkSettings().getLinkType())) {
+      // Most of the time, this link is a CircuitBreaking link, in which case the BlastLink is the Delegate.
+      if (CircuitBreakingLink.class.isAssignableFrom(link.getClass())) {
+        return ((CircuitBreakingLink) link).getLinkDelegateTyped();
+      } else {
+        return (BlastLink) link;
+      }
+    } else {
+      throw new RuntimeException(
+        "Link was not of Type(BLAST), but was instead: " + link.getLinkSettings().getLinkType());
+    }
   }
 
   protected void assertAccountBalance(
@@ -118,7 +124,7 @@ public abstract class AbstractBlastIT {
     final BigInteger expectedAmount
   ) {
     assertThat(
-      String.format("Incorrect balance for `%s@%s`!", accountId, connector.getNodeIlpAddress().get().getValue()),
+      String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.getNodeIlpAddress().get().getValue()),
       connector.getBalanceTracker().getBalance(accountId).getAmount().get(), is(expectedAmount.intValue())
     );
   }

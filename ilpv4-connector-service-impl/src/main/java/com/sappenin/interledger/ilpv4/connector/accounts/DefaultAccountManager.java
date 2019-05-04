@@ -1,7 +1,9 @@
 package com.sappenin.interledger.ilpv4.connector.accounts;
 
+import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ModifiableConnectorSettings;
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.Link;
@@ -41,9 +43,8 @@ public class DefaultAccountManager implements AccountManager {
    */
   public DefaultAccountManager(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final AccountSettingsRepository accountSettingsRepository,
-    final LinkManager linkManager,
-    final ConversionService conversionService
+    final ConversionService conversionService, final AccountSettingsRepository accountSettingsRepository,
+    final LinkManager linkManager
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
@@ -82,19 +83,31 @@ public class DefaultAccountManager implements AccountManager {
     // not already been populated.
     if (AccountRelationship.PARENT.equals(accountSettings.getAccountRelationship())) {
       if (!connectorSettingsSupplier.get().getOperatorAddress().isPresent()) {
-        this.initializeParentAccountSettingsViaIlDcp(accountSettings);
+        this.initializeParentAccountSettingsViaIlDcp(accountSettings.getAccountId());
       }
     }
 
     return returnableAccountSettings;
   }
 
+  /**
+   * Initialize a parent account with new settings from the parent connector.
+   *
+   * @param accountId The {@link AccountId} to initialize via IL-DCP.
+   *
+   * @return The new {@link AccountSettings} after performing IL-DCP.
+   */
   @Override
-  public AccountSettings initializeParentAccountSettingsViaIlDcp(final AccountSettings primaryParentAccountSettings) {
-    Objects.requireNonNull(primaryParentAccountSettings);
+  public AccountSettings initializeParentAccountSettingsViaIlDcp(final AccountId accountId) {
+    Objects.requireNonNull(accountId);
 
-    final Link<?> link = this.getLinkManager().createLink(primaryParentAccountSettings, true);
+    // For IL-DCP to work, there MUST be a pre-exising parent account configured in the AccountSettingsRepository.
+    // It's fine to preemptively load from the data-store here because these settings will naturally be updated later
+    // in this method.
+    final AccountSettingsEntity parentAccountSettingsEntity =
+      getAccountSettingsRepository().safeFindByAccountId(accountId);
 
+    final Link<?> link = this.getLinkManager().getOrCreateLink(parentAccountSettingsEntity);
     final IldcpResponse ildcpResponse = ((IldcpFetcher) ildcpRequest -> {
       Objects.requireNonNull(ildcpRequest);
 
@@ -127,14 +140,11 @@ public class DefaultAccountManager implements AccountManager {
     //////////////////////////////////
     // Update the Account Settings with data returned by IL-DCP!
     //////////////////////////////////
-    final AccountSettingsEntity primaryParentAccountSettingsEntity =
-      new AccountSettingsEntity(primaryParentAccountSettings);
-    primaryParentAccountSettingsEntity.setAssetCode(ildcpResponse.getAssetCode());
-    primaryParentAccountSettingsEntity.setAssetScale(ildcpResponse.getAssetScale());
+    parentAccountSettingsEntity.setAssetCode(ildcpResponse.getAssetCode());
+    parentAccountSettingsEntity.setAssetScale(ildcpResponse.getAssetScale());
 
     // Modify Account Settings by removing and re-creating the parent account.
-    final AccountSettingsEntity updatedAccountSettings =
-      getAccountSettingsRepository().save(primaryParentAccountSettingsEntity);
+    final AccountSettings updatedAccountSettings = getAccountSettingsRepository().save(parentAccountSettingsEntity);
 
     logger.info(
       "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().getOperatorAddress().get()
