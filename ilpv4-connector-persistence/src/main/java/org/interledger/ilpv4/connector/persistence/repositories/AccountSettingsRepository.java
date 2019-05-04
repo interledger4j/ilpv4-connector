@@ -1,6 +1,5 @@
 package org.interledger.ilpv4.connector.persistence.repositories;
 
-import org.interledger.connector.accounts.Account;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
@@ -59,7 +58,7 @@ public interface AccountSettingsRepository extends CrudRepository<AccountSetting
    *
    * @param accountId The {@link AccountId} of the account to retrieve.
    *
-   * @return The requested {@link Account}, if present.
+   * @return The requested {@link AccountSettingsEntity}, if present.
    */
   default AccountSettingsEntity safeFindByAccountId(final AccountId accountId) {
     Objects.requireNonNull(accountId);

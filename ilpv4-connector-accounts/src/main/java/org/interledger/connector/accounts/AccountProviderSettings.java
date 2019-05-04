@@ -13,7 +13,10 @@ import java.util.Optional;
  * attributes on-the-fly for any new incoming connection that supports. Examples of an AccountProvider include a BTP
  * server, where connecting to a new account requires settings and other default information that every account should
  * support.
+ *
+ * @deprecated This interface is no longer used, and will be removed in a future version.
  */
+@Deprecated
 public interface AccountProviderSettings {
 
   static ImmutableAccountProviderSettings.Builder builder() {

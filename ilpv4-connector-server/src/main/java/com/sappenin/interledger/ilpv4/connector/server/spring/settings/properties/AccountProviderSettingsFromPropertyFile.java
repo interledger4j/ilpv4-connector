@@ -12,7 +12,10 @@ import java.util.Optional;
 
 /**
  * Models the YAML format for spring-boot automatic configuration property loading.
+ *
+ * @deprecated The AccountProvider concept is no longer necessary, and will be removed in a future version.
  */
+@Deprecated
 public class AccountProviderSettingsFromPropertyFile implements AccountProviderSettings {
 
   private AccountProviderId id;

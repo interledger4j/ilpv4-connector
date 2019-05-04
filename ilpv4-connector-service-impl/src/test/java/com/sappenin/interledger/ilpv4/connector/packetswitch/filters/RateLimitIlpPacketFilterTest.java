@@ -4,7 +4,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.RateLimiter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
-import org.interledger.connector.accounts.Account;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.core.InterledgerAddress;
@@ -63,9 +62,6 @@ public class RateLimitIlpPacketFilterTest {
   private AccountSettingsEntity accountSettingsMock;
 
   @Mock
-  private Account accountMock;
-
-  @Mock
   private InterledgerFulfillPacket responsePacketMock;
 
   @Mock(answer = RETURNS_MOCKS)
@@ -96,7 +92,6 @@ public class RateLimitIlpPacketFilterTest {
 
     // enable rate limiting by default
     when(accountSettingsRepositoryMock.findByAccountId(SOURCE_ACCOUNT_ID)).thenReturn(Optional.of(accountSettingsMock));
-    when(accountMock.getAccountSettings()).thenReturn(accountSettingsMock);
     when(accountSettingsMock.getRateLimitSettings()).thenReturn(rateLimitSettingsMock);
     when(rateLimitSettingsMock.getMaxPacketsPerSecond()).thenReturn(Optional.of(1000));
 

@@ -7,7 +7,7 @@ import java.net.URI;
 import java.util.Objects;
 
 /**
- * A root exception for all exceptions relating to ILPv4A Accounts.
+ * A root exception for all exceptions relating to ILPv4 Accounts.
  */
 public abstract class AccountProblem extends AbstractConnectorProblem {
 

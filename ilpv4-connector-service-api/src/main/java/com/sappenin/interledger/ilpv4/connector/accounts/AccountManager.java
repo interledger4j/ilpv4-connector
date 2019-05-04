@@ -14,7 +14,8 @@ import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsR
 public interface AccountManager {
 
   /**
-   * Accessor for the Account Settings repository that stores all account settings for this connector.
+   * Accessor for the Account Settings repository that stores all account settings for this connector, and enables
+   * access.
    *
    * @return The {@link AccountSettingsRepository}.
    */
