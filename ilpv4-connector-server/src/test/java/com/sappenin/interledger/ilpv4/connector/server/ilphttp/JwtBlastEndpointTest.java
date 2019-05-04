@@ -1,6 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.server.ilphttp;
 
 import com.google.common.collect.Maps;
+import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.links.loopback.LoopbackLink;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServerConfig;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
@@ -24,7 +25,6 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
 import org.interledger.crypto.Decryptor;
 import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
-import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.BlastConfig.BLAST;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME;
@@ -56,7 +57,7 @@ import static org.junit.Assert.fail;
 
 /**
  * Ensures that the API endpoints for BLAST (i.e., `/ilp`) returns the correct values. The Connector in this unit test
- * is `test1.alice`.
+ * is `test.connie`.
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(
@@ -66,6 +67,7 @@ import static org.junit.Assert.fail;
 @ActiveProfiles({"test"})
 @TestPropertySource(
   properties = {
+    ADMIN_PASSWORD + "=password",
     ConnectorProperties.ENABLED_PROTOCOLS + "." + ConnectorProperties.BLAST_ENABLED + "=true",
     ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME + "=crypto/crypto.p12",
     ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD + "=password",
@@ -89,7 +91,7 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
   TestRestTemplate template;
 
   @Autowired
-  AccountSettingsRepository accountSettingsRepository;
+  AccountManager accountManager;
 
   @Before
   public void setup() {
@@ -97,18 +99,19 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
     ////////////////
     // Add the Alice Account to the Connector.
     ////////////////
-    {
+
+    if (!accountManager.getAccountSettingsRepository().findByAccountId(AccountId.of(ALICE)).isPresent()) {
       final Map<String, Object> customSettings = Maps.newHashMap();
       customSettings.put(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256.name());
       customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, "https://alice.example.com/");
       customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
-      customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT, "alice");
+      customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT, ALICE);
       customSettings.put(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH);
 
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256.name());
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, "https://alice.example.com/");
-      customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, "connie");
+      customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, CONNIE);
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH);
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_URL, "https://alice.example.com");
 
@@ -121,24 +124,24 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
         .assetScale(2)
         .assetCode("XRP")
         .build();
-      accountSettingsRepository.save(new AccountSettingsEntity(accountSettings));
+      accountManager.createAccount(new AccountSettingsEntity(accountSettings));
     }
 
     ///////////////////////
     // Add the Bob Account to the Connector.
     ///////////////////////
-    {
+    if (!accountManager.getAccountSettingsRepository().findByAccountId(AccountId.of(BOB)).isPresent()) {
       final Map<String, Object> customSettings = Maps.newHashMap();
       customSettings.put(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256.name());
       customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, "https://bob.example.com/");
       customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
-      customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT, "bob");
+      customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT, BOB);
       customSettings.put(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH);
 
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256.name());
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, "https://bob.example.com/");
-      customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, "connie");
+      customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, CONNIE);
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH);
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_URL, "https://bob.example.com");
 
@@ -151,7 +154,7 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
         .assetScale(2)
         .assetCode("XRP")
         .build();
-      accountSettingsRepository.save(new AccountSettingsEntity(accountSettings));
+      accountManager.createAccount(new AccountSettingsEntity(accountSettings));
     }
   }
 
@@ -161,11 +164,11 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
    */
   @Test
   public void bobPaysAliceUsingIlpOverHttp() {
-    final BlastHttpSender blastHttpSender = jwtBlastHttpSender();
+    final BlastHttpSender blastHttpSender = jwtBlastHttpSenderForBob();
 
     final InterledgerResponsePacket result = blastHttpSender.sendData(
       InterledgerPreparePacket.builder()
-        .destination(InterledgerAddress.of("test.alice"))
+        .destination(InterledgerAddress.of("test.connie.alice"))
         .amount(BigInteger.ONE)
         .expiresAt(Instant.now().plus(5, ChronoUnit.MINUTES))
         .executionCondition(InterledgerCondition.of(new byte[32]))
@@ -191,14 +194,14 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
    */
   @Test
   public void ildcpTestConnection() {
-    final BlastHttpSender blastHttpSender = jwtBlastHttpSender();
+    final BlastHttpSender blastHttpSender = jwtBlastHttpSenderForBob();
     blastHttpSender.testConnection();
   }
 
   /**
    * Setup the HTTP BLAST Client for the `bob` account
    */
-  private BlastHttpSender jwtBlastHttpSender() {
+  private BlastHttpSender jwtBlastHttpSenderForBob() {
 
     final OutgoingLinkSettings outgoingLinkSettings = ImmutableOutgoingLinkSettings.builder()
       .authType(BlastLinkSettings.AuthType.JWT_HS_256)

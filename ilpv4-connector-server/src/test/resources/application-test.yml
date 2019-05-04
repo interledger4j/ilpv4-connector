@@ -5,10 +5,9 @@ logging:
     com.sappenin: INFO
     org.interledger: INFO
     org.springframework: INFO
-    org.springframework.security: TRACE
+    org.springframework.security: INFO
     com.auth0: ERROR
     org.springframework.web.socket: ERROR
-    org.hibernate: INFO
 server:
   port: 8080
   http2:
@@ -72,7 +71,7 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        show_sql: true
+        show_sql: false
         use_sql_comments: true
         format_sql: true
 
@@ -103,3 +102,15 @@ ilpv4:
     globalRoutingSettings:
       # Seed used for generating routing table auth values.
       routingSecret: DocIHaveToTellYouSomethingAboutY
+      staticRoutes:
+        # ILP address prefix that this static route applies to. Configured routes take precedence over the same or
+        # shorter prefixes that are local or published by peers. More specific prefixes will still take precedence.
+        # NOTE: Prefixes should NOT include a trailing period.
+        - targetPrefix: test.connie.alice
+          # ID of the account that destinations matching `targetPrefix` should be forwarded to. Must be one of the
+          # accounts in `accounts`.
+          peerAccountId: alice
+        - targetPrefix: test.connie.bob
+          # ID of the account that destinations matching `targetPrefix` should be forwarded to. Must be one of the
+          # accounts in `accounts`.
+          peerAccountId: bob
