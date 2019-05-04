@@ -14,6 +14,7 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
+import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology;
 import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.AfterClass;
@@ -160,9 +161,9 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   }
 
   /**
-   * Random address should reject since it's not in the Bob's routing table, and ultimately that is the Connector
-   * that will be unable to route this packet because this test method grabs the blasLink from Alice, which is
-   * already connected to Bob, so the ping just goes right over that link straight to Bob.
+   * Random address should reject since it's not in the Bob's routing table, and ultimately that is the Connector that
+   * will be unable to route this packet because this test method grabs the blasLink from Alice, which is already
+   * connected to Bob, so the ping just goes right over that link straight to Bob.
    */
   @Test
   public void testAlicePingsRandom() throws InterruptedException {

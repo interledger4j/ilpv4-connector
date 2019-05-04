@@ -101,31 +101,34 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
   }
 
   /**
-   * Alice and Connie should have an account with each other, so this ping should succeed.
+   * Alice and Bob are two connectors that have an account relationship with each other (alice is the parent, and Bob is
+   * the child). In this test, the `bob` account on Alice is used by Alice to send a ping packet to Bob, which Bob then
+   * fulfills because Ping is enabled.
    */
   @Test
   public void testAlicePingsBob() throws InterruptedException {
     this.testPing(ALICE_ADDRESS, BOB_ACCOUNT, BOB_AT_ALICE_ADDRESS);
 
     // ALICE
-    assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.valueOf(-1));
+    assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.ZERO);
 
     // BOB
     assertAccountBalance(bobConnector, AccountId.of(ALICE), BigInteger.valueOf(1L));
   }
 
   /**
-   * Alice and Connie should have an account with each other, so this ping should succeed.
+   * Alice and Bob are two connectors that have an account relationship with each other (alice is the parent, and Bob is
+   * the child). In this test, the `alice` account on Bob is used by Bob to send a ping packet to Alice, which Alice
+   * then fulfills because Ping is enabled.
    */
   @Test
   public void testBobPingsAlice() throws InterruptedException {
     this.testPing(BOB_AT_ALICE_ADDRESS, ALICE_ACCOUNT, ALICE_ADDRESS);
 
-    // ALICE (Balance will be 1 from the previous test. TODO: Reset balances on each run)
+    // ALICE
     assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.valueOf(1L));
 
     // BOB
-    // TODO: Currently, pinging doesn't cost a connector any money on any actual account. Instead,
     assertAccountBalance(bobConnector, AccountId.of(ALICE), BigInteger.ZERO);
   }
 
