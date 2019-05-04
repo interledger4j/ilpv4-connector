@@ -17,7 +17,6 @@ import org.interledger.connector.link.blast.IncomingLinkSettings;
 import org.interledger.connector.link.blast.JwtBlastHttpSender;
 import org.interledger.connector.link.blast.OutgoingLinkSettings;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
@@ -45,6 +44,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.sappenin.interledger.ilpv4.connector.links.loopback.LoopbackLink.LOOPBACK_FULFILLMENT;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.BlastConfig.BLAST;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -57,7 +57,7 @@ import static org.junit.Assert.fail;
 
 /**
  * Ensures that the API endpoints for BLAST (i.e., `/ilp`) returns the correct values. The Connector in this unit test
- * is `test.connie`.
+ * is `test.connie`, and this test simulates two accounts at the Connector, one for `alice` and one for `bob`.
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(
@@ -160,7 +160,8 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
 
   /**
    * Validate that Bob can send a packet to `alice` and get a fulfillment back. Since `alice` is operating a loopback
-   * account, we always expect a fulfillment.
+   * account, we always expect the {@link LoopbackLink#LOOPBACK_FULFILLMENT} to be returned, so we must make sure that
+   * the prepare packets use the correct corresponding condition derived from that fulfillment.
    */
   @Test
   public void bobPaysAliceUsingIlpOverHttp() {
@@ -171,14 +172,14 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
         .destination(InterledgerAddress.of("test.connie.alice"))
         .amount(BigInteger.ONE)
         .expiresAt(Instant.now().plus(5, ChronoUnit.MINUTES))
-        .executionCondition(InterledgerCondition.of(new byte[32]))
+        .executionCondition(LOOPBACK_FULFILLMENT.getCondition())
         .build()
     );
 
     new InterledgerResponsePacketHandler() {
       @Override
       protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-        assertThat(interledgerFulfillPacket.getFulfillment(), is(LoopbackLink.LOOPBACK_FULFILLMENT));
+        assertThat(interledgerFulfillPacket.getFulfillment(), is(LOOPBACK_FULFILLMENT));
       }
 
       @Override
@@ -198,14 +199,18 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
     blastHttpSender.testConnection();
   }
 
+  //////////////////
+  // Private Helpers
+  //////////////////
+
   /**
-   * Setup the HTTP BLAST Client for the `bob` account
+   * Construct a new HTTP BLAST Client for the `bob` account
    */
   private BlastHttpSender jwtBlastHttpSenderForBob() {
 
     final OutgoingLinkSettings outgoingLinkSettings = ImmutableOutgoingLinkSettings.builder()
       .authType(BlastLinkSettings.AuthType.JWT_HS_256)
-      .tokenSubject("bob")
+      .tokenSubject(BOB)
       .tokenIssuer(HttpUrl.parse("https://bob.example.com/"))
       .tokenAudience("https://connie.example.com/")
       .url(HttpUrl.parse(template.getRootUri() + "/ilp"))

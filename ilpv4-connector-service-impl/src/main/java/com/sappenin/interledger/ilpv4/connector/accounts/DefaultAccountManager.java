@@ -79,12 +79,19 @@ public class DefaultAccountManager implements AccountManager {
     );
 
     // It is _not_ a requirement that a Connector startup with any accounts configured. Thus, the first account added
-    // to the connector with a relationhip type `PARENT` should trigger IL-DCP, but only if the operator address has
+    // to the connector with a relationship type `PARENT` should trigger IL-DCP, but only if the operator address has
     // not already been populated.
     if (AccountRelationship.PARENT.equals(accountSettings.getAccountRelationship())) {
       if (!connectorSettingsSupplier.get().getOperatorAddress().isPresent()) {
         this.initializeParentAccountSettingsViaIlDcp(accountSettings.getAccountId());
       }
+    }
+
+    // Attempt to connect this account...no need to catch any
+    try {
+      this.linkManager.getOrCreateLink(accountSettings.getAccountId()).connect().get();
+    } catch (Exception e) {
+      logger.error("Unable to connect newly added account: " + e.getMessage(), e);
     }
 
     return returnableAccountSettings;

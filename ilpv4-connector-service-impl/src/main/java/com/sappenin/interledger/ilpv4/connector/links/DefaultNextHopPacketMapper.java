@@ -114,7 +114,6 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       sourceAccountId, nextHopRoute.getNextHopAccountId(), sourcePacket
     );
 
-    Instant nowTime = Instant.now();
     return NextHopInfo.builder()
       .nextHopAccountId(nextHopRoute.getNextHopAccountId())
       .nextHopPacket(
