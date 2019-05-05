@@ -48,8 +48,8 @@ public class AccountSettingsTest {
       "\"settleThreshold\":null," +
       "\"settleTo\":null}," +
       "\"rateLimitSettings\":{\"maxPacketsPerSecond\":null}," +
-      "\"isInternal\":false," +
       "\"isConnectionInitiator\":false," +
+      "\"isInternal\":false," +
       "\"isSendRoutes\":false," +
       "\"isReceiveRoutes\":false}"
     ));

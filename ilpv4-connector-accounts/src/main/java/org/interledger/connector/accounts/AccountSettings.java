@@ -209,7 +209,9 @@ public interface AccountSettings {
   @Value.Modifiable
   @JsonSerialize(as = ImmutableAccountSettings.class)
   @JsonDeserialize(as = ImmutableAccountSettings.class)
-  @JsonPropertyOrder({"accountId", "linkType"})
+  @JsonPropertyOrder({"accountId", "linkType", "ilpAddressSegment", "accountRelationship", "assetCode", "assetScale",
+                       "maximumPacketAmount", "customSettings", "description", "balanceSettings", "rateLimitSettings",
+                       "isConnectionInitiator", "isInternal", "isSendRoutes", "isReceiveRoutes"})
   abstract class AbstractAccountSettings implements AccountSettings {
 
     @Override
