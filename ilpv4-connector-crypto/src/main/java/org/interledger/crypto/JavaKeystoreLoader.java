@@ -5,13 +5,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 
-public class KeystoreLoader {
+/**
+ * A class that assist in loading {@link KeyStore} objects from the classpath.
+ */
+public class JavaKeystoreLoader {
 
   public static KeyStore loadFromClasspath(final String jksFileName, final char[] jksPassword) throws Exception {
 
     // Load Secret0 from Keystore.
     final KeyStore keyStore;
-    try (InputStream keyStoreStream = KeystoreLoader.class.getResourceAsStream("/" + jksFileName)) {
+    try (InputStream keyStoreStream = JavaKeystoreLoader.class.getResourceAsStream("/" + jksFileName)) {
       if (keyStoreStream == null) {
         throw new FileNotFoundException("'" + "/" + jksFileName + "' not found on classpath");
       }

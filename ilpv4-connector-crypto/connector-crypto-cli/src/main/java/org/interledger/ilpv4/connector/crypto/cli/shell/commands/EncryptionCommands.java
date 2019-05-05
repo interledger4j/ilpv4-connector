@@ -6,7 +6,7 @@ import org.interledger.crypto.EncryptionException;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.crypto.KeyMetadata;
 import org.interledger.crypto.KeyStoreType;
-import org.interledger.crypto.KeystoreLoader;
+import org.interledger.crypto.JavaKeystoreLoader;
 import org.interledger.crypto.impl.GcpEncryptionService;
 import org.interledger.crypto.impl.JksEncryptionService;
 import org.slf4j.Logger;
@@ -84,7 +84,7 @@ public class EncryptionCommands {
       return "Encoded Encrypted Secret: " + encryptedSecret.encodedValue();
     } else if (this.keyStoreType.equals(KeyStoreType.JKS)) {
       // Load Secret0 from Keystore.
-      final KeyStore keyStore = KeystoreLoader.loadFromClasspath(this.jksFileName, jksPassword.toCharArray());
+      final KeyStore keyStore = JavaKeystoreLoader.loadFromClasspath(this.jksFileName, jksPassword.toCharArray());
 
       final SecretKey secret0Key = loadSecretKeyFromJavaKeystore(keyStore);
       final EncryptionService encryptionService = new JksEncryptionService(secret0Key);
@@ -124,7 +124,7 @@ public class EncryptionCommands {
       return "Encoded Encrypted Secret: " + Base64.getUrlEncoder().encodeToString(plainTextBytes);
     } else if (this.keyStoreType.equals(KeyStoreType.JKS)) {
       // Load Secret0 from Keystore.
-      final KeyStore keyStore = KeystoreLoader.loadFromClasspath(this.jksFileName, jksPassword.toCharArray());
+      final KeyStore keyStore = JavaKeystoreLoader.loadFromClasspath(this.jksFileName, jksPassword.toCharArray());
       final SecretKey secret0Key = loadSecretKeyFromJavaKeystore(keyStore);
       final EncryptionService encryptionService = new JksEncryptionService(secret0Key);
       final EncryptedSecret encryptedSecret = EncryptedSecret.fromEncodedValue(encodedValue);

@@ -55,7 +55,7 @@ public class SingleConnectorSingleAccountBtpTopology {
   //        ////////////////////
   //        // TODO remove this once a proper administrative system + listener is added to the Connector. For example, an
   //        //  adminstrative function called "reload" should exist, which should trigger an event to all sub-services to
-  //        //  reload themselves. The primary use-case is this IT where the RoutingSettings first get loaded fromEncodedValue the
+  //        //  reload themselves. The primary use-case is this IT where the RoutingSettings first get loaded from the
   //        //  .yml file, and then replaced in ConnectorServer. In ConnectorServer, we would want to call `reload` so
   //        //  that all sub-services re-initialized themselves with the new ConnectorSettings. This would also be useful
   //        //  if ConnectorSettings ever change during runtime. For now, however, this is limited to the ExternalRoutingService,

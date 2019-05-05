@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.util.Objects;
 
 /**
- * A {@link Encryptor} and {@link Decryptor} that uses Google KMS to store private keys and otherwise perform sensitive
+ * An {@link Encryptor} and {@link Decryptor} that uses Google KMS to store private keys and otherwise perform sensitive
  * operations.
  */
 public class GcpEncryptionService implements EncryptionService {

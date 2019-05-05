@@ -1,8 +1,8 @@
 package org.interledger.crypto.gcp;
 
-import org.interledger.crypto.KeyMetadata;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionAlgorithm;
+import org.interledger.crypto.KeyMetadata;
 import org.interledger.crypto.impl.GcpEncryptionService;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -13,7 +13,7 @@ import static org.hamcrest.core.Is.is;
 /**
  * Unit test for {@link GcpEncryptionService}.
  */
-public class GcpSecretsManagerTest {
+public class GcpEncryptionServiceTest {
 
   private static final String TEST_SECRET = "shh";
   private GcpEncryptionService gcpEncryptionService;
@@ -44,6 +44,4 @@ public class GcpSecretsManagerTest {
     final byte[] byteString = gcpEncryptionService.decrypt(encryptedSecret);
     assertThat(new String(byteString), is(TEST_SECRET));
   }
-
-  // TODO: Sign+Verify
 }
