@@ -1,7 +1,7 @@
 package org.interledger.ilpv4.connector.it.blast;
 
-import com.sappenin.interledger.ilpv4.connector.ConnectorProfiles;
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
+import com.sappenin.interledger.ilpv4.connector.RuntimeProperties;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.blast.BlastLink;
@@ -44,7 +44,7 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
   public static void setupClass() {
     System.setProperty(DEFAULT_JWT_TOKEN_ISSUER, "https://connie.example.com");
     System.setProperty(ADMIN_PASSWORD, "password");
-    System.setProperty(SPRING_PROFILES_ACTIVE, ConnectorProfiles.DEV);
+    System.setProperty(SPRING_PROFILES_ACTIVE, RuntimeProperties.ConnectorProfiles.DEV);
     // Required to get the conditional-config to work for this topology...
     System.setProperty(ConnectorProperties.ENABLED_PROTOCOLS + DOT + ConnectorProperties.BLAST_ENABLED, "true");
 

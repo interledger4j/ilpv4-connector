@@ -8,7 +8,6 @@ import javax.persistence.Column;
 import java.math.BigInteger;
 import java.util.Optional;
 
-//@Entity
 @Access(AccessType.FIELD)
 public class AccountBalanceSettingsEntity implements AccountBalanceSettings {
 

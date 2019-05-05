@@ -21,23 +21,10 @@ public class RuntimeUtils {
   public static boolean gcpProfileEnabled(final Environment environment) {
     Objects.requireNonNull(environment);
 
-    // If GAE profile is enabled, add those secrets...
+    // If GCP profile is enabled, add those secrets...
     final boolean runningInGcp = Arrays.stream(environment.getActiveProfiles())
       .filter(profile -> RuntimeProperties.Runtimes.GCP.equals(profile))
       .findAny().map($ -> true).orElse(false);
-    return runningInGcp;
-  }
-
-  /**
-   * Determines if the runtime is running in Google Cloud Platform (GCP) by looking to see if the environment property
-   * `GOOGLE_CLOUD_PROJECT` is present. If this is found, it means we're running in GCP (or we're running in an
-   * environment where the operator wants the runtime to assume this is the case).
-   *
-   * @return {@code true} if the runtime is running in GCP; {@code false} otherwise.
-   */
-  public static boolean runningInGcp() {
-    // If GAE profile is enabled, add those secrets...
-    final boolean runningInGcp = getGoogleCloudProjectId().isPresent();
     return runningInGcp;
   }
 

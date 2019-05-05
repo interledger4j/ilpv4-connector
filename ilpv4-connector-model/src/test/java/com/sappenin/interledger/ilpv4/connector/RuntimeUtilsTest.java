@@ -50,16 +50,6 @@ public class RuntimeUtilsTest {
   }
 
   @Test
-  public void testRunningInGcp() throws ReflectiveOperationException {
-    assertThat(RuntimeUtils.runningInGcp(), is(false));
-    System.setProperty(GOOGLE_CLOUD_PROJECT, "foo");
-    assertThat(RuntimeUtils.runningInGcp(), is(false));
-
-    updateEnv(GOOGLE_CLOUD_PROJECT, "foo");
-    assertThat(RuntimeUtils.runningInGcp(), is(true));
-  }
-
-  @Test
   public void testGetGcpProjectName() throws ReflectiveOperationException {
     assertThat(RuntimeUtils.getGoogleCloudProjectId().isPresent(), is(false));
     System.setProperty(GOOGLE_CLOUD_PROJECT, "foo");

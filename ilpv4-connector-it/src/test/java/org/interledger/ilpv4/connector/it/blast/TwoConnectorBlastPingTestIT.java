@@ -1,7 +1,7 @@
 package org.interledger.ilpv4.connector.it.blast;
 
-import com.sappenin.interledger.ilpv4.connector.ConnectorProfiles;
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
+import com.sappenin.interledger.ilpv4.connector.RuntimeProperties;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.blast.BlastLink;
@@ -14,7 +14,6 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
-import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology;
 import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.AfterClass;
@@ -65,7 +64,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   public static void setupClass() {
     System.setProperty(DEFAULT_JWT_TOKEN_ISSUER, "https://connie.example.com");
     System.setProperty(ADMIN_PASSWORD, "password");
-    System.setProperty(SPRING_PROFILES_ACTIVE, ConnectorProfiles.DEV);
+    System.setProperty(SPRING_PROFILES_ACTIVE, RuntimeProperties.ConnectorProfiles.DEV);
     // Required to get the conditional-config to work for this topology...
     System.setProperty(ConnectorProperties.ENABLED_PROTOCOLS + "." + ConnectorProperties.BLAST_ENABLED, "true");
 
@@ -427,17 +426,24 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
     double totalTime = (end - start);
 
-    double averageProcssingTime = ((double) (totalMillis.get()) / numReps);
+    double averageProcessingTime = ((double) (totalMillis.get()) / numReps);
     double averageMsPerPing = totalTime / numReps;
 
     LOGGER.info("[Pings Perf Test] Latch Count: {}", latch.getCount());
     LOGGER.info("[Pings Perf Test] {} pings took {} ms", numReps, totalTime);
-    LOGGER.info("[Pings Perf Test] Each Ping spent {} ms processing, on Average", averageProcssingTime);
+    LOGGER.info("[Pings Perf Test] Each Ping spent {} ms processing, on Average", averageProcessingTime);
     LOGGER.info("[Pings Perf Test] Average ms/ping: {} ms", averageMsPerPing);
 
     assertThat(latch.getCount(), is(0L));
-    assertThat(averageProcssingTime < 20, is(true));
-    assertThat(averageMsPerPing < 2, is(true));
+    assertThat(
+      "averageProcessingTime should have been less than 20, but was " + averageProcessingTime,
+      averageProcessingTime < 20,
+      is(true)
+    );
+    assertThat(
+      "averageMsPerPing should have been less than 2, but was " + averageMsPerPing, averageMsPerPing < 2,
+      is(true)
+    );
 
     assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.ZERO);
     assertAccountBalance(bobConnector, AccountId.of(ALICE), BigInteger.valueOf(numReps));

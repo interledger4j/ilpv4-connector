@@ -150,18 +150,6 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
   @Override
   public void start() {
     this.reloadLocalRoutes();
-
-    // Add each non-internal account to this service so that each can be tracked in the external routing table.
-    // For example, if a Link for a given account disconnects, then we want this ExternalRoutingService to know about
-    // it so that payments aren't routed through a disconnected Link.
-
-    // TODO: For a system with _many_ accounts, the structure of this service is inefficient. Instead, account/link
-    //  queries should be executed only when a particular account's information is required by the router. That way,
-    //  we can take the expensive task of loading once, cache that information for some amount of time, and then
-    //    StreamSupport.stream(accountSettingsRepository.findAll().spliterator(), false)
-    //      .filter(accountSettings -> accountSettings.isInternal() == false)
-    //      .map(AccountSettings::getAccountId)
-    //      .forEach(accountId -> this.registerAccountWithDataLink(accountId, );
   }
 
   @Override

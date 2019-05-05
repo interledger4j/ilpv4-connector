@@ -96,7 +96,7 @@ public interface BlastLinkSettings extends LinkSettings {
     /**
      * Use RSA asymmetric keys to create aand verify JWT_RS_256 tokens.
      */
-    JWT_RS_256
+    //JWT_RS_256
   }
 
   @Value.Immutable

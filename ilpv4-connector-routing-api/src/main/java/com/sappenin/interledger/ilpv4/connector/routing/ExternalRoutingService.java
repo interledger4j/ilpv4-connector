@@ -21,11 +21,6 @@ public interface ExternalRoutingService extends PaymentRouter<Route> {
   void start();
 
   /**
-   * Shutdown the Routing Service.
-   */
-  //void shutdown();
-
-  /**
    * Register this service to respond to connect/disconnect events that may be emitted from a {@link Link}, and then add
    * the account to this service's internal machinery so that packets can be routed using the supplied Link.
    *

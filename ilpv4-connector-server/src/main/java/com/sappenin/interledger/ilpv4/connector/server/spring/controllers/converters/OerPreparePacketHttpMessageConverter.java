@@ -34,7 +34,7 @@ public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMes
   }
 
   /**
-   * Abstract template method that writes the actual body. Invoked fromEncodedValue {@link #write}.
+   * Abstract template method that writes the actual body. Invoked from {@link #write}.
    *
    * @param interledgerPacket the object to write to the output message
    * @param type              the type of object to write (may be {@code null})
@@ -53,10 +53,10 @@ public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMes
   }
 
   /**
-   * Abstract template method that reads the actual object. Invoked fromEncodedValue {@link #read}.
+   * Abstract template method that reads the actual object. Invoked from {@link #read}.
    *
-   * @param clazz        the type of object to return
-   * @param inputMessage the HTTP input message to read fromEncodedValue
+   * @param clazz        the type of object to return.
+   * @param inputMessage the HTTP input message to read from.
    *
    * @return the converted object
    *
@@ -81,7 +81,7 @@ public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMes
    *                     true}.
    * @param contextClass a context class for the target type, for example a class in which the target type appears in a
    *                     method signature (can be {@code null})
-   * @param inputMessage the HTTP input message to read fromEncodedValue
+   * @param inputMessage the HTTP input message to read from.
    *
    * @return the converted object
    *

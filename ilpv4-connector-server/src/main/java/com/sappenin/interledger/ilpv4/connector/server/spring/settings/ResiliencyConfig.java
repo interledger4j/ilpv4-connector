@@ -22,7 +22,7 @@ public class ResiliencyConfig {
       // a custom Predicate which evaluates if an exception should be recorded as a failure and thus increase the failure rate
       // All InterledgerProtocolExceptions are considered to _not_ be a failure for purpose of circuit breaking.
       // Instead, We want all Reject packets to be propagated back to the initiator so we don't accidentally get a
-      // DOS attack fromEncodedValue an upstream actor sending something like T03 rejections to itself through us.
+      // DOS attack from an upstream actor sending something like T03 rejections to itself through us.
       .ignoreExceptions(InterledgerProtocolException.class)
       .enableAutomaticTransitionFromOpenToHalfOpen()
       .build();
