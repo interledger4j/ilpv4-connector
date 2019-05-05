@@ -15,7 +15,7 @@
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <name>ILPv4 :: Parent</name>
+  <name>ILPv4 :: Connector :: Parent</name>
   <description>The parent pom for this ILPv4 Connector.</description>
 
   <properties>
@@ -27,9 +27,10 @@
     <problem-spring-web.version>0.24.0-RC.0</problem-spring-web.version>
 
     <grpc.version>1.16.1</grpc.version>
-    <protobuf.maven.plugin.version>0.6.1</protobuf.maven.plugin.version>
-    <protoc.version>3.6.1</protoc.version>
-    <protoc.gen.grpc.java.version>1.16.1</protoc.gen.grpc.java.version>
+    <protobuf-java.version>3.7.1</protobuf-java.version>
+    <!--    <protobuf.maven.plugin.version>0.6.1</protobuf.maven.plugin.version>-->
+    <!--    <protoc.version>3.6.1</protoc.version>-->
+    <!--    <protoc.gen.grpc.java.version>1.16.1</protoc.gen.grpc.java.version>-->
 
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
     <spring-cloud.version>Greenwich.SR1</spring-cloud.version>
@@ -42,12 +43,17 @@
 
   <modules>
     <module>ilpv4-api</module>
+    <module>ilpv4-connector-core</module>
+    <module>ilpv4-connector-crypto</module>
+    <module>ilpv4-connector-crypto/connector-crypto-cli</module>
     <module>ilpv4-connector-accounts</module>
     <module>ilpv4-connector-link</module>
     <module>ilpv4-connector-link-blast</module>
     <module>ilpv4-connector-model</module>
+    <module>ilpv4-connector-jackson</module>
     <module>ilpv4-connector-routing-api</module>
     <module>ilpv4-connector-service-api</module>
+    <module>ilpv4-connector-persistence</module>
     <module>ilpv4-connector-routing-impl</module>
     <module>ilpv4-connector-service-impl</module>
     <module>ilpv4-connector-server</module>
@@ -56,13 +62,13 @@
 
   <dependencyManagement>
     <dependencies>
-      <dependency>
-        <groupId>org.springframework.cloud</groupId>
-        <artifactId>spring-cloud-dependencies</artifactId>
-        <version>${spring-cloud.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
+      <!--      <dependency>-->
+      <!--        <groupId>org.springframework.cloud</groupId>-->
+      <!--        <artifactId>spring-cloud-dependencies</artifactId>-->
+      <!--        <version>${spring-cloud.version}</version>-->
+      <!--        <type>pom</type>-->
+      <!--        <scope>import</scope>-->
+      <!--      </dependency>-->
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>ilpv4-api</artifactId>
@@ -80,7 +86,27 @@
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-crypto</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-jackson</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>ilpv4-connector-model</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>ilpv4-connector-persistence</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -137,6 +163,32 @@
         <groupId>com.auth0</groupId>
         <artifactId>auth0-spring-security-api</artifactId>
         <version>1.2.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.kstyrc</groupId>
+        <artifactId>embedded-redis</artifactId>
+        <scope>test</scope>
+        <version>0.6</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.cloud</groupId>
+        <artifactId>google-cloud-kms</artifactId>
+        <version>1.2.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.api.grpc</groupId>
+        <artifactId>proto-google-cloud-kms-v1</artifactId>
+        <version>0.52.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.http-client</groupId>
+        <artifactId>google-http-client</artifactId>
+        <version>1.29.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>${protobuf-java.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -268,9 +320,28 @@
         <version>2.1.4.RELEASE</version>
       </dependency>
       <dependency>
-        <groupId>org.springframework.cloud</groupId>
-        <artifactId>spring-cloud-config-server</artifactId>
-        <version>2.1.1.RELEASE</version>
+        <groupId>org.springframework.hateoas</groupId>
+        <artifactId>spring-hateoas</artifactId>
+        <version>0.25.1.RELEASE</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.plugin</groupId>
+        <artifactId>spring-plugin-core</artifactId>
+        <version>1.2.0.RELEASE</version>
       </dependency>
       <dependency>
         <groupId>org.zalando</groupId>
@@ -292,6 +363,12 @@
         <artifactId>problem-spring-web</artifactId>
         <version>${problem-spring-web.version}</version>
       </dependency>
+      <!--      <dependency>-->
+      <!--        <groupId>redis.clients</groupId>-->
+      <!--        <artifactId>jedis</artifactId>-->
+      <!--        <version>2.9.0</version>-->
+      <!--        <type>jar</type>-->
+      <!--      </dependency>-->
     </dependencies>
   </dependencyManagement>
 
@@ -329,14 +406,22 @@
                   <ignoredDependency>com.google.code.findbugs:annotations</ignoredDependency>
                   <ignoredDependency>com.google.errorprone:error_prone_annotations</ignoredDependency>
                   <ignoredDependency>com.auth0:jwks-rsa</ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-data-redis</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-web</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-jetty</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-websocket</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-security</ignoredDependency>
-                  <ignoredDependency>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure</ignoredDependency>
-                  <ignoredDependency>org.springframework.boot:spring-boot-starter-actuator</ignoredDependency>
+                  <ignoredDependency>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure
+                  </ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-jpa:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-test:jar</ignoredDependency>
-                  <ignoredDependency>org.springframework.boot:spring-boot-configuration-processor:jar</ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-data-jpa:jar</ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-configuration-processor:jar
+                  </ignoredDependency>
+                  <ignoredDependency>org.springframework.plugin:spring-plugin-core:jar</ignoredDependency>
+                  <ignoredDependency>com.h2database:h2:jar</ignoredDependency>
+                  <ignoredDependency>org.hibernate:hibernate-entitymanager</ignoredDependency>
+                  <ignoredDependency>redis.clients:jedis</ignoredDependency>
                 </ignoredDependencies>
               </configuration>
             </execution>

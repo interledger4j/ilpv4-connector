@@ -21,17 +21,13 @@ public interface ExternalRoutingService extends PaymentRouter<Route> {
   void start();
 
   /**
-   * Shutdown the Routing Service.
-   */
-  void shutdown();
-
-  /**
    * Register this service to respond to connect/disconnect events that may be emitted from a {@link Link}, and then add
-   * the account to this service's internal machinery.
+   * the account to this service's internal machinery so that packets can be routed using the supplied Link.
    *
-   * @param account The address of a remote peer that can have packets routed to it.
+   * @param account  The address of a remote peer that can have packets routed to it.
+   * @param dataLink The associated {@link Link} that the supplied accountId is currently connected to.
    */
-  void registerAccount(AccountId account);
+  void registerAccountWithDataLink(AccountId account, Link<?> dataLink);
 
   /**
    * Untrack a peer account address from participating in Routing.

@@ -4,23 +4,28 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.accounts.BlastAccountIdResolver;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountIdResolver;
-import com.sappenin.interledger.ilpv4.connector.server.spring.converters.OerPreparePacketHttpMessageConverter;
+import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.converters.OerPreparePacketHttpMessageConverter;
+import okhttp3.HttpUrl;
 import org.interledger.connector.link.LinkFactoryProvider;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkFactory;
 import org.interledger.connector.link.events.LinkEventEmitter;
+import org.interledger.crypto.Decryptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import org.springframework.core.env.Environment;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
+import java.util.Optional;
 
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.BLAST_ENABLED;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DEFAULT_JWT_TOKEN_ISSUER;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ENABLED_PROTOCOLS;
 
 /**
  * <p>Configures ILP-over-HTTP (i.e., BLAST), which provides a single Link-layer mechanism for this Connector's
@@ -30,11 +35,13 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
  * BLAST client links.</p>
  */
 @Configuration
-@ConditionalOnProperty(BLAST_ENABLED)
-@Import({SpringConnectorWebMvc.class})
+@ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = BLAST_ENABLED, havingValue = "true")
 public class BlastConfig {
 
   public static final String BLAST = "blast";
+
+  @Autowired
+  Environment environment;
 
   @Autowired
   LinkEventEmitter linkEventEmitter;
@@ -45,6 +52,9 @@ public class BlastConfig {
   @Autowired
   @Qualifier(BLAST)
   RestTemplate blastRestTemplate;
+
+  @Autowired
+  Decryptor decryptor;
 
   @Bean
   @Qualifier(BLAST)
@@ -60,6 +70,13 @@ public class BlastConfig {
   }
 
   @Bean
+  HttpUrl defaultJwtTokenIssuer() {
+    return Optional.ofNullable(environment.getProperty(DEFAULT_JWT_TOKEN_ISSUER))
+      .map(HttpUrl::parse)
+      .orElseThrow(() -> new IllegalStateException("Property `" + DEFAULT_JWT_TOKEN_ISSUER + "` must be defined!"));
+  }
+
+  @Bean
   BlastAccountIdResolver blastAccountIdResolver() {
     return new DefaultAccountIdResolver();
   }
@@ -67,7 +84,7 @@ public class BlastConfig {
   @PostConstruct
   public void startup() {
     linkFactoryProvider.registerLinkFactory(
-      BlastLink.LINK_TYPE, new BlastLinkFactory(linkEventEmitter, blastRestTemplate)
+      BlastLink.LINK_TYPE, new BlastLinkFactory(linkEventEmitter, blastRestTemplate, decryptor)
     );
   }
 }

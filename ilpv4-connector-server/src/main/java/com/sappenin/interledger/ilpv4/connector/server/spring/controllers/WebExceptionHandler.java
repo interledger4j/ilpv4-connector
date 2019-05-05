@@ -17,7 +17,7 @@ import static org.interledger.connector.link.blast.BlastHeaders.ILP_OCTET_STREAM
 
 /**
  * WARNING: Only handle HTTP-related exceptions here. General Connector exceptions MUST be handled in the PacketSwitch
- * in order to work with an Link type.
+ * in order to work with a Link type.
  */
 @ControllerAdvice
 public class WebExceptionHandler {

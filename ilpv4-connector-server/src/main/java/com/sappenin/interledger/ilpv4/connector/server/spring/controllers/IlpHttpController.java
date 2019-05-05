@@ -6,6 +6,7 @@ import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,6 +17,8 @@ import org.zalando.problem.spring.common.MediaTypes;
 
 import java.util.Objects;
 
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.BLAST_ENABLED;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ENABLED_PROTOCOLS;
 import static org.interledger.connector.link.blast.BlastHeaders.APPLICATION_ILP_OCTET_STREAM_VALUE;
 
 /**
@@ -24,6 +27,7 @@ import static org.interledger.connector.link.blast.BlastHeaders.APPLICATION_ILP_
  * @see "https://github.com/interledger/rfcs/blob/master/0035-ilp-over-http/0035-ilp-over-http.md"
  */
 @RestController
+@ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = BLAST_ENABLED, havingValue = "true")
 public class IlpHttpController {
 
   public static final String ILP_PATH = "/ilp";

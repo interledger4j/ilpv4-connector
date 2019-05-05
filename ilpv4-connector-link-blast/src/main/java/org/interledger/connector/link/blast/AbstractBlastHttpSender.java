@@ -17,7 +17,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
-import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -33,15 +32,11 @@ import static org.springframework.http.HttpMethod.POST;
 public abstract class AbstractBlastHttpSender implements BlastHttpSender {
 
   protected final Logger logger = LoggerFactory.getLogger(this.getClass());
-
   // Sometimes the Operator Address is not yet populated. In this class, there are times when we require it to be
   // populated, and there are times when we expect this value to possibly be un-initialized.d
   private final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier;
-
-  // Server Endpoint.
-  private final URI uri;
   private final RestTemplate restTemplate;
-  private final Supplier<String> accountIdSupplier;
+  private final OutgoingLinkSettings outgoingLinkSettings;
 
   // Determined via testConnection when the Connection starts-up, if possible.
   private MediaType blastHeader = ILP_OCTET_STREAM;
@@ -50,21 +45,17 @@ public abstract class AbstractBlastHttpSender implements BlastHttpSender {
    * Required-args Constructor.
    *
    * @param operatorAddressSupplier A {@link Supplier} for the ILP address of the node operating this BLAST sender.
-   * @param uri                     The URI of the HTTP endpoint to send BLAST requests to.
    * @param restTemplate            A {@link RestTemplate} to use to communicate with the remote BLAST endpoint.
-   * @param accountIdSupplier       A {@link Supplier} for the AccountId to use when communicating with the remote
-   *                                endpoint.
+   * @param outgoingLinkSettings    A {@link OutgoingLinkSettings} for communicating with the remote endpoint.
    */
   public AbstractBlastHttpSender(
     final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
-    final URI uri,
     final RestTemplate restTemplate,
-    final Supplier<String> accountIdSupplier
+    final OutgoingLinkSettings outgoingLinkSettings
   ) {
     this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
-    this.uri = Objects.requireNonNull(uri);
     this.restTemplate = Objects.requireNonNull(restTemplate);
-    this.accountIdSupplier = Objects.requireNonNull(accountIdSupplier);
+    this.outgoingLinkSettings = Objects.requireNonNull(outgoingLinkSettings);
   }
 
   /**
@@ -78,8 +69,8 @@ public abstract class AbstractBlastHttpSender implements BlastHttpSender {
    */
   public InterledgerResponsePacket sendData(final InterledgerPreparePacket preparePacket) {
     final HttpHeaders headers = constructBlastRequestHeaders();
-    final RequestEntity<InterledgerPreparePacket> requestEntity
-      = new RequestEntity<>(preparePacket, headers, POST, uri);
+    final RequestEntity<InterledgerPreparePacket> requestEntity =
+      new RequestEntity<>(preparePacket, headers, POST, outgoingLinkSettings.url().uri());
     final ResponseEntity<InterledgerResponsePacket> response = restTemplate
       .exchange(requestEntity, InterledgerResponsePacket.class);
 
@@ -108,11 +99,11 @@ public abstract class AbstractBlastHttpSender implements BlastHttpSender {
    * endpoint does not support BLAST requests, then we expect a 415 UNSUPPORTED_MEDIA_TYPE.</p>
    */
   public void testConnection() {
+    final String accountId = outgoingLinkSettings.tokenSubject();
     try {
-
       final HttpHeaders headers = constructBlastRequestHeaders();
       final RequestEntity<InterledgerPreparePacket> requestEntity = new RequestEntity<>(
-        UNFULFILLABLE_PACKET, headers, POST, uri
+        UNFULFILLABLE_PACKET, headers, POST, outgoingLinkSettings.url().uri()
       );
       final ResponseEntity<InterledgerResponsePacket> response = restTemplate.exchange(
         requestEntity, InterledgerResponsePacket.class
@@ -129,11 +120,11 @@ public abstract class AbstractBlastHttpSender implements BlastHttpSender {
           final MediaType contentType = response.getHeaders().getContentType();
           if (logger.isDebugEnabled()) {
             logger.debug("Remote peer-link `{}` ({}) supports ILP-over-HTTP (BLAST): {}",
-              accountIdSupplier.get(), uri, response.getHeaders()
+              outgoingLinkSettings.tokenSubject(), outgoingLinkSettings.url(), response.getHeaders()
             );
           } else {
             logger.info("Remote peer `{}` ({}) supports ILP-over-HTTP (BLAST) using `{}`",
-              accountIdSupplier.get(), uri, contentType
+              accountId, outgoingLinkSettings.url(), contentType
             );
           }
           this.blastHeader = Optional.ofNullable(response.getHeaders().getContentType()).orElse(ILP_OCTET_STREAM);
@@ -141,7 +132,7 @@ public abstract class AbstractBlastHttpSender implements BlastHttpSender {
           throw new HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
             String.format("Remote peer-link `%s` (%s) DOES NOT support ILP-over-HTTP (BLAST)",
-              accountIdSupplier.get(), uri
+              accountId, outgoingLinkSettings.url()
             ));
         }
       } else if (response.getStatusCode().is4xxClientError()) {
@@ -149,21 +140,21 @@ public abstract class AbstractBlastHttpSender implements BlastHttpSender {
           throw new HttpClientErrorException(
             response.getStatusCode(),
             String.format("Remote peer-link `%s` (%s) DOES NOT support ILP-over-HTTP (BLAST)",
-              accountIdSupplier.get(), uri
+              accountId, outgoingLinkSettings.url()
             )
           );
         } else if (response.getStatusCode().equals(HttpStatus.UNSUPPORTED_MEDIA_TYPE)) {
           throw new HttpClientErrorException(
             response.getStatusCode(),
             String.format("Remote peer-link `%s` (%s) DOES NOT support ILP-over-HTTP (BLAST)",
-              accountIdSupplier.get(), uri
+              accountId, outgoingLinkSettings.url()
             )
           );
         } else {
           throw new HttpClientErrorException(
             response.getStatusCode(),
             String.format("Unable to connect to ILP-over-HTTP (BLAST) peer-link: `%s` (%s)",
-              accountIdSupplier.get(), uri
+              accountId, outgoingLinkSettings.url()
             )
           );
         }
@@ -171,20 +162,20 @@ public abstract class AbstractBlastHttpSender implements BlastHttpSender {
     } catch (HttpClientErrorException e) {
       if (e.getStatusCode().equals(HttpStatus.NOT_FOUND)) {
         logger.warn(String.format("Unable to connect to ILP-over-HTTP (BLAST) peer-link: `%s` (%s): %s",
-          accountIdSupplier.get(), uri, e.getMessage())
+          accountId, outgoingLinkSettings.url(), e.getMessage())
         );
       } else {
         throw new HttpClientErrorException(
           e.getStatusCode(),
           String.format("Unable to connect to ILP-over-HTTP (BLAST) peer-link: `%s` (%s): %s",
-            accountIdSupplier.get(), uri, e.getStatusText()
+            accountId, outgoingLinkSettings.url(), e.getStatusText()
           )
         );
       }
     } catch (ResourceAccessException e) { // Remote endpoint is not serving...
       logger.warn(
         String.format("Unable to connect to ILP-over-HTTP (BLAST) peer-link: `%s` (%s): %s",
-          accountIdSupplier.get(), uri, e.getMessage())
+          accountId, outgoingLinkSettings.url(), e.getMessage())
       );
     }
   }
@@ -202,26 +193,27 @@ public abstract class AbstractBlastHttpSender implements BlastHttpSender {
       headers.set(ILP_OPERATOR_ADDRESS_VALUE, operatorAddress.getValue());
     });
 
-    headers.setBearerAuth(new String(this.constructAuthToken()));
+    headers.setBearerAuth(this.constructAuthToken());
     return headers;
   }
 
-  protected abstract byte[] constructAuthToken();
+  /**
+   * Construct an authentication token that can be used for an outgoing request.
+   *
+   * @return A byte-array containing the auth token.
+   */
+  protected abstract String constructAuthToken();
 
   protected Supplier<Optional<InterledgerAddress>> getOperatorAddressSupplier() {
     return operatorAddressSupplier;
-  }
-
-  protected URI getUri() {
-    return uri;
   }
 
   protected RestTemplate getRestTemplate() {
     return restTemplate;
   }
 
-  protected Supplier<String> getAccountIdSupplier() {
-    return accountIdSupplier;
+  protected OutgoingLinkSettings getOutgoingLinkSettings() {
+    return outgoingLinkSettings;
   }
 
   /**

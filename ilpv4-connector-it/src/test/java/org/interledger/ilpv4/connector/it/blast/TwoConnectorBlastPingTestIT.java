@@ -1,7 +1,7 @@
 package org.interledger.ilpv4.connector.it.blast;
 
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
-import com.sappenin.interledger.ilpv4.connector.server.spring.settings.ConnectorProfile;
+import com.sappenin.interledger.ilpv4.connector.RuntimeProperties;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.blast.BlastLink;
@@ -32,9 +32,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DEFAULT_JWT_TOKEN_ISSUER;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.SPRING_PROFILES_ACTIVE;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.connector.link.PingableLink.PING_PROTOCOL_CONDITION;
+import static org.interledger.ilpv4.connector.it.topologies.blast.AbstractTopology.ALICE_ACCOUNT;
+import static org.interledger.ilpv4.connector.it.topologies.blast.AbstractTopology.BOB_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.ALICE;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.ALICE_ADDRESS;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.BOB;
@@ -42,9 +47,9 @@ import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPe
 import static org.junit.Assert.assertThat;
 
 /**
- * Tests to verify that a single connector can route data and money to/from a single child peer. In this test, value is
- * transferred both from Alice->Bob, and then in the opposite direction. Thus, both Alice and Bob sometimes play the
- * role of sender and sometimes play the role of receiver.
+ * Tests to verify that a single connector can route data and money to/from a single child peer. In this
+ * test, value is transferred both from Alice->Bob, and then in the opposite direction. Thus, both Alice and
+ * Bob sometimes play the role of sender and sometimes play the role of receiver.
  */
 // TODO: Once the PING protocol is specified via RFC, extract the PING tests into an abstract super-class. Every IT
 //  should excercise PING functionality as a baseline, and thus far both BTP and BLAST duplicate the same PING tests.
@@ -52,14 +57,16 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorBlastPingTestIT.class);
   private static Topology topology = TwoConnectorPeerBlastTopology.init();
-
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
 
   @BeforeClass
   public static void setupClass() {
-    System.setProperty("spring.profiles.active", ConnectorProfile.CONNECTOR_MODE + "," + ConnectorProfile.DEV);
-    System.setProperty(ConnectorProperties.BLAST_ENABLED, "true");
+    System.setProperty(DEFAULT_JWT_TOKEN_ISSUER, "https://connie.example.com");
+    System.setProperty(ADMIN_PASSWORD, "password");
+    System.setProperty(SPRING_PROFILES_ACTIVE, RuntimeProperties.ConnectorProfiles.DEV);
+    // Required to get the conditional-config to work for this topology...
+    System.setProperty(ConnectorProperties.ENABLED_PROTOCOLS + "." + ConnectorProperties.BLAST_ENABLED, "true");
 
     LOGGER.info("Starting test topology `{}`...", "TwoConnectorPeerBlastTopology");
     topology.start();
@@ -86,27 +93,21 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   @Test
   public void testAliceNodeSettings() {
     final ILPv4Connector connector = getILPv4NodeFromGraph(ALICE_ADDRESS);
-    assertThat(
-      connector.getConnectorSettings().getOperatorAddress().get(),
-      is(TwoConnectorPeerBlastTopology.ALICE_ADDRESS)
-    );
+    assertThat(connector.getConnectorSettings().getOperatorAddress().get(), is(ALICE_ADDRESS));
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
-    assertThat(blastLink.getLinkSettings().getOutgoingAccountId(), is(ALICE));
-    assertThat(blastLink.getLinkSettings().getIncomingAccountId(), is(BOB));
+    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS, BOB_ACCOUNT);
+    assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(ALICE));
+    assertThat(blastLink.getLinkSettings().incomingBlastLinkSettings().tokenSubject(), is(BOB));
   }
 
   @Test
   public void testBobNodeSettings() {
     final ILPv4Connector connector = getILPv4NodeFromGraph(BOB_ADDRESS);
-    assertThat(
-      connector.getConnectorSettings().getOperatorAddress().get(),
-      is(TwoConnectorPeerBlastTopology.BOB_ADDRESS)
-    );
+    assertThat(connector.getConnectorSettings().getOperatorAddress().get(), is(BOB_ADDRESS));
 
-    final BlastLink blastLink = getBlastLinkFromGraph(BOB_ADDRESS);
-    assertThat(blastLink.getLinkSettings().getOutgoingAccountId(), is(BOB));
-    assertThat(blastLink.getLinkSettings().getIncomingAccountId(), is(ALICE));
+    final BlastLink blastLink = getBlastLinkFromGraph(BOB_ADDRESS, ALICE_ACCOUNT);
+    assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(BOB));
+    assertThat(blastLink.getLinkSettings().incomingBlastLinkSettings().tokenSubject(), is(ALICE));
   }
 
   /**
@@ -114,8 +115,8 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
    * reject.
    */
   @Test
-  public void testAlicePingsAlice() throws InterruptedException {
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
+  public void testAlicePingsAliceUsingBobAccount() throws InterruptedException {
+    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS, BOB_ACCOUNT);
 
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
@@ -145,11 +146,11 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   }
 
   /**
-   * Alice and Connie should have an account with each other, so this ping should succeed.
+   * Alice and Bob should have an account with each other, so this ping should succeed.
    */
   @Test
   public void testAlicePingsBob() throws InterruptedException {
-    this.testPing(ALICE_ADDRESS, BOB_ADDRESS);
+    this.testPing(ALICE_ADDRESS, BOB_ACCOUNT, BOB_ADDRESS);
 
     // ALICE
     assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.ZERO);
@@ -159,14 +160,16 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   }
 
   /**
-   * Random address should reject since it's not in the Connector's routing table.
+   * Random address should reject since it's not in the Bob's routing table, and ultimately that is the Connector that
+   * will be unable to route this packet because this test method grabs the blasLink from Alice, which is already
+   * connected to Bob, so the ping just goes right over that link straight to Bob.
    */
   @Test
   public void testAlicePingsRandom() throws InterruptedException {
     final InterledgerAddress randomDestination =
       InterledgerAddress.of(InterledgerAddressPrefix.TEST3.with(UUID.randomUUID().toString()).getValue());
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
+    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS, BOB_ACCOUNT);
 
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
@@ -207,7 +210,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
+    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS, BOB_ACCOUNT);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
       .executionCondition(PING_PROTOCOL_CONDITION)
@@ -250,7 +253,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
+    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS, BOB_ACCOUNT);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
       .executionCondition(PING_PROTOCOL_CONDITION)
@@ -293,7 +296,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
+    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS, BOB_ACCOUNT);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
       .executionCondition(PING_PROTOCOL_CONDITION)
@@ -336,7 +339,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
+    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS, BOB_ACCOUNT);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
       .executionCondition(InterledgerCondition.of(new byte[32]))
@@ -378,7 +381,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
    */
   @Test
   public void testPingPerf() throws InterruptedException {
-    final BlastLink aliceBlastLink = getBlastLinkFromGraph(ALICE_ADDRESS);
+    final BlastLink aliceBlastLink = getBlastLinkFromGraph(ALICE_ADDRESS, BOB_ACCOUNT);
 
     final int numReps = 2000;
 
@@ -423,17 +426,24 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
     double totalTime = (end - start);
 
-    double averageProcssingTime = ((double) (totalMillis.get()) / numReps);
+    double averageProcessingTime = ((double) (totalMillis.get()) / numReps);
     double averageMsPerPing = totalTime / numReps;
 
     LOGGER.info("[Pings Perf Test] Latch Count: {}", latch.getCount());
     LOGGER.info("[Pings Perf Test] {} pings took {} ms", numReps, totalTime);
-    LOGGER.info("[Pings Perf Test] Each Ping spent {} ms processing, on Average", averageProcssingTime);
+    LOGGER.info("[Pings Perf Test] Each Ping spent {} ms processing, on Average", averageProcessingTime);
     LOGGER.info("[Pings Perf Test] Average ms/ping: {} ms", averageMsPerPing);
 
     assertThat(latch.getCount(), is(0L));
-    assertThat(averageProcssingTime < 20, is(true));
-    assertThat(averageMsPerPing < 2, is(true));
+    assertThat(
+      "averageProcessingTime should have been less than 20, but was " + averageProcessingTime,
+      averageProcessingTime < 20,
+      is(true)
+    );
+    assertThat(
+      "averageMsPerPing should have been less than 2, but was " + averageMsPerPing, averageMsPerPing < 2,
+      is(true)
+    );
 
     assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.ZERO);
     assertAccountBalance(bobConnector, AccountId.of(ALICE), BigInteger.valueOf(numReps));

@@ -19,23 +19,27 @@
       <artifactId>guava</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.sappenin.ilpv4</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.sappenin.ilpv4</groupId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ilpv4-connector-persistence</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-link</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.sappenin.ilpv4</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-accounts</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.sappenin.ilpv4</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-model</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.sappenin.ilpv4</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-routing-api</artifactId>
     </dependency>
     <dependency>

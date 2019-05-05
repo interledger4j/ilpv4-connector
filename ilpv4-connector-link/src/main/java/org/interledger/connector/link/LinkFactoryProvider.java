@@ -7,11 +7,11 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * A provider of link factories scoped by type.
+ * A provider of {@link LinkFactory} scoped by type.
  */
 public class LinkFactoryProvider {
 
-  // At runtime, there will potentially be _many_ factories depending on the linktype (e.g., a BTP Factory, a
+  // At runtime, there will potentially be _many_ factories depending on the LinkType (e.g., a BTP Factory, a
   // LoopbackFactory, etc).
   private final Map<LinkType, LinkFactory> linkFactories;
 
@@ -23,8 +23,9 @@ public class LinkFactoryProvider {
     this.linkFactories = Objects.requireNonNull(linkFactories);
   }
 
-  public Optional<LinkFactory> getLinkFactory(final LinkType linkType) {
-    return Optional.ofNullable(this.linkFactories.get(linkType));
+  public LinkFactory getLinkFactory(final LinkType linkType) {
+    return Optional.ofNullable(this.linkFactories.get(linkType))
+      .orElseThrow(() -> new RuntimeException("No registered LinkFactory supports:" + linkType));
   }
 
   public LinkFactory registerLinkFactory(final LinkType linkType, final LinkFactory linkFactory) {

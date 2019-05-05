@@ -72,8 +72,8 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        show_sql: true
-        use_sql_comments: true
+        show_sql: false
+        use_sql_comments: false
         format_sql: true
 
 ###
@@ -89,7 +89,17 @@ h2:
 
 ilpv4:
   connector:
-    #jwtTokenIssuer: https://connie.example.com
+    adminPassword: password
+    keystore:
+      jks:
+        filename: crypto/crypto.p12
+        password: password
+        secret0_alias: secret0
+        secret0_password: password
+        # This property validates that JKS encryption is working properly via the configured startup. This value
+        # represents the plaintext value of `shh`, encrypted with the above details.
+        secret0_test: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
+    #defaultJwtTokenIssuer: https://connie.example.com
     enabledProtocols:
       blastEnabled: false
       pingProtocolEnabled: true

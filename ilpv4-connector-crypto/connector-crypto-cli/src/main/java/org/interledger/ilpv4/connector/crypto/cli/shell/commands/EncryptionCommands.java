@@ -1,0 +1,459 @@
+package org.interledger.ilpv4.connector.crypto.cli.shell.commands;
+
+import org.interledger.crypto.EncryptedSecret;
+import org.interledger.crypto.EncryptionAlgorithm;
+import org.interledger.crypto.EncryptionException;
+import org.interledger.crypto.EncryptionService;
+import org.interledger.crypto.KeyMetadata;
+import org.interledger.crypto.KeyStoreType;
+import org.interledger.crypto.JavaKeystoreLoader;
+import org.interledger.crypto.impl.GcpEncryptionService;
+import org.interledger.crypto.impl.JksEncryptionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.shell.Availability;
+import org.springframework.shell.standard.ShellCommandGroup;
+import org.springframework.shell.standard.ShellComponent;
+import org.springframework.shell.standard.ShellMethod;
+import org.springframework.shell.standard.ShellMethodAvailability;
+import org.springframework.util.StringUtils;
+
+import javax.crypto.SecretKey;
+import java.security.Key;
+import java.security.KeyStore;
+import java.util.Base64;
+import java.util.Objects;
+import java.util.Optional;
+
+/**
+ * Commands for encryption.
+ */
+@ShellComponent
+@ShellCommandGroup("Encryption Commands")
+public class EncryptionCommands {
+
+  private static final String GCP_CONFIGURATION = "GCP Configuration";
+  private static final String JKS_CONFIGURATION = "JKS Configuration";
+
+  private static final String UNSET = "[unset]";
+
+  private final Logger blankLineLogger = LoggerFactory.getLogger("blank.line.logger");
+
+  private KeyStoreType keyStoreType = KeyStoreType.JKS;
+
+  // JKS Properties.
+  private String jksFileName = "crypto.p12";
+  private String jksPassword;
+  private String secret0KeyAlias = "secret0";
+  private String secret0KeyPassword;
+
+  // GCP Properties.
+  private Optional<String> gcpProjectId;
+  private Optional<String> gcpLocationId;
+  private Optional<String> keyringIdentifier = Optional.empty();
+  private EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithm.GOOGLE_SYMMETRIC;
+  private Optional<String> encryptionKeyIdentifier = Optional.empty();
+  private String encryptionKeyVersion = "1";
+
+  public EncryptionCommands() {
+  }
+
+  /**
+   * Encrypt a plaintext value using the selected key information.
+   */
+  @ShellMethod(value = "Encrypt a plaintext value", key = {"e", "encrypt"})
+  String encrypt(final String plaintext) throws Exception {
+    if (plaintext.length() <= 0) {
+      throw new RuntimeException("Secret must not be empty!");
+    }
+
+    if (this.keyStoreType.equals(KeyStoreType.GCP)) {
+      final GcpEncryptionService gcpSecretsManager = new GcpEncryptionService(
+        gcpProjectId.get(), gcpLocationId.get()
+      );
+
+      final KeyMetadata keyMetadata = KeyMetadata.builder()
+        .keyIdentifier(keyringIdentifier.get())
+        .keyVersion(encryptionKeyVersion)
+        .keyringIdentifier(keyringIdentifier.get())
+        .platformIdentifier(keyStoreType.name())
+        .build();
+
+      final EncryptedSecret encryptedSecret =
+        gcpSecretsManager.encrypt(keyMetadata, encryptionAlgorithm, plaintext.getBytes());
+      return "Encoded Encrypted Secret: " + encryptedSecret.encodedValue();
+    } else if (this.keyStoreType.equals(KeyStoreType.JKS)) {
+      // Load Secret0 from Keystore.
+      final KeyStore keyStore = JavaKeystoreLoader.loadFromClasspath(this.jksFileName, jksPassword.toCharArray());
+
+      final SecretKey secret0Key = loadSecretKeyFromJavaKeystore(keyStore);
+      final EncryptionService encryptionService = new JksEncryptionService(secret0Key);
+
+      final KeyMetadata keyMetadata = KeyMetadata.builder()
+        .platformIdentifier(keyStoreType.name())
+        .keyringIdentifier(jksFileName)
+        .keyIdentifier(secret0KeyAlias)
+        .keyVersion("1")
+        .build();
+
+      final EncryptedSecret encryptedSecret =
+        encryptionService.encrypt(keyMetadata, encryptionAlgorithm, plaintext.getBytes());
+      return "Encoded Encrypted Secret: " + encryptedSecret.encodedValue();
+    } else {
+      throw new RuntimeException("Please select a valid Keystore Platform! Unsupported Platform: " + keyStoreType);
+    }
+  }
+
+
+  /**
+   * Encrypt a secret value using the selected key information.
+   */
+  @ShellMethod(value = "Decrypt an encrypted value", key = {"d", "decrypt"})
+  String decrypt(final String encodedValue) throws Exception {
+    if (encodedValue.length() <= 0) {
+      throw new RuntimeException("cipherMessageB64 must not be empty!");
+    }
+
+    if (this.keyStoreType.equals(KeyStoreType.GCP)) {
+      final GcpEncryptionService gcpSecretsManager = new GcpEncryptionService(
+        gcpProjectId.get(), gcpLocationId.get()
+      );
+
+      final EncryptedSecret encryptedSecret = EncryptedSecret.fromEncodedValue(encodedValue);
+      final byte[] plainTextBytes = gcpSecretsManager.decrypt(encryptedSecret);
+      return "Encoded Encrypted Secret: " + Base64.getUrlEncoder().encodeToString(plainTextBytes);
+    } else if (this.keyStoreType.equals(KeyStoreType.JKS)) {
+      // Load Secret0 from Keystore.
+      final KeyStore keyStore = JavaKeystoreLoader.loadFromClasspath(this.jksFileName, jksPassword.toCharArray());
+      final SecretKey secret0Key = loadSecretKeyFromJavaKeystore(keyStore);
+      final EncryptionService encryptionService = new JksEncryptionService(secret0Key);
+      final EncryptedSecret encryptedSecret = EncryptedSecret.fromEncodedValue(encodedValue);
+      final byte[] utfPlainText = encryptionService.decrypt(encryptedSecret);
+      return "PlainText: " + new String(utfPlainText);
+    } else {
+      throw new RuntimeException("Please select a valid Keystore Platform! Unsupported Platform: " + keyStoreType);
+    }
+  }
+
+  /**
+   * Set the keystore platform.
+   *
+   * @param keystorePlatform {@link String} representing the Keystore platform.
+   *
+   * @return A message displayable to the CLI user.
+   */
+  @ShellMethod(
+    value = "Set the keystore platform (defaults to Google KMS)",
+    key = {"kp", "keystore-platform"}
+  )
+  public String setKeystorePlatform(final String keystorePlatform) {
+    this.keyStoreType = KeyStoreType.valueOf(keystorePlatform.toUpperCase());
+
+    if (KeyStoreType.GCP.equals(this.keyStoreType)) {
+      this.encryptionAlgorithm = EncryptionAlgorithm.GOOGLE_SYMMETRIC;
+    } else if (KeyStoreType.JKS.equals(this.keyStoreType)) {
+      this.encryptionAlgorithm = EncryptionAlgorithm.AES_GCM;
+    }
+
+    return String.format("Keystore Platform set to: `%s`", keystorePlatform);
+  }
+
+  /**
+   * Display current values.
+   *
+   * @return A message displayable to the CLI user.
+   */
+  @ShellMethod(
+    value = "Show current values",
+    key = {"cv", "current-values"}
+  )
+  public void showCurrentValues() {
+    if (KeyStoreType.GCP.equals(keyStoreType)) {
+      blankLineLogger.info("Keystore Type         : " + this.keyStoreType);
+      blankLineLogger.info("Keyring Id            : " + this.keyringIdentifier.orElse(UNSET));
+      blankLineLogger.info("Encryption Algorithm  : " + this.encryptionAlgorithm);
+      blankLineLogger.info("Encryption Key Id     : " + this.encryptionKeyIdentifier.orElse(UNSET));
+      blankLineLogger.info("Encryption Key Version: " + this.encryptionKeyVersion);
+    } else if (KeyStoreType.JKS.equals(keyStoreType)) {
+      blankLineLogger.info("Keystore Type    : " + this.keyStoreType);
+      blankLineLogger.info("JKS File         : " + this.jksFileName);
+      blankLineLogger.info("JKS File Password: " + "********");
+      blankLineLogger.info("Secret0 Alias    : " + this.secret0KeyAlias);
+      blankLineLogger.info("Secret0 Password : " + "********");
+    }
+  }
+
+  /**
+   * Centralizes all logic for enabling/disabling shell commands.
+   */
+  @ShellMethodAvailability({"e", "encrypt"})
+  Availability availabilityCheck() {
+    if (KeyStoreType.GCP.equals(this.keyStoreType)) {
+      if (!this.keyringIdentifier.isPresent()) {
+        return Availability.unavailable("You must specify the keyring identifier!");
+      } else if (StringUtils.isEmpty(this.encryptionKeyIdentifier)) {
+        return Availability.unavailable("You must specify the encryption key identifier!");
+      } else if (StringUtils.isEmpty(this.encryptionKeyVersion)) {
+        return Availability.unavailable("You must specify the encryption key version!");
+      } else if (this.encryptionAlgorithm.equals(EncryptionAlgorithm.GOOGLE_SYMMETRIC)) {
+        return Availability.unavailable("JKS currently only supports " + EncryptionAlgorithm.GOOGLE_SYMMETRIC);
+      }
+    } else if (KeyStoreType.JKS.equals(this.keyStoreType)) {
+      if (StringUtils.isEmpty(this.jksFileName)) {
+        return Availability.unavailable("You must specify the JKS filename!");
+      } else if (this.jksPassword == null) {
+        return Availability.unavailable("You must specify the JKS password!");
+      } else if (StringUtils.isEmpty(this.secret0KeyAlias)) {
+        return Availability.unavailable("You must specify the Secret0 Key alias!");
+      } else if (this.secret0KeyPassword == null) {
+        return Availability.unavailable("You must specify the Secret0 Key password!");
+      } else if (this.encryptionAlgorithm.equals(EncryptionAlgorithm.AES_GCM)) {
+        return Availability.unavailable("JKS currently only supports " + EncryptionAlgorithm.AES_GCM);
+      }
+    }
+
+    return Availability.available();
+  }
+
+  ///////////////
+  // JKS Commands
+  ///////////////
+
+  /**
+   * Set the JKS Filename.
+   *
+   * @param jksFileName {@link String} representing the JKS Filename.
+   *
+   * @return A message displayable to the CLI user.
+   */
+  @ShellMethod(
+    value = "Set the JKS Filename",
+    key = {"jksfn", "jks-filename"},
+    group = JKS_CONFIGURATION
+  )
+  public String setJksFileName(final String jksFileName) {
+    this.jksFileName = jksFileName;
+    return String.format("JKS Filename set to: `%s`", jksFileName);
+  }
+
+  public Availability setJksFileNameAvailability() {
+    return jksAvailability();
+  }
+
+  /**
+   * Set the JKS Password.
+   *
+   * @param jksPassword {@link String} representing the GCP Project Identifier.
+   *
+   * @return A message displayable to the CLI user.
+   */
+  @ShellMethod(
+    value = "Set the JKS Password",
+    key = {"jkspw", "jks-password"},
+    group = JKS_CONFIGURATION
+  )
+  public String setJksPassword(final String jksPassword) {
+    this.jksPassword = jksPassword;
+    // These are the same by default...
+    this.secret0KeyPassword = jksPassword;
+    return String.format("JKS Password set to: `%s`", "********");
+  }
+
+  public Availability setJksPasswordAvailability() {
+    return jksAvailability();
+  }
+
+  /**
+   * Set the Secret0 Alias
+   *
+   * @param secret0KeyAlias {@link String} representing the secret0 Key Alias
+   *
+   * @return A message displayable to the CLI user.
+   */
+  @ShellMethod(
+    value = "Set the JKS Secret0 Alias",
+    key = {"jkss0a", "jks-secret0-alias"},
+    group = JKS_CONFIGURATION
+  )
+  public String setSecret0KeyAlias(final String secret0KeyAlias) {
+    this.secret0KeyAlias = secret0KeyAlias;
+    return String.format("JKS secret0KeyAlias set to: `%s`", secret0KeyAlias);
+  }
+
+  public Availability setSecret0KeyAliasAvailability() {
+    return jksAvailability();
+  }
+
+  /**
+   * Set the Secret0 Key Password
+   *
+   * @param secret0KeyPassword {@link String} representing the secret0 Key Password
+   *
+   * @return A message displayable to the CLI user.
+   */
+  @ShellMethod(
+    value = "Set the JKS Secret0 Password",
+    key = {"jkss0pw", "jks-secret0-password"},
+    group = JKS_CONFIGURATION
+  )
+  public String setSecret0KeyPassword(final String secret0KeyPassword) {
+    this.secret0KeyAlias = secret0KeyPassword;
+    return String.format("JKS secret0KeyPassword set to: `%s`", secret0KeyPassword);
+  }
+
+  public Availability setSecret0KeyAvailability() {
+    return jksAvailability();
+  }
+
+  ///////////////
+  // GCP Commands
+  ///////////////
+
+  /**
+   * Set the GCP Project Id.
+   *
+   * @param gcpProjectId {@link String} representing the GCP Project Identifier.
+   *
+   * @return A message displayable to the CLI user.
+   */
+  @ShellMethod(
+    value = "Set the GCP Project Id",
+    key = {"gcppid", "gcp-project-id"},
+    group = GCP_CONFIGURATION
+  )
+  public String setGcpProjectId(final String gcpProjectId) {
+    this.gcpProjectId = Optional.ofNullable(gcpProjectId);
+    return String.format("GCP ProjectId set to: `%s`", this.gcpProjectId.orElse(UNSET));
+  }
+
+  public Availability setGcpProjectIdAvailability() {
+    return gcpAvailability();
+  }
+
+  /**
+   * Set the GCP Location Id.
+   *
+   * @param gcpLocationId {@link String} representing the GCP Location Identifier.
+   *
+   * @return A message displayable to the CLI user.
+   */
+  @ShellMethod(
+    value = "Set the GCP Location Id",
+    key = {"gcplid", "gcp-location-id"},
+    group = GCP_CONFIGURATION
+  )
+  public String setGcpLocationId(final String gcpLocationId) {
+    this.gcpLocationId = Optional.ofNullable(gcpLocationId);
+    return String.format("GCP LocationId set to: `%s`", this.gcpLocationId.orElse(UNSET));
+  }
+
+  public Availability setGcpLocationIdAvailability() {
+    return gcpAvailability();
+  }
+
+  /**
+   * Set the Keyring identifier, if appropriate.
+   *
+   * @param keyringIdentifier {@link String} representing the Keyring.
+   *
+   * @return A message displayable to the CLI user.
+   */
+  @ShellMethod(
+    value = "Set the Keyring platform",
+    key = {"kr", "keyring"},
+    group = GCP_CONFIGURATION
+  )
+  public String setKeyringIdentifier(final String keyringIdentifier) {
+    this.keyringIdentifier = Optional.ofNullable(keyringIdentifier);
+    return String.format("Keyring Identifier set to: `%s`", this.keyringIdentifier.orElse(UNSET));
+  }
+
+  public Availability setKeyringIdentifierAvailability() {
+    return gcpAvailability();
+  }
+
+  /**
+   * Set the Encryption algorithm.
+   *
+   * @param encryptionAlgorithm {@link String}.
+   *
+   * @return A message displayable to the CLI user.
+   */
+  @ShellMethod(
+    value = "Set the Encryption Algorithm",
+    key = {"ea", "encryption-alg"},
+    group = GCP_CONFIGURATION
+  )
+  public String setEncryptionAlgorithm(final String encryptionAlgorithm) {
+    this.encryptionAlgorithm = EncryptionAlgorithm.valueOf(encryptionAlgorithm);
+    return String.format("Encryption algorithm set to: `%s`", this.encryptionAlgorithm);
+  }
+
+  public Availability setEncryptionAlgorithmAvailability() {
+    return gcpAvailability();
+  }
+
+  /**
+   * Set the Encryption Key Identifier
+   *
+   * @param encryptionKeyIdentifier {@link String}.
+   *
+   * @return A message displayable to the CLI user.
+   */
+  @ShellMethod(
+    value = "Set the Key Identifier to use for encryption",
+    key = {"ekid", "encrypt-key-id"},
+    group = GCP_CONFIGURATION
+  )
+  public String setEncryptionKeyIdentifier(final String encryptionKeyIdentifier) {
+    this.encryptionKeyIdentifier = Optional.ofNullable(encryptionKeyIdentifier);
+    return String.format("Encryption Key Identifier set to: `%s`", this.encryptionKeyIdentifier.orElse(UNSET));
+  }
+
+  public Availability setEncryptionKeyIdentifierAvailability() {
+    return gcpAvailability();
+  }
+
+  /**
+   * Set the Encryption Key Version
+   *
+   * @param encryptionKeyVersion {@link String}.
+   *
+   * @return A message displayable to the CLI user.
+   */
+  @ShellMethod(
+    value = "Set the Key version to use for encryption",
+    key = {"ekv", "encrypt-key-version"},
+    group = GCP_CONFIGURATION
+  )
+  public String setEncryptionKeyVersion(final String encryptionKeyVersion) {
+    this.encryptionKeyVersion = Objects.requireNonNull(encryptionKeyVersion);
+    return String.format("Encryption Key Version set to: `%s`", this.encryptionKeyVersion);
+  }
+
+  public Availability setEncryptionKeyVersionAvailability() {
+    return gcpAvailability();
+  }
+
+  private Availability jksAvailability() {
+    return KeyStoreType.JKS.equals(keyStoreType) ? Availability.available() :
+      Availability.unavailable("Only available for JKS Keystores!");
+  }
+
+  private Availability gcpAvailability() {
+    return KeyStoreType.GCP.equals(keyStoreType) ? Availability.available() :
+      Availability.unavailable("Only available for GCP KMS Keystore!");
+  }
+
+  private SecretKey loadSecretKeyFromJavaKeystore(final KeyStore keyStore) throws Exception {
+    Objects.requireNonNull(keyStore);
+
+    // Password-protected keys are not yet supported
+    if (keyStore.isKeyEntry(this.secret0KeyAlias)) {
+      Key key = keyStore.getKey(this.secret0KeyAlias, this.secret0KeyPassword.toCharArray());
+      return (SecretKey) key;
+    } else {
+      throw new EncryptionException("No KeyEntry found for secret0Alias: " + this.secret0KeyAlias);
+    }
+  }
+}

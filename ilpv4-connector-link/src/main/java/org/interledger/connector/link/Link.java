@@ -25,19 +25,25 @@ import java.util.function.Supplier;
  */
 public interface Link<LS extends LinkSettings> extends LinkSender, Connectable {
 
-  // Ping: Ping the Link for various purposes.
+  // The ILP Address given to an operator that
+  InterledgerAddress UNSET_OPERATOR_ADDRESS =
+    InterledgerAddress.of(InterledgerAddress.AllocationScheme.PRIVATE.getValue() + ".unset-operator-address");
 
   /**
-   * A unique identifier for this {@link Link}. This value is generally set only once, (e.g., in a Connector to
-   * correlate a Link to an account identifier) so that the same link can be referenced across requests.
+   * <p>A unique identifier for this {@link Link}. This value is generally set only once, (e.g., in a Connector to
+   * correlate a Link to an account identifier) so that the same link can be referenced across requests.</p>
+   *
+   * <p>Note that this value is non-optional because even though an account operating on a Link may lazily load its
+   * Interledger address, a Link will always have an Id because it always corresponds to a single account, which always
+   * has an accountId.</p>
    *
    * @return A {@link LinkId}.
    */
-  Optional<LinkId> getLinkId();
+  LinkId getLinkId();
 
   /**
-   * A supplier for the ILP address of this node operator. This value may be empty, for example, in cases where the Link
-   * obtains its address from a parent node using IL-DCP.
+   * A supplier fori the ILP address of this node operator. This value may be empty, for example, in cases where the
+   * Link obtains its address from a parent node using IL-DCP.
    *
    * @return A {@link Supplier} of an optioanally-present {@link InterledgerAddress}.
    */

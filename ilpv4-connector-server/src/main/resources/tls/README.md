@@ -1,6 +1,7 @@
 # Spring Boot with TLS
-Note: These steps were taken from
-[Secure Spring Boot Applications with TLS and HTTP/2](https://blog.novatec-gmbh.de/spring-boot-applications-tls-http2/).
+***Note: These steps were taken from [Secure Spring Boot Applications with TLS and HTTP/2](https://blog.novatec-gmbh
+.de/spring-boot-applications-tls-http2/). All Keys and CAs in these folders  are provided for example purposes only 
+and SHOULD not be used for any production purposes other than demonstrating capabilities.***
 
 ## Setting up a private Certificate Authority (CA)
 

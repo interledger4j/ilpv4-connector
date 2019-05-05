@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <include resource="org/springframework/boot/logging/logback/base.xml"/>
+  <appender name="minimal" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%m%n</pattern>
+    </encoder>
+  </appender>
+  <logger name="blank.line.logger" level="ALL" additivity="false">
+    <appender-ref ref="minimal"/>
+  </logger>
+</configuration>

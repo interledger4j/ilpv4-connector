@@ -1,6 +1,5 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteControlRequest;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpSyncMode;
 import com.sappenin.interledger.ilpv4.connector.ccp.codecs.CcpCodecContextFactory;
@@ -9,10 +8,9 @@ import com.sappenin.interledger.ilpv4.connector.routing.CcpSender;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.RoutableAccount;
 import com.sappenin.interledger.ilpv4.connector.routing.RoutingTableId;
+import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
-import org.interledger.connector.accounts.Account;
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;
@@ -24,6 +22,8 @@ import org.interledger.core.InterledgerResponsePacketHandler;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponsePacket;
 import org.interledger.ildcp.asn.framework.IldcpCodecContextFactory;
+import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -65,47 +65,42 @@ public class PeerProtocolPacketFilterTest {
     .build();
 
   @Mock
-  private PacketRejector packetRejectorMock;
-
+  private ConnectorSettings connectorSettingsMock;
   @Mock
   private EnabledProtocolSettings enabledProtocolSettingsMock;
-
+  @Mock
+  private PacketRejector packetRejectorMock;
+  @Mock
+  private AccountSettingsRepository accountSettingsRepositoryMock;
   @Mock
   private PacketSwitchFilterChain filterChainMock;
-
   @Mock
   private ExternalRoutingService externalRoutingServiceMock;
-
-  @Mock
-  private AccountManager accountManagerMock;
 
   private PeerProtocolPacketFilter filter;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    when(connectorSettingsMock.getEnabledProtocols()).thenReturn(enabledProtocolSettingsMock);
 
     when(packetRejectorMock.reject(any(), any(), any(), any())).thenReturn(REJECT_PACKET);
 
     this.filter = new PeerProtocolPacketFilter(
+      () -> connectorSettingsMock,
       packetRejectorMock,
-      enabledProtocolSettingsMock,
       externalRoutingServiceMock,
-      accountManagerMock,
+      accountSettingsRepositoryMock,
       CcpCodecContextFactory.oer(),
       IldcpCodecContextFactory.oer()
     );
 
-    final AccountSettings accountSettingsMock = mock(AccountSettings.class);
-    when(accountSettingsMock.getAssetScale()).thenReturn(9);
-    when(accountSettingsMock.getAssetCode()).thenReturn("XRP");
+    final AccountSettingsEntity accountSettingsEntityMock = mock(AccountSettingsEntity.class);
+    when(accountSettingsEntityMock.getAssetScale()).thenReturn(9);
+    when(accountSettingsEntityMock.getAssetCode()).thenReturn("XRP");
 
-    final Account account = mock(Account.class);
-    when(account.getId()).thenReturn(ACCOUNT_ID);
-    when(account.getAccountSettings()).thenReturn(accountSettingsMock);
-
-    when(accountManagerMock.getAccount(ACCOUNT_ID)).thenReturn(Optional.of(account));
-    when(accountManagerMock.toChildAddress(ACCOUNT_ID)).thenReturn(OPERATOR_ADDRESS);
+    when(accountSettingsRepositoryMock.findByAccountId(ACCOUNT_ID)).thenReturn(Optional.of(accountSettingsEntityMock));
+    when(connectorSettingsMock.toChildAddress(ACCOUNT_ID)).thenReturn(OPERATOR_ADDRESS);
 
     final RoutableAccount routableAccountMock = mock(RoutableAccount.class);
     when(routableAccountMock.getCcpSender()).thenReturn(mock(CcpSender.class));

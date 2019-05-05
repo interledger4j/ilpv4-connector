@@ -73,7 +73,7 @@ public class LoopbackLink extends AbstractLink<LinkSettings> implements Link<Lin
     return Optional.ofNullable(this.getLinkSettings().getCustomSettings().get(SIMULATE_TIMEOUT))
       .map((value) -> {
         if (value.equals("T02")) {
-          return packetRejector.reject(AccountId.of(getLinkId().get().value()), preparePacket,
+          return packetRejector.reject(AccountId.of(getLinkId().value()), preparePacket,
             InterledgerErrorCode.T02_PEER_BUSY, "Loopback set to manually reject via simulate_timeout=T02");
         } else if (value.equals("T03")) {
           // Sleep for 1 minute, which in the typical case will exceed the Circuit-breaker's threshold.
@@ -82,7 +82,7 @@ public class LoopbackLink extends AbstractLink<LinkSettings> implements Link<Lin
           } catch (InterruptedException e) {
             throw new RuntimeException(e);
           }
-          return packetRejector.reject(AccountId.of(getLinkId().get().value()), preparePacket,
+          return packetRejector.reject(AccountId.of(getLinkId().value()), preparePacket,
             InterledgerErrorCode.T03_CONNECTOR_BUSY, "Loopback set to exceed timeout via simulate_timeout=T03");
         }
         if (value.equals("T99")) {

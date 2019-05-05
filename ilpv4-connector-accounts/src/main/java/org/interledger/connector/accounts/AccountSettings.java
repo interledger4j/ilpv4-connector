@@ -1,6 +1,11 @@
 package org.interledger.connector.accounts;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
+import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkType;
 import org.interledger.core.InterledgerAddress;
 
@@ -26,7 +31,10 @@ public interface AccountSettings {
    * @param accountProviderSettings The account provider settings to source configuration from.
    *
    * @return A {@link ImmutableAccountSettings.Builder}.
+   *
+   * @deprecated AccountSettingsProvider will go away.
    */
+  @Deprecated
   static ImmutableAccountSettings.Builder from(final AccountProviderSettings accountProviderSettings) {
     Objects.requireNonNull(accountProviderSettings);
 
@@ -34,7 +42,7 @@ public interface AccountSettings {
       .assetScale(accountProviderSettings.getAssetScale())
       .assetCode(accountProviderSettings.getAssetCode())
       .linkType(accountProviderSettings.getLinkType())
-      .relationship(accountProviderSettings.getRelationship())
+      .accountRelationship(accountProviderSettings.getRelationship())
       .putAllCustomSettings(accountProviderSettings.getCustomSettings())
       .balanceSettings(accountProviderSettings.getBalanceSettings())
       .maximumPacketAmount(accountProviderSettings.getMaximumPacketAmount())
@@ -50,7 +58,7 @@ public interface AccountSettings {
    *
    * @see {@link #getIlpAddressSegment()}.
    */
-  AccountId getId();
+  AccountId getAccountId();
 
   /**
    * Determines if this account is <tt>internal</tt> or <tt>external</tt>. Internal accounts are allowed to process
@@ -63,24 +71,19 @@ public interface AccountSettings {
   boolean isInternal();
 
   /**
-   * Determines if this account is preconfigured (i.e., details are determined at startup).  This is the opposite of
-   * {@link #isDynamic()}.
+   * Determines if connections for this Account are initiated by this Connector, or if the connections are initiated by
+   * the counterparty.
    *
-   * @return {@code true} if this account is defined at startup; {@code false} otherwise.
-   */
-  default boolean isPreconfigured() {
-    return false;
-  }
-
-  /**
-   * Determines if this account is dynamic (i.e., details are not determined until an incoming connection is made). This
-   * is the opposite of {@link #isPreconfigured()}.
+   * <p>For some Link types, such as BTP, a node can be either operate the Websocket client or server. In cases where
+   * the Connector is the Websocket client, this value will be {@code true}. Conversely, if the Connector is operating
+   * the Websocket server for an Account, then this value will be {@code false}.</p>
    *
-   * @return {@code true} if this account is constructed when an incoming connection is made; {@code false} otherwise.
+   * <p>For other Link types, such as Ilp-over-Http, the Connector will operate both a client _and_ a server, so
+   * this value will always be {@code true}.</p>
+   *
+   * @return {@code true} if this Connector is the connection initiator for this {@link Link}; {@code false} otherwise.
    */
-  default boolean isDynamic() {
-    return !isPreconfigured();
-  }
+  boolean isConnectionInitiator();
 
   /**
    * The segment that will be appended to the connector's ILP address to form this account's ILP address. Only
@@ -99,7 +102,7 @@ public interface AccountSettings {
   /**
    * The relationship between this connector and a remote system, for this asset type.
    */
-  AccountRelationship getRelationship();
+  AccountRelationship getAccountRelationship();
 
   /**
    * The {@link LinkType} that should be used for this account in order to send "data".
@@ -170,7 +173,7 @@ public interface AccountSettings {
    * @return {@code true} if this is a `parent` account; {@code false} otherwise.
    */
   default boolean isParentAccount() {
-    return this.getRelationship() == AccountRelationship.PARENT;
+    return this.getAccountRelationship() == AccountRelationship.PARENT;
   }
 
   /**
@@ -180,7 +183,7 @@ public interface AccountSettings {
    * @return {@code true} if this is a `parent` account; {@code false} otherwise.
    */
   default boolean isChildAccount() {
-    return this.getRelationship() == AccountRelationship.CHILD;
+    return this.getAccountRelationship() == AccountRelationship.CHILD;
   }
 
   /**
@@ -190,7 +193,7 @@ public interface AccountSettings {
    * @return {@code true} if this is a `parent` account; {@code false} otherwise.
    */
   default boolean isPeerAccount() {
-    return this.getRelationship() == AccountRelationship.PEER;
+    return this.getAccountRelationship() == AccountRelationship.PEER;
   }
 
   /**
@@ -204,7 +207,18 @@ public interface AccountSettings {
 
   @Value.Immutable(intern = true)
   @Value.Modifiable
+  @JsonSerialize(as = ImmutableAccountSettings.class)
+  @JsonDeserialize(as = ImmutableAccountSettings.class)
+  @JsonPropertyOrder({"accountId", "linkType", "ilpAddressSegment", "accountRelationship", "assetCode", "assetScale",
+                       "maximumPacketAmount", "customSettings", "description", "balanceSettings", "rateLimitSettings",
+                       "isConnectionInitiator", "isInternal", "isSendRoutes", "isReceiveRoutes"})
   abstract class AbstractAccountSettings implements AccountSettings {
+
+    @Override
+    public abstract AccountId getAccountId();
+
+    @Override
+    public abstract LinkType getLinkType();
 
     @Override
     @Value.Default
@@ -214,15 +228,8 @@ public interface AccountSettings {
 
     @Override
     @Value.Default
-    public boolean isPreconfigured() {
-      // Default is false, but the AccountSettingsFromPropertyFile will set this to true.
+    public boolean isConnectionInitiator() {
       return false;
-    }
-
-    @Override
-    @Value.Derived
-    public boolean isDynamic() {
-      return !isPreconfigured();
     }
 
     @Value.Default
@@ -245,14 +252,46 @@ public interface AccountSettings {
 
     @Value.Default
     @Override
+    @JsonSerialize(as = ImmutableAccountBalanceSettings.class)
+    @JsonDeserialize(as = ImmutableAccountBalanceSettings.class)
     public AccountBalanceSettings getBalanceSettings() {
       return AccountBalanceSettings.builder().build();
     }
 
     @Value.Default
     @Override
+    @JsonSerialize(as = ImmutableAccountRateLimitSettings.class)
+    @JsonDeserialize(as = ImmutableAccountRateLimitSettings.class)
     public AccountRateLimitSettings getRateLimitSettings() {
       return AccountRateLimitSettings.builder().build();
+    }
+
+    @Override
+    @JsonIgnore
+    @Value.Derived
+    public boolean isParentAccount() {
+      return this.getAccountRelationship() == AccountRelationship.PARENT;
+    }
+
+    @Override
+    @JsonIgnore
+    @Value.Derived
+    public boolean isChildAccount() {
+      return this.getAccountRelationship() == AccountRelationship.CHILD;
+    }
+
+    @Override
+    @JsonIgnore
+    @Value.Derived
+    public boolean isPeerAccount() {
+      return this.getAccountRelationship() == AccountRelationship.PEER;
+    }
+
+    @Override
+    @Value.Derived
+    @JsonIgnore
+    public boolean isPeerOrParentAccount() {
+      return this.isPeerAccount() || this.isParentAccount();
     }
   }
 

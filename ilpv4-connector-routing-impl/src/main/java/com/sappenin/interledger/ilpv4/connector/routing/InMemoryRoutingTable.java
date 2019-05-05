@@ -11,11 +11,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 /**
- * An implementation of {@link RoutingTable} that stores all routingTableEntries in-memory using an {@link
+ * An implementation of {@link RoutingTable} that stores all routes in-memory using an {@link
  * InterledgerAddressPrefixMap} for efficient search and prefix-matching operations.
  *
- * This implementation is meant for use-cases where routingTableEntries do not change very often, like
- * statically-configured routing environments where this table can be populated when the server starts-up.
+ * This implementation is meant for use-cases where routes do not change very often, like statically-configured routing
+ * environments where this table can be populated when the server starts-up.
  */
 public class InMemoryRoutingTable implements RoutingTable<Route> {
 
@@ -59,14 +59,6 @@ public class InMemoryRoutingTable implements RoutingTable<Route> {
   public boolean compareAndSetCurrentEpoch(final long expectedEpoch, final long newEpoch) {
     return this.currentEpoch.compareAndSet(expectedEpoch, newEpoch);
   }
-
-//  @Override
-//  public Route addRoute(
-//    final InterledgerAddressPrefix interledgerAddressPrefix, final Route route
-//  ) {
-//    Objects.requireNonNull(route);
-//    return this.interledgerAddressPrefixMap.putEntry(interledgerAddressPrefix, route);
-//  }
 
   @Override
   public Route addRoute(final Route route) {
