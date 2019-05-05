@@ -32,12 +32,6 @@ public class MaxPacketAmountFilter extends AbstractPacketFilter implements Packe
     final InterledgerPreparePacket sourcePreparePacket,
     final PacketSwitchFilterChain filterChain
   ) {
-    //    final Account account = accountManager.getAccount(sourceAccountId)
-    //      // REJECT due to no account...
-    //      .orElseThrow(() -> new InterledgerProtocolException(
-    //        reject(sourceAccountId, sourcePreparePacket, InterledgerErrorCode.T00_INTERNAL_ERROR,
-    //          String.format("No Account found: `%s`", sourceAccountId))));
-
     final AccountSettings accountSettings = accountSettingsRepository.findByAccountId(sourceAccountId)
       // REJECT due to no account...
       .orElseThrow(() -> new InterledgerProtocolException(
