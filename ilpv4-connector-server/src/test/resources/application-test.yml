@@ -88,7 +88,13 @@ h2:
 
 ilpv4:
   connector:
-    admin_password: password
+    adminPassword: password
+    keystore:
+      jks:
+        filename: crypto/crypto.p12
+        password: password
+        secret0_alias: secret0
+        secret0_password: password
     defaultJwtTokenIssuer: https://connie.example.com
     enabledProtocols:
       blastEnabled: true

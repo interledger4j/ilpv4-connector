@@ -32,6 +32,7 @@ import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport;
 import java.util.Arrays;
 import java.util.function.Supplier;
 
+import static com.sappenin.interledger.ilpv4.connector.server.spring.auth.blast.AuthConstants.Authorities.CONNECTOR_ADMIN;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.admin.AccountsController.SLASH_ACCOUNT_ID;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
 
@@ -66,6 +67,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   // For Basic Auth
   /////////////////
 
+  /**
+   * Will be replaced with OAuth using JWT in a future release.
+   */
+  @Deprecated
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
@@ -86,7 +91,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
     auth.inMemoryAuthentication()
       .withUser("admin").password(passwordEncoder().encode(adminPassword))
-      .authorities("connector:admin");
+      .authorities("connector:admin", "user")
+      .and()
+      .withUser("user").password(passwordEncoder().encode(adminPassword)).authorities("user");
   }
 
   /**
@@ -99,6 +106,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     return new SecurityContextHolderAwareRequestFilter();
   }
 
+  // TODO: FIXME
   @Bean
   CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
@@ -116,7 +124,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     // Must come first in order to register properly due to 'denyAll' directive below.
     JwtWebSecurityConfigurer
-      // `audience` and `issuer` are unused.
+      // `audience` and `issuer` are not statically configured, but are instead specified in account-settings on a
+      // per-account basis.
       .forHS256("n/a", "n/a", blastAuthenticationProvider())
       .configure(http)
       .authorizeRequests()
@@ -131,10 +140,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       ////////
       // Admin API
       ////////
-      .antMatchers(HttpMethod.POST, AccountsController.SLASH_ACCOUNTS).authenticated()
-      .antMatchers(HttpMethod.GET, AccountsController.SLASH_ACCOUNTS).authenticated()
-      .antMatchers(HttpMethod.GET, AccountsController.SLASH_ACCOUNTS + SLASH_ACCOUNT_ID).authenticated()
-      .antMatchers(HttpMethod.PUT, AccountsController.SLASH_ACCOUNTS + SLASH_ACCOUNT_ID).authenticated()
+      .antMatchers(HttpMethod.POST, AccountsController.SLASH_ACCOUNTS).hasAuthority(CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.GET, AccountsController.SLASH_ACCOUNTS).hasAuthority(CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.GET, AccountsController.SLASH_ACCOUNTS + SLASH_ACCOUNT_ID).hasAuthority(CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.PUT, AccountsController.SLASH_ACCOUNTS + SLASH_ACCOUNT_ID).hasAuthority(CONNECTOR_ADMIN)
 
       // Everything else...
       .anyRequest().denyAll();
