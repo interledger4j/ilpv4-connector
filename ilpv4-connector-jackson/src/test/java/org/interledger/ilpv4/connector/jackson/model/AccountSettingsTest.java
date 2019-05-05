@@ -55,7 +55,6 @@ public class AccountSettingsTest {
     ));
 
     final AccountSettings deserializedAccountSettings = objectMapper.readValue(json, ImmutableAccountSettings.class);
-
     assertThat(deserializedAccountSettings, is(accountSettings));
   }
 
