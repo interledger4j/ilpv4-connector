@@ -225,9 +225,7 @@ public class CcpSenderReceiverTest {
     assertRoutingTableEpoch(0, connectorA, connectorB);
 
     // 3. NodeA sends a Heartbeat (expect NodeB's routing table expiry to be extended).
-    // TODO: Make this blockable....
     this.connectorB.ccpSender.sendRouteUpdateRequest();
-    //Thread.sleep(100);
     //assertRoutingTableIsNotExpired(connectorA, connectorB);
     assertSyncMode(CcpSyncMode.MODE_SYNC, connectorB);
     assertSyncMode(CcpSyncMode.MODE_IDLE, connectorA);

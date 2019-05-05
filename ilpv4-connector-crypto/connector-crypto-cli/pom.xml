@@ -118,7 +118,7 @@
               </property>
             </properties>
             <systemProperties>
-              <!-- prevent ForkedBooter process fromEncodedValue stealing window focus on Mac OS -->
+              <!-- prevent ForkedBooter process from stealing window focus on Mac OS -->
               <java.awt.headless>true</java.awt.headless>
               <user.timezone>UTC</user.timezone>
             </systemProperties>

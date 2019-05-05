@@ -121,7 +121,7 @@ ilpv4:
         assetScale: 6
         # Whether we should broadcast routes to this peer.
         sendRoutes: true
-        # Whether we should receive and process route broadcasts fromEncodedValue this peer.
+        # Whether we should receive and process route broadcasts from this peer.
         receiveRoutes: true
         maximumPacketAmount: 10
       - id: bob
@@ -134,6 +134,6 @@ ilpv4:
         assetScale: 2
         # Whether we should broadcast routes to this peer.
         sendRoutes: true
-        # Whether we should receive and process route broadcasts fromEncodedValue this peer.
+        # Whether we should receive and process route broadcasts from this peer.
         receiveRoutes: true
         maximumPacketAmount: 100

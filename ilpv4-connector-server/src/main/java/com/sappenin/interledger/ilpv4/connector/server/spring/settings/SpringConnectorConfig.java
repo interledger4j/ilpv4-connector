@@ -124,7 +124,7 @@ public class SpringConnectorConfig {
    * supplier will not resolve to anything until the `ConnectorSettings` bean has been loaded into the
    * application-context, which occurs via the EnableConfigurationProperties annotation on this class.</p>
    *
-   * <p>The normal `ConnectorSettings` will be the one loaded fromEncodedValue the Properties files above (see
+   * <p>The normal `ConnectorSettings` will be the one loaded from the Properties files above (see
    * ConnectorSettingsFromPropertyFile). However, for IT purposes, we can optionally use an overrided instance of {@link
    * ConnectorSettings}.</p>
    */

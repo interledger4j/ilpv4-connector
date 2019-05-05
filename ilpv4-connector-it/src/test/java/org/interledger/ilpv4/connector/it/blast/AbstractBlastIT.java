@@ -77,7 +77,7 @@ public abstract class AbstractBlastIT {
   }
 
   /**
-   * Helper method to obtain an instance of {@link ILPv4Connector} fromEncodedValue the topology, based upon its
+   * Helper method to obtain an instance of {@link ILPv4Connector} from the topology, based upon its
    * Interledger Address.
    *
    * @param interledgerAddress

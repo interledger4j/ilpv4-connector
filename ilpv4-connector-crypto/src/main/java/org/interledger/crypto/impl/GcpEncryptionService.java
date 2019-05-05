@@ -61,7 +61,7 @@ public class GcpEncryptionService implements EncryptionService {
     // Encrypt the plaintext with Cloud KMS.
     EncryptResponse response = client.encrypt(keyName, ByteString.copyFrom(plainText));
 
-    // Extract the ciphertext fromEncodedValue the response.
+    // Extract the ciphertext from the response.
     return EncryptedSecret.builder()
       .keyMetadata(keyMetadata)
       .cipherMessage(response.getCiphertext().toByteArray())
@@ -94,7 +94,7 @@ public class GcpEncryptionService implements EncryptionService {
     // Decrypt the ciphertext with Cloud KMS.
     final DecryptResponse response = client.decrypt(keyName, ByteString.copyFrom(cipherMessage));
 
-    // Extract the plaintext fromEncodedValue the response.
+    // Extract the plaintext from the response.
     return response.getPlaintext().toByteArray();
   }
 

@@ -18,8 +18,8 @@ public interface EncryptedSecret {
   }
 
   /**
-   * Construct a {@link EncryptedSecret} fromEncodedValue {@code encodedValue} that conforms to the format defined in
-   * {@link EncryptedSecret#encodedValue()}.
+   * Construct a {@link EncryptedSecret} from {@code encodedValue} that conforms to the format defined in {@link
+   * EncryptedSecret#encodedValue()}.
    *
    * @param encodedValue A {@link String} that conforms to the format defined in {@link EncryptedSecret#encodedValue()}.
    *

@@ -126,7 +126,6 @@ public class JwtBlastAuthenticationProvider extends BlastAuthenticationProvider 
     Objects.requireNonNull(sharedSecretTokenSettings);
 
     return Optional.of(sharedSecretTokenSettings)
-      //.map(BlastLinkSettings::incomingBlastLinkSettings)
       .map(SharedSecretTokenSettings::encryptedTokenSharedSecret)
       .map(EncryptedSecret::fromEncodedValue)
       .map(decryptor::decrypt)

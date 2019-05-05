@@ -47,8 +47,8 @@ import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPe
 import static org.junit.Assert.assertThat;
 
 /**
- * Tests to verify that a single connector can route data and money to/fromEncodedValue a single child peer. In this
- * test, value is transferred both fromEncodedValue Alice->Bob, and then in the opposite direction. Thus, both Alice and
+ * Tests to verify that a single connector can route data and money to/from a single child peer. In this
+ * test, value is transferred both from Alice->Bob, and then in the opposite direction. Thus, both Alice and
  * Bob sometimes play the role of sender and sometimes play the role of receiver.
  */
 // TODO: Once the PING protocol is specified via RFC, extract the PING tests into an abstract super-class. Every IT
