@@ -23,8 +23,16 @@
       <artifactId>ilpv4-connector-accounts</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.sappenin.ilpv4</groupId>
+      <artifactId>ilpv4-connector-persistence</artifactId>
+    </dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-link</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ilpv4-connector-link-blast</artifactId>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -109,7 +117,6 @@
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
 
 </project>

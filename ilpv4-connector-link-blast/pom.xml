@@ -23,6 +23,10 @@
       <artifactId>ilpv4-connector-link</artifactId>
     </dependency>
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ilpv4-connector-crypto</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.auth0</groupId>
       <artifactId>java-jwt</artifactId>
     </dependency>

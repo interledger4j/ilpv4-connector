@@ -1,9 +1,10 @@
 package org.interledger.connector.link.blast;
 
 import org.interledger.core.InterledgerAddress;
+import org.interledger.crypto.Decryptor;
+import org.interledger.crypto.EncryptedSecret;
 import org.springframework.web.client.RestTemplate;
 
-import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -15,33 +16,24 @@ import java.util.function.Supplier;
  */
 public class SimpleBearerBlastHttpSender extends AbstractBlastHttpSender implements BlastHttpSender {
 
-  private final Supplier<byte[]> accountSecretSupplier;
+  private final Decryptor decryptor;
 
   /**
    * Required-args Constructor.
-   *
-   * @param operatorAddressSupplier A {@link Supplier} for the ILP address of the node operating this BLAST sender.
-   * @param uri                     The URI of the HTTP endpoint to send BLAST requests to.
-   * @param restTemplate            A {@link RestTemplate} to use to communicate with the remote BLAST endpoint.
-   * @param accountIdSupplier       A {@link Supplier} for the AccountId to use when communicating with the remote
-   *                                endpoint.
-   * @param accountSecretSupplier   A {@link Supplier} for the Account shared-secret to use when communicating with the
-   *                                remote endpoint.
    */
   public SimpleBearerBlastHttpSender(
-    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
-    final URI uri,
-    final RestTemplate restTemplate,
-    final Supplier<String> accountIdSupplier,
-    final Supplier<byte[]> accountSecretSupplier
+    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier, final RestTemplate restTemplate,
+    final OutgoingLinkSettings outgoingLinkSettings, final Decryptor decryptor
   ) {
-    super(operatorAddressSupplier, uri, restTemplate, accountIdSupplier);
-    this.accountSecretSupplier = Objects.requireNonNull(accountSecretSupplier);
+    super(operatorAddressSupplier, restTemplate, outgoingLinkSettings);
+    this.decryptor = Objects.requireNonNull(decryptor);
   }
 
   @Override
-  protected byte[] constructAuthToken() {
+  protected String constructAuthToken() {
     this.logger.warn("SimpleBearerBlastHttpSender SHOULD NOT be used in a Production environment!");
-    return accountSecretSupplier.get();
+    final EncryptedSecret encryptedSecret =
+      EncryptedSecret.fromEncodedValue(getOutgoingLinkSettings().encryptedTokenSharedSecret());
+    return new String(this.decryptor.decrypt(encryptedSecret));
   }
 }

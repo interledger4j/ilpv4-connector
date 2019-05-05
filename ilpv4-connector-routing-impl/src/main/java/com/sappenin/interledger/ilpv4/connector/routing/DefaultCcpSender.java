@@ -15,11 +15,12 @@ import com.sappenin.interledger.ilpv4.connector.ccp.ImmutableCcpRoutePathPart;
 import com.sappenin.interledger.ilpv4.connector.ccp.ImmutableCcpRouteUpdateRequest;
 import com.sappenin.interledger.ilpv4.connector.ccp.ImmutableCcpWithdrawnRoute;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
-import org.interledger.connector.accounts.Account;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.Link;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
@@ -53,7 +54,7 @@ public class DefaultCcpSender implements CcpSender {
   // route broadcast settings.
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final ForwardingRoutingTable<RouteUpdate> forwardingRoutingTable;
-  private final AccountManager accountManager;
+  private final AccountSettingsRepository accountSettingsRepository;
   private final CodecContext ccpCodecContext;
 
   private final AccountId peerAccountId;
@@ -76,12 +77,12 @@ public class DefaultCcpSender implements CcpSender {
     final AccountId peerAccountId,
     final Link link,
     final ForwardingRoutingTable<RouteUpdate> forwardingRoutingTable,
-    final AccountManager accountManager,
+    final AccountSettingsRepository accountSettingsRepository,
     final CodecContext ccpCodecContext
   ) {
     this.peerAccountId = Objects.requireNonNull(peerAccountId);
     this.forwardingRoutingTable = Objects.requireNonNull(forwardingRoutingTable);
-    this.accountManager = Objects.requireNonNull(accountManager);
+    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.ccpCodecContext = Objects.requireNonNull(ccpCodecContext);
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.link = Objects.requireNonNull(link);
@@ -98,8 +99,6 @@ public class DefaultCcpSender implements CcpSender {
   @Override
   public void handleRouteControlRequest(final CcpRouteControlRequest routeControlRequest) {
     Preconditions.checkNotNull(link, "Plugin must be assigned before using a CcpSender!");
-
-    //final InterledgerAddress peerAccountId = link.getPluginSettings().getpeerAddress();
 
     logger
       .debug("Peer `{}` sent CcpRouteControlRequest: {}", peerAccountId,
@@ -222,21 +221,21 @@ public class DefaultCcpSender implements CcpSender {
             }
 
             // Don't advertise Peer or Supplier (Parent) routes to Suppliers (Parents).
-            final boolean nextHopRelationIsPeerOrParent =
-              this.accountManager.getAccount(actualRoute.getNextHopAccountId())
-                .map(Account::isPeerOrParentAccount)
-                .orElseGet(() -> {
-                  logger.error("NextHop Route {} was not found in the PeerManager!", actualRoute.getNextHopAccountId());
-                  return false;
-                });
+            final boolean nextHopRelationIsPeerOrParent = this
+              .accountSettingsRepository.findByAccountId(actualRoute.getNextHopAccountId())
+              .map(AccountSettings::isPeerOrParentAccount)
+              .orElseGet(() -> {
+                logger.error("NextHop Route {} was not found in the PeerManager!", actualRoute.getNextHopAccountId());
+                return false;
+              });
 
-            final boolean thisPluginIsParent =
-              this.accountManager.getAccount(peerAccountId)
-                .map(Account::isParentAccount)
-                .orElse(false);
+            final boolean thisPluginIsParent = this
+              .accountSettingsRepository.findByAccountId(peerAccountId)
+              .map(AccountSettings::isParentAccount)
+              .orElse(false);
 
             if (thisPluginIsParent || nextHopRelationIsPeerOrParent) {
-              // If the current link is our parent; OR, if th next-hop is a peer or Parent, then withdraw the
+              // If the current link is our parent; OR, if the next-hop is a peer or Parent, then withdraw the
               // route. We only advertise routes to peers/children where the next-hop is a child.
               return null;
             } else {

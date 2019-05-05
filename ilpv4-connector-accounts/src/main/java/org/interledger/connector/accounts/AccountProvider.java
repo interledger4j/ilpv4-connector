@@ -3,6 +3,7 @@ package org.interledger.connector.accounts;
 /**
  * Provides new accounts for the connector to track.
  */
+// TODO: Remove AccountProviders
 public interface AccountProvider {
 
   /**

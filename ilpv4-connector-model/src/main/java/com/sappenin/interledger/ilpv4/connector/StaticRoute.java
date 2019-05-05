@@ -25,7 +25,6 @@ public interface StaticRoute {
    */
   InterledgerAddressPrefix getTargetPrefix();
 
-
   /**
    * The ILP address of the peer this route should route through.
    *

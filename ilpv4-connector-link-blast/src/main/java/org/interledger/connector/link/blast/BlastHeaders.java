@@ -7,8 +7,6 @@ import org.springframework.http.MediaType;
  */
 public interface BlastHeaders {
 
-  String BLAST_AUDIENCE = "urn:ilpv4:blast";
-
   String APPLICATION_ILP_OCTET_STREAM_VALUE = "application/ilp+octet-stream";
   String APPLICATION_ILP_HEADER_OCTET_STREAM_VALUE = "application/ilp-header+octet-stream";
   MediaType ILP_OCTET_STREAM = MediaType.valueOf(APPLICATION_ILP_OCTET_STREAM_VALUE);

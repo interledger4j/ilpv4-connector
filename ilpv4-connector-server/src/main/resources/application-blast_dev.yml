@@ -7,8 +7,9 @@ logging:
     org.interledger: INFO
     org.springframework: INFO
     org.springframework.security: INFO
-    com.auth0: ERROR
     org.springframework.web.socket: ERROR
+    org.hibernate.SQL: INFO
+    #org.hibernate.type.descriptor.sql.BasicBinder: INFO
 server:
   port: 8080
   http2:
@@ -43,7 +44,9 @@ spring:
     throw-exception-if-no-handler-found: true
   # Database Settings
   datasource:
-    url: jdbc:h2:mem:example-app;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    #url: jdbc:h2:mem:ilpv4-connector;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    # Stores H2 to a file for persistence across server restarts
+    url: jdbc:h2:/tmp/ilpv4-connector.bin;DB_CLOSE_ON_EXIT=FALSE
     platform: h2
     username: sa
     password:
@@ -55,8 +58,8 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        show_sql: true
-        use_sql_comments: true
+        show_sql: false
+        use_sql_comments: false
         format_sql: true
 
 ###
@@ -72,7 +75,18 @@ h2:
 
 ilpv4:
   connector:
-    jwtTokenIssuer: https://connie.example.com
+    adminPassword: password
+    # SecretStore configuration.
+    keystore:
+      jks:
+        filename: crypto/crypto.p12
+        password: password
+        secret0_alias: secret0
+        secret0_password: password
+        # This property validates that JKS encryption is working properly via the configured startup. This value
+        # represents the plaintext value of `shh`, encrypted with the above details.
+        secret0_test: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
+    defaultJwtTokenIssuer: https://connie.example.com
     enabledProtocols:
       blastEnabled: true
       pingProtocolEnabled: true
@@ -115,16 +129,15 @@ ilpv4:
         # This BLAST config talks to itself...
         customSettings:
           # Incoming
-          blast.incoming.auth_type: JWT
-          blast.incoming.token_issuer: https://connie.example.com # The JWT issuer of the incoming token.
+          blast.incoming.auth_type: JWT_HS_256
+          blast.incoming.token_issuer: https://connie.example.com # The JWT_HS_256 issuer of the incoming token.
           blast.incoming.account_id: alice # The accountId held at this connector.
-          blast.incoming.account_secret: somesecrettoken
-          blast.incoming.token_expiry: PT2M # See Duration.java for structure.
+          blast.incoming.account_secret: shhh
           # Outgoing
           blast.outgoing.auth_type: simple
-          blast.outgoing.token_issuer: https://connie.example.com # The JWT issuer of the outgoing token.
+          blast.outgoing.token_issuer: https://connie.example.com # The JWT_HS_256 issuer of the outgoing token.
           blast.outgoing.account_id: alice # The accountId held at the remote server.
-          blast.outgoing.account_secret: somesecrettoken
+          blast.outgoing.account_secret: shhh
           blast.outgoing.token_expiry: PT2M # See Duration.java for structure.
           blast.outgoing.url: http://localhost:8080/ilp
       - id: bob
@@ -136,9 +149,9 @@ ilpv4:
         assetCode: XRP
         assetScale: 6
         # Whether we should broadcast routes to this peer.
+        sendRoutes: false
         # Whether we should receive and process route broadcasts from this peer.
         receiveRoutes: false
-        sendRoutes: false
         maximumPacketAmount: 100
         customSettings:
           simulateTimeout: T99 # T03 will make the Loopback Link sleep for 1 min (60000ms), whereas T02 will reject

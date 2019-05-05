@@ -11,7 +11,7 @@
 
   <artifactId>ilpv4-connector-routing-api</artifactId>
 
-  <name>ILPv4 :: Connector Routing API</name>
+  <name>ILPv4 :: Connector :: Routing API</name>
   <description>Routing infrastructure for ILPv4 Connectors.</description>
 
   <dependencies>
@@ -22,6 +22,10 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-accounts</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ilpv4-connector-link</artifactId>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>

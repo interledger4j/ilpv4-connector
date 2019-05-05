@@ -32,7 +32,6 @@ public class ExpiryPacketFilter extends AbstractPacketFilter implements PacketSw
     final InterledgerPreparePacket sourcePreparePacket,
     final PacketSwitchFilterChain filterChain
   ) {
-
     final Duration timeoutDuration = Duration.between(Instant.now(), sourcePreparePacket.getExpiresAt());
     if (timeoutDuration.isNegative() || timeoutDuration.isZero()) {
       return reject(
@@ -48,8 +47,8 @@ public class ExpiryPacketFilter extends AbstractPacketFilter implements PacketSw
       throw (RuntimeException) e.getCause();
     } catch (TimeoutException e) {
       logger.error(e.getMessage(), e);
-      return reject(sourceAccountId, sourcePreparePacket,
-        InterledgerErrorCode.R00_TRANSFER_TIMED_OUT, "Transfer Timed-out"
+      return reject(
+        sourceAccountId, sourcePreparePacket, InterledgerErrorCode.R00_TRANSFER_TIMED_OUT, "Transfer Timed-out"
       );
     }
   }

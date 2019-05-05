@@ -1,11 +1,9 @@
 package org.interledger.connector.link.blast;
 
-import com.google.common.collect.ImmutableMap;
 import okhttp3.HttpUrl;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -14,44 +12,37 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Unit tests for {@link BlastLinkSettings}.
  */
-public class BlastLinkSettingsTest {
+public class BlastLinkSettingsTest extends AbstractBlastLinkTest {
 
   /**
    * Tests the builder when customAttributes is a flat collection of key/value pairs using dotted-notation.
    */
   @Test
   public void applyCustomSettingsWithFlatDottedNotation() {
-    final Map<String, Object> customSettings = ImmutableMap.<String, Object>builder()
-      .put(BlastLinkSettings.BLAST_INCOMING_ACCOUNT_ID, "incomingAccountId")
-      .put(BlastLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, "https://incoming-issuer.example.com")
-      .put(BlastLinkSettings.BLAST_INCOMING_ACCOUNT_SECRET, "incomingSecret")
+    final Map<String, Object> flattenedCustomSettings = this.customSettingsFlat();
 
-      .put(BlastLinkSettings.BLAST_OUTGOING_ACCOUNT_ID, "outgoingAccountId")
-      .put(BlastLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.SIMPLE.name())
-      .put(BlastLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, "https://outgoing-issuer.example.com")
-      .put(BlastLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, Duration.ofDays(1).toString())
-      .put(BlastLinkSettings.BLAST_OUTGOING_ACCOUNT_SECRET, "outgoingSecret")
-      .put(BlastLinkSettings.BLAST_OUTGOING_URL, "https://outgoing.example.com")
+    final ImmutableBlastLinkSettings.Builder builder = BlastLinkSettings.builder().linkType(BlastLink.LINK_TYPE);
+    final ImmutableBlastLinkSettings blastLinkSettings =
+      BlastLinkSettings.applyCustomSettings(builder, flattenedCustomSettings).build();
 
-      .build();
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().authType(), is(BlastLinkSettings.AuthType.JWT_HS_256));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().tokenIssuer().get(),
+      is(HttpUrl.parse("https://incoming-issuer.example.com/")));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().tokenAudience(),
+      is(HttpUrl.parse("https://incoming-audience.example.com/").toString()));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().tokenSubject(), is("incoming-subject"));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().encryptedTokenSharedSecret(), is("incoming-credential"));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().getMinMessageWindow(), is(Duration.ofSeconds(1)));
 
-    final ImmutableBlastLinkSettings.Builder builder =
-      BlastLinkSettings.builder().linkType(BlastLink.LINK_TYPE).minMessageWindow(Duration.ofMillis(20));
-    final BlastLinkSettings settings = BlastLinkSettings.applyCustomSettings(builder, customSettings).build();
-
-    assertThat(settings.getLinkType(), is(BlastLink.LINK_TYPE));
-    assertThat(settings.getMinMessageWindow(), is(Duration.ofMillis(20)));
-
-    assertThat(settings.getIncomingAccountId(), is("incomingAccountId"));
-    assertThat(settings.getIncomingTokenIssuer(), is(HttpUrl.parse("https://incoming-issuer.example.com")));
-    assertThat(settings.getIncomingAccountSecret(), is("incomingSecret"));
-
-    assertThat(settings.getOutgoingAccountId(), is("outgoingAccountId"));
-    assertThat(settings.getOutgoingAuthType(), is(BlastLinkSettings.AuthType.SIMPLE));
-    assertThat(settings.getOutgoingTokenIssuer(), is(HttpUrl.parse("https://outgoing-issuer.example.com")));
-    assertThat(settings.getOutgoingUrl(), is(HttpUrl.parse("https://outgoing.example.com")));
-    assertThat(settings.getOutingTokenExpiry(), is(Duration.ofDays(1)));
-    assertThat(settings.getOutgoingAccountSecret(), is("outgoingSecret"));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().authType(), is(BlastLinkSettings.AuthType.SIMPLE));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().tokenIssuer().get(),
+      is(HttpUrl.parse("https://outgoing-issuer.example.com/")));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().tokenAudience(),
+      is(HttpUrl.parse("https://outgoing-audience.example.com/").toString()));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().tokenSubject(), is("outgoing-subject"));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().encryptedTokenSharedSecret(), is("outgoing-credential"));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().tokenExpiry().get(), is(Duration.ofHours(24)));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().url(), is(HttpUrl.parse("https://outgoing.example.com/")));
   }
 
   /**
@@ -59,76 +50,83 @@ public class BlastLinkSettingsTest {
    */
   @Test
   public void applyCustomSettingsWithMapHeirarchy() {
-    final Map<String, Object> incomingMap = new HashMap<>();
-    incomingMap.put(BlastLinkSettings.ACCOUNT_ID, "incomingAccountId");
-    incomingMap.put(BlastLinkSettings.AUTH_TYPE, BlastLinkSettings.AuthType.JWT.name());
-    incomingMap.put(BlastLinkSettings.TOKEN_ISSUER, "https://incoming-issuer.example.com");
-    incomingMap.put(BlastLinkSettings.ACCOUNT_SECRET, "incomingSecret");
+    final Map<String, Object> customSettings = this.customSettingsHeirarchical();
 
-    final Map<String, Object> outgoingMap = new HashMap<>();
-    outgoingMap.put(BlastLinkSettings.ACCOUNT_ID, "outgoingAccountId");
-    outgoingMap.put(BlastLinkSettings.AUTH_TYPE, BlastLinkSettings.AuthType.SIMPLE.name());
-    outgoingMap.put(BlastLinkSettings.TOKEN_ISSUER, "https://outgoing-issuer.example.com");
-    outgoingMap.put(BlastLinkSettings.TOKEN_EXPIRY, Duration.ofDays(1).toString());
-    outgoingMap.put(BlastLinkSettings.ACCOUNT_SECRET, "outgoingSecret");
-    outgoingMap.put(BlastLinkSettings.URL, "https://outgoing.example.com");
+    final ImmutableBlastLinkSettings.Builder builder = BlastLinkSettings.builder().linkType(BlastLink.LINK_TYPE);
+    final ImmutableBlastLinkSettings blastLinkSettings =
+      BlastLinkSettings.applyCustomSettings(builder, customSettings).build();
 
-    final Map<String, Object> blastMap = new HashMap<>();
-    blastMap.put(BlastLinkSettings.INCOMING, incomingMap);
-    blastMap.put(BlastLinkSettings.OUTGOING, outgoingMap);
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().authType(), is(BlastLinkSettings.AuthType.JWT_HS_256));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().tokenIssuer().get(),
+      is(HttpUrl.parse("https://incoming-issuer.example.com/")));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().tokenAudience(),
+      is(HttpUrl.parse("https://incoming-audience.example.com/").toString()));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().tokenSubject(), is("incoming-subject"));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().encryptedTokenSharedSecret(),
+      is("incoming-credential"));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().getMinMessageWindow(), is(Duration.ofSeconds(1)));
 
-    final Map<String, Object> customSettings = new HashMap<>();
-    customSettings.put(BlastLinkSettings.BLAST, blastMap);
-
-
-    final ImmutableBlastLinkSettings.Builder builder =
-      BlastLinkSettings.builder().linkType(BlastLink.LINK_TYPE).minMessageWindow(Duration.ofMillis(20));
-    final BlastLinkSettings settings = BlastLinkSettings.applyCustomSettings(builder, customSettings).build();
-
-    assertThat(settings.getLinkType(), is(BlastLink.LINK_TYPE));
-    assertThat(settings.getMinMessageWindow(), is(Duration.ofMillis(20)));
-
-    assertThat(settings.getIncomingAccountId(), is("incomingAccountId"));
-    assertThat(settings.getIncomingTokenIssuer(), is(HttpUrl.parse("https://incoming-issuer.example.com")));
-    assertThat(settings.getIncomingAccountSecret(), is("incomingSecret"));
-
-    assertThat(settings.getOutgoingAccountId(), is("outgoingAccountId"));
-    assertThat(settings.getOutgoingAuthType(), is(BlastLinkSettings.AuthType.SIMPLE));
-    assertThat(settings.getOutgoingTokenIssuer(), is(HttpUrl.parse("https://outgoing-issuer.example.com")));
-    assertThat(settings.getOutgoingUrl(), is(HttpUrl.parse("https://outgoing.example.com")));
-    assertThat(settings.getOutingTokenExpiry(), is(Duration.ofDays(1)));
-    assertThat(settings.getOutgoingAccountSecret(), is("outgoingSecret"));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().authType(), is(BlastLinkSettings.AuthType.SIMPLE));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().tokenIssuer().get(),
+      is(HttpUrl.parse("https://outgoing-issuer.example.com/")));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().tokenAudience(),
+      is(HttpUrl.parse("https://outgoing-audience.example.com/").toString()));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().tokenSubject(), is("outgoing-subject"));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().encryptedTokenSharedSecret(),
+      is("outgoing-credential"));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().tokenExpiry().get(), is(Duration.ofHours(48)));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().url(), is(HttpUrl.parse("https://outgoing.example.com/")));
   }
 
   @Test
   public void testWithoutCustomSettings() {
-    final BlastLinkSettings settings = BlastLinkSettings.builder()
+    final IncomingLinkSettings incomingLinksettings =
+      IncomingLinkSettings.builder()
+        .authType(BlastLinkSettings.AuthType.SIMPLE)
+        .tokenIssuer(HttpUrl.parse("https://incoming-issuer.example.com/"))
+        .tokenAudience("https://incoming-audience.example.com/")
+        .tokenSubject("incoming-subject")
+        .minMessageWindow(Duration.ofMillis(30))
+        .encryptedTokenSharedSecret("incoming-credential")
+        .build();
+
+    final OutgoingLinkSettings outgoingLinksettings =
+      OutgoingLinkSettings.builder()
+        .authType(BlastLinkSettings.AuthType.SIMPLE)
+        .tokenIssuer(HttpUrl.parse("https://outgoing-issuer.example.com/"))
+        .tokenAudience("https://outgoing-audience.example.com/")
+        .tokenSubject("outgoing-subject")
+        .encryptedTokenSharedSecret("outgoing-credential")
+        .tokenExpiry(Duration.ofMillis(40))
+        .url(HttpUrl.parse("https://outgoing.example.com/"))
+        .build();
+
+    final BlastLinkSettings blastLinkSettings = BlastLinkSettings.builder()
       .linkType(BlastLink.LINK_TYPE)
-      .incomingAccountId("incomingAccountId")
-      .incomingTokenIssuer(HttpUrl.parse("https://incoming-issuer.example.com"))
-      .incomingAccountSecret("incomingSecret")
+      .incomingBlastLinkSettings(incomingLinksettings)
+      .outgoingBlastLinkSettings(outgoingLinksettings)
+      .build();
 
-      .outgoingAccountId("outgoingAccountId")
-      .outgoingAuthType(BlastLinkSettings.AuthType.SIMPLE)
-      .outgoingTokenIssuer(HttpUrl.parse("https://outgoing-issuer.example.com"))
-      .outgoingUrl(HttpUrl.parse("https://outgoing.example.com"))
-      .outingTokenExpiry(Duration.ofDays(1))
-      .outgoingAccountSecret("outgoingSecret")
+    assertThat(blastLinkSettings.getLinkType(), is(BlastLink.LINK_TYPE));
 
-      .minMessageWindow(Duration.ofMillis(20)).build();
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().authType(), is(BlastLinkSettings.AuthType.SIMPLE));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().tokenIssuer().get(),
+      is(HttpUrl.parse("https://incoming-issuer.example.com/")));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().tokenAudience(),
+      is(HttpUrl.parse("https://incoming-audience.example.com/").toString()));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().tokenSubject(), is("incoming-subject"));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().encryptedTokenSharedSecret(), is("incoming-credential"));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().getMinMessageWindow(), is(Duration.ofMillis(30)));
 
-    assertThat(settings.getLinkType(), is(BlastLink.LINK_TYPE));
-    assertThat(settings.getMinMessageWindow(), is(Duration.ofMillis(20)));
-
-    assertThat(settings.getIncomingAccountId(), is("incomingAccountId"));
-    assertThat(settings.getIncomingTokenIssuer(), is(HttpUrl.parse("https://incoming-issuer.example.com")));
-    assertThat(settings.getIncomingAccountSecret(), is("incomingSecret"));
-
-    assertThat(settings.getOutgoingAccountId(), is("outgoingAccountId"));
-    assertThat(settings.getOutgoingAuthType(), is(BlastLinkSettings.AuthType.SIMPLE));
-    assertThat(settings.getOutgoingTokenIssuer(), is(HttpUrl.parse("https://outgoing-issuer.example.com")));
-    assertThat(settings.getOutgoingUrl(), is(HttpUrl.parse("https://outgoing.example.com")));
-    assertThat(settings.getOutingTokenExpiry(), is(Duration.ofDays(1)));
-    assertThat(settings.getOutgoingAccountSecret(), is("outgoingSecret"));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().authType(), is(BlastLinkSettings.AuthType.SIMPLE));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().tokenIssuer().get(),
+      is(HttpUrl.parse("https://outgoing-issuer.example.com/")));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().tokenAudience(),
+      is(HttpUrl.parse("https://outgoing-audience.example.com/").toString()));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().tokenSubject(), is("outgoing-subject"));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().encryptedTokenSharedSecret(), is("outgoing-credential"));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().tokenExpiry().get(), is(Duration.ofMillis(40)));
+    assertThat(blastLinkSettings.outgoingBlastLinkSettings().url(),
+      is(HttpUrl.parse("https://outgoing.example.com/")));
   }
 }

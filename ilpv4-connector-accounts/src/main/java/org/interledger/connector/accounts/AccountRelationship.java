@@ -1,5 +1,7 @@
 package org.interledger.connector.accounts;
 
+import java.util.Objects;
+
 /**
  * <p>Defines the type of relationship between two ILP nodes for a given account, from the perspective of the Node
  * operating the link. For example, if a node is operating a link of type {@link AccountRelationship#CHILD}, then we
@@ -11,8 +13,8 @@ package org.interledger.connector.accounts;
  * <p>The Interledger network topology is organized in a tiered hierarchy, similar to the Internet, reflecting these
  * relationships. Large, high volume nodes are peered with one another to form the backbone of the network, using the
  * relationship type {@link AccountRelationship#PEER}. Smaller nodes will have links to these "tier 1" nodes and the
- * link will be of type {@link AccountRelationship#CHILD}, from the perspective of the tier 1 node; From the
- * perspective of the smaller node, the type will be {@link AccountRelationship#PARENT}.
+ * link will be of type {@link AccountRelationship#CHILD}, from the perspective of the tier 1 node; From the perspective
+ * of the smaller node, the type will be {@link AccountRelationship#PARENT}.
  *
  * <p>A node MUST only have one link of type parent or, if it has multiple, only one configured to use the IL-DCP
  * protocol upon establishing the link, to request an address from the parent.</p>
@@ -47,6 +49,34 @@ public enum AccountRelationship {
 
   AccountRelationship(final int weight) {
     this.weight = weight;
+  }
+
+  /**
+   * Convert a weight into an instance of {@link AccountRelationship}.
+   *
+   * @param weight
+   *
+   * @return
+   */
+  public static AccountRelationship fromWeight(final Integer weight) {
+    Objects.requireNonNull(weight);
+    switch (weight) {
+      case 0: {
+        return PARENT;
+      }
+      case 1: {
+        return PEER;
+      }
+      case 2: {
+        return CHILD;
+      }
+      case 3: {
+        return LOCAL;
+      }
+      default: {
+        throw new IllegalArgumentException("Invalid `weight`: " + weight);
+      }
+    }
   }
 
   /**

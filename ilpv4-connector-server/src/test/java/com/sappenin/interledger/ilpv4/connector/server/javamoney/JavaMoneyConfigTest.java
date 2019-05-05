@@ -1,6 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.server.javamoney;
 
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServerConfig;
+import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import org.javamoney.moneta.spi.DefaultNumberValue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.money.convert.ConversionQueryBuilder;
@@ -16,8 +19,13 @@ import javax.money.convert.ExchangeRateProvider;
 import javax.money.convert.RateType;
 import java.math.BigInteger;
 
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME;
+import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD;
+import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS;
+import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD;
 
 /**
  * Ensures that the JavaMoney library is properly wired into the Connector.
@@ -26,6 +34,17 @@ import static org.hamcrest.core.Is.is;
 @SpringBootTest(
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   classes = {ConnectorServerConfig.class}
+)
+@ActiveProfiles({"test"})
+@TestPropertySource(
+  properties = {
+    ADMIN_PASSWORD + "=password",
+    ConnectorProperties.ENABLED_PROTOCOLS + "." + ConnectorProperties.BLAST_ENABLED + "=true",
+    ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME + "=crypto/crypto.p12",
+    ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD + "=password",
+    ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS + "=secret0",
+    ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD + "=password"
+  }
 )
 public class JavaMoneyConfigTest {
 

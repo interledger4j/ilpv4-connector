@@ -59,15 +59,13 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
   }
 
   @Override
-  public Optional<LinkId> getLinkId() {
-    return Optional.ofNullable(linkId);
+  public LinkId getLinkId() {
+    return linkId;
   }
 
   public void setLinkId(final LinkId linkId) {
-    Objects.requireNonNull(linkId);
-
     if (this.linkId == null) {
-      this.linkId = linkId;
+      this.linkId = Objects.requireNonNull(linkId);
     } else {
       throw new RuntimeException("LinkId may only be set once!");
     }
@@ -87,8 +85,10 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
   public final CompletableFuture<Void> connect() {
     try {
       if (this.connected.compareAndSet(NOT_CONNECTED, CONNECTED)) {
-        logger.debug("[{}] `{}` connecting to `{}`...",
-          this.linkSettings.getLinkType(), this.operatorAddressSupplier.get(), this.getLinkId()
+        logger.debug("[{}] (ILP Address: `{}`) connecting to `{}`...",
+          this.linkSettings.getLinkType(),
+          this.operatorAddressAsString(),
+          this.getLinkId()
         );
 
         return this.doConnect()
@@ -97,21 +97,26 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
               // Emit a connected event...
               this.linkEventEmitter.emitEvent(LinkConnectedEvent.of(this));
 
-              logger.info("[{}] `{}` connected to `{}`", this.getLinkSettings().getLinkType(),
-                this.operatorAddressSupplier.get(), this.getLinkId());
+              logger.info("[{}] (ILP Address: `{}`) connected to `{}`",
+                this.getLinkSettings().getLinkType(),
+                this.operatorAddressAsString(),
+                this.getLinkId());
             } else {
               this.connected.set(NOT_CONNECTED);
-              final String errorMessage = String.format("[%s] `%s` was unable to connect to Link: `%s`",
+              final String errorMessage = String.format("[%s] (ILP Address: `%s`) was unable to connect to Link: `%s`",
                 this.linkSettings.getLinkType(),
-                this.operatorAddressSupplier.get().map(InterledgerAddress::getValue).orElse("uninitialized"),
-                this.getLinkId().map(LinkId::value).orElse("uninitialized")
+                this.operatorAddressAsString(),
+                this.getLinkId().value()
               );
               logger.error(errorMessage, error);
+              this.linkEventEmitter.emitEvent(LinkErrorEvent.of(this, error));
             }
           });
       } else {
-        logger.debug("[{}] `{}` already connected to `{}`...", this.linkSettings.getLinkType(),
-          this.operatorAddressSupplier.get(), this.getLinkId());
+        logger.debug("[{}] (ILP Address: `{}`) already connected to `{}`...",
+          this.linkSettings.getLinkType(),
+          this.operatorAddressAsString(),
+          this.getLinkId());
         // No-op: We're already expectedCurrentState...
         return CompletableFuture.completedFuture(null);
       }
@@ -140,8 +145,10 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
   public final CompletableFuture<Void> disconnect() {
     try {
       if (this.connected.compareAndSet(CONNECTED, NOT_CONNECTED)) {
-        logger.debug("[{}] `{}` disconnecting from `{}`...", this.linkSettings.getLinkType(),
-          this.operatorAddressSupplier.get(), this.getLinkId());
+        logger.debug("[{}] (ILP Address: `{}`) disconnecting from `{}`...",
+          this.linkSettings.getLinkType(),
+          this.operatorAddressAsString(),
+          this.getLinkId());
 
         return this.doDisconnect()
           .whenComplete(($, error) -> {
@@ -149,23 +156,31 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
               // emit disconnected event.
               this.linkEventEmitter.emitEvent(LinkDisconnectedEvent.of(this));
 
-              logger.debug("[{}] `{}` disconnected from `{}`.", this.linkSettings.getLinkType(),
-                this.operatorAddressSupplier.get(), this.getLinkId());
-            } else {
-              final String errorMessage = String.format("[%s] `%s` error while trying to disconnect from `%s`",
+              logger.debug("[{}] (ILP Address: `{}`) disconnected from `{}`.",
                 this.linkSettings.getLinkType(),
-                this.operatorAddressSupplier.get(), this.getLinkId()
-              );
+                this.operatorAddressAsString(),
+                this.getLinkId());
+            } else {
+              final String errorMessage =
+                String.format("[%s] `%s` error while trying to disconnect from ILP Address: `%s`",
+                  this.linkSettings.getLinkType(),
+                  this.operatorAddressAsString(),
+                  this.getLinkId()
+                );
               logger.error(errorMessage, error);
             }
           })
           .thenAccept(($) -> {
-            logger.debug("[{}] `{}` disconnected from `{}`...", this.linkSettings.getLinkType(),
-              this.operatorAddressSupplier.get(), this.getLinkId());
+            logger.debug("[{}] (ILP Address: `{}`) disconnected from `{}`...",
+              this.linkSettings.getLinkType(),
+              this.operatorAddressAsString(),
+              this.getLinkId());
           });
       } else {
-        logger.debug("[{}] `{}` already disconnected from `{}`...", this.linkSettings.getLinkType(),
-          this.operatorAddressSupplier.get(), this.getLinkId());
+        logger.debug("[{}] (ILP Address: `{}`) already disconnected from `{}`...",
+          this.linkSettings.getLinkType(),
+          this.operatorAddressAsString(),
+          this.getLinkId());
         // No-op: We're already expectedCurrentState...
         return CompletableFuture.completedFuture(null);
       }
@@ -191,7 +206,7 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
     if (!this.linkHandlerAtomicReference.compareAndSet(null, ilpDataHandler)) {
       throw new LinkHandlerAlreadyRegisteredException(
         "DataHandler may not be registered twice. Call unregisterDataHandler first!",
-        this.getLinkId().orElse(LinkId.of("Not yet set!"))
+        this.getLinkId()
       );
     }
   }
@@ -216,6 +231,16 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
   public void removeLinkEventListener(final LinkEventListener linkEventListener) {
     Objects.requireNonNull(linkEventListener);
     this.linkEventEmitter.removeLinkEventListener(linkEventListener);
+  }
+
+  /**
+   * A helper method to properly obtain this Node's ILP operating address as a {@link String}, or a consistent value if
+   * the address has not yet been set.
+   *
+   * @return A {@link String}.
+   */
+  private final String operatorAddressAsString() {
+    return this.operatorAddressSupplier.get().map(InterledgerAddress::getValue).orElse("unset");
   }
 
   /**

@@ -1,13 +1,11 @@
 package com.sappenin.interledger.ilpv4.connector.links;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.fx.JavaMoneyUtils;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.InterledgerAddressUtils;
 import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
 import com.sappenin.interledger.ilpv4.connector.routing.Route;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
-import org.interledger.connector.accounts.Account;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
@@ -15,6 +13,7 @@ import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,20 +37,20 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final PaymentRouter<Route> externalRoutingService;
-  private final AccountManager accountManager;
+  private final AccountSettingsRepository accountSettingsRepository;
   private final InterledgerAddressUtils addressUtils;
   private final JavaMoneyUtils javaMoneyUtils;
 
   public DefaultNextHopPacketMapper(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final PaymentRouter<Route> externalRoutingService,
-    final AccountManager accountManager,
+    final AccountSettingsRepository accountSettingsRepository,
     final InterledgerAddressUtils addressUtils,
     final JavaMoneyUtils javaMoneyUtils
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
-    this.accountManager = Objects.requireNonNull(accountManager);
+    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.addressUtils = Objects.requireNonNull(addressUtils);
     this.javaMoneyUtils = Objects.requireNonNull(javaMoneyUtils);
   }
@@ -145,28 +144,20 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       return sourcePacket.getAmount();
     } else {
       // TODO: Consider a cache here for the source/dest conversion?
-      final AccountSettings sourceAccountSettings = loadAccountSettings(sourceAccountId);
+      final AccountSettings sourceAccountSettings = this.accountSettingsRepository.safeFindByAccountId(sourceAccountId);
       final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.getAssetCode());
       final int sourceScale = sourceAccountSettings.getAssetScale();
       final MonetaryAmount sourceAmount =
         javaMoneyUtils.toMonetaryAmount(sourceCurrencyUnit, sourcePacket.getAmount(), sourceScale);
 
-      final AccountSettings destinationAccountSettings = loadAccountSettings(destinationAccountId);
+      final AccountSettings destinationAccountSettings =
+        this.accountSettingsRepository.safeFindByAccountId(destinationAccountId);
       final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAccountSettings.getAssetCode());
       final int destinationScale = destinationAccountSettings.getAssetScale();
       final CurrencyConversion destCurrencyConversion = MonetaryConversions.getConversion(destinationCurrencyUnit);
 
       return javaMoneyUtils.toInterledgerAmount(sourceAmount.with(destCurrencyConversion), destinationScale);
     }
-  }
-
-  @VisibleForTesting
-  protected AccountSettings loadAccountSettings(final AccountId accountId) {
-    return this.accountManager
-      .getAccount(accountId)
-      .map(Account::getAccountSettings).orElseThrow(
-        () -> new RuntimeException(String.format("No Account for AccountId: `%s`", accountId))
-      );
   }
 
   // TODO: Unit test this!

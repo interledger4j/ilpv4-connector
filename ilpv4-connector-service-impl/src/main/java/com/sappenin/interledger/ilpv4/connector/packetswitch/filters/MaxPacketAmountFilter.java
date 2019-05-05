@@ -1,13 +1,13 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
-import org.interledger.connector.accounts.Account;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 
 import java.util.Objects;
 
@@ -17,11 +17,13 @@ import java.util.Objects;
  */
 public class MaxPacketAmountFilter extends AbstractPacketFilter implements PacketSwitchFilter {
 
-  private final AccountManager accountManager;
+  private final AccountSettingsRepository accountSettingsRepository;
 
-  public MaxPacketAmountFilter(final PacketRejector packetRejector, final AccountManager accountManager) {
+  public MaxPacketAmountFilter(
+    final PacketRejector packetRejector, final AccountSettingsRepository accountSettingsRepository
+  ) {
     super(packetRejector);
-    this.accountManager = Objects.requireNonNull(accountManager);
+    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
   }
 
   @Override
@@ -30,14 +32,14 @@ public class MaxPacketAmountFilter extends AbstractPacketFilter implements Packe
     final InterledgerPreparePacket sourcePreparePacket,
     final PacketSwitchFilterChain filterChain
   ) {
-    final Account account = accountManager.getAccount(sourceAccountId)
+    final AccountSettings accountSettings = accountSettingsRepository.findByAccountId(sourceAccountId)
       // REJECT due to no account...
       .orElseThrow(() -> new InterledgerProtocolException(
         reject(sourceAccountId, sourcePreparePacket, InterledgerErrorCode.T00_INTERNAL_ERROR,
           String.format("No Account found: `%s`", sourceAccountId))));
 
     // If the max packet amount is present...
-    return account.getAccountSettings().getMaximumPacketAmount()
+    return accountSettings.getMaximumPacketAmount()
       //  if Packet amount is greater-than `maxPacketAmount`, then Reject.
       .filter(maxPacketAmount -> sourcePreparePacket.getAmount().compareTo(maxPacketAmount) >= 0)
       .map(maxPacketAmount -> {

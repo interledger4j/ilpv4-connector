@@ -17,7 +17,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * <p>An entry in a {@link RoutingTable}, used by Interledger nodes to determine the "next hop" account that a payment
  * should be forwarded to in order to complete a payment.</p>
  *
- * <p> For more details about the structure of this class as it relates to other routes in a routing table, reference
+ * <p>For more details about the structure of this class as it relates to other routes in a routing table, reference
  * {@link RoutingTable}.</p>
  */
 public interface Route extends BaseRoute {

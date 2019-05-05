@@ -74,8 +74,7 @@ public class CircuitBreakingLink implements Link<LinkSettings> {
     Objects.requireNonNull(preparePacket);
 
     // TODO: Once a load-test is in place, consider not looking this up for _every_ packet send.
-    final CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker(this.getLinkId().map(LinkId::value)
-      .orElseThrow(() -> new RuntimeException("LinkId Required to access a circuit-breaker")));
+    final CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker(this.getLinkId().value());
 
     // The circuitBreaker will catch any exceptions that aren't InterledgerProtocolException and consider those for
     // breaking purposes.
@@ -83,7 +82,7 @@ public class CircuitBreakingLink implements Link<LinkSettings> {
   }
 
   @Override
-  public Optional<LinkId> getLinkId() {
+  public LinkId getLinkId() {
     return this.linkDelegate.getLinkId();
   }
 
@@ -139,5 +138,9 @@ public class CircuitBreakingLink implements Link<LinkSettings> {
 
   public Link<?> getLinkDelegate() {
     return this.linkDelegate;
+  }
+
+  public <T> T getLinkDelegateTyped() {
+    return (T) this.linkDelegate;
   }
 }

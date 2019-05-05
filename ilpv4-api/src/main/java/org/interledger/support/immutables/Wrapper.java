@@ -11,10 +11,6 @@ public abstract class Wrapper<T extends Comparable<T>> implements Comparable<Wra
   @Value.Parameter
   public abstract T value();
 
-  public String valueString() {
-    return value().toString();
-  }
-
   @Override
   public int compareTo(Wrapper<T> otherWrapped) {
     return value().compareTo(otherWrapped.value());
