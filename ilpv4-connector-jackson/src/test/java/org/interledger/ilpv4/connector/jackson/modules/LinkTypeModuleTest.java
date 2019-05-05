@@ -1,7 +1,7 @@
 package org.interledger.ilpv4.connector.jackson.modules;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.LinkType;
 import org.interledger.ilpv4.connector.jackson.ObjectMapperFactory;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,40 +13,40 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 /**
- * Unit tests for {@link AccountIdModule}.
+ * Unit tests for {@link LinkTypeModule}.
  */
-public class AccountIdModuleTest extends AbstractIdTest {
+public class LinkTypeModuleTest extends AbstractIdTest {
 
-  private static final AccountId ACCOUNT_ID = AccountId.of(UUID.randomUUID().toString());
+  private static final LinkType LINK_TYPE = LinkType.of(UUID.randomUUID().toString());
   protected ObjectMapper objectMapperWithoutModule;
 
   @Before
   public void setUp() {
     objectMapperWithoutModule = ObjectMapperFactory.create();
-    objectMapper.registerModule(new AccountIdModule());
+    objectMapper.registerModule(new LinkTypeModule());
   }
 
   @Test
   public void shouldSerializeAndDeserialize() throws IOException {
-    final AccountIdContainer expectedContainer = ImmutableAccountIdContainer.builder()
-      .accountId(ACCOUNT_ID)
+    final LinkTypeContainer expectedContainer = ImmutableLinkTypeContainer.builder()
+      .linkType(LINK_TYPE)
       .build();
 
     final String json = objectMapper.writeValueAsString(expectedContainer);
-    final AccountIdContainer actualContainer = objectMapper
-      .readValue(json, AccountIdContainer.class);
+    final LinkTypeContainer actualContainer = objectMapper
+      .readValue(json, LinkTypeContainer.class);
 
     assertThat(actualContainer, is(expectedContainer));
   }
 
   @Test
   public void shouldNotSerializeAndDeserialize() throws IOException {
-    final AccountIdContainer expectedContainer = ImmutableAccountIdContainer.builder()
-      .accountId(ACCOUNT_ID)
+    final LinkTypeContainer expectedContainer = ImmutableLinkTypeContainer.builder()
+      .linkType(LINK_TYPE)
       .build();
 
     final String actualJson = objectMapperWithoutModule.writeValueAsString(expectedContainer);
-    final AccountIdContainer decodedJson = objectMapperWithoutModule.readValue(actualJson, AccountIdContainer.class);
+    final LinkTypeContainer decodedJson = objectMapperWithoutModule.readValue(actualJson, LinkTypeContainer.class);
     assertThat(decodedJson, is(expectedContainer));
   }
 }

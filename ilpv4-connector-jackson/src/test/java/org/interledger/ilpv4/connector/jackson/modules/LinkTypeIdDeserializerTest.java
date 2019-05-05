@@ -1,6 +1,6 @@
 package org.interledger.ilpv4.connector.jackson.modules;
 
-import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.LinkType;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -10,29 +10,29 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 /**
- * Unit tests for {@link AccountIdDeserializer}.
+ * Unit tests for {@link LinkTypeDeserializer}.
  */
-public class AccountIdDeserializerTest extends AbstractIdTest {
+public class LinkTypeIdDeserializerTest extends AbstractIdTest {
 
-  private AccountId USER_ID = AccountId.of(UUID.randomUUID().toString());
+  private LinkType LINK_TYPE = LinkType.of(UUID.randomUUID().toString());
 
   @Test
   public void shouldDeserialize() throws IOException {
-    final AccountId actual = objectMapper
-      .readValue("\"" + USER_ID.value() + "\"", AccountId.class);
+    final LinkType actual = objectMapper
+      .readValue("\"" + LINK_TYPE.value() + "\"", LinkType.class);
 
-    assertThat(actual, is(USER_ID));
+    assertThat(actual, is(LINK_TYPE));
   }
 
   @Test
   public void shouldDeserializeInContainer() throws IOException {
-    final AccountIdContainer expectedContainer = ImmutableAccountIdContainer.builder()
-      .accountId(USER_ID)
+    final LinkTypeContainer expectedContainer = ImmutableLinkTypeContainer.builder()
+      .linkType(LINK_TYPE)
       .build();
 
-    final AccountIdContainer actualContainer = objectMapper.readValue(
-      "{\"account_id\":\"" + USER_ID.value() + "\"}",
-      AccountIdContainer.class
+    final LinkTypeContainer actualContainer = objectMapper.readValue(
+      "{\"link_type\":\"" + LINK_TYPE.value() + "\"}",
+      LinkTypeContainer.class
     );
 
     assertThat(actualContainer, is(expectedContainer));

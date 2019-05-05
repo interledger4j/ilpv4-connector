@@ -1,66 +1,53 @@
-package com.ripple.ripplenet.idms.jackson;
+package org.interledger.ilpv4.connector.jackson.modules;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.ripple.service.identitymanagement.api.OrganizationId;
-import com.ripple.service.identitymanagement.api.ProductId;
-import com.ripple.service.identitymanagement.api.RoleId;
-import com.ripple.service.identitymanagement.api.UserId;
-import org.immutables.value.Value.Immutable;
-import org.testng.annotations.BeforeMethod;
+import org.immutables.value.Value;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.LinkId;
+import org.interledger.connector.link.LinkType;
+import org.interledger.ilpv4.connector.jackson.ObjectMapperFactory;
+import org.junit.Before;
 
 /**
  * Abstract class that holds common functionality for testing Id (de)serialization using Jackson.
  */
 public abstract class AbstractIdTest {
 
-    protected ObjectMapper objectMapper;
+  protected ObjectMapper objectMapper;
 
-    @BeforeMethod
-    public void setup() {
-        objectMapper = new ObjectMapper()
-            .registerModule(new OrganizationIdModule())
-            .registerModule(new UserIdModule())
-            .registerModule(new ProductIdModule())
-            .registerModule(new RoleIdModule());
-    }
+  @Before
+  public void setup() {
+    objectMapper = ObjectMapperFactory.create();
+  }
 
-    @Immutable
-    @JsonSerialize(as = ImmutableOrganizationIdContainer.class)
-    @JsonDeserialize(as = ImmutableOrganizationIdContainer.class)
-    public interface OrganizationIdContainer {
+  @Value.Immutable
+  @JsonSerialize(as = ImmutableAccountIdContainer.class)
+  @JsonDeserialize(as = ImmutableAccountIdContainer.class)
+  public interface AccountIdContainer {
 
-        @JsonProperty("organization_id")
-        OrganizationId getOrganizationId();
-    }
+    @JsonProperty("account_id")
+    AccountId getAccountId();
+  }
 
-    @Immutable
-    @JsonSerialize(as = ImmutableUserIdContainer.class)
-    @JsonDeserialize(as = ImmutableUserIdContainer.class)
-    public interface UserIdContainer {
+  @Value.Immutable
+  @JsonSerialize(as = ImmutableLinkIdContainer.class)
+  @JsonDeserialize(as = ImmutableLinkIdContainer.class)
+  public interface LinkIdContainer {
 
-        @JsonProperty("user_id")
-        UserId getUserId();
-    }
+    @JsonProperty("link_id")
+    LinkId getLinkId();
+  }
 
-    @Immutable
-    @JsonSerialize(as = ImmutableProductIdContainer.class)
-    @JsonDeserialize(as = ImmutableProductIdContainer.class)
-    public interface ProductIdContainer {
+  @Value.Immutable
+  @JsonSerialize(as = ImmutableLinkTypeContainer.class)
+  @JsonDeserialize(as = ImmutableLinkTypeContainer.class)
+  public interface LinkTypeContainer {
 
-        @JsonProperty("product_id")
-        ProductId getProductId();
-    }
-
-    @Immutable
-    @JsonSerialize(as = ImmutableRoleIdContainer.class)
-    @JsonDeserialize(as = ImmutableRoleIdContainer.class)
-    public interface RoleIdContainer {
-
-        @JsonProperty("role_id")
-        RoleId getRoleId();
-    }
+    @JsonProperty("link_type")
+    LinkType getLinkType();
+  }
 
 }

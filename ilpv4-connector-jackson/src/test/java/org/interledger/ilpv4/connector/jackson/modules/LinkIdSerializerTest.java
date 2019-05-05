@@ -1,6 +1,6 @@
 package org.interledger.ilpv4.connector.jackson.modules;
 
-import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.LinkId;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -10,26 +10,26 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
 /**
- * Unit tests for {@link AccountIdSerializer}.
+ * Unit tests for {@link LinkIdSerializer}.
  */
-public class AccountIdSerializerTest extends AbstractIdTest {
+public class LinkIdSerializerTest extends AbstractIdTest {
 
-  private AccountId ACCOUNT_ID = AccountId.of(UUID.randomUUID().toString());
+  private LinkId LINK_ID = LinkId.of(UUID.randomUUID().toString());
 
   @Test
   public void shouldSerialize() throws IOException {
-    final String actual = objectMapper.writeValueAsString(ACCOUNT_ID);
-    assertThat(actual, is("\"" + ACCOUNT_ID.value() + "\""));
+    final String actual = objectMapper.writeValueAsString(LINK_ID);
+    assertThat(actual, is("\"" + LINK_ID.value() + "\""));
   }
 
   @Test
   public void shouldSerializeInContainer() throws IOException {
-    final AccountIdContainer expectedContainer = ImmutableAccountIdContainer.builder()
-      .accountId(ACCOUNT_ID)
+    final LinkIdContainer expectedContainer = ImmutableLinkIdContainer.builder()
+      .linkId(LINK_ID)
       .build();
 
     final String actualJson = objectMapper.writeValueAsString(expectedContainer);
 
-    assertThat(actualJson, is("{\"account_id\":\"" + ACCOUNT_ID.value() + "\"}"));
+    assertThat(actualJson, is("{\"link_id\":\"" + LINK_ID.value() + "\"}"));
   }
 }

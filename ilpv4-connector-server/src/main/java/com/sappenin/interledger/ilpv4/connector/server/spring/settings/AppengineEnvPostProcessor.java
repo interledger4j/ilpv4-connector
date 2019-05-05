@@ -7,7 +7,7 @@ import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionException;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.crypto.KeyStoreType;
-import org.interledger.crypto.KeystoreLoader;
+import org.interledger.crypto.JavaKeystoreLoader;
 import org.interledger.crypto.impl.GcpEncryptionService;
 import org.interledger.crypto.impl.JksEncryptionService;
 import org.slf4j.Logger;
@@ -116,7 +116,7 @@ public class AppengineEnvPostProcessor implements EnvironmentPostProcessor {
       ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD, ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD_DEFAULT
     ).toCharArray();
 
-    final KeyStore keystore = KeystoreLoader.loadFromClasspath(jksFilename, jksPassword);
+    final KeyStore keystore = JavaKeystoreLoader.loadFromClasspath(jksFilename, jksPassword);
 
     // Password-protected keys are not yet supported
     if (keystore.isKeyEntry(secret0Alias)) {

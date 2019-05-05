@@ -2,7 +2,7 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.settings.crypto;
 
 import org.interledger.crypto.EncryptionException;
 import org.interledger.crypto.EncryptionService;
-import org.interledger.crypto.KeystoreLoader;
+import org.interledger.crypto.JavaKeystoreLoader;
 import org.interledger.crypto.impl.JksEncryptionService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -44,7 +44,7 @@ public class JksCryptoConfig {
    */
   @Bean
   SecretKey secret0Key() throws Exception {
-    final KeyStore ks = KeystoreLoader.loadFromClasspath(jksFilename, jksPassword.toCharArray());
+    final KeyStore ks = JavaKeystoreLoader.loadFromClasspath(jksFilename, jksPassword.toCharArray());
 
     // Password-protected keys are not yet supported
     if (ks.isKeyEntry(secret0Alias)) {

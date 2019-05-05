@@ -1,7 +1,6 @@
 package org.interledger.ilpv4.connector.jackson.modules;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.ilpv4.connector.jackson.ObjectMapperFactory;
 import org.junit.Before;
@@ -18,7 +17,7 @@ import static org.hamcrest.core.Is.is;
  */
 public class AccountIdModuleTest extends AbstractIdTest {
 
-  private static final AccountId ACCOUNT_ID = AccountId.of(UUID.randomUUID());
+  private static final AccountId ACCOUNT_ID = AccountId.of(UUID.randomUUID().toString());
   protected ObjectMapper objectMapperWithoutModule;
 
   @Before
@@ -28,7 +27,7 @@ public class AccountIdModuleTest extends AbstractIdTest {
   }
 
   @Test
-  public void shouldSerializerAndDeserialize() throws IOException {
+  public void shouldSerializeAndDeserialize() throws IOException {
     final AccountIdContainer expectedContainer = ImmutableAccountIdContainer.builder()
       .accountId(ACCOUNT_ID)
       .build();
@@ -40,17 +39,14 @@ public class AccountIdModuleTest extends AbstractIdTest {
     assertThat(actualContainer, is(expectedContainer));
   }
 
-  @Test(expected = InvalidDefinitionException.class)
-  public void shouldNotSerializerAndDeserialize() throws IOException {
+  @Test
+  public void shouldNotSerializeAndDeserialize() throws IOException {
     final AccountIdContainer expectedContainer = ImmutableAccountIdContainer.builder()
       .accountId(ACCOUNT_ID)
       .build();
 
-    try {
-      objectMapperWithoutModule.writeValueAsString(expectedContainer);
-    } catch (InvalidDefinitionException e) {
-      assertThat(e.getMessage().startsWith("No serializer found for class"), is(true));
-      throw e;
-    }
+    final String actualJson = objectMapperWithoutModule.writeValueAsString(expectedContainer);
+    final AccountIdContainer decodedJson = objectMapperWithoutModule.readValue(actualJson, AccountIdContainer.class);
+    assertThat(decodedJson, is(expectedContainer));
   }
 }
