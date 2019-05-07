@@ -21,6 +21,7 @@ spring:
       enabled: false
       max-file-size: 32KB
       max-request-size: 32KB
+
   # Database Settings
   datasource:
     url: jdbc:h2:mem:example-app;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
@@ -77,4 +78,4 @@ ilpv4:
     # Global Routing Settings for this connector.
     globalRoutingSettings:
       # Seed used for generating routing table auth values.
-      routingSecret: DocIHaveToTellYouSomethingAboutY
+      routingSecret:

@@ -64,6 +64,7 @@ public class GcpEncryptionService implements EncryptionService {
     // Extract the ciphertext from the response.
     return EncryptedSecret.builder()
       .keyMetadata(keyMetadata)
+      .encryptionAlgorithm(encryptionAlgorithm)
       .cipherMessage(response.getCiphertext().toByteArray())
       .build();
   }
