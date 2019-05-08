@@ -12,6 +12,7 @@ import org.interledger.crypto.EncryptionService;
 import org.interledger.crypto.Encryptor;
 import org.interledger.crypto.KeyMetadata;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -40,6 +41,11 @@ public class GcpEncryptionService implements EncryptionService {
     } catch (IOException e) {
       throw new RuntimeException(e.getMessage(), e);
     }
+  }
+
+  @PostConstruct
+  public void shutdown() {
+    this.client.shutdown();
   }
 
   @Override

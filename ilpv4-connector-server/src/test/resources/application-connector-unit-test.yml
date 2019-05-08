@@ -1,13 +1,24 @@
 # Test settings to validate loading configuration properties.
 ilpv4:
   connector:
+    # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
+    adminPassword: password
+    keystore:
+      jks:
+        enabled: true
+        filename: crypto/crypto.p12
+        # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
+        password: password
+        secret0_alias: secret0
+        # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
+        secret0_password: password
+    defaultJwtTokenIssuer: https://connie.example.com
     ## ILP address of the connector.
     ## This property can be omitted if an account with relation=parent is configured under accounts.
     nodeIlpAddress: test.example
     # The global prefix. For production environments, this should be `g`. For test environments, consider `test`.
     globalPrefix: test
     btp.enabled: true
-    defaultJwtTokenIssuer: https://example.com
     # Which features are enabled.
     enabledFeatures:
       rateLimitingEnabled: true

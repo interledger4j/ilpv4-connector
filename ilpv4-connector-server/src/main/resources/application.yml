@@ -64,8 +64,9 @@ h2:
 
 ilpv4:
   connector:
-    keystore:
-      platform: jks
+    # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
+    adminPassword:
+    defaultJwtTokenIssuer: https://FIXME.example.com
     btp.enabled: false
     enabledProtocols:
       blastEnabled: true
@@ -77,5 +78,4 @@ ilpv4:
     nodeIlpAddress: test1.connie
     # Global Routing Settings for this connector.
     globalRoutingSettings:
-      # Seed used for generating routing table auth values.
       routingSecret:

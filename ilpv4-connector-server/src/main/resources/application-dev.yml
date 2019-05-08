@@ -89,17 +89,20 @@ h2:
 
 ilpv4:
   connector:
+    # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
     adminPassword: password
     keystore:
       jks:
+        enabled: false
         filename: crypto/crypto.p12
+        # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
         password: password
         secret0_alias: secret0
+        # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
         secret0_password: password
         # This property validates that JKS encryption is working properly via the configured startup. This value
         # represents the plaintext value of `shh`, encrypted with the above details.
         secret0_test: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
-    #defaultJwtTokenIssuer: https://connie.example.com
     enabledProtocols:
       blastEnabled: false
       pingProtocolEnabled: true

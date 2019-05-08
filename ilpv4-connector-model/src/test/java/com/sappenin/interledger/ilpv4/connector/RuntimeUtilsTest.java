@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector;
 
+import org.interledger.crypto.KeyStoreType;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -11,6 +12,9 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_GCP_ENABLED;
+import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_ENABLED;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 
 /**
@@ -19,6 +23,10 @@ import static org.mockito.Mockito.when;
 public class RuntimeUtilsTest {
 
   private static final String GOOGLE_CLOUD_PROJECT = "GOOGLE_CLOUD_PROJECT";
+  private static final String ERR_MESSAGE = String.format(
+    "Unsupported Keystore Type. Please defined either `%s` or `%s`",
+    ILPV4_CONNECTOR_KEYSTORE_GCP_ENABLED, ILPV4_CONNECTOR_KEYSTORE_JKS_ENABLED
+  );
 
   @Mock
   Environment environmentMock;
@@ -58,4 +66,63 @@ public class RuntimeUtilsTest {
     assertThat(RuntimeUtils.getGoogleCloudProjectId().isPresent(), is(true));
   }
 
+  @Test(expected = RuntimeException.class)
+  public void testDetermineKeystoreTypeGcpKmsNull() {
+    when(environmentMock.getProperty(ILPV4_CONNECTOR_KEYSTORE_GCP_ENABLED)).thenReturn(null);
+    try {
+      RuntimeUtils.determineKeystoreType(environmentMock);
+      fail();
+    } catch (Exception e) {
+      assertThat(e.getMessage(), is(ERR_MESSAGE));
+      throw e;
+    }
+  }
+
+  @Test(expected = RuntimeException.class)
+  public void testDetermineKeystoreTypeGcpKmsFalse() {
+    when(environmentMock.getProperty(ILPV4_CONNECTOR_KEYSTORE_GCP_ENABLED)).thenReturn(Boolean.FALSE.toString());
+    try {
+      RuntimeUtils.determineKeystoreType(environmentMock);
+      fail();
+    } catch (Exception e) {
+      assertThat(e.getMessage(), is(ERR_MESSAGE));
+      throw e;
+    }
+  }
+
+  @Test
+  public void testDetermineKeystoreTypeGcpKmsTrue() {
+    when(environmentMock.getProperty(ILPV4_CONNECTOR_KEYSTORE_GCP_ENABLED)).thenReturn(Boolean.TRUE.toString());
+    assertThat(RuntimeUtils.determineKeystoreType(environmentMock), is(KeyStoreType.GCP));
+  }
+
+  @Test(expected = RuntimeException.class)
+  public void testDetermineKeystoreTypeJksNull() {
+    when(environmentMock.getProperty(ILPV4_CONNECTOR_KEYSTORE_JKS_ENABLED)).thenReturn(null);
+    try {
+      RuntimeUtils.determineKeystoreType(environmentMock);
+      fail();
+    } catch (Exception e) {
+      assertThat(e.getMessage(), is(ERR_MESSAGE));
+      throw e;
+    }
+  }
+
+  @Test(expected = RuntimeException.class)
+  public void testDetermineKeystoreTypeJksFalse() {
+    when(environmentMock.getProperty(ILPV4_CONNECTOR_KEYSTORE_JKS_ENABLED)).thenReturn(Boolean.FALSE.toString());
+    try {
+      RuntimeUtils.determineKeystoreType(environmentMock);
+      fail();
+    } catch (Exception e) {
+      assertThat(e.getMessage(), is(ERR_MESSAGE));
+      throw e;
+    }
+  }
+
+  @Test
+  public void testDetermineKeystoreTypeJksTrue() {
+    when(environmentMock.getProperty(ILPV4_CONNECTOR_KEYSTORE_JKS_ENABLED)).thenReturn(Boolean.TRUE.toString());
+    assertThat(RuntimeUtils.determineKeystoreType(environmentMock), is(KeyStoreType.JKS));
+  }
 }

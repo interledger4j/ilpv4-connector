@@ -13,18 +13,19 @@ import javax.crypto.SecretKey;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 
-import static org.interledger.crypto.CryptoConfigConstants.FILENAME;
+import static org.interledger.crypto.CryptoConfigConstants.ENABLED;
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS;
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME;
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD;
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS;
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD;
+import static org.interledger.crypto.CryptoConfigConstants.TRUE;
 
 /**
  * Keystore Configuration that defines keys and secrets as being stored in a Java Keystore located on the classpath.
  */
 @Configuration
-@ConditionalOnProperty(prefix = ILPV4_CONNECTOR_KEYSTORE_JKS, name = FILENAME)
+@ConditionalOnProperty(prefix = ILPV4_CONNECTOR_KEYSTORE_JKS, name = ENABLED, havingValue = TRUE)
 public class JksCryptoConfig {
 
   @Value("${" + ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME + "}")

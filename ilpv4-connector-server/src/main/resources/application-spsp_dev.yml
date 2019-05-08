@@ -71,6 +71,17 @@ h2:
 
 ilpv4:
   connector:
+    # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
+    adminPassword: password
+    keystore:
+      jks:
+        enabled: false
+        filename: crypto/crypto.p12
+        # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
+        password: password
+        secret0_alias: secret0
+        # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
+        secret0_password: password
     enabledProtocols:
       blastEnabled: true
       pingProtocolEnabled: true
