@@ -34,7 +34,7 @@
 
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
     <spring-cloud.version>Greenwich.SR1</spring-cloud.version>
-    <resilience4j.version>0.13.2</resilience4j.version>
+    <resilience4j.version>0.14.1</resilience4j.version>
 
     <!-- org.jacoco:jacoc-maven-plugin -->
     <jacoco.propertyName>argLine</jacoco.propertyName>
