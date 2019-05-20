@@ -7,7 +7,7 @@ logging:
     org.interledger: INFO
     org.springframework: INFO
     org.springframework.security: INFO
-    org.springframework.web.socket: ERROR
+    #org.springframework.web.socket: ERROR
     org.hibernate.SQL: INFO
     #org.hibernate.type.descriptor.sql.BasicBinder: INFO
 server:
@@ -15,15 +15,26 @@ server:
   http2:
     enabled: true
   jetty:
+    accesslog:
+      enabled: true
+      filename: /tmp/java-ilp-connector.log
+      extended-format: true
+      log-cookies: true
+      log-server: true
+      log-latency: true
+      time-zone: MST
     max-http-post-size: 32767
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
+#management:
+#  endpoints:
+#    enabled-by-default: true
+#    web:
+#      exposure:
+#        include: "*"
 #  endpoint:
 #    refresh:
 #      enabled: true
+
+
 
 spring:
   profiles:
@@ -33,6 +44,7 @@ spring:
     ansi:
       enabled: ALWAYS
   http:
+    log-request-details: true
     # MULTIPART (MultipartProperties)
     multipart:
       enabled: false
@@ -78,17 +90,10 @@ ilpv4:
     adminPassword: password
     # SecretStore configuration.
     keystore:
-<<<<<<< Updated upstream
-      jks:
-=======
       gcpkms:
         enabled: false
-        # If running locally, `GOOGLE_CLOUD_PROJECT` must be defined as an environment variable with the correct GCP
-        # project id
-        locationId: global
       jks:
         enabled: true
->>>>>>> Stashed changes
         filename: crypto/crypto.p12
         password: password
         secret0_alias: secret0

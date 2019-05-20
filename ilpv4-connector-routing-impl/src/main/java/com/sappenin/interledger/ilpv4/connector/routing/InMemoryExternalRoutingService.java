@@ -660,19 +660,16 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
       connectorSettingsSupplier.get().getGlobalRoutingSettings().getStaticRoutes().stream()
         .filter(staticRoute -> staticRoute.getTargetPrefix().equals(addressPrefix))
         .findFirst()
-        // If there's a static route, then try to find the account that exists for that route...
-        .map(staticRoute -> accountSettingsRepository.findByAccountId(staticRoute.getPeerAccountId()).orElseGet(() -> {
-          logger.warn("Ignoring configured route, account does not exist. prefix={} accountId={}",
-            staticRoute.getTargetPrefix(), staticRoute.getPeerAccountId());
-          return null;
-        }))
+        // If there's a static route, then create a route, even if the account doesn't exist. In this way, if the
+        // account does eventually come into existence, then things will work properly. If the account never comes
+        // into existence, then the Router will simply reject.
         // If there's a static route, and the account exists...
-        .map(accountSettings -> {
+        .map(staticRoute -> {
           // Otherwise, if the account exists, then we should return a new route to the peer.
           final Route route = ImmutableRoute.builder()
             .path(Collections.emptyList())
             .routePrefix(addressPrefix)
-            .nextHopAccountId(accountSettings.getAccountId())
+            .nextHopAccountId(staticRoute.getPeerAccountId())
             .auth(HMAC(connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret(), addressPrefix))
             .build();
           return route;

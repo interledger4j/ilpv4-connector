@@ -24,8 +24,7 @@ public class IncomingBlastLinkSettingsTest extends AbstractBlastLinkTest {
 
     assertThat(incomingLinksettings.authType(), is(BlastLinkSettings.AuthType.JWT_HS_256));
     assertThat(incomingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://incoming-issuer.example.com/")));
-    assertThat(incomingLinksettings.tokenAudience(), is("https://incoming-audience.example.com/"));
-    assertThat(incomingLinksettings.tokenSubject(), is("incoming-subject"));
+    assertThat(incomingLinksettings.tokenAudience().get(), is(HttpUrl.parse("https://incoming-audience.example.com/")));
     assertThat(incomingLinksettings.encryptedTokenSharedSecret(), is("incoming-credential"));
     assertThat(incomingLinksettings.getMinMessageWindow(), is(Duration.ofSeconds(1)));
   }
@@ -40,8 +39,7 @@ public class IncomingBlastLinkSettingsTest extends AbstractBlastLinkTest {
 
     assertThat(incomingLinksettings.authType(), is(BlastLinkSettings.AuthType.JWT_HS_256));
     assertThat(incomingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://incoming-issuer.example.com/")));
-    assertThat(incomingLinksettings.tokenAudience(), is("https://incoming-audience.example.com/"));
-    assertThat(incomingLinksettings.tokenSubject(), is("incoming-subject"));
+    assertThat(incomingLinksettings.tokenAudience().get(), is(HttpUrl.parse("https://incoming-audience.example.com/")));
     assertThat(incomingLinksettings.encryptedTokenSharedSecret(), is("incoming-credential"));
     assertThat(incomingLinksettings.getMinMessageWindow(), is(Duration.ofSeconds(1)));
   }
@@ -52,8 +50,7 @@ public class IncomingBlastLinkSettingsTest extends AbstractBlastLinkTest {
       IncomingLinkSettings.builder()
         .authType(BlastLinkSettings.AuthType.SIMPLE)
         .tokenIssuer(HttpUrl.parse("https://incoming-issuer.example.com"))
-        .tokenAudience("https://incoming-audience.example.com/")
-        .tokenSubject("incoming-subject")
+        .tokenAudience(HttpUrl.parse("https://incoming-audience.example.com/"))
         .encryptedTokenSharedSecret("shh")
         .minMessageWindow(Duration.ofMillis(30))
         .build();
@@ -61,8 +58,7 @@ public class IncomingBlastLinkSettingsTest extends AbstractBlastLinkTest {
 
     assertThat(incomingLinksettings.authType(), is(BlastLinkSettings.AuthType.SIMPLE));
     assertThat(incomingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://incoming-issuer.example.com/")));
-    assertThat(incomingLinksettings.tokenAudience(), is("https://incoming-audience.example.com/"));
-    assertThat(incomingLinksettings.tokenSubject(), is("incoming-subject"));
+    assertThat(incomingLinksettings.tokenAudience().get(), is(HttpUrl.parse("https://incoming-audience.example.com/")));
     assertThat(incomingLinksettings.encryptedTokenSharedSecret(), is("shh"));
     assertThat(incomingLinksettings.getMinMessageWindow(), is(Duration.ofMillis(30)));
   }

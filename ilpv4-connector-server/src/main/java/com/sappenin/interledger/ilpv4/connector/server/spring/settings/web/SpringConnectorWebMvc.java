@@ -39,7 +39,6 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
 
   // TODO: Configure TLS
   // TODO: Configure HTTP/2
-
   @Autowired
   @Qualifier(ILP)
   private CodecContext ilpCodecContext;

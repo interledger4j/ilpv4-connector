@@ -60,8 +60,7 @@ public class BlastLinkFactory implements LinkFactory {
       blastHttpSender = new JwtBlastHttpSender(
         operatorAddressSupplier,
         restTemplate,
-        blastLinkSettings.outgoingBlastLinkSettings(),
-        decryptor
+        decryptor, blastLinkSettings.outgoingBlastLinkSettings()
       );
     }
 

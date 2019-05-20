@@ -1,8 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.server.ilphttp;
 
 import com.google.common.collect.Maps;
-import com.sappenin.interledger.ilpv4.connector.server.ConnectorServerConfig;
-import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
@@ -21,25 +19,16 @@ import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsR
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 import java.util.Optional;
 
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.BlastConfig.BLAST;
-import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME;
-import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD;
-import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS;
-import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD;
 
 /**
  * Ensures that the API endpoints for BLAST (i.e., `/ilp`) returns the correct values when a
@@ -84,7 +73,6 @@ public class SimpleBearerBlastEndpointTest extends AbstractEndpointTest {
     customSettings.put(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.SIMPLE.name());
     customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, "https://bob.example.com/");
     customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
-    customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT, "bob");
     customSettings.put(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH);
 
     customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.SIMPLE.name());
@@ -122,7 +110,7 @@ public class SimpleBearerBlastEndpointTest extends AbstractEndpointTest {
       .authType(BlastLinkSettings.AuthType.JWT_HS_256)
       .tokenSubject("bob")
       .tokenIssuer(HttpUrl.parse("https://bob.example.com/"))
-      .tokenAudience("n/a")
+      .tokenAudience(HttpUrl.parse("https://n-a.example.com"))
       .url(HttpUrl.parse(template.getRootUri() + "/ilp"))
       // The is the encrypted variant of `shh`
       .encryptedTokenSharedSecret(ENCRYPTED_SHH)

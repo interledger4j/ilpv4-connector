@@ -18,16 +18,18 @@ import static org.interledger.connector.link.blast.BlastLinkSettings.INCOMING;
 import static org.interledger.connector.link.blast.BlastLinkSettings.SHARED_SECRET;
 import static org.interledger.connector.link.blast.BlastLinkSettings.TOKEN_AUDIENCE;
 import static org.interledger.connector.link.blast.BlastLinkSettings.TOKEN_ISSUER;
-import static org.interledger.connector.link.blast.BlastLinkSettings.TOKEN_SUBJECT;
 
+/**
+ * An extension of {@link SharedSecretTokenSettings} for incoming ILP-over-HTTP Links. Note that this interface
+ * purposefully does not define a `sub` claim because the `accountId` for any given account should always be used
+ * instead for verification purposes.
+ */
 public interface IncomingLinkSettings extends SharedSecretTokenSettings {
 
   String BLAST_INCOMING_AUTH_TYPE = BLAST + DOT + INCOMING + DOT + AUTH_TYPE;
 
   String BLAST_INCOMING_TOKEN_ISSUER = BLAST + DOT + INCOMING + DOT + TOKEN_ISSUER;
   String BLAST_INCOMING_TOKEN_AUDIENCE = BLAST + DOT + INCOMING + DOT + TOKEN_AUDIENCE;
-  String BLAST_INCOMING_TOKEN_SUBJECT = BLAST + DOT + INCOMING + DOT + TOKEN_SUBJECT;
-
   String BLAST_INCOMING_SHARED_SECRET = BLAST + DOT + INCOMING + DOT + SHARED_SECRET;
 
   static ImmutableIncomingLinkSettings.Builder builder() {
@@ -76,10 +78,6 @@ public interface IncomingLinkSettings extends SharedSecretTokenSettings {
             .map(BlastLinkSettings.AuthType::valueOf)
             .ifPresent(builder::authType);
 
-          Optional.ofNullable(incomingSettings.get(TOKEN_SUBJECT))
-            .map(Object::toString)
-            .ifPresent(builder::tokenSubject);
-
           Optional.ofNullable(incomingSettings.get(SHARED_SECRET))
             .map(Object::toString)
             .ifPresent(builder::encryptedTokenSharedSecret);
@@ -91,6 +89,7 @@ public interface IncomingLinkSettings extends SharedSecretTokenSettings {
 
           Optional.ofNullable(incomingSettings.get(TOKEN_AUDIENCE))
             .map(Object::toString)
+            .map(HttpUrl::parse)
             .ifPresent(builder::tokenAudience);
         }));
 
@@ -107,11 +106,8 @@ public interface IncomingLinkSettings extends SharedSecretTokenSettings {
 
     Optional.ofNullable(customSettings.get(BLAST_INCOMING_TOKEN_AUDIENCE))
       .map(Object::toString)
+      .map(HttpUrl::parse)
       .ifPresent(builder::tokenAudience);
-
-    Optional.ofNullable(customSettings.get(BLAST_INCOMING_TOKEN_SUBJECT))
-      .map(Object::toString)
-      .ifPresent(builder::tokenSubject);
 
     Optional.ofNullable(customSettings.get(BLAST_INCOMING_SHARED_SECRET))
       .map(Object::toString)

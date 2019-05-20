@@ -5,6 +5,7 @@ import com.sappenin.interledger.ilpv4.connector.RuntimeProperties;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.blast.BlastLink;
+import org.interledger.connector.link.blast.BlastLinkSettings;
 import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.AfterClass;
@@ -80,7 +81,10 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
 
     final BlastLink blastLink = getBlastLinkFromGraph(ALICE_ADDRESS, BOB_ACCOUNT);
     assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(ALICE));
-    assertThat(blastLink.getLinkSettings().incomingBlastLinkSettings().tokenSubject(), is(BOB));
+    assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().authType(),
+      is(BlastLinkSettings.AuthType.JWT_HS_256));
+    assertThat(blastLink.getLinkSettings().incomingBlastLinkSettings().authType(),
+      is(BlastLinkSettings.AuthType.JWT_HS_256));
   }
 
   @Test
@@ -97,7 +101,10 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
 
     final BlastLink blastLink = getBlastLinkFromGraph(BOB_AT_ALICE_ADDRESS, ALICE_ACCOUNT);
     assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(BOB));
-    assertThat(blastLink.getLinkSettings().incomingBlastLinkSettings().tokenSubject(), is(ALICE));
+    assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().authType(),
+      is(BlastLinkSettings.AuthType.JWT_HS_256));
+    assertThat(blastLink.getLinkSettings().incomingBlastLinkSettings().authType(),
+      is(BlastLinkSettings.AuthType.JWT_HS_256));
   }
 
   /**

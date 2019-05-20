@@ -199,7 +199,9 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
         final RoutableAccount routableAccount =
           this.externalRoutingService.getTrackedAccount(sourceAccountId)
-            .orElseThrow(() -> new RuntimeException("No tracked RoutableAccount found!"));
+            .orElseThrow(() -> new RuntimeException(
+              String.format("No tracked RoutableAccount found (`%s`).", sourceAccountId))
+            );
 
         routableAccount.getCcpReceiver().handleRouteUpdateRequest(routeUpdateRequest);
 

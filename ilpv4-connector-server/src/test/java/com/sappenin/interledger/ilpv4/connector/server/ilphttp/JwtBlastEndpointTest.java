@@ -103,14 +103,13 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
     if (!accountManager.getAccountSettingsRepository().findByAccountId(AccountId.of(ALICE)).isPresent()) {
       final Map<String, Object> customSettings = Maps.newHashMap();
       customSettings.put(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256.name());
-      customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, "https://alice.example.com/");
-      customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
-      customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT, ALICE);
+      //customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, "https://alice.example.com/");
+      //customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
       customSettings.put(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH);
 
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256.name());
-      customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
-      customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, "https://alice.example.com/");
+      //customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
+      //customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, "https://alice.example.com/");
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, CONNIE);
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH);
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_URL, "https://alice.example.com");
@@ -133,14 +132,13 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
     if (!accountManager.getAccountSettingsRepository().findByAccountId(AccountId.of(BOB)).isPresent()) {
       final Map<String, Object> customSettings = Maps.newHashMap();
       customSettings.put(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256.name());
-      customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, "https://bob.example.com/");
-      customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
-      customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT, BOB);
+      //customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, "https://bob.example.com/");
+      //customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
       customSettings.put(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH);
 
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256.name());
-      customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
-      customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, "https://bob.example.com/");
+      //customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
+      //customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, "https://bob.example.com/");
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, CONNIE);
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH);
       customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_URL, "https://bob.example.com");
@@ -212,7 +210,7 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
       .authType(BlastLinkSettings.AuthType.JWT_HS_256)
       .tokenSubject(BOB)
       .tokenIssuer(HttpUrl.parse("https://bob.example.com/"))
-      .tokenAudience("https://connie.example.com/")
+      .tokenAudience(HttpUrl.parse("https://connie.example.com/"))
       .url(HttpUrl.parse(template.getRootUri() + "/ilp"))
       .tokenExpiry(Duration.ofMinutes(5))
       .encryptedTokenSharedSecret(ENCRYPTED_SHH)
@@ -221,8 +219,7 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
     return new JwtBlastHttpSender(
       () -> Optional.of(InterledgerAddress.of("test.bob")),
       blastRestTemplate,
-      outgoingLinkSettings,
-      decryptor
+      decryptor, outgoingLinkSettings
     );
   }
 

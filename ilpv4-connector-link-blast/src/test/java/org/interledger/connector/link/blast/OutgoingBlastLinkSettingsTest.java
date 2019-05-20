@@ -24,7 +24,7 @@ public class OutgoingBlastLinkSettingsTest extends AbstractBlastLinkTest {
 
     assertThat(outgoingLinksettings.authType(), is(BlastLinkSettings.AuthType.SIMPLE));
     assertThat(outgoingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://outgoing-issuer.example.com/")));
-    assertThat(outgoingLinksettings.tokenAudience(), is("https://outgoing-audience.example.com/"));
+    assertThat(outgoingLinksettings.tokenAudience().get(), is(HttpUrl.parse("https://outgoing-audience.example.com/")));
     assertThat(outgoingLinksettings.tokenSubject(), is("outgoing-subject"));
     assertThat(outgoingLinksettings.encryptedTokenSharedSecret(), is("outgoing-credential"));
     assertThat(outgoingLinksettings.tokenExpiry().get(), is(Duration.ofHours(24)));
@@ -41,7 +41,7 @@ public class OutgoingBlastLinkSettingsTest extends AbstractBlastLinkTest {
 
     assertThat(outgoingLinksettings.authType(), is(BlastLinkSettings.AuthType.SIMPLE));
     assertThat(outgoingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://outgoing-issuer.example.com/")));
-    assertThat(outgoingLinksettings.tokenAudience(), is("https://outgoing-audience.example.com/"));
+    assertThat(outgoingLinksettings.tokenAudience().get(), is(HttpUrl.parse("https://outgoing-audience.example.com/")));
     assertThat(outgoingLinksettings.tokenSubject(), is("outgoing-subject"));
     assertThat(outgoingLinksettings.encryptedTokenSharedSecret(), is("outgoing-credential"));
     assertThat(outgoingLinksettings.tokenExpiry().get(), is(Duration.ofHours(48)));
@@ -54,7 +54,7 @@ public class OutgoingBlastLinkSettingsTest extends AbstractBlastLinkTest {
       OutgoingLinkSettings.builder()
         .authType(BlastLinkSettings.AuthType.SIMPLE)
         .tokenIssuer(HttpUrl.parse("https://outgoing-issuer.example.com"))
-        .tokenAudience("https://outgoing-audience.example.com")
+        .tokenAudience(HttpUrl.parse("https://outgoing-audience.example.com"))
         .tokenSubject("outgoing-subject")
         .tokenExpiry(Duration.ofMillis(30))
         .encryptedTokenSharedSecret("outgoing-credential")
@@ -63,7 +63,7 @@ public class OutgoingBlastLinkSettingsTest extends AbstractBlastLinkTest {
 
     assertThat(outgoingLinksettings.authType(), is(BlastLinkSettings.AuthType.SIMPLE));
     assertThat(outgoingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://outgoing-issuer.example.com")));
-    assertThat(outgoingLinksettings.tokenAudience(), is("https://outgoing-audience.example.com"));
+    assertThat(outgoingLinksettings.tokenAudience().get(), is(HttpUrl.parse("https://outgoing-audience.example.com")));
     assertThat(outgoingLinksettings.tokenSubject(), is("outgoing-subject"));
     assertThat(outgoingLinksettings.tokenExpiry().get(), is(Duration.ofMillis(30)));
     assertThat(outgoingLinksettings.encryptedTokenSharedSecret(), is("outgoing-credential"));

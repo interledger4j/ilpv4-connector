@@ -1,50 +1,63 @@
-package org.interledger.connector.link.blast;
-
+package com.sappenin.interledger.ilpv4.connector.server.spring.auth.blast;
 
 import org.immutables.value.Value;
-
-import java.time.Instant;
+import org.interledger.connector.accounts.AccountId;
+import org.springframework.security.core.Authentication;
 
 /**
- * Contains information about an ILP-over-HTTP Authentication decision, generally used for caching purposes to sheild
- * any actual underlying shared-secrets from memory.
+ * Contains information about an ILP-over-HTTP Authentication request.
  */
-@Value
 public interface AuthenticationRequest {
 
-  /**
-   * The {@link Instant} this authentication decision was created.
-   *
-   * @return The {@link Instant}.
-   */
-  @Value.Default
-  default Instant creationDateTime() {
-    return Instant.now();
+  static ImmutableAuthenticationRequest.Builder builder() {
+    return ImmutableAuthenticationRequest.builder();
+  }
+
+  default AccountId principal() {
+    return AccountId.of(incomingAuthentication().getPrincipal().toString());
   }
 
   /**
-   * The principal that this Authentication decision represents. For now, this is an accountId in String-form.
+   * The incoming {@link Authentication} as supplied by the request sent by a caller trying to authenticate.
    *
-   * @return The principal that the oringal authentication request was attempting to authenticate.
+   * @return The incoming {@link Authentication}
    */
-  String principal();
-  
-  Authentication aut
+  Authentication incomingAuthentication();
 
   /**
-   * An HMAC of the original credential, for comparison purposes.
-   *
-   * @return The HMAC of a credential.
+   * Exists in order for the principal to be used as the hashcode source for the cache.
    */
-  @Value.Redacted
-  byte[] credentialHmac();
+  @Value.Immutable(prehash = true)
+  abstract class AbstractAuthenticationRequest implements AuthenticationRequest {
 
-  /**
-   * The authentication decision, as a boolean.
-   *
-   * @return {@code true} if the principal in {@link #principal()} was successfully authenticated; {@code false} if the
-   * principal was not successfully authenticated.
-   */
-  boolean isAuthenticated();
+    @Override
+    @Value.Derived
+    public AccountId principal() {
+      return AccountId.of(incomingAuthentication().getPrincipal().toString());
+    }
 
+    @Override
+    public abstract Authentication incomingAuthentication();
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      AuthenticationRequest.AbstractAuthenticationRequest that =
+        (AuthenticationRequest.AbstractAuthenticationRequest) o;
+
+      return principal().equals(that.principal());
+
+    }
+
+    @Override
+    public int hashCode() {
+      return principal().hashCode();
+    }
+  }
 }
