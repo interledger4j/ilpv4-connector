@@ -4,9 +4,9 @@ import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionAlgorithm;
 import org.interledger.crypto.EncryptionException;
 import org.interledger.crypto.EncryptionService;
+import org.interledger.crypto.JavaKeystoreLoader;
 import org.interledger.crypto.KeyMetadata;
 import org.interledger.crypto.KeyStoreType;
-import org.interledger.crypto.JavaKeystoreLoader;
 import org.interledger.crypto.impl.GcpEncryptionService;
 import org.interledger.crypto.impl.JksEncryptionService;
 import org.slf4j.Logger;
@@ -41,11 +41,11 @@ public class EncryptionCommands {
 
   private KeyStoreType keyStoreType = KeyStoreType.JKS;
 
-  // JKS Properties.
+  // JKS Properties (defaults used for development purposes only)
   private String jksFileName = "crypto.p12";
-  private String jksPassword;
+  private String jksPassword = "password";
   private String secret0KeyAlias = "secret0";
-  private String secret0KeyPassword;
+  private String secret0KeyPassword = "password";
 
   // GCP Properties.
   private Optional<String> gcpProjectId;
@@ -63,7 +63,23 @@ public class EncryptionCommands {
    */
   @ShellMethod(value = "Encrypt a plaintext value", key = {"e", "encrypt"})
   String encrypt(final String plaintext) throws Exception {
-    if (plaintext.length() <= 0) {
+    return encryptHelper(plaintext.getBytes());
+  }
+
+  /**
+   * Encrypt a plaintext value that is Base64-encoded using the selected key information.
+   */
+  @ShellMethod(value = "Encrypt a plaintext value encoded that is Base64-encoded", key = {"eb64", "encrypt-base64"})
+  String encryptB64(final String plaintextB64) throws Exception {
+    return encryptHelper(Base64.getDecoder().decode(plaintextB64));
+  }
+
+  /**
+   * Encrypt some bytes.
+   */
+  private String encryptHelper(final byte[] plainBytes) throws Exception {
+    Objects.requireNonNull(plainBytes);
+    if (plainBytes.length == 0) {
       throw new RuntimeException("Secret must not be empty!");
     }
 
@@ -80,7 +96,7 @@ public class EncryptionCommands {
         .build();
 
       final EncryptedSecret encryptedSecret =
-        gcpSecretsManager.encrypt(keyMetadata, encryptionAlgorithm, plaintext.getBytes());
+        gcpSecretsManager.encrypt(keyMetadata, encryptionAlgorithm, plainBytes);
       return "Encoded Encrypted Secret: " + encryptedSecret.encodedValue();
     } else if (this.keyStoreType.equals(KeyStoreType.JKS)) {
       // Load Secret0 from Keystore.
@@ -97,13 +113,12 @@ public class EncryptionCommands {
         .build();
 
       final EncryptedSecret encryptedSecret =
-        encryptionService.encrypt(keyMetadata, encryptionAlgorithm, plaintext.getBytes());
+        encryptionService.encrypt(keyMetadata, encryptionAlgorithm, plainBytes);
       return "Encoded Encrypted Secret: " + encryptedSecret.encodedValue();
     } else {
       throw new RuntimeException("Please select a valid Keystore Platform! Unsupported Platform: " + keyStoreType);
     }
   }
-
 
   /**
    * Encrypt a secret value using the selected key information.
