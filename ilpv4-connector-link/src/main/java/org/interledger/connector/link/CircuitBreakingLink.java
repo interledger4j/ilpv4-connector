@@ -143,4 +143,9 @@ public class CircuitBreakingLink implements Link<LinkSettings> {
   public <T> T getLinkDelegateTyped() {
     return (T) this.linkDelegate;
   }
+
+  @VisibleForTesting
+  CircuitBreaker getCircuitBreaker(){
+    return circuitBreakerRegistry.circuitBreaker(this.getLinkId().value());
+  }
 }
