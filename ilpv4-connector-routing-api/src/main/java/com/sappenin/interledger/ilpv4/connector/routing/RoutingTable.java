@@ -16,7 +16,7 @@ import java.util.function.BiConsumer;
  *     <li><tt>Routes</tt> are an advertisement by a connector, stating that it can reach a particular destination
  *     address prefix.</li>
  *     <li>A <tt>Prefix</tt> is an ILP address prefix covering a portion of the overall Interledger address space.</li>
- *     <li>The <tt>Origin</tt> of a getRoute is the connector who first advertised the getRoute.</li>
+ *     <li>The <tt>Origin</tt> of a route is the connector who first advertised the route.</li>
  *     <li>A Routing Table is a lookup table of routes, indexed by prefix.</li>
  *   </ul>
  * </pre>
@@ -31,13 +31,12 @@ import java.util.function.BiConsumer;
  *
  * <pre>
  * ┌─────────┐      ┌─────────┐      ┌─────────┐
- * │   g.a   │─ ─ ─ │   g.b   │─ ─ ─ │   g.c   │
+ * │   g.a   │─ ─(1)│   g.b   │(2)- ─│   g.c   │
  * └─────────┘      └─────────┘      └─────────┘
- *                       │
- *
+ *                      (3)
  *                       │
  *                  ┌─────────┐
- *                  │   g.b   │
+ *                  │   g.d   │
  *                  └─────────┘
  * </pre>
  *
@@ -46,24 +45,23 @@ import java.util.function.BiConsumer;
  * <pre>
  *  | targetPrefix | nextHopAccount | sourcePrefixFilter |
  *  |==============|================|====================|
- *  | g.a          | g.a            | [absent            |
- *  | g.c          | g.b            | [absent]           |
- *  | g.d          | g.d            | g.c.(.*?)          |
- *  | g   	       | g.a            | g.b.(.*?)          |
+ *  | g.a          | 1              | [absent            |
+ *  | g.c          | 2              | [absent]           |
+ *  | g.d          | 3              | g.c.(.*?)          |
+ *  | g   	       | 1              | g.b.(.*?)          |
  * </pre>
  *
- * <p> In the above example, the getRoute returned for a final-destination address of <tt>g.a</tt> would be
- * <tt>g.a</tt>; the getRoute returned for a final-destination address of <tt>g.c</tt> would be <tt>g.c</tt>, and the
- * final-destination address of <tt>g.d</tt> would be sent through g.d, but only if the payment originates from
- * <tt>g.c</tt>.</p>
+ * <p> In the above example, the route returned for a final-destination address of `g.a` would contain account `1`,
+ * the route returned for a final-destination address of `g.c` would contain account `2`, and the final-destination
+ * address of `g.d` would be sent through account `3`, but only if the payment originates from account `2`.</p>
  *
- * <p>Last but not least, the above table has a global catch-all getRoute for the "g" prefix, which will return a
- * "next-hop" address of "g.a" for any routing requests that don't match any other prefix in the table.</p>
+ * <p>Last but not least, the above table has a global catch-all route for the `g.` prefix, which will return a
+ * "next-hop" account of `1` for any routing requests that don't match any other prefix in the table.</p>
  *
- * <p>Using data from a routing table allows an ILP node to forward packets to the correct next hop in an overall
- * payment path, without holding the entire topology of all ILP nodes in-memory.</p>
+ * <p>Using data from a routing table allows an ILP node to forward packets to the correct next-hop in an overall
+ * payment path, without holding the entire topology of all ILP nodes in memory.</p>
  *
- * <p> This interface is extensible in that it can hold simple routes of type {@link BaseRoute}, or it can hold
+ * <p>This interface is extensible in that it can hold simple routes of type {@link BaseRoute}, or it can hold
  * more complicated implementations that extend {@link BaseRoute}.</p>
  */
 public interface RoutingTable<R extends BaseRoute> {
@@ -110,18 +108,17 @@ public interface RoutingTable<R extends BaseRoute> {
   boolean compareAndSetCurrentEpoch(long expectedEpoch, long newEpoch);
 
   /**
-   * Add a getRoute to this routing table. If the getRoute already exists (keyed by {@code prefix}, then this operation
-   * is a no-op.
+   * Add a route to this routing table. If the route already exists (keyed by {@code prefix}, then this operation is a
+   * no-op.
    *
    * @param route A {@link R} to add to this routing table.
    */
   Route addRoute(R route);
 
   /**
-   * Remove a particular getRoute from the routing table, based upon its target prefix.
+   * Remove a particular route from the routing table, based upon its target prefix.
    *
-   * @param routePrefix The address prefix that uniquely identifies the getRoute to removeEntry from this routing
-   *                    table.
+   * @param routePrefix The address prefix that uniquely identifies the route to removeEntry from this routing table.
    */
   Optional<R> removeRoute(InterledgerAddressPrefix routePrefix);
 
