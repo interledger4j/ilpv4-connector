@@ -159,7 +159,6 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
         .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
         .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, BOB_TOKEN_ISSUER)
         .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, ALICE)
-        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT, BOB)
         .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
 
         // Outgoing
@@ -220,7 +219,6 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
         .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
         .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, ALICE_TOKEN_ISSUER)
         .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, BOB)
-        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT, ALICE)
         .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
 
         // Outgoing

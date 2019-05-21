@@ -84,15 +84,23 @@ public interface BlastLinkSettings extends LinkSettings {
    */
   OutgoingLinkSettings outgoingBlastLinkSettings();
 
+  /**
+   * <p>Defines currently-supported ILP-over-HTTP authentication profiles.</p>
+   *
+   * @see "https://github.com/interledger/rfcs/blob/master/0035-ilp-over-http/0035-ilp-over-http.md"
+   */
   enum AuthType {
     /**
-     * The incoming and outgoing secrets are used as Bearer tokens in an HTTP Authorization header.
+     * <p>The actual incoming and outgoing shared-secrets are used as Bearer tokens in an HTTP Authorization
+     * header.</p>
      */
     SIMPLE,
+
     /**
      * Use shared-secret symmetric keys to create and verify JWT_HS_256 tokens.
      */
     JWT_HS_256,
+
     /**
      * Use RSA asymmetric keys to create aand verify JWT_RS_256 tokens.
      */

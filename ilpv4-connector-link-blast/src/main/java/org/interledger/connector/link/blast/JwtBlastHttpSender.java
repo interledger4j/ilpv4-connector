@@ -2,24 +2,35 @@ package org.interledger.connector.link.blast;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import okhttp3.HttpUrl;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.cache.RemovalListener;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 /**
- * Encapsulates how to communicate with a BLAST peer.
+ * <p>Encapsulates how to communicate with a bilateral Peer using ILP-over-HTTP.</p>
+ *
+ * <p>This implementation attempts to reduce the amount of time the shared-secret is in-memory by pre-emmptively
+ * generating an authentication token that conforms to `JWT_HS_256`.</p>
  */
 public class JwtBlastHttpSender extends AbstractBlastHttpSender implements BlastHttpSender {
 
-  // For HS256, this is tolerable because there will be a new JwtBlastHttpSender for each peer.
-  private final byte[] sharedSecret;
+  // See Javadoc above for how this is used.
+  private final LoadingCache<String, String> ilpOverHttpAuthTokens;
 
   /**
    * Required-args Constructor.
@@ -27,28 +38,54 @@ public class JwtBlastHttpSender extends AbstractBlastHttpSender implements Blast
   public JwtBlastHttpSender(
     final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
     final RestTemplate restTemplate,
-    final OutgoingLinkSettings outgoingLinkSettings,
-    final Decryptor decryptor
+    final Decryptor decryptor,
+    final OutgoingLinkSettings outgoingLinkSettings
   ) {
     super(operatorAddressSupplier, restTemplate, outgoingLinkSettings);
     final EncryptedSecret encryptedSecret =
       EncryptedSecret.fromEncodedValue(getOutgoingLinkSettings().encryptedTokenSharedSecret());
-    this.sharedSecret = Objects.requireNonNull(decryptor).decrypt(encryptedSecret);
+
+    ilpOverHttpAuthTokens = CacheBuilder.newBuilder()
+      // There should only ever be 1 or 2 tokens in-memory for a given client instance.
+      .maximumSize(3)
+      // Expire after this duration, which will correspond to the last incoming request from the peer.
+      .expireAfterAccess(outgoingLinkSettings.tokenExpiry().orElse(Duration.of(30, ChronoUnit.MINUTES)))
+      .removalListener((RemovalListener<String, String>) notification ->
+        logger.debug("Removing IlpOverHttp AuthToken from Cache for Principal: {}", notification.getKey())
+      )
+      .build(new CacheLoader<String, String>() {
+        public String load(final String accountId) {
+          Objects.requireNonNull(accountId);
+
+          final byte[] sharedSecretBytes = Objects.requireNonNull(decryptor).decrypt(encryptedSecret);
+          try {
+            return JWT.create()
+              //.withIssuedAt(new Date())
+              //      .withIssuer(getOutgoingLinkSettings()
+              //        .tokenIssuer()
+              //        .map(HttpUrl::toString)
+              //        .orElseThrow(() -> new RuntimeException("JWT Blast Senders require an Outgoing Issuer!"))
+              //      )
+              .withSubject(getOutgoingLinkSettings().tokenSubject()) // account identifier at the remote server.
+              // Expire at the appointed time, or else after 15 minutes.
+              .withExpiresAt(outgoingLinkSettings.tokenExpiry()
+                .map(expiry -> Date.from(Instant.now().plus(expiry)))
+                .orElseGet(() -> Date.from(Instant.now().plus(15, ChronoUnit.MINUTES))))
+              .sign(Algorithm.HMAC256(sharedSecretBytes));
+          } finally {
+            // Zero-out all bytes in the `sharedSecretBytes` array.
+            Arrays.fill(sharedSecretBytes, (byte) 0);
+          }
+        }
+      });
   }
 
-  // TODO: For performance reasons, we probably want to cache the outgoing token for some amount of time less than
-  //  the expiry so that we don't have to sign on every outgoing request.
   @Override
   protected String constructAuthToken() {
-    return JWT.create()
-      .withIssuedAt(new Date())
-      .withIssuer(getOutgoingLinkSettings()
-        .tokenIssuer()
-        .map(HttpUrl::toString)
-        .orElseThrow(() -> new RuntimeException("JWT Blast Senders require an Outgoing Issuer!"))
-      )
-      .withSubject(getOutgoingLinkSettings().tokenSubject()) // account identifier at the remote server.
-      .withAudience(getOutgoingLinkSettings().tokenAudience())
-      .sign(Algorithm.HMAC256(sharedSecret));
+    try {
+      return this.ilpOverHttpAuthTokens.get(getOutgoingLinkSettings().tokenSubject());
+    } catch (ExecutionException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

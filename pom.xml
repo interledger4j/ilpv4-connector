@@ -25,13 +25,6 @@
     <ilp.version>0.16.0-SNAPSHOT</ilp.version>
     <problem.version>0.22.0</problem.version>
     <problem-spring-web.version>0.24.0-RC.0</problem-spring-web.version>
-
-    <grpc.version>1.16.1</grpc.version>
-    <protobuf-java.version>3.7.1</protobuf-java.version>
-    <!--    <protobuf.maven.plugin.version>0.6.1</protobuf.maven.plugin.version>-->
-    <!--    <protoc.version>3.6.1</protoc.version>-->
-    <!--    <protoc.gen.grpc.java.version>1.16.1</protoc.gen.grpc.java.version>-->
-
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
     <spring-cloud.version>Greenwich.SR1</spring-cloud.version>
     <resilience4j.version>0.14.1</resilience4j.version>
@@ -173,22 +166,7 @@
       <dependency>
         <groupId>com.google.cloud</groupId>
         <artifactId>google-cloud-kms</artifactId>
-        <version>1.9.0</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.api.grpc</groupId>
-        <artifactId>proto-google-cloud-kms-v1</artifactId>
-        <version>0.56.0</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.http-client</groupId>
-        <artifactId>google-http-client</artifactId>
-        <version>1.29.1</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.protobuf</groupId>
-        <artifactId>protobuf-java</artifactId>
-        <version>${protobuf-java.version}</version>
+        <version>1.10.0</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -422,6 +400,10 @@
                   <ignoredDependency>com.h2database:h2:jar</ignoredDependency>
                   <ignoredDependency>org.hibernate:hibernate-entitymanager</ignoredDependency>
                   <ignoredDependency>redis.clients:jedis</ignoredDependency>
+                  <!-- Ignore these so that the KMS client dictates the versioning -->
+                  <ignoredDependency>com.google.http-client:google-http-client:jar</ignoredDependency>
+                  <ignoredDependency>com.google.protobuf:protobuf-java:jar</ignoredDependency>
+                  <ignoredDependency>com.google.api.grpc:proto-google-cloud-kms-v1:jar</ignoredDependency>
                 </ignoredDependencies>
               </configuration>
             </execution>

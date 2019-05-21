@@ -30,7 +30,7 @@ public class IlpPacketEmitter {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(IlpPacketEmitter.class);
 
-  private static final InterledgerAddress DESTINATION = InterledgerAddress.of("test.bob");
+  private static final InterledgerAddress DESTINATION = InterledgerAddress.of("test.alice");
   private static final InterledgerAddress OPERATOR = InterledgerAddress.of("test.connie");
 
   private static final CodecContext ILP_CONTEXT = InterledgerCodecContextFactory.oer();

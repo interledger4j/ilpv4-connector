@@ -87,12 +87,7 @@ public class DefaultAccountManager implements AccountManager {
       }
     }
 
-    // Attempt to connect this account...no need to catch any
-    try {
-      this.linkManager.getOrCreateLink(accountSettings.getAccountId()).connect().get();
-    } catch (Exception e) {
-      logger.error("Unable to connect newly added account: " + e.getMessage(), e);
-    }
+    // No need to prematurely connect to this account. When packets need to flow over it, it will become connected.
 
     return returnableAccountSettings;
   }

@@ -17,7 +17,6 @@ import static org.interledger.connector.link.blast.BlastLinkSettings.TOKEN_EXPIR
 import static org.interledger.connector.link.blast.BlastLinkSettings.TOKEN_ISSUER;
 import static org.interledger.connector.link.blast.BlastLinkSettings.URL;
 import static org.interledger.connector.link.blast.IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET;
-import static org.interledger.connector.link.blast.IncomingLinkSettings.BLAST_INCOMING_TOKEN_SUBJECT;
 import static org.interledger.connector.link.blast.IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE;
 import static org.interledger.connector.link.blast.IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE;
 import static org.interledger.connector.link.blast.IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER;
@@ -34,7 +33,6 @@ public abstract class AbstractBlastLinkTest {
   protected Map<String, Object> customSettingsFlat() {
     return ImmutableMap.<String, Object>builder()
       .put(BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256.name())
-      .put(BLAST_INCOMING_TOKEN_SUBJECT, "incoming-subject")
       .put(BLAST_INCOMING_TOKEN_ISSUER, "https://incoming-issuer.example.com/")
       .put(BLAST_INCOMING_SHARED_SECRET, "incoming-credential")
       .put(BLAST_INCOMING_TOKEN_AUDIENCE, "https://incoming-audience.example.com/")

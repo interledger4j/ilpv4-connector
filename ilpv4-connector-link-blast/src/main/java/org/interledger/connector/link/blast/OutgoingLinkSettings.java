@@ -86,6 +86,7 @@ public interface OutgoingLinkSettings extends SharedSecretTokenSettings {
 
             Optional.ofNullable(outgoingSettings.get(TOKEN_AUDIENCE))
               .map(Object::toString)
+              .map(HttpUrl::parse)
               .ifPresent(builder::tokenAudience);
 
             Optional.ofNullable(outgoingSettings.get(AUTH_TYPE))
@@ -118,6 +119,7 @@ public interface OutgoingLinkSettings extends SharedSecretTokenSettings {
 
     Optional.ofNullable(customSettings.get(BLAST_OUTGOING_TOKEN_AUDIENCE))
       .map(Object::toString)
+      .map(HttpUrl::parse)
       .ifPresent(builder::tokenAudience);
 
     Optional.ofNullable(customSettings.get(BLAST_OUTGOING_AUTH_TYPE))
@@ -146,6 +148,14 @@ public interface OutgoingLinkSettings extends SharedSecretTokenSettings {
 
     return builder;
   }
+
+  /**
+   * The expected `sub` value of an ILP-over-HTTP authentication token. This values identifies the principal that the
+   * token is authenticating.
+   *
+   * @return
+   */
+  String tokenSubject();
 
   /**
    * If present, determines how often to sign a new token for auth. Optional to support the shared-secret use-case.

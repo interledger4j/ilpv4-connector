@@ -2,8 +2,7 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.settings.web;
 
 import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
 import com.sappenin.interledger.ilpv4.connector.links.LinkSettingsFactory;
-import com.sappenin.interledger.ilpv4.connector.server.spring.auth.blast.BlastAuthenticationProvider;
-import com.sappenin.interledger.ilpv4.connector.server.spring.auth.blast.JwtBlastAuthenticationProvider;
+import com.sappenin.interledger.ilpv4.connector.server.spring.auth.blast.IlpOverHttpAuthenticationProvider;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.HealthController;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.IlpHttpController;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.admin.AccountsController;
@@ -68,17 +67,20 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   /////////////////
 
   /**
-   * Will be replaced with OAuth using JWT in a future release.
+   * Used only for BASIC auth at present. Will be moved to the AdminAPI configuration, and will be unused if the
+   * admin-api is disabled.
+   *
+   * @deprecated
    */
   @Deprecated
   @Bean
   public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
+    return new BCryptPasswordEncoder(11);
   }
 
   @Bean
-  BlastAuthenticationProvider blastAuthenticationProvider() {
-    return new JwtBlastAuthenticationProvider(
+  IlpOverHttpAuthenticationProvider ilpOverHttpAuthenticationProvider() {
+    return new IlpOverHttpAuthenticationProvider(
       connectorSettingsSupplier, encryptionService, accountSettingsRepository, linkSettingsFactory
     );
   }
@@ -126,7 +128,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     JwtWebSecurityConfigurer
       // `audience` and `issuer` are not statically configured, but are instead specified in account-settings on a
       // per-account basis.
-      .forHS256("n/a", "n/a", blastAuthenticationProvider())
+      .forHS256("n/a", "n/a", ilpOverHttpAuthenticationProvider())
       .configure(http)
       .authorizeRequests()
 
@@ -135,7 +137,15 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       //////
       .antMatchers(HttpMethod.HEAD, IlpHttpController.ILP_PATH).authenticated()
       .antMatchers(HttpMethod.POST, IlpHttpController.ILP_PATH).authenticated()
-      .antMatchers(HttpMethod.GET, HealthController.SLASH_AH_SLASH_HEALTH).permitAll()
+      .antMatchers(HttpMethod.GET, HealthController.SLASH_AH_SLASH_HEALTH).permitAll();
+
+    // Everything else...
+    //.anyRequest().denyAll();
+
+    http
+      .httpBasic()
+      .and()
+      .authorizeRequests()
 
       ////////
       // Admin API
@@ -144,15 +154,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .antMatchers(HttpMethod.GET, AccountsController.SLASH_ACCOUNTS).hasAuthority(CONNECTOR_ADMIN)
       .antMatchers(HttpMethod.GET, AccountsController.SLASH_ACCOUNTS + SLASH_ACCOUNT_ID).hasAuthority(CONNECTOR_ADMIN)
       .antMatchers(HttpMethod.PUT, AccountsController.SLASH_ACCOUNTS + SLASH_ACCOUNT_ID).hasAuthority(CONNECTOR_ADMIN)
-
       // Everything else...
-      .anyRequest().denyAll();
+      .anyRequest().denyAll()
 
-    http
+      .and()
       .addFilter(securityContextHolderAwareRequestFilter())
       .cors()
-      .and()
-      .httpBasic()
       .and()
       .formLogin().disable()
       .logout().disable()

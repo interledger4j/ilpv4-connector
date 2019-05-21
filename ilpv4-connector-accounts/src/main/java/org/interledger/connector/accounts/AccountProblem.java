@@ -18,7 +18,6 @@ public abstract class AccountProblem extends AbstractConnectorProblem {
    */
   private final AccountId accountId;
 
-
   public AccountProblem(URI type, String title, StatusType status, AccountId accountId) {
     super(type, title, status);
     this.accountId = Objects.requireNonNull(accountId, "accountId must not be null!");

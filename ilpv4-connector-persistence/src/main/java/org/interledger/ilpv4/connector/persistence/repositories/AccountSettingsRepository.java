@@ -1,6 +1,7 @@
 package org.interledger.ilpv4.connector.persistence.repositories;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
@@ -62,9 +63,8 @@ public interface AccountSettingsRepository extends CrudRepository<AccountSetting
    */
   default AccountSettingsEntity safeFindByAccountId(final AccountId accountId) {
     Objects.requireNonNull(accountId);
-    // TODO: Use AccountSettingsNotFoundException
     return this.findByAccountId(accountId)
-      .orElseThrow(() -> new RuntimeException("No AccountSettings found for AccountId: " + accountId));
+      .orElseThrow(() -> new AccountNotFoundProblem(accountId));
   }
 
   /**
