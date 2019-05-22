@@ -9,7 +9,7 @@ import java.util.function.Consumer;
 
 /**
  * <p>A Routing Table is a lookup table of routes, indexed by prefix. This type of routing table is used to forward
- * routes to remote peers.</p>
+ * routes to remote peers and to accept routes from remote peers.</p>
  */
 public interface ForwardingRoutingTable<R extends BaseRoute> {
 
@@ -32,10 +32,10 @@ public interface ForwardingRoutingTable<R extends BaseRoute> {
   boolean compareAndSetRoutingTableId(RoutingTableId expectedRoutingTableId, RoutingTableId newRoutingTableId);
 
   /**
-   * <p>Accessor for the current getEpoch of this routing table.</p>
+   * <p>Accessor for the current epoch of this routing table.</p>
    *
    * <p>Every time the routing table is modified, the update is logged and the revision number of the table is
-   * increased. The revision number of the table is called an **getEpoch**.</p>
+   * increased. The revision number of the table is called an **epoch**.</p>
    *
    * @return A <tt>int</tt>.
    */

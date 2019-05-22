@@ -7,8 +7,8 @@ import java.util.Optional;
 /**
  * An interface that determines a "best" next-hop for a particular Interledger payment based upon implementation-defined
  * metrics. For example, while a given routing table might contain multiple valid routes for a payment to traverse, one
- * implementation of this interface might decide to always choose the "closest" getRoute, whereas another implementation
- * might decide to use the "most reliable" getRoute.
+ * implementation of this interface might decide to always choose the "closest" route, whereas another implementation
+ * might decide to use the "most reliable" route.
  */
 public interface PaymentRouter<R extends BaseRoute> {
 

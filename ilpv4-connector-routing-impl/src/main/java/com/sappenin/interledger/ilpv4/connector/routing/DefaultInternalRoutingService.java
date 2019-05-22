@@ -7,10 +7,13 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * An implementation of {@link ExternalRoutingService} that manages an internal-only routing table used to route packets
+ * An implementation of {@link InternalRoutingService} that manages an internal-only routing table used to route packets
  * that are only internally-routed by this Connector. These routes are not visible to external Connectors, do not
  * participate in CCP routing-table updates, and generally do not forward to an external address (e.g., `g.*`).
+ *
+ * @deprecated See deprecation node in {@link InternalRoutingService}.
  */
+@Deprecated
 public class DefaultInternalRoutingService implements InternalRoutingService {
 
   private final RoutingTable<Route> internalRoutingTable;
