@@ -1,1 +1,0 @@
-org.springframework.boot.env.EnvironmentPostProcessor=com.sappenin.interledger.ilpv4.connector.server.spring.settings.AppengineEnvPostProcessor
