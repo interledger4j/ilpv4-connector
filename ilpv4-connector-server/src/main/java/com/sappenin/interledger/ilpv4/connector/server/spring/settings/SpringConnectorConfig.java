@@ -39,12 +39,14 @@ import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PeerProtoco
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PingProtocolFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.RateLimitIlpPacketFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.ValidateFulfillmentPacketFilter;
-import com.sappenin.interledger.ilpv4.connector.routing.DefaultInternalRoutingService;
+import com.sappenin.interledger.ilpv4.connector.routing.ChildAccountPaymentRouter;
+import com.sappenin.interledger.ilpv4.connector.routing.DefaultRouteBroadcaster;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
+import com.sappenin.interledger.ilpv4.connector.routing.ForwardingRoutingTable;
+import com.sappenin.interledger.ilpv4.connector.routing.InMemoryForwardingRoutingTable;
+import com.sappenin.interledger.ilpv4.connector.routing.RouteBroadcaster;
+import com.sappenin.interledger.ilpv4.connector.routing.RouteUpdate;
 import com.sappenin.interledger.ilpv4.connector.routing.InMemoryExternalRoutingService;
-import com.sappenin.interledger.ilpv4.connector.routing.InternalRoutingService;
-import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
-import com.sappenin.interledger.ilpv4.connector.routing.Route;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.crypto.CryptoConfig;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.javamoney.JavaMoneyConfig;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
@@ -56,6 +58,7 @@ import org.interledger.connector.link.AbstractLink;
 import org.interledger.connector.link.LinkFactoryProvider;
 import org.interledger.connector.link.events.LinkEventEmitter;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.crypto.Decryptor;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.ilpv4.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
@@ -209,7 +212,7 @@ public class SpringConnectorConfig {
   ) {
     return new DefaultAccountManager(
       connectorSettingsSupplier, conversionService, accountSettingsRepository, linkManager
-      );
+    );
   }
 
   @Bean
@@ -220,23 +223,49 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  public InternalRoutingService internalPaymentRouter() {
-    return new DefaultInternalRoutingService();
+  InMemoryForwardingRoutingTable InMemoryRouteUpdateForwardRoutingTable() {
+    return new InMemoryForwardingRoutingTable();
   }
 
   @Bean
-  @Qualifier("externalPaymentRouter")
-    // This is also a PaymentRouter
-  ExternalRoutingService connectorModeRoutingService(
-    EventBus eventBus,
-    @Qualifier(CCP) CodecContext ccpCodecContext,
-    Supplier<ConnectorSettings> connectorSettingsSupplier,
-    AccountSettingsRepository accountSettingsRepository,
-    AccountIdResolver accountIdResolver,
-    LinkManager linkManager
+  ChildAccountPaymentRouter childAccountPaymentRouter(
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final AccountSettingsRepository accountSettingsRepository,
+    final Decryptor decryptor
+  ) {
+    return new ChildAccountPaymentRouter(connectorSettingsSupplier, accountSettingsRepository, decryptor);
+  }
+
+  @Bean
+  ExternalRoutingService externalRoutingService2(
+    final EventBus eventBus,
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final Decryptor decryptor,
+    final AccountSettingsRepository accountSettingsRepository,
+    final ChildAccountPaymentRouter childAccountPaymentRouter,
+    final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
+    final RouteBroadcaster routeBroadcaster
   ) {
     return new InMemoryExternalRoutingService(
-      eventBus, ccpCodecContext, connectorSettingsSupplier, accountIdResolver, accountSettingsRepository, linkManager
+      eventBus, connectorSettingsSupplier, decryptor, accountSettingsRepository, childAccountPaymentRouter,
+      outgoingRoutingTable, routeBroadcaster
+    );
+  }
+
+  @Bean
+  RouteBroadcaster routeBroadcaster(
+    Supplier<ConnectorSettings> connectorSettingsSupplier,
+    @Qualifier(CCP) CodecContext ccpCodecContext,
+    AccountSettingsRepository accountSettingsRepository,
+    ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
+    LinkManager linkManager
+  ) {
+    return new DefaultRouteBroadcaster(
+      connectorSettingsSupplier,
+      ccpCodecContext,
+      outgoingRoutingTable,
+      accountSettingsRepository,
+      linkManager
     );
   }
 
@@ -260,7 +289,7 @@ public class SpringConnectorConfig {
 
   @Bean
   List<PacketSwitchFilter> packetSwitchFilters(
-    ExternalRoutingService externalRoutingService,
+    RouteBroadcaster routeBroadcaster,
     AccountSettingsRepository accountSettingsRepository,
     InterledgerAddressUtils addressUtils,
     BalanceTracker balanceTracker,
@@ -288,7 +317,7 @@ public class SpringConnectorConfig {
       new PeerProtocolPacketFilter(
         connectorSettingsSupplier(),
         packetRejector,
-        externalRoutingService,
+        routeBroadcaster,
         accountSettingsRepository,
         ccpCodecContext,
         ildcpCodecContext
@@ -326,13 +355,14 @@ public class SpringConnectorConfig {
   @Bean
   NextHopPacketMapper nextHopLinkMapper(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    @Qualifier("externalPaymentRouter") PaymentRouter<Route> externalPaymentRouter,
+    //@Qualifier("externalPaymentRouter")
+    ExternalRoutingService externalRoutingService,
     final AccountSettingsRepository accountSettingsRepository,
     final InterledgerAddressUtils addressUtils,
     final JavaMoneyUtils javaMoneyUtils
   ) {
     return new DefaultNextHopPacketMapper(
-      connectorSettingsSupplier, externalPaymentRouter, accountSettingsRepository, addressUtils, javaMoneyUtils
+      connectorSettingsSupplier, externalRoutingService, accountSettingsRepository, addressUtils, javaMoneyUtils
     );
   }
 
@@ -358,7 +388,6 @@ public class SpringConnectorConfig {
     AccountManager accountManager,
     AccountSettingsRepository accountSettingsRepository,
     LinkManager linkManager,
-    InternalRoutingService internalRoutingService,
     ExternalRoutingService externalRoutingService,
     ILPv4PacketSwitch ilpPacketSwitch,
     BalanceTracker balanceTracker,
@@ -370,7 +399,6 @@ public class SpringConnectorConfig {
       accountManager,
       accountSettingsRepository,
       linkManager,
-      internalRoutingService,
       externalRoutingService,
       ilpPacketSwitch,
       balanceTracker,

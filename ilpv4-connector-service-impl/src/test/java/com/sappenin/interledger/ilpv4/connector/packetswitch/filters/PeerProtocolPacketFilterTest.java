@@ -5,8 +5,8 @@ import com.sappenin.interledger.ilpv4.connector.ccp.CcpSyncMode;
 import com.sappenin.interledger.ilpv4.connector.ccp.codecs.CcpCodecContextFactory;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import com.sappenin.interledger.ilpv4.connector.routing.CcpSender;
-import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.RoutableAccount;
+import com.sappenin.interledger.ilpv4.connector.routing.RouteBroadcaster;
 import com.sappenin.interledger.ilpv4.connector.routing.RoutingTableId;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
@@ -65,6 +65,8 @@ public class PeerProtocolPacketFilterTest {
     .build();
 
   @Mock
+  private RouteBroadcaster routeBroadcasterMock;
+  @Mock
   private ConnectorSettings connectorSettingsMock;
   @Mock
   private EnabledProtocolSettings enabledProtocolSettingsMock;
@@ -74,8 +76,6 @@ public class PeerProtocolPacketFilterTest {
   private AccountSettingsRepository accountSettingsRepositoryMock;
   @Mock
   private PacketSwitchFilterChain filterChainMock;
-  @Mock
-  private ExternalRoutingService externalRoutingServiceMock;
 
   private PeerProtocolPacketFilter filter;
 
@@ -89,7 +89,7 @@ public class PeerProtocolPacketFilterTest {
     this.filter = new PeerProtocolPacketFilter(
       () -> connectorSettingsMock,
       packetRejectorMock,
-      externalRoutingServiceMock,
+      routeBroadcasterMock,
       accountSettingsRepositoryMock,
       CcpCodecContextFactory.oer(),
       IldcpCodecContextFactory.oer()
@@ -104,7 +104,7 @@ public class PeerProtocolPacketFilterTest {
 
     final RoutableAccount routableAccountMock = mock(RoutableAccount.class);
     when(routableAccountMock.getCcpSender()).thenReturn(mock(CcpSender.class));
-    when(externalRoutingServiceMock.getTrackedAccount(ACCOUNT_ID)).thenReturn(Optional.of(routableAccountMock));
+    when(routeBroadcasterMock.getCcpEnabledAccount(ACCOUNT_ID)).thenReturn(Optional.of(routableAccountMock));
   }
 
   @Test(expected = NullPointerException.class)

@@ -3,7 +3,6 @@ package com.sappenin.interledger.ilpv4.connector.routing;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpNewRoute;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteControlRequest;
@@ -49,9 +48,6 @@ public class DefaultCcpSender implements CcpSender {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  // TODO: Replace this with a RouteBroadcastSettings. This will be for a given sender/receiver pair, because a
-  //  CcpSender is created anew for each connection. We should remove this supplier which will re-enable per-peer
-  // route broadcast settings.
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final ForwardingRoutingTable<RouteUpdate> forwardingRoutingTable;
   private final AccountSettingsRepository accountSettingsRepository;
@@ -60,13 +56,14 @@ public class DefaultCcpSender implements CcpSender {
   private final AccountId peerAccountId;
   private final Link link;
 
+  // Next epoch that the peer requested from us.
   private final AtomicInteger lastKnownEpoch;
   private final AtomicReference<CcpSyncMode> syncMode;
-  private final AtomicReference<UUID> lastKnownRoutingTableId;
+
+  private final AtomicReference<RoutingTableId> lastKnownRoutingTableId;
   private final ConcurrentTaskScheduler scheduler;
 
-  private final Object scheduledTaskLock = new Object();
-  // This holds the scheduled getRoute update task. If nothing is scheduled, then this value will be null.
+  // This holds the scheduled route update task. If nothing is scheduled, then this value will be null.
   private ScheduledFuture<?> scheduledTask;
 
   /**
@@ -90,7 +87,7 @@ public class DefaultCcpSender implements CcpSender {
     this.syncMode = new AtomicReference<>(CcpSyncMode.MODE_IDLE);
 
     this.lastKnownEpoch = new AtomicInteger();
-    this.lastKnownRoutingTableId = new AtomicReference<>(UUID.randomUUID());
+    this.lastKnownRoutingTableId = new AtomicReference<>(RoutingTableId.of(UUID.randomUUID()));
 
     // Since a CcpSender only operates for a single peer, we only need a single thread.
     this.scheduler = new ConcurrentTaskScheduler(Executors.newSingleThreadScheduledExecutor());
@@ -98,23 +95,23 @@ public class DefaultCcpSender implements CcpSender {
 
   @Override
   public void handleRouteControlRequest(final CcpRouteControlRequest routeControlRequest) {
-    Preconditions.checkNotNull(link, "Plugin must be assigned before using a CcpSender!");
+    Preconditions.checkNotNull(link, "Link must be assigned before using a CcpSender!");
 
-    logger
-      .debug("Peer `{}` sent CcpRouteControlRequest: {}", peerAccountId,
-        routeControlRequest);
+    logger.debug("Peer `{}` sent CcpRouteControlRequest: {}", peerAccountId, routeControlRequest);
     if (syncMode.get() != routeControlRequest.getMode()) {
       logger.debug(
         "Peer `{}` requested changing routing mode. oldMode={} newMode={}",
         peerAccountId, this.syncMode.get(), routeControlRequest.getMode()
       );
     }
+
     this.syncMode.set(routeControlRequest.getMode());
 
     if (lastKnownRoutingTableId.get().equals(this.forwardingRoutingTable.getRoutingTableId()) == false) {
       logger.debug(
         "Peer `{}` has old routing table id, resetting lastKnownEpoch to 0. theirTableId=`{}` correctTableId=`{}`",
-        peerAccountId, lastKnownRoutingTableId,
+        peerAccountId,
+        lastKnownRoutingTableId,
         this.forwardingRoutingTable.getRoutingTableId());
       this.lastKnownEpoch.set(0);
     } else {
@@ -142,15 +139,15 @@ public class DefaultCcpSender implements CcpSender {
 
   public void startBroadcasting() {
     // Start broadcasting routes to the configured peer, but only if another thread isn't already pending...
-    // Synchronize on the scheduledTask so that only a single thread at a time can enter this block...
-    synchronized (scheduledTaskLock) {
+    // Synchronize on this instance so that only a single thread at a time can enter this block...
+    synchronized (this) {
       if (scheduledTask == null) {
         scheduledTask = this.scheduler.scheduleWithFixedDelay(
           this::sendRouteUpdateRequest,
           this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteBroadcastInterval()
         );
       } else {
-        // Do nothing. The getRoute-update has already been scheduled...
+        // Do nothing. The route-update has already been scheduled...
       }
     }
   }
@@ -158,8 +155,8 @@ public class DefaultCcpSender implements CcpSender {
   @PreDestroy
   public void stopBroadcasting() {
     // Stop broadcasting routes to the configured peer.
-    // Synchronize on the scheduledTask so that only a single thread at a time can enter this block...
-    synchronized (scheduledTask) {
+    // Synchronize on this instance so that only a single thread at a time can enter this block...
+    synchronized (this) {
       try {
         if (this.scheduledTask != null) {
           this.scheduledTask.cancel(false);
@@ -174,22 +171,15 @@ public class DefaultCcpSender implements CcpSender {
   }
 
   /**
-   * Asynchronously send a getRoute update to a remote peer.
+   * Send a route update to a remote peer.
    */
   // @Async -- No need to manage this thread via Spring because this operation is manually scheduled in
-  // response to getRoute control requests and other inputs from the routing service.
+  // response to route control requests.
   public void sendRouteUpdateRequest() {
-    Preconditions.checkNotNull(link, "Plugin must be assigned before using a CcpSender!");
+    Preconditions.checkNotNull(link, "Link must be assigned before using a CcpSender!");
 
-    // Perform getRoute update, catch and log any exceptions...
+    // Perform route update, catch and log any exceptions...
     try {
-      if (!this.link.isConnected()) {
-        logger.warn("Cannot send routes, lpi2 not connected (yet). Plugin: {}", link);
-        //return ImmutableRouteUpdateResults.builder().build();
-        return;
-      }
-
-      //final Instant lastUpdate = Instant.now();
       final int nextRequestedEpoch = this.lastKnownEpoch.get();
 
       // Find all updates from the nextRequestedEpoch index to the (nextRequestedEpoch + maxPerTable) inside of the
@@ -229,12 +219,12 @@ public class DefaultCcpSender implements CcpSender {
                 return false;
               });
 
-            final boolean thisPluginIsParent = this
+            final boolean thisLinkIsParent = this
               .accountSettingsRepository.findByAccountId(peerAccountId)
               .map(AccountSettings::isParentAccount)
               .orElse(false);
 
-            if (thisPluginIsParent || nextHopRelationIsPeerOrParent) {
+            if (thisLinkIsParent || nextHopRelationIsPeerOrParent) {
               // If the current link is our parent; OR, if the next-hop is a peer or Parent, then withdraw the
               // route. We only advertise routes to peers/children where the next-hop is a child.
               return null;
@@ -292,7 +282,7 @@ public class DefaultCcpSender implements CcpSender {
 
       // Try to send the ccpRouteUpdateRequest....
 
-      // We anticipate that they're going to be happy with our getRoute update and ccpRouteUpdateRequest the next one.
+      // We anticipate that they're going to be happy with our route update and ccpRouteUpdateRequest the next one.
       final int previousNextRequestedEpoch = this.lastKnownEpoch.get();
       this.lastKnownEpoch.compareAndSet(previousNextRequestedEpoch, toEpoch);
 
@@ -311,7 +301,7 @@ public class DefaultCcpSender implements CcpSender {
       logger.debug("Route update succeeded to peer: `{}`!", peerAccountId);
 
     } catch (RuntimeException e) {
-      logger.error("Failed to broadcast getRoute information to peer. peer=`{}`", peerAccountId, e);
+      logger.error("Failed to broadcast route information to peer. peer=`{}`", peerAccountId, e);
       throw e;
     }
   }

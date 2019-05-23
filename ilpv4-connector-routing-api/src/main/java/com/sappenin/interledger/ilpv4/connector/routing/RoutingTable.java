@@ -4,7 +4,6 @@ import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 
 import java.util.Optional;
-import java.util.UUID;
 import java.util.function.BiConsumer;
 
 /**
@@ -67,53 +66,12 @@ import java.util.function.BiConsumer;
 public interface RoutingTable<R extends BaseRoute> {
 
   /**
-   * The unique identifier of this routing table, primarily used for coordinating Route updates via CCP.
-   *
-   * @return A {@link UUID}.
-   */
-  RoutingTableId getRoutingTableId();
-
-  /**
-   * Atomically sets the value to the given updated value if the current value {@code ==} the expected value.
-   *
-   * @param expectedRoutingTableId the expected value
-   * @param newRoutingTableId      the new value
-   *
-   * @return {@code true} if successful. False return indicates that the actual value was not equal to the expected
-   * value.
-   */
-  boolean compareAndSetRoutingTableId(RoutingTableId expectedRoutingTableId, RoutingTableId newRoutingTableId);
-
-  /**
-   * <p>Accessor for the current getEpoch of this routing table.</p>
-   *
-   * <p>Every time the routing table is modified, the update is logged and the revision number of the table is
-   * increased. The revision number of the table is called an **getEpoch**.</p>
-   *
-   * @return A <tt>long</tt>.
-   */
-  default long getCurrentEpoch() {
-    return 0L;
-  }
-
-  /**
-   * Atomically sets the value to the given updated value if the current value {@code ==} the expected value.
-   *
-   * @param expectedEpoch the expected value
-   * @param newEpoch      the new value
-   *
-   * @return {@code true} if successful. False return indicates that the actual value was not equal to the expected
-   * value.
-   */
-  boolean compareAndSetCurrentEpoch(long expectedEpoch, long newEpoch);
-
-  /**
    * Add a route to this routing table. If the route already exists (keyed by {@code prefix}, then this operation is a
    * no-op.
    *
    * @param route A {@link R} to add to this routing table.
    */
-  Route addRoute(R route);
+  R addRoute(R route);
 
   /**
    * Remove a particular route from the routing table, based upon its target prefix.
@@ -134,13 +92,6 @@ public interface RoutingTable<R extends BaseRoute> {
   Optional<R> getRouteByPrefix(InterledgerAddressPrefix addressPrefix);
 
   /**
-   * Remove all routes from the routing table that are keyed by {@code targetPrefix}.
-   *
-   * @param routePrefix An {@link InterledgerAddressPrefix} prefix used as a key in the routing table.
-   */
-  // void removeAllRoutesForPrefix(InterledgerAddressPrefix routePrefix);
-
-  /**
    * Obtain a view of all Routes in this Routing Table.
    *
    * @return
@@ -150,21 +101,20 @@ public interface RoutingTable<R extends BaseRoute> {
   /**
    * Perform the following action on each item in the routing table.
    *
-   * @param action
+   * @param action A {@link BiConsumer} that is applied to all routes in this table. The BiConsumer accepts an {@link
+   *               InterledgerAddressPrefix} and an instance of {@link R}.
    */
   void forEach(final BiConsumer<InterledgerAddressPrefix, R> action);
 
   /**
-   * Determine the ledger-prefix for the "next hop" ledger that a payment should be delivered/forwarded to. If this
-   * routing table has no such getRoute, then return {@link Optional#empty()}.
+   * Determine the next-hop route for the specified {@code interledgerAddress}, if any.
    *
-   * @param finalDestinationAddress An {@link InterledgerAddress} representing the final destination of the payment
-   *                                (i.e., the address of the receiver of an ILP payment).
+   * @param interledgerAddress An {@link InterledgerAddress} representing the final destination of a packet (i.e., the
+   *                           address of the receiver of an ILP payment).
    *
-   * @return An optionally-present ILP-prefix identifying the ledger-links that should be used to make the next local
-   * transfer in an Interledger payment.
+   * @return An optionally-present {@link R}.
    */
-  Optional<R> findNextHopRoute(InterledgerAddress finalDestinationAddress);
+  Optional<R> findNextHopRoute(InterledgerAddress interledgerAddress);
 
   /**
    * Reset the routing table to an empty state.

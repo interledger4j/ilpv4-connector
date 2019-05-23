@@ -58,7 +58,7 @@ import static org.hamcrest.core.Is.is;
  * └─────────┘      └─────────┘      └─────────┘      └─────────┘
  * </pre>
  *
- * This harness exercises simulated routing updates from Node B to Node A under carious conditions.
+ * This harness exercises simulated routing updates from Node B to Node A under various conditions.
  */
 public class CcpSenderReceiverTest {
 
@@ -79,13 +79,9 @@ public class CcpSenderReceiverTest {
   private static final InterledgerAddress CONNECTOR_D_ADDRESS =
     InterledgerAddress.of(InterledgerAddressPrefix.TEST1.getValue() + "." + CONNECTOR_D_ACCOUNT.value());
 
-  //  private static final InterledgerAddressPrefix CONNECTOR_A_PREFIX =
-  //    InterledgerAddressPrefix.of(CONNECTOR_A_ADDRESS.getValue());
-  //  private static final InterledgerAddressPrefix CONNECTOR_B_PREFIX =
-  //    InterledgerAddressPrefix.of(CONNECTOR_B_ADDRESS.getValue());
-
   private static final InterledgerAddressPrefix CONNECTOR_C_PREFIX =
     InterledgerAddressPrefix.of(CONNECTOR_C_ADDRESS.getValue());
+
   private static final InterledgerAddressPrefix CONNECTOR_D_PREFIX =
     InterledgerAddressPrefix.of(CONNECTOR_D_ADDRESS.getValue());
 
@@ -133,21 +129,16 @@ public class CcpSenderReceiverTest {
     );
 
     {
+      // Because this is a simulated ConnectorA, this table is the sole instance for this connector.
       final ForwardingRoutingTable<RouteUpdate> routeUpdateForwardingRoutingTable =
-        new InMemoryRouteUpdateForwardRoutingTable();
-      final ForwardingRoutingTable<IncomingRoute> incomingRouteForwardingRoutingTable =
-        new InMemoryIncomingRouteForwardRoutingTable();
+        new InMemoryForwardingRoutingTable();
       final CcpSender ccpSender = new DefaultCcpSender(
         () -> connectorA_ConnectorSettings, CONNECTOR_B_ACCOUNT, linkRunningOnA,
         routeUpdateForwardingRoutingTable, connectorA_AccountSettingsRepository,
         codecContext
       );
       final CcpReceiver ccpReceiver =
-        new DefaultCcpReceiver(() -> connectorA_ConnectorSettings, CONNECTOR_B_ACCOUNT, linkRunningOnA,
-          incomingRouteForwardingRoutingTable,
-          codecContext
-        );
-
+        new DefaultCcpReceiver(() -> connectorA_ConnectorSettings, CONNECTOR_B_ACCOUNT, linkRunningOnA, codecContext);
       this.connectorA = new SimulatedConnector(CONNECTOR_A_ADDRESS, linkRunningOnA, ccpSender, ccpReceiver);
     }
 
@@ -157,20 +148,15 @@ public class CcpSenderReceiverTest {
     );
 
     {
+      // Because this is a simulated ConnectorB, this table is the sole instance for this connector.
       final ForwardingRoutingTable<RouteUpdate> routeUpdateForwardingRoutingTable =
-        new InMemoryRouteUpdateForwardRoutingTable();
-      final ForwardingRoutingTable<IncomingRoute> incomingRouteForwardingRoutingTable =
-        new InMemoryIncomingRouteForwardRoutingTable();
+        new InMemoryForwardingRoutingTable();
       final CcpSender ccpSender = new DefaultCcpSender(
         () -> connectorB_ConnectorSettings, CONNECTOR_A_ACCOUNT, linkRunningOnB, routeUpdateForwardingRoutingTable,
         connectorB_AccountSettingsRepository, codecContext
       );
       final CcpReceiver ccpReceiver =
-        new DefaultCcpReceiver(() -> connectorB_ConnectorSettings, CONNECTOR_A_ACCOUNT, linkRunningOnB,
-          incomingRouteForwardingRoutingTable,
-          codecContext
-        );
-
+        new DefaultCcpReceiver(() -> connectorB_ConnectorSettings, CONNECTOR_A_ACCOUNT, linkRunningOnB, codecContext);
       this.connectorB = new SimulatedConnector(CONNECTOR_B_ADDRESS, linkRunningOnB, ccpSender, ccpReceiver);
     }
 
@@ -244,7 +230,7 @@ public class CcpSenderReceiverTest {
 
     // The Route to C
     ((DefaultCcpSender) this.connectorB.ccpSender).getForwardingRoutingTable().addRoute(
-      CONNECTOR_C_PREFIX, ImmutableRouteUpdate.builder()
+      ImmutableRouteUpdate.builder()
         .epoch(0)
         .route(
           ImmutableRoute.builder()
@@ -260,7 +246,7 @@ public class CcpSenderReceiverTest {
 
     // The Route to D through C.
     ((DefaultCcpSender) this.connectorB.ccpSender).getForwardingRoutingTable().addRoute(
-      CONNECTOR_C_PREFIX, ImmutableRouteUpdate.builder()
+      ImmutableRouteUpdate.builder()
         .epoch(0)
         .route(
           ImmutableRoute.builder()
@@ -327,7 +313,7 @@ public class CcpSenderReceiverTest {
     Stream.of(connectors).forEach(connector ->
       assertThat(
         ((DefaultCcpSender) connector.ccpSender)
-          .getForwardingRoutingTable().getRouteForPrefix(prefix).isPresent(),
+          .getForwardingRoutingTable().getRouteByPrefix(prefix).isPresent(),
         is(true)
       )
     );
@@ -381,9 +367,6 @@ public class CcpSenderReceiverTest {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    // The receiver on the other side of this simulated lpi2 relationship...
-    private final CodecContext codecContext;
-
     private final LinkEventEmitter linkEventEmitter;
 
     private SimulatedConnector localConnector;
@@ -396,7 +379,8 @@ public class CcpSenderReceiverTest {
       final LinkEventEmitter linkEventEmitter
     ) {
       super(operatorAddressSupplier, linkSettings, linkEventEmitter);
-      this.codecContext = Objects.requireNonNull(codecContext);
+      Objects.requireNonNull(codecContext);
+
       this.linkEventEmitter = Objects.requireNonNull(linkEventEmitter);
 
       /////////////////////////////
@@ -459,7 +443,7 @@ public class CcpSenderReceiverTest {
 
               // TODO: In the real connector, we would update the local routing table via the following two calls in
               // getRoute-broadcaster.js->updatePrefix(prefix:String) {
-              // const newBest = this.getBestPeerRouteForPrefix(prefix)
+              // const newBest = this.getCurrentBestPeerRouteForPrefix(prefix)
               // return this.updateLocalRoute(prefix, newBest)
               // }
               // But in this test we don't do that...

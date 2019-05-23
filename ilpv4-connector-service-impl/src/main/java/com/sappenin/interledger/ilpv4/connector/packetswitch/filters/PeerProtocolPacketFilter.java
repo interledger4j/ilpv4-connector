@@ -5,8 +5,8 @@ import com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteControlRequest;
 import com.sappenin.interledger.ilpv4.connector.ccp.CcpRouteUpdateRequest;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
-import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.RoutableAccount;
+import com.sappenin.interledger.ilpv4.connector.routing.RouteBroadcaster;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
@@ -41,7 +41,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
   public static final InterledgerAddress PEER_DOT_ROUTE = InterledgerAddress.of("peer.route");
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
-  private final ExternalRoutingService externalRoutingService;
+  private final RouteBroadcaster routeBroadcaster;
   private final AccountSettingsRepository accountSettingsRepository;
   private final CodecContext ccpCodecContext;
   private final CodecContext ildcpCodecContext;
@@ -49,16 +49,15 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
   public PeerProtocolPacketFilter(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final PacketRejector packetRejector,
-    final ExternalRoutingService externalRoutingService,
+    final RouteBroadcaster routeBroadcaster,
     final AccountSettingsRepository accountSettingsRepository,
     final CodecContext ccpCodecContext,
     final CodecContext ildcpCodecContext
   ) {
     super(packetRejector);
     this.connectorSettingsSupplier = connectorSettingsSupplier;
-    this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
+    this.routeBroadcaster = Objects.requireNonNull(routeBroadcaster);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
-
     this.ccpCodecContext = Objects.requireNonNull(ccpCodecContext);
     this.ildcpCodecContext = Objects.requireNonNull(ildcpCodecContext);
   }
@@ -156,6 +155,9 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
       );
   }
 
+  /**
+   * The primary handler for all incoming CCP packets to support routing updates.
+   */
   @VisibleForTesting
   protected InterledgerResponsePacket handlePeerRouting(
     final AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket
@@ -181,7 +183,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
           ccpCodecContext.read(CcpRouteControlRequest.class, inputStream);
 
         final RoutableAccount routableAccount =
-          this.externalRoutingService.getTrackedAccount(sourceAccountId).orElseThrow(
+          this.routeBroadcaster.getCcpEnabledAccount(sourceAccountId).orElseThrow(
             () -> new RuntimeException(String.format("No tracked RoutableAccount found: `%s`", sourceAccountId.value()))
           );
 
@@ -194,18 +196,17 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
       } else if (sourcePreparePacket.getDestination().equals(CCP_UPDATE_DESTINATION_ADDRESS)) {
         final ByteArrayInputStream inputStream = new ByteArrayInputStream(sourcePreparePacket.getData());
-        final CcpRouteUpdateRequest routeUpdateRequest =
-          ccpCodecContext.read(CcpRouteUpdateRequest.class, inputStream);
+        final CcpRouteUpdateRequest routeUpdateRequest = ccpCodecContext.read(CcpRouteUpdateRequest.class, inputStream);
 
         final RoutableAccount routableAccount =
-          this.externalRoutingService.getTrackedAccount(sourceAccountId)
+          this.routeBroadcaster.getCcpEnabledAccount(sourceAccountId)
             .orElseThrow(() -> new RuntimeException(
               String.format("No tracked RoutableAccount found (`%s`).", sourceAccountId))
             );
 
         routableAccount.getCcpReceiver().handleRouteUpdateRequest(routeUpdateRequest);
 
-        // Return the Ccp response...
+        // Return the CCP response...
         return InterledgerFulfillPacket.builder()
           .fulfillment(CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT)
           .build();

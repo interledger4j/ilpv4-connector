@@ -3,6 +3,7 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.settings;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.sappenin.interledger.ilpv4.connector.RuntimeUtils;
+import org.aspectj.lang.annotation.DeclareError;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionException;
 import org.interledger.crypto.EncryptionService;
@@ -45,7 +46,12 @@ import static org.interledger.crypto.EncryptedSecret.ENCODING_PREFIX;
  *
  * @see "https://docs.spring.io/spring-boot/docs/current/reference/html/howto-spring-boot-application.html
  * #howto-customize-the-environment-or-application-context"
+ *
+ * @deprecated The only two properties that this class is used for currently is the routing-secret (which isn't
+ * technically used at present) and the admin API password. Both of these values will go away and/or be loaded only
+ * sporadically, so this class should go away as well.
  */
+@Deprecated
 public class AppengineEnvPostProcessor implements EnvironmentPostProcessor {
 
   // Application/ProjectId

@@ -8,8 +8,14 @@ import org.interledger.core.InterledgerResponsePacket;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+/**
+ * Defines a receiver of Route Broadcast Protocol (RBP), formerly known as Connector-to-Connector Protocol or `CCP`.
+ *
+ * @see "https://github.com/interledger/rfcs/pull/455"
+ */
 public interface CcpReceiver {
 
   /**
@@ -36,16 +42,15 @@ public interface CcpReceiver {
    *
    * @param action A {@link Consumer} to apply to each element in the route-update log.
    */
-  void forEachIncomingRoute(final Consumer<IncomingRoute> action);
-
-  /**
-   * Obtain an iterable for all incoming routes.
-   */
-  Iterable<IncomingRoute> getAllIncomingRoutes();
+  void forEachIncomingRoute(final BiConsumer<InterledgerAddressPrefix, IncomingRoute> action);
 
   /**
    * Return the single route that corresponds to the supplied {@code prefix}.
+   *
+   * @param addressPrefix The {@link InterledgerAddressPrefix} to lookup an incoming route for.
+   *
+   * @return An optionally present {@link IncomingRoute}.
    */
-  Optional<IncomingRoute> getRouteForPrefix(final InterledgerAddressPrefix addressPrefix);
+  Optional<IncomingRoute> getIncomingRouteForPrefix(final InterledgerAddressPrefix addressPrefix);
 
 }

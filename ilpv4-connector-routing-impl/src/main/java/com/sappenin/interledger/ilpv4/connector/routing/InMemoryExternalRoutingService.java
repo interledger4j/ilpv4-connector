@@ -2,427 +2,246 @@ package com.sappenin.interledger.ilpv4.connector.routing;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.google.common.hash.Hashing;
-import com.sappenin.interledger.ilpv4.connector.StaticRoute;
-import com.sappenin.interledger.ilpv4.connector.accounts.AccountIdResolver;
-import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.link.Link;
-import org.interledger.connector.link.events.LinkConnectedEvent;
-import org.interledger.connector.link.events.LinkDisconnectedEvent;
-import org.interledger.connector.link.events.LinkErrorEvent;
-import org.interledger.connector.link.events.LinkEventListener;
+import org.interledger.connector.link.LinkType;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
-import org.interledger.encoding.asn.framework.CodecContext;
+import org.interledger.crypto.Decryptor;
+import org.interledger.crypto.EncryptedSecret;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static com.sappenin.interledger.ilpv4.connector.routing.Route.HMAC;
 
 /**
- * An implementation of {@link ExternalRoutingService} that manages an in-memory routing table used to route packets
- * between publicly accessible peers (i.e., other ILP nodes that we might want to forward public ILP network routing
- * information to).
+ * <p>An implementation of {@link ExternalRoutingService} that manages an in-memory routing table used to route
+ * packets between publicly accessible peers (i.e., other ILP nodes that we might want to forward public ILP network
+ * routing information to).</p>
+ *
+ * <p>This implementation ultimately populates two routing tables, one for public route-exchange, and another for
+ * actual packet routing decisions (i.e., the local routing table).</p>
+ *
+ * <p>This service has three basic sources of routing data: CCP route updates, statically configured routes, and
+ * account-related information used to route packets to child accounts.</p>
+ *
+ * <p>The implementations organizes these sources of data around the {@link LinkType} of each source using the
+ * following rules-set:</p>
+ *
+ * <ol>
+ * <li>Static Routes: When the Connector starts-up, it loads all statically-configured routes and adds
+ * them to this routing service.</li>
+ * <li>Parent Accounts: Parent accounts connected via IL-DCP will have a routing-table entry added. Other parent
+ * accounts that do not use IL-DCP must have a static-route configured in order to be routable.
+ * </li>
+ * <li>Peer Accounts: All accounts of type {@link AccountRelationship#PEER} may have a static route configured, but
+ * this is not automatic. The account may also participate in CCP depending upon account settings in which case
+ * additional routes may become available based upon network conditions.</li>
+ * <li>Child Accounts: If a particular packet has a destination address that starts-with the address of
+ * the Connector's operational address, then the packet is routed using an instance of {@link
+ * ChildAccountPaymentRouter}.</li>
+ * </ol>
+ * </p>
  */
-public class InMemoryExternalRoutingService implements ExternalRoutingService, LinkEventListener {
+public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
-  private static final boolean SHOULD_SEND_ROUTES = true;
-  private static final boolean SHOULD_NOT_SEND_ROUTES = false;
-  private static final boolean SHOULD_RECEIVE_ROUTES = true;
-  private static final boolean SHOULD_NOT_RECEIVE_ROUTES = false;
   private static final boolean ROUTES_HAVE_CHANGED = true;
   private static final boolean ROUTES_HAVE_NOT_CHANGED = false;
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final EventBus eventBus;
-
-  private final CodecContext ccpCodecContext;
+  private final AccountSettingsRepository accountSettingsRepository;
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
+  private final Decryptor decryptor;
 
   // Local routing table, used for actually routing packets.
   private final RoutingTable<Route> localRoutingTable;
 
-  // Used for routes that this connector has received from peer accounts.
-  private final ForwardingRoutingTable<IncomingRoute> incomingRoutingTable;
-
-  // Master outgoing routing table, used for routes that this connector broadcasts to peer accounts.
+  // This is the master outgoing routing table, used for routes that this connector broadcasts to peer accounts.
+  // Note that each CcpReceiver has its own incoming table, but there is only one outgoing table for the entire
+  // Connector.
   private final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable;
 
-  private final AccountIdResolver accountIdResolver;
-  private final AccountSettingsRepository accountSettingsRepository;
-  private final LinkManager linkManager;
+  // Responsible for managing all outgoing CCP messages...
+  private final RouteBroadcaster routeBroadcaster;
 
-  // A Map of addresses to all RoutableAccounts that are currently being tracked by this routing service.
-  private final Map<AccountId, RoutableAccount> trackedAccounts;
-
-  // Holds routing information for a given peer, which is a remote ILPv4 node that this connector is peering with.
-  //private final Map<InterledgerAddress, Peer> peers;
   private final RoutingTableEntryComparator routingTableEntryComparator;
 
-  // Stores the unique identifier of a Runnable so that if unregister is called, that particular handler
-  // can be removed from the callback listeners, resulting in an account no longer being registered/tracked by this
-  // service.
-  private Map<AccountId, Runnable> unregisterAccountCallbacks;
+  private final ChildAccountPaymentRouter childAccountPaymentRouter;
 
   /**
    * Required-args Constructor.
    */
   public InMemoryExternalRoutingService(
     final EventBus eventBus,
-    final CodecContext ccpCodecContext,
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final AccountIdResolver accountIdResolver,
+    final Decryptor decryptor,
     final AccountSettingsRepository accountSettingsRepository,
-    final LinkManager linkManager
-  ) {
-    this.eventBus = Objects.requireNonNull(eventBus);
-    this.eventBus.register(this); // Required in order to add/remove routes on Link Connect/Disconnects
-
-    this.ccpCodecContext = Objects.requireNonNull(ccpCodecContext);
-    this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
-
-    this.localRoutingTable = new InMemoryRoutingTable();
-    this.incomingRoutingTable = new InMemoryIncomingRouteForwardRoutingTable();
-    this.outgoingRoutingTable = new InMemoryRouteUpdateForwardRoutingTable();
-
-    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
-    this.linkManager = Objects.requireNonNull(linkManager);
-    this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
-
-    this.trackedAccounts = Maps.newConcurrentMap();
-    this.unregisterAccountCallbacks = Maps.newConcurrentMap();
-    this.routingTableEntryComparator = new RoutingTableEntryComparator(accountSettingsRepository);
-  }
-
-  /**
-   * Required-args Constructor.
-   */
-  @VisibleForTesting
-  protected InMemoryExternalRoutingService(
-    final EventBus eventBus,
-    final CodecContext ccpCodecContext,
-    final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final RoutingTable<Route> localRoutingTable,
-    final ForwardingRoutingTable<IncomingRoute> incomingRoutingTable,
+    final ChildAccountPaymentRouter childAccountPaymentRouter,
     final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
-    final AccountIdResolver accountIdResolver,
-    final AccountSettingsRepository accountSettingsRepository,
-    final LinkManager linkManager
+    final RouteBroadcaster routeBroadcaster
   ) {
     this.eventBus = Objects.requireNonNull(eventBus);
     this.eventBus.register(this);
 
-    this.ccpCodecContext = Objects.requireNonNull(ccpCodecContext);
-    this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
-    this.localRoutingTable = Objects.requireNonNull(localRoutingTable);
-    this.incomingRoutingTable = Objects.requireNonNull(incomingRoutingTable);
-    this.outgoingRoutingTable = Objects.requireNonNull(outgoingRoutingTable);
-
-    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
-    this.linkManager = Objects.requireNonNull(linkManager);
-    this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
-
-    this.unregisterAccountCallbacks = Maps.newConcurrentMap();
-    this.trackedAccounts = Maps.newConcurrentMap();
     this.routingTableEntryComparator = new RoutingTableEntryComparator(accountSettingsRepository);
+
+    this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
+    this.decryptor = decryptor;
+    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
+    this.childAccountPaymentRouter = Objects.requireNonNull(childAccountPaymentRouter);
+    this.localRoutingTable = new InMemoryRoutingTable();
+
+    this.outgoingRoutingTable = Objects.requireNonNull(outgoingRoutingTable);
+    this.routeBroadcaster = routeBroadcaster;
   }
 
   @Override
   public void start() {
-    this.reloadLocalRoutes();
+    this.initRoutingTables();
   }
 
   @Override
-  public void registerAccountWithDataLink(final AccountId accountId, final Link<?> dataLink) {
-    Objects.requireNonNull(accountId);
-    Objects.requireNonNull(dataLink);
+  public Optional<Route> findBestNexHop(final InterledgerAddress finalDestinationAddress) {
+    Objects.requireNonNull(finalDestinationAddress);
 
-    if (this.unregisterAccountCallbacks.containsKey(accountId)) {
-      logger.warn("Peer Account `{}` was already tracked!", accountId);
-      return;
-    }
+    // TODO: An alternative to this setup is to create an Account with an address of `self.childaccounts` and route
+    // this packet to a Loopback-like plugin that forwards a packet to the correct account.
 
-    final LinkEventListener dataLinkEventListener = new LinkEventListener() {
-      @Override
-      public void onConnect(LinkConnectedEvent linkConnectedEvent) {
-        final AccountId accountId = AccountId.of(dataLink.getLinkId().value());
-        if (!dataLink.isConnected()) {
-          // some links don't set `isConnected() = true` before emitting the
-          // connect event, setImmediate has a good chance of working.
-          logger.error(
-            "Link emitted connect, but then returned false for isConnected, broken dataLink. accountId={}",
-            accountId
-          );
-        } else {
-          addTrackedAccount(accountId);
-        }
-      }
-
-      @Override
-      public void onDisconnect(LinkDisconnectedEvent linkDisconnectedEvent) {
-        final AccountId accountId = accountIdResolver.resolveAccountId(dataLink);
-        removeAccount(accountId);
-      }
-
-      @Override
-      public void onError(LinkErrorEvent linkErrorEvent) {
-        logger.error(linkErrorEvent.getError().getMessage(), linkErrorEvent.getError());
-      }
-    };
-
-    // When registering an accountId, we should remove any callbacks that might already exist.
-    this.unregisterAccountCallbacks.put(accountId, () -> dataLink.removeLinkEventListener(dataLinkEventListener));
-
-    // Tracked accounts should not enter service until they connect. Additionally, if a tracked dataLink disconnects, it
-    // should be removed from operation until it reconnects.
-    dataLink.addLinkEventListener(dataLinkEventListener);
-
-    // If the dataLink for the account above is already connected, then the account/dataLink won't become eligible for
-    // routing without this extra check.
-    if (dataLink.isConnected()) {
-      this.addTrackedAccount(accountId);
-    }
-  }
-
-  /**
-   * Untrack a peer accountId address from participating in Routing.
-   *
-   * @param accountId The address of a remote peer that can have packets routed to it.
-   */
-  public void unregisterAccount(final AccountId accountId) {
-    this.removeAccount(accountId);
-
-    Optional.ofNullable(this.unregisterAccountCallbacks.get(accountId))
-      .ifPresent(untrackRunnable -> {
-        // Run the Runnable that was configured when the link was registered (see TrackAccount).
-        untrackRunnable.run();
-      });
-  }
-
-  // This is happening via the IlpNodeEvent system...
-
-  //  /**
-  //   * If an AccountManager is present in the system running this routing service, then this service can react to those
-  //   * events by updating the routing table.
-  //   *
-  //   * @param accountAddedEvent
-  //   */
-  //  @EventListener(condition = "#event.name == T(com.sappenin.interledger.ilpv4.connector.events.AccountAddedEvent).NAME")
-  //  public void handleAccountAdded(AccountAddedEvent accountAddedEvent) {
-  //
-  //
-  //  }
-  //
-  //  /**
-  //   * If an AccountManager is present in the system running this routing service, then this service can react to those
-  //   * events by updating the routing table.
-  //   *
-  //   * @param accountRemovedEvent
-  //   */
-  //  @EventListener(
-  //    condition = "#event.name == T(com.sappenin.interledger.ilpv4.connector.events.AccountRemotedEvent).NAME"
-  //  )
-  //  public void handleAccountRemoved(AccountRemovedEvent accountRemovedEvent) {
-  //    System.out.println("Handling generic event (conditional).");
-  //  }
-
-  /**
-   * Adds a remote accountId to this Routing Service. This method is called in response to a tracking call.
-   *
-   * @param accountId
-   */
-  @VisibleForTesting
-  protected void addTrackedAccount(final AccountId accountId) {
-    Objects.requireNonNull(accountId);
-
-    final AccountSettings accountSettings = accountSettingsRepository.findByAccountId(accountId)
-      // TODO: This condition never happens, so RuntimeException is probably sufficient. However, consider an
-      // InterledgerException instead?
-      .orElseThrow(() -> new RuntimeException("Account not found!"));
-
-    // Check if this account is a parent account. If so, update the routing table appropriately (e.g., if this is a
-    // parent account, and its the primary parent account, then add a global route for this account).
-    if (
-      accountSettings.isParentAccount() &&
-        accountSettingsRepository.findPrimaryParentAccountSettings().isPresent() &&
-        accountSettingsRepository.findPrimaryParentAccountSettings().get().getAccountId()
-          .equals(accountSettings.getAccountId())
-    ) {
-      // Add a default global route for this account...
-      this.setDefaultRoute(accountSettings.getAccountId());
-    }
-
-    final boolean sendRoutes = this.shouldSendRoutes(accountSettings);
-    final boolean receiveRoutes = this.shouldReceiveRoutes(accountSettings);
-    if (!sendRoutes && !receiveRoutes) {
-      logger.warn("Not sending nor receiving routes for peer. accountId={}", accountId);
-
-      logger.debug("Checking to see if Account {} has a static-route...", accountId);
-      // Update the local-routing table for the newly added account, but only if it exists in the static-routing
-      // configuration.
-      this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getStaticRoutes().stream()
-        .filter(staticRoute -> staticRoute.getPeerAccountId().equals(accountId))
-        .findFirst() // There should only be one static route defined per-account, but just in case pick the first one.
-        .map(staticRoute -> Route.builder()  // Map to route.
-          .nextHopAccountId(staticRoute.getPeerAccountId())
-          .routePrefix(staticRoute.getTargetPrefix())
-          .build()
-        )
-        .ifPresent(localRoutingTable::addRoute);
-      return;
-    }
-
-    this.getTrackedAccount(accountId)
-      .map(existingPeer -> {
-        // Every time we reconnect, we'll send a new route control message to make sure they are still sending us
-        // routes, but only as long as receiving is enabled.
-        if (receiveRoutes) {
-          existingPeer.getCcpReceiver().sendRouteControl();
-        }
-        return existingPeer;
-      })
-      .orElseGet(() -> {
-        // The Account in question did not have an existing link in this routing service, so create a new link and
-        // initialize it.
-        final Link<?> link = linkManager.getOrCreateLink(accountId);
-        logger.debug(
-          "Adding Link to trackedAccounts. accountId={} sendRoutes={} isReceiveRoutes={}",
-          accountId, sendRoutes, receiveRoutes
-        );
-        final RoutableAccount newPeerAccount = ImmutableRoutableAccount.builder()
-          .accountId(accountId)
-          .ccpSender(constructCcpSender(accountSettings.getAccountId(), link))
-          .ccpReceiver(constructCcpReceiver(accountSettings.getAccountId(), link))
-          .build();
-
-        this.setTrackedAccount(newPeerAccount);
-
-        // Always send a new RoutControl request to the remote peer, but only if it's connected.
-        newPeerAccount.getCcpReceiver().sendRouteControl();
-
-        // This is somewhat expensive, so only do this if the peer was newly constructed...in other words, we don't
-        // want to reload the local routing tables if a link merely disconnected and reconnected, but nothing
-        // intrinsically changed about the routing tables that wasn't handled by those listeners.
-        this.reloadLocalRoutes();
-
-        return newPeerAccount;
-      });
-  }
-
-  private CcpSender constructCcpSender(final AccountId peerAccountId, final Link link) {
-    Objects.requireNonNull(peerAccountId);
-    Objects.requireNonNull(link);
-    return new DefaultCcpSender(
-      connectorSettingsSupplier, peerAccountId, link, outgoingRoutingTable, accountSettingsRepository, ccpCodecContext
-    );
-  }
-
-  private CcpReceiver constructCcpReceiver(final AccountId peerAccountId, final Link link) {
-    Objects.requireNonNull(peerAccountId);
-    Objects.requireNonNull(link);
-    return new DefaultCcpReceiver(
-      connectorSettingsSupplier, peerAccountId, link, incomingRoutingTable, ccpCodecContext
-    );
-  }
-
-  /**
-   * Determines if the link configured for the accountSettings in {@code accountSettings} should send routes to the
-   * remote peer accountSettings.
-   *
-   * @param accountSettings An instance of {@link AccountSettings} for a remote peer accountSettings.
-   *
-   * @return {@code true} if the link is configured to send routes, {@code false} otherwise.
-   */
-  private boolean shouldSendRoutes(final AccountSettings accountSettings) {
-    Objects.requireNonNull(accountSettings);
-    if (accountSettings.isChildAccount()) {
-      return SHOULD_NOT_SEND_ROUTES;
+    if (this.childAccountPaymentRouter.isChildAccount(finalDestinationAddress)) {
+      return childAccountPaymentRouter.findBestNexHop(finalDestinationAddress);
     } else {
-      return accountSettings.isSendRoutes();
+      // Child-accounts never make their way into this table. Because of this check, even if a remote node were to
+      // get a child-address into this table, it would never be honored.
+      return this.localRoutingTable.findNextHopRoute(finalDestinationAddress);
     }
   }
 
   /**
-   * Determines if the link configured for the accountSettings in {@code accountSettings} should receive routes from the
-   * remote peer accountSettings.
+   * <p>Initializes (or re-initializes) the routing subsystems used by the Connector to make routing decisions.</p>
    *
-   * @param accountSettings An instance of {@link AccountSettings} for a remote peer accountSettings.
+   * <p>This method does the following:
    *
-   * @return {@code true} if the link is configured to receive routes, {@code false} otherwise.
+   * <ol>
+   * <li>Parent Accounts: For the primary "Parent" account (if any), this implementation initializes an entry in the
+   * {@link RouteBroadcaster} and also configures the local routing-table appropriately. Note that other non-primary
+   * parent accounts may have a static-route configured.
+   * </li>
+   * <li>Peer Accounts: For each `PEER` that participates in CCP, initializes an entry in the
+   * {@link RouteBroadcaster}.</li>
+   * <li>Child Accounts: At present, `CHILD` accounts do not participate in CCP (though this could easily
+   * be changed in the future). For local routing decisions, all packets destined for a child account are forwarded to
+   * an instance of {@link ChildAccountPaymentRouter}.</li>
+   * <li>Static Routes: For any configured static route, this implementation updates the local routing table and also
+   * attempts to register each associated account in the {@link RouteBroadcaster}.</li>
+   * </ol>
    */
-  private boolean shouldReceiveRoutes(final AccountSettings accountSettings) {
-    Objects.requireNonNull(accountSettings);
-    if (accountSettings.isChildAccount()) {
-      return SHOULD_NOT_RECEIVE_ROUTES;
-    } else {
-      return accountSettings.isReceiveRoutes();
-    }
-  }
+  private void initRoutingTables() {
+    logger.debug("Entering #initRoutingTables...");
 
-  @VisibleForTesting
-  protected void removeAccount(final AccountId accountId) {
-    this.getTrackedAccount(accountId)
-      .ifPresent(peer -> {
-        logger.trace("Remove peer. peerId={}", accountId);
+    localRoutingTable.reset();
 
-        // Stop the CcpSender from broadcasting routes...
-        peer.getCcpSender().stopBroadcasting();
+    // TODO: No need to add a route for our own address because this is currently handled via Filter, but determine
+    //  if this works correctly with CCP (e.g., we want to broadcast routes that are our children).
+    // final InterledgerAddress ourAddress = this.connectorSettingsSupplier.get().getOperatorAddress();
 
-        // We have to removeEntry the peer before calling updatePrefix on each of its advertised prefixes in order to
-        // find the next best route.
-        this.trackedAccounts.remove(accountId);
+    //////////////////
+    // Parent Accounts
+    //////////////////
 
-        peer.getCcpReceiver().forEachIncomingRoute((incomingRoute) -> {
-          // Update all tables that might contain this prefix. This includes local routes
-          updatePrefix(incomingRoute.getRoutePrefix());
-        });
+    // Determine the default Route, and add it to the local routing table.
+    this.determineDefaultRoute().ifPresent(defaultRoute -> {
+        this.localRoutingTable.addRoute(defaultRoute);
 
-        this.accountSettingsRepository.findByAccountId(accountId)
-          .map(AccountSettings::getAccountRelationship)
-          .filter(accountRelationship -> accountRelationship.equals(AccountRelationship.CHILD))
-          // Only do this if the relationship is CHILD...
-          .ifPresent($ -> {
-            // TODO: Revisit this!
-            //this.updatePrefix(accountManager.toChildAddress(accountId))
-          });
+        // Enable this Account for CCP (if appropriate)
+        routeBroadcaster.registerCcpEnabledAccount(defaultRoute.getNextHopAccountId());
+      }
+    );
 
+    //////////////////
+    // Peer Accounts
+    //////////////////
+
+    // All eligible PEER accounts are registered for CCP (if appropriate). Unless there is a static route configured,
+    // then only CCP will populate routes amongst peers.
+    accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.PEER).stream()
+      .forEach(routeBroadcaster::registerCcpEnabledAccount);
+
+    //////////////////
+    // Child Accounts
+    //////////////////
+
+    // Child accounts do not currently participate in CCP. If a static route is configured for a Child, it will be
+    // populated below.
+
+    //////////////////
+    // Static Routes
+    //////////////////
+
+    // For any statically configured route...
+    this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getStaticRoutes().stream()
+      .forEach(staticRoute -> {
+
+        // ...attempt to register a CCP-enabled account (duplicate requests are fine).
+        routeBroadcaster.registerCcpEnabledAccount(staticRoute.getPeerAccountId());
+
+        // This will add the prefix correctly _and_ update the forwarding table...
+        updatePrefix(staticRoute.getTargetPrefix());
       });
+
+    ////////////////////
+    // Choose Best Paths
+    ////////////////////
+
+    // The above merely updates the local tables with any Routes we want to be proactively populated. This method
+    // then takes every prefix and attempts to clarify all "best-path" choices.
+
+    this.localRoutingTable.forEach((accountId, route) -> {
+      // This method determines what the forwarding-tables should look like based upon "best path" algorithms.
+      this.updatePrefix(route.getRoutePrefix());
+    });
+
   }
 
   /**
-   * Update this prefix in both the local and forwarding routing tables.
+   * Update all routing tables for the supplied {@code addressPrefix}.
    *
    * @param addressPrefix
    */
   @VisibleForTesting
   protected void updatePrefix(final InterledgerAddressPrefix addressPrefix) {
     Objects.requireNonNull(addressPrefix);
-    final Optional<Route> newBestRoute = this.getBestPeerRouteForPrefix(addressPrefix);
+    final Optional<Route> newBestRoute = this.getCurrentBestPeerRouteForPrefix(addressPrefix);
+
+    // If the local routing table changes, then update the forwarding routing table.
     if (this.updateLocalRoute(addressPrefix, newBestRoute)) {
       this.updateForwardingRoute(addressPrefix, newBestRoute);
     }
   }
 
+  /**
+   * A helper method to update the local routing table for {@code addressPrefix} with the optionally-specified {@code
+   * newBestRoute}.
+   *
+   * @param addressPrefix
+   * @param newBestRoute
+   *
+   * @return
+   */
   private boolean updateLocalRoute(
     final InterledgerAddressPrefix addressPrefix, final Optional<Route> newBestRoute
   ) {
@@ -446,7 +265,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
           return ROUTES_HAVE_CHANGED;
         })
         .orElseGet(() -> {
-          logger.debug("No more route available for prefix. prefix={}", addressPrefix);
+          logger.debug("No more routes available for prefix. prefix={}", addressPrefix);
           this.localRoutingTable.removeRoute(addressPrefix);
           return ROUTES_HAVE_NOT_CHANGED;
         });
@@ -474,13 +293,20 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
         return ImmutableRoute.builder()
           .from(nblr)
           .path(newPath)
+          // All Routes have an `auth` value that is derived from the prefix and a connector-wide secret that the
+          // route-owner controls (e.g., this Connector for routes that come from us). When this route is advertised
+          // via a forwarding table, the auth value is hashed again so that it is always unique from the perspective of
+          // outside connectors (TODO: Verify this with https://github.com/interledger/rfcs/pull/455)
           .auth(Hashing.sha256().hashBytes(nblr.getAuth()).asBytes())
           .build();
       })
       .map(nblr -> {
         final InterledgerAddressPrefix globalPrefix = connectorSettingsSupplier.get().getGlobalPrefix();
         final boolean hasGlobalPrefix = addressPrefix.getRootPrefix().equals(globalPrefix);
-        final boolean isDefaultRoute = addressPrefix.startsWith(globalPrefix);
+        final boolean isDefaultRoute = determineDefaultRoute()
+          .map(Route::getRoutePrefix)
+          .map(routePrefix -> routePrefix.equals(nblr.getRoutePrefix()))
+          .orElse(false);
 
         // Don't advertise local customer routes that we originated. Packets for these destinations should still
         // reach us because we are advertising our own address as a prefix.
@@ -507,7 +333,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
     // Only if there's a newBestNextHop, update the forwarding tables...
     newBestNextHop.ifPresent(nbnh -> {
 
-      final Optional<RouteUpdate> currentBest = this.outgoingRoutingTable.getRouteForPrefix(addressPrefix);
+      // Don't look in the log, but look in the actual Routing table for the prefix...
+      final Optional<RouteUpdate> currentBest = this.outgoingRoutingTable.getRouteByPrefix(addressPrefix);
       final Optional<AccountId> currentBestNextHop = currentBest
         .map(RouteUpdate::getRoute)
         .filter(Optional::isPresent)
@@ -517,7 +344,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
       // There's a new NextBestHop, so update the forwarding table, but only if it's different from the optionally
       // present currentBestNextHop.
       if (!currentBestNextHop.isPresent() || !currentBestNextHop.get().equals(nbnh)) {
-        final int newEpoch = this.outgoingRoutingTable.getCurrentEpoch() + 1;
+        final int newEpoch = this.outgoingRoutingTable.getCurrentEpoch();
 
         final RouteUpdate newBestRouteUpdate = ImmutableRouteUpdate.builder()
           .routePrefix(addressPrefix)
@@ -525,9 +352,9 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
           .epoch(newEpoch)
           .build();
 
-        // Add the route update to the outoing routing table so that it will be sent to remote peers on the next CCP
+        // Add the route update to the outgoing routing table so that it will be sent to remote peers on the next CCP
         // send operation.
-        this.outgoingRoutingTable.addRoute(addressPrefix, newBestRouteUpdate);
+        this.outgoingRoutingTable.addRoute(newBestRouteUpdate);
         logger.debug("Logging route update. update={}", newBestRouteUpdate);
 
         // If there's a current-best, null-out the getEpoch.
@@ -538,7 +365,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
 
         // Update the epoch after updating the log so that the Route forwarder doesn't think there's new things to
         // send before they're actually added.
-        outgoingRoutingTable.compareAndSetCurrentEpoch(this.outgoingRoutingTable.getCurrentEpoch(), newEpoch);
+        //outgoingRoutingTable.compareAndSetCurrentEpoch(this.outgoingRoutingTable.getCurrentEpoch(), newEpoch);
 
         // If there's a new best local route, then we need to re-check any prefixes that start with this prefix to see
         // if we can apply DRAGON filtering.
@@ -551,7 +378,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
           .forEach(subPrefix -> {
             // Only update the forward routing table if there is a route present (we don't want to removeEntry routes when
             // dragon filtering...)
-            this.outgoingRoutingTable.getRouteForPrefix(subPrefix)
+            this.outgoingRoutingTable.getRouteByPrefix(subPrefix)
               .ifPresent(routeUpdate -> this.updateForwardingRoute(subPrefix, routeUpdate.getRoute()));
           });
       }
@@ -559,34 +386,96 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
   }
 
   /**
-   * Reload the local routing table based upon our current peer settings.
+   * Returns the current "best route" for the specified prefix according to the following rules:
+   *
+   * <ol>
+   * <li>If a static-route exists for a prefix, then that is always the "best route"</li>.
+   * <li>Otherwise, </li>
+   * </ol>. The rules for this
+   *
+   * @param addressPrefix
+   *
+   * @return
    */
   @VisibleForTesting
-  protected void reloadLocalRoutes() {
-    logger.debug("Entering #reloadLocalRoutes...");
+  protected Optional<Route> getCurrentBestPeerRouteForPrefix(final InterledgerAddressPrefix addressPrefix) {
+    Objects.requireNonNull(addressPrefix);
 
-    // Reset the local routing table.
-    this.localRoutingTable.reset();
+    // Static-routes have highest priority...
+    return Optional.ofNullable(
+      connectorSettingsSupplier.get().getGlobalRoutingSettings().getStaticRoutes().stream()
+        .filter(staticRoute -> staticRoute.getTargetPrefix().equals(addressPrefix))
+        .findFirst()
+        .map(staticRoute -> {
+          // If there's a static route, then use it, even if the account doesn't exist. In this
+          // way, if the account does eventually come into existence, then things will work properly. If the account never
+          // comes into existence, then the Router and/or Link will simply reject if anything is attempted.
+          return (Route) ImmutableRoute.builder()
+            .routePrefix(addressPrefix)
+            .nextHopAccountId(staticRoute.getPeerAccountId())
+            .auth(this.constructRouteAuth(addressPrefix))
+            .build();
+        })
+        .orElseGet(() -> {
+            //...then look in the receiver.
+            // If we get here, there was no statically-configured route, _or, there was a statically configured route
+            // but no account existed. Either way, look for a local route.
+            return localRoutingTable.getRouteByPrefix(addressPrefix)
+              .orElseGet(() -> {
+                // If we get here, there was no local route, so search through all tracked accounts and sort all
+                // of the routes to find the shortest-path (i.e., lowest weight) route that will work for
+                // `addressPrefix`. This is the best route.
 
-    // Local Accounts?
-    //this.accountManager.getAllAccounts();
+                return this.routeBroadcaster.getAllCcpEnabledAccounts()
+                  .map(RoutableAccount::getCcpReceiver)
+                  .map(ccpReceiver -> ccpReceiver.getIncomingRouteForPrefix(addressPrefix))
+                  .filter(Optional::isPresent)
+                  .map(Optional::get)
+                  .sorted(routingTableEntryComparator)
+                  .collect(Collectors.<IncomingRoute>toList()).stream()
+                  .findFirst()
+                  .map(bestRoute -> (Route) ImmutableRoute.builder()
+                    .routePrefix(bestRoute.getRoutePrefix())
+                    .nextHopAccountId(bestRoute.getPeerAccountId())
+                    .path(bestRoute.getPath())
+                    .auth(bestRoute.getAuth())
+                    .build()
+                  )
+                  .orElse(null);
+              });
+          }
+        )
+    );
+  }
 
-    // Add a route for our own address....
-    //final InterledgerAddress ourAddress = this.connectorSettingsSupplier.get().getOperatorAddress();
+  /**
+   * Constructs the value of {@link Route#getAuth()} by HMAC'ing {@code addressPrefix} using a routing-secret configured
+   * for this Connector.
+   *
+   * @param addressPrefix
+   *
+   * @return
+   */
+  private byte[] constructRouteAuth(final InterledgerAddressPrefix addressPrefix) {
+    Objects.requireNonNull(addressPrefix);
 
-    //    this.localRoutingTable.addRoute(
-    //      //      InterledgerAddressPrefix.from(ourAddress),
-    //      ImmutableRoute.builder()
-    //        .nextHopAccountId(AccountId.of("self-ping"))
-    //        .routePrefix(InterledgerAddressPrefix.from(ourAddress))
-    //        .auth(HMAC(this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret(),
-    //          InterledgerAddressPrefix.from(ourAddress)))
-    //        // empty path.
-    //        // never expires
-    //        .build()
-    //    );
+    // Decrypt the routingSecret, but only momentarily...
+    final byte[] routingSecret = decryptor.decrypt(EncryptedSecret.fromEncodedValue(
+      connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret()
+    ));
 
-    // Determine the default Route, and add it to the local routing table.
+    try {
+      return HMAC(routingSecret, addressPrefix);
+    } finally {
+      // Zero-out all bytes in the `sharedSecretBytes` array.
+      Arrays.fill(routingSecret, (byte) 0);
+    }
+  }
+
+  /**
+   * Determine the default route for this connector, if any.
+   */
+  private Optional<Route> determineDefaultRoute() {
     final Optional<AccountId> nextHopForDefaultRoute;
     if (connectorSettingsSupplier.get().getGlobalRoutingSettings().isUseParentForDefaultRoute()) {
       nextHopForDefaultRoute = this.accountSettingsRepository.findFirstByAccountRelationship(AccountRelationship.PARENT)
@@ -606,163 +495,17 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService, L
       nextHopForDefaultRoute = Optional.empty();
     }
 
-    nextHopForDefaultRoute.ifPresent(nextHopAccountId ->
-      this.localRoutingTable.addRoute(ImmutableRoute.builder()
-        .routePrefix(InterledgerAddressPrefix.GLOBAL)
+    final InterledgerAddressPrefix globalPrefix = connectorSettingsSupplier.get().getGlobalPrefix();
+    return nextHopForDefaultRoute.map(nextHopAccountId ->
+      ImmutableRoute.builder()
+        .routePrefix(globalPrefix)
         .nextHopAccountId(nextHopAccountId)
-        // empty path
-        .auth(HMAC(this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret(),
-          InterledgerAddressPrefix.GLOBAL))
         // empty path.
         // never expires
+        .auth(this.constructRouteAuth(globalPrefix))
         .build()
-      ));
-
-    // TODO: FIX THIS block per the JS impl...
-    // For each local account that is a child...
-    this.accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.CHILD)
-      .forEach(accountSettings -> {
-        final AccountId accountId = accountSettings.getAccountId();
-        final InterledgerAddressPrefix childAddressAsPrefix =
-          InterledgerAddressPrefix.from(connectorSettingsSupplier.get().toChildAddress(accountId));
-
-        localRoutingTable.addRoute(
-          ImmutableRoute.builder()
-            .routePrefix(childAddressAsPrefix)
-            .nextHopAccountId(accountId)
-            // No Path
-            .auth(HMAC(
-              this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret(), childAddressAsPrefix)
-            )
-            .build()
-        );
-      });
-
-    // Local prefixes Stream
-    final Stream<InterledgerAddressPrefix> localPrefixesStream =
-      StreamSupport.stream(this.localRoutingTable.getAllPrefixes().spliterator(), false);
-
-    // Configured prefixes Stream (from Static routes)
-    final Stream<InterledgerAddressPrefix> configuredPrefixesStream =
-      this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getStaticRoutes().stream()
-        .map(StaticRoute::getTargetPrefix);
-
-    // Update all prefixes...
-    Stream.concat(localPrefixesStream, configuredPrefixesStream).forEach(this::updatePrefix);
-  }
-
-  @VisibleForTesting
-  protected Optional<Route> getBestPeerRouteForPrefix(final InterledgerAddressPrefix addressPrefix) {
-    Objects.requireNonNull(addressPrefix);
-
-    // configured routes have highest priority
-    return Optional.ofNullable(
-      connectorSettingsSupplier.get().getGlobalRoutingSettings().getStaticRoutes().stream()
-        .filter(staticRoute -> staticRoute.getTargetPrefix().equals(addressPrefix))
-        .findFirst()
-        // If there's a static route, then create a route, even if the account doesn't exist. In this way, if the
-        // account does eventually come into existence, then things will work properly. If the account never comes
-        // into existence, then the Router will simply reject.
-        // If there's a static route, and the account exists...
-        .map(staticRoute -> {
-          // Otherwise, if the account exists, then we should return a new route to the peer.
-          final Route route = ImmutableRoute.builder()
-            .path(Collections.emptyList())
-            .routePrefix(addressPrefix)
-            .nextHopAccountId(staticRoute.getPeerAccountId())
-            .auth(HMAC(connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret(), addressPrefix))
-            .build();
-          return route;
-        })
-        .orElseGet(() -> {
-            //...then look in the receiver.
-            // If we get here, there was no statically-configured route, _or_, there was a statically configured route
-            // but no account existed. Either way, look for a local route.
-            return localRoutingTable.getRouteByPrefix(addressPrefix)
-              .orElseGet(() -> {
-                // If we getEntry here, there was no local route, so search through all tracked accounts and sort all
-                // of the routes to find the shortest-path (i.e., lowest weight) route that will work for `addressPrefix`.
-                return trackedAccounts.values().stream()
-                  .map(RoutableAccount::getCcpReceiver)
-                  .map(ccpReceiver -> ccpReceiver.getRouteForPrefix(addressPrefix).orElse(null))
-                  .filter(route -> route != null)
-                  .sorted(routingTableEntryComparator)
-                  .collect(Collectors.toList()).stream()
-                  .findFirst()
-                  .map(bestRoute -> ImmutableRoute.builder()
-                    .routePrefix(bestRoute.getRoutePrefix())
-                    .nextHopAccountId(bestRoute.getPeerAccountId())
-                    .path(bestRoute.getPath())
-                    .auth(bestRoute.getAuth())
-                    .build()
-                  )
-                  .orElse(null);
-              });
-          }
-        )
     );
-  }
 
-  @Override
-  public void setTrackedAccount(final RoutableAccount routableAccount) {
-    Objects.requireNonNull(routableAccount);
-
-    if (trackedAccounts.putIfAbsent(routableAccount.getAccountId(), routableAccount) != null) {
-      throw new RuntimeException(
-        String.format("AccountId `%s` is already being tracked for routing purposes", routableAccount.getAccountId())
-      );
-    }
-  }
-
-  @Override
-  public Optional<RoutableAccount> getTrackedAccount(final AccountId accountId) {
-    Objects.requireNonNull(accountId);
-    return Optional.ofNullable(this.trackedAccounts.get(accountId));
-  }
-
-  ////////////////////////
-  // PaymentRouter Methods
-  ////////////////////////
-
-  @Override
-  public Optional<Route> findBestNexHop(final InterledgerAddress finalDestinationAddress) {
-    Objects.requireNonNull(finalDestinationAddress);
-    return this.localRoutingTable.findNextHopRoute(finalDestinationAddress);
-  }
-
-  @Override
-  public RoutingTable<Route> getRoutingTable() {
-    return this.localRoutingTable;
-  }
-
-  ////////////////////////
-  // Link Event Listener
-  ////////////////////////
-
-  /**
-   * Called to handle an {@link LinkConnectedEvent}.
-   *
-   * @param event A {@link LinkConnectedEvent}.
-   */
-  @Override
-  @Subscribe
-  public void onConnect(LinkConnectedEvent event) {
-    // Unregister the account (associated to the link that connected) with the routing service.
-    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getLink());
-    this.registerAccountWithDataLink(accountId, event.getLink());
-  }
-
-  /**
-   * Called to handle an {@link LinkDisconnectedEvent}.
-   *
-   * @param event A {@link LinkDisconnectedEvent}.
-   */
-  @Override
-  @Subscribe
-  public void onDisconnect(LinkDisconnectedEvent event) {
-    // Unregister the account (associated to the link that disconnected) from the routing service.
-    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getLink());
-    this.unregisterAccount(accountId);
   }
 
 }

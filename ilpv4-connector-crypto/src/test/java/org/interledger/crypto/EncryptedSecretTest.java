@@ -107,7 +107,8 @@ public class EncryptedSecretTest {
       EncryptedSecret.fromEncodedValue("gcpkms:kr1:foo_password:1:gs:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
       fail();
     } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(), is("encodedValue must start with `enc` prefix"));
+      assertThat(e.getMessage(), is(
+        "encodedValue must start with `enc` prefix. Value was instead: gcpkms:kr1:foo_password:1:gs:VGhpcyBpcyBhIHRoZSBzZWNyZXQ="));
       throw e;
     }
   }
@@ -118,7 +119,8 @@ public class EncryptedSecretTest {
       EncryptedSecret.fromEncodedValue(":gcpkms:kr1:gs:foo_password:1:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
       fail();
     } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(), is("encodedValue must start with `enc` prefix"));
+      assertThat(e.getMessage(), is(
+        "encodedValue must start with `enc` prefix. Value was instead: :gcpkms:kr1:gs:foo_password:1:VGhpcyBpcyBhIHRoZSBzZWNyZXQ="));
       throw e;
     }
   }
@@ -129,7 +131,8 @@ public class EncryptedSecretTest {
       EncryptedSecret.fromEncodedValue("enc2:gcpkms:kr1:gs:foo_password:1:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
       fail();
     } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(), is("encodedValue must start with `enc` prefix"));
+      assertThat(e.getMessage(), is(
+        "encodedValue must start with `enc` prefix. Value was instead: enc2:gcpkms:kr1:gs:foo_password:1:VGhpcyBpcyBhIHRoZSBzZWNyZXQ="));
       throw e;
     }
   }
