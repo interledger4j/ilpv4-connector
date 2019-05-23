@@ -23,6 +23,7 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME;
+import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME_DEFAULT;
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD;
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD_DEFAULT;
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS;
@@ -43,7 +44,7 @@ import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYST
   properties = {
     ADMIN_PASSWORD + "=password",
     ConnectorProperties.ENABLED_PROTOCOLS + "." + ConnectorProperties.BLAST_ENABLED + "=true",
-    ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME + "=" + ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME,
+    ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME + "=" + ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME_DEFAULT,
     ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD + "=" + ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD_DEFAULT,
     ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS + "=" + ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS_DEFAULT,
     ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD + "=" + ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD_DEFAULT
