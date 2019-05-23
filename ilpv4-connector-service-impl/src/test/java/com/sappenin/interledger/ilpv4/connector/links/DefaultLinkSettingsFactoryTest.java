@@ -25,6 +25,9 @@ import static org.junit.Assert.fail;
  */
 public class DefaultLinkSettingsFactoryTest {
 
+  protected static final String ENCRYPTED_SHH
+    = "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=";
+
   DefaultLinkSettingsFactory factory;
 
   @Before
@@ -57,12 +60,12 @@ public class DefaultLinkSettingsFactoryTest {
     customSettings.put(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256.name());
     customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, "https://alice.example.com/");
     customSettings.put(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
-    customSettings.put(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, "shh");
+    customSettings.put(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH);
     customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256.name());
     customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
     customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, "https://alice.example.com/");
     customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, "connie");
-    customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, "shh");
+    customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH);
     customSettings.put(OutgoingLinkSettings.BLAST_OUTGOING_URL, "https://alice.example.com");
 
     AccountSettings accountSettings = AccountSettings.builder()

@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
@@ -8,7 +9,6 @@ import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.links.LinkSettingsFactory;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
-import com.sappenin.interledger.ilpv4.connector.routing.InternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkFactoryProvider;
@@ -66,22 +66,17 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   private final LinkManager linkManager;
   private final LinkSettingsFactory linkSettingsFactory;
 
-  private final InternalRoutingService internalRoutingService;
   private final ExternalRoutingService externalRoutingService;
   private final BalanceTracker balanceTracker;
 
-  // Handles all packet addresses.
   private final ILPv4PacketSwitch ilpPacketSwitch;
 
-  /**
-   * Required-args Constructor (minus an EventBus).
-   */
-  public DefaultILPv4Connector(
+  @VisibleForTesting
+  DefaultILPv4Connector(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountManager accountManager,
     final AccountSettingsRepository accountSettingsRepository,
     final LinkManager linkManager,
-    final InternalRoutingService internalRoutingService,
     final ExternalRoutingService externalRoutingService,
     final ILPv4PacketSwitch ilpPacketSwitch,
     final BalanceTracker balanceTracker,
@@ -92,7 +87,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       accountManager,
       accountSettingsRepository,
       linkManager,
-      internalRoutingService,
       externalRoutingService,
       ilpPacketSwitch,
       balanceTracker,
@@ -101,12 +95,14 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     );
   }
 
+  /**
+   * Required-args Constructor (minus an EventBus).
+   */
   public DefaultILPv4Connector(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountManager accountManager,
     final AccountSettingsRepository accountSettingsRepository,
     final LinkManager linkManager,
-    final InternalRoutingService internalRoutingService,
     final ExternalRoutingService externalRoutingService,
     final ILPv4PacketSwitch ilpPacketSwitch,
     final BalanceTracker balanceTracker,
@@ -117,7 +113,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     this.accountManager = Objects.requireNonNull(accountManager);
     this.accountSettingsRepository = accountSettingsRepository;
     this.linkManager = Objects.requireNonNull(linkManager);
-    this.internalRoutingService = Objects.requireNonNull(internalRoutingService);
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
     this.ilpPacketSwitch = Objects.requireNonNull(ilpPacketSwitch);
     this.balanceTracker = Objects.requireNonNull(balanceTracker);
@@ -170,11 +165,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   @Override
   public ExternalRoutingService getExternalRoutingService() {
     return this.externalRoutingService;
-  }
-
-  @Override
-  public InternalRoutingService getInternalRoutingService() {
-    return this.internalRoutingService;
   }
 
   @Override

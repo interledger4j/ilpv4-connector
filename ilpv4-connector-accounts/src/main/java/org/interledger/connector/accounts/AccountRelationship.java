@@ -37,13 +37,7 @@ public enum AccountRelationship {
   /**
    * Indicates that a link is for a node that is the `child` of the node operating the link.
    */
-  CHILD(2),
-
-  /**
-   * @deprecated May be removed if unused.
-   */
-  @Deprecated
-  LOCAL(3);
+  CHILD(2);
 
   private int weight;
 
@@ -69,9 +63,6 @@ public enum AccountRelationship {
       }
       case 2: {
         return CHILD;
-      }
-      case 3: {
-        return LOCAL;
       }
       default: {
         throw new IllegalArgumentException("Invalid `weight`: " + weight);

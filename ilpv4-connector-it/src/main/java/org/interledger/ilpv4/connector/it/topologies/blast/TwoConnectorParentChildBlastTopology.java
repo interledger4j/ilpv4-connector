@@ -123,7 +123,9 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
         .build())
       .globalPrefix(InterledgerAddressPrefix.TEST)
       .globalRoutingSettings(GlobalRoutingSettings.builder()
-        .routingSecret("DocIHaveToTellYouSomethingAboutY")
+        //A simulated routing secret, which is a seed used for generating routing table auth values. Represents the
+        // plaintext value of `shh`, encrypted.
+        .routingSecret(ENCRYPTED_SHH)
         .build()
       )
 
@@ -189,7 +191,9 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
         .build())
       .globalPrefix(InterledgerAddressPrefix.TEST)
       .globalRoutingSettings(GlobalRoutingSettings.builder()
-        .routingSecret("DocIHaveToTellYouSomethingAboutY")
+        //A simulated routing secret, which is a seed used for generating routing table auth values. Represents the
+        // plaintext value of `shh`, encrypted.
+        .routingSecret(ENCRYPTED_SHH)
         .build()
       )
       .build();

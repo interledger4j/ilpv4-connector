@@ -38,7 +38,6 @@ public class AccountRelationshipTest {
     assertThat(AccountRelationship.fromWeight(0), is(AccountRelationship.PARENT));
     assertThat(AccountRelationship.fromWeight(1), is(AccountRelationship.PEER));
     assertThat(AccountRelationship.fromWeight(2), is(AccountRelationship.CHILD));
-    assertThat(AccountRelationship.fromWeight(3), is(AccountRelationship.LOCAL));
   }
 
   @Test
@@ -46,6 +45,5 @@ public class AccountRelationshipTest {
     assertThat(AccountRelationship.PARENT.getWeight(), is(0));
     assertThat(AccountRelationship.PEER.getWeight(), is(1));
     assertThat(AccountRelationship.CHILD.getWeight(), is(2));
-    assertThat(AccountRelationship.LOCAL.getWeight(), is(3));
   }
 }

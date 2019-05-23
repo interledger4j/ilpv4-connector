@@ -29,7 +29,8 @@ public interface EncryptedSecret {
     Objects.requireNonNull(encodedValue);
 
     if (!encodedValue.startsWith("enc:")) {
-      throw new IllegalArgumentException("encodedValue must start with `enc` prefix");
+      throw new IllegalArgumentException(
+        "encodedValue must start with `enc` prefix. Value was instead: " + encodedValue);
     }
 
     final String[] encodedValues = encodedValue.split(":");

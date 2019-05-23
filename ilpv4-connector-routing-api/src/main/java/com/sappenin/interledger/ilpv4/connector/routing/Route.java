@@ -29,11 +29,12 @@ public interface Route extends BaseRoute {
   }
 
   /**
-   * Create an HMAC of the routing secret and address prefix using Hmac SHA256.
+   * Create an HMAC of the routing secret and address prefix using HMAC_SHA_256. In this way, all Routes have an `auth`
+   * values that is derived from the prefix and a connector-wide secret.
    */
-  static byte[] HMAC(String routingSecret, InterledgerAddressPrefix addressPrefix) {
+  static byte[] HMAC(byte[] routingSecret, InterledgerAddressPrefix addressPrefix) {
     return Hashing
-      .hmacSha256(routingSecret.getBytes(UTF_8))
+      .hmacSha256(routingSecret)
       .hashBytes(addressPrefix.getValue().getBytes(UTF_8)).asBytes();
   }
 
@@ -53,14 +54,14 @@ public interface Route extends BaseRoute {
   List<InterledgerAddress> getPath();
 
   /**
-   * <p>An optionally-present expiration date/time for this getRoute.</p>
+   * <p>An optionally-present expiration date/time for this route.</p>
    *
    * @return An {@link Instant} representing the
    */
   Optional<Instant> getExpiresAt();
 
   /**
-   * Bytes that can be used for authentication of a given getRoute. Reserved for the future, currently not used.
+   * Bytes that can be used for authentication of a given route. Reserved for the future, currently not used.
    *
    * @return
    */

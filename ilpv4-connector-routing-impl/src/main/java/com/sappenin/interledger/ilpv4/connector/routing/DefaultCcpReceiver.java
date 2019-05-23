@@ -14,10 +14,12 @@ import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.Link;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.core.InterledgerResponsePacketMapper;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,10 +31,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.UUID;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 /**
  * Default implementation of {@link CcpReceiver}.
@@ -41,27 +43,54 @@ public class DefaultCcpReceiver implements CcpReceiver {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  private final ForwardingRoutingTable<IncomingRoute> incomingRoutes;
+  private final RoutingTable<IncomingRoute> incomingRoutes;
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final CodecContext ccpCodecContext;
 
-  // The Plugin that can communicate to the remote peer.
+  // Info for communicating with the remote peer.
   private final AccountId peerAccountId;
   private final Link link;
 
-  // Contains the identifier used used by our peer. We'll reset the getEpoch to 0 if the identifier changes.
+  // Current routing table id used by our peer. We'll reset our epoch if this changes.
+  private Optional<RoutingTableId> routingTableId = Optional.empty();
+
+  //Epoch index up to which our peer has sent updates
+  private int epoch = 0;
+
+  // Contains the identifier used used by our peer. We'll reset the epoch to 0 if the identifier changes.
   private Instant routingTableExpiry = Instant.EPOCH;
 
+  /**
+   * Required-args Constructor. Note that each instance of a CCP Receiver should have its own incoming routing table.
+   */
   public DefaultCcpReceiver(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final AccountId peerAccountId, final Link link, final ForwardingRoutingTable<IncomingRoute> incomingRoutes,
+    final AccountId peerAccountId,
+    final Link link,
     final CodecContext ccpCodecContext
   ) {
+    this(
+      connectorSettingsSupplier,
+      peerAccountId,
+      link,
+      ccpCodecContext,
+      new InMemoryRoutingTable<>()
+    );
+  }
+
+  @VisibleForTesting
+  DefaultCcpReceiver(
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final AccountId peerAccountId,
+    final Link link,
+    final CodecContext ccpCodecContext,
+    final RoutingTable<IncomingRoute> incomingRoutes
+  ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
-    this.incomingRoutes = Objects.requireNonNull(incomingRoutes);
     this.ccpCodecContext = Objects.requireNonNull(ccpCodecContext);
     this.peerAccountId = peerAccountId;
     this.link = Objects.requireNonNull(link);
+    this.incomingRoutes = Objects.requireNonNull(incomingRoutes);
   }
 
   @Override
@@ -73,29 +102,29 @@ public class DefaultCcpReceiver implements CcpReceiver {
     // Extend the routingTableExpiry of the routing-table held by this receiver...
     this.bump(routeUpdateRequest.holdDownTime());
 
-    // If the remote peer/account has a new routing table Id, then we reset the getEpoch so that we can update all
+    // If the remote peer/account has a new routing table Id, then we reset the epoch so that we can take all
     // routes from the remote.
-    if (!this.incomingRoutes.getRoutingTableId().equals(routeUpdateRequest.routingTableId())) {
-      logger.debug("Saw new routing table. oldId={} newId={}", this.incomingRoutes.getRoutingTableId(),
-        routeUpdateRequest.routingTableId());
-      this.incomingRoutes
-        .compareAndSetRoutingTableId(incomingRoutes.getRoutingTableId(), routeUpdateRequest.routingTableId());
-      this.incomingRoutes.compareAndSetCurrentEpoch(incomingRoutes.getCurrentEpoch(), 0);
+    if (!this.routingTableId.isPresent() || !this.routingTableId.get().equals(routeUpdateRequest.routingTableId())) {
+      logger.debug("Saw new routing table. oldId={} newId={}",
+        this.routingTableId.map(RoutingTableId::value).map(UUID::toString).orElse("n/a"),
+        routeUpdateRequest.routingTableId()
+      );
+      this.epoch = 0;
     }
 
-    // If this happens, then the entire routing table will expire, and we'll startBroadcasting over eventually...?
-    if (routeUpdateRequest.fromEpochIndex() > this.incomingRoutes.getCurrentEpoch()) {
-      // There is a gap, we need to go back to the last getEpoch we have
+    if (routeUpdateRequest.fromEpochIndex() > this.epoch) {
+      // There is a gap, we need to go back to the last epoch we have
       logger.debug("Gap in routing updates. expectedEpoch={} actualFromEpoch={}",
-        this.incomingRoutes.getCurrentEpoch(), routeUpdateRequest.fromEpochIndex()
+        this.epoch, routeUpdateRequest.fromEpochIndex()
       );
       return Collections.emptyList();
     }
 
-    if (this.incomingRoutes.getCurrentEpoch() > routeUpdateRequest.toEpochIndex()) {
+    if (this.epoch > routeUpdateRequest.toEpochIndex()) {
       // This routing update is older than what we already have
-      logger.debug("Old routing update, ignoring. expectedEpoch={} actualToEpoch={}",
-        this.incomingRoutes.getCurrentEpoch(), routeUpdateRequest.toEpochIndex()
+      logger.debug(
+        "Old routing update, ignoring. expectedEpoch={} actualToEpoch={}",
+        this.epoch, routeUpdateRequest.toEpochIndex()
       );
       return Collections.emptyList();
     }
@@ -105,11 +134,9 @@ public class DefaultCcpReceiver implements CcpReceiver {
       logger.debug("Pure heartbeat. fromEpoch={} toEpoch={}",
         routeUpdateRequest.fromEpochIndex(), routeUpdateRequest.toEpochIndex()
       );
-      this.incomingRoutes
-        .compareAndSetCurrentEpoch(incomingRoutes.getCurrentEpoch(), routeUpdateRequest.toEpochIndex());
+      this.epoch = routeUpdateRequest.toEpochIndex();
       return Collections.emptyList();
     }
-
 
     final ImmutableList.Builder<InterledgerAddressPrefix> changedPrefixesBuilder = ImmutableList.builder();
 
@@ -141,28 +168,28 @@ public class DefaultCcpReceiver implements CcpReceiver {
         .build()
       )
       .forEach(newIncomingRoute -> {
-        if (this.incomingRoutes.addRoute(newIncomingRoute.getRoutePrefix(), newIncomingRoute)) {
+        if (this.incomingRoutes.addRoute(newIncomingRoute) != null) {
           changedPrefixesBuilder.add(newIncomingRoute.getRoutePrefix());
         }
       });
 
-    this.incomingRoutes
-      .compareAndSetCurrentEpoch(this.incomingRoutes.getCurrentEpoch(), routeUpdateRequest.toEpochIndex());
+    this.epoch = routeUpdateRequest.toEpochIndex();
 
     final List<InterledgerAddressPrefix> changedPrefixes = changedPrefixesBuilder.build();
-    logger.debug("Applied getRoute update. changedPrefixesCount={} fromEpoch={} toEpoch={}",
+    logger.debug("Applied route update. changedPrefixesCount={} fromEpoch={} toEpoch={}",
       changedPrefixes.size(), routeUpdateRequest.fromEpochIndex(), routeUpdateRequest.toEpochIndex()
     );
     return changedPrefixes;
   }
 
   public InterledgerResponsePacket sendRouteControl() {
-    Preconditions.checkNotNull(link, "Plugin must be assigned before using a CcpReceiver!");
+    Preconditions.checkNotNull(link, "Link must be assigned before using a CcpReceiver!");
 
-    final ImmutableCcpRouteControlRequest request = ImmutableCcpRouteControlRequest.builder()
+    final CcpRouteControlRequest request = ImmutableCcpRouteControlRequest.builder()
       .mode(CcpSyncMode.MODE_SYNC)
-      .lastKnownRoutingTableId(this.incomingRoutes.getRoutingTableId())
-      .lastKnownEpoch(this.incomingRoutes.getCurrentEpoch())
+      .lastKnownRoutingTableId(this.routingTableId)
+      .lastKnownEpoch(this.epoch)
+      // No features....
       .build();
 
     final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
@@ -176,8 +203,19 @@ public class DefaultCcpReceiver implements CcpReceiver {
     // Link handles retry, if any...
     try {
       InterledgerResponsePacket responsePacket = this.link.sendPacket(preparePacket);
-      logger.debug("Successfully sent getRoute control message. peer={}", peerAccountId);
-      return responsePacket;
+      return new InterledgerResponsePacketMapper<InterledgerResponsePacket>() {
+        @Override
+        protected InterledgerResponsePacket mapFulfillPacket(InterledgerFulfillPacket fulfillPacket) {
+          logger.debug("Successfully sent route control message. peer={}", peerAccountId);
+          return fulfillPacket;
+        }
+
+        @Override
+        protected InterledgerResponsePacket mapRejectPacket(InterledgerRejectPacket rejectPacket) {
+          logger.debug("Route control message was rejected. rejection={}", rejectPacket.getMessage());
+          return rejectPacket;
+        }
+      }.map(responsePacket);
     } catch (Exception e) {
       if (e instanceof InterledgerProtocolException) {
         final InterledgerRejectPacket rejectPacket =
@@ -192,21 +230,14 @@ public class DefaultCcpReceiver implements CcpReceiver {
   }
 
   @Override
-  public void forEachIncomingRoute(final Consumer<IncomingRoute> action) {
+  public void forEachIncomingRoute(final BiConsumer<InterledgerAddressPrefix, IncomingRoute> action) {
     this.incomingRoutes.forEach(action);
   }
 
   @Override
-  public Iterable<IncomingRoute> getAllIncomingRoutes() {
-    return this.incomingRoutes.getAllRoutes();
-  }
-
-  @Override
-  public Optional<IncomingRoute> getRouteForPrefix(InterledgerAddressPrefix addressPrefix) {
-    return StreamSupport.stream(this.getAllIncomingRoutes().spliterator(), false)
-      // TODO: Will go away once routes are 1-1.
-      .filter(incomingRoute -> incomingRoute.getRoutePrefix().equals(addressPrefix))
-      .findFirst();
+  public Optional<IncomingRoute> getIncomingRouteForPrefix(final InterledgerAddressPrefix addressPrefix) {
+    Objects.requireNonNull(addressPrefix);
+    return incomingRoutes.getRouteByPrefix(addressPrefix);
   }
 
   /**

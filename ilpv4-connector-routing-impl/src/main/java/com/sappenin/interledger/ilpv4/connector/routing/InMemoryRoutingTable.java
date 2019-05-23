@@ -5,9 +5,6 @@ import org.interledger.core.InterledgerAddressPrefix;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 /**
@@ -17,16 +14,12 @@ import java.util.function.BiConsumer;
  * This implementation is meant for use-cases where routes do not change very often, like statically-configured routing
  * environments where this table can be populated when the server starts-up.
  */
-public class InMemoryRoutingTable implements RoutingTable<Route> {
+public class InMemoryRoutingTable<R extends BaseRoute> implements RoutingTable<R> {
 
-  private final AtomicReference<RoutingTableId> routingTableId;
-  private final AtomicLong currentEpoch;
-  private final InterledgerAddressPrefixMap<Route> interledgerAddressPrefixMap;
+  private final InterledgerAddressPrefixMap<R> interledgerAddressPrefixMap;
 
   public InMemoryRoutingTable() {
-    this.routingTableId = new AtomicReference<>(RoutingTableId.of(UUID.randomUUID()));
-    this.currentEpoch = new AtomicLong();
-    this.interledgerAddressPrefixMap = new InterledgerAddressPrefixMap();
+    this(new InterledgerAddressPrefixMap());
   }
 
   /**
@@ -35,45 +28,38 @@ public class InMemoryRoutingTable implements RoutingTable<Route> {
    * @param interledgerAddressPrefixMap
    */
   public InMemoryRoutingTable(final InterledgerAddressPrefixMap interledgerAddressPrefixMap) {
-    this.routingTableId = new AtomicReference<>(RoutingTableId.of(UUID.randomUUID()));
-    this.currentEpoch = new AtomicLong();
     this.interledgerAddressPrefixMap = Objects.requireNonNull(interledgerAddressPrefixMap);
   }
 
-  @Override
-  public RoutingTableId getRoutingTableId() {
-    return this.routingTableId.get();
-  }
+  //  @Override
+  //  public RoutingTableId getRoutingTableId() {
+  //    return this.routingTableId.get();
+  //  }
 
-  public boolean compareAndSetRoutingTableId(
-    final RoutingTableId expectRoutingTableId, final RoutingTableId newRoutingTableId
-  ) {
-    return this.routingTableId.compareAndSet(expectRoutingTableId, newRoutingTableId);
-  }
-
-  @Override
-  public long getCurrentEpoch() {
-    return this.currentEpoch.get();
-  }
-
-  public boolean compareAndSetCurrentEpoch(final long expectedEpoch, final long newEpoch) {
-    return this.currentEpoch.compareAndSet(expectedEpoch, newEpoch);
-  }
+  //  public boolean compareAndSetRoutingTableId(
+  //    final RoutingTableId expectRoutingTableId, final RoutingTableId newRoutingTableId
+  //  ) {
+  //    return this.routingTableId.compareAndSet(expectRoutingTableId, newRoutingTableId);
+  //  }
+  //
+  //  public boolean compareAndSetCurrentEpoch(final long expectedEpoch, final long newEpoch) {
+  //    return this.currentEpoch.compareAndSet(expectedEpoch, newEpoch);
+  //  }
 
   @Override
-  public Route addRoute(final Route route) {
+  public R addRoute(final R route) {
     Objects.requireNonNull(route);
     return this.interledgerAddressPrefixMap.putEntry(route.getRoutePrefix(), route);
   }
 
   @Override
-  public Optional<Route> removeRoute(final InterledgerAddressPrefix addressPrefix) {
+  public Optional<R> removeRoute(final InterledgerAddressPrefix addressPrefix) {
     Objects.requireNonNull(addressPrefix);
     return this.interledgerAddressPrefixMap.removeEntry(addressPrefix);
   }
 
   @Override
-  public Optional<Route> getRouteByPrefix(final InterledgerAddressPrefix addressPrefix) {
+  public Optional<R> getRouteByPrefix(final InterledgerAddressPrefix addressPrefix) {
     Objects.requireNonNull(addressPrefix);
     return this.interledgerAddressPrefixMap.getEntry(addressPrefix);
   }
@@ -85,31 +71,23 @@ public class InMemoryRoutingTable implements RoutingTable<Route> {
   //    return this.interledgerAddressPrefixMap.removeAll(addressPrefix);
   //  }
 
-  /**
-   * Obtain a view of all Routes in this Routing Table.
-   *
-   * @return
-   */
   @Override
   public Iterable<InterledgerAddressPrefix> getAllPrefixes() {
     return this.interledgerAddressPrefixMap.getKeys();
   }
 
   @Override
-  public void forEach(final BiConsumer<InterledgerAddressPrefix, Route> action) {
+  public void forEach(final BiConsumer<InterledgerAddressPrefix, R> action) {
     Objects.requireNonNull(action);
     this.interledgerAddressPrefixMap.forEach(action);
   }
 
   @Override
-  public Optional<Route> findNextHopRoute(final InterledgerAddress finalDestinationAddress) {
-    Objects.requireNonNull(finalDestinationAddress, "finalDestinationAddress must not be null!");
-    return this.interledgerAddressPrefixMap.findNextHop(finalDestinationAddress);
+  public Optional<R> findNextHopRoute(final InterledgerAddress interledgerAddress) {
+    Objects.requireNonNull(interledgerAddress, "finalDestinationAddress must not be null!");
+    return this.interledgerAddressPrefixMap.findNextHop(interledgerAddress);
   }
 
-  /**
-   * Reset the routing table to an empty state.
-   */
   @Override
   public void reset() {
     this.interledgerAddressPrefixMap.reset();
