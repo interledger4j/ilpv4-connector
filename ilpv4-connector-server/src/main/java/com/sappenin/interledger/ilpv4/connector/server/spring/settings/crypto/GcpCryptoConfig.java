@@ -17,7 +17,7 @@ import static org.interledger.crypto.CryptoConfigConstants.TRUE;
 @ConditionalOnProperty(prefix = ILPV4_CONNECTOR_KEYSTORE_GCP, name = ENABLED, havingValue = TRUE)
 public class GcpCryptoConfig {
 
-  @Value(GOOGLE_CLOUD_PROJECT)
+  @Value("${" + GOOGLE_CLOUD_PROJECT + "}")
   private String gcpProjectId;
 
   @Value("${" + ILPV4_CONNECTOR_KEYSTORE_LOCATION_ID + "}")
@@ -25,7 +25,7 @@ public class GcpCryptoConfig {
 
   @Bean
   EncryptionService encryptionService() {
-    return new GcpEncryptionService(gcpProjectId, gcpProjectId);
+    return new GcpEncryptionService(gcpProjectId, gcpLocationId);
   }
 
 }
