@@ -17,7 +17,6 @@ import static org.interledger.crypto.CryptoConfigConstants.TRUE;
 @ConditionalOnProperty(prefix = ILPV4_CONNECTOR_KEYSTORE_GCP, name = ENABLED, havingValue = TRUE)
 public class GcpCryptoConfig {
 
-  //@Value("${" + ILPV4_CONNECTOR_KEYSTORE_PROJECT_ID + "}")
   @Value(GOOGLE_CLOUD_PROJECT)
   private String gcpProjectId;
 
