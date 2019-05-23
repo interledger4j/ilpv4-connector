@@ -7,6 +7,9 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
+import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_GCP_ENABLED;
+import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_ENABLED;
+
 /**
  * Utility methods for interacting with and learning about the current server runtime.
  */
@@ -46,11 +49,44 @@ public class RuntimeUtils {
    */
   public static KeyStoreType determineKeystoreType(Environment environment) {
     Objects.requireNonNull(environment);
-    final String configuredKeystore = environment.getProperty("ilpv4.connector.keystore.platform", "");
-    try {
-      return KeyStoreType.fromKeystoreTypeId(configuredKeystore);
-    } catch (Exception e) {
-      throw new RuntimeException("Unsupported Keystore Type: " + configuredKeystore);
+
+    if (isGcpKmsEnabled(environment)) {
+      return KeyStoreType.GCP;
+    } else if (isJksKmsEnabled(environment)) {
+      return KeyStoreType.JKS;
+    } else {
+      throw new RuntimeException(
+        String.format("Unsupported Keystore Type. Please defined either `%s` or `%s`",
+          ILPV4_CONNECTOR_KEYSTORE_GCP_ENABLED, ILPV4_CONNECTOR_KEYSTORE_JKS_ENABLED)
+      );
     }
+  }
+
+  /**
+   * Determine if the GCP KMS key-store is enabled.
+   *
+   * @param environment
+   *
+   * @return
+   */
+  private static boolean isGcpKmsEnabled(final Environment environment) {
+    Objects.requireNonNull(environment);
+    return Optional.ofNullable(environment.getProperty(ILPV4_CONNECTOR_KEYSTORE_GCP_ENABLED))
+      .map(val -> val.equalsIgnoreCase(Boolean.TRUE.toString()))
+      .orElse(false);
+  }
+
+  /**
+   * Determine if the JKS key-store is enabled.
+   *
+   * @param environment
+   *
+   * @return
+   */
+  private static boolean isJksKmsEnabled(final Environment environment) {
+    Objects.requireNonNull(environment);
+    return Optional.ofNullable(environment.getProperty(ILPV4_CONNECTOR_KEYSTORE_JKS_ENABLED))
+      .map(val -> val.equalsIgnoreCase(Boolean.TRUE.toString()))
+      .orElse(false);
   }
 }

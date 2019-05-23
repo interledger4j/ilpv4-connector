@@ -91,6 +91,7 @@ ilpv4:
     adminPassword: password
     keystore:
       jks:
+        enabled: true
         filename: crypto/crypto.p12
         password: password
         secret0_alias: secret0

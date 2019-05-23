@@ -107,9 +107,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     auth.inMemoryAuthentication()
       .withUser("admin").password(passwordEncoder().encode(new String(pwBytes)))
-      .authorities("connector:admin", "user");
-    //.and()
-    //.withUser("user").password(passwordEncoder().encode(new String(pwBytes))).authorities("user");
+      .authorities("connector:admin", "user")
+      .and()
+      .withUser("user").password(passwordEncoder().encode(new String(pwBytes))).authorities("user");
   }
 
   /**

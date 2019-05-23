@@ -22,6 +22,7 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DOT;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.SPRING_PROFILES_ACTIVE;
 import static org.hamcrest.CoreMatchers.is;
+import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_ENABLED;
 import static org.interledger.ilpv4.connector.it.topologies.blast.AbstractTopology.ALICE_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.blast.AbstractTopology.BOB_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.ALICE;
@@ -45,6 +46,7 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
   public static void setupClass() {
     System.setProperty(DEFAULT_JWT_TOKEN_ISSUER, "https://connie.example.com");
     System.setProperty(ADMIN_PASSWORD, "password");
+    System.setProperty(ILPV4_CONNECTOR_KEYSTORE_JKS_ENABLED, "true");
     System.setProperty(SPRING_PROFILES_ACTIVE, RuntimeProperties.ConnectorProfiles.DEV);
     // Required to get the conditional-config to work for this topology...
     System.setProperty(ConnectorProperties.ENABLED_PROTOCOLS + DOT + ConnectorProperties.BLAST_ENABLED, "true");

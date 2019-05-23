@@ -21,6 +21,7 @@ spring:
       enabled: false
       max-file-size: 32KB
       max-request-size: 32KB
+
   # Database Settings
   datasource:
     url: jdbc:h2:mem:example-app;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
@@ -63,8 +64,6 @@ h2:
 
 ilpv4:
   connector:
-    keystore:
-      platform: jks
     btp.enabled: false
     enabledProtocols:
       blastEnabled: true

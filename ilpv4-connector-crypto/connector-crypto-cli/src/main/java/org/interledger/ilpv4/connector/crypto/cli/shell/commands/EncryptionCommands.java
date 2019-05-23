@@ -48,8 +48,8 @@ public class EncryptionCommands {
   private String secret0KeyPassword = "password";
 
   // GCP Properties.
-  private Optional<String> gcpProjectId;
-  private Optional<String> gcpLocationId;
+  private Optional<String> gcpProjectId = Optional.empty();
+  private Optional<String> gcpKeyringLocationId = Optional.of("global");
   private Optional<String> keyringIdentifier = Optional.empty();
   private EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithm.GOOGLE_SYMMETRIC;
   private Optional<String> encryptionKeyIdentifier = Optional.empty();
@@ -85,11 +85,11 @@ public class EncryptionCommands {
 
     if (this.keyStoreType.equals(KeyStoreType.GCP)) {
       final GcpEncryptionService gcpSecretsManager = new GcpEncryptionService(
-        gcpProjectId.get(), gcpLocationId.get()
+        gcpProjectId.get(), gcpKeyringLocationId.get()
       );
 
       final KeyMetadata keyMetadata = KeyMetadata.builder()
-        .keyIdentifier(keyringIdentifier.get())
+        .keyIdentifier(encryptionKeyIdentifier.get())
         .keyVersion(encryptionKeyVersion)
         .keyringIdentifier(keyringIdentifier.get())
         .platformIdentifier(keyStoreType.name())
@@ -131,7 +131,7 @@ public class EncryptionCommands {
 
     if (this.keyStoreType.equals(KeyStoreType.GCP)) {
       final GcpEncryptionService gcpSecretsManager = new GcpEncryptionService(
-        gcpProjectId.get(), gcpLocationId.get()
+        gcpProjectId.get(), gcpKeyringLocationId.get()
       );
 
       final EncryptedSecret encryptedSecret = EncryptedSecret.fromEncodedValue(encodedValue);
@@ -159,7 +159,7 @@ public class EncryptionCommands {
    */
   @ShellMethod(
     value = "Set the keystore platform (defaults to Google KMS)",
-    key = {"kp", "keystore-platform"}
+    key = {"pid", "keystore-platform-id"}
   )
   public String setKeystorePlatform(final String keystorePlatform) {
     this.keyStoreType = KeyStoreType.valueOf(keystorePlatform.toUpperCase());
@@ -185,6 +185,8 @@ public class EncryptionCommands {
   public void showCurrentValues() {
     if (KeyStoreType.GCP.equals(keyStoreType)) {
       blankLineLogger.info("Keystore Type         : " + this.keyStoreType);
+      blankLineLogger.info("GCP Project Id        : " + this.gcpProjectId.orElse(UNSET));
+      blankLineLogger.info("Keyring Location      : " + this.gcpKeyringLocationId.orElse(UNSET));
       blankLineLogger.info("Keyring Id            : " + this.keyringIdentifier.orElse(UNSET));
       blankLineLogger.info("Encryption Algorithm  : " + this.encryptionAlgorithm);
       blankLineLogger.info("Encryption Key Id     : " + this.encryptionKeyIdentifier.orElse(UNSET));
@@ -204,14 +206,18 @@ public class EncryptionCommands {
   @ShellMethodAvailability({"e", "encrypt"})
   Availability availabilityCheck() {
     if (KeyStoreType.GCP.equals(this.keyStoreType)) {
-      if (!this.keyringIdentifier.isPresent()) {
+      if (!this.gcpProjectId.isPresent()) {
+        return Availability.unavailable("You must specify the GCP Project Id!");
+      } else if (!this.gcpKeyringLocationId.isPresent()) {
+        return Availability.unavailable("You must specify the GCP Keyring Location Id!");
+      } else if (!this.keyringIdentifier.isPresent()) {
         return Availability.unavailable("You must specify the keyring identifier!");
       } else if (StringUtils.isEmpty(this.encryptionKeyIdentifier)) {
         return Availability.unavailable("You must specify the encryption key identifier!");
       } else if (StringUtils.isEmpty(this.encryptionKeyVersion)) {
         return Availability.unavailable("You must specify the encryption key version!");
-      } else if (this.encryptionAlgorithm.equals(EncryptionAlgorithm.GOOGLE_SYMMETRIC)) {
-        return Availability.unavailable("JKS currently only supports " + EncryptionAlgorithm.GOOGLE_SYMMETRIC);
+      } else if (!this.encryptionAlgorithm.equals(EncryptionAlgorithm.GOOGLE_SYMMETRIC)) {
+        return Availability.unavailable("GCP currently only supports " + EncryptionAlgorithm.GOOGLE_SYMMETRIC);
       }
     } else if (KeyStoreType.JKS.equals(this.keyStoreType)) {
       if (StringUtils.isEmpty(this.jksFileName)) {
@@ -222,7 +228,7 @@ public class EncryptionCommands {
         return Availability.unavailable("You must specify the Secret0 Key alias!");
       } else if (this.secret0KeyPassword == null) {
         return Availability.unavailable("You must specify the Secret0 Key password!");
-      } else if (this.encryptionAlgorithm.equals(EncryptionAlgorithm.AES_GCM)) {
+      } else if (!this.encryptionAlgorithm.equals(EncryptionAlgorithm.AES_GCM)) {
         return Availability.unavailable("JKS currently only supports " + EncryptionAlgorithm.AES_GCM);
       }
     }
@@ -358,8 +364,8 @@ public class EncryptionCommands {
     group = GCP_CONFIGURATION
   )
   public String setGcpLocationId(final String gcpLocationId) {
-    this.gcpLocationId = Optional.ofNullable(gcpLocationId);
-    return String.format("GCP LocationId set to: `%s`", this.gcpLocationId.orElse(UNSET));
+    this.gcpKeyringLocationId = Optional.ofNullable(gcpLocationId);
+    return String.format("GCP LocationId set to: `%s`", this.gcpKeyringLocationId.orElse(UNSET));
   }
 
   public Availability setGcpLocationIdAvailability() {
@@ -375,7 +381,7 @@ public class EncryptionCommands {
    */
   @ShellMethod(
     value = "Set the Keyring platform",
-    key = {"kr", "keyring"},
+    key = {"krid", "keyring-id"},
     group = GCP_CONFIGURATION
   )
   public String setKeyringIdentifier(final String keyringIdentifier) {
@@ -417,7 +423,7 @@ public class EncryptionCommands {
    */
   @ShellMethod(
     value = "Set the Key Identifier to use for encryption",
-    key = {"ekid", "encrypt-key-id"},
+    key = {"ekid", "encryption-key-id"},
     group = GCP_CONFIGURATION
   )
   public String setEncryptionKeyIdentifier(final String encryptionKeyIdentifier) {
@@ -438,7 +444,7 @@ public class EncryptionCommands {
    */
   @ShellMethod(
     value = "Set the Key version to use for encryption",
-    key = {"ekv", "encrypt-key-version"},
+    key = {"ekv", "encryption-key-version"},
     group = GCP_CONFIGURATION
   )
   public String setEncryptionKeyVersion(final String encryptionKeyVersion) {
