@@ -17,7 +17,11 @@ import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.Link;
+import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerRejectPacket;
+import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.core.InterledgerResponsePacketHandler;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
@@ -138,6 +142,7 @@ public class DefaultCcpSender implements CcpSender {
   }
 
   public void startBroadcasting() {
+
     // Start broadcasting routes to the configured peer, but only if another thread isn't already pending...
     // Synchronize on this instance so that only a single thread at a time can enter this block...
     synchronized (this) {
@@ -146,6 +151,7 @@ public class DefaultCcpSender implements CcpSender {
           this::sendRouteUpdateRequest,
           this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteBroadcastInterval()
         );
+        logger.info("CcpSender now broadcasting to Peer: {}", this.peerAccountId);
       } else {
         // Do nothing. The route-update has already been scheduled...
       }
@@ -160,6 +166,7 @@ public class DefaultCcpSender implements CcpSender {
       try {
         if (this.scheduledTask != null) {
           this.scheduledTask.cancel(false);
+          logger.info("CcpSender no longer broadcasting to Peer: {}", this.peerAccountId);
         } else {
           // Do nothing. There is no scheduled task to cancel.
         }
@@ -286,22 +293,41 @@ public class DefaultCcpSender implements CcpSender {
       final int previousNextRequestedEpoch = this.lastKnownEpoch.get();
       this.lastKnownEpoch.compareAndSet(previousNextRequestedEpoch, toEpoch);
 
-      this.link.sendPacket(
-        InterledgerPreparePacket.builder()
-          .amount(BigInteger.ZERO)
-          .destination(CcpConstants.CCP_UPDATE_DESTINATION_ADDRESS)
-          .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
-          .expiresAt(Instant.now().plus(
-            // TODO: Verify this is correct. Should the packet just have a normal expiration?
-            this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteExpiry()
-          ))
-          .data(serializeCcpPacket(ccpRouteUpdateRequest))
-          .build()
+      final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
+        .amount(BigInteger.ZERO)
+        .destination(CcpConstants.CCP_UPDATE_DESTINATION_ADDRESS)
+        .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
+        .expiresAt(Instant.now().plus(
+          // TODO: Verify this is correct. Should the packet just have a normal expiration?
+          this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteExpiry()
+        ))
+        .data(serializeCcpPacket(ccpRouteUpdateRequest))
+        .build();
+      logger.info(
+        "CcpSender sending RouteUpdate Request: targetPeerAccountId={}. ccpRouteUpdateRequest={} preparePacket={}",
+        this.peerAccountId, ccpRouteUpdateRequest, preparePacket
       );
-      logger.debug("Route update succeeded to peer: `{}`!", peerAccountId);
 
+      final InterledgerResponsePacket response = this.link.sendPacket(preparePacket);
+      new InterledgerResponsePacketHandler() {
+
+        @Override
+        protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
+          logger.debug(
+            "Route update succeeded. ttargetPeerAccountId=`{}` fulfillPacket={}", peerAccountId,
+            interledgerFulfillPacket
+          );
+        }
+
+        @Override
+        protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
+          logger.error(
+            "Route update failed! targetPeerAccountId=`{}` rejectPacket={}", peerAccountId, interledgerRejectPacket
+          );
+        }
+      }.handle(response);
     } catch (RuntimeException e) {
-      logger.error("Failed to broadcast route information to peer. peer=`{}`", peerAccountId, e);
+      logger.error("Failed to broadcast route information to peer. targetPeerAccountId=`{}`", peerAccountId, e);
       throw e;
     }
   }

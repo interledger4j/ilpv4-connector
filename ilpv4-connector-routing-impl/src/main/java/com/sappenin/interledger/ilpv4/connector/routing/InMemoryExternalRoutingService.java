@@ -225,10 +225,18 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   @VisibleForTesting
   protected void updatePrefix(final InterledgerAddressPrefix addressPrefix) {
     Objects.requireNonNull(addressPrefix);
+
     final Optional<Route> newBestRoute = this.getCurrentBestPeerRouteForPrefix(addressPrefix);
 
     // If the local routing table changes, then update the forwarding routing table.
     if (this.updateLocalRoute(addressPrefix, newBestRoute)) {
+
+      logger.info(
+        "New BestRoute for Prefix `{}` is AccountId(`{}`)",
+        addressPrefix.getValue(),
+        newBestRoute.map(Route::getNextHopAccountId).map(AccountId::value).orElse("n/a")
+      );
+
       this.updateForwardingRoute(addressPrefix, newBestRoute);
     }
   }
@@ -495,8 +503,11 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
       nextHopForDefaultRoute = Optional.empty();
     }
 
+    // Emit the default route.
+    nextHopForDefaultRoute.ifPresent(defaultRoute -> logger.info("Default Route Configured: " + defaultRoute));
+
     final InterledgerAddressPrefix globalPrefix = connectorSettingsSupplier.get().getGlobalPrefix();
-    return nextHopForDefaultRoute.map(nextHopAccountId ->
+    final Optional<Route> defaultRoute = nextHopForDefaultRoute.map(nextHopAccountId ->
       ImmutableRoute.builder()
         .routePrefix(globalPrefix)
         .nextHopAccountId(nextHopAccountId)
@@ -506,6 +517,9 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
         .build()
     );
 
+    // Emit the default route.
+    defaultRoute.ifPresent($ -> logger.info("Default Route Configured: " + $));
+    return defaultRoute;
   }
 
 }
