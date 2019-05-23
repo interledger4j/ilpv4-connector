@@ -62,6 +62,9 @@ import static org.hamcrest.core.Is.is;
  */
 public class CcpSenderReceiverTest {
 
+  protected static final String ENCRYPTED_SHH
+    = "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=";
+
   private static final AccountId CONNECTOR_A_ACCOUNT = AccountId.of("a");
   private static final AccountId CONNECTOR_B_ACCOUNT = AccountId.of("b");
   private static final AccountId CONNECTOR_C_ACCOUNT = AccountId.of("c");
@@ -112,11 +115,11 @@ public class CcpSenderReceiverTest {
 
     this.codecContext = CcpCodecContextFactory.register(InterledgerCodecContextFactory.oer());
     this.connectorA_ConnectorSettings = ImmutableConnectorSettings.builder()
-      .globalRoutingSettings(GlobalRoutingSettings.builder().routingSecret("shh").build())
+      .globalRoutingSettings(GlobalRoutingSettings.builder().routingSecret(ENCRYPTED_SHH).build())
       .operatorAddress(CONNECTOR_A_ADDRESS)
       .build();
     this.connectorB_ConnectorSettings = ImmutableConnectorSettings.builder()
-      .globalRoutingSettings(GlobalRoutingSettings.builder().routingSecret("shh").build())
+      .globalRoutingSettings(GlobalRoutingSettings.builder().routingSecret(ENCRYPTED_SHH).build())
       .operatorAddress(CONNECTOR_B_ADDRESS)
       .build();
 

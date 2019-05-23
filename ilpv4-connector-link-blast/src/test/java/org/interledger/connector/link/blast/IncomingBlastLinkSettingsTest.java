@@ -14,6 +14,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class IncomingBlastLinkSettingsTest extends AbstractBlastLinkTest {
 
+  // This value doesn't _strictly_ need to be encrypted for purposes of this test. It could easily be plain-text, but
+  // for completeness we use the encrypted test-variant.
+  private static final String SHH
+    = "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=";
+
   /**
    * Tests the builder when customAttributes is a flat collection of key/value pairs using dotted-notation.
    */
@@ -51,7 +56,7 @@ public class IncomingBlastLinkSettingsTest extends AbstractBlastLinkTest {
         .authType(BlastLinkSettings.AuthType.SIMPLE)
         .tokenIssuer(HttpUrl.parse("https://incoming-issuer.example.com"))
         .tokenAudience(HttpUrl.parse("https://incoming-audience.example.com/"))
-        .encryptedTokenSharedSecret("shh")
+        .encryptedTokenSharedSecret(SHH)
         .minMessageWindow(Duration.ofMillis(30))
         .build();
 
@@ -59,7 +64,7 @@ public class IncomingBlastLinkSettingsTest extends AbstractBlastLinkTest {
     assertThat(incomingLinksettings.authType(), is(BlastLinkSettings.AuthType.SIMPLE));
     assertThat(incomingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://incoming-issuer.example.com/")));
     assertThat(incomingLinksettings.tokenAudience().get(), is(HttpUrl.parse("https://incoming-audience.example.com/")));
-    assertThat(incomingLinksettings.encryptedTokenSharedSecret(), is("shh"));
+    assertThat(incomingLinksettings.encryptedTokenSharedSecret(), is(SHH));
     assertThat(incomingLinksettings.getMinMessageWindow(), is(Duration.ofMillis(30)));
   }
 }

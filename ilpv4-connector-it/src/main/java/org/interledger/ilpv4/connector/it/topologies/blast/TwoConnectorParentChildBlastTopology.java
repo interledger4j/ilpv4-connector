@@ -125,7 +125,7 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
       .globalRoutingSettings(GlobalRoutingSettings.builder()
         //A simulated routing secret, which is a seed used for generating routing table auth values. Represents the
         // plaintext value of `shh`, encrypted.
-        .routingSecret("enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=")
+        .routingSecret(ENCRYPTED_SHH)
         .build()
       )
 
@@ -193,7 +193,7 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
       .globalRoutingSettings(GlobalRoutingSettings.builder()
         //A simulated routing secret, which is a seed used for generating routing table auth values. Represents the
         // plaintext value of `shh`, encrypted.
-        .routingSecret("enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=")
+        .routingSecret(ENCRYPTED_SHH)
         .build()
       )
       .build();

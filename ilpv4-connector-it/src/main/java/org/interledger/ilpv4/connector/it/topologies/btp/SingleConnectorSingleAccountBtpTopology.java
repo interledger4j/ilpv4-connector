@@ -109,7 +109,7 @@ public class SingleConnectorSingleAccountBtpTopology {
   //    final BtpClientPluginSettings pluginSettings = BtpClientPluginSettings.builder()
   //      .operatorAddress(ALICE)
   //      .authUsername("alice")
-  //      .secret("shh")
+  //      .secret(ENCRYPTED_SHH)
   //      .remotePeerScheme("ws")
   //      .remotePeerHostname("localhost")
   //      .remotePeerPort(conniePort)
