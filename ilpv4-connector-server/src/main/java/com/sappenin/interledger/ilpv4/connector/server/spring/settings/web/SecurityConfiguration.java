@@ -7,6 +7,8 @@ import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.Health
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.IlpHttpController;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.admin.AccountsController;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import org.interledger.crypto.Decryptor;
+import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +57,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Autowired
   LinkSettingsFactory linkSettingsFactory;
 
+  @Autowired
+  Decryptor decryptor;
+
   /**
    * Will be removed once a formal authentication mechanism is added for admin API calls.
    */
@@ -91,11 +96,20 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Deprecated
   @Autowired
   public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+
+    // If the AdminPassword is stored in encrypted-format, we attempt to decrypt it first.
+    final byte[] pwBytes;
+    if (adminPassword != null && adminPassword.startsWith(EncryptedSecret.ENCODING_PREFIX)) {
+      pwBytes = decryptor.decrypt(EncryptedSecret.fromEncodedValue(adminPassword));
+    } else {
+      pwBytes = adminPassword.getBytes();
+    }
+
     auth.inMemoryAuthentication()
-      .withUser("admin").password(passwordEncoder().encode(adminPassword))
+      .withUser("admin").password(passwordEncoder().encode(new String(pwBytes)))
       .authorities("connector:admin", "user")
       .and()
-      .withUser("user").password(passwordEncoder().encode(adminPassword)).authorities("user");
+      .withUser("user").password(passwordEncoder().encode(new String(pwBytes))).authorities("user");
   }
 
   /**

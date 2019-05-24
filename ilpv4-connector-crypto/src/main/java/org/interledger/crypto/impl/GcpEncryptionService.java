@@ -12,6 +12,7 @@ import org.interledger.crypto.EncryptionService;
 import org.interledger.crypto.Encryptor;
 import org.interledger.crypto.KeyMetadata;
 
+import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -42,6 +43,11 @@ public class GcpEncryptionService implements EncryptionService {
     }
   }
 
+  @PreDestroy
+  public void shutdown() {
+    this.client.shutdown();
+  }
+
   @Override
   public EncryptedSecret encrypt(
     final KeyMetadata keyMetadata,
@@ -64,6 +70,7 @@ public class GcpEncryptionService implements EncryptionService {
     // Extract the ciphertext from the response.
     return EncryptedSecret.builder()
       .keyMetadata(keyMetadata)
+      .encryptionAlgorithm(encryptionAlgorithm)
       .cipherMessage(response.getCiphertext().toByteArray())
       .build();
   }

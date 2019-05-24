@@ -185,6 +185,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
   public InterledgerResponsePacket sendRouteControl() {
     Preconditions.checkNotNull(link, "Link must be assigned before using a CcpReceiver!");
 
+
     final CcpRouteControlRequest request = ImmutableCcpRouteControlRequest.builder()
       .mode(CcpSyncMode.MODE_SYNC)
       .lastKnownRoutingTableId(this.routingTableId)
@@ -202,6 +203,14 @@ public class DefaultCcpReceiver implements CcpReceiver {
 
     // Link handles retry, if any...
     try {
+      logger.info(
+        "Sending Ccp RouteControl Request to Peer AccountId(`{}`)." +
+          " CcpRouteControlRequest={} InterledgerPreparePacket={}",
+        this.peerAccountId,
+        request,
+        preparePacket
+      );
+
       InterledgerResponsePacket responsePacket = this.link.sendPacket(preparePacket);
       return new InterledgerResponsePacketMapper<InterledgerResponsePacket>() {
         @Override

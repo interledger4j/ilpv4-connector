@@ -93,13 +93,14 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
           if (receiveRoutes) {
             existingPeer.getCcpReceiver().sendRouteControl();
           }
+          logger.warn("CCP Peer already registered with RouteBroadcaster using AccountId=`{}`", accountId);
           return existingPeer;
         })
         .orElseGet(() -> {
           // The Account in question did not have an existing link in this routing service, so create a new link and
           // initialize it.
           final Link<?> link = linkManager.getOrCreateLink(accountId);
-          logger.debug(
+          logger.info(
             "Adding Link to ccpEnabledAccounts. accountId={} sendRoutes={} isReceiveRoutes={}",
             accountId, sendRoutes, receiveRoutes
           );
