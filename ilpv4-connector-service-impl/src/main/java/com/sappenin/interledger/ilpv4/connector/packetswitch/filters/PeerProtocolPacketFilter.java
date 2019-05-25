@@ -40,6 +40,10 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
   public static final InterledgerAddress PEER_DOT_ROUTE = InterledgerAddress.of("peer.route");
 
+  private static final boolean PREEMPTIVELY_REJECT = true;
+  private static final boolean SENDING_NOT_ENABLED = false;
+  private static final boolean RECEIVING_NOT_ENABLED = false;
+
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final RouteBroadcaster routeBroadcaster;
   private final AccountSettingsRepository accountSettingsRepository;
@@ -178,6 +182,19 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
       }
 
       if (sourcePreparePacket.getDestination().equals(CCP_CONTROL_DESTINATION_ADDRESS)) {
+
+        // If the account is not eligible for sending route updates, or the account doesn't exist, then
+        // preemptively reject this request.
+        final boolean preemptivelyReject = accountSettingsRepository.findByAccountId(sourceAccountId)
+          .map(accountSetting -> accountSetting.isSendRoutes() == SENDING_NOT_ENABLED).orElse(PREEMPTIVELY_REJECT);
+        if (preemptivelyReject) {
+          return reject(
+            sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
+            String.format("CCP sending is not enabled for this account. destination=`%s`.",
+              sourcePreparePacket.getDestination().getValue())
+          );
+        }
+
         final ByteArrayInputStream inputStream = new ByteArrayInputStream(sourcePreparePacket.getData());
         final CcpRouteControlRequest routeControlRequest =
           ccpCodecContext.read(CcpRouteControlRequest.class, inputStream);
@@ -195,6 +212,20 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
           .build();
 
       } else if (sourcePreparePacket.getDestination().equals(CCP_UPDATE_DESTINATION_ADDRESS)) {
+
+        // If the account is not eligible for receiving route updates, or the account doesn't exist, then
+        // preemptively reject this request.
+        final boolean preemptiveReject = accountSettingsRepository.findByAccountId(sourceAccountId)
+          .map(accountSetting -> accountSetting.isReceiveRoutes() == RECEIVING_NOT_ENABLED).orElse(PREEMPTIVELY_REJECT);
+        if (preemptiveReject) {
+          return reject(
+            sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
+            String.format("CCP receiving is not enabled for this account. destination=`%s`.",
+              sourcePreparePacket.getDestination().getValue())
+          );
+        }
+
+
         final ByteArrayInputStream inputStream = new ByteArrayInputStream(sourcePreparePacket.getData());
         final CcpRouteUpdateRequest routeUpdateRequest = ccpCodecContext.read(CcpRouteUpdateRequest.class, inputStream);
 
