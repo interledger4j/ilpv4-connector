@@ -27,7 +27,7 @@ public class BlastJwtEmitter {
 
   private static final Algorithm ALGORITHM_HS256 =
     Algorithm.HMAC256(BaseEncoding.base64().decode(SHARED_SECRET_B64));
-  private static final String ALICE = "emmett-xrp";
+  private static final String SUBJECT = "alice-xrp";
 
   public static void main(String[] args) {
     emitHs256Jwt();
@@ -42,7 +42,7 @@ public class BlastJwtEmitter {
    */
   private static void emitHs256Jwt() {
     final String jwtString = JWT.create()
-      .withSubject(ALICE)
+      .withSubject(SUBJECT)
       .sign(ALGORITHM_HS256);
 
     LOGGER.info("JWT: {}", jwtString);
@@ -54,7 +54,7 @@ public class BlastJwtEmitter {
       ));
 
     // Valid token...
-    final Verification verification = JWT.require(ALGORITHM_HS256).withSubject(ALICE);
+    final Verification verification = JWT.require(ALGORITHM_HS256).withSubject(SUBJECT);
 
     // Valid token...
     verification.build().verify(jwtString);
@@ -74,7 +74,7 @@ public class BlastJwtEmitter {
   private static void emitHs256JwtWithExpiry() {
 
     final String jwtString = JWT.create()
-      .withSubject(ALICE)
+      .withSubject(SUBJECT)
       .withExpiresAt(Date.from(Instant.now().plus(730, ChronoUnit.DAYS)))
       .sign(ALGORITHM_HS256);
 
@@ -87,7 +87,7 @@ public class BlastJwtEmitter {
       ));
 
     // Valid token...
-    final Verification verification = JWT.require(ALGORITHM_HS256).withSubject(ALICE);
+    final Verification verification = JWT.require(ALGORITHM_HS256).withSubject(SUBJECT);
 
     // Valid token...
     verification.build().verify(jwtString);
