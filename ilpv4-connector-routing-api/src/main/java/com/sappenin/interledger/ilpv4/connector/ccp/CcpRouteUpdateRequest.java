@@ -14,6 +14,10 @@ import java.util.UUID;
 @Value.Immutable
 public interface CcpRouteUpdateRequest {
 
+  static ImmutableCcpRouteUpdateRequest.Builder builder() {
+    return ImmutableCcpRouteUpdateRequest.builder();
+  }
+
   /**
    * The routing table ID that the requesting node knows about when this request is issued.
    *
