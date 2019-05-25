@@ -63,6 +63,11 @@ import static org.mockito.Mockito.when;
 @RunWith(Parameterized.class)
 public class PeerProtocolPacketFilterTest {
 
+  private static final boolean SEND_ROUTES_ENABLED = true;
+  private static final boolean SEND_ROUTES_DISABLED = false;
+  private static final boolean RECEIVE_ROUTES_ENABLED = true;
+  private static final boolean RECEIVE_ROUTES_DISABLED = false;
+
   private static final AccountId ACCOUNT_ID = AccountId.of("test-account");
   private static final InterledgerAddress OPERATOR_ADDRESS = InterledgerAddress.of("example.foo");
 
@@ -99,13 +104,13 @@ public class PeerProtocolPacketFilterTest {
   public static Collection<Object[]> errorCodes() {
     return ImmutableList.of(
       // Both disabled
-      new Object[]{false, false},
+      new Object[]{SEND_ROUTES_DISABLED, RECEIVE_ROUTES_DISABLED},
       // send enabled
-      new Object[]{true, false},
+      new Object[]{SEND_ROUTES_ENABLED, RECEIVE_ROUTES_DISABLED},
       // receive enabled
-      new Object[]{false, true},
+      new Object[]{SEND_ROUTES_DISABLED, RECEIVE_ROUTES_ENABLED},
       // Both enabled
-      new Object[]{true, true}
+      new Object[]{SEND_ROUTES_ENABLED, RECEIVE_ROUTES_ENABLED}
     );
   }
 
