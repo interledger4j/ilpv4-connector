@@ -319,7 +319,7 @@ public class PeerProtocolPacketFilterTest {
             .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
           assertThat(errorCodeArgumentCaptor.getValue(), is(InterledgerErrorCode.F00_BAD_REQUEST));
           assertThat(errorMessageCaptor.getValue(),
-            is("CCP not enabled for this account. destination=`peer.route.control`."));
+            is("CCP sending is not enabled for this account. destination=`peer.route.control`."));
 
           assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
           assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(OPERATOR_ADDRESS));
@@ -383,7 +383,7 @@ public class PeerProtocolPacketFilterTest {
             .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
           assertThat(errorCodeArgumentCaptor.getValue(), is(InterledgerErrorCode.F00_BAD_REQUEST));
           assertThat(errorMessageCaptor.getValue(),
-            is("CCP not enabled for this account. destination=`peer.route.update`."));
+            is("CCP receiving is not enabled for this account. destination=`peer.route.update`."));
 
           assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
           assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(OPERATOR_ADDRESS));

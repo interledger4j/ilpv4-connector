@@ -190,7 +190,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
         if (preemptivelyReject) {
           return reject(
             sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
-            String.format("CCP not enabled for this account. destination=`%s`.",
+            String.format("CCP sending is not enabled for this account. destination=`%s`.",
               sourcePreparePacket.getDestination().getValue())
           );
         }
@@ -220,7 +220,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
         if (preemptiveReject) {
           return reject(
             sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
-            String.format("CCP not enabled for this account. destination=`%s`.",
+            String.format("CCP receiving is not enabled for this account. destination=`%s`.",
               sourcePreparePacket.getDestination().getValue())
           );
         }
