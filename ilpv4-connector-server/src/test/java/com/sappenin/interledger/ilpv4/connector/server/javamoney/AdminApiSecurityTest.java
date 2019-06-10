@@ -60,7 +60,6 @@ public class AdminApiSecurityTest {
   @Test
   public void testGetAccountsWithInsufficientCredentials() {
     final HttpHeaders headers = new HttpHeaders();
-    // Authorization: Basic admin:password
     headers.setBasicAuth(USER, PASSWORD);
     final HttpEntity httpEntity = new HttpEntity(headers);
 
@@ -75,7 +74,6 @@ public class AdminApiSecurityTest {
   @Test
   public void testGetAccountsWithAdminCredentials() {
     final HttpHeaders headers = new HttpHeaders();
-    // Authorization: Basic user:password
     headers.setBasicAuth(ADMIN, PASSWORD);
     final HttpEntity httpEntity = new HttpEntity(headers);
 

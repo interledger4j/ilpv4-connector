@@ -7,11 +7,12 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.zalando.problem.StatusType;
 import org.zalando.problem.ThrowableProblem;
 import org.zalando.problem.spring.web.advice.ProblemHandling;
+import org.zalando.problem.spring.web.advice.security.SecurityAdviceTrait;
 
 import java.net.URI;
 
 @ControllerAdvice
-class ProblemExceptionHandling implements ProblemHandling {
+class ProblemExceptionHandling implements ProblemHandling, SecurityAdviceTrait {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
