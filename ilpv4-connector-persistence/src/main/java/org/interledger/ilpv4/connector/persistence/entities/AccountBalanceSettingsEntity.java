@@ -5,10 +5,12 @@ import org.interledger.connector.accounts.AccountBalanceSettings;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
+import javax.persistence.Embeddable;
 import java.math.BigInteger;
 import java.util.Optional;
 
 @Access(AccessType.FIELD)
+@Embeddable
 public class AccountBalanceSettingsEntity implements AccountBalanceSettings {
 
   @Column(name = "MIN_BALANCE")

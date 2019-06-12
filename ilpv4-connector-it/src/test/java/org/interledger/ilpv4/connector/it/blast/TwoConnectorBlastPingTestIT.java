@@ -15,6 +15,7 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
+import org.interledger.ilpv4.connector.balances.InMemoryBalanceTracker;
 import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.AfterClass;
@@ -54,7 +55,7 @@ import static org.junit.Assert.assertThat;
  * Bob sometimes play the role of sender and sometimes play the role of receiver.
  */
 // TODO: Once the PING protocol is specified via RFC, extract the PING tests into an abstract super-class. Every IT
-//  should excercise PING functionality as a baseline, and thus far both BTP and BLAST duplicate the same PING tests.
+//  should exercise PING functionality as a baseline, but both BTP and BLAST duplicate the same PING tests.
 public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorBlastPingTestIT.class);
@@ -89,8 +90,8 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     bobConnector = this.getILPv4NodeFromGraph(BOB_ADDRESS);
 
     // Reset all accounts on each connector...
-    bobConnector.getBalanceTracker().resetBalance(AccountId.of(ALICE));
-    aliceConnector.getBalanceTracker().resetBalance(AccountId.of(BOB));
+    ((InMemoryBalanceTracker)bobConnector.getBalanceTracker()).resetBalance(AccountId.of(ALICE));
+    ((InMemoryBalanceTracker)aliceConnector.getBalanceTracker()).resetBalance(AccountId.of(BOB));
   }
 
   @Test

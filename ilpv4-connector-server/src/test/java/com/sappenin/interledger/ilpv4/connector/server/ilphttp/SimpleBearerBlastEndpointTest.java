@@ -38,14 +38,10 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.bl
 //  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
 //  classes = {ConnectorServerConfig.class}
 //)
-//@ActiveProfiles({"test"}) // Maps to `application-test.yml`
+//@ActiveProfiles({"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 //@TestPropertySource(
 //  properties = {
-//    ConnectorProperties.ENABLED_PROTOCOLS + "." + ConnectorProperties.BLAST_ENABLED + "=true",
-//    ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME + "=crypto/crypto.p12",
-//    ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD + "=password",
-//    ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS + "=secret0",
-//    ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD + "=password",
+//    ILPV4__CONNECTOR__INMEMORY_BALANCE_TRACKER__ENABLED + "=" + TRUE
 //  }
 //)
 public class SimpleBearerBlastEndpointTest extends AbstractEndpointTest {

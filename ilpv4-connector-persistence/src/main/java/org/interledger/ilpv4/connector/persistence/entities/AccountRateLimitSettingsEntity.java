@@ -5,9 +5,11 @@ import org.interledger.connector.accounts.AccountRateLimitSettings;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
+import javax.persistence.Embeddable;
 import java.util.Optional;
 
 @Access(AccessType.FIELD)
+@Embeddable
 public class AccountRateLimitSettingsEntity implements AccountRateLimitSettings {
 
   @Column(name = "MAX_PACKETS_PER_SEC")

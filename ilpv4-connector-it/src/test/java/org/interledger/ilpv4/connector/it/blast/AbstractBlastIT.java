@@ -77,8 +77,8 @@ public abstract class AbstractBlastIT {
   }
 
   /**
-   * Helper method to obtain an instance of {@link ILPv4Connector} from the topology, based upon its
-   * Interledger Address.
+   * Helper method to obtain an instance of {@link ILPv4Connector} from the topology, based upon its Interledger
+   * Address.
    *
    * @param interledgerAddress
    *
@@ -125,7 +125,7 @@ public abstract class AbstractBlastIT {
   ) {
     assertThat(
       String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.getNodeIlpAddress().get().getValue()),
-      connector.getBalanceTracker().getBalance(accountId).getAmount().get(), is(expectedAmount.intValue())
+      connector.getBalanceTracker().getBalance(accountId).netBalance(), is(expectedAmount)
     );
   }
 }

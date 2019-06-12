@@ -176,7 +176,7 @@ public class RedisBalanceTrackerFulfillPacketTest {
 
     final AccountBalance loadedBalance = balanceTracker.getBalance(accountId);
     assertThat(loadedBalance.balance(), is(BigInteger.valueOf(1L)));
-    assertThat(loadedBalance.prepaidBalance(), is(ZERO));
+    assertThat(loadedBalance.prepaidAmount(), is(ZERO));
     assertThat(loadedBalance.netBalance(), is(ONE));
   }
 
@@ -192,7 +192,7 @@ public class RedisBalanceTrackerFulfillPacketTest {
 
     final AccountBalance loadedBalance = balanceTracker.getBalance(DESTINATION_ACCOUNT_ID);
     assertThat(loadedBalance.balance(), is(expectedBalanceInRedis));
-    assertThat(loadedBalance.prepaidBalance(), is(expectedPrepaidAmountInRedis));
+    assertThat(loadedBalance.prepaidAmount(), is(expectedPrepaidAmountInRedis));
     assertThat(loadedBalance.netBalance(), is(expectedBalanceInRedis.add(expectedPrepaidAmountInRedis)));
   }
 

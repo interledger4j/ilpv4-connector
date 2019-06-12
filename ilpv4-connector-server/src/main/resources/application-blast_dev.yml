@@ -65,6 +65,8 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
+      create_empty_composites:
+        enabled: true
     open-in-view: false
     properties:
       hibernate:

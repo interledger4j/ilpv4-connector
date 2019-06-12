@@ -1,20 +1,21 @@
 package org.interledger.crypto;
 
+import static org.interledger.ilpv4.connector.core.ConfigConstants.DOT;
+import static org.interledger.ilpv4.connector.core.ConfigConstants.ENABLED;
+import static org.interledger.ilpv4.connector.core.ConfigConstants.ILPV4__CONNECTOR;
+
+/**
+ * Constants related to configuration of Encryption/Decryption services operated by this Connector.
+ */
 public class CryptoConfigConstants {
 
-  public static final String DOT = ".";
-  public static final String ENABLED = "enabled";
-  public static final String TRUE = "true";
-  public static final String FALSE = "false";
-
-  public static final String ILPV4_CONNECTOR_KEYSTORE = "ilpv4.connector.keystore";
+  public static final String ILPV4_CONNECTOR_KEYSTORE = ILPV4__CONNECTOR + DOT + "keystore";
 
   public static final String ILPV4_CONNECTOR_KEYSTORE_GCP = ILPV4_CONNECTOR_KEYSTORE + ".gcpkms";
   public static final String ILPV4_CONNECTOR_KEYSTORE_GCP_ENABLED = ILPV4_CONNECTOR_KEYSTORE_GCP + DOT + ENABLED;
 
-  public static final String GOOGLE_CLOUD_PROJECT= "GOOGLE_CLOUD_PROJECT";
+  public static final String GOOGLE_CLOUD_PROJECT = "GOOGLE_CLOUD_PROJECT";
   public static final String ILPV4_CONNECTOR_KEYSTORE_LOCATION_ID = ILPV4_CONNECTOR_KEYSTORE_GCP + ".locationId";
-
 
   ///////////////
   // JKS

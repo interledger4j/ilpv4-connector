@@ -57,6 +57,8 @@ import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYST
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS_DEFAULT;
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD;
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD_DEFAULT;
+import static org.interledger.ilpv4.connector.core.ConfigConstants.ILPV4__CONNECTOR__INMEMORY_BALANCE_TRACKER__ENABLED;
+import static org.interledger.ilpv4.connector.core.ConfigConstants.TRUE;
 import static org.junit.Assert.fail;
 
 /**
@@ -68,15 +70,10 @@ import static org.junit.Assert.fail;
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   classes = {ConnectorServerConfig.class}
 )
-@ActiveProfiles({"test"})
+@ActiveProfiles({"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 @TestPropertySource(
   properties = {
-    ADMIN_PASSWORD + "=password",
-    ConnectorProperties.ENABLED_PROTOCOLS + "." + ConnectorProperties.BLAST_ENABLED + "=true",
-    ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME + "=" + ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME_DEFAULT,
-    ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD + "=" + ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD_DEFAULT,
-    ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS + "=" + ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS_DEFAULT,
-    ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD + "=" + ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD_DEFAULT
+    ILPV4__CONNECTOR__INMEMORY_BALANCE_TRACKER__ENABLED + "=" + TRUE
   }
 )
 public class JwtBlastEndpointTest extends AbstractEndpointTest {

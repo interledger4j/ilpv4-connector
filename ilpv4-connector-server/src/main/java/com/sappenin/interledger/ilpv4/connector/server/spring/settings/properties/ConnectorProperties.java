@@ -15,7 +15,6 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.settings.properti
  */
 public class ConnectorProperties {
 
-  public static final String ILPV4_ = "ilpv4.connector.admin_password";
   /**
    * TODO: BTP Enable/disable should be determined on whether there's an account configured that uses BTP. the only
    * thing needed here is whether to turn on or off the WebSocket server, so perhaps that's another gate. We should

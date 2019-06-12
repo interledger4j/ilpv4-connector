@@ -6,6 +6,7 @@ import com.sappenin.interledger.ilpv4.connector.server.spring.settings.propertie
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkSettings;
+import org.interledger.ilpv4.connector.balances.InMemoryBalanceTracker;
 import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.AfterClass;
@@ -69,8 +70,8 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
     bobConnector = this.getILPv4NodeFromGraph(BOB_AT_ALICE_ADDRESS);
 
     // Reset all accounts on each connector...
-    bobConnector.getBalanceTracker().resetBalance(AccountId.of(ALICE));
-    aliceConnector.getBalanceTracker().resetBalance(AccountId.of(BOB));
+    ((InMemoryBalanceTracker)bobConnector.getBalanceTracker()).resetBalance(AccountId.of(ALICE));
+    ((InMemoryBalanceTracker)aliceConnector.getBalanceTracker()).resetBalance(AccountId.of(BOB));
   }
 
   @Test

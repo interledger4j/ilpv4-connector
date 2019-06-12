@@ -4,11 +4,15 @@ import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -18,9 +22,14 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.nio.charset.Charset;
 
+import static org.interledger.ilpv4.connector.core.ConfigConstants.FALSE;
+import static org.interledger.ilpv4.connector.core.ConfigConstants.ILPV4__CONNECTOR__INMEMORY_BALANCE_TRACKER__ENABLED;
+import static org.interledger.ilpv4.connector.core.ConfigConstants.TRUE;
+
 @Configuration
-//@ConditionalOnProperty(name = "spring.data.redis.repositories.enabled", havingValue = "true")
 public class RedisBalanceTrackerConfig {
+
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   @Value("${redis.host:localhost}")
   String redisHost;
@@ -35,19 +44,38 @@ public class RedisBalanceTrackerConfig {
   Decryptor decryptor;
 
   @Bean
+  @ConditionalOnProperty(
+    value = ILPV4__CONNECTOR__INMEMORY_BALANCE_TRACKER__ENABLED, havingValue = FALSE, matchIfMissing = true
+  )
   BalanceTracker redisBalanceTracker() {
     final BalanceTracker balanceTracker = new RedisBalanceTracker(updateBalanceForPrepareScript(),
       updateBalanceForFulfillScript(),
       updateBalanceForRejectScript(), redisTemplate());
 
     try {
-      // Try to connect to Redis...
+      // Try to connect to Redis, but default to InMemoryBalanceTracker if there's no Redis...
       balanceTracker.getBalance(AccountId.of(""));
-    } catch (Exception e) {
-      throw new RuntimeException("Unable to connect to Redis. Redis is required to operate the Connector!", e);
+    } catch (RedisConnectionFailureException e) {
+      logger.warn("WARNING: Unable to connect to Redis! Using InMemoryBalanceTracker instead, but this configuration " +
+        "should not be used in production. Use RedisBalanceTracker instead!");
+      // If debug-output is enabled, then emit the stack-trace.
+      if (logger.isDebugEnabled()) {
+        logger.debug(e.getMessage(), e);
+      }
+
+      return new InMemoryBalanceTracker();
     }
 
     return balanceTracker;
+  }
+
+  /**
+   * Used for non-integration tests.
+   */
+  @Bean
+  @ConditionalOnProperty(value = ILPV4__CONNECTOR__INMEMORY_BALANCE_TRACKER__ENABLED, havingValue = TRUE)
+  BalanceTracker inMemoryBalanceTracker() {
+    return new InMemoryBalanceTracker();
   }
 
   @Bean

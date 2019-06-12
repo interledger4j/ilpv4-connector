@@ -29,7 +29,7 @@ public interface AccountBalance {
    */
   @Value.Derived
   default BigInteger netBalance() {
-    return balance().add(prepaidBalance());
+    return balance().add(prepaidAmount());
   }
 
   /**
@@ -48,5 +48,5 @@ public interface AccountBalance {
    * @return An {@link BigInteger} representing the number of units the counterparty (i.e., owner of this account) has
    * prepaid with this Connector.
    */
-  BigInteger prepaidBalance();
+  BigInteger prepaidAmount();
 }

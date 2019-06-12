@@ -54,7 +54,7 @@ public class RedisBalanceTracker implements BalanceTracker {
     return AccountBalance.builder()
       .accountId(accountId)
       .balance(toBigInteger(result.get(BALANCE)))
-      .prepaidBalance(toBigInteger(result.get(PREPAID_AMOUNT)))
+      .prepaidAmount(toBigInteger(result.get(PREPAID_AMOUNT)))
       .build();
   }
 
