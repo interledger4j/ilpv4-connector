@@ -8,7 +8,7 @@ import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import com.sappenin.interledger.ilpv4.connector.routing.RoutableAccount;
 import com.sappenin.interledger.ilpv4.connector.routing.RouteBroadcaster;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
-import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
@@ -19,7 +19,6 @@ import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
 import org.interledger.ildcp.IldcpResponsePacket;
-import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -46,7 +45,6 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final RouteBroadcaster routeBroadcaster;
-  private final AccountSettingsRepository accountSettingsRepository;
   private final CodecContext ccpCodecContext;
   private final CodecContext ildcpCodecContext;
 
@@ -54,21 +52,19 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final PacketRejector packetRejector,
     final RouteBroadcaster routeBroadcaster,
-    final AccountSettingsRepository accountSettingsRepository,
     final CodecContext ccpCodecContext,
     final CodecContext ildcpCodecContext
   ) {
     super(packetRejector);
     this.connectorSettingsSupplier = connectorSettingsSupplier;
     this.routeBroadcaster = Objects.requireNonNull(routeBroadcaster);
-    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.ccpCodecContext = Objects.requireNonNull(ccpCodecContext);
     this.ildcpCodecContext = Objects.requireNonNull(ildcpCodecContext);
   }
 
   @Override
   public InterledgerResponsePacket doFilter(
-    final AccountId sourceAccountId,
+    final AccountSettings sourceAccountSettings,
     final InterledgerPreparePacket sourcePreparePacket,
     final PacketSwitchFilterChain filterChain
   ) {
@@ -79,9 +75,9 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
       // `peer.config`
       if (sourcePreparePacket.getDestination().equals(IldcpRequestPacket.PEER_DOT_CONFIG)) {
         if (connectorSettingsSupplier.get().getEnabledProtocols().isPeerConfigEnabled()) {
-          return this.handleIldcpRequest(sourceAccountId, sourcePreparePacket);
+          return this.handleIldcpRequest(sourceAccountSettings, sourcePreparePacket);
         } else {
-          return reject(sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
+          return reject(sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
             "IL-DCP is not supported by this Connector.");
         }
       }
@@ -90,10 +86,10 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
       else if (sourcePreparePacket.getDestination().startsWith(PEER_DOT_ROUTE)) {
         if (connectorSettingsSupplier.get().getEnabledProtocols().isPeerRoutingEnabled()) {
           //CCP via `peer.routing`
-          return handlePeerRouting(sourceAccountId, sourcePreparePacket);
+          return handlePeerRouting(sourceAccountSettings, sourcePreparePacket);
         } else {
           // Reject.
-          return reject(sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
+          return reject(sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
             "CCP routing protocol is not supported by this node.");
         }
       }
@@ -102,14 +98,15 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
       else {
         // Reject.
         return reject(
-          sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F01_INVALID_PACKET, "unknown peer protocol."
+          sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F01_INVALID_PACKET,
+          "unknown peer protocol."
         );
       }
     }
 
     // Not a `peer.` request...
     else {
-      return filterChain.doFilter(sourceAccountId, sourcePreparePacket);
+      return filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
     }
   }
 
@@ -124,39 +121,34 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
    */
   @VisibleForTesting
   protected InterledgerResponsePacket handleIldcpRequest(
-    final AccountId sourceAccountId, final InterledgerPreparePacket ildcpRequestPacket
+    final AccountSettings sourceAccountSettings, final InterledgerPreparePacket ildcpRequestPacket
   ) throws InterledgerProtocolException {
 
-    Objects.requireNonNull(sourceAccountId);
+    Objects.requireNonNull(sourceAccountSettings);
     Objects.requireNonNull(ildcpRequestPacket);
 
-    return this.accountSettingsRepository.findByAccountId(sourceAccountId)
-      .map(accountSettingsEntity -> {
-        final InterledgerAddress childAddress = connectorSettingsSupplier.get().toChildAddress(sourceAccountId);
+    final InterledgerAddress childAddress =
+      connectorSettingsSupplier.get().toChildAddress(sourceAccountSettings.getAccountId());
 
-        // Convert IldcpResponse to bytes...
-        final IldcpResponse ildcpResponse = IldcpResponse.builder()
-          // TODO: Remove the short-cast once assetscale is converted to byte.
-          .assetScale((short) accountSettingsEntity.getAssetScale())
-          .assetCode(accountSettingsEntity.getAssetCode())
-          .clientAddress(childAddress)
-          .build();
+    // Convert IldcpResponse to bytes...
+    final IldcpResponse ildcpResponse = IldcpResponse.builder()
+      // TODO: Remove the short-cast once assetscale is converted to byte.
+      .assetScale((short) sourceAccountSettings.getAssetScale())
+      .assetCode(sourceAccountSettings.getAssetCode())
+      .clientAddress(childAddress)
+      .build();
 
-        final ByteArrayOutputStream os = new ByteArrayOutputStream();
-        try {
-          ildcpCodecContext.write(ildcpResponse, os);
-        } catch (IOException e) {
-          throw new RuntimeException(e.getMessage(), e);
-        }
+    final ByteArrayOutputStream os = new ByteArrayOutputStream();
+    try {
+      ildcpCodecContext.write(ildcpResponse, os);
+    } catch (IOException e) {
+      throw new RuntimeException(e.getMessage(), e);
+    }
 
-        return (InterledgerResponsePacket) InterledgerFulfillPacket.builder()
-          .fulfillment(IldcpResponsePacket.EXECUTION_FULFILLMENT)
-          .data(os.toByteArray())
-          .build();
-      })
-      .orElseGet(() -> reject(sourceAccountId, ildcpRequestPacket, InterledgerErrorCode.F00_BAD_REQUEST,
-        String.format("Invalid Source Account: `%s`", sourceAccountId.value()))
-      );
+    return InterledgerFulfillPacket.builder()
+      .fulfillment(IldcpResponsePacket.EXECUTION_FULFILLMENT)
+      .data(os.toByteArray())
+      .build();
   }
 
   /**
@@ -164,19 +156,19 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
    */
   @VisibleForTesting
   protected InterledgerResponsePacket handlePeerRouting(
-    final AccountId sourceAccountId, InterledgerPreparePacket sourcePreparePacket
+    final AccountSettings sourceAccountSettings, InterledgerPreparePacket sourcePreparePacket
   ) {
     try {
       if (!sourcePreparePacket.getDestination().startsWith(PEER_DOT_ROUTE)) {
         return this.reject(
-          sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F02_UNREACHABLE,
+          sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F02_UNREACHABLE,
           String.format("Unsupported Peer address: `%s`", PEER_DOT_ROUTE.getValue())
         );
       }
 
       if (!PEER_PROTOCOL_EXECUTION_CONDITION.equals(sourcePreparePacket.getExecutionCondition())) {
         return reject(
-          sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F01_INVALID_PACKET,
+          sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F01_INVALID_PACKET,
           "Packet does not contain correct condition for a peer protocol request."
         );
       }
@@ -185,11 +177,10 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
         // If the account is not eligible for sending route updates, or the account doesn't exist, then
         // preemptively reject this request.
-        final boolean preemptivelyReject = accountSettingsRepository.findByAccountId(sourceAccountId)
-          .map(accountSetting -> accountSetting.isSendRoutes() == SENDING_NOT_ENABLED).orElse(PREEMPTIVELY_REJECT);
+        final boolean preemptivelyReject = sourceAccountSettings.isSendRoutes() == SENDING_NOT_ENABLED;
         if (preemptivelyReject) {
           return reject(
-            sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
+            sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
             String.format("CCP sending is not enabled for this account. destination=`%s`.",
               sourcePreparePacket.getDestination().getValue())
           );
@@ -200,9 +191,10 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
           ccpCodecContext.read(CcpRouteControlRequest.class, inputStream);
 
         final RoutableAccount routableAccount =
-          this.routeBroadcaster.getCcpEnabledAccount(sourceAccountId).orElseThrow(
-            () -> new RuntimeException(String.format("No tracked RoutableAccount found: `%s`", sourceAccountId.value()))
-          );
+          this.routeBroadcaster.getCcpEnabledAccount(sourceAccountSettings.getAccountId())
+            .orElseThrow(() -> new RuntimeException(
+              String.format("No tracked RoutableAccount found: `%s`", sourceAccountSettings.getAccountId()))
+            );
 
         routableAccount.getCcpSender().handleRouteControlRequest(routeControlRequest);
 
@@ -215,11 +207,10 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
         // If the account is not eligible for receiving route updates, or the account doesn't exist, then
         // preemptively reject this request.
-        final boolean preemptiveReject = accountSettingsRepository.findByAccountId(sourceAccountId)
-          .map(accountSetting -> accountSetting.isReceiveRoutes() == RECEIVING_NOT_ENABLED).orElse(PREEMPTIVELY_REJECT);
+        final boolean preemptiveReject = sourceAccountSettings.isReceiveRoutes() == RECEIVING_NOT_ENABLED;
         if (preemptiveReject) {
           return reject(
-            sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
+            sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
             String.format("CCP receiving is not enabled for this account. destination=`%s`.",
               sourcePreparePacket.getDestination().getValue())
           );
@@ -230,9 +221,9 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
         final CcpRouteUpdateRequest routeUpdateRequest = ccpCodecContext.read(CcpRouteUpdateRequest.class, inputStream);
 
         final RoutableAccount routableAccount =
-          this.routeBroadcaster.getCcpEnabledAccount(sourceAccountId)
+          this.routeBroadcaster.getCcpEnabledAccount(sourceAccountSettings.getAccountId())
             .orElseThrow(() -> new RuntimeException(
-              String.format("No tracked RoutableAccount found (`%s`).", sourceAccountId))
+              String.format("No tracked RoutableAccount found (`%s`).", sourceAccountSettings.getAccountId()))
             );
 
         routableAccount.getCcpReceiver().handleRouteUpdateRequest(routeUpdateRequest);
@@ -244,7 +235,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
       } else {
         return reject(
-          sourceAccountId, sourcePreparePacket,
+          sourceAccountSettings.getAccountId(), sourcePreparePacket,
           InterledgerErrorCode.F00_BAD_REQUEST,
           String.format("Unrecognized CCP message. destination=`%s`.", sourcePreparePacket.getDestination().getValue())
         );

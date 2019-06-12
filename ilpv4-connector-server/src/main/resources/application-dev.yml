@@ -93,7 +93,7 @@ ilpv4:
     adminPassword: password
     keystore:
       jks:
-        enabled: false
+        enabled: true
         filename: crypto/crypto.p12
         # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
         password: password

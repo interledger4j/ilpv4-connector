@@ -97,14 +97,5 @@ public class LoopbackLink extends AbstractLink<LinkSettings> implements Link<Lin
       .orElseGet(InterledgerFulfillPacket.builder()
         .fulfillment(LOOPBACK_FULFILLMENT)
         .data(preparePacket.getData())::build);
-
-    // if (preparePacket.getAmount().equals(BigInteger.ZERO)) {
-    //    } else {
-    //      return InterledgerRejectPacket.builder()
-    //        .code(InterledgerErrorCode.F00_BAD_REQUEST)
-    //        .message("Loopback Packets MUST have an amount of 0")
-    //        .triggeredBy(getOperatorAddressSupplier().get().get()) // We expect the address to have been populated.
-    //        .build();
-    //    }
   }
 }

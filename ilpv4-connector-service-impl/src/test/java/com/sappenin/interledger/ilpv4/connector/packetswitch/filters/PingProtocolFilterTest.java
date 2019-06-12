@@ -2,6 +2,7 @@ package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
 import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;
@@ -46,6 +47,9 @@ public class PingProtocolFilterTest {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   @Mock
+  AccountSettings accountSettingsMock;
+
+  @Mock
   PacketRejector packetRejectorMock;
 
   @Mock
@@ -58,6 +62,8 @@ public class PingProtocolFilterTest {
     MockitoAnnotations.initMocks(this);
     when(packetRejectorMock.reject(any(), any(), any(), any())).thenReturn(REJECT_PACKET);
     this.pingProtocolFilter = new PingProtocolFilter(packetRejectorMock, () -> TARGET_ADDRESS);
+
+    when(accountSettingsMock.getAccountId()).thenReturn(AccountId.of("alice"));
   }
 
   @Test
@@ -102,7 +108,7 @@ public class PingProtocolFilterTest {
       .expiresAt(Instant.now())
       .build();
     InterledgerResponsePacket response = pingProtocolFilter.doFilter(
-      AccountId.of("alice"), preparePacket, filterChainMock
+      accountSettingsMock, preparePacket, filterChainMock
     );
 
     new InterledgerResponsePacketHandler() {
@@ -132,7 +138,7 @@ public class PingProtocolFilterTest {
       .expiresAt(Instant.now())
       .build();
     pingProtocolFilter.doFilter(
-      AccountId.of("alice"), preparePacket, filterChainMock
+      accountSettingsMock, preparePacket, filterChainMock
     );
 
     // Not a ping packet, so verify processing continues.
@@ -148,7 +154,7 @@ public class PingProtocolFilterTest {
       .expiresAt(Instant.now())
       .build();
     InterledgerResponsePacket response = pingProtocolFilter.doFilter(
-      AccountId.of("alice"), preparePacket, filterChainMock
+      accountSettingsMock, preparePacket, filterChainMock
     );
 
     new InterledgerResponsePacketHandler() {

@@ -83,6 +83,11 @@ h2:
       trace: false
       web-allow-others: false
 
+redis:
+  #host: localhost
+  #port: 6379
+  #password: shh
+
 ilpv4:
   connector:
     # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.

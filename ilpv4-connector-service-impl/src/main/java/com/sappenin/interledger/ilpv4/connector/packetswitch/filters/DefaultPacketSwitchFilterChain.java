@@ -5,7 +5,7 @@ import com.sappenin.interledger.ilpv4.connector.links.NextHopInfo;
 import com.sappenin.interledger.ilpv4.connector.links.NextHopPacketMapper;
 import com.sappenin.interledger.ilpv4.connector.links.filters.DefaultLinkFilterChain;
 import com.sappenin.interledger.ilpv4.connector.links.filters.LinkFilter;
-import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkSettings;
 import org.interledger.core.InterledgerPreparePacket;
@@ -46,30 +46,38 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
     this.linkFilters = Objects.requireNonNull(linkFilters);
     this.linkManager = Objects.requireNonNull(linkManager);
     this.nextHopPacketMapper = nextHopPacketMapper;
+    this._filterIndex = 0;
   }
 
   @Override
   public InterledgerResponsePacket doFilter(
-    final AccountId sourceAccountId, final InterledgerPreparePacket preparePacket
+    final AccountSettings sourceAccountSettings, final InterledgerPreparePacket preparePacket
   ) {
 
-    Objects.requireNonNull(sourceAccountId);
+    Objects.requireNonNull(sourceAccountSettings);
     Objects.requireNonNull(preparePacket);
 
     if (this._filterIndex < this.packetSwitchFilters.size()) {
-      return packetSwitchFilters.get(_filterIndex++).doFilter(sourceAccountId, preparePacket, this);
+      // Apply all PacketSwitch filters...
+      return packetSwitchFilters.get(_filterIndex++).doFilter(sourceAccountSettings, preparePacket, this);
     } else {
-      logger.debug("Sending outbound ILP Prepare: sourceAccountId: `{}` packet={}", sourceAccountId, preparePacket);
+      // ...and then send the new packet to its destination on the correct outbound link.
+      logger.debug(
+        "Sending outbound ILP Prepare: sourceAccountId: `{}` packet={}",
+        sourceAccountSettings.getAccountId(), preparePacket
+      );
 
       // Here, use the link-mapper to get the `next-hop`, create a LinkFilterChain, and then send.
-      final NextHopInfo nextHopInfo = this.nextHopPacketMapper.getNextHopPacket(sourceAccountId, preparePacket);
+      final NextHopInfo nextHopInfo = this.nextHopPacketMapper.getNextHopPacket(
+        sourceAccountSettings.getAccountId(), preparePacket
+      );
 
       final Link<? extends LinkSettings> link =
         this.linkManager.getOrCreateLink(nextHopInfo.nextHopAccountId());
 
       logger.debug(
         "Sending outbound ILP Prepare: sourceAccountId: `{}` link={} packet={}",
-        sourceAccountId, link, preparePacket
+        sourceAccountSettings.getAccountId(), link, preparePacket
       );
 
       // The final operation in the filter-chain is `link.sendPacket(newPreparePacket)`.

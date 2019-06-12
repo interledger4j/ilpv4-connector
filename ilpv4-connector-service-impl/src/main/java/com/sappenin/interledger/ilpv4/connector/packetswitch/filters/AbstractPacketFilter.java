@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
-
 /**
  * An abstract implementation of {@link PacketSwitchFilter} that contains common logic.
  */
@@ -25,11 +24,26 @@ public abstract class AbstractPacketFilter implements PacketSwitchFilter {
     this.packetRejector = Objects.requireNonNull(packetRejector);
   }
 
+  /**
+   * Helper method to construct a Reject packet.
+   */
+  @VisibleForTesting
+  protected InterledgerRejectPacket reject(
+    final AccountId sourceAccountId, final InterledgerPreparePacket preparePacket, final InterledgerErrorCode errorCode
+  ) {
+    return this.reject(sourceAccountId, preparePacket, errorCode, "");
+  }
+
+  /**
+   * Helper method to construct a Reject packet.
+   */
   @VisibleForTesting
   protected InterledgerRejectPacket reject(
     final AccountId sourceAccountId, final InterledgerPreparePacket preparePacket,
     final InterledgerErrorCode errorCode, final String errorMessage
   ) {
+    Objects.requireNonNull(sourceAccountId);
+    Objects.requireNonNull(preparePacket);
     Objects.requireNonNull(errorCode);
     Objects.requireNonNull(errorMessage);
 

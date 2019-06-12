@@ -14,7 +14,6 @@ import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountIdResolve
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountManager;
 import com.sappenin.interledger.ilpv4.connector.accounts.DefaultAccountSettingsResolver;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
-import com.sappenin.interledger.ilpv4.connector.balances.InMemoryBalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.fx.JavaMoneyUtils;
 import com.sappenin.interledger.ilpv4.connector.links.DefaultLinkManager;
 import com.sappenin.interledger.ilpv4.connector.links.DefaultLinkSettingsFactory;
@@ -43,10 +42,10 @@ import com.sappenin.interledger.ilpv4.connector.routing.ChildAccountPaymentRoute
 import com.sappenin.interledger.ilpv4.connector.routing.DefaultRouteBroadcaster;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.ForwardingRoutingTable;
+import com.sappenin.interledger.ilpv4.connector.routing.InMemoryExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.routing.InMemoryForwardingRoutingTable;
 import com.sappenin.interledger.ilpv4.connector.routing.RouteBroadcaster;
 import com.sappenin.interledger.ilpv4.connector.routing.RouteUpdate;
-import com.sappenin.interledger.ilpv4.connector.routing.InMemoryExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.crypto.CryptoConfig;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.javamoney.JavaMoneyConfig;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
@@ -60,6 +59,7 @@ import org.interledger.connector.link.events.LinkEventEmitter;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.crypto.Decryptor;
 import org.interledger.encoding.asn.framework.CodecContext;
+import org.interledger.ilpv4.connector.balances.RedisBalanceTrackerConfig;
 import org.interledger.ilpv4.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
@@ -96,6 +96,7 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.Co
           ConnectorPersistenceConfig.class,
           CryptoConfig.class,
           ResiliencyConfig.class,
+          RedisBalanceTrackerConfig.class,
           SpringConnectorWebMvc.class
         })
 public class SpringConnectorConfig {
@@ -237,7 +238,7 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  ExternalRoutingService externalRoutingService2(
+  ExternalRoutingService externalRoutingService(
     final EventBus eventBus,
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final Decryptor decryptor,
@@ -278,11 +279,6 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  BalanceTracker balanceTracker(AccountSettingsRepository accountSettingsRepository) {
-    return new InMemoryBalanceTracker(accountSettingsRepository);
-  }
-
-  @Bean
   PacketRejector packetRejector(final Supplier<ConnectorSettings> connectorSettingsSupplier) {
     return new PacketRejector(() -> connectorSettingsSupplier.get().getOperatorAddress());
   }
@@ -290,7 +286,6 @@ public class SpringConnectorConfig {
   @Bean
   List<PacketSwitchFilter> packetSwitchFilters(
     RouteBroadcaster routeBroadcaster,
-    AccountSettingsRepository accountSettingsRepository,
     InterledgerAddressUtils addressUtils,
     BalanceTracker balanceTracker,
     PacketRejector packetRejector,
@@ -303,7 +298,7 @@ public class SpringConnectorConfig {
     final ImmutableList.Builder<PacketSwitchFilter> filterList = ImmutableList.builder();
 
     if (connectorSettings.getEnabledFeatures().isRateLimitingEnabled()) {
-      filterList.add(new RateLimitIlpPacketFilter(packetRejector, accountSettingsRepository));// Limits Data packets...
+      filterList.add(new RateLimitIlpPacketFilter(packetRejector));// Limits Data packets...
     }
 
     // TODO: Enable/Disable MaxPacketAmount, expiry, allowedDest, Balance
@@ -311,14 +306,13 @@ public class SpringConnectorConfig {
     filterList.add(
       new AllowedDestinationPacketFilter(packetRejector, addressUtils),
       new ExpiryPacketFilter(packetRejector),
-      new MaxPacketAmountFilter(packetRejector, accountSettingsRepository),
+      new MaxPacketAmountFilter(packetRejector),
       new BalanceIlpPacketFilter(packetRejector, balanceTracker),
       new ValidateFulfillmentPacketFilter(packetRejector),
       new PeerProtocolPacketFilter(
         connectorSettingsSupplier(),
         packetRejector,
         routeBroadcaster,
-        accountSettingsRepository,
         ccpCodecContext,
         ildcpCodecContext
       )
@@ -375,11 +369,12 @@ public class SpringConnectorConfig {
   ILPv4PacketSwitch ilpPacketSwitch(
     List<PacketSwitchFilter> packetSwitchFilters, List<LinkFilter> linkFilters,
     LinkManager linkManager, NextHopPacketMapper nextHopPacketMapper,
-    ConnectorExceptionHandler connectorExceptionHandler
+    ConnectorExceptionHandler connectorExceptionHandler, AccountSettingsRepository accountSettingsRepository,
+    PacketRejector packetRejector
   ) {
     return new DefaultILPv4PacketSwitch(
-      packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler
-    );
+      packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler,
+      accountSettingsRepository, packetRejector);
   }
 
   @Bean

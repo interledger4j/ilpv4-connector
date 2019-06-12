@@ -1,7 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
 import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
-import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;
@@ -43,12 +43,12 @@ public class PingProtocolFilter extends AbstractPacketFilter implements PacketSw
 
   @Override
   public InterledgerResponsePacket doFilter(
-    final AccountId sourceAccountId,
+    final AccountSettings sourceAccountSettings,
     final InterledgerPreparePacket sourcePreparePacket,
     final PacketSwitchFilterChain filterChain
   ) {
 
-    Objects.requireNonNull(sourceAccountId);
+    Objects.requireNonNull(sourceAccountSettings);
     Objects.requireNonNull(sourcePreparePacket);
     Objects.requireNonNull(filterChain);
 
@@ -63,12 +63,13 @@ public class PingProtocolFilter extends AbstractPacketFilter implements PacketSw
           .build();
       } else {
         return reject(
-          sourceAccountId, sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST, "Invalid Ping Protocol Condition"
+          sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
+          "Invalid Ping Protocol Condition"
         );
       }
     } else {
       // Not a ping packet, so continue processing.
-      return filterChain.doFilter(sourceAccountId, sourcePreparePacket);
+      return filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
     }
   }
 }
