@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.routing;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 
 import java.util.Optional;
@@ -11,6 +12,8 @@ import java.util.Optional;
  * might decide to use the "most reliable" route.
  */
 public interface PaymentRouter<R extends BaseRoute> {
+
+  AccountId PING_ACCOUNT_ID = AccountId.of("__ping_account__");
 
   /**
    * Given an incoming transfer on a particular source ledger, this method finds the best "next-hop" getRoute that

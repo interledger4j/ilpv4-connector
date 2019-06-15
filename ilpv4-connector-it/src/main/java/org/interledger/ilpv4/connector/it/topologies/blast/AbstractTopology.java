@@ -15,8 +15,10 @@ public abstract class AbstractTopology {
 
   public static final String ALICE = "alice";
   public static final String BOB = "bob";
+  public static final String PAUL = "paul";
   public static final AccountId ALICE_ACCOUNT = AccountId.of(ALICE);
   public static final AccountId BOB_ACCOUNT = AccountId.of(BOB);
+  public static final AccountId PAUL_ACCOUNT = AccountId.of(PAUL);
 
   public static final String TEST = InterledgerAddress.AllocationScheme.TEST.getValue();
 

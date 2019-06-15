@@ -31,8 +31,8 @@ public class SingleConnectorMultiAccountBtpTopology {
   //  public static final String USD = "USD";
   //  public static final String EUR = "EUR";
   //
-  //  public static final InterledgerAddress ALICE_ADDRESS = InterledgerAddress.of("test.alice");
-  //  public static final InterledgerAddress BOB_ADDRESS = InterledgerAddress.of("test.bob");
+  //  public static final InterledgerAddress ALICE_CONNECTOR_ADDRESS = InterledgerAddress.of("test.alice");
+  //  public static final InterledgerAddress BOB_CONNECTOR_ADDRESS = InterledgerAddress.of("test.bob");
   //  public static final InterledgerAddress CONNIE = InterledgerAddress.of("test.connie");
   //  public static final InterledgerAddress ALICE_AT_CONNIE = CONNIE.with("alice");
   //  public static final InterledgerAddress BOB_AT_CONNIE = CONNIE.with("bob");
@@ -54,7 +54,7 @@ public class SingleConnectorMultiAccountBtpTopology {
   //      protected void doAfterGraphStartup(Topology g) {
   //
   //        // Connect Alice to Connie.
-  //        g.addNode(ALICE_ADDRESS, new BtpSingleAccountClientNode(constructBtpWebsocketClient(g, ALICE_ADDRESS, ALICE_AT_CONNIE)));
+  //        g.addNode(ALICE_CONNECTOR_ADDRESS, new BtpSingleAccountClientNode(constructBtpWebsocketClient(g, ALICE_CONNECTOR_ADDRESS, ALICE_AT_CONNIE)));
   //
   //
   //        //        g.addEdge(
@@ -62,7 +62,7 @@ public class SingleConnectorMultiAccountBtpTopology {
   //        //        );
   //
   //        // Connect Bob to Connie.
-  //        g.addNode(BOB_ADDRESS, new BtpSingleAccountClientNode(constructBtpWebsocketClient(g, BOB_ADDRESS, BOB_AT_CONNIE)));
+  //        g.addNode(BOB_CONNECTOR_ADDRESS, new BtpSingleAccountClientNode(constructBtpWebsocketClient(g, BOB_CONNECTOR_ADDRESS, BOB_AT_CONNIE)));
   //
   //        //        g.addEdge(
   //        //          new ClientWebsocketBtpPluginEdge(BOB_AT_CONNIE, connieAccountInBob(g))
@@ -91,7 +91,7 @@ public class SingleConnectorMultiAccountBtpTopology {
   //    // Configure Bob
   //    ///////////////////
   //    {
-  //      //topology.addNode(BOB_ADDRESS, new BtpSingleAccountClientNode(constructSingleAccountConnection(BOB_ADDRESS, BOB_AT_CONNIE)));
+  //      //topology.addNode(BOB_CONNECTOR_ADDRESS, new BtpSingleAccountClientNode(constructSingleAccountConnection(BOB_CONNECTOR_ADDRESS, BOB_AT_CONNIE)));
   //    }
   //
   //    LOGGER.info("\n" +

@@ -14,10 +14,11 @@ import static org.interledger.connector.link.PingableLink.PING_PROTOCOL_CONDITIO
  */
 public interface BlastHttpSender {
 
+  // Used by BLAST to test the connection by verifying a rejection with a T01.
   InterledgerPreparePacket UNFULFILLABLE_PACKET = InterledgerPreparePacket.builder()
     .executionCondition(PING_PROTOCOL_CONDITION)
     .expiresAt(Instant.now().plusSeconds(30))
-    .destination(InterledgerAddress.of("peer.this_should_reject"))
+    .destination(InterledgerAddress.of("peer.ilp_over_http_connection_test_that_should_always_reject"))
     .build();
 
   /**

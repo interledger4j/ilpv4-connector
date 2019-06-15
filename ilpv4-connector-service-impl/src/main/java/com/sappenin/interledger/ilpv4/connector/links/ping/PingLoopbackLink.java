@@ -23,14 +23,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 /**
- * <p>A {@link Link} that responds to Ping protocol packets that conform to the unidirectional mode.</p>
- * <p>Ping functionality is implemented as a Link so that all packet processing related to balance tracking can be
- * properly performed.
+ * <p>A {@link Link} that responds to Ping protocol packets that conform to the unidirectional mode of the Ping
+ * protocol .</p>
+ *
+ * <p>Ping functionality is implemented as a Loopback Link so that all packet processing related to balance tracking
+ * can be properly performed, but also so that no outbound traffic actually leaves the Connector while processing a Ping
+ * request.
  * </p>
  */
-public class UniPingLink extends AbstractLink<LinkSettings> implements Link<LinkSettings> {
+public class PingLoopbackLink extends AbstractLink<LinkSettings> implements Link<LinkSettings> {
 
-  public static final String LINK_TYPE_STRING = "UNIDIRECTIONAL_PING";
+  public static final String LINK_TYPE_STRING = "PING";
   public static final LinkType LINK_TYPE = LinkType.of(LINK_TYPE_STRING);
 
   public static final InterledgerFulfillment PING_PROTOCOL_FULFILLMENT =
@@ -41,7 +44,7 @@ public class UniPingLink extends AbstractLink<LinkSettings> implements Link<Link
   /**
    * Required-args constructor.
    */
-  public UniPingLink(
+  public PingLoopbackLink(
     final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
     final LinkSettings linkSettings,
     final LinkEventEmitter linkEventEmitter
@@ -70,7 +73,7 @@ public class UniPingLink extends AbstractLink<LinkSettings> implements Link<Link
 
   @Override
   public InterledgerResponsePacket sendPacket(final InterledgerPreparePacket preparePacket) {
-    Objects.requireNonNull(preparePacket);
+    Objects.requireNonNull(preparePacket, "preparePacket must not be null!");
 
     if (preparePacket.getExecutionCondition().equals(PING_PROTOCOL_CONDITION)) {
       return InterledgerFulfillPacket.builder()

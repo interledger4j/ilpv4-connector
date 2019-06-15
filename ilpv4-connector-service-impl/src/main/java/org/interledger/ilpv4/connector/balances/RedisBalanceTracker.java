@@ -10,7 +10,6 @@ import org.springframework.data.redis.core.BoundHashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 
-import java.math.BigInteger;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -20,6 +19,9 @@ import static java.util.Collections.singletonList;
  * An implementation of {@link BalanceTracker} that uses Redis to track all balances.
  */
 public class RedisBalanceTracker implements BalanceTracker {
+
+  // TODO: Stop sending Strings into Redis and instead send longs!
+  // See https://github.com/sappenin/java-ilpv4-connector/issues/153
 
   public static final String BALANCE = "balance";
   public static final String PREPAID_AMOUNT = "prepaid_amount";
@@ -53,14 +55,14 @@ public class RedisBalanceTracker implements BalanceTracker {
 
     return AccountBalance.builder()
       .accountId(accountId)
-      .balance(toBigInteger(result.get(BALANCE)))
-      .prepaidAmount(toBigInteger(result.get(PREPAID_AMOUNT)))
+      .balance(toLong(result.get(BALANCE)))
+      .prepaidAmount(toLong(result.get(PREPAID_AMOUNT)))
       .build();
   }
 
   @Override
-  public BigInteger updateBalanceForPrepare(
-    final AccountId sourceAccountId, final BigInteger sourceAmount, final Optional<BigInteger> minBalance
+  public void updateBalanceForPrepare(
+    final AccountId sourceAccountId, final long sourceAmount, final Optional<Long> minBalance
   )
     throws BalanceTrackerException {
 
@@ -69,21 +71,21 @@ public class RedisBalanceTracker implements BalanceTracker {
     Objects.requireNonNull(minBalance, "minBalance must not be null!");
 
     try {
-      Long result;
+      long result;
       if (minBalance.isPresent()) {
         result = redisTemplate.execute(
           updateBalanceForPrepareScript,
           singletonList(toRedisAccountsKey(sourceAccountId)),
           // Arg1: from_amount
           // Arg2: min_balance (optional)
-          sourceAmount.toString(), minBalance.toString()
+          sourceAmount + "", minBalance.orElse(0L) + ""
         );
       } else {
         result = redisTemplate.execute(
           updateBalanceForPrepareScript,
           singletonList(toRedisAccountsKey(sourceAccountId)),
           // Arg1: from_amount
-          sourceAmount.toString()
+          sourceAmount + ""
         );
       }
 
@@ -91,8 +93,6 @@ public class RedisBalanceTracker implements BalanceTracker {
         "Processed prepare with incoming amount: {}. Account {} has balance (including prepaid amount): {} ",
         sourceAmount, sourceAccountId, result
       );
-
-      return BigInteger.valueOf(result);
     } catch (Exception e) {
       final String errorMessage = String.format(
         "Error handling prepare with sourceAmount `%s` from accountId `%s`", sourceAmount, sourceAccountId
@@ -102,10 +102,9 @@ public class RedisBalanceTracker implements BalanceTracker {
   }
 
   @Override
-  public BigInteger updateBalanceForFulfill(final AccountId destinationAccountId, final BigInteger destinationAmount) throws BalanceTrackerException {
+  public void updateBalanceForFulfill(final AccountId destinationAccountId, final long destinationAmount) throws BalanceTrackerException {
     Objects.requireNonNull(destinationAccountId, "destinationAccountId must not be null!");
     Objects.requireNonNull(destinationAmount, "destinationAmount must not be null!");
-
 
     try {
       // TODO: Use BigDecimal
@@ -113,15 +112,13 @@ public class RedisBalanceTracker implements BalanceTracker {
         updateBalanceForFulfillScript,
         singletonList(toRedisAccountsKey(destinationAccountId)),
         // Arg1: from_amount
-        destinationAmount.toString()
+        destinationAmount + ""
       );
 
       logger.debug(
         "Processed fulfill for outgoing amount: `{}`. Account `{}` has balance (including prepaid amount): `{}`",
         destinationAmount, destinationAccountId, result
       );
-
-      return BigInteger.valueOf(result);
     } catch (Exception e) {
       final String errorMessage = String.format(
         "Error handling fulfill packet with destinationAmount `%s` from accountId `%s`", destinationAmount,
@@ -132,25 +129,23 @@ public class RedisBalanceTracker implements BalanceTracker {
   }
 
   @Override
-  public BigInteger updateBalanceForReject(AccountId sourceAccountId, BigInteger sourceAmount) throws BalanceTrackerException {
+  public void updateBalanceForReject(AccountId sourceAccountId, long sourceAmount) throws BalanceTrackerException {
     Objects.requireNonNull(sourceAccountId, "sourceAccountId must not be null!");
     Objects.requireNonNull(sourceAmount, "sourceAmount must not be null!");
 
     try {
       // TODO: Use BigDecimal
-      Long result = redisTemplate.execute(
+      long result = redisTemplate.execute(
         updateBalanceForRejectScript,
         singletonList(toRedisAccountsKey(sourceAccountId)),
         // Arg1: from_amount
-        sourceAmount.toString()
+        sourceAmount + ""
       );
 
       logger.debug(
         "Processed reject for incoming amount: `{}`. Account `{}` has balance (including prepaid amount): `{}`",
         sourceAmount, sourceAccountId, result
       );
-
-      return BigInteger.valueOf(result);
     } catch (Exception e) {
       final String errorMessage = String.format(
         "Error handling reject packet with sourceAmount `%s` from accountId `%s`", sourceAmount, sourceAccountId
@@ -163,11 +158,11 @@ public class RedisBalanceTracker implements BalanceTracker {
     return "accounts:" + accountId.value();
   }
 
-  private BigInteger toBigInteger(final String numAsString) {
+  private long toLong(final String numAsString) {
     if (numAsString == null || numAsString.length() == 0) {
-      return BigInteger.ZERO;
+      return 0L;
     } else {
-      return new BigInteger(numAsString);
+      return Long.parseLong(numAsString);
     }
   }
 }

@@ -70,8 +70,8 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
     bobConnector = this.getILPv4NodeFromGraph(BOB_AT_ALICE_ADDRESS);
 
     // Reset all accounts on each connector...
-    ((InMemoryBalanceTracker)bobConnector.getBalanceTracker()).resetBalance(AccountId.of(ALICE));
-    ((InMemoryBalanceTracker)aliceConnector.getBalanceTracker()).resetBalance(AccountId.of(BOB));
+    ((InMemoryBalanceTracker) bobConnector.getBalanceTracker()).resetBalance(AccountId.of(ALICE));
+    ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetBalance(AccountId.of(BOB));
   }
 
   @Test
@@ -117,7 +117,7 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
    */
   @Test
   public void testAlicePingsBob() throws InterruptedException {
-    this.testPing(ALICE_ADDRESS, BOB_ACCOUNT, BOB_AT_ALICE_ADDRESS);
+    this.testPing(BOB_ACCOUNT, ALICE_ADDRESS, BOB_AT_ALICE_ADDRESS, BigInteger.ONE);
 
     // ALICE
     assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.ZERO);
@@ -133,7 +133,7 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
    */
   @Test
   public void testBobPingsAlice() throws InterruptedException {
-    this.testPing(BOB_AT_ALICE_ADDRESS, ALICE_ACCOUNT, ALICE_ADDRESS);
+    this.testPing(ALICE_ACCOUNT, BOB_AT_ALICE_ADDRESS, ALICE_ADDRESS, BigInteger.ONE);
 
     // ALICE
     assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.valueOf(1L));

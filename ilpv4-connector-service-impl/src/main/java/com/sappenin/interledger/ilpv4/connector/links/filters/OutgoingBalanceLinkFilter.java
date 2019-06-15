@@ -57,7 +57,9 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
           // response. Thus, this code increment the receiver's account upon encountering a fulfill packet response
           // from the counterparty.
           try {
-            balanceTracker.updateBalanceForFulfill(outgoingDestinationAccountId, outgoingPreparePacket.getAmount());
+            balanceTracker.updateBalanceForFulfill(
+              outgoingDestinationAccountId, outgoingPreparePacket.getAmount().longValue()
+            );
 
             // TODO: Enable Settle
             //this.maybeSettle(account);

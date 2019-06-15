@@ -39,7 +39,6 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
   public static final InterledgerAddress PEER_DOT_ROUTE = InterledgerAddress.of("peer.route");
 
-  private static final boolean PREEMPTIVELY_REJECT = true;
   private static final boolean SENDING_NOT_ENABLED = false;
   private static final boolean RECEIVING_NOT_ENABLED = false;
 
@@ -77,7 +76,8 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
         if (connectorSettingsSupplier.get().getEnabledProtocols().isPeerConfigEnabled()) {
           return this.handleIldcpRequest(sourceAccountSettings, sourcePreparePacket);
         } else {
-          return reject(sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
+          return packetRejector.reject(sourceAccountSettings.getAccountId(), sourcePreparePacket,
+            InterledgerErrorCode.F00_BAD_REQUEST,
             "IL-DCP is not supported by this Connector.");
         }
       }
@@ -89,7 +89,8 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
           return handlePeerRouting(sourceAccountSettings, sourcePreparePacket);
         } else {
           // Reject.
-          return reject(sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
+          return packetRejector.reject(sourceAccountSettings.getAccountId(), sourcePreparePacket,
+            InterledgerErrorCode.F00_BAD_REQUEST,
             "CCP routing protocol is not supported by this node.");
         }
       }
@@ -97,7 +98,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
       // Unsupported `peer.` request...
       else {
         // Reject.
-        return reject(
+        return packetRejector.reject(
           sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F01_INVALID_PACKET,
           "unknown peer protocol."
         );
@@ -160,14 +161,14 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
   ) {
     try {
       if (!sourcePreparePacket.getDestination().startsWith(PEER_DOT_ROUTE)) {
-        return this.reject(
+        return packetRejector.reject(
           sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F02_UNREACHABLE,
           String.format("Unsupported Peer address: `%s`", PEER_DOT_ROUTE.getValue())
         );
       }
 
       if (!PEER_PROTOCOL_EXECUTION_CONDITION.equals(sourcePreparePacket.getExecutionCondition())) {
-        return reject(
+        return packetRejector.reject(
           sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F01_INVALID_PACKET,
           "Packet does not contain correct condition for a peer protocol request."
         );
@@ -179,7 +180,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
         // preemptively reject this request.
         final boolean preemptivelyReject = sourceAccountSettings.isSendRoutes() == SENDING_NOT_ENABLED;
         if (preemptivelyReject) {
-          return reject(
+          return packetRejector.reject(
             sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
             String.format("CCP sending is not enabled for this account. destination=`%s`.",
               sourcePreparePacket.getDestination().getValue())
@@ -209,7 +210,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
         // preemptively reject this request.
         final boolean preemptiveReject = sourceAccountSettings.isReceiveRoutes() == RECEIVING_NOT_ENABLED;
         if (preemptiveReject) {
-          return reject(
+          return packetRejector.reject(
             sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F00_BAD_REQUEST,
             String.format("CCP receiving is not enabled for this account. destination=`%s`.",
               sourcePreparePacket.getDestination().getValue())
@@ -234,7 +235,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
           .build();
 
       } else {
-        return reject(
+        return packetRejector.reject(
           sourceAccountSettings.getAccountId(), sourcePreparePacket,
           InterledgerErrorCode.F00_BAD_REQUEST,
           String.format("Unrecognized CCP message. destination=`%s`.", sourcePreparePacket.getDestination().getValue())
@@ -244,6 +245,5 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
       throw new RuntimeException(e.getMessage(), e);
     }
   }
-
 
 }

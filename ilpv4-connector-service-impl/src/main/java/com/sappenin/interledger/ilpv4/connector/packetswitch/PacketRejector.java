@@ -32,15 +32,16 @@ public class PacketRejector {
   }
 
   /**
-   * Helper-method to reject an incoming request.
+   * Helper-method to reject a request.
    *
-   * @param errorCode
-   * @param errorMessage
-   *
-   * @return
+   * @param rejectingAccountId The {@link AccountId} that was the source of this Reject action (i.e., the Account
+   *                           responsible for construcing the reject packet).
+   * @param preparePacket      The {@link InterledgerPreparePacket} that was the catalyst for this reject action.
+   * @param errorCode          The {@link InterledgerErrorCode} that expresses the reason for this reject action.
+   * @param errorMessage       An error message for clarity. If no error message is desired, supply an empty string.
    */
   public InterledgerRejectPacket reject(
-    final AccountId sourceAccountId, final InterledgerPreparePacket preparePacket,
+    final AccountId rejectingAccountId, final InterledgerPreparePacket preparePacket,
     final InterledgerErrorCode errorCode, final String errorMessage
   ) {
     Objects.requireNonNull(errorCode);
@@ -53,8 +54,11 @@ public class PacketRejector {
       .message(errorMessage)
       .build();
 
-    logger.warn("Rejecting Prepare Packet from `{}`: {} {}", sourceAccountId, preparePacket, rejectPacket);
+    logger.warn(
+      "Rejecting Prepare packet inside AccountId(`{}`): PreparePacket: {} RejectPacket: {}",
+      rejectingAccountId, preparePacket, rejectPacket
+    );
+
     return rejectPacket;
   }
-
 }

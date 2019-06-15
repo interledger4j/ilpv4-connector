@@ -6,24 +6,21 @@ import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTrackerException;
 import org.interledger.connector.accounts.AccountId;
 
-import java.math.BigInteger;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Tracks balances in-memory only.
+ * Tracks balances in-memory in a thread-safe manner.
  *
- * Note that this implementation is not meant for production usage, so it is not thread-safe. Instead, this
- * implementation exists to facilitate Spring-container tests involving only a single server.
- *
- * For multi-server tests, or actual use-cases, consider using {@link RedisBalanceTracker}.
+ * Note that this implementation is not meant for production usage because the values it tracks are not durable.
+ * Instead, consider using {@link RedisBalanceTracker} or another persistent implementation of {@link BalanceTracker}.
  */
 public class InMemoryBalanceTracker implements BalanceTracker {
 
-  //private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
-  private final Map<AccountId, BigInteger> balances;
-  private final Map<AccountId, BigInteger> prepaidBalances;
+  private final Map<AccountId, AtomicLong> balances;
+  private final Map<AccountId, AtomicLong> prepaidBalances;
 
   public InMemoryBalanceTracker() {
     this.balances = Maps.newConcurrentMap();
@@ -34,18 +31,20 @@ public class InMemoryBalanceTracker implements BalanceTracker {
   public AccountBalance getBalance(AccountId accountId) {
     return AccountBalance.builder()
       .accountId(accountId)
-      .balance(Optional.ofNullable(this.balances.get(accountId)).orElse(BigInteger.ZERO))
-      .prepaidAmount(Optional.ofNullable(this.prepaidBalances.get(accountId)).orElse(BigInteger.ZERO))
+      .balance(getOrCreateBalance(this.balances, accountId).longValue())
+      .prepaidAmount(getOrCreateBalance(this.prepaidBalances, accountId).longValue())
       .build();
   }
 
   @Override
-  public BigInteger updateBalanceForPrepare(AccountId sourceAccountId, BigInteger sourceAmount, Optional<BigInteger> minBalance) throws BalanceTrackerException {
+  public void updateBalanceForPrepare(
+    AccountId sourceAccountId, long sourceAmount, Optional<Long> minBalance
+  ) throws BalanceTrackerException {
     final AccountBalance accountBalance = this.getBalance(sourceAccountId);
 
     // Throw an exception if minBalance is violated....
     minBalance.ifPresent(mb -> {
-      if (accountBalance.netBalance().subtract(sourceAmount).compareTo(mb) < 0) {
+      if (accountBalance.netBalance().longValue() - sourceAmount < mb) {
         throw new BalanceTrackerException(String.format(
           "Incoming prepare of %s would bring account %s under its minimum balance. Current balance: %s, min balance: %s",
           sourceAmount, sourceAccountId, accountBalance.netBalance(), mb)
@@ -53,35 +52,59 @@ public class InMemoryBalanceTracker implements BalanceTracker {
       }
     });
 
-    if (accountBalance.prepaidAmount().compareTo(sourceAmount) >= 0) {
+    if (accountBalance.prepaidAmount() >= sourceAmount) {
       // Reduce prepaid_amount by 1
-      this.prepaidBalances.put(sourceAccountId, accountBalance.prepaidAmount().subtract(BigInteger.ONE));
-    } else if (accountBalance.prepaidAmount().compareTo(BigInteger.ZERO) >= 0) {
-      final BigInteger subFromBalance = sourceAmount.subtract(accountBalance.prepaidAmount());
-      this.prepaidBalances.put(sourceAccountId, BigInteger.ZERO);
-      this.balances.put(sourceAccountId, accountBalance.balance().subtract(subFromBalance));
+      this.decrement(prepaidBalances, sourceAccountId, sourceAmount);
+    } else if (accountBalance.prepaidAmount() >= 0L) {
+      final long subFromBalance = sourceAmount - accountBalance.prepaidAmount();
+      this.prepaidBalances.put(sourceAccountId, new AtomicLong());
+      this.decrement(balances, sourceAccountId, subFromBalance);
     } else {
-      // Decrement the balance by 1
-      this.balances.put(sourceAccountId, accountBalance.balance().subtract(BigInteger.ONE));
+      // Decrement the balance by `sourceAmount`
+      this.decrement(this.balances, sourceAccountId, sourceAmount);
     }
-
-    return getBalance(sourceAccountId).netBalance();
   }
 
   @Override
-  public BigInteger updateBalanceForFulfill(AccountId destinationAccountId, BigInteger destinationAmount) throws BalanceTrackerException {
-    Optional.ofNullable(this.balances.get(destinationAccountId)).orElse(BigInteger.ZERO).add(destinationAmount);
-    return getBalance(destinationAccountId).netBalance();
+  public void updateBalanceForFulfill(AccountId destinationAccountId, long destinationAmount) throws BalanceTrackerException {
+    this.increment(this.balances, destinationAccountId, destinationAmount);
   }
 
   @Override
-  public BigInteger updateBalanceForReject(AccountId sourceAccountId, BigInteger sourceAmount) throws BalanceTrackerException {
-    Optional.ofNullable(this.balances.get(sourceAccountId)).orElse(BigInteger.ZERO).add(sourceAmount);
-    return getBalance(sourceAccountId).netBalance();
+  public void updateBalanceForReject(AccountId sourceAccountId, long sourceAmount) throws BalanceTrackerException {
+    this.increment(this.balances, sourceAccountId, sourceAmount);
   }
 
-  public void resetBalance(AccountId accountId) {
-    this.balances.put(accountId, BigInteger.ZERO);
-    this.prepaidBalances.put(accountId, BigInteger.ZERO);
+  public void resetBalance(final AccountId accountId) {
+    Objects.requireNonNull(accountId);
+    this.balances.put(accountId, new AtomicLong());
+    this.prepaidBalances.put(accountId, new AtomicLong());
+  }
+
+  private void increment(
+    final Map<AccountId, AtomicLong> balanceTracker, final AccountId accountId, final long amount
+  ) {
+    final AtomicLong balance = getOrCreateBalance(balanceTracker, accountId);
+    balance.getAndAdd(amount);
+  }
+
+  private void decrement(
+    final Map<AccountId, AtomicLong> balanceTracker, final AccountId accountId, final long amount
+  ) {
+    final AtomicLong balance = getOrCreateBalance(balanceTracker, accountId);
+    balance.getAndAdd(0 - amount);
+  }
+
+  private synchronized AtomicLong getOrCreateBalance(
+    final Map<AccountId, AtomicLong> balanceTracker, final AccountId accountId
+  ) {
+    Objects.requireNonNull(balanceTracker);
+    Objects.requireNonNull(accountId);
+
+    return Optional.ofNullable(balanceTracker.get(accountId))
+      .orElseGet(() -> {
+        balanceTracker.put(accountId, new AtomicLong());
+        return balanceTracker.get(accountId);
+      });
   }
 }

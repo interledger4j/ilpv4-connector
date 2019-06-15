@@ -25,6 +25,8 @@ import com.sappenin.interledger.ilpv4.connector.links.filters.LinkFilter;
 import com.sappenin.interledger.ilpv4.connector.links.filters.OutgoingBalanceLinkFilter;
 import com.sappenin.interledger.ilpv4.connector.links.loopback.LoopbackLink;
 import com.sappenin.interledger.ilpv4.connector.links.loopback.LoopbackLinkFactory;
+import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLink;
+import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLinkFactory;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.DefaultILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.InterledgerAddressUtils;
@@ -35,7 +37,6 @@ import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.ExpiryPacke
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.MaxPacketAmountFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PacketSwitchFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PeerProtocolPacketFilter;
-import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.PingProtocolFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.RateLimitIlpPacketFilter;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.filters.ValidateFulfillmentPacketFilter;
 import com.sappenin.interledger.ilpv4.connector.routing.ChildAccountPaymentRouter;
@@ -51,7 +52,6 @@ import com.sappenin.interledger.ilpv4.connector.server.spring.settings.javamoney
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.web.SpringConnectorWebMvc;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
-import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.interledger.connector.link.AbstractLink;
 import org.interledger.connector.link.LinkFactoryProvider;
@@ -152,11 +152,19 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  LinkFactoryProvider linkFactoryProvider(LoopbackLinkFactory loopbackLinkFactory) {
+  PingLoopbackLinkFactory unidirectionalPingLinkFactory(LinkEventEmitter linkEventEmitter) {
+    return new PingLoopbackLinkFactory(linkEventEmitter);
+  }
+
+  @Bean
+  LinkFactoryProvider linkFactoryProvider(
+    LoopbackLinkFactory loopbackLinkFactory, PingLoopbackLinkFactory pingLoopbackLinkFactory
+  ) {
     final LinkFactoryProvider provider = new LinkFactoryProvider();
 
     // Register known types...Spring will register proper known types based upon config...
     provider.registerLinkFactory(LoopbackLink.LINK_TYPE, loopbackLinkFactory);
+    provider.registerLinkFactory(PingLoopbackLink.LINK_TYPE, pingLoopbackLinkFactory);
 
     // TODO: Register any SPI types...?
     // See https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/io/support/SpringFactoriesLoader.html
@@ -292,9 +300,6 @@ public class SpringConnectorConfig {
     @Qualifier(CCP) CodecContext ccpCodecContext, @Qualifier(ILDCP) CodecContext ildcpCodecContext
   ) {
     final ConnectorSettings connectorSettings = connectorSettingsSupplier().get();
-    final Supplier<InterledgerAddress> operatorAddressSupplier =
-      () -> connectorSettingsSupplier().get().getOperatorAddressSafe();
-
     final ImmutableList.Builder<PacketSwitchFilter> filterList = ImmutableList.builder();
 
     if (connectorSettings.getEnabledFeatures().isRateLimitingEnabled()) {
@@ -319,14 +324,6 @@ public class SpringConnectorConfig {
     );
 
     // TODO: Throughput for Money...
-
-    final EnabledProtocolSettings enabledProtocolSettings = connectorSettings.getEnabledProtocols();
-    /////////////////////////////////////
-    // Ping Protocol (must be after the above filters so that pre-filtering is performed properly, even for pings).
-    /////////////////////////////////////
-    if (enabledProtocolSettings.isPingProtocolEnabled()) {
-      filterList.add(new PingProtocolFilter(packetRejector, operatorAddressSupplier));
-    }
 
     /////////////////////////////////////
     // Non-routable destinations (self.*)
@@ -361,8 +358,10 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  ConnectorExceptionHandler connectorExceptionHandler(PacketRejector packetRejector) {
-    return new ConnectorExceptionHandler(packetRejector);
+  ConnectorExceptionHandler connectorExceptionHandler(
+    Supplier<ConnectorSettings> connectorSettingsSupplier, PacketRejector packetRejector
+  ) {
+    return new ConnectorExceptionHandler(connectorSettingsSupplier, packetRejector);
   }
 
   @Bean

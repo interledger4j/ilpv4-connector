@@ -8,7 +8,6 @@ import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.GlobalRoutingSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ImmutableConnectorSettings;
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
@@ -27,7 +26,9 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 
 /**
- * <p>A very simple topology that simulates a single ILP-over-HTTP (BLAST) connection between two Connectors.</p>
+ * <p>A very simple topology that simulates a single ILP-over-HTTP (BLAST) connection between two Connectors to
+ * enable a pinging entity (Paul) to issue a ping request using his connector (test.alice) to ping the `test.bob`
+ * Connector. In this way, Paul will pay units to Bob's ping account. .</p>
  *
  * <p>Nodes in this topology are connected as follows:</p>
  *
@@ -44,8 +45,9 @@ import java.math.BigInteger;
  */
 public class TwoConnectorPeerBlastTopology extends AbstractTopology {
 
-  public static final InterledgerAddress ALICE_ADDRESS = InterledgerAddress.of(TEST + DOT + ALICE);
-  public static final InterledgerAddress BOB_ADDRESS = InterledgerAddress.of(TEST + DOT + BOB);
+  public static final InterledgerAddress ALICE_CONNECTOR_ADDRESS = InterledgerAddress.of(TEST + DOT + ALICE);
+  public static final InterledgerAddress BOB_CONNECTOR_ADDRESS = InterledgerAddress.of(TEST + DOT + BOB);
+  public static final InterledgerAddress PAUL_CHILD_ACCOUNT_ADDRESS = ALICE_CONNECTOR_ADDRESS.with(PAUL);
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorPeerBlastTopology.class);
 
@@ -60,15 +62,21 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
     final Topology topology = new Topology(new Topology.PostConstructListener() {
       @Override
       protected void doAfterTopologyStartup(Topology g) {
-        final ConnectorServerNode aliceServerNode = g.getNode(ALICE_ADDRESS.getValue(), ConnectorServerNode.class);
+        final ConnectorServerNode aliceServerNode =
+          g.getNode(ALICE_CONNECTOR_ADDRESS.getValue(), ConnectorServerNode.class);
         final int alicePort = aliceServerNode.getPort();
-        final ConnectorServerNode bobServerNode = g.getNode(BOB_ADDRESS.getValue(), ConnectorServerNode.class);
+        final ConnectorServerNode bobServerNode =
+          g.getNode(BOB_CONNECTOR_ADDRESS.getValue(), ConnectorServerNode.class);
         final int bobPort = bobServerNode.getPort();
 
         try {
           // Add Bob's account on Alice...
           final AccountSettingsEntity bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
+
+          // Add Paul's account on Alice
+          final AccountSettingsEntity paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice();
+          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(paulAccountSettingsAtAlice);
 
           // Add Alice's account on Bob...
           final AccountSettingsEntity aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort);
@@ -92,7 +100,7 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
     {
       final ConnectorServer aliceServer = new ConnectorServer(constructConnectorSettingsForAlice());
       aliceServer.setPort(ALICE_PORT);
-      topology.addNode(ALICE_ADDRESS, new ConnectorServerNode(ALICE, aliceServer));
+      topology.addNode(ALICE_CONNECTOR_ADDRESS, new ConnectorServerNode(ALICE, aliceServer));
     }
 
     ///////////////////
@@ -101,7 +109,7 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
     {
       final ConnectorServer bobServer = new ConnectorServer(constructConnectorSettingsForBob());
       bobServer.setPort(BOB_PORT);
-      topology.addNode(BOB_ADDRESS, new ConnectorServerNode(BOB, bobServer));
+      topology.addNode(BOB_CONNECTOR_ADDRESS, new ConnectorServerNode(BOB, bobServer));
     }
 
     LOGGER.info("\n" +
@@ -126,7 +134,7 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
   private static AccountSettingsEntity constructBobAccountSettingsOnAlice(final int bobPort) {
     return new AccountSettingsEntity(
       AccountSettings.builder()
-        .accountId(AccountId.of(BOB))
+        .accountId(BOB_ACCOUNT)
         .description("Blast account for Bob")
         .accountRelationship(AccountRelationship.PEER)
         .rateLimitSettings(AccountRateLimitSettings.builder().maxPacketsPerSecond(5000).build())
@@ -157,11 +165,41 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
   }
 
   /**
+   * An AccountSettings object that represents Paul's account at Alice. Since this account is only used to send, it does
+   * not require any incoming connection settings.
+   */
+  private static AccountSettingsEntity constructPaulAccountSettingsOnAlice() {
+    return new AccountSettingsEntity(
+      AccountSettings.builder()
+        .accountId(PAUL_ACCOUNT)
+        .description("Blast sender account for Paul")
+        .accountRelationship(AccountRelationship.CHILD)
+        .linkType(BlastLink.LINK_TYPE)
+        .assetScale(9)
+        .assetCode(XRP)
+
+        // Incoming
+        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
+        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
+
+        // Outgoing (dummy values since these are unused because the account never receives in this topology)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, PAUL)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
+        .putCustomSettings(
+          OutgoingLinkSettings.BLAST_OUTGOING_URL, "http://localhost:8080" + IlpHttpController.ILP_PATH
+        )
+
+        .build()
+    );
+  }
+
+  /**
    * Construct a {@link ConnectorSettings} with a Connector properly configured to represent <tt>Alice</tt>.
    */
   public static ConnectorSettings constructConnectorSettingsForAlice() {
     return ImmutableConnectorSettings.builder()
-      .operatorAddress(ALICE_ADDRESS)
+      .operatorAddress(ALICE_CONNECTOR_ADDRESS)
       .enabledProtocols(EnabledProtocolSettings.builder()
         .isBlastEnabled(true)
         .isPingProtocolEnabled(true)
@@ -175,7 +213,7 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
         .routingSecret("enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=")
         // Always route packets to Bob...
         .staticRoutes(Lists.newArrayList(StaticRoute.builder()
-          .targetPrefix(InterledgerAddressPrefix.from(BOB_ADDRESS))
+          .targetPrefix(InterledgerAddressPrefix.from(BOB_CONNECTOR_ADDRESS))
           .peerAccountId(BOB_ACCOUNT)
           .build()
         ))
@@ -192,7 +230,7 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
   private static AccountSettingsEntity constructAliceAccountSettingsOnBob(final int alicePort) {
     return new AccountSettingsEntity(
       AccountSettings.builder()
-        .accountId(AccountId.of(ALICE))
+        .accountId(ALICE_ACCOUNT)
         .description("Blast account for Alice")
         .rateLimitSettings(AccountRateLimitSettings.builder().maxPacketsPerSecond(5000).build())
         .maximumPacketAmount(BigInteger.valueOf(1000000L)) // 1M NanoDollars is $0.001
@@ -227,7 +265,7 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
    */
   public static ConnectorSettings constructConnectorSettingsForBob() {
     return ImmutableConnectorSettings.builder()
-      .operatorAddress(BOB_ADDRESS)
+      .operatorAddress(BOB_CONNECTOR_ADDRESS)
       .enabledProtocols(EnabledProtocolSettings.builder()
         .isBlastEnabled(true)
         .isPingProtocolEnabled(true)
@@ -241,7 +279,7 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
         .routingSecret("enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=")
         // Always route packets to Alice...
         .staticRoutes(Lists.newArrayList(StaticRoute.builder()
-          .targetPrefix(InterledgerAddressPrefix.from(ALICE_ADDRESS))
+          .targetPrefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
           .peerAccountId(ALICE_ACCOUNT)
           .build()
         ))

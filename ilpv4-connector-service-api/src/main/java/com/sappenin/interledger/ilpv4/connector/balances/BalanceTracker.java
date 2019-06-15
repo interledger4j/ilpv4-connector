@@ -2,7 +2,6 @@ package com.sappenin.interledger.ilpv4.connector.balances;
 
 import org.interledger.connector.accounts.AccountId;
 
-import java.math.BigInteger;
 import java.util.Optional;
 
 /**
@@ -41,16 +40,16 @@ public interface BalanceTracker {
    * according to the passed-in information. This method does not take into consideration any sort of minimum balance.
    *
    * @param sourceAccountId The {@link AccountId} of the account balance to adjust.
-   * @param sourceAmount    A {@link BigInteger} representing a positive amount of units to subtract from =the source
+   * @param sourceAmount    A {@link long} representing a positive amount of units to subtract from =the source
    *                        account's balance.
    *
-   * @return A {@link BigInteger} representing the new net-balance, which is the sum of the `balance` and the
+   * @return An unsigned long representing the new net-balance, which is the sum of the `balance` and the
    * `prepaid_amount`.
    *
    * @throws BalanceTrackerException If anything prevents the balance updates to succeed atomically.
    */
-  default BigInteger updateBalanceForPrepare(AccountId sourceAccountId, BigInteger sourceAmount) throws BalanceTrackerException {
-    return updateBalanceForPrepare(sourceAccountId, sourceAmount, Optional.empty());
+  default void updateBalanceForPrepare(AccountId sourceAccountId, long sourceAmount) throws BalanceTrackerException {
+    updateBalanceForPrepare(sourceAccountId, sourceAmount, Optional.empty());
   }
 
   /**
@@ -58,18 +57,19 @@ public interface BalanceTracker {
    * according to the passed-in information.
    *
    * @param sourceAccountId The {@link AccountId} of the account balance to adjust.
-   * @param sourceAmount    A {@link BigInteger} representing a positive amount of units to subtract from =the source
+   * @param sourceAmount    A {@link Long} representing a positive amount of units to subtract from =the source
    *                        account's balance.
-   * @param minBalance      An optionally-present {@link BigInteger} representing the minimum balance that the source
-   *                        account is allowed to reduce to.
+   * @param minBalance      An optionally-present {@link Long} representing the minimum balance that the source account
+   *                        is allowed to reduce to (typed as {@link Long} in order to allow a large negative balance up
+   *                        to the width of a long number).
    *
-   * @return A {@link BigInteger} representing the new net-balance, which is the sum of the `balance` and the
+   * @return An unsigned long representing the new net-balance, which is the sum of the `balance` and the
    * `prepaid_amount`.
    *
    * @throws BalanceTrackerException If anything prevents the balance updates to succeed atomically.
    */
-  BigInteger updateBalanceForPrepare(
-    AccountId sourceAccountId, BigInteger sourceAmount, Optional<BigInteger> minBalance
+  void updateBalanceForPrepare(
+    AccountId sourceAccountId, long sourceAmount, Optional<Long> minBalance
   ) throws BalanceTrackerException;
 
   /**
@@ -78,13 +78,14 @@ public interface BalanceTracker {
    * counterparty account).
    *
    * @param destinationAccountId The {@link AccountId} of the destination balance to adjust.
-   * @param destinationAmount    The amount of units to add to the destination account's balance (positive or
-   *                             negative).
+   * @param destinationAmount    The amount of units (as an unsigned long) to add to the destination account's balance.
+   *
+   * @return An unsigned long representing the new net-balance, which is the sum of the `balance` and the
+   * `prepaid_amount`.
    *
    * @throws BalanceTrackerException If anything prevents the balance updates to succeed atomically.
-   * @return
    */
-  BigInteger updateBalanceForFulfill(AccountId destinationAccountId, BigInteger destinationAmount) throws BalanceTrackerException;
+  void updateBalanceForFulfill(AccountId destinationAccountId, long destinationAmount) throws BalanceTrackerException;
 
   /**
    * Called in response to an ILP Reject packet, atomically updates the balances for a source and destination account
@@ -94,10 +95,10 @@ public interface BalanceTracker {
    * @param sourceAccountId The {@link AccountId} of the account balance to adjust.
    * @param sourceAmount    The amount of units to add to the source account's balance (positive or negative).
    *
-   * @return A {@link BigInteger} representing the new net-balance, which is the sum of the `balance` and the
+   * @return An unsigned long representing the new net-balance, which is the sum of the `balance` and the
    * `prepaid_amount`.
    *
    * @throws BalanceTrackerException If anything prevents the balance updates to succeed atomically.
    */
-  BigInteger updateBalanceForReject(AccountId sourceAccountId, BigInteger sourceAmount) throws BalanceTrackerException;
+  void updateBalanceForReject(AccountId sourceAccountId, long sourceAmount) throws BalanceTrackerException;
 }

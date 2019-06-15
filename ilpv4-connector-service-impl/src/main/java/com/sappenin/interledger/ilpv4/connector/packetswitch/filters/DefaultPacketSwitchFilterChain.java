@@ -5,6 +5,7 @@ import com.sappenin.interledger.ilpv4.connector.links.NextHopInfo;
 import com.sappenin.interledger.ilpv4.connector.links.NextHopPacketMapper;
 import com.sappenin.interledger.ilpv4.connector.links.filters.DefaultLinkFilterChain;
 import com.sappenin.interledger.ilpv4.connector.links.filters.LinkFilter;
+import com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkSettings;
@@ -72,8 +73,12 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
         sourceAccountSettings.getAccountId(), preparePacket
       );
 
-      final Link<? extends LinkSettings> link =
-        this.linkManager.getOrCreateLink(nextHopInfo.nextHopAccountId());
+      final Link<? extends LinkSettings> link;
+      if (nextHopInfo.nextHopAccountId().equals(PaymentRouter.PING_ACCOUNT_ID)) {
+        link = this.linkManager.getPingLink();
+      } else {
+        link = this.linkManager.getOrCreateLink(nextHopInfo.nextHopAccountId());
+      }
 
       logger.debug(
         "Sending outbound ILP Prepare: sourceAccountId: `{}` link={} packet={}",

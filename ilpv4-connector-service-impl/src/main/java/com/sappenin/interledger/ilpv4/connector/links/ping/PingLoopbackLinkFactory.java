@@ -1,7 +1,5 @@
 package com.sappenin.interledger.ilpv4.connector.links.ping;
 
-import com.sappenin.interledger.ilpv4.connector.links.loopback.LoopbackLink;
-import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkFactory;
 import org.interledger.connector.link.LinkSettings;
@@ -14,19 +12,18 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * An implementation of {@link LinkFactory} for creating Links that can handle the `Loopback` packets.
+ * An implementation of {@link LinkFactory} for creating Links that can handle the `Unidirectional Ping` packets.
  */
-public class UnidrectionalPingLinkFactory implements LinkFactory {
+public class PingLoopbackLinkFactory implements LinkFactory {
 
   private final LinkEventEmitter linkEventEmitter;
-  private final PacketRejector packetRejector;
+  private PingLoopbackLink lazyPingLoopbackLink;
 
   /**
    * Required-args Constructor.
    */
-  public UnidrectionalPingLinkFactory(final LinkEventEmitter linkEventEmitter, final PacketRejector packetRejector) {
+  public PingLoopbackLinkFactory(final LinkEventEmitter linkEventEmitter) {
     this.linkEventEmitter = Objects.requireNonNull(linkEventEmitter);
-    this.packetRejector = Objects.requireNonNull(packetRejector);
   }
 
   /**
@@ -45,12 +42,21 @@ public class UnidrectionalPingLinkFactory implements LinkFactory {
       );
     }
 
-    return new LoopbackLink(operatorAddressSupplier, linkSettings, linkEventEmitter, packetRejector);
+    if (lazyPingLoopbackLink != null) {
+      return lazyPingLoopbackLink;
+    } else {
+      synchronized (this) {
+        if (lazyPingLoopbackLink == null) {
+          lazyPingLoopbackLink = new PingLoopbackLink(operatorAddressSupplier, linkSettings, linkEventEmitter);
+        }
+        return lazyPingLoopbackLink;
+      }
+    }
   }
 
   @Override
   public boolean supports(LinkType linkType) {
-    return LoopbackLink.LINK_TYPE.equals(linkType);
+    return PingLoopbackLink.LINK_TYPE.equals(linkType);
   }
 
 }

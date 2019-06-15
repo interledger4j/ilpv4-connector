@@ -36,7 +36,7 @@ public class MaxPacketAmountFilter extends AbstractPacketFilter implements Packe
           "Rejecting packet for exceeding max amount. accountId={} maxAmount={} actualAmount={}",
           sourceAccountSettings.getAccountId(), maxPacketAmount, sourcePreparePacket.getAmount()
         );
-        return (InterledgerResponsePacket) reject(
+        return (InterledgerResponsePacket) packetRejector.reject(
           sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F08_AMOUNT_TOO_LARGE,
           String.format(
             "Packet size too large: maxAmount=%s actualAmount=%s", maxPacketAmount, sourcePreparePacket.getAmount())

@@ -2,6 +2,7 @@ package com.sappenin.interledger.ilpv4.connector.links;
 
 import com.google.common.collect.Maps;
 import com.sappenin.interledger.ilpv4.connector.links.loopback.LoopbackLink;
+import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLink;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
@@ -92,6 +93,20 @@ public class DefaultLinkSettingsFactoryTest {
       .build();
     final LinkSettings actual = factory.construct(accountSettings);
     assertThat(actual.getLinkType(), is(LoopbackLink.LINK_TYPE));
+    assertThat(actual.getCustomSettings().isEmpty(), is(true));
+  }
+
+  @Test
+  public void testConstructUnidirectionalPingLink() {
+    AccountSettings accountSettings = AccountSettings.builder()
+      .accountId(AccountId.of("foo"))
+      .linkType(PingLoopbackLink.LINK_TYPE)
+      .accountRelationship(AccountRelationship.PEER)
+      .assetScale(2)
+      .assetCode("XRP")
+      .build();
+    final LinkSettings actual = factory.construct(accountSettings);
+    assertThat(actual.getLinkType(), is(PingLoopbackLink.LINK_TYPE));
     assertThat(actual.getCustomSettings().isEmpty(), is(true));
   }
 }

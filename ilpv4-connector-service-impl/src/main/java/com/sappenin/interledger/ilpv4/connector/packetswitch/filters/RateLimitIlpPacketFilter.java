@@ -72,7 +72,7 @@ public class RateLimitIlpPacketFilter extends AbstractPacketFilter implements Pa
           if (rateLimiter.tryAcquire(1)) {
             return filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
           } else {
-            return reject(
+            return packetRejector.reject(
               sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.T03_CONNECTOR_BUSY,
               "Rate Limit exceeded"
             );

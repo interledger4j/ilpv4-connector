@@ -1,7 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.links;
 
 import com.sappenin.interledger.ilpv4.connector.links.loopback.LoopbackLink;
-import org.interledger.connector.accounts.AccountId;
+import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLink;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.LinkSettings;
 import org.interledger.connector.link.blast.BlastLink;
@@ -24,6 +24,10 @@ public class DefaultLinkSettingsFactory implements LinkSettingsFactory {
       case LoopbackLink.LINK_TYPE_STRING: {
         return LinkSettings.builder().customSettings(accountSettings.getCustomSettings())
           .linkType(LoopbackLink.LINK_TYPE).build();
+      }
+      case PingLoopbackLink.LINK_TYPE_STRING: {
+        return LinkSettings.builder().customSettings(accountSettings.getCustomSettings())
+          .linkType(PingLoopbackLink.LINK_TYPE).build();
       }
       default: {
         throw new IllegalArgumentException("Unsupported LinkType: " + accountSettings.getLinkType());

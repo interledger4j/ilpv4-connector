@@ -37,7 +37,7 @@ public class BalanceIlpPacketFilter extends AbstractPacketFilter implements Pack
     try {
       // Preemptively decrease the account balance....
       this.balanceTracker.updateBalanceForPrepare(
-        sourceAccountSettings.getAccountId(), sourcePreparePacket.getAmount(),
+        sourceAccountSettings.getAccountId(), sourcePreparePacket.getAmount().longValue(),
         sourceAccountSettings.getBalanceSettings().getMinBalance()
       );
 
@@ -49,8 +49,9 @@ public class BalanceIlpPacketFilter extends AbstractPacketFilter implements Pack
       // If there's an error, it means the prepare balance update was not applied, so simply log the exception and
       // reject.
       logger.error(e.getMessage(), e);
-      return reject(sourceAccountSettings.getAccountId(), sourcePreparePacket,
-        InterledgerErrorCode.T04_INSUFFICIENT_LIQUIDITY);
+      return packetRejector.reject(
+        sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.T04_INSUFFICIENT_LIQUIDITY, ""
+      );
     }
 
     final InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
@@ -70,7 +71,9 @@ public class BalanceIlpPacketFilter extends AbstractPacketFilter implements Pack
       protected InterledgerResponsePacket mapRejectPacket(final InterledgerRejectPacket interledgerRejectPacket) {
         // Reverse the sender on reject. The sender will be reversed in the Packet filter.
         try {
-          balanceTracker.updateBalanceForReject(sourceAccountSettings.getAccountId(), sourcePreparePacket.getAmount());
+          balanceTracker.updateBalanceForReject(
+            sourceAccountSettings.getAccountId(), sourcePreparePacket.getAmount().longValue()
+          );
 
           // TODO: Stats
           // this.stats.balance.setValue(account, {}, balance.getValue().toNumber())
