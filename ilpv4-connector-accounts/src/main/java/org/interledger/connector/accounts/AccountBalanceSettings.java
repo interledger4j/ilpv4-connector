@@ -23,7 +23,7 @@ public interface AccountBalanceSettings {
   /**
    * <p>The minimum balance (in this account's indivisible base units) the connector must maintain for this account.
    * For example, the connector will reject incoming packets if the transaction would put the account balance below this
-   * number.  If this value is not present, then the connector will assume no minimum balance.</p>
+   * number. If this value is not present, then the connector will assume no minimum balance.</p>
    *
    * <p>Note that it is permissible to use a {@lknk Long} here since this value represents a minimum value, which is
    * sign-less. Thus, we could use the largest long to represent the largest minimum balance.</p>
