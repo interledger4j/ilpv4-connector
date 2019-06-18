@@ -5,10 +5,8 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 
 /**
- * <p>A PacketSwitch filter is an object that performs filtering tasks on either a request to send money, or on the
- * response  from a target plugin, or both.</p>
- *
- * <p>Filters perform filtering in the <code>doFilter</code> method.
+ * <p>A PacketSwitch filter performs filtering tasks on a request to send data, or on the response from a target link,
+ * or both.</p>
  */
 public interface PacketSwitchFilter {
 

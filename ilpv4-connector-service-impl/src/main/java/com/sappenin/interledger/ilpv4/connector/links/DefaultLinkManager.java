@@ -75,7 +75,6 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
     this.defaultCircuitBreakerConfig = Objects.requireNonNull(defaultCircuitBreakerConfig);
     Objects.requireNonNull(eventBus).register(this);
 
-
     this.pingLink = linkFactoryProvider.getLinkFactory(PingLoopbackLink.LINK_TYPE)
       .constructLink(
         operatorAddressSupplier,

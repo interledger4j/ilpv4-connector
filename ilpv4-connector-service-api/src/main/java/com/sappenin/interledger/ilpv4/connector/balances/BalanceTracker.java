@@ -13,12 +13,12 @@ import java.util.Optional;
  *
  * <p>In the balance-tracker paradigm, a double-entry accounting model can be implied from any given balance (see
  * above), but only on a net basis. In order to track a full accounting of all balance changes, packets must be
- * separately logged and accumulated using some external reporting system (e.g., Google BigQuery).</p>
+ * separately logged and accumulated using some external reporting system such as Google BigQuery.</p>
  *
  * <p>As an implementation note, the design for this interface is taken from the discussions had in the Interledger
  * Forum
  * <a href="https://forum.interledger.org/t/what-should-positive-negative-balances-represent/501/26?u=sappenin">here</a>.
- * In other words, implementation track a single net balance number and, for nodes that accept pre-payment, have a
+ * In other words, the implementation track a single net balance number and, for nodes that accept pre-payment, have a
  * separate number to track prepaid funds. All ILP packets affect the normal net balance position, and outgoing
  * settlements would be based upon this position. When an implementation receives an incoming settlement, it will clear
  * out as much of the peer’s debt as the settlement covers and any extra would be put into the prepaid funds
