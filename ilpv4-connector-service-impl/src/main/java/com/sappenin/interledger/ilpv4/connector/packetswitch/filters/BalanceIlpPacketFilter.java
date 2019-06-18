@@ -69,7 +69,7 @@ public class BalanceIlpPacketFilter extends AbstractPacketFilter implements Pack
 
       @Override
       protected InterledgerResponsePacket mapRejectPacket(final InterledgerRejectPacket interledgerRejectPacket) {
-        // Reverse the sender on reject. The sender will be reversed in the Packet filter.
+        // Only reverse the sender on a reject (The outgoing balance will be untouched).
         try {
           balanceTracker.updateBalanceForReject(
             sourceAccountSettings.getAccountId(), sourcePreparePacket.getAmount().longValue()

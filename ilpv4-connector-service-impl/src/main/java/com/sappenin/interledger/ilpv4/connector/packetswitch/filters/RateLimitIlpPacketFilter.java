@@ -78,7 +78,8 @@ public class RateLimitIlpPacketFilter extends AbstractPacketFilter implements Pa
             );
           }
         })
-        // There is no RateLimiter for this account, so simply continue the FilterChain.
+        // There is no RateLimiter for this account (because RateLimiting is disabled) so simply continue the
+        // FilterChain.
         .orElseGet(() -> filterChain.doFilter(sourceAccountSettings, sourcePreparePacket));
     } catch (ExecutionException e) {
       throw new RuntimeException(e); // Should map to T99 Internal Error.

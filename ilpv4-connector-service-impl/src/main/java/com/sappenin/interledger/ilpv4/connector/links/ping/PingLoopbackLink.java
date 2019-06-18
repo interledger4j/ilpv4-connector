@@ -23,12 +23,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 /**
- * <p>A {@link Link} that responds to Ping protocol packets that conform to the unidirectional mode of the Ping
- * protocol .</p>
+ * <p>A {@link Link} that responds to Ping protocol packets that conform to the Ping protocol.</p>
  *
- * <p>Ping functionality is implemented as a Loopback Link so that all packet processing related to balance tracking
- * can be properly performed, but also so that no outbound traffic actually leaves the Connector while processing a Ping
- * request.
+ * <p>Ping functionality is implemented as a Loopback Link so that all packet-processing related to balance tracking
+ * can be properly performed without any special processing inside of the core connector logic. Additionally, this link
+ * is a loopback link so that no outbound traffic ever leaves the Connector while processing a Ping request.
  * </p>
  */
 public class PingLoopbackLink extends AbstractLink<LinkSettings> implements Link<LinkSettings> {

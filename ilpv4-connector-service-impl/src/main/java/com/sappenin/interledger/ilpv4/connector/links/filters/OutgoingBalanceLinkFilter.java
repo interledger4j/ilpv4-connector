@@ -53,9 +53,9 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
       return new InterledgerResponsePacketMapper<InterledgerResponsePacket>() {
         @Override
         protected InterledgerResponsePacket mapFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-          // The implementation has done nothing preemptively for outbound links until it receives a Fulfill
-          // response. Thus, this code increment the receiver's account upon encountering a fulfill packet response
-          // from the counterparty.
+          // Up to this point, the implementation has done nothing preemptively for outbound links. Thus, this code
+          // increments the outbound account's balance upon encountering a fulfill packet response from the
+          // counterparty.
           try {
             balanceTracker.updateBalanceForFulfill(
               outgoingDestinationAccountId, outgoingPreparePacket.getAmount().longValue()
@@ -65,7 +65,6 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
             //this.maybeSettle(account);
             // TODO: Stats
             // this.stats.incomingDataPacketValue.increment(account, { result : 'fulfilled' }, + amount)
-
 
             return interledgerFulfillPacket;
           } catch (BalanceTrackerException e) {
