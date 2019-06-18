@@ -1,6 +1,5 @@
 package com.sappenin.interledger.ilpv4.connector.links.filters;
 
-import com.sappenin.interledger.ilpv4.connector.balances.BalanceChangeResult;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTrackerException;
 import org.interledger.connector.accounts.AccountId;
@@ -15,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 
@@ -43,10 +41,10 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
     final LinkFilterChain filterChain
   ) {
 
-    // We do nothing preemptively here (i.e. unlike for incoming packets) and wait until the packet is fulfilled
-    // This means we always take the most conservative view of our balance with the upstream peer.
+    Objects.requireNonNull(outgoingDestinationAccountId);
+    Objects.requireNonNull(outgoingPreparePacket);
+    Objects.requireNonNull(filterChain);
 
-    final UUID balanceAdjustmentTxId = UUID.randomUUID();
     try {
       final InterledgerResponsePacket responsePacket =
         filterChain.doFilter(outgoingDestinationAccountId, outgoingPreparePacket);
@@ -55,38 +53,30 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
       return new InterledgerResponsePacketMapper<InterledgerResponsePacket>() {
         @Override
         protected InterledgerResponsePacket mapFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-
+          // Up to this point, the implementation has done nothing preemptively for outbound links. Thus, this code
+          // increments the outbound account's balance upon encountering a fulfill packet response from the
+          // counterparty.
           try {
-            // Decrease balance on fulfill
-            final BalanceChangeResult result = balanceTracker.adjustBalance(
-              balanceAdjustmentTxId, outgoingDestinationAccountId, outgoingPreparePacket.getAmount().negate()
+            balanceTracker.updateBalanceForFulfill(
+              outgoingDestinationAccountId, outgoingPreparePacket.getAmount().longValue()
             );
-            // NOT_ATTEMPTED can occur if the BalanceChange is 0, so we only reject here if there was a
-            // problem with the balance tracker.
-            if (result.balanceTransferStatus() == BalanceChangeResult.Status.FAILED) {
-              // TODO: Reconsider this. If this happens, it means the peer fulfilled, but we're unable to fulfill with
-              //  our connector because the Balance tracker was unable to be updated. This should trigger a
-              //  reconciliation event of some sort.
-              logger.error(
-                "Outgoing account Fulfilled, but the BalanceTracker update failed. RECONCILATION WARNING: {}", result
-              );
-              return reject(
-                outgoingDestinationAccountId, outgoingPreparePacket,
-                InterledgerErrorCode.F99_APPLICATION_ERROR, "Unable to apply BalanceChange: " + result
-              );
-            } else {
-              // TODO: Enable Settle
-              //this.maybeSettle(account);
-              // TODO: Stats
-              // this.stats.balance.setValue(account, {}, balance.getValue().toNumber())
-              // this.stats.outgoingDataPacketValue.increment(account, { result : 'fulfilled' }, + amount)
-              return interledgerFulfillPacket;
-            }
+
+            // TODO: Enable Settle
+            //this.maybeSettle(account);
+            // TODO: Stats
+            // this.stats.incomingDataPacketValue.increment(account, { result : 'fulfilled' }, + amount)
+
+            return interledgerFulfillPacket;
           } catch (BalanceTrackerException e) {
-            logger.error(e.getMessage(), e);
+            logger.error("RECONCILIATION REQUIRED: Unable to update balance in Redis. Reconciliation required! " +
+                "OutgoingPreparePacket: {} ReceivedFulfillPacket: {}. OriginalError: {}",
+              outgoingPreparePacket, interledgerFulfillPacket, e
+            );
+
             return reject(
               outgoingDestinationAccountId, outgoingPreparePacket,
-              InterledgerErrorCode.F99_APPLICATION_ERROR, "Unable to apply BalanceChange: " + e.getMessage()
+              InterledgerErrorCode.T00_INTERNAL_ERROR,
+              "Received Fulfill from upstream, but could not apply balance change"
             );
           }
         }
@@ -119,22 +109,5 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
       throw e;
     }
   }
-
-  //  @VisibleForTesting
-  //  protected void decreaseAccountBalance(AccountId accountId, BigInteger amount, String errorMessagePrefix) {
-  //    // Ignore 0-amount packets.
-  //    if (amount.equals(BigInteger.ZERO)) {
-  //      return;
-  //    } else {
-  //      // Decrease balance of accountId
-  //      final BalanceChangeResult balanceChangeResult = this.balanceTracker.adjustBalance(
-  //        UUID.randomUUID(), accountId, amount.negate()
-  //      );
-  //      logger.debug("{}; BalanceChangeResult: {}", errorMessagePrefix, balanceChangeResult);
-  //      // TODO: Log stats....
-  //      // this.stats.balance.setValue(account, {}, balance.getValue().toNumber())
-  //      // this.stats.incomingDataPacketValue.increment(account, { result : 'failed' }, + amount)
-  //    }
-  //  }
 
 }

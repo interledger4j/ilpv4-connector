@@ -10,44 +10,44 @@ import java.util.Optional;
  */
 public class AccountBalanceSettingsFromPropertyFile implements AccountBalanceSettings {
 
-  private Optional<BigInteger> minBalance = Optional.empty();
-  private Optional<BigInteger> maxBalance = Optional.empty();
-  private Optional<BigInteger> settleThreshold = Optional.empty();
-  private Optional<BigInteger> settleTo = Optional.empty();
+  private Optional<Long> minBalance = Optional.empty();
+  private Optional<Long> maxBalance = Optional.empty();
+  private Optional<Long> settleThreshold = Optional.empty();
+  private Optional<Long> settleTo = Optional.empty();
 
   @Override
-  public Optional<BigInteger> getMinBalance() {
+  public Optional<Long> getMinBalance() {
     return minBalance;
   }
 
-  public void setMinBalance(Optional<BigInteger> minBalance) {
+  public void setMinBalance(Optional<Long> minBalance) {
     this.minBalance = minBalance;
   }
 
   @Override
-  public Optional<BigInteger> getMaxBalance() {
+  public Optional<Long> getMaxBalance() {
     return maxBalance;
   }
 
-  public void setMaxBalance(Optional<BigInteger> maxBalance) {
+  public void setMaxBalance(Optional<Long> maxBalance) {
     this.maxBalance = maxBalance;
   }
 
   @Override
-  public Optional<BigInteger> getSettleThreshold() {
+  public Optional<Long> getSettleThreshold() {
     return settleThreshold;
   }
 
-  public void setSettleThreshold(Optional<BigInteger> settleThreshold) {
+  public void setSettleThreshold(Optional<Long> settleThreshold) {
     this.settleThreshold = settleThreshold;
   }
 
   @Override
-  public Optional<BigInteger> getSettleTo() {
+  public Optional<Long> getSettleTo() {
     return settleTo;
   }
 
-  public void setSettleTo(Optional<BigInteger> settleTo) {
+  public void setSettleTo(Optional<Long> settleTo) {
     this.settleTo = settleTo;
   }
 }

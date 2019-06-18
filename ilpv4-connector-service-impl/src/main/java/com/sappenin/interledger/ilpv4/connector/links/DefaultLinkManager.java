@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountIdResolver;
+import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLink;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
@@ -51,8 +52,8 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
   private final AccountSettingsRepository accountSettingsRepository;
   private final LinkSettingsFactory linkSettingsFactory;
   private final LinkFactoryProvider linkFactoryProvider;
-
   private final CircuitBreakerConfig defaultCircuitBreakerConfig;
+  private final Link<?> pingLink;
 
   /**
    * Required-args constructor.
@@ -73,6 +74,14 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
     this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
     this.defaultCircuitBreakerConfig = Objects.requireNonNull(defaultCircuitBreakerConfig);
     Objects.requireNonNull(eventBus).register(this);
+
+    this.pingLink = linkFactoryProvider.getLinkFactory(PingLoopbackLink.LINK_TYPE)
+      .constructLink(
+        operatorAddressSupplier,
+        LinkSettings.builder()
+          .linkType(PingLoopbackLink.LINK_TYPE)
+          .build()
+      );
   }
 
   // Required for efficient Link-lookup-by-AccountId in the PacketSwitch.
@@ -141,6 +150,16 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
   @Override
   public Set<Link<?>> getAllConnectedLinks() {
     return this.connectedLinks.values().stream().collect(Collectors.toSet());
+  }
+
+  /**
+   * Accessor for the {@link Link} that processes Ping protocol requests.
+   *
+   * @return A {@link Link} for processing unidirectional and bidirectional ping requests.
+   */
+  @Override
+  public Link<? extends LinkSettings> getPingLink() {
+    return pingLink;
   }
 
   ////////////////////////

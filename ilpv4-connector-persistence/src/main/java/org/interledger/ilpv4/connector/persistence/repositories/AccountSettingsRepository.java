@@ -19,6 +19,13 @@ import java.util.Optional;
 @Repository
 public interface AccountSettingsRepository extends CrudRepository<AccountSettingsEntity, Long> {
 
+  /**
+   * Find an Account by its natural identifier (i.e., the accountId as a String).
+   *
+   * @param naturalId A {@link String} corresponding to {@link AccountSettingsEntity#getNaturalId()}.
+   *
+   * @return An optionally-present {@link AccountSettingsEntity}.
+   */
   Optional<AccountSettingsEntity> findByNaturalId(String naturalId);
 
   /**
@@ -28,12 +35,19 @@ public interface AccountSettingsRepository extends CrudRepository<AccountSetting
    */
   List<AccountSettingsEntity> findAccountSettingsEntitiesByConnectionInitiatorIsTrue();
 
+  /**
+   * Find the first account that this connector has with a relationship of {@code relationship}.
+   *
+   * @param relationship An {@link AccountRelationship} to filter by.
+   *
+   * @return An optionally-present {@link AccountSettingsEntity}.
+   */
   Optional<AccountSettingsEntity> findFirstByAccountRelationship(AccountRelationship relationship);
 
   /**
    * Find the first AccountSettings with a relationship of {@link AccountRelationship#PARENT}, if it exists.
    *
-   * @return
+   * @return An optionally-present {@link AccountSettingsEntity}.
    */
   default Optional<AccountSettingsEntity> findPrimaryParentAccountSettings() {
     return findFirstByAccountRelationship(AccountRelationship.PARENT);
@@ -49,6 +63,13 @@ public interface AccountSettingsRepository extends CrudRepository<AccountSetting
    */
   Collection<AccountSettingsEntity> findByAccountRelationshipIs(AccountRelationship relationship);
 
+  /**
+   * Find an account by the supplied {@code accountId}.
+   *
+   * @param accountId The {@link AccountId} to lookup by.
+   *
+   * @return An optionally-present {@link AccountSettingsEntity}.
+   */
   default Optional<AccountSettingsEntity> findByAccountId(AccountId accountId) {
     return this.findByNaturalId(accountId.value());
   }

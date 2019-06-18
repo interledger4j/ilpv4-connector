@@ -74,6 +74,8 @@ spring:
         show_sql: false
         use_sql_comments: true
         format_sql: true
+        create_empty_composites:
+          enabled: true
 
 ###
 #   H2 Settings

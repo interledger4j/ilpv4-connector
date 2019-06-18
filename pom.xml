@@ -346,12 +346,6 @@
         <artifactId>problem-spring-web</artifactId>
         <version>${problem-spring-web.version}</version>
       </dependency>
-      <!--      <dependency>-->
-      <!--        <groupId>redis.clients</groupId>-->
-      <!--        <artifactId>jedis</artifactId>-->
-      <!--        <version>2.9.0</version>-->
-      <!--        <type>jar</type>-->
-      <!--      </dependency>-->
     </dependencies>
   </dependencyManagement>
 
@@ -394,18 +388,17 @@
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-jetty</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-websocket</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-security</ignoredDependency>
-                  <ignoredDependency>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure
-                  </ignoredDependency>
+                  <ignoredDependency>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-jpa:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-test:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-data-jpa:jar</ignoredDependency>
-                  <ignoredDependency>org.springframework.boot:spring-boot-configuration-processor:jar
-                  </ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-configuration-processor:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.plugin:spring-plugin-core:jar</ignoredDependency>
                   <ignoredDependency>com.h2database:h2:jar</ignoredDependency>
+                  <ignoredDependency>org.springframework.data:spring-data-redis:jar</ignoredDependency>
+                  <ignoredDependency>redis.clients:jedis:jar</ignoredDependency>
                   <ignoredDependency>org.hibernate:hibernate-entitymanager</ignoredDependency>
-                  <ignoredDependency>redis.clients:jedis</ignoredDependency>
-                  <!-- Ignore these so that the KMS client dictates the versioning -->
+                  <!-- Ignore these so that the KMS client dictates the versions -->
                   <ignoredDependency>com.google.http-client:google-http-client:jar</ignoredDependency>
                   <ignoredDependency>com.google.protobuf:protobuf-java:jar</ignoredDependency>
                   <ignoredDependency>com.google.api.grpc:proto-google-cloud-kms-v1:jar</ignoredDependency>

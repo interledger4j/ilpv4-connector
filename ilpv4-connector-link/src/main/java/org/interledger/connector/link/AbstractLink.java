@@ -97,7 +97,7 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
               // Emit a connected event...
               this.linkEventEmitter.emitEvent(LinkConnectedEvent.of(this));
 
-              logger.info("[{}] (ILP Address: `{}`) connected to `{}`",
+              logger.info("[{}] (Operator: `{}`) connected to remote `{}`",
                 this.getLinkSettings().getLinkType(),
                 this.operatorAddressAsString(),
                 this.getLinkId());

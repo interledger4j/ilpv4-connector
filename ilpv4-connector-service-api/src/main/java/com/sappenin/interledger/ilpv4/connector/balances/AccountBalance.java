@@ -3,7 +3,7 @@ package com.sappenin.interledger.ilpv4.connector.balances;
 import org.immutables.value.Value;
 import org.interledger.connector.accounts.AccountId;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.math.BigInteger;
 
 @Value.Immutable
 public interface AccountBalance {
@@ -20,30 +20,34 @@ public interface AccountBalance {
   AccountId accountId();
 
   /**
-   * The amount of units currently in this account balance.
+   * The amount of units representing the net position this Connector operator holds with the account owner. A positive
+   * balance indicates the Connector operator has an outstanding liability (i.e., owes money) to the account holder. A
+   * negative balance represents an asset (i.e., the account holder owes money to the operator). This value is actually
+   * the sum of the balance and the prepaid balance.
    *
-   * @return
+   * @return An {@link BigInteger} representing the net balance of this account.
    */
-  AtomicInteger getAmount();
+  @Value.Derived
+  default BigInteger netBalance() {
+    final BigInteger netBalance = BigInteger.valueOf(balance());
+    return netBalance.add(BigInteger.valueOf(prepaidAmount()));
+  }
 
   /**
-   * The settings associated with this account.
+   * The amount of units representing the net position this Connector operator holds with the account owner. A positive
+   * balance indicates the Connector operator has an outstanding liability (i.e., owes money) to the account holder. A
+   * negative balance represents an asset (i.e., the account holder owes money to the operator).
    *
-   * @return
+   * @return An {@link BigInteger} representing the net balance of this account.
    */
-  //AccountSettings getAccountSettings();
+  long balance();
 
   /**
-   * Currency code or other asset identifier that will be used to select the correct rate for this account.
-   */
-  String getAssetCode();
-
-  /**
-   * Interledger amounts are integers, but most currencies are typically represented as # fractional units, e.g. cents.
-   * This property defines how many Interledger units make # up one regular unit. For dollars, this would usually be set
-   * to 9, so that Interledger # amounts are expressed in nano-dollars.
+   * The number of units that the account holder has prepaid. This value is factored into the value returned by {@link
+   * #netBalance()}, and is generally never negative.
    *
-   * @return
+   * @return An {@link BigInteger} representing the number of units the counterparty (i.e., owner of this account) has
+   * prepaid with this Connector.
    */
-  int getAssetScale();
+  long prepaidAmount();
 }

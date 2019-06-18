@@ -16,7 +16,7 @@ public class Ids {
   /**
    * A wrapper that defines a unique identifier for an account.
    */
-  @Value.Immutable
+  @Value.Immutable(intern = true)
   @Wrapped
   @JsonSerialize(as = AccountId.class)
   @JsonDeserialize(as = AccountId.class)
@@ -30,7 +30,7 @@ public class Ids {
   /**
    * A wrapper that defines a unique identifier for an account provider.
    */
-  @Value.Immutable
+  @Value.Immutable(intern = true)
   @Wrapped
   @JsonSerialize(as = AccountProviderId.class)
   @JsonDeserialize(as = AccountProviderId.class)

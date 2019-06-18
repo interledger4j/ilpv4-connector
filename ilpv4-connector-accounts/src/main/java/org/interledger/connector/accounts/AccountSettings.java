@@ -205,7 +205,10 @@ public interface AccountSettings {
     return this.isPeerAccount() || this.isParentAccount();
   }
 
-  @Value.Immutable(intern = true)
+  // Purposefully not interned. Because we desire hashcode/equals to align with AccountSettingsEntity, if this class
+  // were to be interned, then constructing a new instance with the same AccountId as an already interned instance
+  // would simply return the old, immutable value, which would be incorrect.
+  @Value.Immutable
   @Value.Modifiable
   @JsonSerialize(as = ImmutableAccountSettings.class)
   @JsonDeserialize(as = ImmutableAccountSettings.class)
@@ -293,6 +296,24 @@ public interface AccountSettings {
     public boolean isPeerOrParentAccount() {
       return this.isPeerAccount() || this.isParentAccount();
     }
-  }
 
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      AccountSettings accountSettings = (AccountSettings) o;
+
+      return getAccountId().equals(accountSettings.getAccountId());
+    }
+
+    @Override
+    public int hashCode() {
+      return getAccountId().hashCode();
+    }
+  }
 }

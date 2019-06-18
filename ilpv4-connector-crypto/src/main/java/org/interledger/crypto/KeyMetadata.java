@@ -1,6 +1,6 @@
 package org.interledger.crypto;
 
-import com.google.api.client.util.Preconditions;
+import com.google.common.base.Preconditions;
 import org.immutables.value.Value;
 
 /**

@@ -14,6 +14,7 @@ import com.sappenin.interledger.ilpv4.connector.routing.RoutingTableId;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;
@@ -25,8 +26,6 @@ import org.interledger.core.InterledgerResponsePacketHandler;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponsePacket;
 import org.interledger.ildcp.asn.framework.IldcpCodecContextFactory;
-import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
-import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -77,22 +76,21 @@ public class PeerProtocolPacketFilterTest {
     .message("error message")
     .build();
 
+  @Mock
+  RouteBroadcaster routeBroadcasterMock;
+  @Mock
+  ConnectorSettings connectorSettingsMock;
+  @Mock
+  EnabledProtocolSettings enabledProtocolSettingsMock;
+  @Mock
+  PacketRejector packetRejectorMock;
+  @Mock
+  AccountSettings accountSettingsMock;
+  @Mock
+  PacketSwitchFilterChain filterChainMock;
+
   private boolean sendRoutesEnabled;
   private boolean receiveRoutesEnabled;
-
-  @Mock
-  private RouteBroadcaster routeBroadcasterMock;
-  @Mock
-  private ConnectorSettings connectorSettingsMock;
-  @Mock
-  private EnabledProtocolSettings enabledProtocolSettingsMock;
-  @Mock
-  private PacketRejector packetRejectorMock;
-  @Mock
-  private AccountSettingsRepository accountSettingsRepositoryMock;
-  @Mock
-  private PacketSwitchFilterChain filterChainMock;
-
   private PeerProtocolPacketFilter filter;
 
   public PeerProtocolPacketFilterTest(final boolean sendRoutesEnabled, final boolean receiveRoutesEnabled) {
@@ -125,18 +123,16 @@ public class PeerProtocolPacketFilterTest {
       () -> connectorSettingsMock,
       packetRejectorMock,
       routeBroadcasterMock,
-      accountSettingsRepositoryMock,
       CcpCodecContextFactory.oer(),
       IldcpCodecContextFactory.oer()
     );
 
-    final AccountSettingsEntity accountSettingsEntityMock = mock(AccountSettingsEntity.class);
-    when(accountSettingsEntityMock.getAssetScale()).thenReturn(9);
-    when(accountSettingsEntityMock.getAssetCode()).thenReturn("XRP");
-    when(accountSettingsEntityMock.isSendRoutes()).thenReturn(sendRoutesEnabled);
-    when(accountSettingsEntityMock.isReceiveRoutes()).thenReturn(receiveRoutesEnabled);
+    when(accountSettingsMock.getAccountId()).thenReturn(ACCOUNT_ID);
+    when(accountSettingsMock.getAssetScale()).thenReturn(9);
+    when(accountSettingsMock.getAssetCode()).thenReturn("XRP");
+    when(accountSettingsMock.isSendRoutes()).thenReturn(sendRoutesEnabled);
+    when(accountSettingsMock.isReceiveRoutes()).thenReturn(receiveRoutesEnabled);
 
-    when(accountSettingsRepositoryMock.findByAccountId(ACCOUNT_ID)).thenReturn(Optional.of(accountSettingsEntityMock));
     when(connectorSettingsMock.toChildAddress(ACCOUNT_ID)).thenReturn(OPERATOR_ADDRESS);
 
     final RoutableAccount routableAccountMock = mock(RoutableAccount.class);
@@ -148,7 +144,7 @@ public class PeerProtocolPacketFilterTest {
   @Test(expected = NullPointerException.class)
   public void doFilterWithNullPacket() {
     try {
-      filter.doFilter(ACCOUNT_ID, null, filterChainMock);
+      filter.doFilter(accountSettingsMock, null, filterChainMock);
       fail();
     } catch (NullPointerException e) {
       assertThat(e.getMessage(), is(nullValue()));
@@ -165,7 +161,7 @@ public class PeerProtocolPacketFilterTest {
     when(enabledProtocolSettingsMock.isPeerConfigEnabled()).thenReturn(false);
     final InterledgerPreparePacket preparePacket = this.constructPreparePacket(IldcpRequestPacket.PEER_DOT_CONFIG);
 
-    final InterledgerResponsePacket result = filter.doFilter(ACCOUNT_ID, preparePacket, filterChainMock);
+    final InterledgerResponsePacket result = filter.doFilter(accountSettingsMock, preparePacket, filterChainMock);
 
     new InterledgerResponsePacketHandler() {
 
@@ -188,34 +184,6 @@ public class PeerProtocolPacketFilterTest {
     }.handle(result);
   }
 
-  @Test
-  public void doFilterForPeerDotConfigWhenEnabledWithNoAccount() {
-    when(enabledProtocolSettingsMock.isPeerConfigEnabled()).thenReturn(true);
-    final InterledgerPreparePacket preparePacket = this.constructPreparePacket(IldcpRequestPacket.PEER_DOT_CONFIG);
-
-    final InterledgerResponsePacket result = filter.doFilter(AccountId.of("foo"), preparePacket, filterChainMock);
-
-    new InterledgerResponsePacketHandler() {
-
-      @Override
-      protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-        fail(String.format("Should not fulfill: %s", interledgerFulfillPacket));
-      }
-
-      @Override
-      protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-        final ArgumentCaptor<InterledgerErrorCode> errorCodeArgumentCaptor =
-          ArgumentCaptor.forClass(InterledgerErrorCode.class);
-        final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
-        verify(packetRejectorMock)
-          .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
-
-        assertThat(errorCodeArgumentCaptor.getValue(), is(InterledgerErrorCode.F00_BAD_REQUEST));
-        assertThat(errorMessageCaptor.getValue(), is("Invalid Source Account: `foo`"));
-      }
-    }.handle(result);
-  }
-
   /**
    * Uses the DataProvider to test various settings...
    */
@@ -224,7 +192,7 @@ public class PeerProtocolPacketFilterTest {
     when(enabledProtocolSettingsMock.isPeerConfigEnabled()).thenReturn(true);
     final InterledgerPreparePacket preparePacket = this.constructPreparePacket(IldcpRequestPacket.PEER_DOT_CONFIG);
 
-    final InterledgerResponsePacket result = filter.doFilter(ACCOUNT_ID, preparePacket, filterChainMock);
+    final InterledgerResponsePacket result = filter.doFilter(accountSettingsMock, preparePacket, filterChainMock);
 
     new InterledgerResponsePacketHandler() {
       @Override
@@ -251,7 +219,7 @@ public class PeerProtocolPacketFilterTest {
     when(enabledProtocolSettingsMock.isPeerRoutingEnabled()).thenReturn(false);
     final InterledgerPreparePacket preparePacket = this.constructPreparePacket(InterledgerAddress.of("peer.route"));
 
-    final InterledgerResponsePacket result = filter.doFilter(ACCOUNT_ID, preparePacket, filterChainMock);
+    final InterledgerResponsePacket result = filter.doFilter(accountSettingsMock, preparePacket, filterChainMock);
 
     new InterledgerResponsePacketHandler() {
 
@@ -299,7 +267,7 @@ public class PeerProtocolPacketFilterTest {
       .data(os.toByteArray())
       .build();
 
-    final InterledgerResponsePacket result = filter.doFilter(ACCOUNT_ID, preparePacket, filterChainMock);
+    final InterledgerResponsePacket result = filter.doFilter(accountSettingsMock, preparePacket, filterChainMock);
 
     new InterledgerResponsePacketHandler() {
       // Route control messages have no connection to `receiveEnabled`.
@@ -363,7 +331,7 @@ public class PeerProtocolPacketFilterTest {
       .data(os.toByteArray())
       .build();
 
-    final InterledgerResponsePacket result = filter.doFilter(ACCOUNT_ID, preparePacket, filterChainMock);
+    final InterledgerResponsePacket result = filter.doFilter(accountSettingsMock, preparePacket, filterChainMock);
 
     new InterledgerResponsePacketHandler() {
       // Route update messages have no connection to `sendEnabled`.
@@ -407,7 +375,7 @@ public class PeerProtocolPacketFilterTest {
   public void doFilterForPeerDotFoo() {
     final InterledgerPreparePacket preparePacket = this.constructPreparePacket(InterledgerAddress.of("peer.foo"));
 
-    final InterledgerResponsePacket result = filter.doFilter(ACCOUNT_ID, preparePacket, filterChainMock);
+    final InterledgerResponsePacket result = filter.doFilter(accountSettingsMock, preparePacket, filterChainMock);
 
     new InterledgerResponsePacketHandler() {
 

@@ -53,4 +53,11 @@ public interface LinkManager {
    * @return A {@link Link} that is currently connected for a particular accountId.
    */
   Set<Link<?>> getAllConnectedLinks();
+
+  /**
+   * Accessor for the {@link Link} that processes Ping protocol requests.
+   *
+   * @return A {@link Link} for processing unidirectional and bidirectional ping requests.
+   */
+  Link<? extends LinkSettings> getPingLink();
 }

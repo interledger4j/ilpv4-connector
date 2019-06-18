@@ -5,23 +5,26 @@ import org.interledger.connector.accounts.AccountBalanceSettings;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
-import java.math.BigInteger;
+import javax.persistence.Embeddable;
 import java.util.Optional;
 
 @Access(AccessType.FIELD)
+@Embeddable
 public class AccountBalanceSettingsEntity implements AccountBalanceSettings {
 
+  // See Javadoc in AccountSettings for more details around the number types in this class.
+
   @Column(name = "MIN_BALANCE")
-  BigInteger minBalance;
+  Long minBalance;
 
   @Column(name = "MAX_BALANCE")
-  BigInteger maxBalance;
+  Long maxBalance;
 
   @Column(name = "SETTLE_THRESHOLD")
-  BigInteger settleThreshold;
+  Long settleThreshold;
 
   @Column(name = "SETTLE_TO")
-  BigInteger settleTo;
+  Long settleTo;
 
   /**
    * To satisfy Hibernate
@@ -37,38 +40,38 @@ public class AccountBalanceSettingsEntity implements AccountBalanceSettings {
   }
 
   @Override
-  public Optional<BigInteger> getMinBalance() {
+  public Optional<Long> getMinBalance() {
     return Optional.ofNullable(minBalance);
   }
 
-  public void setMinBalance(Optional<BigInteger> minBalance) {
+  public void setMinBalance(Optional<Long> minBalance) {
     this.minBalance = minBalance.orElse(null);
   }
 
   @Override
-  public Optional<BigInteger> getMaxBalance() {
+  public Optional<Long> getMaxBalance() {
     return Optional.ofNullable(maxBalance);
   }
 
-  public void setMaxBalance(Optional<BigInteger> maxBalance) {
+  public void setMaxBalance(Optional<Long> maxBalance) {
     this.maxBalance = maxBalance.orElse(null);
   }
 
   @Override
-  public Optional<BigInteger> getSettleThreshold() {
+  public Optional<Long> getSettleThreshold() {
     return Optional.ofNullable(settleThreshold);
   }
 
-  public void setSettleThreshold(Optional<BigInteger> settleThreshold) {
+  public void setSettleThreshold(Optional<Long> settleThreshold) {
     this.settleThreshold = settleThreshold.orElse(null);
   }
 
   @Override
-  public Optional<BigInteger> getSettleTo() {
+  public Optional<Long> getSettleTo() {
     return Optional.ofNullable(settleTo);
   }
 
-  public void setSettleTo(Optional<BigInteger> settleTo) {
+  public void setSettleTo(Optional<Long> settleTo) {
     this.settleTo = settleTo.orElse(null);
   }
 }

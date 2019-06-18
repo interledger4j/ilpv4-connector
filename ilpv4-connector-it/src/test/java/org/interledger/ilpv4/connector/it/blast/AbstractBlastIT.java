@@ -1,6 +1,7 @@
 package org.interledger.ilpv4.connector.it.blast;
 
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
+import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLink;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.CircuitBreakingLink;
@@ -21,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
-import static org.interledger.connector.link.PingableLink.PING_PROTOCOL_CONDITION;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -34,15 +34,21 @@ public abstract class AbstractBlastIT {
   protected abstract Topology getTopology();
 
   /**
-   * Helper method to testing ping functionality.
+   * Helper method to testing ping functionality. In a real system this would not function this way because this
+   * methodology simply uses a Connection at a particular Connector (identified by {@code senderNodeAddress}) but this
+   * connection doesn't actually flow through the packet-switch, so no balances are affected. To do this properly, an
+   * actual sender should be used to ping a connector via the peer'd Connector.
    *
-   * @param senderNodeAddress  The {@link InterledgerAddress} for the node initiating the ILP ping.
+   * @param senderAccountId    The {@link AccountId} of the account to source the ping from.
+   * @param senderNodeAddress  The {@link InterledgerAddress} for the node to use for initiating the ping (using {@code
+   *                           senderAccountId}).
    * @param destinationAddress The {@link InterledgerAddress} to ping.
+   * @param numUnits           A {@link BigInteger} representing the number of units to ping with.
    */
   protected void testPing(
-    final InterledgerAddress senderNodeAddress,
-    final AccountId senderAccountId,
-    final InterledgerAddress destinationAddress
+    final AccountId senderAccountId, final InterledgerAddress senderNodeAddress,
+    final InterledgerAddress destinationAddress,
+    final BigInteger numUnits
   )
     throws InterruptedException {
 
@@ -54,12 +60,16 @@ public abstract class AbstractBlastIT {
     final long start = System.currentTimeMillis();
 
     final BlastLink blastLink = getBlastLinkFromGraph(senderNodeAddress, senderAccountId);
-    final InterledgerResponsePacket responsePacket = blastLink.ping(destinationAddress, BigInteger.ONE);
+    final InterledgerResponsePacket responsePacket = blastLink.ping(destinationAddress, numUnits);
 
     new InterledgerResponsePacketHandler() {
       @Override
       protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-        assertThat(interledgerFulfillPacket.getFulfillment().validateCondition(PING_PROTOCOL_CONDITION), is(true));
+        assertThat(interledgerFulfillPacket.getFulfillment(), is(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT));
+        assertThat(
+          interledgerFulfillPacket.getFulfillment().validateCondition(PingLoopbackLink.PING_PROTOCOL_CONDITION),
+          is(true)
+        );
         latch.countDown();
       }
 
@@ -77,8 +87,8 @@ public abstract class AbstractBlastIT {
   }
 
   /**
-   * Helper method to obtain an instance of {@link ILPv4Connector} from the topology, based upon its
-   * Interledger Address.
+   * Helper method to obtain an instance of {@link ILPv4Connector} from the topology, based upon its Interledger
+   * Address.
    *
    * @param interledgerAddress
    *
@@ -125,7 +135,7 @@ public abstract class AbstractBlastIT {
   ) {
     assertThat(
       String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.getNodeIlpAddress().get().getValue()),
-      connector.getBalanceTracker().getBalance(accountId).getAmount().get(), is(expectedAmount.intValue())
+      connector.getBalanceTracker().getBalance(accountId).netBalance(), is(expectedAmount)
     );
   }
 }

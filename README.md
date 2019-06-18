@@ -25,6 +25,11 @@ This Connector implementation is intended for operation as a server-based ILSP, 
 
 * **Route Broadcast Protocol**: Defines how Connectors can exchange routing table updates as defined in [Route Broadcast Protocol](https://github.com/interledger/rfcs/pull/455).
 
+* **Balance Tracking**: [Redis](https://redis.io) is used to durably track balance updates in a high-performance 
+manner.
+
+* **Persistent Data Storage**: Account and other data can be stored using Postgres, MySQL, Oracle, MSSQL, and more.
+  
 # Architecture & Design
 To learn more about how this implementation is designed, see the [docs](./docs) folder, specifically [Connector Design](./docs/connector-design.md).
 

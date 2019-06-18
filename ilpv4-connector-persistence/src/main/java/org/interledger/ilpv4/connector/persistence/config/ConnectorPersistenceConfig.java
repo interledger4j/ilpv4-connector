@@ -14,8 +14,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EnableJpaRepositories(basePackages = "org.interledger.ilpv4.connector.persistence.repositories")
 @EntityScan("org.interledger.ilpv4.connector.persistence.entities")
 @Import({
-          H2ConnectorPersistenceConfig.class,
-          RedisConnectorPersistenceConfig.class
+          H2ConnectorPersistenceConfig.class
         })
 
 public class ConnectorPersistenceConfig {

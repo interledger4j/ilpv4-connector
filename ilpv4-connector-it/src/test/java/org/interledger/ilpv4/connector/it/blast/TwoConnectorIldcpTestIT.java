@@ -3,9 +3,9 @@ package org.interledger.ilpv4.connector.it.blast;
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
 import com.sappenin.interledger.ilpv4.connector.RuntimeProperties;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkSettings;
+import org.interledger.ilpv4.connector.balances.InMemoryBalanceTracker;
 import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.AfterClass;
@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 
+import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DEFAULT_JWT_TOKEN_ISSUER;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DOT;
@@ -69,8 +70,10 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
     bobConnector = this.getILPv4NodeFromGraph(BOB_AT_ALICE_ADDRESS);
 
     // Reset all accounts on each connector...
-    bobConnector.getBalanceTracker().resetBalance(AccountId.of(ALICE));
-    aliceConnector.getBalanceTracker().resetBalance(AccountId.of(BOB));
+    ((InMemoryBalanceTracker) bobConnector.getBalanceTracker()).resetBalance(ALICE_ACCOUNT);
+    ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetBalance(BOB_ACCOUNT);
+    ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetBalance(PING_ACCOUNT_ID);
+    ((InMemoryBalanceTracker) bobConnector.getBalanceTracker()).resetBalance(PING_ACCOUNT_ID);
   }
 
   @Test
@@ -116,13 +119,17 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
    */
   @Test
   public void testAlicePingsBob() throws InterruptedException {
-    this.testPing(ALICE_ADDRESS, BOB_ACCOUNT, BOB_AT_ALICE_ADDRESS);
+    this.testPing(BOB_ACCOUNT, ALICE_ADDRESS, BOB_AT_ALICE_ADDRESS, BigInteger.ONE);
 
-    // ALICE
-    assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.ZERO);
+    // Bob@ALICE (this account is 0 because using it to ping does not engage any balance tracking).
+    assertAccountBalance(aliceConnector, BOB_ACCOUNT, BigInteger.valueOf(0L));
 
-    // BOB
-    assertAccountBalance(bobConnector, AccountId.of(ALICE), BigInteger.valueOf(1L));
+    // Alice@BOB
+    assertAccountBalance(bobConnector, ALICE_ACCOUNT, BigInteger.valueOf(-1L));
+
+    // PING ACCOUNT
+    assertAccountBalance(bobConnector, PING_ACCOUNT_ID, BigInteger.valueOf(1L));
+    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, BigInteger.valueOf(0L));
   }
 
   /**
@@ -132,13 +139,17 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
    */
   @Test
   public void testBobPingsAlice() throws InterruptedException {
-    this.testPing(BOB_AT_ALICE_ADDRESS, ALICE_ACCOUNT, ALICE_ADDRESS);
+    this.testPing(ALICE_ACCOUNT, BOB_AT_ALICE_ADDRESS, ALICE_ADDRESS, BigInteger.ONE);
 
-    // ALICE
-    assertAccountBalance(aliceConnector, AccountId.of(BOB), BigInteger.valueOf(1L));
+    // bob@ALICE (this account is 0 because using it to ping does not engage any balance tracking).
+    assertAccountBalance(bobConnector, ALICE_ACCOUNT, BigInteger.valueOf(0));
 
-    // BOB
-    assertAccountBalance(bobConnector, AccountId.of(ALICE), BigInteger.ZERO);
+    // Alice@BOB
+    assertAccountBalance(aliceConnector, BOB_ACCOUNT, BigInteger.valueOf(-1L));
+
+    // PING ACCOUNT
+    assertAccountBalance(bobConnector, PING_ACCOUNT_ID, BigInteger.valueOf(0L));
+    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, BigInteger.valueOf(1L));
   }
 
   /////////////////

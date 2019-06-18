@@ -7,11 +7,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import static org.interledger.crypto.CryptoConfigConstants.ENABLED;
 import static org.interledger.crypto.CryptoConfigConstants.GOOGLE_CLOUD_PROJECT;
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_GCP;
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_LOCATION_ID;
-import static org.interledger.crypto.CryptoConfigConstants.TRUE;
+import static org.interledger.ilpv4.connector.core.ConfigConstants.ENABLED;
+import static org.interledger.ilpv4.connector.core.ConfigConstants.TRUE;
 
 @Configuration
 @ConditionalOnProperty(prefix = ILPV4_CONNECTOR_KEYSTORE_GCP, name = ENABLED, havingValue = TRUE)

@@ -37,7 +37,6 @@ import static org.interledger.ilpv4.connector.persistence.entities.DataConstants
 @Table(name = ACCOUNT_SETTINGS, indexes = {
   @Index(name = ACCT_REL_IDX, columnList = ACCOUNT_RELATIONSHIP)
 })
-//@RedisHash(ACCOUNT_SETTINGS)
 public class AccountSettingsEntity implements AccountSettings {
 
   @Id
