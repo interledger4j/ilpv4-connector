@@ -28,7 +28,11 @@ public class RedisBalanceTracker implements BalanceTracker {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  // All scripts are injected so that the SHA checksum is not recalculated on every execution.
+  // The following are Lua scripts that are used to atomically execute the given logic inside Redis. This allows for
+  // more complex logic without needing multiple round trips for messages to be sent to and from Redis, as well as
+  // locks to ensure no other process is accessing Redis at the same time. Note that all scripts are injected so that
+  // the SHA checksum is not recalculated on every execution.
+  // For more information on scripting in Redis, see https://redis.io/commands/eval
   private final RedisScript<Long> updateBalanceForPrepareScript;
   private final RedisScript<Long> updateBalanceForFulfillScript;
   private final RedisScript<Long> updateBalanceForRejectScript;

@@ -21,8 +21,9 @@ public interface AccountBalanceSettings {
   }
 
   /**
-   * <p>The minimum balance (in this account's indivisible base units) the connector must maintain. The connector will
-   * reject outgoing packets if they would put it below this balance.</p>
+   * <p>The minimum balance (in this account's indivisible base units) the connector must maintain for this account.
+   * For example, the connector will reject incoming packets if the transaction would put the account balance below this
+   * number.  If this value is not present, then the connector will assume no minimum balance.</p>
    *
    * <p>Note that it is permissible to use a {@lknk Long} here since this value represents a minimum value, which is
    * sign-less. Thus, we could use the largest long to represent the largest minimum balance.</p>
@@ -32,9 +33,9 @@ public interface AccountBalanceSettings {
   Optional<Long> getMinBalance();
 
   /**
-   * <p>Maximum balance (in this account's indivisible base units) the connector will allow. The connector will reject
-   * incoming packets if they would put it above this balance. If this value is not present, then the connector will
-   * assume no maximum balance.</p>
+   * <p>Maximum balance (in this account's indivisible base units) the connector will allow. For example, the connector
+   * will reject outgoing packets if the transaction would put the account balance above this number. If this value is
+   * not present, then the connector will assume no maximum balance.</p>
    *
    * <p>Note that it is permissible to use a {@lknk Long} here since this value represents a minimum value, which is
    * sign-less. Thus, we could use the largest long to represent the largest minimum balance.</p>
