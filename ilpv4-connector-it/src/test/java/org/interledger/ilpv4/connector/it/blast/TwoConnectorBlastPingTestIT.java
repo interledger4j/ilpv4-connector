@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.annotation.Order;
 
 import java.math.BigInteger;
 import java.time.Instant;
@@ -531,11 +530,12 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
    */
   @Test
   public void zTestPingPerf() throws InterruptedException {
-    final BlastLink aliceBlastLink = getBlastLinkFromGraph(ALICE_CONNECTOR_ADDRESS, PAUL_ACCOUNT);
+    final BlastLink paulToAliceLink = getBlastLinkFromGraph(ALICE_CONNECTOR_ADDRESS, PAUL_ACCOUNT);
 
+    final int TIMEOUT = 30;
     final int numReps = 2000;
 
-    final int numThreads = 10;
+    final int numThreads = 5;
     final CountDownLatch latch = new CountDownLatch(numReps);
 
     // Tracks total time spent in the Runnable so we can find an average.
@@ -543,7 +543,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
     final Runnable runnable = () -> {
       final long start = System.currentTimeMillis();
-      final InterledgerResponsePacket responsePacket = aliceBlastLink.ping(BOB_CONNECTOR_ADDRESS, ONE);
+      final InterledgerResponsePacket responsePacket = paulToAliceLink.ping(BOB_CONNECTOR_ADDRESS, ONE);
 
       new InterledgerResponsePacketHandler() {
         @Override
@@ -568,11 +568,11 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     for (int i = 0; i < numReps; i++) {
       executor.submit(runnable);
     }
-    latch.await(5, TimeUnit.SECONDS);
+    latch.await(TIMEOUT, TimeUnit.SECONDS);
     final long end = System.currentTimeMillis();
 
     executor.shutdown();
-    executor.awaitTermination(10, TimeUnit.SECONDS);
+    executor.awaitTermination(TIMEOUT, TimeUnit.SECONDS);
 
     double totalTime = (end - start);
 
@@ -581,8 +581,8 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
     LOGGER.info("[Pings Perf Test] Latch Count: {}", latch.getCount());
     LOGGER.info("[Pings Perf Test] {} pings took {} ms", numReps, totalTime);
-    LOGGER.info("[Pings Perf Test] Each Ping spent {} ms processing, on Average", averageProcessingTime);
-    LOGGER.info("[Pings Perf Test] Average ms/ping: {} ms", averageMsPerPing);
+    LOGGER.info("[Pings Perf Test] Average CPU (time/ping): {} ms", averageProcessingTime);
+    LOGGER.info("[Pings Perf Test] Average Ping (ms/ping): {} ms", averageMsPerPing);
 
     assertThat(latch.getCount(), is(0L));
     assertThat(
@@ -591,19 +591,24 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
       is(true)
     );
     assertThat(
-      "averageMsPerPing should have been less than 2, but was " + averageMsPerPing, averageMsPerPing < 2,
+      "averageMsPerPing should have been less than 4, but was " + averageMsPerPing, averageMsPerPing < 4,
       is(true)
     );
 
-    // TODO: Some account should be paying for Ping traffic...
-    assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO);
+    // test.alice.paul: Should be -1 because that account initiated and paid for the ping.
+    assertAccountBalance(aliceConnector, PAUL_ACCOUNT, BigInteger.valueOf(numReps * -1));
+    // test.alice.bob: Should be 0 because this account will receive one from Paul, but then pay the Bob Connector.
+    assertAccountBalance(aliceConnector, BOB_ACCOUNT, BigInteger.valueOf(numReps));
+    // test.alice.__ping_account__: Should be 0 because it is no engaged in this flow.
+    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, ZERO);
 
-    // Alice @ Bob (should be numReps.negate, because this account accepts all ping traffic)
-    assertAccountBalance(bobConnector, ALICE_ACCOUNT, BigInteger.valueOf(numReps).negate());
-    // PingAccount @ Bob (should be `numReps`, since this account gets all the ping money for a connector)
+    // test.bob.alice: Should be 0 because it gets `numReps` from Alice Connector, but pays `numReps` to the ping
+    // account on Bob.
+    assertAccountBalance(bobConnector, ALICE_ACCOUNT, BigInteger.valueOf(numReps * -1));
+    // test.bob.__ping_account__: Should be `numReps` because it's receiving the ping funds.  Because this account is
+    // owned by the Connector, it's OK to extend the 1 unit of credit above to the incoming account.
     assertAccountBalance(bobConnector, PING_ACCOUNT_ID, BigInteger.valueOf(numReps));
   }
-
 
   // TODO: Cross currency ping?
 
