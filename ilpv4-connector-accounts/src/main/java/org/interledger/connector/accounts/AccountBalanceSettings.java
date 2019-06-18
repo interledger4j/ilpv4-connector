@@ -25,8 +25,8 @@ public interface AccountBalanceSettings {
    * For example, the connector will reject incoming packets if the transaction would put the account balance below this
    * number. If this value is not present, then the connector will assume no minimum balance.</p>
    *
-   * <p>Note that it is permissible to use a {@lknk Long} here since this value represents a minimum value, which is
-   * sign-less. Thus, we could use the largest long to represent the largest minimum balance.</p>
+   * <p>Note that it is permissible to use a {@link Long} here since this value represents a minimum value, which is
+   * sign-less. Thus, we can use the largest long to represent the largest minimum balance.</p>
    *
    * @return The minimum balance, or {@link Optional#empty()} if there is no minimum.
    */
@@ -37,8 +37,8 @@ public interface AccountBalanceSettings {
    * will reject outgoing packets if the transaction would put the account balance above this number. If this value is
    * not present, then the connector will assume no maximum balance.</p>
    *
-   * <p>Note that it is permissible to use a {@lknk Long} here since this value represents a minimum value, which is
-   * sign-less. Thus, we could use the largest long to represent the largest minimum balance.</p>
+   * <p>Note that it is permissible to use a {@link Long} here since this value represents a minimum value, which is
+   * sign-less. Thus, we can use the largest long to represent the largest minimum balance.</p>
    *
    * @return The maximum balance, or {@link Optional#empty()} if there is no maximum.
    */
@@ -48,9 +48,9 @@ public interface AccountBalanceSettings {
    * <p>Optional Balance (in this account's indivisible base units) numerically below which the connector will
    * automatically initiate a settlement.</p>
    *
-   * <p>Note that it is permissible to use a {@lknk Long} here since this value represents a threshold for a value
+   * <p>Note that it is permissible to use a {@link Long} here since this value represents a threshold for a value
    * that will never go negative (this roughly correlates to the `prepaid_balance` in the balance tracker, and this will
-   * never go negative). Thus, we could use the largest long number to represent the largest threshold).</p>
+   * never go negative). Thus, we can use the largest long number to represent the largest threshold).</p>
    *
    * @return The settlement threshold balance, or {@link Optional#empty()} if there is no threshold (i.e., the account
    * should never settle).
@@ -60,9 +60,9 @@ public interface AccountBalanceSettings {
   /**
    * Optional Balance (in this account's indivisible base units) the connector will attempt to reach when settling.
    *
-   * <p>Note that it is permissible to use a {@lknk Long} here since this value only ever represents a positive
+   * <p>Note that it is permissible to use a {@link Long} here since this value only ever represents a positive
    * number (this roughly correlates to the `prepaid_balance` in the balance tracker, and this will never go negative).
-   * Thus, we could use the largest long number to represent the largest threshold).</p>
+   * Thus, we can use the largest long number to represent the largest threshold).</p>
    *
    * @return The amount that triggers settlement.
    */
