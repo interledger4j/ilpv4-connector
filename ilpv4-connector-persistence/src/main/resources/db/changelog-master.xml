@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <property name="now" value="now()" dbms="h2"/>
+    <property name="now" value="now()" dbms="postgresql"/>
+
+    <property name="boolean_false" value="FALSE" dbms="h2"/>
+    <property name="boolean_false" value="FALSE" dbms="postgresql"/>
+
+    <property name="timestamp" value="TIMESTAMP" dbms="h2"/>
+    <property name="timestamp" value="TIMESTAMP WITHOUT TIME ZONE" dbms="postgresql"/>
+
+    <!-- DDL -->
+    <include file="db/changelogs/base/changelog.xml"/>
+
+</databaseChangeLog>

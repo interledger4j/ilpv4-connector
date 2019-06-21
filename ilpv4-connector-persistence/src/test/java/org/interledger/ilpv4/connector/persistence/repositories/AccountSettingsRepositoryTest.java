@@ -20,7 +20,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -55,7 +54,7 @@ public class AccountSettingsRepositoryTest {
       .description("description")
       .assetCode("XRP")
       .assetScale(9)
-      .maximumPacketAmount(BigInteger.TEN)
+      .maximumPacketAmount(10L)
       .linkType(LinkType.of("Loopback"))
       .isConnectionInitiator(true)
       .isInternal(true)

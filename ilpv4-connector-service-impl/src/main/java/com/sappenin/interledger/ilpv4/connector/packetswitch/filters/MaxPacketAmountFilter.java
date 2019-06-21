@@ -5,9 +5,6 @@ import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
-
-import java.util.Objects;
 
 
 /**
@@ -30,7 +27,7 @@ public class MaxPacketAmountFilter extends AbstractPacketFilter implements Packe
     // If the max packet amount is present...
     return sourceAccountSettings.getMaximumPacketAmount()
       //  if Packet amount is greater-than `maxPacketAmount`, then Reject.
-      .filter(maxPacketAmount -> sourcePreparePacket.getAmount().compareTo(maxPacketAmount) > 0)
+      .filter(maxPacketAmount -> sourcePreparePacket.getAmount().longValue() > maxPacketAmount)
       .map(maxPacketAmount -> {
         logger.error(
           "Rejecting packet for exceeding max amount. accountId={} maxAmount={} actualAmount={}",

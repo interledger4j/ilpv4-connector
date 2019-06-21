@@ -22,8 +22,6 @@ import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntit
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-
 /**
  * <p>A very simple topology that simulates a single ILP-over-HTTP (BLAST) connection between two Connectors where
  * one Connector (`alice`) is the <tt>Parent</tt>, and the other Connector (`bob`) is the child.</p>
@@ -146,7 +144,7 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
         .accountId(AccountId.of(BOB))
         .description("Blast account for Bob @ Alice")
         .accountRelationship(AccountRelationship.CHILD)
-        .maximumPacketAmount(BigInteger.valueOf(1000000L)) // 1M NanoDollars is $0.001
+        .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
         .linkType(BlastLink.LINK_TYPE)
         .isConnectionInitiator(true)
         .assetScale(9)
@@ -208,7 +206,7 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
         .accountId(AccountId.of(ALICE))
         .description("Blast account for Alice @ Bob")
         .isConnectionInitiator(true)
-        .maximumPacketAmount(BigInteger.valueOf(1000000L)) // 1M NanoDollars is $0.001
+        .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
         .accountRelationship(AccountRelationship.PARENT)
         .linkType(BlastLink.LINK_TYPE)
         .assetScale(9)

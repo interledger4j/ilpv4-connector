@@ -41,10 +41,6 @@ spring:
   ##            uri: https://fixme.example.com
   ##            order: 2
   #        bootstrap: true
-
-  profiles:
-    # see https://stackoverflow.com/questions/37700352
-    active: ${spring.profiles.active}
   output:
     ansi:
       enabled: ALWAYS
@@ -117,30 +113,3 @@ ilpv4:
       # A simulated routing secret, which is a seed used for generating routing table auth values.
       # Represents the plaintext value of `shh`, encrypted.
       routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
-    accounts:
-      - id: alice
-        description: Simulated Alice account
-        # The default relationship-type that this connector should view an account as.
-        relationship: PEER
-        # Type of the Link that should be used for this account.
-        linkType: Loopback
-        assetCode: XRP
-        assetScale: 6
-        # Whether we should broadcast routes to this peer.
-        sendRoutes: true
-        # Whether we should receive and process route broadcasts from this peer.
-        receiveRoutes: true
-        maximumPacketAmount: 10
-      - id: bob
-        description: Simulated Bob Account.
-        # The default relationship-type that this connector should view an account as.
-        relationship: PEER
-        # Type of the Link that should be used for this account.
-        linkType: Loopback
-        assetCode: USD
-        assetScale: 2
-        # Whether we should broadcast routes to this peer.
-        sendRoutes: true
-        # Whether we should receive and process route broadcasts from this peer.
-        receiveRoutes: true
-        maximumPacketAmount: 100

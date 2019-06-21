@@ -13,6 +13,28 @@
 
   <name>ILPv4 :: Connector :: Persistence</name>
   <description>A persistence layer for the ILPv4 Connectors.</description>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.liquibase</groupId>
+          <artifactId>liquibase-maven-plugin</artifactId>
+          <version>3.6.3</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.postgresql</groupId>
+              <artifactId>postgresql</artifactId>
+              <version>42.2.5</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+  <properties>
+    <org.postgresql.postgresql.version>42.2.5</org.postgresql.postgresql.version>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -40,12 +62,10 @@
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
     </dependency>
-    <!-- DataSource (HikariCP) -->
-    <!-- TODO Enable Hikari-->
-    <!--    <dependency>-->
-    <!--      <groupId>com.zaxxer</groupId>-->
-    <!--      <artifactId>HikariCP</artifactId>-->
-    <!--    </dependency>-->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+    </dependency>
 
     <!-- JPA Provider (Hibernate)-->
     <dependency>
@@ -106,5 +126,37 @@
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
   </dependencies>
+
+  <profiles>
+    <!-- Used to initialize a Postgres DB for the Connector -->
+    <!-- Execute the command `mvn -P liquibase-pg-sql -DskipTests liquibase:update` to update the Database -->
+    <profile>
+      <id>liquibase-pg-sql</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-maven-plugin</artifactId>
+            <configuration>
+              <driver>org.postgresql.Driver</driver>
+              <changeLogFile>db/changelog-master.xml</changeLogFile>
+              <url>jdbc:postgresql://localhost:5432/circle_test</url>
+            </configuration>
+            <executions>
+              <execution>
+                <phase>compile</phase>
+                <goals>
+                  <goal>updateSQL</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

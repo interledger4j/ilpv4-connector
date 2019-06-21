@@ -1,0 +1,7 @@
+# See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
+logging:
+  level:
+    ROOT: INFO
+    org.interledger: INFO
+    org.springframework: INFO
+    org.springframework.security: INFO

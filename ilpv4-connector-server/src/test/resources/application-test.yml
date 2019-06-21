@@ -41,9 +41,6 @@ spring:
   ##            order: 2
   #        bootstrap: true
 
-  profiles:
-    # see https://stackoverflow.com/questions/37700352
-    active: ${spring.profiles.active}
   output:
     ansi:
       enabled: ALWAYS
@@ -57,36 +54,11 @@ spring:
     add-mappings: false
   mvc:
     throw-exception-if-no-handler-found: true
-  # Database Settings
-  datasource:
-    url: jdbc:h2:mem:example-app;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    platform: h2
-    username: sa
-    password:
-    driverClassName: org.h2.Driver
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
-    hibernate:
-      ddl-auto: update
-    open-in-view: false
     properties:
       hibernate:
-        show_sql: false
-        use_sql_comments: true
-        format_sql: true
-        create_empty_composites:
-          enabled: true
-
-###
-#   H2 Settings
-###
-h2:
-  console:
-    enabled: true
-    path: /console
-    settings:
-      trace: false
-      web-allow-others: false
+        temp:
+          use_jdbc_metadata_defaults: false
 
 ilpv4:
   connector:

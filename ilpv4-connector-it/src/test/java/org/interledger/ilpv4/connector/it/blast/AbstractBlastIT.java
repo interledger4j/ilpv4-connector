@@ -3,6 +3,7 @@ package org.interledger.ilpv4.connector.it.blast;
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
 import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLink;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
+import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.CircuitBreakingLink;
 import org.interledger.connector.link.Link;
@@ -13,6 +14,7 @@ import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
 import org.interledger.ilpv4.connector.it.topology.Topology;
+import org.junit.BeforeClass;
 import org.slf4j.Logger;
 
 import java.math.BigInteger;
@@ -20,6 +22,15 @@ import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DEFAULT_JWT_TOKEN_ISSUER;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DOT;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__GLOBAL_ROUTING_SETTINGS__ROUTING_SECRET;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__ENABLED;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__FILENAME;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__PASSWORD;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__SECRET0_ALIAS;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__SECRET0_PASSWORD;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -28,6 +39,32 @@ import static org.junit.Assert.assertThat;
  * Abstract parent class for BLAST Integration tests.
  */
 public abstract class AbstractBlastIT {
+
+  @BeforeClass
+  public static void setupClass() {
+    System.setProperty("spring.jpa.hibernate.ddl-auto", "update");
+    System.setProperty("spring.jpa.properties.hibernate.temp.use_jdbc_metadata_defaults", "false");
+    // System.setProperty("spring.jpa.database-platform", "org.hibernate.dialect.PostgreSQL9Dialect");
+
+    System.setProperty(DEFAULT_JWT_TOKEN_ISSUER, "https://connie.example.com");
+    System.setProperty(ADMIN_PASSWORD, "password");
+
+    // Configure JKS Properly for test purposes
+    // For dev/test purposes this is fine, but not for real use-cases. Use KMS instead.
+    System.setProperty(ILPV4__CONNECTOR__KEYSTORE__JKS__ENABLED, "true");
+    System.setProperty(ILPV4__CONNECTOR__KEYSTORE__JKS__FILENAME, "crypto/crypto.p12");
+    System.setProperty(ILPV4__CONNECTOR__KEYSTORE__JKS__PASSWORD, "password");
+    // For dev/test purposes this is fine, but not for real use-cases. Encrypt this value instead.
+    System.setProperty(ILPV4__CONNECTOR__KEYSTORE__JKS__SECRET0_ALIAS, "secret0");
+    System.setProperty(ILPV4__CONNECTOR__KEYSTORE__JKS__SECRET0_PASSWORD, "password");
+    //A simulated routing secret, which is a seed used for generating routing table auth values. Represents the
+    // plaintext value of `shh`, encrypted.
+    System.setProperty(ILPV4__CONNECTOR__GLOBAL_ROUTING_SETTINGS__ROUTING_SECRET,
+      "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=");
+
+    // Required to get the conditional-config to work for this topology...
+    System.setProperty(ConnectorProperties.ENABLED_PROTOCOLS + DOT + ConnectorProperties.BLAST_ENABLED, "true");
+  }
 
   protected abstract Logger getLogger();
 

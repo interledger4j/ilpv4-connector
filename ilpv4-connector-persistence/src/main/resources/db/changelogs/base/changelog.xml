@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+  <changeSet author="dfuelling" id="create initial tables">
+    <createTable tableName="ACCOUNT_SETTINGS">
+      <column autoIncrement="true" name="ID" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="NATURAL_ID" type="VARCHAR(32)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="CREATED_DTTM" type="DATETIME">
+        <constraints nullable="false"/>
+      </column>
+      <column name="MODIFIED_DTTM" type="DATETIME">
+        <constraints nullable="false"/>
+      </column>
+      <column name="VERSION" type="SMALLINT UNSIGNED">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="DESCRIPTION" type="VARCHAR(255)">
+        <constraints nullable="true"/>
+      </column>
+
+      <column name="INTERNAL" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="CONNECTION_INITIATOR" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+
+      <!-- Purposefully smaller than 1024 to allow for long values with a long prefix -->
+      <column name="ILP_ADDR_SEGMENT" type="VARCHAR(512)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="ACCOUNT_RELATIONSHIP" type="SMALLINT UNSIGNED">
+        <constraints nullable="false"/>
+      </column>
+      <column name="LINK_TYPE" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="ASSET_CODE" type="VARCHAR(12)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="ASSET_SCALE" type="SMALLINT UNSIGNED">
+        <constraints nullable="false"/>
+      </column>
+      <column name="SEND_ROUTES" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="RECEIVE_ROUTES" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="MAX_PACKET_AMT" type="BIGINT">
+        <constraints nullable="true"/>
+      </column>
+
+      <!-- AccountBalanceSettingsEntity-->
+      <column name="MIN_BALANCE" type="BIGINT">
+        <constraints nullable="true"/>
+      </column>
+      <column name="MAX_BALANCE" type="BIGINT">
+        <constraints nullable="true"/>
+      </column>
+      <column name="SETTLE_THRESHOLD" type="BIGINT">
+        <constraints nullable="true"/>
+      </column>
+      <column name="SETTLE_TO" type="BIGINT">
+        <constraints nullable="true"/>
+      </column>
+
+      <!-- AccountRateLimitSettingsEntity-->
+      <column name="MAX_PACKETS_PER_SEC" type="BIGINT">
+        <constraints nullable="true"/>
+      </column>
+
+      <column name="CUSTOM_SETTINGS" type="VARCHAR(8196)">
+        <constraints nullable="true"/>
+      </column>
+
+    </createTable>
+  </changeSet>
+
+  <changeSet author="dfuelling" id="hibernate_sequence">
+    <createSequence incrementBy="1" sequenceName="hibernate_sequence" startValue="1"/>
+  </changeSet>
+</databaseChangeLog>

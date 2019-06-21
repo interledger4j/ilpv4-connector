@@ -24,9 +24,6 @@ management:
 #      enabled: true
 
 spring:
-  profiles:
-    # see https://stackoverflow.com/questions/37700352
-    active: ${spring.profiles.active}
   output:
     ansi:
       enabled: ALWAYS

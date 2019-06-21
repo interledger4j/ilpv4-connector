@@ -23,8 +23,6 @@ import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntit
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-
 /**
  * <p>A very simple topology that simulates a single ILP-over-HTTP (BLAST) connection between two Connectors to
  * enable a pinging entity (Paul) to issue a ping request using his connector (test.alice) to ping the `test.bob`
@@ -68,6 +66,10 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
         final ConnectorServerNode bobServerNode =
           g.getNode(BOB_CONNECTOR_ADDRESS.getValue(), ConnectorServerNode.class);
         final int bobPort = bobServerNode.getPort();
+
+        // Before initializing, delete all Accounts from the DB just to be safe (technically, Alice and Bob share
+        // this DB, so making this call _only_ on one node is sufficient)
+        aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
 
         try {
           // Add Bob's account on Alice...
@@ -138,7 +140,7 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
         .description("Blast account for Bob")
         .accountRelationship(AccountRelationship.PEER)
         .rateLimitSettings(AccountRateLimitSettings.builder().maxPacketsPerSecond(5000).build())
-        .maximumPacketAmount(BigInteger.valueOf(1000000L)) // 1M NanoDollars is $0.001
+        .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
         .linkType(BlastLink.LINK_TYPE)
         .assetScale(9)
         .assetCode(XRP)
@@ -233,7 +235,7 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
         .accountId(ALICE_ACCOUNT)
         .description("Blast account for Alice")
         .rateLimitSettings(AccountRateLimitSettings.builder().maxPacketsPerSecond(5000).build())
-        .maximumPacketAmount(BigInteger.valueOf(1000000L)) // 1M NanoDollars is $0.001
+        .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
         .accountRelationship(AccountRelationship.PEER)
         .linkType(BlastLink.LINK_TYPE)
         .assetScale(9)
