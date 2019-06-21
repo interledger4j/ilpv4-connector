@@ -108,8 +108,8 @@ jobs:
 
       # gets the project dependencies and installs sub-module deps
       - run:
-        name: Install Connector Dependencies
-        command: mvn dependency:go-offline -DskipTests install
+          name: Install Connector Dependencies
+          command: mvn dependency:go-offline -DskipTests install
 
       - save_cache: # saves the project dependencies
           paths:
