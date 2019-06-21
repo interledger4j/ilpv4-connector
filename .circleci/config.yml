@@ -13,7 +13,6 @@ jobs:
         environment:
           # Customize the JVM maximum heap limit
           MAVEN_OPTS: -Xmx3200m
-          spring.profiles.active: default
           spring.datasource.url: jdbc:h2:mem:connector-db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
 
       # Service container image available at `host: localhost`
@@ -68,7 +67,6 @@ jobs:
       - store_artifacts:
           path: ~/junit
 
-
       # publish the coverage report to codecov.io
       - run: bash <(curl -s https://codecov.io/bash)
 
@@ -81,7 +79,6 @@ jobs:
         environment:
           # Customize the JVM maximum heap limit
           MAVEN_OPTS: -Xmx3200m
-          #spring.profiles.active: ci_postgresql
           spring.datasrouce.user: circleci
           spring.datasource.url: jdbc:postgresql://localhost:5432/circle_test
 
