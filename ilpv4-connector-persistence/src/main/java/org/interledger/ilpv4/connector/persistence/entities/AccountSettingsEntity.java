@@ -45,8 +45,10 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
   @Column(name = "NATURAL_ID")
   private String naturalId;
 
+  @Column(name ="DESCRIPTION")
   private String description;
 
+  @Column(name = "INTERNAL")
   private boolean internal;
 
   @Column(name = "CONNECTION_INITIATOR")

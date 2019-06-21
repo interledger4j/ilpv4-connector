@@ -22,6 +22,18 @@
         <constraints nullable="false"/>
       </column>
 
+      <column name="DESCRIPTION" type="VARCHAR(255)">
+        <constraints nullable="true"/>
+      </column>
+
+      <column name="INTERNAL" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="CONNECTION_INITIATOR" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+
       <!-- Purposefully smaller than 1024 to allow for long values with a long prefix -->
       <column name="ILP_ADDR_SEGMENT" type="VARCHAR(512)">
         <constraints nullable="true"/>
@@ -38,10 +50,10 @@
       <column name="ASSET_SCALE" type="SMALLINT UNSIGNED">
         <constraints nullable="false"/>
       </column>
-      <column name="SEND_ROUTES" type="BOOLEAN">
+      <column name="SEND_ROUTES" type="BOOLEAN" defaultValueBoolean="false">
         <constraints nullable="false"/>
       </column>
-      <column name="RECEIVE_ROUTES" type="BOOLEAN">
+      <column name="RECEIVE_ROUTES" type="BOOLEAN" defaultValueBoolean="false">
         <constraints nullable="false"/>
       </column>
       <column name="MAX_PACKET_AMT" type="BIGINT">
