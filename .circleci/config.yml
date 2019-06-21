@@ -72,7 +72,7 @@ jobs:
       # publish the coverage report to codecov.io
       - run: bash <(curl -s https://codecov.io/bash)
 
-  test-postgres:
+  test-postgresql:
     working_directory: ~/repo
 
     docker:
@@ -127,3 +127,9 @@ jobs:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}
 
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test-postgresql
