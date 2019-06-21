@@ -82,14 +82,14 @@ jobs:
           # Customize the JVM maximum heap limit
           MAVEN_OPTS: -Xmx3200m
           #spring.profiles.active: ci_postgresql
-          spring.datasrouce.user: postgres
-          spring.datasource.url: jdbc:postgresql://localhost:5432/connector
+          spring.datasrouce.user: circleci
+          spring.datasource.url: jdbc:postgresql://localhost:5432/circle_test
 
       # Service container image available at `host: localhost`
       - image: circleci/postgres:alpine
         environment:
-          POSTGRES_USER: postgres
-          POSTGRES_DB: connector
+          POSTGRES_USER: circleci
+          POSTGRES_DB: circle_test
 
     steps:
 
@@ -120,7 +120,7 @@ jobs:
 
       - run:
           name: Maven Install (Postrges)
-          command: mvn dependency:go-offline install -Dspring.datasource.url=jdbc:postgresql://localhost:5432/connector
+          command: mvn dependency:go-offline install -Dspring.datasource.url=jdbc:postgresql://localhost:5432/circle_test
 
       - save_cache:
           paths:
