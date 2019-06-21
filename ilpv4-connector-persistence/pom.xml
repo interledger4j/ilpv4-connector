@@ -28,7 +28,7 @@
             </dependency>
           </dependencies>
           <configuration>
-            <username>postgres</username>
+            <username>root</username>
           </configuration>
         </plugin>
       </plugins>
