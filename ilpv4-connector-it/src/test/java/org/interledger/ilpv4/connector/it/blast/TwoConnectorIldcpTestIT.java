@@ -1,7 +1,6 @@
 package org.interledger.ilpv4.connector.it.blast;
 
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
-import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkSettings;
 import org.interledger.ilpv4.connector.balances.InMemoryBalanceTracker;
@@ -17,17 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 
 import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DEFAULT_JWT_TOKEN_ISSUER;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DOT;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__GLOBAL_ROUTING_SETTINGS__ROUTING_SECRET;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__ENABLED;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__FILENAME;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__PASSWORD;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__SECRET0_ALIAS;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__SECRET0_PASSWORD;
 import static org.hamcrest.CoreMatchers.is;
-import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_ENABLED;
 import static org.interledger.ilpv4.connector.it.topologies.blast.AbstractTopology.ALICE_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.blast.AbstractTopology.BOB_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.ALICE;
