@@ -116,7 +116,7 @@ jobs:
           name: Create Database
           command: |
             cd ./ilpv4-connector-persistence
-            mvn -P liquibase-pg-sql -DskipTests liquibase:update
+            mvn clean install -P liquibase-pg-sql -DskipTests liquibase:update
 
       - run:
           name: Maven Install
