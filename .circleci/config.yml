@@ -119,8 +119,8 @@ jobs:
             mvn clean install -P liquibase-pg-sql -DskipTests liquibase:update
 
       - run:
-          name: Maven Install
-          command: mvn dependency:go-offline install
+          name: Maven Install (Postrges)
+          command: mvn dependency:go-offline install -Dspring.datasource.url=jdbc:postgresql://localhost:5432/connector
 
       - save_cache:
           paths:
