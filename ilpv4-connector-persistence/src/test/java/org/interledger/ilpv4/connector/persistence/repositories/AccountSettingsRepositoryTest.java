@@ -55,7 +55,7 @@ public class AccountSettingsRepositoryTest {
       .description("description")
       .assetCode("XRP")
       .assetScale(9)
-      .maximumPacketAmount(BigInteger.TEN)
+      .maximumPacketAmount(10L)
       .linkType(LinkType.of("Loopback"))
       .isConnectionInitiator(true)
       .isInternal(true)

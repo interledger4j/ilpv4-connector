@@ -1,7 +1,6 @@
 package org.interledger.ilpv4.connector.it.blast;
 
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
-import com.sappenin.interledger.ilpv4.connector.RuntimeProperties;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkSettings;
@@ -21,7 +20,12 @@ import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PIN
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DEFAULT_JWT_TOKEN_ISSUER;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DOT;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.SPRING_PROFILES_ACTIVE;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__GLOBAL_ROUTING_SETTINGS__ROUTING_SECRET;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__ENABLED;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__FILENAME;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__PASSWORD;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__SECRET0_ALIAS;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__SECRET0_PASSWORD;
 import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_ENABLED;
 import static org.interledger.ilpv4.connector.it.topologies.blast.AbstractTopology.ALICE_ACCOUNT;
@@ -44,21 +48,14 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
   private ILPv4Connector bobConnector;
 
   @BeforeClass
-  public static void setupClass() {
-    System.setProperty(DEFAULT_JWT_TOKEN_ISSUER, "https://connie.example.com");
-    System.setProperty(ADMIN_PASSWORD, "password");
-    System.setProperty(ILPV4_CONNECTOR_KEYSTORE_JKS_ENABLED, "true");
-    System.setProperty(SPRING_PROFILES_ACTIVE, RuntimeProperties.ConnectorProfiles.DEV);
-    // Required to get the conditional-config to work for this topology...
-    System.setProperty(ConnectorProperties.ENABLED_PROTOCOLS + DOT + ConnectorProperties.BLAST_ENABLED, "true");
-
+  public static void startTopology() {
     LOGGER.info("Starting test topology `{}`...", "TwoConnectorPeerBlastTopology");
     topology.start();
     LOGGER.info("Test topology `{}` started!", "TwoConnectorPeerBlastTopology");
   }
 
   @AfterClass
-  public static void shutdownClass() {
+  public static void stopTopology() {
     LOGGER.info("Stopping test topology `{}`...", "TwoConnectorPeerBlastTopology");
     topology.stop();
     LOGGER.info("Test topology `{}` stopped!", "TwoConnectorPeerBlastTopology");

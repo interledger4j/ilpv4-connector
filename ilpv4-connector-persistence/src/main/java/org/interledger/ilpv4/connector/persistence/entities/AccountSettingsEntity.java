@@ -10,7 +10,6 @@ import org.interledger.connector.link.LinkType;
 import org.interledger.ilpv4.connector.persistence.AccountRelationshipConverter;
 import org.interledger.ilpv4.connector.persistence.HashMapConverter;
 import org.interledger.ilpv4.connector.persistence.LinkTypeConverter;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -22,7 +21,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.Table;
-import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -32,12 +30,11 @@ import static org.interledger.ilpv4.connector.persistence.entities.DataConstants
 import static org.interledger.ilpv4.connector.persistence.entities.DataConstants.TableNames.ACCOUNT_SETTINGS;
 
 @Entity
-@EnableJpaAuditing
 @Access(AccessType.FIELD)
 @Table(name = ACCOUNT_SETTINGS, indexes = {
   @Index(name = ACCT_REL_IDX, columnList = ACCOUNT_RELATIONSHIP)
 })
-public class AccountSettingsEntity implements AccountSettings {
+public class AccountSettingsEntity extends AbstractEntity implements AccountSettings {
 
   @Id
   @GeneratedValue
@@ -73,16 +70,19 @@ public class AccountSettingsEntity implements AccountSettings {
   private int assetScale;
 
   @Column(name = "MAX_PACKET_AMT")
-  private BigInteger maximumPacketAmount;
+  private Long maximumPacketAmount;
+
+  @Column(name = "SEND_ROUTES")
+  private boolean sendRoutes;
+
+  @Column(name = "RECEIVE_ROUTES")
+  private boolean receiveRoutes;
 
   @Embedded
   private AccountBalanceSettingsEntity balanceSettings;
 
   @Embedded
   private AccountRateLimitSettingsEntity rateLimitSettings;
-
-  private boolean sendRoutes;
-  private boolean receiveRoutes;
 
   @Convert(converter = HashMapConverter.class)
   @Column(name = "CUSTOM_SETTINGS", length = 8196)
@@ -200,11 +200,11 @@ public class AccountSettingsEntity implements AccountSettings {
   }
 
   @Override
-  public Optional<BigInteger> getMaximumPacketAmount() {
+  public Optional<Long> getMaximumPacketAmount() {
     return Optional.ofNullable(maximumPacketAmount);
   }
 
-  public void setMaximumPacketAmount(Optional<BigInteger> maximumPacketAmount) {
+  public void setMaximumPacketAmount(Optional<Long> maximumPacketAmount) {
     this.maximumPacketAmount = maximumPacketAmount.orElse(null);
   }
 

@@ -76,7 +76,7 @@ public interface AccountProviderSettings {
    *
    * @return The maximum packet amount allowed by this account.
    */
-  Optional<BigInteger> getMaximumPacketAmount();
+  Optional<Long> getMaximumPacketAmount();
 
   /**
    * Defines whether the connector should maintain and enforce a balance for this account.

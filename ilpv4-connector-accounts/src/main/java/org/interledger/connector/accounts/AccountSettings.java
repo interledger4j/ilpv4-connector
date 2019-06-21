@@ -9,7 +9,6 @@ import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkType;
 import org.interledger.core.InterledgerAddress;
 
-import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -125,12 +124,12 @@ public interface AccountSettings {
   int getAssetScale();
 
   /**
-   * The maximum amount per packet for incoming prepare packets. The connector will reject any incoming prepare packets
+   * The maximum amount per-packet for incoming prepare packets. The connector will reject any incoming prepare packets
    * from this account with a higher amount.
    *
    * @return The maximum packet amount allowed by this account.
    */
-  Optional<BigInteger> getMaximumPacketAmount();
+  Optional<Long> getMaximumPacketAmount();
 
   /**
    * Defines whether the connector should maintain and enforce a balance for this account.

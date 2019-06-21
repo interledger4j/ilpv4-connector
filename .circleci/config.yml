@@ -13,6 +13,8 @@ jobs:
         environment:
           # Customize the JVM maximum heap limit
           MAVEN_OPTS: -Xmx3200m
+          spring.profiles.active: default
+          spring.datasource.url: jdbc:h2:mem:connector-db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
 
       # Service container image available at `host: localhost`
       #- image: circleci/redis:4.0.14-alpine
@@ -70,4 +72,58 @@ jobs:
       # publish the coverage report to codecov.io
       - run: bash <(curl -s https://codecov.io/bash)
 
+  test-postgres:
+    working_directory: ~/repo
+
+    docker:
+      # Primary container image where all commands run
+      - image: circleci/openjdk:8-jdk
+        environment:
+          # Customize the JVM maximum heap limit
+          MAVEN_OPTS: -Xmx3200m
+          #spring.profiles.active: ci_postgresql
+          spring.datasrouce.user: root
+          spring.datasource.url: jdbc:postgresql://localhost:5432/connector
+
+      # Service container image available at `host: localhost`
+      - image: circleci/postgres:alpine
+        environment:
+          POSTGRES_USER: root
+          POSTGRES_DB: connector
+
+    steps:
+
+      # apply the JCE unlimited strength policy to allow the PSK 256 bit key length
+      # solution from http://qiita.com/yoskhdia/items/f4702a3abc4467de69b0
+      - run:
+          name: Getting JCE unlimited strength policy to allow the 256 bit keys
+          command: |
+            curl -L --cookie 'oraclelicense=accept-securebackup-cookie;'  http://download.oracle.com/otn-pub/java/jce/8/jce_policy-8.zip -o /tmp/jce_policy.zip
+            unzip -o /tmp/jce_policy.zip -d /tmp
+            sudo mv -f /tmp/UnlimitedJCEPolicyJDK8/US_export_policy.jar $JAVA_HOME/jre/lib/security/US_export_policy.jar
+            sudo mv -f /tmp/UnlimitedJCEPolicyJDK8/local_policy.jar $JAVA_HOME/jre/lib/security/local_policy.jar
+
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "pom.xml" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+
+      - run:
+          name: Create Database
+          command: |
+            cd ./ilpv4-connector-persistence
+            mvn -P liquibase-pg-sql -DskipTests liquibase:update
+
+      - run:
+          name: Maven Install
+          command: mvn dependency:go-offline install
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: v1-dependencies-{{ checksum "pom.xml" }}
 

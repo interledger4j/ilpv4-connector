@@ -292,6 +292,11 @@
         <version>1.1</version>
       </dependency>
       <dependency>
+        <groupId>org.liquibase</groupId>
+        <artifactId>liquibase-core</artifactId>
+        <version>3.6.3</version>
+      </dependency>
+      <dependency>
         <groupId>org.mockito</groupId>
         <artifactId>mockito-core</artifactId>
         <version>2.28.2</version>
@@ -361,6 +366,14 @@
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <source>8</source>
+            <target>8</target>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
             <useSystemClassLoader>false</useSystemClassLoader>
@@ -379,10 +392,19 @@
               <configuration>
                 <failOnWarning>true</failOnWarning>
                 <ignoredDependencies>
+                  <ignoredDependency>com.auth0:jwks-rsa</ignoredDependency>
                   <ignoredDependency>com.google.code.findbugs:jsr305</ignoredDependency>
                   <ignoredDependency>com.google.code.findbugs:annotations</ignoredDependency>
                   <ignoredDependency>com.google.errorprone:error_prone_annotations</ignoredDependency>
-                  <ignoredDependency>com.auth0:jwks-rsa</ignoredDependency>
+
+                  <!-- Ignore these so that the KMS client dictates the versions -->
+                  <ignoredDependency>com.google.http-client:google-http-client:jar</ignoredDependency>
+                  <ignoredDependency>com.google.protobuf:protobuf-java:jar</ignoredDependency>
+                  <ignoredDependency>com.google.api.grpc:proto-google-cloud-kms-v1:jar</ignoredDependency>
+
+                  <ignoredDependency>com.h2database:h2:jar</ignoredDependency>
+                  <ignoredDependency>org.hibernate:hibernate-entitymanager</ignoredDependency>
+                  <ignoredDependency>org.postgresql:postgresql:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-data-redis</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-web</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-jetty</ignoredDependency>
@@ -394,14 +416,8 @@
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-data-jpa:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-configuration-processor:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.plugin:spring-plugin-core:jar</ignoredDependency>
-                  <ignoredDependency>com.h2database:h2:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.data:spring-data-redis:jar</ignoredDependency>
                   <ignoredDependency>redis.clients:jedis:jar</ignoredDependency>
-                  <ignoredDependency>org.hibernate:hibernate-entitymanager</ignoredDependency>
-                  <!-- Ignore these so that the KMS client dictates the versions -->
-                  <ignoredDependency>com.google.http-client:google-http-client:jar</ignoredDependency>
-                  <ignoredDependency>com.google.protobuf:protobuf-java:jar</ignoredDependency>
-                  <ignoredDependency>com.google.api.grpc:proto-google-cloud-kms-v1:jar</ignoredDependency>
                 </ignoredDependencies>
               </configuration>
             </execution>
@@ -488,29 +504,13 @@
     </plugins>
   </build>
 
-  <!-- TODO: Remove `connector-mode` -->
   <profiles>
     <!-- -->
     <profile>
       <id>dev</id>
-      <properties>
-        <spring.profiles.active>dev</spring.profiles.active>
-      </properties>
-    </profile>
-    <profile>
-      <id>test</id>
-      <properties>
-        <spring.profiles.active>test</spring.profiles.active>
-      </properties>
-    </profile>
-    <profile>
-      <id>prod</id>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
-      <properties>
-        <spring.profiles.active>prod</spring.profiles.active>
-      </properties>
 
       <reporting>
         <plugins>

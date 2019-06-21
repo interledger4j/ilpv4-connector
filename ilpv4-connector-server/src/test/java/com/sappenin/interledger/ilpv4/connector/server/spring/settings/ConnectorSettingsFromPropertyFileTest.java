@@ -92,7 +92,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(account.getAssetScale(), is(8));
       assertThat(account.isSendRoutes(), is(false));
       assertThat(account.isReceiveRoutes(), is(false));
-      assertThat(account.getMaximumPacketAmount(), is(Optional.of(BigInteger.valueOf(100001L))));
+      assertThat(account.getMaximumPacketAmount(), is(Optional.of(100001L)));
       assertThat(account.getCustomSettings().get("foo"), is("bar"));
       assertThat(account.getCustomSettings().get("boo"), is("baz"));
 
@@ -118,7 +118,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(account.getAssetScale(), is(3));
       assertThat(account.isSendRoutes(), is(true));
       assertThat(account.isReceiveRoutes(), is(true));
-      assertThat(account.getMaximumPacketAmount(), is(Optional.of(BigInteger.valueOf(100002L))));
+      assertThat(account.getMaximumPacketAmount(), is(Optional.of(100002L)));
       assertThat(account.getCustomSettings().get("foo"), is("bar1"));
       assertThat(account.getCustomSettings().get("boo"), is("baz1"));
 
@@ -197,7 +197,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(settings.getAssetScale(), is(8));
       assertThat(settings.isSendRoutes(), is(false));
       assertThat(settings.isReceiveRoutes(), is(false));
-      assertThat(settings.getMaximumPacketAmount(), is(Optional.of(BigInteger.valueOf(100001L))));
+      assertThat(settings.getMaximumPacketAmount(), is(Optional.of(100001L)));
       assertThat(settings.getCustomSettings().get("foo"), is("bar"));
       assertThat(settings.getCustomSettings().get("boo"), is("baz"));
 

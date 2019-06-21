@@ -6,7 +6,6 @@ import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.LinkType;
 
-import java.math.BigInteger;
 import java.util.Map;
 import java.util.Optional;
 
@@ -33,7 +32,7 @@ public class AccountSettingsFromPropertyFile implements AccountSettings {
 
   private LinkType linkType;
   private Map<String, Object> customSettings = Maps.newConcurrentMap();
-  private Optional<BigInteger> maximumPacketAmount = Optional.empty();
+  private Optional<Long> maximumPacketAmount = Optional.empty();
 
   @Override
   public AccountId getAccountId() {
@@ -161,11 +160,11 @@ public class AccountSettingsFromPropertyFile implements AccountSettings {
   }
 
   @Override
-  public Optional<BigInteger> getMaximumPacketAmount() {
+  public Optional<Long> getMaximumPacketAmount() {
     return maximumPacketAmount;
   }
 
-  public void setMaximumPacketAmount(Optional<BigInteger> maximumPacketAmount) {
+  public void setMaximumPacketAmount(Optional<Long> maximumPacketAmount) {
     this.maximumPacketAmount = maximumPacketAmount;
   }
 }

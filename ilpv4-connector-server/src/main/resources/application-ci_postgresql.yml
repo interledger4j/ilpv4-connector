@@ -1,9 +1,8 @@
-# See https://docs.spring.io/spring-boot/docs/current/reference/html/common-application-properties.html
+# A custom properties file that can be used in the CI system.
 logging:
   level:
-    ROOT: INFO
+    ROOT: DEBUG
 server:
-  #port: 8080
   http2:
     enabled: true
   jetty:
@@ -27,12 +26,12 @@ spring:
     #password:
     #driverClassName: org.postgresql.Driver
   jpa:
-    #hibernate:
-      #ddl-auto: update
+    hibernate:
+      ddl-auto: update
     open-in-view: false
     properties:
       hibernate:
-        show_sql: false
+        show_sql: true
         use_sql_comments: false
         format_sql: true
         create_empty_composites:
@@ -49,17 +48,6 @@ spring:
   session:
     store-type: NONE
 
-###
-#   H2 Settings
-###
-h2:
-  console:
-    enabled: false
-    path: /console
-    settings:
-      trace: false
-      web-allow-others: false
-
 ilpv4:
   connector:
     btp.enabled: false
@@ -73,4 +61,6 @@ ilpv4:
     nodeIlpAddress: test1.connie
     # Global Routing Settings for this connector.
     globalRoutingSettings:
-      #routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
+      # A simulated routing secret, which is a seed used for generating routing table auth values.
+      # Represents the plaintext value of `shh`, encrypted.
+      routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
