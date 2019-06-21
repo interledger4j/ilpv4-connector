@@ -34,6 +34,7 @@ import static org.interledger.ilpv4.connector.persistence.entities.DataConstants
 @Table(name = ACCOUNT_SETTINGS, indexes = {
   @Index(name = ACCT_REL_IDX, columnList = ACCOUNT_RELATIONSHIP)
 })
+@SuppressWarnings({"PMD"})
 public class AccountSettingsEntity extends AbstractEntity implements AccountSettings {
 
   @Id
@@ -45,7 +46,7 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
   @Column(name = "NATURAL_ID")
   private String naturalId;
 
-  @Column(name ="DESCRIPTION")
+  @Column(name = "DESCRIPTION")
   private String description;
 
   @Column(name = "INTERNAL")

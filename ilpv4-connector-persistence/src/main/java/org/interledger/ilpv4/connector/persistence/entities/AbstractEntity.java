@@ -15,6 +15,7 @@ import java.time.Instant;
  */
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
+@SuppressWarnings({"PMD"})
 public class AbstractEntity {
 
   @Column(name = "CREATED_DTTM", nullable = false, updatable = false)
