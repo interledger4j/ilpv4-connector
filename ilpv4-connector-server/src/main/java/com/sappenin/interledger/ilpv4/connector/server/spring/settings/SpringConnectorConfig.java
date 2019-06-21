@@ -291,6 +291,42 @@ public class SpringConnectorConfig {
     return new PacketRejector(() -> connectorSettingsSupplier.get().getOperatorAddress());
   }
 
+  /**
+   * A collection of {@link PacketSwitchFilter}. Requests move down through the filter-chain, and responses move back up
+   * through the same filter chain in the reverse order, like this:
+   *
+   * <pre>
+   * ┌────────────────────────────────────┐
+   * │   AllowedDestinationPacketFilter   │
+   * └────△───────────────────────────┬───┘
+   * Fulfill/Reject                 Prepare
+   * ┌────┴───────────────────────────▽───┐
+   * │       MaxPacketAmountFilter        │
+   * └────△───────────────────────────┬───┘
+   * Fulfill/Reject                 Prepare
+   * ┌────┴───────────────────────────▽───┐
+   * │         ExpiryPacketFilter         │
+   * └────△───────────────────────────┬───┘
+   * Fulfill/Reject                 Prepare
+   * ┌────┴───────────────────────────▽───┐
+   * │       BalanceIlpPacketFilter       │
+   * └────△───────────────────────────┬───┘
+   * Fulfill/Reject                 Prepare
+   * ┌────┴───────────────────────────▽───┐
+   * │  ValidateFulfillmentPacketFilter   │
+   * └────△───────────────────────────┬───┘
+   * Fulfill/Reject                 Prepare
+   * ┌────┴───────────────────────────▽───┐
+   * │      PeerProtocolPacketFilter      │
+   * └────△───────────────────────────┬───┘
+   * Fulfill/Reject                 Prepare
+   * ┌────┴───────────────────────────▽──┐
+   * │                                   │
+   * │           PacketSwitch            │
+   * │                                   │
+   * └───────────────────────────────────┘
+   * </pre>
+   */
   @Bean
   List<PacketSwitchFilter> packetSwitchFilters(
     RouteBroadcaster routeBroadcaster,
@@ -305,15 +341,22 @@ public class SpringConnectorConfig {
     if (connectorSettings.getEnabledFeatures().isRateLimitingEnabled()) {
       filterList.add(new RateLimitIlpPacketFilter(packetRejector));// Limits Data packets...
     }
-
-    // TODO: Enable/Disable MaxPacketAmount, expiry, allowedDest, Balance
-
+    
     filterList.add(
+      /////////////////////////////////
+      // Incoming Prepare packet Preconditions
+      new ExpiryPacketFilter(packetRejector), // Start the expiry timer first to account for delay by other filters
       new AllowedDestinationPacketFilter(packetRejector, addressUtils),
-      new ExpiryPacketFilter(packetRejector),
       new MaxPacketAmountFilter(packetRejector),
+
+      // Once the Prepare packet is considered valid, process balance changes.
       new BalanceIlpPacketFilter(packetRejector, balanceTracker),
+
+      //
       new ValidateFulfillmentPacketFilter(packetRejector),
+
+      /////////////////////////////////
+      // This filter can short-circuit a request, so be careful adding packets after it.
       new PeerProtocolPacketFilter(
         connectorSettingsSupplier(),
         packetRejector,
