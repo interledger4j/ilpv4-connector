@@ -44,7 +44,7 @@ public abstract class AbstractBlastIT {
   public static void setupClass() {
     System.setProperty("spring.jpa.hibernate.ddl-auto", "update");
     System.setProperty("spring.jpa.properties.hibernate.temp.use_jdbc_metadata_defaults", "false");
-//    System.setProperty("spring.jpa.database-platform", "org.hibernate.dialect.PostgreSQL9Dialect");
+    // System.setProperty("spring.jpa.database-platform", "org.hibernate.dialect.PostgreSQL9Dialect");
 
     System.setProperty(DEFAULT_JWT_TOKEN_ISSUER, "https://connie.example.com");
     System.setProperty(ADMIN_PASSWORD, "password");
