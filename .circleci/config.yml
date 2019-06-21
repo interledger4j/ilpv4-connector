@@ -39,16 +39,14 @@ jobs:
           keys:
             - v1-dependencies-{{ checksum "pom.xml" }}
 
-      - run: mvn dependency:go-offline # gets the project dependencies
+      - run:
+          name: Full Build (H2)
+          command:  mvn dependency:go-offline install
 
       - save_cache: # saves the project dependencies
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}
-
-      - run:
-          name: Full Build (H2)
-          command:  mvn dependency:go-offline install
 
       # save tests
       - run:
@@ -108,20 +106,15 @@ jobs:
           keys:
             - v1-dependencies-{{ checksum "pom.xml" }}
 
-      - run: mvn dependency:go-offline # gets the project dependencies
+      # gets the project dependencies and installs sub-module deps
+      - run:
+        name: Install Connector Dependencies
+        command: mvn dependency:go-offline -DskipTests install
 
       - save_cache: # saves the project dependencies
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}
-
-      # OK for now until we have non SNAPSHOT dependencies for this project's sub-modules. Once that happens, this
-      # can probably be removed. This is only needed so that the next command doesn't fail due to not having its
-      # dependencies installed locally.
-      - run:
-          name: Install Connector Dependencies
-          command: |
-            mvn install -DskipTests
 
       - run:
           name: Create Database
