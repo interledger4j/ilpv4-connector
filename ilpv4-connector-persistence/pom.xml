@@ -27,9 +27,6 @@
               <version>42.2.5</version>
             </dependency>
           </dependencies>
-          <configuration>
-            <username>postgres</username>
-          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
