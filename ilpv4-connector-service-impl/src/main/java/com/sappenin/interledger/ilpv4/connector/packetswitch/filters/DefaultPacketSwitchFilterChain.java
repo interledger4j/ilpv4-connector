@@ -54,7 +54,6 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
   public InterledgerResponsePacket doFilter(
     final AccountSettings sourceAccountSettings, final InterledgerPreparePacket preparePacket
   ) {
-
     Objects.requireNonNull(sourceAccountSettings);
     Objects.requireNonNull(preparePacket);
 
