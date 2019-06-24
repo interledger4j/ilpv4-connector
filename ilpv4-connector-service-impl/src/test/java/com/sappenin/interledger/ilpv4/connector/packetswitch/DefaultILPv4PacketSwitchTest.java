@@ -91,7 +91,7 @@ public class DefaultILPv4PacketSwitchTest {
   private DefaultILPv4PacketSwitch packetSwitch;
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
 
     this.outgoingLink = new LoopbackLink(

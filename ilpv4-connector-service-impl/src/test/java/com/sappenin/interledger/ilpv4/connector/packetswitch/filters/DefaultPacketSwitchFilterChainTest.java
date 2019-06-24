@@ -80,7 +80,7 @@ public class DefaultPacketSwitchFilterChainTest {
   private DefaultPacketSwitchFilterChain filterChain;
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
 
     this.packetSwitchFilters = Lists.newArrayList();
