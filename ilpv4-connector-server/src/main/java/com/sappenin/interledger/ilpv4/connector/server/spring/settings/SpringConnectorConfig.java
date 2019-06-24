@@ -341,7 +341,7 @@ public class SpringConnectorConfig {
     if (connectorSettings.getEnabledFeatures().isRateLimitingEnabled()) {
       filterList.add(new RateLimitIlpPacketFilter(packetRejector));// Limits Data packets...
     }
-    
+
     filterList.add(
       /////////////////////////////////
       // Incoming Prepare packet Preconditions
@@ -416,7 +416,8 @@ public class SpringConnectorConfig {
   ) {
     return new DefaultILPv4PacketSwitch(
       packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler,
-      accountSettingsRepository, packetRejector);
+      accountSettingsRepository, packetRejector
+    );
   }
 
   @Bean
