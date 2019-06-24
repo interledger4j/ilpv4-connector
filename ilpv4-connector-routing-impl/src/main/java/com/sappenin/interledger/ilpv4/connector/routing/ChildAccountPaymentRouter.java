@@ -53,11 +53,9 @@ public class ChildAccountPaymentRouter implements PaymentRouter<Route> {
     Objects.requireNonNull(decryptor);
 
     this.childAccountRoutes = CacheBuilder.newBuilder()
-      // TODO: Make this configurable
-      .maximumSize(5000)
+      .maximumSize(5000) // TODO: Make size configurable
       // Expire after this duration, which will correspond to the last incoming request from the peer.
-      // TODO: Make this configurable
-      .expireAfterAccess(5, TimeUnit.MINUTES)
+      .expireAfterAccess(30, TimeUnit.SECONDS) // TODO: Make this configurable
       .build(
         new CacheLoader<InterledgerAddress, Optional<Route>>() {
 
