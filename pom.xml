@@ -407,6 +407,9 @@
                   <ignoredDependency>com.google.protobuf:protobuf-java:jar</ignoredDependency>
                   <ignoredDependency>com.google.api.grpc:proto-google-cloud-kms-v1:jar</ignoredDependency>
 
+                  <!-- Not used for compile time, only for OkHttp 4 support-->
+                  <ignoredDependency>com.fasterxml.jackson.module:jackson-module-kotlin:jar</ignoredDependency>
+
                   <ignoredDependency>com.h2database:h2:jar</ignoredDependency>
                   <ignoredDependency>org.hibernate:hibernate-entitymanager</ignoredDependency>
                   <ignoredDependency>org.postgresql:postgresql:jar</ignoredDependency>

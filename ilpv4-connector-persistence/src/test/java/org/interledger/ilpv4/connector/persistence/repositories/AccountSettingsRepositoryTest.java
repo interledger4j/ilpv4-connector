@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -28,6 +29,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.fail;
 
 /**
  * Unit tests for {@link AccountSettingsRepository}.
@@ -101,8 +103,6 @@ public class AccountSettingsRepositoryTest {
 
   @Test
   public void whenSaveAndLoadWithMinimalFieldsPopulated() {
-    final Map<String, Object> customSettings = Maps.newHashMap();
-
     final AccountSettings accountSettings = AccountSettings.builder()
       .accountId(AccountId.of(UUID.randomUUID().toString()))
       .assetCode("XRP")
@@ -288,6 +288,36 @@ public class AccountSettingsRepositoryTest {
     assertThat(accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.PARENT).size(), is(1));
     assertThat(accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.CHILD).size(), is(1));
     assertThat(accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.PEER).size(), is(1));
+  }
+
+  @Test(expected = DataIntegrityViolationException.class)
+  public void whenAccountSettingsAlreadyExists() {
+    final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
+    final AccountSettings accountSettings1 = AccountSettings.builder()
+      .accountId(accountId)
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PEER)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity1 = new AccountSettingsEntity(accountSettings1);
+    accountSettingsRepository.save(accountSettingsEntity1);
+
+    AccountSettingsEntity loadedEntity = accountSettingsRepository.findByAccountId(accountId).get();
+    assertThat(loadedEntity.getAccountId(), is(accountSettings1.getAccountId()));
+
+    final AccountSettingsEntity duplicateEntity = new AccountSettingsEntity(accountSettings1);
+    assertThat(duplicateEntity.getAccountId(), is(accountSettings1.getAccountId()));
+
+    try {
+      accountSettingsRepository.save(duplicateEntity);
+      accountSettingsRepository.findAll(); // Triggers the flush
+      fail("Shouldn't be able to save a duplicate AccountSettings!");
+    } catch (DataIntegrityViolationException e) {
+      assertThat(e.getMessage().startsWith("could not execute statement"), is(true));
+      assertThat(accountSettingsRepository.count(), is(1));
+      throw e;
+    }
   }
 
   /**

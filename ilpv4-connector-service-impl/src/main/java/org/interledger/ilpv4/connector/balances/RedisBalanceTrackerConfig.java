@@ -48,13 +48,13 @@ public class RedisBalanceTrackerConfig {
     value = ILPV4__CONNECTOR__INMEMORY_BALANCE_TRACKER__ENABLED, havingValue = FALSE, matchIfMissing = true
   )
   BalanceTracker redisBalanceTracker() {
-    final BalanceTracker balanceTracker = new RedisBalanceTracker(updateBalanceForPrepareScript(),
-      updateBalanceForFulfillScript(),
-      updateBalanceForRejectScript(), redisTemplate());
+    final BalanceTracker redisBalanceTracker = new RedisBalanceTracker(
+      updateBalanceForPrepareScript(), updateBalanceForFulfillScript(), updateBalanceForRejectScript(), redisTemplate()
+    );
 
     try {
       // Try to connect to Redis, but default to InMemoryBalanceTracker if there's no Redis...
-      balanceTracker.getBalance(AccountId.of(""));
+      redisBalanceTracker.getBalance(AccountId.of(""));
     } catch (RedisConnectionFailureException e) {
       logger.warn("WARNING: Unable to connect to Redis! Using InMemoryBalanceTracker instead, but this configuration " +
         "should not be used in production. Use RedisBalanceTracker instead!");
@@ -66,7 +66,7 @@ public class RedisBalanceTrackerConfig {
       return new InMemoryBalanceTracker();
     }
 
-    return balanceTracker;
+    return redisBalanceTracker;
   }
 
   /**
