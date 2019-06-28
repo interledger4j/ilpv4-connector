@@ -69,7 +69,7 @@ public class BlastConfig {
    * between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
    */
   @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__CONNECT_TIMEOUT_MILLIS + ":1000}")
-  long defaultConnectTimeoutMillis;
+  private long defaultConnectTimeoutMillis;
 
   /**
    * Applied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout, otherwise
@@ -77,20 +77,20 @@ public class BlastConfig {
    * 10.
    */
   @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__READ_TIMEOUT_MILLIS + ":1000}")
-  long defaultReadTimeoutMillis;
+  private long defaultReadTimeoutMillis;
 
   /**
    * Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1 and
    * {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
    */
   @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__WRITE_TIMEOUT_MILLIS + ":1000}")
-  long defaultWriteTimeoutMillis;
+  private long defaultWriteTimeoutMillis;
 
   @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__MAX_IDLE_CONNECTIONS + ":5}")
-  int defaultMaxIdleConnections;
+  private int defaultMaxIdleConnections;
 
   @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__KEEP_ALIVE_MINUTES + ":5}")
-  long defaultConnectionKeepAliveMinutes;
+  private long defaultConnectionKeepAliveMinutes;
 
   @Autowired
   Environment environment;
