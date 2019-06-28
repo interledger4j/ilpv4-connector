@@ -59,6 +59,10 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>ilpv4-connector-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>ilpv4-connector-model</artifactId>
     </dependency>
     <dependency>
