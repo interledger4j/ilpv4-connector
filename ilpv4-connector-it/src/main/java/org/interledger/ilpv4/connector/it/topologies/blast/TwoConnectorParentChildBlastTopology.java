@@ -63,6 +63,10 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
         final ConnectorServerNode bobServerNode = g.getNode(BOB_AT_ALICE_ADDRESS.getValue(), ConnectorServerNode.class);
         final int bobPort = bobServerNode.getPort();
 
+        // Delete all accounts before initializing the Topology otherwise we see sporadic CI build failures when
+        // building on Postgres. Only need to do this on one server since both servers share the same DB.
+        aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
+
         // Add Bob's account on Alice...
         final AccountSettingsEntity bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort);
         aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);

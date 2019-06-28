@@ -10,7 +10,7 @@
         <constraints nullable="false" primaryKey="true"/>
       </column>
       <column name="NATURAL_ID" type="VARCHAR(32)">
-        <constraints nullable="false"/>
+        <constraints nullable="false" unique="true"/>
       </column>
       <column name="CREATED_DTTM" type="DATETIME">
         <constraints nullable="false"/>

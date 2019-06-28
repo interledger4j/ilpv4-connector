@@ -2,7 +2,6 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.controllers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.zalando.problem.StatusType;
 import org.zalando.problem.ThrowableProblem;

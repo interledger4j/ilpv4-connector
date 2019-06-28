@@ -3,43 +3,33 @@
 logging:
   level:
     ROOT: INFO
-    com.sappenin: INFO
-    org.interledger: INFO
-    org.springframework: INFO
-    org.springframework.security: INFO
-    #org.springframework.web.socket: ERROR
+    com: INFO
+    org.springframework.boot: INFO
+    org.springframework.web: INFO
+    org.hibernate: INFO
     org.hibernate.SQL: INFO
-    #org.hibernate.type.descriptor.sql.BasicBinder: INFO
+
 server:
   port: 9000
   http2:
     enabled: true
   jetty:
-    accesslog:
-      enabled: true
-      filename: /tmp/java-ilp-connector.log
-      extended-format: true
-      log-cookies: true
-      log-server: true
-      log-latency: true
-      time-zone: MST
-    max-http-post-size: 32767
-#management:
-#  endpoints:
-#    enabled-by-default: true
-#    web:
-#      exposure:
-#        include: "*"
-#  endpoint:
-#    refresh:
+#    accesslog:
 #      enabled: true
+#      filename: /tmp/java-ilp-connector.log
+#      extended-format: true
+#      log-cookies: true
+#      log-server: true
+#      log-latency: true
+#      time-zone: MST
+    max-http-post-size: 32767
 
 spring:
   output:
     ansi:
       enabled: ALWAYS
   http:
-    log-request-details: true
+    log-request-details: false
     # MULTIPART (MultipartProperties)
     multipart:
       enabled: false
@@ -54,14 +44,14 @@ spring:
     #url: jdbc:h2:mem:ilpv4-connector;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     # Stores H2 to a file for persistence across server restarts
     url: jdbc:h2:/tmp/ilpv4-connector.bin;DB_CLOSE_ON_EXIT=FALSE
-    platform: h2
-    username: sa
-    password:
-    driverClassName: org.h2.Driver
+    #platform: h2
+    #username: sa
+    #password:
+    #driverClassName: org.h2.Driver
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: false
     hibernate:
-      ddl-auto: update
+      #ddl-auto: none
       create_empty_composites:
         enabled: true
     open-in-view: false
@@ -69,14 +59,15 @@ spring:
       hibernate:
         show_sql: false
         use_sql_comments: false
-        format_sql: true
+        format_sql: false
+        generate_statistics: false
 
 ###
 #   H2 Settings
 ###
 h2:
   console:
-    enabled: true
+    enabled: false
     path: /console
     settings:
       trace: false
