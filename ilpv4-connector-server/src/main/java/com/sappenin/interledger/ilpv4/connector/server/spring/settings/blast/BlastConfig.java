@@ -34,7 +34,6 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DEFAULT_JWT_TOKEN_ISSUER;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ENABLED_PROTOCOLS;
 import static okhttp3.CookieJar.NO_COOKIES;
-import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME;
 import static org.interledger.ilpv4.connector.core.ConfigConstants.DOT;
 import static org.interledger.ilpv4.connector.core.ConfigConstants.ILPV4__CONNECTOR;
 import static org.interledger.ilpv4.connector.core.ConfigConstants.TRUE;
@@ -69,7 +68,7 @@ public class BlastConfig {
    * Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must be
    * between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
    */
-  @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__CONNECT_TIMEOUT_MILLIS + ":10}")
+  @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__CONNECT_TIMEOUT_MILLIS + ":1000}")
   long defaultConnectTimeoutMillis;
 
   /**
@@ -77,14 +76,14 @@ public class BlastConfig {
    * values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to
    * 10.
    */
-  @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__READ_TIMEOUT_MILLIS + ":10}")
+  @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__READ_TIMEOUT_MILLIS + ":1000}")
   long defaultReadTimeoutMillis;
 
   /**
    * Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1 and
    * {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
    */
-  @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__WRITE_TIMEOUT_MILLIS + ":10}")
+  @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__WRITE_TIMEOUT_MILLIS + ":1000}")
   long defaultWriteTimeoutMillis;
 
   @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__MAX_IDLE_CONNECTIONS + ":5}")
