@@ -21,7 +21,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import javax.transaction.Transactional;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
