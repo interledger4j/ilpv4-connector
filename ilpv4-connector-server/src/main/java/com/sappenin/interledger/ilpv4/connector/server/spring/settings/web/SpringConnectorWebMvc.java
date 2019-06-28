@@ -5,6 +5,7 @@ import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.conver
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.converters.AccountSettingsConverter;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.converters.OerPreparePacketHttpMessageConverter;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.converters.RateLimitSettingsConverter;
+import com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.BlastConfig;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -34,7 +35,7 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
 @EnableWebMvc
 @EnableHypermediaSupport(type = {EnableHypermediaSupport.HypermediaType.HAL})
 @ComponentScan(basePackages = "com.sappenin.interledger.ilpv4.connector.server.spring.controllers")
-@Import({JacksonConfig.class, SecurityConfiguration.class})
+@Import({BlastConfig.class, JacksonConfig.class, SecurityConfiguration.class})
 public class SpringConnectorWebMvc implements WebMvcConfigurer {
 
   // TODO: Configure TLS

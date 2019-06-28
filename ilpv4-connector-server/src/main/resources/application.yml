@@ -62,6 +62,20 @@ h2:
 
 ilpv4:
   connector:
+    ilpOverHttp:
+      connectionDefaults:
+        # Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must
+        # be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If unspecified, defaults to 10.
+        # connectTimeoutMillis: 2000
+        # This is pplied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
+        # otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If
+        # unspecified, defaults to 10.
+        # readTimeoutMillis: 1000
+        # Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1
+        # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
+        # writeTimeoutMillis: 1000
+        # maxIdleConnections: 10
+        # keepAliveMillis: 10000
     btp.enabled: false
     enabledProtocols:
       blastEnabled: true
@@ -72,5 +86,5 @@ ilpv4:
     ## This property can be omitted if an account with relation=parent is configured under accounts.
     nodeIlpAddress: test1.connie
     # Global Routing Settings for this connector.
-    globalRoutingSettings:
+    #globalRoutingSettings:
       #routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
