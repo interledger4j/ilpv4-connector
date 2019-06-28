@@ -39,8 +39,6 @@ public class ConnectorServerNode extends AbstractServerNode<ConnectorServer> {
 
   @Override
   public void stop() {
-    // Before shutting down the server, delete all AccountSettings so this test doesn't interfere with other tests.
-    this.getILPv4Connector().getAccountSettingsRepository().deleteAll();
     super.stop();
   }
 }

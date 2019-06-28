@@ -2,12 +2,7 @@
 logging:
   level:
     ROOT: INFO
-    com.sappenin: INFO
-    org.interledger: INFO
-    org.springframework: INFO
-    org.springframework.security: INFO
-    com.auth0: ERROR
-    org.springframework.web.socket: ERROR
+
 server:
   port: 8080
   http2:
@@ -53,7 +48,7 @@ spring:
       hibernate:
         show_sql: false
         use_sql_comments: false
-        format_sql: true
+        format_sql: false
         create_empty_composites:
           enabled: true
 

@@ -43,7 +43,7 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
   private Long id;
 
   @NaturalId
-  @Column(name = "NATURAL_ID")
+  @Column(name = "NATURAL_ID") // Hibernate treats this as unique, but Liquibase is explicit about uniqueness.
   private String naturalId;
 
   @Column(name = "DESCRIPTION")

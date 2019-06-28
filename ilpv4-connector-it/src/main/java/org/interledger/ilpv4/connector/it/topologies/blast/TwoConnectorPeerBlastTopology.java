@@ -67,8 +67,8 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
           g.getNode(BOB_CONNECTOR_ADDRESS.getValue(), ConnectorServerNode.class);
         final int bobPort = bobServerNode.getPort();
 
-        // Before initializing, delete all Accounts from the DB just to be safe (technically, Alice and Bob share
-        // this DB, so making this call _only_ on one node is sufficient)
+        // Delete all accounts before initializing the Topology otherwise we see sporadic CI build failures when
+        // building on Postgres. Only need to do this on one server since both servers share the same DB.
         aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
 
         try {
