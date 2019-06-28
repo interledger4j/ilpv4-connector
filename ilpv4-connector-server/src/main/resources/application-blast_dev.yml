@@ -89,6 +89,22 @@ redis:
 
 ilpv4:
   connector:
+    # Connector-wide defaults for ilp-over-http Links
+    #ilpOverHttp:
+      #connectionDefaults:
+        # Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must
+        # be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If unspecified, defaults to 10.
+        #connectTimeoutMillis: 2000
+        # This is pplied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
+        # otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If
+        # unspecified, defaults to 10.
+        #readTimeoutMillis: 1000
+        # Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1
+        # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
+        #writeTimeoutMillis: 1000
+        #maxIdleConnections: 10
+        #keepAliveMillis: 10000
+
     # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
     adminPassword: password
     keystore:
