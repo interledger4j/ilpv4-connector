@@ -14,7 +14,7 @@ end
 local to_account_id = KEYS[1]
 local to_amount = tonumber(ARGV[1])
 
-local balance = redis.call('HINCRBY', to_account_id, 'balance', to_amount)
+local clearing_balance = redis.call('HINCRBY', to_account_id, 'clearing_balance', to_amount)
 local prepaid_amount = numberOrZero(redis.call('HGET', to_account_id, 'prepaid_amount'))
 
-return balance + prepaid_amount
+return clearing_balance + prepaid_amount

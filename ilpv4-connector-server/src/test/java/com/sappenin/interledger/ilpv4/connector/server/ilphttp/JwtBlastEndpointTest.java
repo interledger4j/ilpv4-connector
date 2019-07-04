@@ -4,7 +4,6 @@ import com.google.common.collect.Maps;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.links.loopback.LoopbackLink;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServerConfig;
-import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
@@ -33,7 +32,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestTemplate;
 
@@ -46,19 +44,8 @@ import java.util.Optional;
 
 import static com.sappenin.interledger.ilpv4.connector.links.loopback.LoopbackLink.LOOPBACK_FULFILLMENT;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.BlastConfig.BLAST;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME;
-import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_FILENAME_DEFAULT;
-import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD;
-import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_PASSWORD_DEFAULT;
-import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS;
-import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS_DEFAULT;
-import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD;
-import static org.interledger.crypto.CryptoConfigConstants.ILPV4_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD_DEFAULT;
-import static org.interledger.ilpv4.connector.core.ConfigConstants.ILPV4__CONNECTOR__INMEMORY_BALANCE_TRACKER__ENABLED;
-import static org.interledger.ilpv4.connector.core.ConfigConstants.TRUE;
 import static org.junit.Assert.fail;
 
 /**
@@ -71,11 +58,6 @@ import static org.junit.Assert.fail;
   classes = {ConnectorServerConfig.class}
 )
 @ActiveProfiles({"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
-@TestPropertySource(
-  properties = {
-    ILPV4__CONNECTOR__INMEMORY_BALANCE_TRACKER__ENABLED + "=" + TRUE
-  }
-)
 public class JwtBlastEndpointTest extends AbstractEndpointTest {
 
   @LocalServerPort

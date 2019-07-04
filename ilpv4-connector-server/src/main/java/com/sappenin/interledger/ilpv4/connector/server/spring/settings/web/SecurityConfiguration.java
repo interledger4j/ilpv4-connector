@@ -5,7 +5,6 @@ import com.sappenin.interledger.ilpv4.connector.links.LinkSettingsFactory;
 import com.sappenin.interledger.ilpv4.connector.server.spring.auth.blast.IlpOverHttpAuthenticationProvider;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.HealthController;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.IlpHttpController;
-import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.admin.AccountsController;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
@@ -34,7 +33,9 @@ import java.util.Arrays;
 import java.util.function.Supplier;
 
 import static com.sappenin.interledger.ilpv4.connector.server.spring.auth.blast.AuthConstants.Authorities.CONNECTOR_ADMIN;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.admin.AccountsController.SLASH_ACCOUNT_ID;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNT_ID;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.PathConstants.SLASH_SETTLEMENTS;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
 
 @Configuration
@@ -151,10 +152,16 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       //////
       .antMatchers(HttpMethod.HEAD, IlpHttpController.ILP_PATH).authenticated()
       .antMatchers(HttpMethod.POST, IlpHttpController.ILP_PATH).authenticated()
-      .antMatchers(HttpMethod.GET, HealthController.SLASH_AH_SLASH_HEALTH).permitAll();
+      .antMatchers(HttpMethod.GET, HealthController.SLASH_AH_SLASH_HEALTH).permitAll() // permitAll if hidden by LB.
 
-    // Everything else...
-    //.anyRequest().denyAll();
+      /////////////
+      // Settlement
+      /////////////
+      .antMatchers(HttpMethod.POST, SLASH_ACCOUNTS + SLASH_ACCOUNT_ID + SLASH_SETTLEMENTS).authenticated()
+    ;
+
+    // WARNING: Don't add `denyAll` here...it's taken care of after the JWT security below. To verify, turn on debugging
+    // for Spring Security (e.g.,  org.springframework.security: DEBUG) and look at the security filter chain).
 
     http
       .httpBasic()
@@ -164,10 +171,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       ////////
       // Admin API
       ////////
-      .antMatchers(HttpMethod.POST, AccountsController.SLASH_ACCOUNTS).hasAuthority(CONNECTOR_ADMIN)
-      .antMatchers(HttpMethod.GET, AccountsController.SLASH_ACCOUNTS).hasAuthority(CONNECTOR_ADMIN)
-      .antMatchers(HttpMethod.GET, AccountsController.SLASH_ACCOUNTS + SLASH_ACCOUNT_ID).hasAuthority(CONNECTOR_ADMIN)
-      .antMatchers(HttpMethod.PUT, AccountsController.SLASH_ACCOUNTS + SLASH_ACCOUNT_ID).hasAuthority(CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.POST, SLASH_ACCOUNTS).hasAuthority(CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.GET, SLASH_ACCOUNTS).hasAuthority(CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.GET, SLASH_ACCOUNTS + SLASH_ACCOUNT_ID).hasAuthority(CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.PUT, SLASH_ACCOUNTS + SLASH_ACCOUNT_ID).hasAuthority(CONNECTOR_ADMIN)
       // Everything else...
       .anyRequest().denyAll()
 

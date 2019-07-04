@@ -5,10 +5,12 @@ import com.sappenin.interledger.ilpv4.connector.balances.AccountBalance;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTrackerException;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.ilpv4.connector.core.settlement.Quantity;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -19,11 +21,11 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class InMemoryBalanceTracker implements BalanceTracker {
 
-  private final Map<AccountId, AtomicLong> balances;
+  private final Map<AccountId, AtomicLong> clearingBalances;
   private final Map<AccountId, AtomicLong> prepaidBalances;
 
   public InMemoryBalanceTracker() {
-    this.balances = Maps.newConcurrentMap();
+    this.clearingBalances = Maps.newConcurrentMap();
     this.prepaidBalances = Maps.newConcurrentMap();
   }
 
@@ -31,7 +33,7 @@ public class InMemoryBalanceTracker implements BalanceTracker {
   public AccountBalance getBalance(AccountId accountId) {
     return AccountBalance.builder()
       .accountId(accountId)
-      .balance(getOrCreateBalance(this.balances, accountId).longValue())
+      .clearingBalance(getOrCreateBalance(this.clearingBalances, accountId).longValue())
       .prepaidAmount(getOrCreateBalance(this.prepaidBalances, accountId).longValue())
       .build();
   }
@@ -58,26 +60,45 @@ public class InMemoryBalanceTracker implements BalanceTracker {
     } else if (accountBalance.prepaidAmount() >= 0L) {
       final long subFromBalance = sourceAmount - accountBalance.prepaidAmount();
       this.prepaidBalances.put(sourceAccountId, new AtomicLong());
-      this.decrement(balances, sourceAccountId, subFromBalance);
+      this.decrement(clearingBalances, sourceAccountId, subFromBalance);
     } else {
-      // Decrement the balance by `sourceAmount`
-      this.decrement(this.balances, sourceAccountId, sourceAmount);
+      // Decrement the clearingBalance by `sourceAmount`
+      this.decrement(this.clearingBalances, sourceAccountId, sourceAmount);
     }
   }
 
   @Override
   public void updateBalanceForFulfill(AccountId destinationAccountId, long destinationAmount) throws BalanceTrackerException {
-    this.increment(this.balances, destinationAccountId, destinationAmount);
+    this.increment(this.clearingBalances, destinationAccountId, destinationAmount);
   }
 
   @Override
   public void updateBalanceForReject(AccountId sourceAccountId, long sourceAmount) throws BalanceTrackerException {
-    this.increment(this.balances, sourceAccountId, sourceAmount);
+    this.increment(this.clearingBalances, sourceAccountId, sourceAmount);
+  }
+
+  @Override
+  public void updateBalanceForSettlement(UUID idempotencyKey, AccountId sourceAccountId, Quantity scaledQuantity) throws BalanceTrackerException {
+
+    final AccountBalance accountBalance = this.getBalance(sourceAccountId);
+
+    if (accountBalance.clearingBalance() >= 0L) {
+      // Increment prepaid_amount by the `amount
+      this.increment(prepaidBalances, sourceAccountId, scaledQuantity.amount().longValue());
+    } else if (Math.abs(accountBalance.clearingBalance()) >= scaledQuantity.amount().longValue()) {
+      // Increment balance by the `amount`
+      this.increment(clearingBalances, sourceAccountId, scaledQuantity.amount().longValue());
+    } else {
+
+      this.increment(prepaidBalances, sourceAccountId,
+        scaledQuantity.amount().add(accountBalance.netBalance()).longValue());
+      this.clearingBalances.put(sourceAccountId, new AtomicLong());
+    }
   }
 
   public void resetBalance(final AccountId accountId) {
     Objects.requireNonNull(accountId);
-    this.balances.put(accountId, new AtomicLong());
+    this.clearingBalances.put(accountId, new AtomicLong());
     this.prepaidBalances.put(accountId, new AtomicLong());
   }
 

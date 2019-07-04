@@ -39,11 +39,6 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.bl
 //  classes = {ConnectorServerConfig.class}
 //)
 //@ActiveProfiles({"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
-//@TestPropertySource(
-//  properties = {
-//    ILPV4__CONNECTOR__INMEMORY_BALANCE_TRACKER__ENABLED + "=" + TRUE
-//  }
-//)
 public class SimpleBearerBlastEndpointTest extends AbstractEndpointTest {
 
   @LocalServerPort

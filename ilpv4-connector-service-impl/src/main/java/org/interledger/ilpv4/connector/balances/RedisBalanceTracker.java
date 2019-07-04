@@ -4,6 +4,7 @@ import com.sappenin.interledger.ilpv4.connector.balances.AccountBalance;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTrackerException;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.ilpv4.connector.core.settlement.Quantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.BoundHashOperations;
@@ -12,6 +13,7 @@ import org.springframework.data.redis.core.script.RedisScript;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 import static java.util.Collections.singletonList;
 
@@ -23,7 +25,7 @@ public class RedisBalanceTracker implements BalanceTracker {
   // TODO: Stop sending Strings into Redis and instead send longs!
   // See https://github.com/sappenin/java-ilpv4-connector/issues/153
 
-  public static final String BALANCE = "balance";
+  public static final String CLEARING_BALANCE = "clearing_balance";
   public static final String PREPAID_AMOUNT = "prepaid_amount";
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -36,17 +38,19 @@ public class RedisBalanceTracker implements BalanceTracker {
   private final RedisScript<Long> updateBalanceForPrepareScript;
   private final RedisScript<Long> updateBalanceForFulfillScript;
   private final RedisScript<Long> updateBalanceForRejectScript;
+  private final RedisScript<Long> processIncomingSettlementScript;
 
   private final RedisTemplate<String, String> redisTemplate;
 
   public RedisBalanceTracker(
     final RedisScript<Long> updateBalanceForPrepareScript, final RedisScript<Long> updateBalanceForFulfillScript,
-    final RedisScript<Long> updateBalanceForRejectScript,
+    final RedisScript<Long> updateBalanceForRejectScript, final RedisScript<Long> processIncomingSettlementScript,
     final RedisTemplate<String, String> redisTemplate
   ) {
     this.updateBalanceForPrepareScript = Objects.requireNonNull(updateBalanceForPrepareScript);
     this.updateBalanceForFulfillScript = Objects.requireNonNull(updateBalanceForFulfillScript);
     this.updateBalanceForRejectScript = Objects.requireNonNull(updateBalanceForRejectScript);
+    this.processIncomingSettlementScript = Objects.requireNonNull(processIncomingSettlementScript);
     this.redisTemplate = Objects.requireNonNull(redisTemplate);
   }
 
@@ -59,7 +63,7 @@ public class RedisBalanceTracker implements BalanceTracker {
 
     return AccountBalance.builder()
       .accountId(accountId)
-      .balance(toLong(result.get(BALANCE)))
+      .clearingBalance(toLong(result.get(CLEARING_BALANCE)))
       .prepaidAmount(toLong(result.get(PREPAID_AMOUNT)))
       .build();
   }
@@ -67,12 +71,11 @@ public class RedisBalanceTracker implements BalanceTracker {
   @Override
   public void updateBalanceForPrepare(
     final AccountId sourceAccountId, final long sourceAmount, final Optional<Long> minBalance
-  )
-    throws BalanceTrackerException {
+  ) throws BalanceTrackerException {
 
-    Objects.requireNonNull(sourceAccountId, "sourceAccountId must not be null!");
-    Objects.requireNonNull(sourceAmount, "sourceAmount must not be null!");
-    Objects.requireNonNull(minBalance, "minBalance must not be null!");
+    Objects.requireNonNull(sourceAccountId, "sourceAccountId must not be null");
+    Objects.requireNonNull(sourceAmount, "sourceAmount must not be null");
+    Objects.requireNonNull(minBalance, "minBalance must not be null");
 
     try {
       long result;
@@ -94,7 +97,7 @@ public class RedisBalanceTracker implements BalanceTracker {
       }
 
       logger.debug(
-        "Processed prepare with incoming amount: {}. Account {} has balance (including prepaid amount): {} ",
+        "Processed prepare with incoming amount: {}. Account {} has clearingBalance (including prepaid amount): {} ",
         sourceAmount, sourceAccountId, result
       );
     } catch (Exception e) {
@@ -107,8 +110,8 @@ public class RedisBalanceTracker implements BalanceTracker {
 
   @Override
   public void updateBalanceForFulfill(final AccountId destinationAccountId, final long destinationAmount) throws BalanceTrackerException {
-    Objects.requireNonNull(destinationAccountId, "destinationAccountId must not be null!");
-    Objects.requireNonNull(destinationAmount, "destinationAmount must not be null!");
+    Objects.requireNonNull(destinationAccountId, "destinationAccountId must not be null");
+    Objects.requireNonNull(destinationAmount, "destinationAmount must not be null");
 
     try {
       // TODO: Use BigDecimal
@@ -120,7 +123,7 @@ public class RedisBalanceTracker implements BalanceTracker {
       );
 
       logger.debug(
-        "Processed fulfill for outgoing amount: `{}`. Account `{}` has balance (including prepaid amount): `{}`",
+        "Processed fulfill for outgoing amount: `{}`. Account `{}` has clearingBalance (including prepaid amount): `{}`",
         destinationAmount, destinationAccountId, result
       );
     } catch (Exception e) {
@@ -134,11 +137,10 @@ public class RedisBalanceTracker implements BalanceTracker {
 
   @Override
   public void updateBalanceForReject(AccountId sourceAccountId, long sourceAmount) throws BalanceTrackerException {
-    Objects.requireNonNull(sourceAccountId, "sourceAccountId must not be null!");
-    Objects.requireNonNull(sourceAmount, "sourceAmount must not be null!");
+    Objects.requireNonNull(sourceAccountId, "sourceAccountId must not be null");
+    Objects.requireNonNull(sourceAmount, "sourceAmount must not be null");
 
     try {
-      // TODO: Use BigDecimal
       long result = redisTemplate.execute(
         updateBalanceForRejectScript,
         singletonList(toRedisAccountsKey(sourceAccountId)),
@@ -147,12 +149,43 @@ public class RedisBalanceTracker implements BalanceTracker {
       );
 
       logger.debug(
-        "Processed reject for incoming amount: `{}`. Account `{}` has balance (including prepaid amount): `{}`",
+        "Processed reject for incoming amount: `{}`. Account `{}` has clearingBalance (including prepaid amount): `{}`",
         sourceAmount, sourceAccountId, result
       );
     } catch (Exception e) {
       final String errorMessage = String.format(
         "Error handling reject packet with sourceAmount `%s` from accountId `%s`", sourceAmount, sourceAccountId
+      );
+      throw new BalanceTrackerException(errorMessage, e);
+    }
+  }
+
+  @Override
+  public void updateBalanceForSettlement(
+    final UUID idempotencyKey, final AccountId sourceAccountId, final Quantity scaledQuantity
+  ) throws BalanceTrackerException {
+    Objects.requireNonNull(idempotencyKey, "idempotencyKey must not be null");
+    Objects.requireNonNull(sourceAccountId, "sourceAccountId must not be null");
+    Objects.requireNonNull(scaledQuantity, "quantity must not be null");
+
+    try {
+      long result = redisTemplate.execute(
+        processIncomingSettlementScript,
+        singletonList(toRedisAccountsKey(sourceAccountId)),
+        // Arg1: amount
+        scaledQuantity.amount() + "",
+        // Arg2: idempotency_key
+        idempotencyKey.toString()
+      );
+
+      logger.debug(
+        "Processed Incoming Settlement Quantity: `{}`. AccountId `{}` has new clearingBalance (including prepaid amount): `{}`",
+        scaledQuantity, sourceAccountId, result
+      );
+    } catch (Exception e) {
+      final String errorMessage = String.format(
+        "Error handling Incoming Settlement from Settlement Engine with Quantity `%s` from accountId `%s`",
+        scaledQuantity, sourceAccountId
       );
       throw new BalanceTrackerException(errorMessage, e);
     }

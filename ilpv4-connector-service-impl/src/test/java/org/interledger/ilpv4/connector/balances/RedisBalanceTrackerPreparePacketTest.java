@@ -30,7 +30,7 @@ import static org.junit.Assert.fail;
  * Prepare packets.
  */
 @RunWith(Parameterized.class)
-@ContextConfiguration(classes = {RedisBalanceTrackerConfig.class, AbstractRedisBalanceTrackerTest.Config.class})
+@ContextConfiguration(classes = {AbstractRedisBalanceTrackerTest.Config.class})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTrackerTest {
 
@@ -77,7 +77,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
       // expected_balance, expected_prepaid_amount,
       // producesError
 
-      // balance = 0, prepaid_amount = 0
+      // clearingBalance = 0, prepaid_amount = 0
       // --> no min.
       // --> negative min
       // --> positive min
@@ -87,7 +87,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
       new Object[]{ZERO, ZERO, PREPARE_ONE, ONE_MIN, ZERO, ZERO, PRODUCES_ERROR},
       new Object[]{ZERO, ZERO, PREPARE_ONE, ZERO_MIN, ZERO, ZERO, PRODUCES_ERROR},
 
-      // balance = 0, prepaid_amount > 0
+      // clearingBalance = 0, prepaid_amount > 0
       // --> no min.
       // --> negative min
       // --> positive min
@@ -97,7 +97,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
       new Object[]{ZERO, ONE, PREPARE_ONE, ONE_MIN, ZERO, ZERO, PRODUCES_ERROR},
       new Object[]{ZERO, ONE, PREPARE_ONE, ZERO_MIN, ZERO, ZERO, PRODUCES_NO_ERROR},
 
-      // balance = 0, prepaid_amount < 0
+      // clearingBalance = 0, prepaid_amount < 0
       // --> no min.
       // --> negative min
       // --> positive min
@@ -107,7 +107,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
       new Object[]{ZERO, NEGATIVE_ONE, PREPARE_ONE, ONE_MIN, ZERO, NEGATIVE_ONE, PRODUCES_ERROR},
       new Object[]{ZERO, NEGATIVE_ONE, PREPARE_ONE, ZERO_MIN, ZERO, NEGATIVE_ONE, PRODUCES_ERROR},
 
-      // balance > 0, prepaid_amount = 0
+      // clearingBalance > 0, prepaid_amount = 0
       // --> no min.
       // --> negative min
       // --> positive min
@@ -117,7 +117,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
       new Object[]{ONE, ZERO, PREPARE_ONE, ONE_MIN, ONE, ZERO, PRODUCES_ERROR},
       new Object[]{ONE, ZERO, PREPARE_ONE, ZERO_MIN, ZERO, ZERO, PRODUCES_NO_ERROR},
 
-      // balance > 0, prepaid_amount > 0
+      // clearingBalance > 0, prepaid_amount > 0
       // --> no min.
       // --> negative min
       // --> positive min
@@ -127,7 +127,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
       new Object[]{ONE, ONE, PREPARE_ONE, ONE_MIN, ONE, ZERO, PRODUCES_NO_ERROR},
       new Object[]{ONE, ONE, PREPARE_ONE, ZERO_MIN, ONE, ZERO, PRODUCES_NO_ERROR},
 
-      // balance > 0, prepaid_amount < 0
+      // clearingBalance > 0, prepaid_amount < 0
       // --> no min.
       // --> negative min
       // --> positive min
@@ -137,7 +137,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
       new Object[]{ONE, NEGATIVE_ONE, PREPARE_ONE, ONE_MIN, ONE, NEGATIVE_ONE, PRODUCES_ERROR},
       new Object[]{ONE, NEGATIVE_ONE, PREPARE_ONE, ZERO_MIN, ONE, NEGATIVE_ONE, PRODUCES_ERROR},
 
-      // balance < 0, prepaid_amount = 0
+      // clearingBalance < 0, prepaid_amount = 0
       // --> no min.
       // --> negative min
       // --> positive min
@@ -147,7 +147,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
       new Object[]{NEGATIVE_ONE, ZERO, PREPARE_ONE, ONE_MIN, NEGATIVE_ONE, ZERO, PRODUCES_ERROR},
       new Object[]{NEGATIVE_ONE, ZERO, PREPARE_ONE, ZERO_MIN, NEGATIVE_ONE, ZERO, PRODUCES_ERROR},
 
-      // balance < 0, prepaid_amount > 0
+      // clearingBalance < 0, prepaid_amount > 0
       // --> no min.
       // --> negative min
       // --> positive min
@@ -157,7 +157,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
       new Object[]{NEGATIVE_ONE, ONE, PREPARE_ONE, ONE_MIN, NEGATIVE_ONE, ONE, PRODUCES_ERROR},
       new Object[]{NEGATIVE_ONE, ONE, PREPARE_ONE, ZERO_MIN, NEGATIVE_ONE, ONE, PRODUCES_ERROR},
 
-      // balance < 0, prepaid_amount < 0
+      // clearingBalance < 0, prepaid_amount < 0
       // --> no min.
       // --> negative min
       // --> min below prepare
@@ -191,7 +191,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
     try {
       balanceTracker.updateBalanceForPrepare(null, ONE, Optional.ofNullable(ZERO));
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("sourceAccountId must not be null!"));
+      assertThat(e.getMessage(), is("sourceAccountId must not be null"));
       throw e;
     }
   }
@@ -201,7 +201,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
     try {
       balanceTracker.updateBalanceForPrepare(SOURCE_ACCOUNT_ID, ONE, null);
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("minBalance must not be null!"));
+      assertThat(e.getMessage(), is("minBalance must not be null"));
       throw e;
     }
   }
@@ -211,7 +211,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
   /////////////////
 
   /**
-   * Verify the correct balance when no account exists in Redis.
+   * Verify the correct clearingBalance when no account exists in Redis.
    */
   @Test
   public void updateBalanceForPrepareWhenNoAccountInRedis() {
@@ -221,13 +221,13 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
     );
 
     final AccountBalance loadedBalance = balanceTracker.getBalance(accountId);
-    assertThat(loadedBalance.balance(), is(NEGATIVE_ONE));
+    assertThat(loadedBalance.clearingBalance(), is(NEGATIVE_ONE));
     assertThat(loadedBalance.prepaidAmount(), is(ZERO));
     assertThat(loadedBalance.netBalance().longValue(), is(NEGATIVE_ONE));
   }
 
   /**
-   * Verify the correct balance when no account exists in Redis, but the minimum value is 0.
+   * Verify the correct clearingBalance when no account exists in Redis, but the minimum value is 0.
    */
   @Test(expected = BalanceTrackerException.class)
   public void updateBalanceForPrepareWhenNoAccountInRedisZeroMinBalance() {
@@ -245,7 +245,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
   }
 
   /**
-   * Verify the correct balance when no account exists in Redis and the minBalance is unspecified.
+   * Verify the correct clearingBalance when no account exists in Redis and the minBalance is unspecified.
    */
   @Test
   public void updateBalanceForPrepareWhenNoAccountInRedisAndNoMinBalance() {
@@ -253,13 +253,13 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
     balanceTracker.updateBalanceForPrepare(accountId, ONE);
 
     final AccountBalance loadedBalance = balanceTracker.getBalance(accountId);
-    assertThat(loadedBalance.balance(), is(NEGATIVE_ONE));
+    assertThat(loadedBalance.clearingBalance(), is(NEGATIVE_ONE));
     assertThat(loadedBalance.prepaidAmount(), is(ZERO));
     assertThat(loadedBalance.netBalance().longValue(), is(NEGATIVE_ONE));
   }
 
   /**
-   * Verify the correct balance when the `min_balance` is greater than the
+   * Verify the correct clearingBalance when the `min_balance` is greater than the
    */
   @Test
   public void updateBalanceForPrepareWithParamterizedValues() {
@@ -301,7 +301,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
       }
 
       final AccountBalance loadedBalance = balanceTracker.getBalance(SOURCE_ACCOUNT_ID);
-      assertThat(loadedBalance.balance(), is(expectedBalanceInRedis));
+      assertThat(loadedBalance.clearingBalance(), is(expectedBalanceInRedis));
       assertThat(loadedBalance.prepaidAmount(), is(expectedPrepaidAmountInRedis));
       assertThat(loadedBalance.netBalance().longValue(), is(expectedBalanceInRedis + expectedPrepaidAmountInRedis));
     }

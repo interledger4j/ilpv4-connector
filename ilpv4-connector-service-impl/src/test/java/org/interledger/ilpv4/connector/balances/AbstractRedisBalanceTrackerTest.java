@@ -1,22 +1,26 @@
 package org.interledger.ilpv4.connector.balances;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.crypto.Decryptor;
+import org.interledger.ilpv4.connector.config.RedisConfig;
+import org.interledger.ilpv4.connector.jackson.ObjectMapperFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.RedisTemplate;
 import redis.embedded.RedisServerBuilder;
 
 import java.util.Objects;
 import java.util.Optional;
 
-import static org.interledger.ilpv4.connector.balances.RedisBalanceTracker.BALANCE;
+import static org.interledger.ilpv4.connector.balances.RedisBalanceTracker.CLEARING_BALANCE;
 import static org.interledger.ilpv4.connector.balances.RedisBalanceTracker.PREPAID_AMOUNT;
 
 /**
- * Unit tests for {@link RedisBalanceTracker} that validates the script and balance-change functionality for handling
+ * Unit tests for {@link RedisBalanceTracker} that validates the script and clearingBalance-change functionality for handling
  * Fulfill packets.
  */
 public abstract class AbstractRedisBalanceTrackerTest {
@@ -45,13 +49,13 @@ public abstract class AbstractRedisBalanceTrackerTest {
   protected static final Optional<Long> NEG_ONE_MIN = Optional.of(NEGATIVE_ONE);
   protected static final Optional<Long> NEG_TEN_MIN = Optional.of(NEGATIVE_TEN);
 
-  static redis.embedded.RedisServer redisServer;
+  private static redis.embedded.RedisServer redisServer;
 
-  long existingAccountBalance;
-  long existingPrepaidBalance;
-  long prepareAmount;
-  long expectedBalanceInRedis;
-  long expectedPrepaidAmountInRedis;
+  protected long existingAccountBalance;
+  protected long existingPrepaidBalance;
+  protected long prepareAmount;
+  protected long expectedBalanceInRedis;
+  protected long expectedPrepaidAmountInRedis;
 
   /**
    * Required-args Constructor.
@@ -86,7 +90,7 @@ public abstract class AbstractRedisBalanceTrackerTest {
   protected abstract RedisTemplate getRedisTemplate();
 
   protected void initializeAccount(final AccountId accountId, final long balance, final long existingPrepaidBalance) {
-    getRedisTemplate().boundHashOps(toRedisAccountId(accountId)).put(BALANCE, balance + "");
+    getRedisTemplate().boundHashOps(toRedisAccountId(accountId)).put(CLEARING_BALANCE, balance + "");
     getRedisTemplate().boundHashOps(toRedisAccountId(accountId)).put(PREPAID_AMOUNT, existingPrepaidBalance + "");
   }
 
@@ -96,12 +100,19 @@ public abstract class AbstractRedisBalanceTrackerTest {
   }
 
   @Configuration
+  @Import({RedisConfig.class, BalanceTrackerConfig.class})
   static class Config {
 
     // For testing purposes, Redis is not secured with a password, so this implementation can be a no-op.
     @Bean
     Decryptor decryptor() {
       return (keyMetadata, encryptionAlgorithm, cipherMessage) -> new byte[0];
+    }
+
+
+    @Bean
+    ObjectMapper objectMapper() {
+      return ObjectMapperFactory.create();
     }
   }
 }

@@ -28,7 +28,9 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.admin.AccountsController.SLASH_ACCOUNTS;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.PathConstants.ACCOUNT_ID;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNT_ID;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -38,9 +40,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
  */
 @RestController(SLASH_ACCOUNTS)
 public class AccountsController {
-
-  public static final String SLASH_ACCOUNTS = "/accounts";
-  public static final String SLASH_ACCOUNT_ID = "/{accountId}";
 
   private final AccountManager accountManager;
   private final ConversionService conversionService;
@@ -114,7 +113,7 @@ public class AccountsController {
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public Resource<AccountSettings> getAccount(
-    @PathVariable("accountId") final AccountId accountId
+    @PathVariable(ACCOUNT_ID) final AccountId accountId
   ) {
     return accountManager.getAccountSettingsRepository().findByAccountId(accountId)
       .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
@@ -132,7 +131,7 @@ public class AccountsController {
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public Resource<AccountSettings> updateAccount(
-    @PathVariable("accountId") final AccountId accountId,
+    @PathVariable(ACCOUNT_ID) final AccountId accountId,
     @RequestBody final AccountSettings.AbstractAccountSettings accountSettings
   ) {
 
