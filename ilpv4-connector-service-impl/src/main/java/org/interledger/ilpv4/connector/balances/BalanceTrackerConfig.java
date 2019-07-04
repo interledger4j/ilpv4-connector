@@ -18,7 +18,7 @@ public class BalanceTrackerConfig {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   @Autowired
-  RedisTemplate<String, String> redisTemplate;
+  protected RedisTemplate<String, String> redisTemplate;
 
   @Bean
   protected BalanceTracker redisBalanceTracker() {

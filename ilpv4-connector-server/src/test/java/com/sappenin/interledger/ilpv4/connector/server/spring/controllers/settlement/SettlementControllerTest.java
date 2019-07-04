@@ -5,7 +5,6 @@ import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.Header
 import com.sappenin.interledger.ilpv4.connector.settlement.IdempotentResponseInfo;
 import org.interledger.ilpv4.connector.core.settlement.Quantity;
 import org.interledger.ilpv4.connector.settlement.NumberScalingUtils;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,14 +42,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @RunWith(SpringRunner.class)
 @WebMvcTest(controllers = SettlementController.class)
+@SuppressWarnings("PMD")
 public class SettlementControllerTest extends AbstractControllerTest {
 
   @Autowired
   private MockMvc mvc;
-
-  @Before
-  public void setup() {
-  }
 
   @Test
   public void sendSettlementMessageWithoutIdempotenceKey() throws Exception {

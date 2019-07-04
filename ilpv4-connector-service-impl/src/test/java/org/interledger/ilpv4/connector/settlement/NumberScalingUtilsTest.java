@@ -35,6 +35,7 @@ public class NumberScalingUtilsTest {
   }
 
   @Parameterized.Parameters
+  @SuppressWarnings("PMD")
   public static Collection<Object[]> testValue() {
     return Arrays.asList(
 

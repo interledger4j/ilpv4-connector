@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.controllers.settlement;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sappenin.interledger.ilpv4.connector.links.LinkSettingsFactory;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
@@ -48,11 +49,7 @@ public abstract class AbstractControllerTest {
   @MockBean
   protected LinkSettingsFactory linkSettingsFactory;
 
-  protected String asJsonString(final Object obj) {
-    try {
+  protected String asJsonString(final Object obj) throws JsonProcessingException {
       return this.objectMapper.writeValueAsString(obj);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
   }
 }

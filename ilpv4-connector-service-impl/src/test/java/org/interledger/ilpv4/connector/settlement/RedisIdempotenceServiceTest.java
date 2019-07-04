@@ -54,7 +54,7 @@ public class RedisIdempotenceServiceTest {
   public final SpringMethodRule springMethodRule = new SpringMethodRule();
 
   @Autowired
-  IdempotenceService idempotenceService;
+  protected IdempotenceService idempotenceService;
 
   @BeforeClass
   public static void startRedisServer() {
@@ -131,12 +131,12 @@ public class RedisIdempotenceServiceTest {
 
     // For testing purposes, Redis is not secured with a password, so this implementation can be a no-op.
     @Bean
-    Decryptor decryptor() {
+    protected Decryptor decryptor() {
       return (keyMetadata, encryptionAlgorithm, cipherMessage) -> new byte[0];
     }
 
     @Bean
-    ObjectMapper objectMapper() {
+    protected ObjectMapper objectMapper() {
       return ObjectMapperFactory.create();
     }
 

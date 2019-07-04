@@ -82,7 +82,7 @@ public class RedisConfig {
   }
 
   @Bean
-  RedisTemplate<UUID, IdempotentResponseInfo> idempotencRedisTemplate() {
+  protected RedisTemplate<UUID, IdempotentResponseInfo> idempotencRedisTemplate() {
     RedisTemplate<UUID, IdempotentResponseInfo> template = new RedisTemplate<>();
 
     Jackson2JsonRedisSerializer serializer = new Jackson2JsonRedisSerializer(IdempotentResponseInfo.class);
