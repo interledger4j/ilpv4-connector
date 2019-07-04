@@ -6,6 +6,7 @@
 [![license-ci][license-image]][license-url]
 [![codacy][codacy-image]][codacy-url] 
 [![issues][github-issues-image]][github-issues-url]
+[![Total Alerts](https://img.shields.io/lgtm/alerts/g/sappenin/java-ilp-connector.svg?logo=lgtm)](https://lgtm.com/projects/g/sappenin/java-ilp-connector/alerts)
 
 [forum-url]: https://forum.interledger.org/tags/java-ilpv4-connector
 [forum-image]: https://img.shields.io/badge/Discuss-Interledger%20Forum-blue.svg
