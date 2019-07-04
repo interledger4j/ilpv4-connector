@@ -38,7 +38,7 @@ public class DefaultSettlementServiceTest {
   private DefaultSettlementService settlementService;
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
 
     this.settlementService = new DefaultSettlementService(accountSettingsRepositoryMock, balanceTrackerMock);

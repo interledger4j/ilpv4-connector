@@ -122,7 +122,7 @@ public class SettlementController {
           if (responseCached) {
             return new ResponseEntity<>(settledQuantity, headers, status);
           } else {
-            throw new RuntimeException("Unable to update IdempotenceRecord");
+            throw new RuntimeException("Unable to update IdempotenceRecord"); // NOPMD - shouldn't ever happen.
           }
         } else {
           // For some reason the threading guarantee assumed above didn't hold, so return a 409. This should only
