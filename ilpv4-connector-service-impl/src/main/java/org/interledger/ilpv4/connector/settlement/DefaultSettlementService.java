@@ -27,7 +27,12 @@ public class DefaultSettlementService implements SettlementService {
   }
 
   @Override
-  public Quantity handleIncomingSettlement(UUID idempotencyKey, AccountId accountId, Quantity incomingSettlement) {
+  public Quantity handleIncomingSettlement(
+    final UUID idempotencyKey, final AccountId accountId, final Quantity incomingSettlement
+  ) {
+    Objects.requireNonNull(idempotencyKey, "idempotencyKey must not be null");
+    Objects.requireNonNull(accountId, "accountId must not be null");
+    Objects.requireNonNull(incomingSettlement, "incomingSettlement must not be null");
 
     final AccountSettings accountSettings = this.accountSettingsRepository
       .findByAccountId(accountId)
