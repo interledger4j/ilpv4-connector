@@ -3,6 +3,7 @@ package org.interledger.ilpv4.connector.balances;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.crypto.Decryptor;
+import org.interledger.ilpv4.connector.config.BalanceTrackerConfig;
 import org.interledger.ilpv4.connector.config.RedisConfig;
 import org.interledger.ilpv4.connector.jackson.ObjectMapperFactory;
 import org.junit.AfterClass;

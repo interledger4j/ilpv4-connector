@@ -1,8 +1,8 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.controllers.settlement;
 
 import com.google.common.collect.Lists;
-import com.sappenin.interledger.ilpv4.connector.settlement.IdempotenceService;
-import com.sappenin.interledger.ilpv4.connector.settlement.IdempotentResponseInfo;
+import com.sappenin.interledger.ilpv4.connector.settlement.IdempotentRequestCache;
+import com.sappenin.interledger.ilpv4.connector.settlement.HttpResponseInfo;
 import com.sappenin.interledger.ilpv4.connector.settlement.SettlementService;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.ilpv4.connector.core.settlement.Quantity;
@@ -42,11 +42,11 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RequestMapping(SLASH)
 public class SettlementController {
 
-  private final IdempotenceService idempotenceService;
+  private final IdempotentRequestCache idempotentRequestCache;
   private final SettlementService settlementService;
 
-  public SettlementController(final IdempotenceService idempotenceService, final SettlementService settlementService) {
-    this.idempotenceService = Objects.requireNonNull(idempotenceService);
+  public SettlementController(final IdempotentRequestCache idempotentRequestCache, final SettlementService settlementService) {
+    this.idempotentRequestCache = Objects.requireNonNull(idempotentRequestCache);
     this.settlementService = Objects.requireNonNull(settlementService);
   }
 
@@ -89,14 +89,14 @@ public class SettlementController {
     }
 
     // Check Idempotence to avoid processing this request twice.
-    return idempotenceService.getIdempotenceRecord(requestId)
+    return idempotentRequestCache.getHttpResponseInfo(requestId)
       .map(priorRequest -> new ResponseEntity(
         priorRequest.responseBody(), priorRequest.responseHeaders(), priorRequest.responseStatus())
       )
       .orElseGet(() -> {
         // Only one thread is guaranteed to succeed here. E.g., Redis is single-threaded, so only one of these calls will
         // succeed, even under heavy load.
-        if (idempotenceService.reserveRequestId(requestId)) {
+        if (idempotentRequestCache.reserveRequestId(requestId)) {
           final Quantity settledQuantity = settlementService.handleIncomingSettlement(
             requestId, accountId, quantity
           );
@@ -110,14 +110,14 @@ public class SettlementController {
           headers.put(IDEMPOTENCY_KEY, Lists.newArrayList(requestId.toString()));
 
           // Update Redis for future Idempotent calls.
-          final IdempotentResponseInfo response =
-            IdempotentResponseInfo.builder()
+          final HttpResponseInfo response =
+            HttpResponseInfo.builder()
               .requestId(requestId)
               .responseStatus(status)
               .responseHeaders(headers)
               .responseBody(settledQuantity)
               .build();
-          final boolean responseCached = idempotenceService.updateIdempotenceRecord(response);
+          final boolean responseCached = idempotentRequestCache.updateHttpResponseInfo(response);
 
           if (responseCached) {
             return new ResponseEntity<>(settledQuantity, headers, status);

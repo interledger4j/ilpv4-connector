@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sappenin.interledger.ilpv4.connector.links.LinkSettingsFactory;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
-import com.sappenin.interledger.ilpv4.connector.settlement.IdempotenceService;
+import com.sappenin.interledger.ilpv4.connector.settlement.IdempotentRequestCache;
 import com.sappenin.interledger.ilpv4.connector.settlement.SettlementService;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.crypto.EncryptionService;
@@ -29,7 +29,7 @@ public abstract class AbstractControllerTest {
   protected ObjectMapper objectMapper;
 
   @MockBean
-  protected IdempotenceService idempotenceServiceMock;
+  protected IdempotentRequestCache idempotentRequestCacheMock;
 
   @MockBean
   protected SettlementService settlementServiceMock;

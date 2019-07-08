@@ -4,9 +4,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * A service that can be used to enforce idempotent requests.
+ * A cache that can be used to support idempotent requests.
  */
-public interface IdempotenceService {
+public interface IdempotentRequestCache {
 
   /**
    * Reserve the supplied {@code requestId} so that no other requests can utilize it.
@@ -17,15 +17,21 @@ public interface IdempotenceService {
    */
   boolean reserveRequestId(UUID requestId);
 
-
   /**
    * Create an idempotency record containing the supplied {@code idempotenyData}.
    *
-   * @param idempotentResponseInfo
+   * @param httpResponseInfo
    *
    * @return {@code true} if the record was created; {@code false} if the record already existed.
    */
-  boolean updateIdempotenceRecord(IdempotentResponseInfo idempotentResponseInfo);
+  boolean updateHttpResponseInfo(HttpResponseInfo httpResponseInfo);
 
-  Optional<IdempotentResponseInfo> getIdempotenceRecord(UUID requestId);
+  /**
+   * Accessor for an optionally present {@link HttpResponseInfo}.
+   *
+   * @param requestId A {@link UUID} that uniquely identifies the HTTP request.
+   *
+   * @return A {@link HttpResponseInfo} that correlates to the {@code requestId}, if such an item exists.
+   */
+  Optional<HttpResponseInfo> getHttpResponseInfo(UUID requestId);
 }

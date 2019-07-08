@@ -1,10 +1,13 @@
-package org.interledger.ilpv4.connector.settlement;
+package org.interledger.ilpv4.connector.config;
 
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
-import com.sappenin.interledger.ilpv4.connector.settlement.IdempotenceService;
-import com.sappenin.interledger.ilpv4.connector.settlement.IdempotentResponseInfo;
+import com.sappenin.interledger.ilpv4.connector.settlement.IdempotentRequestCache;
+import com.sappenin.interledger.ilpv4.connector.settlement.HttpResponseInfo;
 import com.sappenin.interledger.ilpv4.connector.settlement.SettlementService;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.ilpv4.connector.settlement.DefaultSettlementService;
+import org.interledger.ilpv4.connector.settlement.InMemoryIdempotentRequestCache;
+import org.interledger.ilpv4.connector.settlement.RedisIdempotentRequestCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -23,11 +26,11 @@ public class SettlementConfig {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   @Bean
-  protected IdempotenceService idempotenceService(RedisTemplate<UUID, IdempotentResponseInfo> redisTemplate) {
+  protected IdempotentRequestCache idempotenceService(RedisTemplate<UUID, HttpResponseInfo> redisTemplate) {
 
     try {
       if (redisTemplate.getConnectionFactory().getConnection().ping().equalsIgnoreCase("PONG")) {
-        return new RedisIdempotenceService(redisTemplate);
+        return new RedisIdempotentRequestCache(redisTemplate);
       } else {
         logger.error("Redis Ping did not succeed.");
       }
@@ -39,10 +42,10 @@ public class SettlementConfig {
     }
 
     logger.warn(
-      "WARNING: Using InMemoryIdempotenceService. For Clustered/HA deployments, use RedisIdempotenceService instead"
+      "WARNING: Using InMemoryIdempotentRequestCache. For Clustered/HA deployments, use RedisIdempotentRequestCache instead"
     );
 
-    return new InMemoryIdempotenceService();
+    return new InMemoryIdempotentRequestCache();
   }
 
   @Bean

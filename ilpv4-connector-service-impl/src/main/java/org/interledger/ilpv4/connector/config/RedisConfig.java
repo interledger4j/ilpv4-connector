@@ -1,7 +1,7 @@
 package org.interledger.ilpv4.connector.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sappenin.interledger.ilpv4.connector.settlement.IdempotentResponseInfo;
+import com.sappenin.interledger.ilpv4.connector.settlement.HttpResponseInfo;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.slf4j.Logger;
@@ -82,10 +82,10 @@ public class RedisConfig {
   }
 
   @Bean
-  protected RedisTemplate<UUID, IdempotentResponseInfo> idempotencRedisTemplate() {
-    RedisTemplate<UUID, IdempotentResponseInfo> template = new RedisTemplate<>();
+  protected RedisTemplate<UUID, HttpResponseInfo> idempotencRedisTemplate() {
+    RedisTemplate<UUID, HttpResponseInfo> template = new RedisTemplate<>();
 
-    Jackson2JsonRedisSerializer serializer = new Jackson2JsonRedisSerializer(IdempotentResponseInfo.class);
+    Jackson2JsonRedisSerializer serializer = new Jackson2JsonRedisSerializer(HttpResponseInfo.class);
     serializer.setObjectMapper(objectMapper);
     template.setDefaultSerializer(serializer);
     template.setEnableDefaultSerializer(true);

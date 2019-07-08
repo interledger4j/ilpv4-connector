@@ -1,7 +1,7 @@
 package org.interledger.ilpv4.connector.settlement;
 
-import com.sappenin.interledger.ilpv4.connector.settlement.IdempotenceService;
-import com.sappenin.interledger.ilpv4.connector.settlement.IdempotentResponseInfo;
+import com.sappenin.interledger.ilpv4.connector.settlement.IdempotentRequestCache;
+import com.sappenin.interledger.ilpv4.connector.settlement.HttpResponseInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -12,15 +12,15 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
- * An implementation of {@link IdempotenceService} that uses Redis as a backing store.
+ * An implementation of {@link IdempotentRequestCache} that uses Redis as a backing store.
  */
-public class RedisIdempotenceService implements IdempotenceService {
+public class RedisIdempotentRequestCache implements IdempotentRequestCache {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  private final RedisTemplate<UUID, IdempotentResponseInfo> redisTemplate;
+  private final RedisTemplate<UUID, HttpResponseInfo> redisTemplate;
 
-  public RedisIdempotenceService(final RedisTemplate<UUID, IdempotentResponseInfo> redisTemplate) {
+  public RedisIdempotentRequestCache(final RedisTemplate<UUID, HttpResponseInfo> redisTemplate) {
     this.redisTemplate = redisTemplate;
   }
 
@@ -40,13 +40,13 @@ public class RedisIdempotenceService implements IdempotenceService {
   }
 
   @Override
-  public boolean updateIdempotenceRecord(final IdempotentResponseInfo idempotentResponseInfo) {
-    Objects.requireNonNull(idempotentResponseInfo);
+  public boolean updateHttpResponseInfo(final HttpResponseInfo httpResponseInfo) {
+    Objects.requireNonNull(httpResponseInfo);
 
-    final UUID requestId = idempotentResponseInfo.requestId();
-    if (redisTemplate.opsForValue().setIfPresent(requestId, idempotentResponseInfo)) {
+    final UUID requestId = httpResponseInfo.requestId();
+    if (redisTemplate.opsForValue().setIfPresent(requestId, httpResponseInfo)) {
       // First time, so set the expiry
-      logger.debug("Updating IdempotenceData in Redis for RequestId `{}`: {}", requestId, idempotentResponseInfo);
+      logger.debug("Updating IdempotenceData in Redis for RequestId `{}`: {}", requestId, httpResponseInfo);
       return true;
     } else {
       logger.debug("IdempotenceData for RequestId `{}` already existed in Redis", requestId);
@@ -55,7 +55,7 @@ public class RedisIdempotenceService implements IdempotenceService {
   }
 
   @Override
-  public Optional<IdempotentResponseInfo> getIdempotenceRecord(UUID requestId) {
+  public Optional<HttpResponseInfo> getHttpResponseInfo(UUID requestId) {
     return Optional.ofNullable(redisTemplate.opsForValue().get(requestId));
   }
 }

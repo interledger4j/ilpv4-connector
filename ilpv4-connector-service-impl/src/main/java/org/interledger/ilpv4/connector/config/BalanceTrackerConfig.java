@@ -1,6 +1,8 @@
-package org.interledger.ilpv4.connector.balances;
+package org.interledger.ilpv4.connector.config;
 
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
+import org.interledger.ilpv4.connector.balances.InMemoryBalanceTracker;
+import org.interledger.ilpv4.connector.balances.RedisBalanceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -10,15 +10,16 @@ import org.springframework.http.HttpStatus;
 import java.util.UUID;
 
 /**
- * Contains data that will be persisted into Redis for determining if a remote API call has already been processed.
+ * Contains an Http response that will be persisted into a cache (e.g., Redis). The primary use-case for this datatype
+ * is to determine if a remote API call has already been processed.
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutableIdempotentResponseInfo.class)
-@JsonDeserialize(as = ImmutableIdempotentResponseInfo.class)
-public interface IdempotentResponseInfo {
+@JsonSerialize(as = ImmutableHttpResponseInfo.class)
+@JsonDeserialize(as = ImmutableHttpResponseInfo.class)
+public interface HttpResponseInfo {
 
-  static ImmutableIdempotentResponseInfo.Builder builder() {
-    return ImmutableIdempotentResponseInfo.builder();
+  static ImmutableHttpResponseInfo.Builder builder() {
+    return ImmutableHttpResponseInfo.builder();
   }
 
   /**

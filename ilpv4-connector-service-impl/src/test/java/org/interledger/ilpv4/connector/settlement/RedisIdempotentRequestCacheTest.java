@@ -2,11 +2,12 @@ package org.interledger.ilpv4.connector.settlement;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import com.sappenin.interledger.ilpv4.connector.settlement.IdempotenceService;
-import com.sappenin.interledger.ilpv4.connector.settlement.IdempotentResponseInfo;
+import com.sappenin.interledger.ilpv4.connector.settlement.HttpResponseInfo;
+import com.sappenin.interledger.ilpv4.connector.settlement.IdempotentRequestCache;
 import org.interledger.crypto.Decryptor;
-import org.interledger.ilpv4.connector.balances.BalanceTrackerConfig;
+import org.interledger.ilpv4.connector.config.BalanceTrackerConfig;
 import org.interledger.ilpv4.connector.config.RedisConfig;
+import org.interledger.ilpv4.connector.config.SettlementConfig;
 import org.interledger.ilpv4.connector.core.settlement.ImmutableQuantity;
 import org.interledger.ilpv4.connector.jackson.ObjectMapperFactory;
 import org.interledger.ilpv4.connector.persistence.config.ConnectorPersistenceConfig;
@@ -36,12 +37,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Unit tests for {@link RedisIdempotenceService}.
+ * Unit tests for {@link RedisIdempotentRequestCache}.
  */
-@ContextConfiguration(classes = {RedisIdempotenceServiceTest.Config.class})
+@ContextConfiguration(classes = {RedisIdempotentRequestCacheTest.Config.class})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @DataJpaTest
-public class RedisIdempotenceServiceTest {
+public class RedisIdempotentRequestCacheTest {
 
   @ClassRule
   public static final SpringClassRule SPRING_CLASS_RULE = new SpringClassRule();
@@ -54,7 +55,7 @@ public class RedisIdempotenceServiceTest {
   public final SpringMethodRule springMethodRule = new SpringMethodRule();
 
   @Autowired
-  protected IdempotenceService idempotenceService;
+  protected IdempotentRequestCache idempotentRequestCache;
 
   @BeforeClass
   public static void startRedisServer() {
@@ -69,8 +70,8 @@ public class RedisIdempotenceServiceTest {
 
   @Test
   public void updateIdempotenceRecordWhenNoExistingRecord() {
-    boolean result = idempotenceService.updateIdempotenceRecord(
-      IdempotentResponseInfo.builder()
+    boolean result = idempotentRequestCache.updateHttpResponseInfo(
+      HttpResponseInfo.builder()
         .requestId(UUID.randomUUID())
         .responseStatus(HttpStatus.OK)
         .responseHeaders(new HttpHeaders())
@@ -84,37 +85,37 @@ public class RedisIdempotenceServiceTest {
   @Test
   public void updateIdempotenceRecordWhenOneExists() {
     final UUID requestId = UUID.randomUUID();
-    assertThat(idempotenceService.reserveRequestId(requestId), is(true));
+    assertThat(idempotentRequestCache.reserveRequestId(requestId), is(true));
 
     HttpHeaders headers = new HttpHeaders();
     headers.setBasicAuth("user", "password");
     headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
     headers.setContentType(MediaType.APPLICATION_JSON);
 
-    final IdempotentResponseInfo data =
-      IdempotentResponseInfo.builder()
+    final HttpResponseInfo data =
+      HttpResponseInfo.builder()
         .requestId(requestId)
         .responseStatus(HttpStatus.OK)
         .responseHeaders(headers)
         .responseBody(ImmutableQuantity.builder().amount(BigInteger.ONE).scale(2).build())
         .build();
 
-    assertThat(idempotenceService.updateIdempotenceRecord(data), is(true));
-    assertThat(idempotenceService.updateIdempotenceRecord(data), is(true));
+    assertThat(idempotentRequestCache.updateHttpResponseInfo(data), is(true));
+    assertThat(idempotentRequestCache.updateHttpResponseInfo(data), is(true));
   }
 
   @Test
   public void getIdempotenceRecordWhenNoExistingRecord() {
-    assertThat(idempotenceService.getIdempotenceRecord(UUID.randomUUID()).isPresent(), is(false));
+    assertThat(idempotentRequestCache.getHttpResponseInfo(UUID.randomUUID()).isPresent(), is(false));
   }
 
   @Test
   public void getIdempotenceRecordWhenRecordExists() {
     final UUID requestId = UUID.randomUUID();
-    assertThat(idempotenceService.reserveRequestId(requestId), is(true));
+    assertThat(idempotentRequestCache.reserveRequestId(requestId), is(true));
 
-    boolean result = idempotenceService.updateIdempotenceRecord(
-      IdempotentResponseInfo.builder()
+    boolean result = idempotentRequestCache.updateHttpResponseInfo(
+      HttpResponseInfo.builder()
         .requestId(requestId)
         .responseStatus(HttpStatus.OK)
         .responseHeaders(new HttpHeaders())
@@ -122,7 +123,7 @@ public class RedisIdempotenceServiceTest {
         .build()
     );
     assertThat(result, is(true));
-    assertThat(idempotenceService.getIdempotenceRecord(requestId).isPresent(), is(true));
+    assertThat(idempotentRequestCache.getHttpResponseInfo(requestId).isPresent(), is(true));
   }
 
   @Configuration

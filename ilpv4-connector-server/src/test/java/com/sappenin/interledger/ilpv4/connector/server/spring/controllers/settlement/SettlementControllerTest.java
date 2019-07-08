@@ -2,7 +2,7 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.controllers.settl
 
 import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.HeaderConstants;
-import com.sappenin.interledger.ilpv4.connector.settlement.IdempotentResponseInfo;
+import com.sappenin.interledger.ilpv4.connector.settlement.HttpResponseInfo;
 import org.interledger.ilpv4.connector.core.settlement.Quantity;
 import org.interledger.ilpv4.connector.settlement.NumberScalingUtils;
 import org.junit.Test;
@@ -110,10 +110,10 @@ public class SettlementControllerTest extends AbstractControllerTest {
     Quantity clearedQuantity = NumberScalingUtils.translate(settledQuantity, 9);
 
     HttpHeaders headers = this.testHeaders(idempotenceId.toString());
-    when(idempotenceServiceMock.reserveRequestId(idempotenceId)).thenReturn(true);
+    when(idempotentRequestCacheMock.reserveRequestId(idempotenceId)).thenReturn(true);
     when(settlementServiceMock.handleIncomingSettlement(idempotenceId, ALICE_ACCOUNT_ID, settledQuantity))
       .thenReturn(clearedQuantity);
-    when(idempotenceServiceMock.updateIdempotenceRecord(any())).thenReturn(true);
+    when(idempotentRequestCacheMock.updateHttpResponseInfo(any())).thenReturn(true);
 
     this.mvc
       .perform(post(SLASH_ACCOUNTS + SLASH + ALICE_ACCOUNT_ID.value() + SLASH_SETTLEMENTS)
@@ -129,15 +129,15 @@ public class SettlementControllerTest extends AbstractControllerTest {
 
     HttpHeaders cachedHeaders = new HttpHeaders();
     cachedHeaders.set(IDEMPOTENCY_KEY, idempotenceId.toString());
-    final IdempotentResponseInfo cachedResponse =
-      IdempotentResponseInfo.builder()
+    final HttpResponseInfo cachedResponse =
+      HttpResponseInfo.builder()
         .responseStatus(HttpStatus.OK)
         .requestId(idempotenceId)
         .responseBody(clearedQuantity)
         .responseHeaders(cachedHeaders)
         .build();
 
-    when(idempotenceServiceMock.getIdempotenceRecord(idempotenceId)).thenReturn(Optional.of(cachedResponse));
+    when(idempotentRequestCacheMock.getHttpResponseInfo(idempotenceId)).thenReturn(Optional.of(cachedResponse));
 
     // Call the endpoint twice
     this.mvc
@@ -153,7 +153,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
       .andExpect(header().string(IDEMPOTENCY_KEY, idempotenceId.toString()));
 
     verify(settlementServiceMock).handleIncomingSettlement(idempotenceId, ALICE_ACCOUNT_ID, settledQuantity);
-    verify(idempotenceServiceMock).updateIdempotenceRecord(any());
+    verify(idempotentRequestCacheMock).updateHttpResponseInfo(any());
 
   }
 
