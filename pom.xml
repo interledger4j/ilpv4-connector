@@ -27,7 +27,7 @@
     <problem-spring-web.version>0.24.0</problem-spring-web.version>
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
     <spring-cloud.version>Greenwich.SR1</spring-cloud.version>
-    <resilience4j.version>0.16.0</resilience4j.version>
+    <resilience4j.version>0.17.0</resilience4j.version>
 
     <!-- org.jacoco:jacoc-maven-plugin -->
     <jacoco.propertyName>argLine</jacoco.propertyName>
@@ -176,7 +176,7 @@
       <dependency>
         <groupId>com.squareup.okhttp3</groupId>
         <artifactId>okhttp</artifactId>
-        <version>4.0.0</version>
+        <version>4.0.1</version>
       </dependency>
       <dependency>
         <groupId>com.github.ben-manes.caffeine</groupId>
@@ -216,7 +216,7 @@
       <dependency>
         <groupId>io.vavr</groupId>
         <artifactId>vavr</artifactId>
-        <version>0.10.0</version>
+        <version>0.10.1</version>
       </dependency>
       <dependency>
         <groupId>javax.inject</groupId>
@@ -434,7 +434,7 @@
         <plugin>
           <groupId>org.owasp</groupId>
           <artifactId>dependency-check-maven</artifactId>
-          <version>5.1.0</version>
+          <version>5.2.0</version>
           <executions>
             <execution>
               <goals>
