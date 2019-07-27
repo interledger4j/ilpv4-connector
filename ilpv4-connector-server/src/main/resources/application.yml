@@ -15,6 +15,9 @@ server:
   jetty:
     max-http-post-size: 32767 # Max per ILP ASN.1
 spring:
+  cache:
+    redis:
+      time-to-live: 86400
   output:
     ansi:
       enabled: ALWAYS

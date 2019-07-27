@@ -1,6 +1,6 @@
 package org.interledger.ilpv4.connector.settlement;
 
-import org.interledger.ilpv4.connector.core.settlement.Quantity;
+import org.interledger.ilpv4.connector.core.settlement.SettlementQuantity;
 
 import java.math.BigInteger;
 import java.util.Objects;
@@ -11,28 +11,34 @@ import java.util.Objects;
 public class NumberScalingUtils {
 
   /**
-   * Translate a {@link Quantity} with a given scale into a new quantity with a scale of {@code destinationScale}.
+   * Translate a {@link SettlementQuantity} with a given scale into a new settlementQuantity with a scale of {@code
+   * destinationScale}.
    *
-   * @param quantity         A {@link Quantity} to translate into a new scaled amount.
-   * @param destinationScale TODO: Take definition of `scale` from RFC once it's finalized.
+   * @param settlementQuantity A {@link SettlementQuantity} to translate into a new scaled amount.
+   * @param destinationScale   TODO: Take definition of `scale` from RFC once it's finalized.
    *
-   * @return A new {@link Quantity} with scale of {@code destinationScale}.
+   * @return A new {@link SettlementQuantity} with scale of {@code destinationScale}.
    */
-  public static Quantity translate(final Quantity quantity, final int destinationScale) {
+  public static SettlementQuantity translate(final SettlementQuantity settlementQuantity, final int destinationScale) {
 
-    Objects.requireNonNull(quantity, "Quantity must not be null");
+    Objects.requireNonNull(settlementQuantity, "SettlementQuantity must not be null");
 
     // The difference between the two `scale` values
-    final int scaleDifference = destinationScale - quantity.scale();
+    final int scaleDifference = destinationScale - settlementQuantity.scale();
+
+    // Unsigned long....
+    final BigInteger settlementQuantityAmount = BigInteger.valueOf(settlementQuantity.amount());
+
 
     final BigInteger newAmount = scaleDifference > 0 ?
       // value * (10^scaleDifference)
-      quantity.amount().multiply(BigInteger.TEN.pow(scaleDifference)) :
+      settlementQuantityAmount.multiply(BigInteger.TEN.pow(scaleDifference)) :
       // value / (10^-scaleDifference))
-      quantity.amount().divide((BigInteger.TEN.pow(scaleDifference * -1)));
+      settlementQuantityAmount.divide((BigInteger.TEN.pow(scaleDifference * -1)));
 
-    return Quantity.builder()
-      .amount(newAmount)
+    // TODO: If overflow, should we return a quantity of 0 instead of blowing up?
+    return SettlementQuantity.builder()
+      .amount(newAmount.longValueExact())
       .scale(destinationScale)
       .build();
   }

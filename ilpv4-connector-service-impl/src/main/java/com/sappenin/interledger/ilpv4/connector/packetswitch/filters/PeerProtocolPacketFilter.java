@@ -8,6 +8,7 @@ import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import com.sappenin.interledger.ilpv4.connector.routing.RoutableAccount;
 import com.sappenin.interledger.ilpv4.connector.routing.RouteBroadcaster;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import com.sappenin.interledger.ilpv4.connector.settlement.SettlementService;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
@@ -38,6 +39,7 @@ import static com.sappenin.interledger.ilpv4.connector.ccp.CcpConstants.PEER_PRO
 public class PeerProtocolPacketFilter extends AbstractPacketFilter implements PacketSwitchFilter {
 
   public static final InterledgerAddress PEER_DOT_ROUTE = InterledgerAddress.of("peer.route");
+  public static final InterledgerAddress PEER_DOT_SETTLE = InterledgerAddress.of("peer.settle");
 
   private static final boolean SENDING_NOT_ENABLED = false;
   private static final boolean RECEIVING_NOT_ENABLED = false;
@@ -46,19 +48,22 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
   private final RouteBroadcaster routeBroadcaster;
   private final CodecContext ccpCodecContext;
   private final CodecContext ildcpCodecContext;
+  private final SettlementService settlementService;
 
   public PeerProtocolPacketFilter(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final PacketRejector packetRejector,
     final RouteBroadcaster routeBroadcaster,
     final CodecContext ccpCodecContext,
-    final CodecContext ildcpCodecContext
+    final CodecContext ildcpCodecContext,
+    final SettlementService settlementService
   ) {
     super(packetRejector);
     this.connectorSettingsSupplier = connectorSettingsSupplier;
     this.routeBroadcaster = Objects.requireNonNull(routeBroadcaster);
     this.ccpCodecContext = Objects.requireNonNull(ccpCodecContext);
     this.ildcpCodecContext = Objects.requireNonNull(ildcpCodecContext);
+    this.settlementService = Objects.requireNonNull(settlementService);
   }
 
   @Override
@@ -93,6 +98,12 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
             InterledgerErrorCode.F00_BAD_REQUEST,
             "CCP routing protocol is not supported by this node.");
         }
+      }
+
+      // `peer.settle` is a message coming from a Peer over ILPv4, destined for a Settlement Engine (connected to
+      // this Connector) that correlates to the account link this packet was received on.
+      else if (sourcePreparePacket.getDestination().startsWith(PEER_DOT_SETTLE)) {
+        return handlePeerSettlement(sourceAccountSettings, sourcePreparePacket);
       }
 
       // Unsupported `peer.` request...
@@ -244,6 +255,26 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
     } catch (IOException e) {
       throw new RuntimeException(e.getMessage(), e);
     }
+  }
+
+  /**
+   * Handle an incoming ILP Prepare packet that contains peer-wise settlement engine messaging.
+   *
+   * @param settlementMessage A {@link InterledgerPreparePacket} with data sent from the peer's Settlement Engine.
+   *
+   * @return An {@link InterledgerResponsePacket} containing any response from this Connector's Settlement Engine.
+   */
+  @VisibleForTesting
+  protected InterledgerResponsePacket handlePeerSettlement(
+    final AccountSettings sourceAccountSettings, final InterledgerPreparePacket settlementMessage
+  ) throws InterledgerProtocolException {
+    Objects.requireNonNull(sourceAccountSettings);
+    Objects.requireNonNull(settlementMessage);
+
+
+    // NOTE: Idempotency is not required here because that will have been handled at the Connector's SE API Endpoint
+    // (i.e., in `/messages`).
+    return this.settlementService.onSettlementMessageFromPeer(sourceAccountSettings, settlementMessage);
   }
 
 }

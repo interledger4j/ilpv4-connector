@@ -43,15 +43,21 @@ public class AccountSettingsTest {
       "\"maximumPacketAmount\":null," +
       "\"customSettings\":{}," +
       "\"description\":\"\"," +
-      "\"balanceSettings\":{\"minBalance\":null," +
+      "\"balanceSettings\":{" +
+      "\"minBalance\":null," +
       "\"maxBalance\":null," +
       "\"settleThreshold\":null," +
-      "\"settleTo\":null}," +
-      "\"rateLimitSettings\":{\"maxPacketsPerSecond\":null}," +
+      "\"settleTo\":\"0\"" +
+      "}," +
+      "\"rateLimitSettings\":{" +
+      "\"maxPacketsPerSecond\":null" +
+      "}," +
       "\"isConnectionInitiator\":false," +
       "\"isInternal\":false," +
       "\"isSendRoutes\":false," +
-      "\"isReceiveRoutes\":false}"
+      "\"isReceiveRoutes\":false," +
+      "\"settlementEngineDetails\":null" +
+      "}"
     ));
 
     final AccountSettings deserializedAccountSettings = objectMapper.readValue(json, ImmutableAccountSettings.class);

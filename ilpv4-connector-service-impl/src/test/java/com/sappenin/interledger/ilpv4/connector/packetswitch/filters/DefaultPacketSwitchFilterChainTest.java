@@ -10,6 +10,8 @@ import com.sappenin.interledger.ilpv4.connector.links.loopback.LoopbackLink;
 import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLink;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.PacketRejector;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountRelationship;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.AbstractLink;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkSettings;
@@ -21,6 +23,7 @@ import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
 import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -50,13 +53,35 @@ public class DefaultPacketSwitchFilterChainTest {
 
   // The AccountId of the Incoming Link
   private static final AccountId INCOMING_ACCOUNT_ID = AccountId.of("source-account");
+  private static final AccountSettings INCOMING_ACCOUNT_SETTINGS = AccountSettings.builder()
+    .accountId(INCOMING_ACCOUNT_ID)
+    .accountRelationship(AccountRelationship.PEER)
+    .assetCode("USD")
+    .assetScale(2)
+    .linkType(LoopbackLink.LINK_TYPE)
+    .build();
 
   // The AccountId of the Outbound Link
   private static final AccountId OUTGOING_ACCOUNT_ID = AccountId.of("destination-account");
+  private static final AccountSettings OUTGOING_ACCOUNT_SETTINGS = AccountSettings.builder()
+    .accountId(OUTGOING_ACCOUNT_ID)
+    .accountRelationship(AccountRelationship.PEER)
+    .assetCode("USD")
+    .assetScale(2)
+    .linkType(LoopbackLink.LINK_TYPE)
+    .build();
 
   private static final LinkSettings OUTGOING_LINK_SETTINGS = LinkSettings.builder()
     .linkType(LoopbackLink.LINK_TYPE)
     .putCustomSettings("accountId", OUTGOING_ACCOUNT_ID.value())
+    .build();
+
+  private static final AccountSettings PING_ACCOUNT_SETTINGS = AccountSettings.builder()
+    .accountId(PING_ACCOUNT_ID)
+    .accountRelationship(AccountRelationship.PEER)
+    .assetCode("USD")
+    .assetScale(2)
+    .linkType(PingLoopbackLink.LINK_TYPE)
     .build();
 
   private static final InterledgerPreparePacket PREPARE_PACKET = InterledgerPreparePacket.builder()
@@ -72,6 +97,8 @@ public class DefaultPacketSwitchFilterChainTest {
   private LinkManager linkManagerMock;
   @Mock
   private NextHopPacketMapper nextHopPacketMapperMock;
+  @Mock
+  private AccountSettingsRepository accountSettingsRepositoryMock;
 
   private Link outgoingLink;
 
@@ -96,8 +123,16 @@ public class DefaultPacketSwitchFilterChainTest {
       packetSwitchFilters,
       linkFiltersMock,
       linkManagerMock,
-      nextHopPacketMapperMock
+      nextHopPacketMapperMock,
+      accountSettingsRepositoryMock
     );
+
+    when(accountSettingsRepositoryMock.findByAccountId(INCOMING_ACCOUNT_ID))
+      .thenReturn(Optional.of(new AccountSettingsEntity(INCOMING_ACCOUNT_SETTINGS)));
+    when(accountSettingsRepositoryMock.findByAccountId(OUTGOING_ACCOUNT_ID))
+      .thenReturn(Optional.of(new AccountSettingsEntity(OUTGOING_ACCOUNT_SETTINGS)));
+    when(accountSettingsRepositoryMock.findByAccountId(PING_ACCOUNT_ID))
+      .thenReturn(Optional.of(new AccountSettingsEntity(PING_ACCOUNT_SETTINGS)));
   }
 
   @Test
@@ -211,10 +246,7 @@ public class DefaultPacketSwitchFilterChainTest {
       .thenReturn(nextHopInfo);
     when(linkManagerMock.getPingLink()).thenReturn(outgoingLink);
 
-    final AccountSettingsEntity accountSettingsEntityMock = mock(AccountSettingsEntity.class);
-    when(accountSettingsEntityMock.getAccountId()).thenReturn(INCOMING_ACCOUNT_ID);
-
-    final InterledgerResponsePacket actual = filterChain.doFilter(accountSettingsEntityMock, pingPreparePacket);
+    final InterledgerResponsePacket actual = filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket);
     new InterledgerResponsePacketHandler() {
 
       @Override

@@ -1,10 +1,9 @@
-package com.sappenin.interledger.ilpv4.connector.server.spring.controllers.settlement;
+package com.sappenin.interledger.ilpv4.connector.server.spring.controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sappenin.interledger.ilpv4.connector.links.LinkSettingsFactory;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
-import com.sappenin.interledger.ilpv4.connector.settlement.IdempotentRequestCache;
 import com.sappenin.interledger.ilpv4.connector.settlement.SettlementService;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.crypto.EncryptionService;
@@ -27,9 +26,6 @@ public abstract class AbstractControllerTest {
 
   @Autowired
   protected ObjectMapper objectMapper;
-
-  @MockBean
-  protected IdempotentRequestCache idempotentRequestCacheMock;
 
   @MockBean
   protected SettlementService settlementServiceMock;

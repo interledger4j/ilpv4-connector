@@ -1,6 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.links.filters;
 
-import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.Link;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
@@ -33,18 +33,18 @@ public class DefaultLinkFilterChain implements LinkFilterChain {
 
   @Override
   public InterledgerResponsePacket doFilter(
-    final AccountId destinationAccountId, final InterledgerPreparePacket preparePacket
+    final AccountSettings destinationAccountSettings, final InterledgerPreparePacket preparePacket
   ) {
 
-    Objects.requireNonNull(destinationAccountId);
+    Objects.requireNonNull(destinationAccountSettings);
     Objects.requireNonNull(preparePacket);
 
     if (this._filterIndex < this.linkFilters.size()) {
-      return linkFilters.get(_filterIndex++).doFilter(destinationAccountId, preparePacket, this);
+      return linkFilters.get(_filterIndex++).doFilter(destinationAccountSettings, preparePacket, this);
     } else {
       LOGGER.debug(
-        "Sending outbound ILP Prepare. destinationAccountId: `{}` link={} packet={}",
-        destinationAccountId, link, preparePacket
+        "Sending outbound ILP Prepare. destinationAccountSettings: {}; link={}; packet={};",
+        destinationAccountSettings, link, preparePacket
       );
       return link.sendPacket(preparePacket);
     }

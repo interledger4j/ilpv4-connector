@@ -199,7 +199,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
   @Test(expected = NullPointerException.class)
   public void updateBalanceForPrepareWithNullMinBalance() {
     try {
-      balanceTracker.updateBalanceForPrepare(SOURCE_ACCOUNT_ID, ONE, null);
+      balanceTracker.updateBalanceForPrepare(ACCOUNT_ID, ONE, null);
     } catch (NullPointerException e) {
       assertThat(e.getMessage(), is("minBalance must not be null"));
       throw e;
@@ -250,7 +250,7 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
   @Test
   public void updateBalanceForPrepareWhenNoAccountInRedisAndNoMinBalance() {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-    balanceTracker.updateBalanceForPrepare(accountId, ONE);
+    balanceTracker.updateBalanceForPrepare(accountId, ONE, Optional.empty());
 
     final AccountBalance loadedBalance = balanceTracker.getBalance(accountId);
     assertThat(loadedBalance.clearingBalance(), is(NEGATIVE_ONE));
@@ -264,27 +264,27 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
   @Test
   public void updateBalanceForPrepareWithParamterizedValues() {
 
-    this.initializeAccount(SOURCE_ACCOUNT_ID, this.existingAccountBalance, this.existingPrepaidBalance);
+    this.initializeAccount(ACCOUNT_ID, this.existingClearingBalance, this.existingPrepaidBalance);
 
     if (producesError) {
       try {
         if (this.minBalance.isPresent()) {
-          balanceTracker.updateBalanceForPrepare(SOURCE_ACCOUNT_ID, prepareAmount, minBalance);
+          balanceTracker.updateBalanceForPrepare(ACCOUNT_ID, prepareAmount, minBalance);
         } else {
-          balanceTracker.updateBalanceForPrepare(SOURCE_ACCOUNT_ID, prepareAmount);
+          balanceTracker.updateBalanceForPrepare(ACCOUNT_ID, prepareAmount, Optional.empty());
         }
         fail(String.format("Should have produced an error, but did not. " +
             "prepareAmount: `%s`, minBalance: `%s`, " +
-            "existingAccountBalance: `%s`, existingPrepaidBalance: `%s`, " +
-            "expectedBalanceInRedis: `%s`, expectedPrepaidAmountInRedis: `%s`",
+            "existingClearingBalance: `%s`, existingPrepaidBalance: `%s`, " +
+            "expectedClearingBalanceInRedis: `%s`, expectedPrepaidAmountInRedis: `%s`",
           prepareAmount, minBalance,
-          this.existingAccountBalance, this.existingPrepaidBalance,
-          this.expectedBalanceInRedis, this.expectedPrepaidAmountInRedis)
+          this.existingClearingBalance, this.existingPrepaidBalance,
+          this.expectedClearingBalanceInRedis, this.expectedPrepaidAmountInRedis)
         );
       } catch (BalanceTrackerException e) {
         assertTrue(e.getMessage().contains(
           String.format("Error handling prepare with sourceAmount `%s` from accountId `%s`",
-            prepareAmount, SOURCE_ACCOUNT_ID.value(), existingAccountBalance,
+            prepareAmount, ACCOUNT_ID.value(), existingClearingBalance,
             minBalance.map(Object::toString).orElse(""))));
         return;
       }
@@ -292,18 +292,19 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
 
       if (this.minBalance.isPresent()) {
         balanceTracker.updateBalanceForPrepare(
-          SOURCE_ACCOUNT_ID, this.prepareAmount, this.minBalance
+          ACCOUNT_ID, this.prepareAmount, this.minBalance
         );
       } else {
         balanceTracker.updateBalanceForPrepare(
-          SOURCE_ACCOUNT_ID, this.prepareAmount
+          ACCOUNT_ID, this.prepareAmount, Optional.empty()
         );
       }
 
-      final AccountBalance loadedBalance = balanceTracker.getBalance(SOURCE_ACCOUNT_ID);
-      assertThat(loadedBalance.clearingBalance(), is(expectedBalanceInRedis));
+      final AccountBalance loadedBalance = balanceTracker.getBalance(ACCOUNT_ID);
+      assertThat(loadedBalance.clearingBalance(), is(expectedClearingBalanceInRedis));
       assertThat(loadedBalance.prepaidAmount(), is(expectedPrepaidAmountInRedis));
-      assertThat(loadedBalance.netBalance().longValue(), is(expectedBalanceInRedis + expectedPrepaidAmountInRedis));
+      assertThat(loadedBalance.netBalance().longValue(), is(
+        expectedClearingBalanceInRedis + expectedPrepaidAmountInRedis));
     }
   }
 }

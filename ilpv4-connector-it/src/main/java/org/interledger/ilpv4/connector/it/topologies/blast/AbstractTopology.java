@@ -1,8 +1,16 @@
 package org.interledger.ilpv4.connector.it.topologies.blast;
 
+import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLink;
 import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountRelationship;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
+
+import java.util.Optional;
+
+import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 
 /**
  * An abstract class for all Topologies.
@@ -38,5 +46,23 @@ public abstract class AbstractTopology {
     System.setProperty("server.port", "0");
     System.setProperty("spring.jmx.enabled", "false");
     System.setProperty("spring.application.admin.enabled", "false");
+  }
+
+
+  /**
+   * An AccountSettings object that represents a ping account on Bob.
+   */
+  protected static AccountSettingsEntity constructPingAccountSettings() {
+    return new AccountSettingsEntity(
+      AccountSettings.builder()
+        .accountId(PING_ACCOUNT_ID)
+        .accountRelationship(AccountRelationship.CHILD)
+        .settlementEngineDetails(Optional.empty())
+        .assetCode("USD")
+        .assetScale(2)
+        .description("A receiver-like child account for collecting all Ping protocol revenues.")
+        .linkType(PingLoopbackLink.LINK_TYPE)
+        .build()
+    );
   }
 }

@@ -3,7 +3,7 @@ package com.sappenin.interledger.ilpv4.connector.settlement;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
-import org.interledger.ilpv4.connector.core.settlement.Quantity;
+import org.interledger.ilpv4.connector.core.settlement.SettlementQuantity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
@@ -46,6 +46,6 @@ public interface HttpResponseInfo {
   /**
    * @return
    */
-  Quantity responseBody();
+  SettlementQuantity responseBody();
 
 }

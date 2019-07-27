@@ -2,6 +2,7 @@ package org.interledger.ilpv4.connector.it.topologies.blast;
 
 import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.StaticRoute;
+import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLink;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.IlpHttpController;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
@@ -22,6 +23,10 @@ import org.interledger.ilpv4.connector.it.topology.nodes.ConnectorServerNode;
 import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
+
+import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 
 /**
  * <p>A very simple topology that simulates a single ILP-over-HTTP (BLAST) connection between two Connectors to
@@ -83,6 +88,12 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
           // Add Alice's account on Bob...
           final AccountSettingsEntity aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
+
+          // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
+          // NOTE: The Connector configures a Ping Account properly but this Topology deletes all accounts above
+          // before running, so we must create a new PING account here.
+          final AccountSettingsEntity pingAccountSettingsAtBob = constructPingAccountSettings();
+          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(pingAccountSettingsAtBob);
 
           // Try to connect the bob account...
           aliceServerNode.getILPv4Connector().getLinkManager().getOrCreateLink(bobAccountSettingsAtAlice);

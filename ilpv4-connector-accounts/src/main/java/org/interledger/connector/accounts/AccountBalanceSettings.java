@@ -2,6 +2,7 @@ package org.interledger.connector.accounts;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.Preconditions;
 import org.immutables.value.Value;
 
 import java.util.Optional;
@@ -41,7 +42,11 @@ public interface AccountBalanceSettings {
    * sign-less. Thus, we can use the largest long to represent the largest minimum balance.</p>
    *
    * @return The maximum balance, or {@link Optional#empty()} if there is no maximum.
+   *
+   * @see "https://github.com/sappenin/java-ilpv4-connector/issues/215"
+   * @deprecated No longer needed since Settlement values can provide for this.
    */
+  @Deprecated
   Optional<Long> getMaxBalance();
 
   /**
@@ -58,21 +63,38 @@ public interface AccountBalanceSettings {
   Optional<Long> getSettleThreshold();
 
   /**
-   * Optional Balance (in this account's indivisible base units) the connector will attempt to reach when settling.
+   * <p>The account balance (in this account's indivisible base units) the connector will attempt to reach when
+   * settling (default value is 0).</p>
    *
-   * <p>Note that it is permissible to use a {@link Long} here since this value only ever represents a positive
-   * number (this roughly correlates to the `prepaid_balance` in the balance tracker, and this will never go negative).
-   * Thus, we can use the largest long number to represent the largest threshold).</p>
+   * <p>Note that it is permissible to use a {@link long} here since this value only ever represents a positive
+   * unsigned long number or zero.</p>
    *
    * @return The amount that triggers settlement.
    */
-  Optional<Long> getSettleTo();
+  default long getSettleTo() {
+    return 0L;
+  }
 
   @Value.Immutable(intern = true)
   @Value.Modifiable
   @JsonSerialize(as = ImmutableAccountBalanceSettings.class)
   @JsonDeserialize(as = ImmutableAccountBalanceSettings.class)
   abstract class AbstractAccountBalanceSettings implements AccountBalanceSettings {
+
+    @Override
+    @Value.Default
+    public long getSettleTo() {
+      return 0L;
+    }
+
+    @Value.Check
+    public AbstractAccountBalanceSettings check() {
+      this.getSettleThreshold()
+        .ifPresent(settleThreshold -> Preconditions.checkArgument(settleThreshold >= getSettleTo(),
+          "settleThreshold must be greater than or equal to the settleTo"
+        ));
+      return this;
+    }
 
   }
 }

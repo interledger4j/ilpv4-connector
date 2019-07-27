@@ -499,7 +499,10 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
         .orElseThrow(() -> new RuntimeException("Connector was configured to use a default address as the nextHop " +
           "for the default route, but no Account was configured for this address!"));
     } else {
-      logger.warn("No Default Route configured.");
+      logger.warn(
+        "No Default Route configured (A default route provides a fallback upstream link for any packets that are not" +
+          " intrinsically routable)."
+      );
       nextHopForDefaultRoute = Optional.empty();
     }
 

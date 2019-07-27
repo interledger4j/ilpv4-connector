@@ -41,6 +41,7 @@ public interface AccountBalance {
    *
    * @return An {@link BigInteger} representing the net clearing balance of this account.
    */
+  // TODO: Use UnsignedLong
   long clearingBalance();
 
   /**
@@ -50,5 +51,6 @@ public interface AccountBalance {
    * @return An {@link BigInteger} representing the number of units the counterparty (i.e., owner of this account) has
    * prepaid with this Connector.
    */
+  // TODO: Use UnsignedLong
   long prepaidAmount();
 }

@@ -132,15 +132,13 @@ public class RedisBalanceTrackerRejectPacketTest extends AbstractRedisBalanceTra
 
   @Test
   public void updateBalanceForRejectWithParamterizedValues() {
-    this.initializeAccount(SOURCE_ACCOUNT_ID, this.existingAccountBalance, this.existingPrepaidBalance);
+    this.initializeAccount(ACCOUNT_ID, this.existingClearingBalance, this.existingPrepaidBalance);
 
-    balanceTracker.updateBalanceForReject(
-      SOURCE_ACCOUNT_ID, this.prepareAmount
-    );
+    balanceTracker.updateBalanceForReject(ACCOUNT_ID, this.prepareAmount);
 
-    final AccountBalance loadedBalance = balanceTracker.getBalance(SOURCE_ACCOUNT_ID);
-    assertThat(loadedBalance.clearingBalance(), is(expectedBalanceInRedis));
+    final AccountBalance loadedBalance = balanceTracker.getBalance(ACCOUNT_ID);
+    assertThat(loadedBalance.clearingBalance(), is(expectedClearingBalanceInRedis));
     assertThat(loadedBalance.prepaidAmount(), is(expectedPrepaidAmountInRedis));
-    assertThat(loadedBalance.netBalance().longValue(), is(expectedBalanceInRedis + expectedPrepaidAmountInRedis));
+    assertThat(loadedBalance.netBalance().longValue(), is(expectedClearingBalanceInRedis + expectedPrepaidAmountInRedis));
   }
 }

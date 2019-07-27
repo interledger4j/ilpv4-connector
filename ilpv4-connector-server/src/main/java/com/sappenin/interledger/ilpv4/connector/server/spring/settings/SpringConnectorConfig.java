@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
@@ -52,7 +53,12 @@ import com.sappenin.interledger.ilpv4.connector.server.spring.settings.javamoney
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.web.SpringConnectorWebMvc;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import com.sappenin.interledger.ilpv4.connector.settlement.SettlementService;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountRateLimitSettings;
+import org.interledger.connector.accounts.AccountRelationship;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.AbstractLink;
 import org.interledger.connector.link.LinkFactoryProvider;
 import org.interledger.connector.link.events.LinkEventEmitter;
@@ -60,10 +66,12 @@ import org.interledger.core.InterledgerAddress;
 import org.interledger.crypto.Decryptor;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.ilpv4.connector.config.BalanceTrackerConfig;
+import org.interledger.ilpv4.connector.config.CaffeineCacheConfig;
 import org.interledger.ilpv4.connector.config.RedisConfig;
-import org.interledger.ilpv4.connector.persistence.config.ConnectorPersistenceConfig;
-import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.ilpv4.connector.config.SettlementConfig;
+import org.interledger.ilpv4.connector.persistence.config.ConnectorPersistenceConfig;
+import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,9 +86,11 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
+import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.CCP;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.ILDCP;
 
@@ -98,6 +108,7 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.Co
           ConnectorPersistenceConfig.class,
           CryptoConfig.class,
           ResiliencyConfig.class,
+          CaffeineCacheConfig.class,
           RedisConfig.class, SettlementConfig.class, BalanceTrackerConfig.class,
           SpringConnectorWebMvc.class
         })
@@ -113,7 +124,7 @@ public class SpringConnectorConfig {
     if (connectorSettingsSupplier().get().getOperatorAddress().isPresent()) {
       logger.info("STARTED ILPV4 CONNECTOR: `{}`", connectorSettingsSupplier().get().getOperatorAddress().get());
     } else {
-      logger.info("STARTED ILPV4 identityRateProviderCHILD CONNECTOR: [Operator Address pending IL-DCP]");
+      logger.info("STARTED ILPV4 CHILD CONNECTOR: [Operator Address pending IL-DCP]");
     }
   }
 
@@ -244,6 +255,32 @@ public class SpringConnectorConfig {
     final AccountSettingsRepository accountSettingsRepository,
     final Decryptor decryptor
   ) {
+
+    // If the Ping Protocol is enabled, we need to ensure that there is a Ping account suitable to accept value for
+    // Ping requests.
+    if (connectorSettingsSupplier.get().getEnabledProtocols().isPingProtocolEnabled()) {
+      if (!accountSettingsRepository.findByAccountId(PING_ACCOUNT_ID).isPresent()) {
+        // Create this account.
+
+        final AccountSettings pingAccountSettings = AccountSettings.builder()
+          .accountId(PING_ACCOUNT_ID)
+          .accountRelationship(AccountRelationship.CHILD)
+          .assetCode("USD") // TODO: Make this configurable, or else the same as the Connector's base currency.
+          .assetScale(2) // TODO: Make this configurable, or else the same as the Connector's base currency.
+          .description("A receiver-like child account for collecting all Ping protocol revenues.")
+          // TODO: In theory we don't need a rate limit for ping requests because they should always contain value.
+          //  However, some systems may ping with a 0-value packet. Also, consider the case where 1M accounts each
+          //  ping a Connector cluster every 5 or 10 or 60 seconds.
+          .rateLimitSettings(AccountRateLimitSettings.builder()
+            .maxPacketsPerSecond(1) // TODO: Make Configurable, per the above comment.
+            .build())
+          .linkType(PingLoopbackLink.LINK_TYPE)
+          .build();
+
+        accountSettingsRepository.save(new AccountSettingsEntity(pingAccountSettings));
+      }
+    }
+
     return new ChildAccountPaymentRouter(connectorSettingsSupplier, accountSettingsRepository, decryptor);
   }
 
@@ -335,6 +372,7 @@ public class SpringConnectorConfig {
     InterledgerAddressUtils addressUtils,
     BalanceTracker balanceTracker,
     PacketRejector packetRejector,
+    SettlementService settlementService,
     @Qualifier(CCP) CodecContext ccpCodecContext, @Qualifier(ILDCP) CodecContext ildcpCodecContext
   ) {
     final ConnectorSettings connectorSettings = connectorSettingsSupplier().get();
@@ -358,13 +396,14 @@ public class SpringConnectorConfig {
       new ValidateFulfillmentPacketFilter(packetRejector),
 
       /////////////////////////////////
-      // This filter can short-circuit a request, so be careful adding packets after it.
+      // WARNING: This filter can short-circuit a request, so be careful adding filters after it.
       new PeerProtocolPacketFilter(
         connectorSettingsSupplier(),
         packetRejector,
         routeBroadcaster,
         ccpCodecContext,
-        ildcpCodecContext
+        ildcpCodecContext,
+        settlementService
       )
     );
 
@@ -378,13 +417,15 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  List<LinkFilter> linkFilters(BalanceTracker balanceTracker) {
+  List<LinkFilter> linkFilters(
+    BalanceTracker balanceTracker, SettlementService settlementService
+  ) {
     final Supplier<InterledgerAddress> operatorAddressSupplier =
       () -> connectorSettingsSupplier().get().getOperatorAddress().get();
 
     return Lists.newArrayList(
       //      // TODO: Throughput for Money...
-      new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker)
+      new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker, settlementService)
     );
   }
 
@@ -413,12 +454,13 @@ public class SpringConnectorConfig {
   ILPv4PacketSwitch ilpPacketSwitch(
     List<PacketSwitchFilter> packetSwitchFilters, List<LinkFilter> linkFilters,
     LinkManager linkManager, NextHopPacketMapper nextHopPacketMapper,
-    ConnectorExceptionHandler connectorExceptionHandler, AccountSettingsRepository accountSettingsRepository,
-    PacketRejector packetRejector
+    ConnectorExceptionHandler connectorExceptionHandler, PacketRejector packetRejector,
+    AccountSettingsRepository accountSettingsRepository,
+    Cache<AccountId, Optional<? extends AccountSettings>> accountSettingsCache
   ) {
     return new DefaultILPv4PacketSwitch(
       packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler,
-      accountSettingsRepository, packetRejector
+      packetRejector, accountSettingsRepository, accountSettingsCache
     );
   }
 

@@ -1,31 +1,28 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.controllers.settlement;
 
 import com.google.common.collect.Lists;
+import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.AbstractControllerTest;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.HeaderConstants;
-import com.sappenin.interledger.ilpv4.connector.settlement.HttpResponseInfo;
-import org.interledger.ilpv4.connector.core.settlement.Quantity;
+import org.interledger.ilpv4.connector.core.settlement.SettlementQuantity;
 import org.interledger.ilpv4.connector.settlement.NumberScalingUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.math.BigInteger;
-import java.util.Optional;
 import java.util.UUID;
 
 import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.HeaderConstants.APPLICATION_PROBLEM_JSON;
-import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.HeaderConstants.IDEMPOTENCY_KEY;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.PathConstants.SLASH;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.PathConstants.SLASH_SETTLEMENTS;
-import static org.mockito.ArgumentMatchers.any;
+import static com.sappenin.interledger.ilpv4.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
@@ -45,13 +42,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SuppressWarnings("PMD")
 public class SettlementControllerTest extends AbstractControllerTest {
 
+  static {
+    System.setProperty("spring.cache.type", "redis");
+  }
+
   @Autowired
   private MockMvc mvc;
 
   @Test
   public void sendSettlementMessageWithoutIdempotenceKey() throws Exception {
-    Quantity settledQuantity = Quantity.builder()
-      .amount(BigInteger.valueOf(1))
+    SettlementQuantity settledSettlementQuantity = SettlementQuantity.builder()
+      .amount(1L)
       .scale(6)
       .build();
 
@@ -62,7 +63,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
         .headers(headers)
         .contentType(MediaType.APPLICATION_JSON)
         .accept(MediaType.APPLICATION_JSON)
-        .content(asJsonString(settledQuantity))
+        .content(asJsonString(settledSettlementQuantity))
         .with(httpBasic("admin", "password")).with(csrf())
       )
       .andExpect(status().isBadRequest())
@@ -76,20 +77,19 @@ public class SettlementControllerTest extends AbstractControllerTest {
 
   @Test
   public void sendSettlementMessageWithNonUuidIdempotenceKey() throws Exception {
-    Quantity settledQuantity = Quantity.builder()
-      .amount(BigInteger.valueOf(1))
+    SettlementQuantity settledSettlementQuantity = SettlementQuantity.builder()
+      .amount(1L)
       .scale(6)
       .build();
 
     HttpHeaders headers = this.testHeaders("123");
-
 
     this.mvc
       .perform(post(SLASH_ACCOUNTS + SLASH + ALICE_ACCOUNT_ID.value() + SLASH_SETTLEMENTS)
         .headers(headers)
         .contentType(MediaType.APPLICATION_JSON)
         .accept(MediaType.APPLICATION_JSON)
-        .content(asJsonString(settledQuantity))
+        .content(asJsonString(settledSettlementQuantity))
         .with(httpBasic("admin", "password")).with(csrf())
       )
       .andExpect(status().isBadRequest())
@@ -101,60 +101,47 @@ public class SettlementControllerTest extends AbstractControllerTest {
 
   @Test
   public void sendSettlementMessageTwice() throws Exception {
-    UUID idempotenceId = UUID.randomUUID();
-
-    Quantity settledQuantity = Quantity.builder()
-      .amount(BigInteger.valueOf(1))
+    final UUID idempotenceId = UUID.randomUUID();
+    final SettlementQuantity settledSettlementQuantity = SettlementQuantity.builder()
+      .amount(1L)
       .scale(6)
       .build();
-    Quantity clearedQuantity = NumberScalingUtils.translate(settledQuantity, 9);
 
-    HttpHeaders headers = this.testHeaders(idempotenceId.toString());
-    when(idempotentRequestCacheMock.reserveRequestId(idempotenceId)).thenReturn(true);
-    when(settlementServiceMock.handleIncomingSettlement(idempotenceId, ALICE_ACCOUNT_ID, settledQuantity))
-      .thenReturn(clearedQuantity);
-    when(idempotentRequestCacheMock.updateHttpResponseInfo(any())).thenReturn(true);
+    final HttpHeaders headers = this.testHeaders(idempotenceId.toString());
+    final SettlementQuantity clearedSettlementQuantity = NumberScalingUtils.translate(settledSettlementQuantity, 9);
+    when(settlementServiceMock.onLocalSettlementPayment(idempotenceId, ALICE_ACCOUNT_ID, settledSettlementQuantity))
+      .thenReturn(clearedSettlementQuantity);
 
+    // Make the call...
     this.mvc
       .perform(post(SLASH_ACCOUNTS + SLASH + ALICE_ACCOUNT_ID.value() + SLASH_SETTLEMENTS)
         .headers(headers)
         .contentType(MediaType.APPLICATION_JSON)
         .accept(MediaType.APPLICATION_JSON)
-        .content(asJsonString(settledQuantity))
+        .content(asJsonString(settledSettlementQuantity))
         .with(httpBasic("admin", "password")).with(csrf())
       )
       .andExpect(status().isOk())
       .andExpect(header().string(HeaderConstants.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE))
       .andExpect(header().string(IDEMPOTENCY_KEY, idempotenceId.toString()));
 
-    HttpHeaders cachedHeaders = new HttpHeaders();
-    cachedHeaders.set(IDEMPOTENCY_KEY, idempotenceId.toString());
-    final HttpResponseInfo cachedResponse =
-      HttpResponseInfo.builder()
-        .responseStatus(HttpStatus.OK)
-        .requestId(idempotenceId)
-        .responseBody(clearedQuantity)
-        .responseHeaders(cachedHeaders)
-        .build();
-
-    when(idempotentRequestCacheMock.getHttpResponseInfo(idempotenceId)).thenReturn(Optional.of(cachedResponse));
-
-    // Call the endpoint twice
+    // Call the endpoint a second time...
     this.mvc
       .perform(post(SLASH_ACCOUNTS + SLASH + ALICE_ACCOUNT_ID.value() + SLASH_SETTLEMENTS)
         .headers(headers)
         .contentType(MediaType.APPLICATION_JSON)
         .accept(MediaType.APPLICATION_JSON)
-        .content(asJsonString(settledQuantity))
+        .content(asJsonString(settledSettlementQuantity))
         .with(httpBasic("admin", "password")).with(csrf())
       )
       .andExpect(status().isOk())
       .andExpect(header().string(HeaderConstants.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE))
       .andExpect(header().string(IDEMPOTENCY_KEY, idempotenceId.toString()));
 
-    verify(settlementServiceMock).handleIncomingSettlement(idempotenceId, ALICE_ACCOUNT_ID, settledQuantity);
-    verify(idempotentRequestCacheMock).updateHttpResponseInfo(any());
+    verify(settlementServiceMock).onLocalSettlementPayment(idempotenceId, ALICE_ACCOUNT_ID, settledSettlementQuantity);
 
+    // Due to request caching, the Controller should not be triggered more than once.
+    verifyNoMoreInteractions(settlementServiceMock);
   }
 
   //////////////////
@@ -170,7 +157,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
   private HttpHeaders testHeaders(final String idempotenceId) {
     HttpHeaders headers = new HttpHeaders();
     if (idempotenceId != null) {
-      headers.set(HeaderConstants.IDEMPOTENCY_KEY, idempotenceId);
+      headers.set(IDEMPOTENCY_KEY, idempotenceId);
     }
     headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
     headers.setContentType(MediaType.APPLICATION_JSON);

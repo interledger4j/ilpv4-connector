@@ -5,7 +5,10 @@ import java.util.UUID;
 
 /**
  * A cache that can be used to support idempotent requests.
+ *
+ * @deprecated Will be removed in-favor of Spring @Cachable on the HTTP Controllers.
  */
+@Deprecated
 public interface IdempotentRequestCache {
 
   /**

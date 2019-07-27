@@ -2,12 +2,17 @@ package org.interledger.ilpv4.connector.balances;
 
 import com.google.common.collect.ImmutableList;
 import com.sappenin.interledger.ilpv4.connector.balances.AccountBalance;
+import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.annotation.DirtiesContext;
@@ -20,6 +25,8 @@ import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link RedisBalanceTracker} that validates the script and balance-change functionality for handling
@@ -42,6 +49,11 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
   @Autowired
   RedisTemplate<String, String> redisTemplate;
 
+  @Mock
+  AccountSettings accountSettingsMock;
+  @Mock
+  AccountBalance accountBalanceMock;
+
   /**
    * Required-args Constructor.
    */
@@ -61,7 +73,8 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
   @Parameterized.Parameters
   public static Collection<Object[]> errorCodes() {
     return ImmutableList.of(
-      // existing_account_balance, existing_prepaid_amount,
+      // existing_clearing_balance, existing_prepaid_amount,
+      // settle_threshold, settle_to,
       // prepare_amount,
       // expected_balance, expected_prepaid_amount
 
@@ -93,6 +106,19 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
     );
   }
 
+  @Before
+  public void setup() {
+    MockitoAnnotations.initMocks(this);
+
+    AccountBalanceSettings balanceSettingsMock = mock(AccountBalanceSettings.class);
+    when(accountSettingsMock.getBalanceSettings()).thenReturn(balanceSettingsMock);
+    when(accountSettingsMock.getAccountId()).thenReturn(ACCOUNT_ID);
+    when(accountSettingsMock.getAssetScale()).thenReturn(2); // Hard-coded since this is not being tested in this class.
+
+    when(accountBalanceMock.clearingBalance()).thenReturn(existingClearingBalance);
+    when(accountBalanceMock.prepaidAmount()).thenReturn(existingPrepaidBalance);
+  }
+
   @Override
   protected RedisTemplate getRedisTemplate() {
     return this.redisTemplate;
@@ -107,7 +133,7 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
     try {
       balanceTracker.updateBalanceForFulfill(null, ONE);
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("destinationAccountId must not be null"));
+      assertThat(e.getMessage(), is("destinationAccountSettings must not be null"));
       throw e;
     }
   }
@@ -122,7 +148,8 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
   @Test
   public void updateBalanceForFulfillWhenNoAccountInRedis() {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-    balanceTracker.updateBalanceForFulfill(accountId, ONE);
+    when(accountSettingsMock.getAccountId()).thenReturn(accountId);
+    balanceTracker.updateBalanceForFulfill(accountSettingsMock, ONE);
 
     final AccountBalance loadedBalance = balanceTracker.getBalance(accountId);
     assertThat(loadedBalance.clearingBalance(), is(ONE));
@@ -132,14 +159,14 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
 
   @Test
   public void updateBalanceForFulfillWithParamterizedValues() {
-    this.initializeAccount(DESTINATION_ACCOUNT_ID, this.existingAccountBalance, this.existingPrepaidBalance);
+    this.initializeAccount(ACCOUNT_ID, this.existingClearingBalance, this.existingPrepaidBalance);
 
-    balanceTracker.updateBalanceForFulfill(DESTINATION_ACCOUNT_ID, this.prepareAmount);
+    balanceTracker.updateBalanceForFulfill(accountSettingsMock, this.prepareAmount);
 
-    final AccountBalance loadedBalance = balanceTracker.getBalance(DESTINATION_ACCOUNT_ID);
-    assertThat(loadedBalance.clearingBalance(), is(expectedBalanceInRedis));
+    final AccountBalance loadedBalance = balanceTracker.getBalance(ACCOUNT_ID);
+    assertThat(loadedBalance.clearingBalance(), is(expectedClearingBalanceInRedis));
     assertThat(loadedBalance.prepaidAmount(), is(expectedPrepaidAmountInRedis));
-    assertThat(loadedBalance.netBalance().longValue(), is(expectedBalanceInRedis + expectedPrepaidAmountInRedis));
+    assertThat(loadedBalance.netBalance().longValue(), is(expectedClearingBalanceInRedis + expectedPrepaidAmountInRedis));
   }
 
 }

@@ -38,7 +38,7 @@ elseif math.abs(numberOrZero(clearing_balance)) >= amount then
 else
     prepaid_amount = redis.call('HINCRBY', account_id, 'prepaid_amount', amount + clearing_balance)
     clearing_balance = 0
-    redis.call('HSET', account_id, 'clearing_balance', 0)
+    redis.call('HSET', account_id, 'clearing_balance', clearing_balance)
 end
 
 return clearing_balance + prepaid_amount

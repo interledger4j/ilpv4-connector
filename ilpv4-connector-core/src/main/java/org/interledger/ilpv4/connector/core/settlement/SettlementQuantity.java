@@ -2,20 +2,19 @@ package org.interledger.ilpv4.connector.core.settlement;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.Preconditions;
 import org.immutables.value.Value;
-
-import java.math.BigInteger;
 
 /**
  * Represents an amount denominated in some unit of a particular fungible asset.
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutableQuantity.class)
-@JsonDeserialize(as = ImmutableQuantity.class)
-public interface Quantity {
+@JsonSerialize(as = ImmutableSettlementQuantity.class)
+@JsonDeserialize(as = ImmutableSettlementQuantity.class)
+public interface SettlementQuantity {
 
-  static ImmutableQuantity.Builder builder() {
-    return ImmutableQuantity.builder();
+  static ImmutableSettlementQuantity.Builder builder() {
+    return ImmutableSettlementQuantity.builder();
   }
 
   /**
@@ -27,13 +26,23 @@ public interface Quantity {
    *
    * @return A {@link String} representing the amount.
    */
-  BigInteger amount();
+  long amount();
 
   /**
-   * TODO: Clarify this. See https://github.com/interledger/rfcs/pull/536/files#diff-990a915317f4e35578edfa70631bd07dR142
+   * TODO: Clarify definition in this Javadoc once RFC is finalized.
    *
    * @return
    */
   int scale();
 
+  @Value.Check
+  default SettlementQuantity check() {
+    Preconditions.checkArgument(amount() >= 0, "amount must not be negative");
+
+    // Scale can theoretically be negative, though we don't have any uses-cases at present.
+    // See https://github.com/interledger/rfcs/pull/536/files#r296461291
+    //Preconditions.checkArgument(scale() >= 0, "scale must not be negative");
+
+    return this;
+  }
 }

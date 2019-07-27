@@ -10,5 +10,6 @@ public class PathConstants {
   public static final String SLASH_ACCOUNTS = "/accounts";
   public static final String SLASH_ACCOUNT_ID = "/{" + ACCOUNT_ID + "}";
   public static final String SLASH_SETTLEMENTS = "/settlements";
+  public static final String SLASH_MESSAGES = "/messages";
 
 }

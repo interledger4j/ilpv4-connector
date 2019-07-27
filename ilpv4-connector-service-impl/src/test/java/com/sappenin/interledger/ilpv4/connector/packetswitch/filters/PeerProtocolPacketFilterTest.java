@@ -13,6 +13,7 @@ import com.sappenin.interledger.ilpv4.connector.routing.RouteBroadcaster;
 import com.sappenin.interledger.ilpv4.connector.routing.RoutingTableId;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
+import com.sappenin.interledger.ilpv4.connector.settlement.SettlementService;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
@@ -88,6 +89,8 @@ public class PeerProtocolPacketFilterTest {
   AccountSettings accountSettingsMock;
   @Mock
   PacketSwitchFilterChain filterChainMock;
+  @Mock
+  SettlementService settlementService;
 
   private boolean sendRoutesEnabled;
   private boolean receiveRoutesEnabled;
@@ -124,7 +127,8 @@ public class PeerProtocolPacketFilterTest {
       packetRejectorMock,
       routeBroadcasterMock,
       CcpCodecContextFactory.oer(),
-      IldcpCodecContextFactory.oer()
+      IldcpCodecContextFactory.oer(),
+      settlementService
     );
 
     when(accountSettingsMock.getAccountId()).thenReturn(ACCOUNT_ID);
@@ -411,4 +415,10 @@ public class PeerProtocolPacketFilterTest {
       .expiresAt(Instant.now().plusSeconds(30))
       .build();
   }
+
+
+  // TODO: UPDATE TEST FOR SETTLEMENT SERVICE FUNCTIONALITY!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
 }

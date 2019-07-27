@@ -5,6 +5,7 @@ import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.conver
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.converters.AccountSettingsConverter;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.converters.OerPreparePacketHttpMessageConverter;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.converters.RateLimitSettingsConverter;
+import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.converters.SettlementEngineDetailsConverter;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.blast.BlastConfig;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,10 +63,18 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
   }
 
   @Bean
+  SettlementEngineDetailsConverter settlementEngineDetailsConverter() {
+    return new SettlementEngineDetailsConverter();
+  }
+
+  @Bean
   AccountSettingsConverter accountSettingsConverter(
   ) {
-    return new AccountSettingsConverter(rateLimitSettingsConverter(), accountBalanceSettingsConverter());
+    return new AccountSettingsConverter(
+      rateLimitSettingsConverter(), accountBalanceSettingsConverter(), settlementEngineDetailsConverter()
+    );
   }
+
 
   ////////////////////////
   // HttpMessageConverters

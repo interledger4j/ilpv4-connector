@@ -14,27 +14,36 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
 
+import java.util.List;
+
 @Configuration
 public class BalanceTrackerConfig {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   @Autowired
-  protected RedisTemplate<String, String> redisTemplate;
+  protected RedisTemplate<String, String> stringRedisTemplate;
+
+  @Autowired
+  protected RedisTemplate<String, ?> jacksonRedisTemplate;
 
   @Bean
   protected BalanceTracker redisBalanceTracker() {
     try {
       // Try to connect to Redis, but default to InMemoryBalanceTracker if there's no Redis...
-      if (redisTemplate.getConnectionFactory().getConnection().ping().equalsIgnoreCase("PONG")) {
+      if (stringRedisTemplate.getConnectionFactory().getConnection().ping().equalsIgnoreCase("PONG")) {
         return new RedisBalanceTracker(
           updateBalanceForPrepareScript(), updateBalanceForFulfillScript(), updateBalanceForRejectScript(),
-          processIncomingSettlementScript(), redisTemplate
+          updateBalanceForIncomingSettlment(), updateBalanceForSettlementRefund(),
+          stringRedisTemplate, jacksonRedisTemplate
         );
       }
     } catch (RedisConnectionFailureException e) {
-      logger.warn("WARNING: Using InMemoryBalanceTracker. Because this configuration is not durable, it should " +
-        "not be used in production deployments. Configure RedisBalanceTracker instead.");
+      logger.warn(
+        "WARNING: Using InMemoryBalanceTracker. Because this configuration is not durable, it should not be used in " +
+          "production deployments. Configure RedisBalanceTracker instead. " +
+          "HINT: is Redis running on its configured port, by default 6379?"
+      );
       // If debug-output is enabled, then emit the stack-trace.
       if (logger.isDebugEnabled()) {
         logger.debug(e.getMessage(), e);
@@ -53,10 +62,10 @@ public class BalanceTrackerConfig {
   }
 
   @Bean
-  protected RedisScript<Long> updateBalanceForFulfillScript() {
-    DefaultRedisScript<Long> script = new DefaultRedisScript();
+  protected RedisScript<List> updateBalanceForFulfillScript() {
+    DefaultRedisScript<List> script = new DefaultRedisScript();
     script.setLocation(new ClassPathResource("META-INF/scripts/updateBalanceForFulfill.lua"));
-    script.setResultType(Long.class);
+    script.setResultType(List.class);
     return script;
   }
 
@@ -69,9 +78,17 @@ public class BalanceTrackerConfig {
   }
 
   @Bean
-  protected RedisScript<Long> processIncomingSettlementScript() {
+  protected RedisScript<Long> updateBalanceForSettlementRefund() {
     DefaultRedisScript<Long> script = new DefaultRedisScript();
-    script.setLocation(new ClassPathResource("META-INF/scripts/processIncomingSettlement.lua"));
+    script.setLocation(new ClassPathResource("META-INF/scripts/updateBalanceForSettlementRefund.lua"));
+    script.setResultType(Long.class);
+    return script;
+  }
+
+  @Bean
+  protected RedisScript<Long> updateBalanceForIncomingSettlment() {
+    DefaultRedisScript<Long> script = new DefaultRedisScript();
+    script.setLocation(new ClassPathResource("META-INF/scripts/updateBalanceForIncomingSettlement.lua"));
     script.setResultType(Long.class);
     return script;
   }

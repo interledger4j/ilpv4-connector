@@ -99,7 +99,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(balanceSettings.getMinBalance(), is(Optional.of(1L)));
       assertThat(balanceSettings.getMaxBalance(), is(Optional.of((2L))));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.of(10000001L)));
-      assertThat(balanceSettings.getSettleTo(), is(Optional.of(3L)));
+      assertThat(balanceSettings.getSettleTo(), is(3L));
 
       final AccountRateLimitSettings rateLimitSettings = account.getRateLimitSettings();
       assertThat(rateLimitSettings.getMaxPacketsPerSecond().get(), is(5000));
@@ -125,7 +125,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(balanceSettings.getMinBalance(), is(Optional.of(-7L)));
       assertThat(balanceSettings.getMaxBalance(), is(Optional.of(-3L)));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.of(-10000001L)));
-      assertThat(balanceSettings.getSettleTo(), is(Optional.of(54L)));
+      assertThat(balanceSettings.getSettleTo(), is(54L));
 
       final AccountRateLimitSettings rateLimitSettings = account.getRateLimitSettings();
       assertThat(rateLimitSettings.getMaxPacketsPerSecond().get(), is(1));
@@ -150,7 +150,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(balanceSettings.getMinBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));
-      assertThat(balanceSettings.getSettleTo(), is(Optional.empty()));
+      assertThat(balanceSettings.getSettleTo(), is(0L));
 
       final AccountRateLimitSettings rateLimitSettings = account.getRateLimitSettings();
       assertThat(rateLimitSettings.getMaxPacketsPerSecond(), is(Optional.empty()));
@@ -175,7 +175,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(balanceSettings.getMinBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));
-      assertThat(balanceSettings.getSettleTo(), is(Optional.empty()));
+      assertThat(balanceSettings.getSettleTo(), is(0L));
 
       final AccountRateLimitSettings rateLimitSettings = account.getRateLimitSettings();
       assertThat(rateLimitSettings.getMaxPacketsPerSecond(), is(Optional.empty()));
@@ -204,7 +204,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(balanceSettings.getMinBalance(), is(Optional.of(1L)));
       assertThat(balanceSettings.getMaxBalance(), is(Optional.of(2L)));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.of(10000001L)));
-      assertThat(balanceSettings.getSettleTo(), is(Optional.of(3L)));
+      assertThat(balanceSettings.getSettleTo(), is(3L));
 
       final AccountRateLimitSettings rateLimitSettings = settings.getRateLimitSettings();
       assertThat(rateLimitSettings.getMaxPacketsPerSecond().get(), is(5000));
@@ -229,7 +229,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(balanceSettings.getMinBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));
-      assertThat(balanceSettings.getSettleTo(), is(Optional.empty()));
+      assertThat(balanceSettings.getSettleTo(), is(0L));
 
       final AccountRateLimitSettings rateLimitSettings = settings.getRateLimitSettings();
       assertThat(rateLimitSettings.getMaxPacketsPerSecond(), is(Optional.empty()));
@@ -255,7 +255,7 @@ public class ConnectorSettingsFromPropertyFileTest {
       assertThat(balanceSettings.getMinBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));
-      assertThat(balanceSettings.getSettleTo(), is(Optional.empty()));
+      assertThat(balanceSettings.getSettleTo(), is(0L));
 
       final AccountRateLimitSettings rateLimitSettings = settings.getRateLimitSettings();
       assertThat(rateLimitSettings.getMaxPacketsPerSecond(), is(Optional.empty()));

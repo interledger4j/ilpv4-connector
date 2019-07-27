@@ -1,7 +1,6 @@
 package org.interledger.ilpv4.connector.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sappenin.interledger.ilpv4.connector.settlement.HttpResponseInfo;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.slf4j.Logger;
@@ -14,11 +13,9 @@ import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.nio.charset.Charset;
-import java.util.UUID;
 
 @Configuration
 public class RedisConfig {
@@ -28,8 +25,10 @@ public class RedisConfig {
   @Value("${redis.host:localhost}")
   protected String redisHost;
 
+  // Technically, this _could_ be typed as an int, but the @MockWebMvc doesn't properly setup the AnnotationProcessor
+  // that Spring Boot uses for parsing SPEL, so instead this is typed as a String and value-checked below where used.
   @Value("${redis.port:6379}")
-  protected int redisPort;
+  protected String redisPort = "6379";
 
   @Value("${redis.password")
   protected String redisPassword;
@@ -42,7 +41,14 @@ public class RedisConfig {
 
   @Bean
   protected JedisConnectionFactory jedisConnectionFactory() {
-    RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, redisPort);
+
+    int actualRedisPort;
+    try {
+      actualRedisPort = Integer.parseInt(redisPort);
+    } catch (Exception e) {
+      actualRedisPort = 6379;
+    }
+    RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, actualRedisPort);
 
     if (redisPassword != null && redisPassword.startsWith(EncryptedSecret.ENCODING_PREFIX)) {
       EncryptedSecret encryptedRedisPassword = EncryptedSecret.fromEncodedValue(redisPassword);
@@ -70,28 +76,14 @@ public class RedisConfig {
     return jedisConnectionFactory;
   }
 
-  // WARNING: Must be named `stringRedisTemplate` in order to supercede the default Spring AutoConfig.
   @Bean
-  protected RedisTemplate<String, String> redisTemplate() {
-    RedisTemplate<String, String> template = new RedisTemplate<>();
+  protected RedisTemplate<String, ?> jacksonRedisTemplate() {
+    final RedisTemplate<String, ?> template = new RedisTemplate<>();
+
     template.setDefaultSerializer(new StringRedisSerializer());
     template.setEnableDefaultSerializer(true);
     template.setConnectionFactory(jedisConnectionFactory());
 
     return template;
   }
-
-  @Bean
-  protected RedisTemplate<UUID, HttpResponseInfo> idempotencRedisTemplate() {
-    RedisTemplate<UUID, HttpResponseInfo> template = new RedisTemplate<>();
-
-    Jackson2JsonRedisSerializer serializer = new Jackson2JsonRedisSerializer(HttpResponseInfo.class);
-    serializer.setObjectMapper(objectMapper);
-    template.setDefaultSerializer(serializer);
-    template.setEnableDefaultSerializer(true);
-    template.setConnectionFactory(jedisConnectionFactory());
-
-    return template;
-  }
-
 }

@@ -17,19 +17,21 @@ import redis.embedded.RedisServerBuilder;
 import java.util.Objects;
 import java.util.Optional;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 import static org.interledger.ilpv4.connector.balances.RedisBalanceTracker.CLEARING_BALANCE;
 import static org.interledger.ilpv4.connector.balances.RedisBalanceTracker.PREPAID_AMOUNT;
+import static org.mockito.Mockito.mock;
 
 /**
- * Unit tests for {@link RedisBalanceTracker} that validates the script and clearingBalance-change functionality for handling
- * Fulfill packets.
+ * Unit tests for {@link RedisBalanceTracker} that validates the script and clearingBalance-change functionality for
+ * handling Fulfill packets.
  */
 public abstract class AbstractRedisBalanceTrackerTest {
 
   protected static final int REDIS_PORT = 6379;
 
-  protected static final AccountId SOURCE_ACCOUNT_ID = AccountId.of("1");
-  protected static final AccountId DESTINATION_ACCOUNT_ID = AccountId.of("1");
+  protected static final AccountId ACCOUNT_ID = AccountId.of("1");
 
   protected static final boolean PRODUCES_NO_ERROR = false;
   protected static final boolean PRODUCES_ERROR = true;
@@ -40,6 +42,7 @@ public abstract class AbstractRedisBalanceTrackerTest {
   protected static final long NEGATIVE_ONE = -1L;
   protected static final long TWO = 2L;
   protected static final long NEGATIVE_TWO = -2L;
+  protected static final long NINE = 9L;
   protected static final long TEN = 10L;
   protected static final long NEGATIVE_TEN = -10L;
   protected static final long PREPARE_ONE = ONE;
@@ -52,26 +55,26 @@ public abstract class AbstractRedisBalanceTrackerTest {
 
   private static redis.embedded.RedisServer redisServer;
 
-  protected long existingAccountBalance;
+  protected long existingClearingBalance;
   protected long existingPrepaidBalance;
   protected long prepareAmount;
-  protected long expectedBalanceInRedis;
+  protected long expectedClearingBalanceInRedis;
   protected long expectedPrepaidAmountInRedis;
 
   /**
    * Required-args Constructor.
    */
   public AbstractRedisBalanceTrackerTest(
-    final long existingAccountBalance,
+    final long existingClearingBalance,
     final long existingPrepaidBalance,
     final long prepareAmount,
-    final long expectedBalanceInRedis,
+    final long expectedClearingBalanceInRedis,
     final long expectedPrepaidAmountInRedis
   ) {
-    this.existingAccountBalance = existingAccountBalance;
+    this.existingClearingBalance = existingClearingBalance;
     this.existingPrepaidBalance = existingPrepaidBalance;
     this.prepareAmount = prepareAmount;
-    this.expectedBalanceInRedis = expectedBalanceInRedis;
+    this.expectedClearingBalanceInRedis = expectedClearingBalanceInRedis;
     this.expectedPrepaidAmountInRedis = expectedPrepaidAmountInRedis;
   }
 
@@ -90,8 +93,8 @@ public abstract class AbstractRedisBalanceTrackerTest {
 
   protected abstract RedisTemplate getRedisTemplate();
 
-  protected void initializeAccount(final AccountId accountId, final long balance, final long existingPrepaidBalance) {
-    getRedisTemplate().boundHashOps(toRedisAccountId(accountId)).put(CLEARING_BALANCE, balance + "");
+  protected void initializeAccount(final AccountId accountId, final long clearingBalance, final long existingPrepaidBalance) {
+    getRedisTemplate().boundHashOps(toRedisAccountId(accountId)).put(CLEARING_BALANCE, clearingBalance + "");
     getRedisTemplate().boundHashOps(toRedisAccountId(accountId)).put(PREPAID_AMOUNT, existingPrepaidBalance + "");
   }
 

@@ -4,8 +4,10 @@ import com.google.common.collect.Maps;
 import com.sappenin.interledger.ilpv4.connector.balances.AccountBalance;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTrackerException;
+import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.ilpv4.connector.core.settlement.Quantity;
+import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.ilpv4.connector.core.settlement.SettlementQuantity;
 
 import java.util.Map;
 import java.util.Objects;
@@ -40,60 +42,61 @@ public class InMemoryBalanceTracker implements BalanceTracker {
 
   @Override
   public void updateBalanceForPrepare(
-    AccountId sourceAccountId, long sourceAmount, Optional<Long> minBalance
+    AccountId sourceAccountId, long amount, Optional<Long> minBalance
   ) throws BalanceTrackerException {
     final AccountBalance accountBalance = this.getBalance(sourceAccountId);
 
     // Throw an exception if minBalance is violated....
     minBalance.ifPresent(mb -> {
-      if (accountBalance.netBalance().longValue() - sourceAmount < mb) {
+      if (accountBalance.netBalance().longValue() - amount < mb) {
         throw new BalanceTrackerException(String.format(
           "Incoming prepare of %s would bring account %s under its minimum balance. Current balance: %s, min balance: %s",
-          sourceAmount, sourceAccountId, accountBalance.netBalance(), mb)
+          amount, sourceAccountId, accountBalance.netBalance(), mb)
         );
       }
     });
 
-    if (accountBalance.prepaidAmount() >= sourceAmount) {
+    if (accountBalance.prepaidAmount() >= amount) {
       // Reduce prepaid_amount by 1
-      this.decrement(prepaidBalances, sourceAccountId, sourceAmount);
+      this.decrement(prepaidBalances, sourceAccountId, amount);
     } else if (accountBalance.prepaidAmount() >= 0L) {
-      final long subFromBalance = sourceAmount - accountBalance.prepaidAmount();
+      final long subFromBalance = amount - accountBalance.prepaidAmount();
       this.prepaidBalances.put(sourceAccountId, new AtomicLong());
       this.decrement(clearingBalances, sourceAccountId, subFromBalance);
     } else {
       // Decrement the clearingBalance by `sourceAmount`
-      this.decrement(this.clearingBalances, sourceAccountId, sourceAmount);
+      this.decrement(this.clearingBalances, sourceAccountId, amount);
     }
   }
 
   @Override
-  public void updateBalanceForFulfill(AccountId destinationAccountId, long destinationAmount) throws BalanceTrackerException {
-    this.increment(this.clearingBalances, destinationAccountId, destinationAmount);
+  public UpdateBalanceForFulfillResponse updateBalanceForFulfill(
+    final AccountSettings destinationAccountSettings, final long amount
+  ) throws BalanceTrackerException {
+    this.increment(this.clearingBalances, destinationAccountSettings.getAccountId(), amount);
+
+    final AccountBalance currentBalance = this.getBalance(destinationAccountSettings.getAccountId());
+    final long amountToSettle = this.computeSettlementQuantity(destinationAccountSettings, currentBalance);
+
+    return UpdateBalanceForFulfillResponse.builder()
+      .accountBalance(currentBalance)
+      .clearingAmountToSettle(amountToSettle)
+      .build();
   }
 
   @Override
-  public void updateBalanceForReject(AccountId sourceAccountId, long sourceAmount) throws BalanceTrackerException {
-    this.increment(this.clearingBalances, sourceAccountId, sourceAmount);
+  public void updateBalanceForReject(AccountId sourceAccountId, long amount) throws BalanceTrackerException {
+    this.increment(this.clearingBalances, sourceAccountId, amount);
   }
 
   @Override
-  public void updateBalanceForSettlement(UUID idempotencyKey, AccountId sourceAccountId, Quantity scaledQuantity) throws BalanceTrackerException {
+  public void updateBalanceForIncomingSettlement(UUID idempotencyKey, AccountId accountId, long amount) throws BalanceTrackerException {
+    this.increment(this.clearingBalances, accountId, amount);
+  }
 
-    final AccountBalance accountBalance = this.getBalance(sourceAccountId);
-
-    if (accountBalance.clearingBalance() >= 0L) {
-      // Increment prepaid_amount by the `amount
-      this.increment(prepaidBalances, sourceAccountId, scaledQuantity.amount().longValue());
-    } else if (Math.abs(accountBalance.clearingBalance()) >= scaledQuantity.amount().longValue()) {
-      // Increment balance by the `amount`
-      this.increment(clearingBalances, sourceAccountId, scaledQuantity.amount().longValue());
-    } else {
-
-      this.increment(prepaidBalances, sourceAccountId,
-        scaledQuantity.amount().add(accountBalance.netBalance()).longValue());
-      this.clearingBalances.put(sourceAccountId, new AtomicLong());
-    }
+  @Override
+  public void updateBalanceForOutgoingSettlementRefund(AccountId accountId, long amount) throws BalanceTrackerException {
+    this.increment(this.clearingBalances, accountId, amount);
   }
 
   public void resetBalance(final AccountId accountId) {
@@ -127,5 +130,43 @@ public class InMemoryBalanceTracker implements BalanceTracker {
         balanceTracker.put(accountId, new AtomicLong());
         return balanceTracker.get(accountId);
       });
+  }
+
+  /**
+   * <p>Compute a {@link SettlementQuantity} based upon the current balance of an account. Using the {@link
+   * AccountBalanceSettings#getSettleThreshold()} and {@link AccountBalanceSettings#getSettleTo()}, this method can
+   * compute the amount of a settlement payment by determining if the current balance exceeds the settlement threshold,
+   * and if so, by how much.</p>
+   *
+   * <p>Note that this method returns a {@link SettlementQuantity} with the scale of the ILP clearing layer, and NOT
+   * with the scale of the settlement layer, if these two values diverge.</p>
+   *
+   * @param accountSettings A {@link AccountSettings} for the account to compute a settlement payment amount for.
+   * @param accountBalance  A {@link AccountBalance} containing a snapshot in time of the account's balance (note this
+   *                        value may be stale).
+   *
+   * @return An optionally-present {@link SettlementQuantity} with the scale of the ILP clearing layer.
+   */
+  private long computeSettlementQuantity(
+    final AccountSettings accountSettings, final AccountBalance accountBalance
+  ) {
+    Objects.requireNonNull(accountSettings, "accountSettings must not be null");
+    Objects.requireNonNull(accountBalance, "accountBalance must not be null");
+
+    final long settleTo = accountSettings.getBalanceSettings().getSettleTo();
+    final long clearingBalance = accountBalance.clearingBalance();
+
+    return accountSettings.getBalanceSettings().getSettleThreshold()
+      // If there is a settle_threshold, we need to return the propert settlement quantity, if any.
+      .map(settleThreshold -> {
+        final long settlementAmount;
+        if (clearingBalance > settleThreshold && clearingBalance > settleTo) {
+          settlementAmount = clearingBalance - settleTo;
+        } else {
+          settlementAmount = 0;
+        }
+        return settlementAmount;
+      })
+      .orElse(0L);
   }
 }

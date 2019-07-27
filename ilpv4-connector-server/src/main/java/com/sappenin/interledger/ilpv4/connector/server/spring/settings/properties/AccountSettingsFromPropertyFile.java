@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.connector.link.LinkType;
 
 import java.util.Map;
@@ -29,6 +30,8 @@ public class AccountSettingsFromPropertyFile implements AccountSettings {
 
   private AccountBalanceSettingsFromPropertyFile balanceSettings = new AccountBalanceSettingsFromPropertyFile();
   private AccountRateLimitSettingsFromPropertyFile rateLimitSettings = new AccountRateLimitSettingsFromPropertyFile();
+  private SettlementEngineDetailsFromPropertyFile settlementEngineDetails =
+    new SettlementEngineDetailsFromPropertyFile();
 
   private LinkType linkType;
   private Map<String, Object> customSettings = Maps.newConcurrentMap();
@@ -133,12 +136,26 @@ public class AccountSettingsFromPropertyFile implements AccountSettings {
     this.balanceSettings = balanceSettings;
   }
 
+  @Override
   public AccountRateLimitSettingsFromPropertyFile getRateLimitSettings() {
     return rateLimitSettings;
   }
 
   public void setRateLimitSettings(AccountRateLimitSettingsFromPropertyFile rateLimitSettings) {
     this.rateLimitSettings = rateLimitSettings;
+  }
+
+  @Override
+  public Optional<SettlementEngineDetails> settlementEngineDetails() {
+    return Optional.ofNullable(settlementEngineDetails);
+  }
+
+  public Optional<SettlementEngineDetails> getSettlementEngineDetails() {
+    return this.settlementEngineDetails();
+  }
+
+  public void setSettlementEngineDetails(SettlementEngineDetailsFromPropertyFile balanceSettings) {
+    this.settlementEngineDetails = settlementEngineDetails;
   }
 
   @Override

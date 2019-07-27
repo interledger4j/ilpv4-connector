@@ -2,6 +2,7 @@ package org.interledger.connector.accounts;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.Preconditions;
 import org.immutables.value.Value;
 import org.interledger.support.immutables.Wrapped;
 import org.interledger.support.immutables.Wrapper;
@@ -24,6 +25,15 @@ public class Ids {
     @Override
     public String toString() {
       return this.value();
+    }
+
+    @Value.Check
+    public _AccountId enforceSize() {
+      Preconditions.checkArgument(
+        this.value().length() < 64,
+        "AccountId must not be longer than 64 characters!"
+      );
+      return this;
     }
   }
 

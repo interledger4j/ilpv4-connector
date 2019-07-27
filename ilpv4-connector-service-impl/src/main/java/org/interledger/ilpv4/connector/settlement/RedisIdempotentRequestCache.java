@@ -1,7 +1,7 @@
 package org.interledger.ilpv4.connector.settlement;
 
-import com.sappenin.interledger.ilpv4.connector.settlement.IdempotentRequestCache;
 import com.sappenin.interledger.ilpv4.connector.settlement.HttpResponseInfo;
+import com.sappenin.interledger.ilpv4.connector.settlement.IdempotentRequestCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -13,7 +13,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * An implementation of {@link IdempotentRequestCache} that uses Redis as a backing store.
+ *
+ * @deprecated Will be removed in-favor of Spring @Cachable on the HTTP Controllers.
  */
+@Deprecated
 public class RedisIdempotentRequestCache implements IdempotentRequestCache {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());

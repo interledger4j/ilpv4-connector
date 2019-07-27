@@ -12,7 +12,10 @@ import java.util.UUID;
 /**
  * An in-memory implementation of {@link IdempotentRequestCache}. This implementation does not support an HA
  * environment, and should not be used in production scenarios operating more than a single node.
+ *
+ * @deprecated Will be removed in-favor of Spring @Cachable on the HTTP Controllers.
  */
+@Deprecated
 public class InMemoryIdempotentRequestCache implements IdempotentRequestCache {
 
   private final Map<UUID, Optional<HttpResponseInfo>> responses;

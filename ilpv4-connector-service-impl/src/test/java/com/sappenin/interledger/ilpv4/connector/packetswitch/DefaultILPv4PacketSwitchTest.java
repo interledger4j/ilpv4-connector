@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch;
 
+import com.google.common.cache.LoadingCache;
 import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.ConnectorExceptionHandler;
 import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
@@ -196,7 +197,7 @@ public class DefaultILPv4PacketSwitchTest {
     verify(linkFiltersMock, times(numReps)).size();
     verify(linkManagerMock, times(numReps)).getOrCreateLink(OUTGOING_ACCOUNT_ID);
     verify(nextHopPacketMapperMock, times(numReps)).getNextHopPacket(INCOMING_ACCOUNT_ID, PREPARE_PACKET);
-    verify(accountSettingsRepositoryMock, times(1)).findByAccountId(INCOMING_ACCOUNT_ID);
+    verify(accountSettingsRepositoryMock, times(2)).findByAccountId(any());
 
     verifyZeroInteractions(connectorExceptionHandlerMock);
     verifyZeroInteractions(packetRejectorMock);

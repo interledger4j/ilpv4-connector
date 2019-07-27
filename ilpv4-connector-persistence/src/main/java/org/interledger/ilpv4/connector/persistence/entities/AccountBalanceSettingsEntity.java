@@ -67,11 +67,11 @@ public class AccountBalanceSettingsEntity implements AccountBalanceSettings {
   }
 
   @Override
-  public Optional<Long> getSettleTo() {
-    return Optional.ofNullable(settleTo);
+  public long getSettleTo() {
+    return settleTo;
   }
 
-  public void setSettleTo(Optional<Long> settleTo) {
-    this.settleTo = settleTo.orElse(null);
+  public void setSettleTo(long settleTo) {
+    this.settleTo = settleTo;
   }
 }
