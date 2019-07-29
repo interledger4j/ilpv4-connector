@@ -21,8 +21,6 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import static okhttp3.CookieJar.NO_COOKIES;
-import static org.interledger.ilpv4.connector.core.ConfigConstants.DOT;
-import static org.interledger.ilpv4.connector.core.ConfigConstants.ILPV4__CONNECTOR;
 
 /**
  * <p>Configuration for{@link SettlementEngineClient}.</p>
@@ -32,61 +30,46 @@ public class SettlementEngineClientConfig {
 
   public static final String SETTLEMENT_ENGINE_CLIENT = "SETTLEMENT_ENGINE_CLIENT";
 
-  private static final String ILPV4__CONNECTOR__SE = ILPV4__CONNECTOR + DOT + "settlementEngines";
-  private static final String ILPV4__CONNECTOR__SE__CONN_DEFAULTS
-    = ILPV4__CONNECTOR__SE + DOT + "connectionDefaults";
-
-  private static final String ILPV4__CONNECTOR__SE__CONNECTION_DEFAULTS__CONNECT_TIMEOUT_MILLIS =
-    ILPV4__CONNECTOR__SE__CONN_DEFAULTS + DOT + "connectTimeoutMillis";
-  private static final String ILPV4__CONNECTOR__SE__CONNECTION_DEFAULTS__READ_TIMEOUT_MILLIS =
-    ILPV4__CONNECTOR__SE__CONN_DEFAULTS + DOT + "readTimeoutMillis";
-  private static final String ILPV4__CONNECTOR__SE__CONNECTION_DEFAULTS__WRITE_TIMEOUT_MILLIS =
-    ILPV4__CONNECTOR__SE__CONN_DEFAULTS + DOT + "writeTimeoutMillis";
-  private static final String ILPV4__CONNECTOR__SE__CONNECTION_DEFAULTS__MAX_IDLE_CONNECTIONS =
-    ILPV4__CONNECTOR__SE__CONN_DEFAULTS + DOT + "maxIdleConnections";
-  private static final String ILPV4__CONNECTOR__SE__CONNECTION_DEFAULTS__KEEP_ALIVE_MINUTES =
-    ILPV4__CONNECTOR__SE__CONN_DEFAULTS + DOT + "keepAliveMinutes";
-
   @Autowired
   Environment environment;
 
-  /**
-   * Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must be
-   * between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
-   */
-  @Value("${" + ILPV4__CONNECTOR__SE__CONNECTION_DEFAULTS__CONNECT_TIMEOUT_MILLIS + ":1000}")
-  private long defaultConnectTimeoutMillis;
-
-  /**
-   * Applied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout, otherwise
-   * values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to
-   * 10.
-   */
-  @Value("${" + ILPV4__CONNECTOR__SE__CONNECTION_DEFAULTS__READ_TIMEOUT_MILLIS + ":1000}")
-  private long defaultReadTimeoutMillis;
-
-  /**
-   * Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1 and
-   * {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
-   */
-  @Value("${" + ILPV4__CONNECTOR__SE__CONNECTION_DEFAULTS__WRITE_TIMEOUT_MILLIS + ":1000}")
-  private long defaultWriteTimeoutMillis;
-
-  @Value("${" + ILPV4__CONNECTOR__SE__CONNECTION_DEFAULTS__MAX_IDLE_CONNECTIONS + ":5}")
-  private int defaultMaxIdleConnections;
-
-  @Value("${" + ILPV4__CONNECTOR__SE__CONNECTION_DEFAULTS__KEEP_ALIVE_MINUTES + ":1}")
-  private long defaultConnectionKeepAliveMinutes;
-
   @Bean
   @Qualifier(SETTLEMENT_ENGINE_CLIENT)
-  public ConnectionPool connectionPool() {
+  public ConnectionPool seConnectionPool(
+    @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.maxIdleConnections:5}")
+    final int defaultMaxIdleConnections,
+    @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.keepAliveMinutes:1}")
+    final long defaultConnectionKeepAliveMinutes
+  ) {
     return new ConnectionPool(defaultMaxIdleConnections, defaultConnectionKeepAliveMinutes, TimeUnit.MINUTES);
   }
 
+  /**
+   * @param settlementEngineConnectionPool A {@link ConnectionPool} as configured above.
+   * @param defaultConnectTimeoutMillis    Applied when connecting a TCP socket to the target host. A value of 0 means
+   *                                       no timeout, otherwise values must be between 1 and {@link Integer#MAX_VALUE}
+   *                                       when converted to milliseconds. If unspecified, defaults to 10.
+   * @param defaultReadTimeoutMillis       Applied to both the TCP socket and for individual read IO operations. A value
+   *                                       of 0 means no timeout, otherwise values must be between 1 and {@link
+   *                                       Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults
+   *                                       to 10.
+   * @param defaultWriteTimeoutMillis      Applied to individual write IO operations. A value of 0 means no timeout,
+   *                                       otherwise values must be between 1 and {@link Integer#MAX_VALUE} when
+   *                                       converted to milliseconds. If unspecified, defaults to 10.
+   *
+   * @return A {@link OkHttp3ClientHttpRequestFactory}.
+   */
   @Bean
   @Qualifier(SETTLEMENT_ENGINE_CLIENT)
-  OkHttp3ClientHttpRequestFactory okHttp3ClientHttpRequestFactory(final ConnectionPool settlementEngineConnectionPool) {
+  OkHttp3ClientHttpRequestFactory seOkHttp3ClientHttpRequestFactory(
+    @Qualifier(SETTLEMENT_ENGINE_CLIENT) final ConnectionPool settlementEngineConnectionPool,
+    @Value("${ilpv4.connector.settlementEngines.connectionDefaults.connectTimeoutMillis:1000}")
+    final long defaultConnectTimeoutMillis,
+    @Value("${ilpv4.connector.settlementEngines.connectionDefaults.readTimeoutMillis:1000}")
+    final long defaultReadTimeoutMillis,
+    @Value("${ilpv4.connector.settlementEngines.connectionDefaults.writeTimeoutMillis:1000}")
+    final long defaultWriteTimeoutMillis
+  ) {
     OkHttpClient.Builder builder = new OkHttpClient.Builder();
     ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).build();
 
@@ -103,15 +86,15 @@ public class SettlementEngineClientConfig {
 
   @Bean
   @Qualifier(SETTLEMENT_ENGINE_CLIENT)
-  RestTemplate restTemplate(
-    ObjectMapper objectMapper, OkHttp3ClientHttpRequestFactory okHttp3ClientHttpRequestFactory
+  RestTemplate seRestTemplate(
+    ObjectMapper objectMapper,
+    @Qualifier(SETTLEMENT_ENGINE_CLIENT) OkHttp3ClientHttpRequestFactory okHttp3ClientHttpRequestFactory
   ) {
     MappingJackson2HttpMessageConverter httpMessageConverter = new MappingJackson2HttpMessageConverter(objectMapper);
     RestTemplate restTemplate = new RestTemplate(okHttp3ClientHttpRequestFactory);
     restTemplate.setMessageConverters(Lists.newArrayList(httpMessageConverter));
     return restTemplate;
   }
-
 
   // TODO: Add security. See BlastConfig for one example.
 
