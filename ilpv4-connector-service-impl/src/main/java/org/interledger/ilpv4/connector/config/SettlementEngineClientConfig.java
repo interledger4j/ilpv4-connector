@@ -75,7 +75,7 @@ public class SettlementEngineClientConfig {
   @Value("${" + ILPV4__CONNECTOR__SE__CONNECTION_DEFAULTS__MAX_IDLE_CONNECTIONS + ":5}")
   private int defaultMaxIdleConnections;
 
-  @Value("${" + ILPV4__CONNECTOR__SE__CONNECTION_DEFAULTS__KEEP_ALIVE_MINUTES + ":5}")
+  @Value("${" + ILPV4__CONNECTOR__SE__CONNECTION_DEFAULTS__KEEP_ALIVE_MINUTES + ":1}")
   private long defaultConnectionKeepAliveMinutes;
 
   @Bean

@@ -29,8 +29,8 @@ public class CaffeineCacheConfig {
   @Bean
   public Cache<HttpUrl, SettlementEngineClient> settlementEngineClientCache() {
     return Caffeine.newBuilder()
-      .expireAfterAccess(30, TimeUnit.MINUTES) // TODO Make this duration configurable
-      .maximumSize(10) // TODO: Make size configurable.
+      .expireAfterAccess(2, TimeUnit.MINUTES) // TODO Make this duration configurable
+      .maximumSize(30) // TODO: Make size configurable.
       .build();
   }
 

@@ -74,7 +74,7 @@ public class DefaultSettlementService implements SettlementService {
       accountSettingsRepository,
       settlementEngineRestTemplate,
       Caffeine.newBuilder()
-        .expireAfterAccess(15, TimeUnit.MINUTES)
+        .expireAfterAccess(2, TimeUnit.MINUTES)
         .maximumSize(5000)
         .build()
     );

@@ -94,7 +94,7 @@ ilpv4:
         # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
         #writeTimeoutMillis: 1000
         #maxIdleConnections: 10
-        #keepAliveMillis: 10000
+        #keepAliveMinutes: 1
 
     # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
     adminPassword: password

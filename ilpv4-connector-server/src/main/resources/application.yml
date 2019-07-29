@@ -83,7 +83,7 @@ ilpv4:
         # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
         # writeTimeoutMillis: 1000
         # maxIdleConnections: 10
-        # keepAliveMillis: 10000
+        # keepAliveMinutes: 1
     ilpOverHttp:
       connectionDefaults:
         # Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must
@@ -97,7 +97,7 @@ ilpv4:
         # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
         # writeTimeoutMillis: 1000
         # maxIdleConnections: 10
-        # keepAliveMillis: 10000
+        # keepAliveMinutes: 1
     btp.enabled: false
     enabledProtocols:
       blastEnabled: true
