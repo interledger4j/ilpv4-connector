@@ -47,8 +47,7 @@ public class SettlementController {
 
   private final SettlementService settlementService;
 
-  public SettlementController(final SettlementService settlementService
-  ) {
+  public SettlementController(final SettlementService settlementService) {
     this.settlementService = Objects.requireNonNull(settlementService);
   }
 

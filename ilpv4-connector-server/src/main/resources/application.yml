@@ -71,12 +71,25 @@ h2:
 
 ilpv4:
   connector:
+    settlementEngines:
+      connectionDefaults:
+        # Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must
+        # be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If unspecified, defaults to 10.
+        # This is applied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
+        # otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If
+        # unspecified, defaults to 10.
+        # readTimeoutMillis: 1000
+        # Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1
+        # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
+        # writeTimeoutMillis: 1000
+        # maxIdleConnections: 10
+        # keepAliveMillis: 10000
     ilpOverHttp:
       connectionDefaults:
         # Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must
         # be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If unspecified, defaults to 10.
         # connectTimeoutMillis: 2000
-        # This is pplied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
+        # This is applied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
         # otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If
         # unspecified, defaults to 10.
         # readTimeoutMillis: 1000
