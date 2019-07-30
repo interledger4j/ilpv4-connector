@@ -1,6 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings;
 
 import com.github.benmanes.caffeine.cache.Cache;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
@@ -85,6 +86,9 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import javax.annotation.PostConstruct;
+import javax.money.CurrencyUnit;
+import javax.money.Monetary;
+import javax.money.convert.ExchangeRateProvider;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -93,6 +97,7 @@ import java.util.function.Supplier;
 import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.CCP;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.ILDCP;
+import static com.sappenin.interledger.javax.money.providers.XrpCurrencyProvider.XRP;
 
 /**
  * <p>Primary configuration for the ILPv4 Connector.</p>
@@ -121,6 +126,16 @@ public class SpringConnectorConfig {
 
   @PostConstruct
   public void onStartup() {
+    // Sanity check to ensure that XRP FX is configured properly...
+    try {
+      CurrencyUnit xrp = Monetary.getCurrency(XRP);
+      Preconditions.checkNotNull(xrp != null, "XRP currency not configured");
+      CurrencyUnit usd = Monetary.getCurrency("USD");
+      Preconditions.checkNotNull(usd != null, "USD currency not configured");
+    } catch (Exception e) {
+      throw new RuntimeException("Currency support is not configured properly. Error: " + e.getMessage(), e);
+    }
+
     if (connectorSettingsSupplier().get().getOperatorAddress().isPresent()) {
       logger.info("STARTED ILPV4 CONNECTOR: `{}`", connectorSettingsSupplier().get().getOperatorAddress().get());
     } else {
@@ -151,7 +166,7 @@ public class SpringConnectorConfig {
       final Object overrideBean = applicationContext.getBean(ConnectorSettings.OVERRIDE_BEAN_NAME);
       return () -> (ConnectorSettings) overrideBean;
     } catch (Exception e) {
-      logger.info("No Override Bean found....");
+      logger.debug("No ConnectorSettings Override Bean found....");
     }
 
     // No override was detected, so return the normal variant that exists because of the EnableConfigurationProperties

@@ -1,7 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings.javamoney;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.fx.JavaMoneyUtils;
 import com.sappenin.interledger.javax.money.providers.CryptoCompareRateProvider;
@@ -20,9 +19,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.PostConstruct;
-import javax.money.CurrencyUnit;
-import javax.money.Monetary;
 import javax.money.convert.ExchangeRateProvider;
 import javax.money.spi.RoundingProviderSpi;
 import java.util.function.Supplier;
@@ -30,8 +26,12 @@ import java.util.function.Supplier;
 import static com.sappenin.interledger.javax.money.providers.XrpCurrencyProvider.XRP;
 
 /**
- * Configures JavaMoney beans so they can be connected into the JavaMoney subsystem using
- * <tt>SpringServiceProvider</tt>.
+ * Configures JavaMoney.
+ *
+ * Note that it is technically possible to connect Spring bean implementations of the JavaMoney SPI (i.e., {@link
+ * javax.money.spi.ServiceProvider} into the JavaMoney bootstrapping framework. One such attempt was using {@link
+ * SpringServiceProvider} although it doesn't quite work properly, so is current disabled in the SPI file called
+ * `javax.money.spi.ServiceProvider`.
  */
 @Configuration
 public class JavaMoneyConfig {
@@ -43,16 +43,6 @@ public class JavaMoneyConfig {
 
   @Autowired
   Environment environment;
-
-  @PostConstruct
-  public void setup() {
-    // Sanity check to ensure that XRP FX is configured properly...this will throw an exception if configuration is
-    // wrong.
-    CurrencyUnit xrp = Monetary.getCurrency(XRP);
-    Preconditions.checkNotNull(xrp != null);
-    CurrencyUnit usd = Monetary.getCurrency("USD");
-    Preconditions.checkNotNull(usd != null);
-  }
 
   @Bean
   JavaMoneyUtils javaMoneyUtils() {
@@ -137,11 +127,5 @@ public class JavaMoneyConfig {
   @Bean
   DefaultMonetaryConversionsSingletonSpi defaultMonetaryConversionsSingletonSpi() {
     return new DefaultMonetaryConversionsSingletonSpi();
-  }
-
-  @PostConstruct
-  public void init() {
-
-
   }
 }

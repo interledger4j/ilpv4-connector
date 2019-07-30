@@ -145,12 +145,11 @@ jobs:
     requires: # We only run the "test-it" job when the above non-IT builds have succeeded
       - build
       - test-postgresql
-
     filters:  # using regex filters requires the entire branch to match
       branches:
-        only:  # only branches matching the below regex filters will run
-          - df/*
+        only:  # branches matching the below regex filters will always run
           - master
+
     working_directory: ~/repo
 
     docker:
