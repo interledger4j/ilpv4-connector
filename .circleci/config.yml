@@ -140,16 +140,7 @@ jobs:
 
   # This job only runs the Integration Tests (ITs) found in the `ilpv4-connector-it` module using a Postgres DB and a
   # real Redis server.
-  test_it:
-    type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
-    requires: # We only run the "test_it" job when the above non-IT builds have succeeded
-      - main_build
-      - test_postgresql
-    filters:  # using regex filters requires the entire branch to match
-      branches:
-        only:  # branches matching the below regex filters will always run
-          - master
-
+  integration_tests:
     working_directory: ~/repo
 
     docker:
@@ -223,4 +214,12 @@ workflows:
     jobs:
       - main_build
       - test_postgresql
-      - test_it
+      - integration_tests
+        type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
+          requires: # We only run the "integration_tests" job when the above non-IT builds have succeeded
+            - main_build
+            - test_postgresql
+          filters:  # using regex filters requires the entire branch to match
+            branches:
+              only:  # branches matching the below regex filters will always run
+                - master
