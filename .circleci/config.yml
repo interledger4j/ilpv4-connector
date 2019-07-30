@@ -143,7 +143,7 @@ jobs:
   test_it:
     type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
     requires: # We only run the "test_it" job when the above non-IT builds have succeeded
-      - build
+      - main_build
       - test_postgresql
     filters:  # using regex filters requires the entire branch to match
       branches:
