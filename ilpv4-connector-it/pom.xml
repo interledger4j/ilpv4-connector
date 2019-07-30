@@ -13,10 +13,6 @@
   <name>ILPv4 :: Connector :: Integration Tests</name>
   <description>Integration Tests for the ILPv4 Connectors.</description>
 
-  <properties>
-    <redisPort>6379</redisPort>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -87,49 +83,6 @@
 
   <build>
     <plugins>
-
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.6.0</version>
-        <executions>
-          <execution>
-            <id>launch-redis</id>
-            <phase>pre-integration-test</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <executable>redis-server</executable>
-              <!-- See https://github.com/mojohaus/exec-maven-plugin/issues/75 -->
-              <longModulepath>false</longModulepath>
-              <arguments>
-                <argument>${project.basedir}/src/test/redis/redis.conf</argument>
-                <argument>--port</argument>
-                <argument>6379</argument>
-              </arguments>
-            </configuration>
-          </execution>
-          <execution>
-            <id>shutdown-redis</id>
-            <phase>post-integration-test</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <executable>redis-cli</executable>
-              <longModulepath>false</longModulepath>
-              <arguments>
-                <argument>-p</argument>
-                <argument>${redisPort}</argument>
-                <argument>shutdown</argument>
-              </arguments>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-
       <!-- The execution of the surefire plugin includes all classes whose name starts with Test, or ends with Test,
 Tests or TestCase. In contrast, the failsafe plugin executes test methods in classes whose name starts with IT,
  or ends with IT or ITCase. -->
@@ -150,9 +103,6 @@ Tests or TestCase. In contrast, the failsafe plugin executes test methods in cla
           </execution>
         </executions>
       </plugin>
-
-
-
     </plugins>
   </build>
 </project>

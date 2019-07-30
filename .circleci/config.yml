@@ -90,6 +90,9 @@ jobs:
         environment:
           POSTGRES_USER: circleci
           POSTGRES_DB: circle_test
+      # Service container image available at `host: localhost`
+      - image: circleci/redis:4.0.14-alpine
+        environment:
 
     steps:
 
@@ -104,6 +107,10 @@ jobs:
             sudo mv -f /tmp/UnlimitedJCEPolicyJDK8/local_policy.jar $JAVA_HOME/jre/lib/security/local_policy.jar
 
       - checkout # check out source code to working directory
+
+      - run:
+          name: Wait for Redis to receive connections
+          command: dockerize -wait tcp://localhost:6379 -timeout 1m
 
       # Restore the saved cache after the first run or if `pom.xml` has changed. Read about caching dependencies:
       # https://circleci.com/docs/2.0/caching/
