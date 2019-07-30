@@ -220,7 +220,3 @@ workflows:
           requires: # We only run the "integration_tests" job when the above non-IT builds have succeeded
             - build
             - test_postgresql
-          filters:  # using regex filters requires the entire branch to match
-            branches:
-              only:  # branches matching the below regex filters will always run
-                - master
