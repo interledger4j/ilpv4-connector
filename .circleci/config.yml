@@ -7,7 +7,7 @@ jobs:
 
   # This job builds the entire project and runs all unit tests (specifically the persistence tests) against H2 by
   # setting the `spring.datasource.url` value. All Integration Tests are skipped.
-  main-build:
+  main_build:
     working_directory: ~/repo
 
     docker:
@@ -73,7 +73,7 @@ jobs:
 
   # This job builds the entire project and runs all unit tests (specifically the persistence tests) against Postgres by
   # setting the `spring.datasource.url` value. All Integration Tests are skipped.
-  test-postgresql:
+  test_postgresql:
     working_directory: ~/repo
 
     docker:
@@ -140,9 +140,9 @@ jobs:
 
   # This job only runs the Integration Tests (ITs) found in the `ilpv4-connector-it` module using a Postgres DB and a
   # real Redis server.
-  test-it:
+  test_it:
     type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
-    requires: # We only run the "test-it" job when the above non-IT builds have succeeded
+    requires: # We only run the "test_it" job when the above non-IT builds have succeeded
       - build
       - test-postgresql
     filters:  # using regex filters requires the entire branch to match
@@ -213,6 +213,6 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - main-build
-      - test-postgresql
-      - test-it
+      - main_build
+      - test_postgresql
+      - test_it

@@ -382,6 +382,7 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
             <useSystemClassLoader>false</useSystemClassLoader>
+            <argLine>-Dfile.encoding=UTF-8</argLine>
           </configuration>
         </plugin>
         <plugin>
