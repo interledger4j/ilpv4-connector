@@ -41,7 +41,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.connector.link.PingableLink.PING_PROTOCOL_CONDITION;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
-import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_AT_ALICE_ADDRESS;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PAUL_AT_ALICE_ADDRESS;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.ALICE;
@@ -84,7 +83,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   public void setup() {
     aliceConnector = this.getILPv4NodeFromGraph(ALICE_CONNECTOR_ADDRESS);
     // Note Bob's Connector's address is purposefully a child of Alice due to IL-DCP
-    bobConnector = this.getILPv4NodeFromGraph(BOB_AT_ALICE_ADDRESS);
+    bobConnector = this.getILPv4NodeFromGraph(BOB_CONNECTOR_ADDRESS);
     this.resetBalanceTracking();
   }
 
@@ -166,8 +165,9 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
     // test.bob.alice: Should be 0 because this account is never engaged.
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, ZERO);
-    // test.bob.__ping_account__: Should be 0 because this account is never engaged.
-    assertAccountBalance(bobConnector, PING_ACCOUNT_ID, ZERO);
+    // test.bob.__ping_account__: Should be 0 because this account is never engaged, but because the IT forces both
+    // Connectors to share the same REDIS instance, it's actually ONE.
+    assertAccountBalance(bobConnector, PING_ACCOUNT_ID, ONE);
   }
 
   /**
@@ -237,8 +237,9 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, ONE.negate());
     // test.alice.bob: Should be 0 because this account will receive one from Paul, but then pay the Bob Connector.
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, ONE);
-    // test.alice.__ping_account__: Should be 0 because it is no engaged in this flow.
-    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, ZERO);
+    // test.alice.__ping_account__: Should be 0 because it is no engaged in this flow, but because the IT forces both
+    //    // Connectors to share the same REDIS instance, it's actually ONE.
+    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, ONE);
 
     // test.bob.alice: Should be 0 because it gets 1 from Alice Connector, but pays one to the ping account on Bob.
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, ONE.negate());
@@ -258,8 +259,9 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, TEN.negate());
     // test.alice.bob: Should be 10 because this account will receive ten from Paul on this Connector.
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, TEN);
-    // test.alice.__ping_account__: Should be 0 because it is no engaged in this flow.
-    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, ZERO);
+    // test.alice.__ping_account__: Should be 0 because it is no engaged in this flow, but because the IT forces both
+    // Connectors to share the same REDIS instance, it's actually ONE.
+    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, TEN);
 
     // test.bob.alice: Should be -10 because it pays from Alice Connector, but pays one to the ping account on Bob.
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, TEN.negate());
@@ -582,8 +584,9 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, BigInteger.valueOf(numReps * -1));
     // test.alice.bob: Should be 0 because this account will receive one from Paul, but then pay the Bob Connector.
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, BigInteger.valueOf(numReps));
-    // test.alice.__ping_account__: Should be 0 because it is no engaged in this flow.
-    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, ZERO);
+    // test.alice.__ping_account__: Should be 0 because it is no engaged in this flow, but because the IT forces both
+    // Connectors to share the same REDIS instance, it's actually ONE.
+    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, BigInteger.valueOf(numReps));
 
     // test.bob.alice: Should be 0 because it gets `numReps` from Alice Connector, but pays `numReps` to the ping
     // account on Bob.

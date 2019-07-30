@@ -19,7 +19,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
-import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_CONNECTOR_ADDRESS;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.ALICE;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.BOB;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.BOB_AT_ALICE_ADDRESS;
@@ -53,7 +52,7 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
   @Before
   public void setup() {
     aliceConnector = this.getILPv4NodeFromGraph(ALICE_CONNECTOR_ADDRESS);
-    bobConnector = this.getILPv4NodeFromGraph(BOB_CONNECTOR_ADDRESS);
+    bobConnector = this.getILPv4NodeFromGraph(BOB_AT_ALICE_ADDRESS);
     this.resetBalanceTracking();
   }
 
@@ -108,9 +107,9 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
     // Alice@BOB
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, BigInteger.valueOf(-1L));
 
-    // PING ACCOUNT
-    assertAccountBalance(bobConnector, PING_ACCOUNT_ID, BigInteger.valueOf(1L));
-    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, BigInteger.valueOf(0L));
+    // PING ACCOUNT (Note that currently this IT forces both Connectors to share the same Redis instance, so checking
+    // Bob's PING_ACCOUNT will be the same as alice).
+    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, BigInteger.valueOf(1L));
   }
 
   /**
@@ -128,8 +127,8 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
     // Alice@BOB
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, BigInteger.valueOf(-1L));
 
-    // PING ACCOUNT
-    assertAccountBalance(bobConnector, PING_ACCOUNT_ID, BigInteger.valueOf(0L));
+    // PING ACCOUNT (Note that currently this IT forces both Connectors to share the same Redis instance, so checking
+    // Bob's PING_ACCOUNT will be the same as alice).
     assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, BigInteger.valueOf(1L));
   }
 

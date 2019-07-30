@@ -86,7 +86,6 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import javax.annotation.PostConstruct;
-import javax.money.CurrencyUnit;
 import javax.money.Monetary;
 import javax.money.convert.ExchangeRateProvider;
 import java.util.List;
@@ -120,18 +119,29 @@ import static com.sappenin.interledger.javax.money.providers.XrpCurrencyProvider
 public class SpringConnectorConfig {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
+  @Autowired
+  ExchangeRateProvider exchangeRateProvider;
   @Autowired
   private ApplicationContext applicationContext;
 
   @PostConstruct
   public void onStartup() {
-    // Sanity check to ensure that XRP FX is configured properly...
+    // Sanity check to ensure that FX is configured properly...
     try {
-      CurrencyUnit xrp = Monetary.getCurrency(XRP);
-      Preconditions.checkNotNull(xrp != null, "XRP currency not configured");
-      CurrencyUnit usd = Monetary.getCurrency("USD");
-      Preconditions.checkNotNull(usd != null, "USD currency not configured");
+      /////////////
+      // Tests that Spring-configured JavaMoney is working properly...
+      /////////////
+      Preconditions.checkNotNull(
+        this.exchangeRateProvider.getExchangeRate("XRP", "USD"),
+        "exchangeRateProvider not properly configured"
+      );
+
+      /////////////
+      // Tests that native JavaMoney is working properly...
+      /////////////
+      Preconditions.checkNotNull(Monetary.getCurrency(XRP), "XRP currency not configured");
+      Preconditions.checkNotNull(Monetary.getCurrency("USD"), "USD currency not configured");
+
     } catch (Exception e) {
       throw new RuntimeException("Currency support is not configured properly. Error: " + e.getMessage(), e);
     }
