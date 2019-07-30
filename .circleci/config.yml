@@ -44,7 +44,7 @@ jobs:
 
       - run:
           name: Full Build (H2)
-          command:  mvn dependency:go-offline -DskipIts install
+          command:  mvn dependency:go-offline -DskipITs install
 
       - save_cache: # saves the project dependencies
           paths:
