@@ -571,12 +571,12 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
     assertThat(latch.getCount(), is(0L));
     assertThat(
-      "averageProcessingTime should have been less than 20, but was " + averageProcessingTime,
-      averageProcessingTime < 20,
+      "averageProcessingTime should have been less than 30, but was " + averageProcessingTime,
+      averageProcessingTime < 30,
       is(true)
     );
     assertThat(
-      "averageMsPerPing should have been less than 4, but was " + averageMsPerPing, averageMsPerPing < 4,
+      "averageMsPerPing should have been less than 6, but was " + averageMsPerPing, averageMsPerPing < 6,
       is(true)
     );
 
