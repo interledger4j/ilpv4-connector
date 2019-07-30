@@ -216,7 +216,6 @@ workflows:
       - build
       - test_postgresql
       - integration_tests:
-          type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
           requires: # We only run the "integration_tests" job when the above non-IT builds have succeeded
             - build
             - test_postgresql
