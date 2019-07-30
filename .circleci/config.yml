@@ -207,7 +207,7 @@ jobs:
           name: Run Integration Tests (ITs)
           command: |
             cd ./ilpv4-connector-it
-            mvn install -Dspring.datasource.url=jdbc:postgresql://localhost:5432/circle_test
+            mvn verify -Dspring.datasource.url=jdbc:postgresql://localhost:5432/circle_test
 
 workflows:
   version: 2

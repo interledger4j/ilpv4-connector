@@ -156,9 +156,6 @@
             <executions>
               <execution>
                 <phase>compile</phase>
-                <goals>
-                  <goal>updateSQL</goal>
-                </goals>
               </execution>
             </executions>
           </plugin>

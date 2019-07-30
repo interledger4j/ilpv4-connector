@@ -32,6 +32,15 @@
     <!-- org.jacoco:jacoc-maven-plugin -->
     <jacoco.propertyName>argLine</jacoco.propertyName>
     <start-class>com.sappenin.interledger.ilpv4.connector.server.ConnectorApplication</start-class>
+
+    <!--
+      -DskipUTs=true for skipping surefire tests.
+      -DskipITs=true for skipping failsafe tests.
+      -DskipTests=true for skipping all tests.
+    -->
+    <skipTests>false</skipTests>
+    <skipITs>${skipTests}</skipITs>
+    <skipUTs>${skipTests}</skipUTs>
   </properties>
 
   <modules>
@@ -380,27 +389,14 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <configuration>
-            <useSystemClassLoader>false</useSystemClassLoader>
-            <encoding>UTF-8</encoding>
-            <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
-            <argLine>-Xmx1024m -Xms1024m -XX:MaxPermSize=512m -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
-          </configuration>
+          <version>3.0.0-M3</version>
         </plugin>
 
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-failsafe-plugin</artifactId>
-          <configuration>
-            <useSystemClassLoader>false</useSystemClassLoader>
-            <encoding>UTF-8</encoding>
-            <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
-            <argLine>-Xmx1024m -Xms1024m -XX:MaxPermSize=512m -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
-          </configuration>
+          <version>3.0.0-M3</version>
         </plugin>
-
-
-
 
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -437,11 +433,13 @@
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-jetty</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-websocket</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-security</ignoredDependency>
-                  <ignoredDependency>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure</ignoredDependency>
+                  <ignoredDependency>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure
+                  </ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-jpa:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-test:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-data-jpa:jar</ignoredDependency>
-                  <ignoredDependency>org.springframework.boot:spring-boot-configuration-processor:jar</ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-configuration-processor:jar
+                  </ignoredDependency>
                   <ignoredDependency>org.springframework.plugin:spring-plugin-core:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.data:spring-data-redis:jar</ignoredDependency>
                   <ignoredDependency>redis.clients:jedis:jar</ignoredDependency>
@@ -488,6 +486,20 @@
       </plugins>
     </pluginManagement>
     <plugins>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <skipTests>${skipUTs}</skipTests>
+          <useSystemClassLoader>false</useSystemClassLoader>
+          <encoding>UTF-8</encoding>
+          <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
+          <argLine>-Xmx1024m -Xms1024m -XX:MaxPermSize=512m -Djdk.net.URLClassPath.disableClassPathURLCheck=true
+          </argLine>
+        </configuration>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
