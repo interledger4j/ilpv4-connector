@@ -1,6 +1,8 @@
 package org.interledger.ilpv4.connector.it.blast;
 
+import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
+import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLink;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
@@ -13,15 +15,25 @@ import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
+import org.interledger.ilpv4.connector.balances.InMemoryBalanceTracker;
+import org.interledger.ilpv4.connector.balances.RedisBalanceTracker;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.BeforeClass;
 import org.slf4j.Logger;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.jedis.JedisConnection;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 
 import java.math.BigInteger;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DEFAULT_JWT_TOKEN_ISSUER;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DOT;
@@ -33,6 +45,10 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__SECRET0_PASSWORD;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -136,6 +152,28 @@ public abstract class AbstractBlastIT {
   }
 
   /**
+   * Helper method to obtain an instance of {@link RedisBalanceTracker} for a given node, if Redis is enabled.
+   *
+   * @param interledgerAddress
+   *
+   * @return An optionally-present instance of {@link RedisBalanceTracker}.
+   */
+  protected Optional<RedisTemplate<String, Object>> getRedisTemplate(final InterledgerAddress interledgerAddress) {
+    Objects.requireNonNull(interledgerAddress);
+
+    Object redisTemplateObject =
+      ((ConnectorServer) getTopology().getNode(interledgerAddress.getValue()).getContentObject())
+        .getContext()
+        .getBean("jacksonRedisTemplate");
+
+    if (redisTemplateObject != null) {
+      return Optional.ofNullable((RedisTemplate) redisTemplateObject);
+    } else {
+      return Optional.empty();
+    }
+  }
+
+  /**
    * Helper method to obtain an instance of {@link Link} from the topology, based upon its Interledger Address.
    *
    * @param nodeAddress The {@link InterledgerAddress} of the node in the graph to obtain a Link from.
@@ -172,5 +210,32 @@ public abstract class AbstractBlastIT {
       String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.getNodeIlpAddress().get().getValue()),
       connector.getBalanceTracker().getBalance(accountId).netBalance(), is(expectedAmount)
     );
+  }
+
+  /**
+   * Helper method to reset any balance tracking accounts so that each test run can start off with a clean slate. Note
+   * that we _could_ expose a method on {@link BalanceTracker} called "resetBalance", but this is not currently a
+   * requirement for any business logic, so it was decided to not enable this behavior in order to avoid a potential
+   * footgun in production code (i.e., resetting balances is only something needed by integration tests at present).
+   */
+  protected void resetBalanceTracking() {
+    final ILPv4Connector aliceConnector = this.getILPv4NodeFromGraph(ALICE_CONNECTOR_ADDRESS);
+
+    final BalanceTracker balanceTracker = aliceConnector.getBalanceTracker();
+    // ITs should not be running with the InMemoryBalanceTracker, but sometimes they do such as when running from an
+    // IDE where maven-exec-plugin doesn't startup Redis.
+    if (InMemoryBalanceTracker.class.isAssignableFrom(balanceTracker.getClass())) {
+      ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetBalance(ALICE_ACCOUNT);
+      ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetBalance(BOB_ACCOUNT);
+      ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetBalance(PING_ACCOUNT_ID);
+      ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetBalance(PAUL_ACCOUNT);
+    } else {
+      // Clear out the whole Redis datastore...
+      this.getRedisTemplate(ALICE_CONNECTOR_ADDRESS)
+        .map(RedisTemplate::getConnectionFactory)
+        .map(RedisConnectionFactory::getConnection)
+        .map(RedisConnection::serverCommands)
+        .ifPresent($ -> $.flushAll());
+    }
   }
 }

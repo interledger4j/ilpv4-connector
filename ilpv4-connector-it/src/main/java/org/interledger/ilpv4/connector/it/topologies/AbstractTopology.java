@@ -1,4 +1,4 @@
-package org.interledger.ilpv4.connector.it.topologies.blast;
+package org.interledger.ilpv4.connector.it.topologies;
 
 import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLink;
 import okhttp3.HttpUrl;
@@ -26,9 +26,17 @@ public abstract class AbstractTopology {
   public static final String PAUL = "paul";
   public static final AccountId ALICE_ACCOUNT = AccountId.of(ALICE);
   public static final AccountId BOB_ACCOUNT = AccountId.of(BOB);
+
+  // Used for sending Pings from an account that is neither Alice nor Bob.
   public static final AccountId PAUL_ACCOUNT = AccountId.of(PAUL);
 
   public static final String TEST = InterledgerAddress.AllocationScheme.TEST.getValue();
+
+  public static final InterledgerAddress ALICE_CONNECTOR_ADDRESS = InterledgerAddress.of(TEST + DOT + ALICE);
+  public static final InterledgerAddress BOB_AT_ALICE_ADDRESS = ALICE_CONNECTOR_ADDRESS.with(BOB);
+  public static final InterledgerAddress BOB_CONNECTOR_ADDRESS = InterledgerAddress.of(TEST + DOT + BOB);
+  public static final InterledgerAddress ALICE_AT_BOB_ADDRESS = BOB_CONNECTOR_ADDRESS.with(ALICE);
+  public static final InterledgerAddress PAUL_AT_ALICE_ADDRESS = ALICE_CONNECTOR_ADDRESS.with(PAUL);
 
   public static final String ALICE_TOKEN_ISSUER = HttpUrl.parse("https://" + ALICE + ".example.com").toString();
   public static final String BOB_TOKEN_ISSUER = HttpUrl.parse("https://" + BOB + ".example.com").toString();

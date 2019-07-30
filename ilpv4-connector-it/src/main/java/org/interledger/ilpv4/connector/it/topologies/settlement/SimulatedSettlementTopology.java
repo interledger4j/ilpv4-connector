@@ -1,22 +1,21 @@
-package org.interledger.ilpv4.connector.it.topologies.blast;
+package org.interledger.ilpv4.connector.it.topologies.settlement;
 
 import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.StaticRoute;
-import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLink;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.IlpHttpController;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.GlobalRoutingSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ImmutableConnectorSettings;
-import org.interledger.connector.accounts.AccountRateLimitSettings;
+import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkSettings;
 import org.interledger.connector.link.blast.IncomingLinkSettings;
 import org.interledger.connector.link.blast.OutgoingLinkSettings;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.ilpv4.connector.it.topologies.AbstractTopology;
 import org.interledger.ilpv4.connector.it.topology.Topology;
@@ -25,18 +24,17 @@ import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntit
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
-
-import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
-
 /**
- * <p>A very simple topology that simulates a single ILP-over-HTTP (BLAST) connection between two Connectors to
- * enable a pinging entity (Paul) to issue a ping request using his connector (test.alice) to ping the `test.bob`
- * Connector. In this way, Paul will pay units to Bob's ping account. .</p>
+ * <p>A very simple topology involving two Connectors that simulates ILP Settlement over XRP using a simulated
+ * settlement engine.</p>
  *
  * <p>Nodes in this topology are connected as follows:</p>
  *
  * <pre>
+ *                     ┌─────────┐
+ *                     │   XRP   │
+ *                     └─────────┘
+ *
  * ┌──────────────┐                     ┌──────────────┐
  * │              ◁───────HTTP/2────────┤              │
  * │              │                     │              │
@@ -45,16 +43,22 @@ import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PIN
  * │              │                     │              │
  * │              ├──────HTTP/2─────────▷              │
  * └──────────────┘                     └──────────────┘
+ *         │                                    │
+ *         │                                    │
+ *         │                                    │
+ *         │      ┌──────────────────────┐      │
+ *         │      │  Settlement Engine   │      │
+ *         └─────▶│     (Simulated)      │◀─────┘
+ *                └──────────────────────┘
  * </pre>
  */
-public class TwoConnectorPeerBlastTopology extends AbstractTopology {
+public class SimulatedSettlementTopology extends AbstractTopology {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorPeerBlastTopology.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(SimulatedSettlementTopology.class);
 
   /**
-   * In this topology, each Connector starts-up with an Account for the other connector. During initialization,
-   *
-   * @return
+   * In this topology, each Connector starts-up with an Account for the other connector. Each account is configured to
+   * enable settlement using a simulated settlement engine.
    */
   public static Topology init() {
 
@@ -77,10 +81,6 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
           // Add Bob's account on Alice...
           final AccountSettingsEntity bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
-
-          // Add Paul's account on Alice (Paul is used for sending pings)
-          final AccountSettingsEntity paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice();
-          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(paulAccountSettingsAtAlice);
 
           // Add Alice's account on Bob...
           final AccountSettingsEntity aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort);
@@ -123,7 +123,11 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
     }
 
     LOGGER.info("\n" +
-      "\nSTARTING BLAST TOPOLOGY\n" +
+      "\nSTARTING SETTLEMENT TOPOLOGY:                      \n" +
+      "                    ┌─────────┐                      \n" +
+      "                    │   XRP   │                      \n" +
+      "                    └─────────┘                      \n" +
+      "                                                     \n" +
       "┌──────────────┐                     ┌──────────────┐\n" +
       "│              ◁───────HTTP/2────────┤              │\n" +
       "│              │                     │              │\n" +
@@ -131,7 +135,14 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
       "│  test.alice  │                     │   test.bob   │\n" +
       "│              │                     │              │\n" +
       "│              ├──────HTTP/2─────────▷              │\n" +
-      "└──────────────┘                     └──────────────┘\n"
+      "└──────────────┘                     └──────────────┘\n" +
+      "        │                                    │       \n" +
+      "        │                                    │       \n" +
+      "        │                                    │       \n" +
+      "        │      ┌──────────────────────┐      │       \n" +
+      "        │      │  Settlement Engine   │      │       \n" +
+      "        └─────▶│     (Simulated)      │◀─────┘       \n" +
+      "               └──────────────────────┘              "
     );
     return topology;
   }
@@ -145,9 +156,15 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
     return new AccountSettingsEntity(
       AccountSettings.builder()
         .accountId(BOB_ACCOUNT)
-        .description("Blast account for Bob")
+        .description("IlpOverHttp account for Bob")
         .accountRelationship(AccountRelationship.PEER)
-        .rateLimitSettings(AccountRateLimitSettings.builder().maxPacketsPerSecond(5000).build())
+        .settlementEngineDetails(
+          SettlementEngineDetails.builder()
+            .assetScale(6)
+            .settlementEngineAccountId(BOB_ACCOUNT.value())
+            .baseUrl(HttpUrl.parse("http://localhost:9000"))
+            .build()
+        )
         .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
         .linkType(BlastLink.LINK_TYPE)
         .assetScale(9)
@@ -168,36 +185,6 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
         .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, EXPIRY_2MIN)
         .putCustomSettings(
           OutgoingLinkSettings.BLAST_OUTGOING_URL, "http://localhost:" + bobPort + IlpHttpController.ILP_PATH
-        )
-
-        .build()
-    );
-  }
-
-  /**
-   * An AccountSettings object that represents Paul's account at Alice. Since this account is only used to send, it does
-   * not require any incoming connection settings.
-   */
-  private static AccountSettingsEntity constructPaulAccountSettingsOnAlice() {
-    return new AccountSettingsEntity(
-      AccountSettings.builder()
-        .accountId(PAUL_ACCOUNT)
-        .description("Blast sender account for Paul")
-        .accountRelationship(AccountRelationship.CHILD)
-        .linkType(BlastLink.LINK_TYPE)
-        .assetScale(9)
-        .assetCode(XRP)
-
-        // Incoming
-        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
-
-        // Outgoing (dummy values since these are unused because the account never receives in this topology)
-        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, PAUL)
-        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
-        .putCustomSettings(
-          OutgoingLinkSettings.BLAST_OUTGOING_URL, "http://localhost:8080" + IlpHttpController.ILP_PATH
         )
 
         .build()
@@ -242,7 +229,13 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
       AccountSettings.builder()
         .accountId(ALICE_ACCOUNT)
         .description("Blast account for Alice")
-        .rateLimitSettings(AccountRateLimitSettings.builder().maxPacketsPerSecond(5000).build())
+        .settlementEngineDetails(
+          SettlementEngineDetails.builder()
+            .assetScale(6)
+            .settlementEngineAccountId(BOB_ACCOUNT.value())
+            .baseUrl(HttpUrl.parse("http://localhost:9000"))
+            .build()
+        )
         .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
         .accountRelationship(AccountRelationship.PEER)
         .linkType(BlastLink.LINK_TYPE)

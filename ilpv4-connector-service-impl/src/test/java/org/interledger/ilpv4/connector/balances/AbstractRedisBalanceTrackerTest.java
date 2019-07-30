@@ -8,27 +8,28 @@ import org.interledger.ilpv4.connector.config.RedisConfig;
 import org.interledger.ilpv4.connector.jackson.ObjectMapperFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.connection.jedis.JedisConnection;
 import org.springframework.data.redis.core.RedisTemplate;
+import redis.clients.jedis.Jedis;
 import redis.embedded.RedisServerBuilder;
 
 import java.util.Objects;
 import java.util.Optional;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
 import static org.interledger.ilpv4.connector.balances.RedisBalanceTracker.CLEARING_BALANCE;
 import static org.interledger.ilpv4.connector.balances.RedisBalanceTracker.PREPAID_AMOUNT;
-import static org.mockito.Mockito.mock;
 
 /**
  * Unit tests for {@link RedisBalanceTracker} that validates the script and clearingBalance-change functionality for
  * handling Fulfill packets.
  */
 public abstract class AbstractRedisBalanceTrackerTest {
-
+  protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractRedisBalanceTrackerTest.class);
   protected static final int REDIS_PORT = 6379;
 
   protected static final AccountId ACCOUNT_ID = AccountId.of("1");
@@ -80,15 +81,24 @@ public abstract class AbstractRedisBalanceTrackerTest {
 
   @BeforeClass
   public static void startRedisServer() {
-    redisServer = new RedisServerBuilder().port(REDIS_PORT)
-      //.setting("maxheap 128M")
-      .build();
-    redisServer.start();
+    try {
+      final JedisConnection connection = new JedisConnection(new Jedis());
+      connection.ping();
+      LOGGER.warn("Redis was already running on port {}. This is fine, although this test suite supports an in-memory" +
+        " version of Redis if no existing Redis is available.", REDIS_PORT);
+    } catch (Exception e) {
+      redisServer = new RedisServerBuilder().port(REDIS_PORT)
+        //.setting("maxheap 128M")
+        .build();
+      redisServer.start();
+    }
   }
 
   @AfterClass
   public static void stopRedisServer() {
-    redisServer.stop();
+    if (redisServer != null && redisServer.isActive()) {
+      redisServer.stop();
+    }
   }
 
   protected abstract RedisTemplate getRedisTemplate();

@@ -15,7 +15,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
 
-import javax.money.Monetary;
 import javax.money.MonetaryException;
 import javax.money.convert.ConversionContext;
 import javax.money.convert.ConversionQuery;
@@ -80,8 +79,6 @@ public class CryptoCompareRateProvider extends AbstractRateProvider {
     this.apiUrlTemplate =
       "https://min-api.cryptocompare.com/data/price?fsym={fsym}&tsyms={tsyms}&extraParams=java.ilpv4.connector";
     this.exchangeRateCache = this.fxLoader();
-
-    Monetary.getCurrency("XRP");
   }
 
   private LoadingCache<ConversionQuery, ExchangeRate> fxLoader() {
@@ -96,8 +93,9 @@ public class CryptoCompareRateProvider extends AbstractRateProvider {
             Objects.requireNonNull(conversionQuery);
 
             final ExchangeRateBuilder builder = exchangeRateBuilder(conversionQuery);
-            final String baseCurrencyCode = conversionQuery.getBaseCurrency().getCurrencyCode();
-            final String terminatingCurrencyCode = conversionQuery.getCurrency().getCurrencyCode();
+            // WARNING: CryptoCompare will fail if the currency codes aren't upper-cased!
+            final String baseCurrencyCode = conversionQuery.getBaseCurrency().getCurrencyCode().toUpperCase();
+            final String terminatingCurrencyCode = conversionQuery.getCurrency().getCurrencyCode().toUpperCase();
 
             if (baseCurrencyCode.equals(terminatingCurrencyCode)) {
               builder.setFactor(DefaultNumberValue.ONE);

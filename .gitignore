@@ -230,6 +230,9 @@ Icon
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
 
+# Redis files
+*.rdb
+
 # Directories potentially created on remote AFP share
 .AppleDB
 .AppleDesktop
@@ -237,3 +240,6 @@ Network Trash Folder
 Temporary Items
 .apdisk
 .idea
+
+# Ignore JavaMoney cache files.
+.resourceCache

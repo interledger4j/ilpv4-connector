@@ -2,7 +2,7 @@ package org.interledger.ilpv4.connector.it.topology;
 
 /**
  * A node in a topology, which wraps a single object of a particular type. For example, a node might contain an ILP
- * Connector running in a Spring Boot runtime.
+ * Connector running in a Spring Boot runtime, a Redis Server, or any other runtime.
  */
 public interface Node<T> {
 

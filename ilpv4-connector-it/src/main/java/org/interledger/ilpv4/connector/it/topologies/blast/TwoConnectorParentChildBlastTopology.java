@@ -14,8 +14,8 @@ import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkSettings;
 import org.interledger.connector.link.blast.IncomingLinkSettings;
 import org.interledger.connector.link.blast.OutgoingLinkSettings;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.ilpv4.connector.it.topologies.AbstractTopology;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.interledger.ilpv4.connector.it.topology.nodes.ConnectorServerNode;
 import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
@@ -41,8 +41,6 @@ import org.slf4j.LoggerFactory;
  */
 public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
 
-  public static final InterledgerAddress ALICE_ADDRESS = InterledgerAddress.of(TEST + DOT + ALICE);
-  public static final InterledgerAddress BOB_AT_ALICE_ADDRESS = ALICE_ADDRESS.with(BOB);
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorParentChildBlastTopology.class);
 
   /**
@@ -58,7 +56,9 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
       @Override
       protected void doAfterTopologyStartup(Topology g) {
 
-        final ConnectorServerNode aliceServerNode = g.getNode(ALICE_ADDRESS.getValue(), ConnectorServerNode.class);
+        final ConnectorServerNode aliceServerNode = g.getNode(
+          ALICE_CONNECTOR_ADDRESS.getValue(), ConnectorServerNode.class
+        );
         final int alicePort = aliceServerNode.getPort();
         final ConnectorServerNode bobServerNode = g.getNode(BOB_AT_ALICE_ADDRESS.getValue(), ConnectorServerNode.class);
         final int bobPort = bobServerNode.getPort();
@@ -90,7 +90,7 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
     {
       final ConnectorServer aliceServer = new ConnectorServer(constructConnectorSettingsForAlice());
       aliceServer.setPort(ALICE_PORT);
-      topology.addNode(ALICE_ADDRESS, new ConnectorServerNode(ALICE, aliceServer));
+      topology.addNode(ALICE_CONNECTOR_ADDRESS, new ConnectorServerNode(ALICE, aliceServer));
     }
 
     ///////////////////
@@ -122,7 +122,7 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
    */
   public static ConnectorSettings constructConnectorSettingsForAlice() {
     final ConnectorSettings connectorSettings = ImmutableConnectorSettings.builder()
-      .operatorAddress(ALICE_ADDRESS)
+      .operatorAddress(ALICE_CONNECTOR_ADDRESS)
       .enabledProtocols(EnabledProtocolSettings.builder()
         .isBlastEnabled(true)
         .isPingProtocolEnabled(true)

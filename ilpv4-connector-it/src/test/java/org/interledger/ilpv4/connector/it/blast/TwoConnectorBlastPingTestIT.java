@@ -12,7 +12,6 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
-import org.interledger.ilpv4.connector.balances.InMemoryBalanceTracker;
 import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.AfterClass;
@@ -40,14 +39,15 @@ import static java.math.BigInteger.ZERO;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.connector.link.PingableLink.PING_PROTOCOL_CONDITION;
-import static org.interledger.ilpv4.connector.it.topologies.blast.AbstractTopology.ALICE_ACCOUNT;
-import static org.interledger.ilpv4.connector.it.topologies.blast.AbstractTopology.BOB_ACCOUNT;
-import static org.interledger.ilpv4.connector.it.topologies.blast.AbstractTopology.PAUL_ACCOUNT;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_AT_ALICE_ADDRESS;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PAUL_AT_ALICE_ADDRESS;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.ALICE;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.ALICE_CONNECTOR_ADDRESS;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.BOB;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.BOB_CONNECTOR_ADDRESS;
-import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.PAUL_CHILD_ACCOUNT_ADDRESS;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -62,6 +62,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorBlastPingTestIT.class);
   private static Topology topology = TwoConnectorPeerBlastTopology.init();
+
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
 
@@ -82,15 +83,9 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   @Before
   public void setup() {
     aliceConnector = this.getILPv4NodeFromGraph(ALICE_CONNECTOR_ADDRESS);
-    bobConnector = this.getILPv4NodeFromGraph(BOB_CONNECTOR_ADDRESS);
-
-    // Reset all accounts on each connector...
-    ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetBalance(BOB_ACCOUNT);
-    ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetBalance(PAUL_ACCOUNT);
-    ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetBalance(PING_ACCOUNT_ID);
-
-    ((InMemoryBalanceTracker) bobConnector.getBalanceTracker()).resetBalance(ALICE_ACCOUNT);
-    ((InMemoryBalanceTracker) bobConnector.getBalanceTracker()).resetBalance(PING_ACCOUNT_ID);
+    // Note Bob's Connector's address is purposefully a child of Alice due to IL-DCP
+    bobConnector = this.getILPv4NodeFromGraph(BOB_AT_ALICE_ADDRESS);
+    this.resetBalanceTracking();
   }
 
   @Test
@@ -130,7 +125,8 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final InterledgerResponsePacket responsePacket = blastLink.ping(PAUL_CHILD_ACCOUNT_ADDRESS, ONE);
+    // Note Bob's Connector's address is purposefully a child of Alice due to IL-DCP
+    final InterledgerResponsePacket responsePacket = blastLink.ping(PAUL_AT_ALICE_ADDRESS, ONE);
 
     new InterledgerResponsePacketHandler() {
       @Override

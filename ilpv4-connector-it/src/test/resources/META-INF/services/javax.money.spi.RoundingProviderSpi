@@ -1,7 +1,6 @@
 # JavaMoney fq provider names
 # See https://jaxenter.de/go-for-the-money-einfuehrung-in-das-money-and-currency-api-38668
 # To display Bitcoin as Satoshis, for example.
-com.sappenin.interledger.ilpv4.connector.javax.money.providers.GuinRoundingProvider
-com.sappenin.interledger.ilpv4.connector.javax.money.providers.SabRoundingProvider
-com.sappenin.interledger.ilpv4.connector.javax.money.providers.GuinRoundingProvider
-com.sappenin.interledger.ilpv4.connector.javax.money.providers.SabRoundingProvider
+
+# Example
+# org.interledger.connector.javax.money.providers.XyzRoundingProvider
