@@ -1,5 +1,6 @@
 package org.interledger.ilpv4.connector.balances;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.sappenin.interledger.ilpv4.connector.balances.AccountBalance;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
@@ -99,10 +100,13 @@ public class InMemoryBalanceTracker implements BalanceTracker {
     this.increment(this.clearingBalances, accountId, amount);
   }
 
-  public void resetBalance(final AccountId accountId) {
-    Objects.requireNonNull(accountId);
-    this.clearingBalances.put(accountId, new AtomicLong());
-    this.prepaidBalances.put(accountId, new AtomicLong());
+  /**
+   * Exists only for testing, but is purposefully not in the parent interface.
+   */
+  @VisibleForTesting
+  public void resetAllBalances() {
+    this.clearingBalances.clear();
+    this.prepaidBalances.clear();
   }
 
   private void increment(

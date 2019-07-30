@@ -108,8 +108,8 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, BigInteger.valueOf(-1L));
 
     // PING ACCOUNT (Note that currently this IT forces both Connectors to share the same Redis instance, so checking
-    // Bob's PING_ACCOUNT will be the same as alice).
-    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, BigInteger.valueOf(1L));
+    // Alice's PING_ACCOUNT will be the same as alice, but techincally that's incorrect so it's unasserted here).
+    assertAccountBalance(bobConnector, PING_ACCOUNT_ID, BigInteger.valueOf(1L));
   }
 
   /**

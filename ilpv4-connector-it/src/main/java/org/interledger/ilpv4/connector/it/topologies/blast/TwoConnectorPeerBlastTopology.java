@@ -2,7 +2,6 @@ package org.interledger.ilpv4.connector.it.topologies.blast;
 
 import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.StaticRoute;
-import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLink;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.IlpHttpController;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
@@ -16,7 +15,6 @@ import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkSettings;
 import org.interledger.connector.link.blast.IncomingLinkSettings;
 import org.interledger.connector.link.blast.OutgoingLinkSettings;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.ilpv4.connector.it.topologies.AbstractTopology;
 import org.interledger.ilpv4.connector.it.topology.Topology;
@@ -24,10 +22,6 @@ import org.interledger.ilpv4.connector.it.topology.nodes.ConnectorServerNode;
 import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
-
-import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 
 /**
  * <p>A very simple topology that simulates a single ILP-over-HTTP (BLAST) connection between two Connectors to
@@ -37,14 +31,14 @@ import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PIN
  * <p>Nodes in this topology are connected as follows:</p>
  *
  * <pre>
- * ┌──────────────┐                     ┌──────────────┐
- * │              ◁───────HTTP/2────────┤              │
- * │              │                     │              │
- * │  CONNECTOR   │                     │  CONNECTOR   │
- * │  test.alice  │                     │   test.bob   │
- * │              │                     │              │
- * │              ├──────HTTP/2─────────▷              │
- * └──────────────┘                     └──────────────┘
+ *                                       ┌──────────────┐                     ┌──────────────┐
+ *                                       │              ◁───────HTTP/2────────┤              │
+ * ┌─────────────────┐                   │              │                     │              │
+ * │      Paul       │                   │  CONNECTOR   │                     │  CONNECTOR   │
+ * │(test.alice.paul)│◁──Ilp-over-Http──▷│  test.alice  │                     │   test.bob   │
+ * │                 │                   │              │                     │              │
+ * └─────────────────┘                   │              ├──────HTTP/2─────────▷              │
+ *                                       └──────────────┘                     └──────────────┘
  * </pre>
  */
 public class TwoConnectorPeerBlastTopology extends AbstractTopology {
@@ -124,14 +118,14 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
 
     LOGGER.info("\n" +
       "\nSTARTING BLAST TOPOLOGY\n" +
-      "┌──────────────┐                     ┌──────────────┐\n" +
-      "│              ◁───────HTTP/2────────┤              │\n" +
-      "│              │                     │              │\n" +
-      "│  CONNECTOR   │                     │  CONNECTOR   │\n" +
-      "│  test.alice  │                     │   test.bob   │\n" +
-      "│              │                     │              │\n" +
-      "│              ├──────HTTP/2─────────▷              │\n" +
-      "└──────────────┘                     └──────────────┘\n"
+      "                                      ┌──────────────┐                     ┌──────────────┐\n" +
+      "                                      │              ◁───────HTTP/2────────┤              │\n" +
+      "┌─────────────────┐                   │              │                     │              │\n" +
+      "│      Paul       │                   │  CONNECTOR   │                     │  CONNECTOR   │\n" +
+      "│(test.alice.paul)│◁──Ilp-over-Http──▷│  test.alice  │                     │   test.bob   │\n" +
+      "└─────────────────┘                   │              │                     │              │\n" +
+      "                                      │              ├──────HTTP/2─────────▷              │\n" +
+      "                                      └──────────────┘                     └──────────────┘"
     );
     return topology;
   }

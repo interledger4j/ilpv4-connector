@@ -1,6 +1,5 @@
 package org.interledger.ilpv4.connector.it.blast;
 
-import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLink;
@@ -20,12 +19,9 @@ import org.interledger.ilpv4.connector.balances.RedisBalanceTracker;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.BeforeClass;
 import org.slf4j.Logger;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.jedis.JedisConnection;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
 
 import java.math.BigInteger;
 import java.util.Objects;
@@ -33,7 +29,6 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DEFAULT_JWT_TOKEN_ISSUER;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DOT;
@@ -45,10 +40,8 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__SECRET0_PASSWORD;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
-import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
-import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
-import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_CONNECTOR_ADDRESS;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -220,15 +213,13 @@ public abstract class AbstractBlastIT {
    */
   protected void resetBalanceTracking() {
     final ILPv4Connector aliceConnector = this.getILPv4NodeFromGraph(ALICE_CONNECTOR_ADDRESS);
+    final ILPv4Connector bobConnector = this.getILPv4NodeFromGraph(BOB_CONNECTOR_ADDRESS);
 
-    final BalanceTracker balanceTracker = aliceConnector.getBalanceTracker();
     // ITs should not be running with the InMemoryBalanceTracker, but sometimes they do such as when running from an
     // IDE where maven-exec-plugin doesn't startup Redis.
-    if (InMemoryBalanceTracker.class.isAssignableFrom(balanceTracker.getClass())) {
-      ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetBalance(ALICE_ACCOUNT);
-      ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetBalance(BOB_ACCOUNT);
-      ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetBalance(PING_ACCOUNT_ID);
-      ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetBalance(PAUL_ACCOUNT);
+    if (InMemoryBalanceTracker.class.isAssignableFrom(aliceConnector.getBalanceTracker().getClass())) {
+      ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetAllBalances();
+      ((InMemoryBalanceTracker) bobConnector.getBalanceTracker()).resetAllBalances();
     } else {
       // Clear out the whole Redis datastore...
       this.getRedisTemplate(ALICE_CONNECTOR_ADDRESS)
