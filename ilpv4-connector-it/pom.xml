@@ -94,7 +94,6 @@ Tests or TestCase. In contrast, the failsafe plugin executes test methods in cla
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <version>2.22.1</version>
         <executions>
           <execution>
             <goals>
