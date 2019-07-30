@@ -248,8 +248,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
     // test.alice.paul: SHOULD BE -1 because that account initiated and paid for the ping.
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, ONE.negate());
-    // test.alice.alice: SHOULD BE 0 because that account is not engaged.
-    assertAccountBalance(aliceConnector, ALICE_ACCOUNT, ZERO);
+
     // test.alice.bob: SHOULD BE 1 because this account will get fulfilled and increment by 1.
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, ONE);
 

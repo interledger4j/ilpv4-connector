@@ -21,7 +21,6 @@ import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALI
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_AT_ALICE_ADDRESS;
-import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_CONNECTOR_ADDRESS;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.ALICE;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.BOB;
 import static org.junit.Assert.assertThat;
