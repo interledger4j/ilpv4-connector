@@ -81,18 +81,28 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
   @Before
   public void setup() {
-    aliceConnector = this.getILPv4NodeFromGraph(ALICE_CONNECTOR_ADDRESS);
+    aliceConnector = this.getILPv4NodeFromGraph(getAliceConnectorAddress());
     // Note Bob's Connector's address is purposefully a child of Alice due to IL-DCP
-    bobConnector = this.getILPv4NodeFromGraph(BOB_CONNECTOR_ADDRESS);
+    bobConnector = this.getILPv4NodeFromGraph(getBobConnectorAddress());
     this.resetBalanceTracking();
+  }
+
+  @Override
+  protected InterledgerAddress getAliceConnectorAddress() {
+    return ALICE_CONNECTOR_ADDRESS;
+  }
+
+  @Override
+  protected InterledgerAddress getBobConnectorAddress() {
+    return BOB_CONNECTOR_ADDRESS;
   }
 
   @Test
   public void testAliceNodeSettings() {
-    final ILPv4Connector connector = getILPv4NodeFromGraph(ALICE_CONNECTOR_ADDRESS);
-    assertThat(connector.getConnectorSettings().getOperatorAddress().get(), is(ALICE_CONNECTOR_ADDRESS));
+    final ILPv4Connector connector = getILPv4NodeFromGraph(getAliceConnectorAddress());
+    assertThat(connector.getConnectorSettings().getOperatorAddress().get(), is(getAliceConnectorAddress()));
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_CONNECTOR_ADDRESS, BOB_ACCOUNT);
+    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), BOB_ACCOUNT);
     assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(ALICE));
     assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().authType(),
       is(BlastLinkSettings.AuthType.JWT_HS_256));
@@ -102,10 +112,10 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
   @Test
   public void testBobNodeSettings() {
-    final ILPv4Connector connector = getILPv4NodeFromGraph(BOB_CONNECTOR_ADDRESS);
-    assertThat(connector.getConnectorSettings().getOperatorAddress().get(), is(BOB_CONNECTOR_ADDRESS));
+    final ILPv4Connector connector = getILPv4NodeFromGraph(getBobConnectorAddress());
+    assertThat(connector.getConnectorSettings().getOperatorAddress().get(), is(getBobConnectorAddress()));
 
-    final BlastLink blastLink = getBlastLinkFromGraph(BOB_CONNECTOR_ADDRESS, ALICE_ACCOUNT);
+    final BlastLink blastLink = getBlastLinkFromGraph(getBobConnectorAddress(), ALICE_ACCOUNT);
     assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(BOB));
     assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().authType(),
       is(BlastLinkSettings.AuthType.JWT_HS_256));
@@ -119,7 +129,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
    */
   @Test
   public void testPaulPingsPaulChildAccount() throws InterruptedException {
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_CONNECTOR_ADDRESS, PAUL_ACCOUNT);
+    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
 
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
@@ -139,7 +149,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
         assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
         assertThat(interledgerRejectPacket.getMessage(), is("Destination address is unreachable"));
         assertThat(interledgerRejectPacket.getTriggeredBy().isPresent(), is(true));
-        assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(ALICE_CONNECTOR_ADDRESS));
+        assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(getAliceConnectorAddress()));
         latch.countDown();
       }
     }.handle(responsePacket);
@@ -154,7 +164,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
    */
   @Test
   public void testPaulPingsAliceConnector() throws InterruptedException {
-    this.testPing(PAUL_ACCOUNT, ALICE_CONNECTOR_ADDRESS, ALICE_CONNECTOR_ADDRESS, ONE);
+    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getAliceConnectorAddress(), ONE);
 
     // test.alice.paul: Should be -1 because that account initiated and paid for the ping.
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, ONE.negate());
@@ -177,12 +187,12 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
    */
   @Test
   public void testAlicePingsAliceUsingBobAccount() throws InterruptedException {
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_CONNECTOR_ADDRESS, BOB_ACCOUNT);
+    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), BOB_ACCOUNT);
 
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final InterledgerResponsePacket responsePacket = blastLink.ping(ALICE_CONNECTOR_ADDRESS, ONE);
+    final InterledgerResponsePacket responsePacket = blastLink.ping(getAliceConnectorAddress(), ONE);
 
     new InterledgerResponsePacketHandler() {
       @Override
@@ -196,7 +206,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
         assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
         assertThat(interledgerRejectPacket.getMessage(), is("Destination address is unreachable"));
         assertThat(interledgerRejectPacket.getTriggeredBy().isPresent(), is(true));
-        assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(BOB_CONNECTOR_ADDRESS));
+        assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(getBobConnectorAddress()));
         latch.countDown();
       }
     }.handle(responsePacket);
@@ -211,7 +221,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
    */
   @Test
   public void testPaulPingsBobConnectorWith0Units() throws InterruptedException {
-    this.testPing(PAUL_ACCOUNT, ALICE_CONNECTOR_ADDRESS, BOB_CONNECTOR_ADDRESS, ZERO);
+    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), ZERO);
 
     // test.alice.paul: Should be 0 because the packet units are 0
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, ZERO);
@@ -234,7 +244,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   public void testPaulPingsBobConnectorWith1Units() throws InterruptedException {
     // After the Ping, the balances should look like this:
     // [[PAUL]][1] <-> [-1][[ALICE]][1] <-> [-1][BOB][1] <-> [-1][[PING_ACT]]
-    this.testPing(PAUL_ACCOUNT, ALICE_CONNECTOR_ADDRESS, BOB_CONNECTOR_ADDRESS, ONE);
+    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), ONE);
 
     // test.alice.paul: SHOULD BE -1 because that account initiated and paid for the ping.
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, ONE.negate());
@@ -257,7 +267,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
    */
   @Test
   public void testPaulPingsBobWith10Units() throws InterruptedException {
-    this.testPing(PAUL_ACCOUNT, ALICE_CONNECTOR_ADDRESS, BOB_CONNECTOR_ADDRESS, BigInteger.TEN);
+    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), BigInteger.TEN);
 
     // test.alice.paul: Should be -10 because that account initiated and paid for the ping.
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, TEN.negate());
@@ -282,7 +292,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final InterledgerAddress randomDestination =
       InterledgerAddress.of(InterledgerAddressPrefix.TEST3.with(UUID.randomUUID().toString()).getValue());
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_CONNECTOR_ADDRESS, PAUL_ACCOUNT);
+    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
 
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
@@ -301,7 +311,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
         assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
         assertThat(interledgerRejectPacket.getMessage(), is("Destination address is unreachable"));
         assertThat(interledgerRejectPacket.getTriggeredBy().isPresent(), is(true));
-        assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(ALICE_CONNECTOR_ADDRESS));
+        assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(getAliceConnectorAddress()));
         latch.countDown();
       }
     }.handle(responsePacket);
@@ -317,9 +327,9 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
    */
   @Test
   public void testPaulPingsRandomAtBob() throws InterruptedException {
-    final InterledgerAddress randomDestination = BOB_CONNECTOR_ADDRESS.with(UUID.randomUUID().toString());
+    final InterledgerAddress randomDestination = getBobConnectorAddress().with(UUID.randomUUID().toString());
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_CONNECTOR_ADDRESS, PAUL_ACCOUNT);
+    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
 
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
@@ -338,7 +348,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
         assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
         assertThat(interledgerRejectPacket.getMessage(), is("Destination address is unreachable"));
         assertThat(interledgerRejectPacket.getTriggeredBy().isPresent(), is(true));
-        assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(BOB_CONNECTOR_ADDRESS));
+        assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(getBobConnectorAddress()));
         latch.countDown();
       }
     }.handle(responsePacket);
@@ -357,13 +367,13 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_CONNECTOR_ADDRESS, PAUL_ACCOUNT);
+    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
       .executionCondition(PING_PROTOCOL_CONDITION)
       .expiresAt(Instant.now().minusSeconds(500))
       .amount(BigInteger.valueOf(1L)) // Ping with the smallest unit...
-      .destination(BOB_CONNECTOR_ADDRESS)
+      .destination(getBobConnectorAddress())
       .build();
 
     final InterledgerResponsePacket responsePacket = blastLink.sendPacket(pingPacket);
@@ -397,13 +407,13 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_CONNECTOR_ADDRESS, PAUL_ACCOUNT);
+    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
       .executionCondition(PING_PROTOCOL_CONDITION)
       .expiresAt(Instant.now().plusSeconds(30))
       .amount(BigInteger.valueOf(100000000000L)) // Ping with a unit that's too large...
-      .destination(BOB_CONNECTOR_ADDRESS)
+      .destination(getBobConnectorAddress())
       .build();
 
     final InterledgerResponsePacket responsePacket = blastLink.sendPacket(pingPacket);
@@ -437,7 +447,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_CONNECTOR_ADDRESS, PAUL_ACCOUNT);
+    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
       .executionCondition(PING_PROTOCOL_CONDITION)
@@ -477,13 +487,13 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_CONNECTOR_ADDRESS, PAUL_ACCOUNT);
+    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
       .executionCondition(InterledgerCondition.of(new byte[32]))
       .expiresAt(Instant.now().plusSeconds(30))
       .amount(BigInteger.valueOf(1L)) // Ping with the smallest unit...
-      .destination(BOB_CONNECTOR_ADDRESS)
+      .destination(getBobConnectorAddress())
       .build();
 
     final InterledgerResponsePacket responsePacket = blastLink.sendPacket(pingPacket);
@@ -519,7 +529,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
    */
   @Test
   public void zTestPingPerf() throws InterruptedException {
-    final BlastLink paulToAliceLink = getBlastLinkFromGraph(ALICE_CONNECTOR_ADDRESS, PAUL_ACCOUNT);
+    final BlastLink paulToAliceLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
 
     final int TIMEOUT = 30;
     final int numReps = 2000;
@@ -532,7 +542,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
     final Runnable runnable = () -> {
       final long start = System.currentTimeMillis();
-      final InterledgerResponsePacket responsePacket = paulToAliceLink.ping(BOB_CONNECTOR_ADDRESS, ONE);
+      final InterledgerResponsePacket responsePacket = paulToAliceLink.ping(getBobConnectorAddress(), ONE);
 
       new InterledgerResponsePacketHandler() {
         @Override

@@ -3,6 +3,7 @@ package org.interledger.ilpv4.connector.it.blast;
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkSettings;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.AfterClass;
@@ -19,9 +20,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_AT_ALICE_ADDRESS;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_CONNECTOR_ADDRESS;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.ALICE;
 import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.BOB;
-import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.BOB_AT_ALICE_ADDRESS;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -32,6 +34,7 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorIldcpTestIT.class);
   private static Topology topology = TwoConnectorParentChildBlastTopology.init();
+
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
 
@@ -51,20 +54,30 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
 
   @Before
   public void setup() {
-    aliceConnector = this.getILPv4NodeFromGraph(ALICE_CONNECTOR_ADDRESS);
-    bobConnector = this.getILPv4NodeFromGraph(BOB_AT_ALICE_ADDRESS);
+    aliceConnector = this.getILPv4NodeFromGraph(getAliceConnectorAddress());
+    bobConnector = this.getILPv4NodeFromGraph(getBobConnectorAddress());
     this.resetBalanceTracking();
+  }
+
+  @Override
+  protected InterledgerAddress getAliceConnectorAddress() {
+    return ALICE_CONNECTOR_ADDRESS;
+  }
+
+  @Override
+  protected InterledgerAddress getBobConnectorAddress() {
+    return BOB_AT_ALICE_ADDRESS;
   }
 
   @Test
   public void testAliceNodeSettings() {
-    final ILPv4Connector connector = getILPv4NodeFromGraph(ALICE_CONNECTOR_ADDRESS);
+    final ILPv4Connector connector = getILPv4NodeFromGraph(getAliceConnectorAddress());
     assertThat(
       connector.getConnectorSettings().getOperatorAddress().get(),
-      is(ALICE_CONNECTOR_ADDRESS)
+      is(getAliceConnectorAddress())
     );
 
-    final BlastLink blastLink = getBlastLinkFromGraph(ALICE_CONNECTOR_ADDRESS, BOB_ACCOUNT);
+    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), BOB_ACCOUNT);
     assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(ALICE));
     assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().authType(),
       is(BlastLinkSettings.AuthType.JWT_HS_256));
@@ -77,14 +90,14 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
     // Give time for IL-DCP to work...
     Thread.sleep(2000);
 
-    final ILPv4Connector connector = getILPv4NodeFromGraph(BOB_AT_ALICE_ADDRESS);
+    final ILPv4Connector connector = getILPv4NodeFromGraph(getBobConnectorAddress());
     assertThat(connector.getConnectorSettings().getOperatorAddress().isPresent(), is(true));
     assertThat(
       connector.getConnectorSettings().getOperatorAddress().get(),
-      is(BOB_AT_ALICE_ADDRESS)
+      is(getBobConnectorAddress())
     );
 
-    final BlastLink blastLink = getBlastLinkFromGraph(BOB_AT_ALICE_ADDRESS, ALICE_ACCOUNT);
+    final BlastLink blastLink = getBlastLinkFromGraph(getBobConnectorAddress(), ALICE_ACCOUNT);
     assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(BOB));
     assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().authType(),
       is(BlastLinkSettings.AuthType.JWT_HS_256));
@@ -99,7 +112,7 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
    */
   @Test
   public void testAlicePingsBob() throws InterruptedException {
-    this.testPing(BOB_ACCOUNT, ALICE_CONNECTOR_ADDRESS, BOB_AT_ALICE_ADDRESS, BigInteger.ONE);
+    this.testPing(BOB_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), BigInteger.ONE);
 
     // Bob@ALICE (this account is 0 because using it to ping does not engage any balance tracking).
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, BigInteger.valueOf(0L));
@@ -119,7 +132,7 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
    */
   @Test
   public void testBobPingsAlice() throws InterruptedException {
-    this.testPing(ALICE_ACCOUNT, BOB_AT_ALICE_ADDRESS, ALICE_CONNECTOR_ADDRESS, BigInteger.ONE);
+    this.testPing(ALICE_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(), BigInteger.ONE);
 
     // bob@ALICE (this account is 0 because using it to ping does not engage any balance tracking).
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, BigInteger.valueOf(0));

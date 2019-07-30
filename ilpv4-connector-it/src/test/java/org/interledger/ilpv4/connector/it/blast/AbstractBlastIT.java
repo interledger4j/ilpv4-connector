@@ -40,8 +40,6 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__SECRET0_PASSWORD;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
-import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
-import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_CONNECTOR_ADDRESS;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -212,8 +210,8 @@ public abstract class AbstractBlastIT {
    * footgun in production code (i.e., resetting balances is only something needed by integration tests at present).
    */
   protected void resetBalanceTracking() {
-    final ILPv4Connector aliceConnector = this.getILPv4NodeFromGraph(ALICE_CONNECTOR_ADDRESS);
-    final ILPv4Connector bobConnector = this.getILPv4NodeFromGraph(BOB_CONNECTOR_ADDRESS);
+    final ILPv4Connector aliceConnector = this.getILPv4NodeFromGraph(getAliceConnectorAddress());
+    final ILPv4Connector bobConnector = this.getILPv4NodeFromGraph(getBobConnectorAddress());
 
     // ITs should not be running with the InMemoryBalanceTracker, but sometimes they do such as when running from an
     // IDE where maven-exec-plugin doesn't startup Redis.
@@ -222,11 +220,23 @@ public abstract class AbstractBlastIT {
       ((InMemoryBalanceTracker) bobConnector.getBalanceTracker()).resetAllBalances();
     } else {
       // Clear out the whole Redis datastore...
-      this.getRedisTemplate(ALICE_CONNECTOR_ADDRESS)
+      this.getRedisTemplate(getAliceConnectorAddress())
         .map(RedisTemplate::getConnectionFactory)
         .map(RedisConnectionFactory::getConnection)
         .map(RedisConnection::serverCommands)
         .ifPresent($ -> $.flushAll());
     }
   }
+
+  /**
+   * Abstract method to obtain a reference to the ILP Address for the BOB Connector. This is necessary because
+   * sub-classes of this abstract class may not all use the same ILP address for each Connector.
+   */
+  protected abstract InterledgerAddress getAliceConnectorAddress();
+
+  /**
+   * Abstract method to obtain a reference to the ILP Address for the BOB Connector. This is necessary because
+   * sub-classes of this abstract class may not all use the same ILP address for each Connector.
+   */
+  protected abstract InterledgerAddress getBobConnectorAddress();
 }
