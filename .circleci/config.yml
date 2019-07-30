@@ -43,7 +43,7 @@ jobs:
             - v1-dependencies-{{ checksum "pom.xml" }}
 
       - run:
-          name: Full Build (H2)
+          name: Full Build (H2 minus ITs)
           command:  mvn dependency:go-offline -DskipITs install
 
       - save_cache: # saves the project dependencies
@@ -90,7 +90,7 @@ jobs:
         environment:
           POSTGRES_USER: circleci
           POSTGRES_DB: circle_test
-      # Service container image available at `host: localhost`
+      # Service container image available at `tcp://localhost:6379`
       - image: circleci/redis:4.0.14-alpine
         environment:
 
@@ -135,8 +135,8 @@ jobs:
             mvn -P liquibase-pg-sql -DskipTests liquibase:update
 
       - run:
-          name: Full Build (Postrges)
-          command: mvn install -Dspring.datasource.url=jdbc:postgresql://localhost:5432/circle_test
+          name: Full Build (Postgres minus ITs)
+          command: mvn install -DskipITs -Dspring.datasource.url=jdbc:postgresql://localhost:5432/circle_test
 
   # This job only runs the Integration Tests (ITs) found in the `ilpv4-connector-it` module using a Postgres DB and a
   # real Redis server.
@@ -144,7 +144,7 @@ jobs:
     type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
     requires: # We only run the "test_it" job when the above non-IT builds have succeeded
       - build
-      - test-postgresql
+      - test_postgresql
     filters:  # using regex filters requires the entire branch to match
       branches:
         only:  # branches matching the below regex filters will always run
@@ -167,6 +167,10 @@ jobs:
           POSTGRES_USER: circleci
           POSTGRES_DB: circle_test
 
+      # Service container image available at `tcp://localhost:6379`
+      - image: circleci/redis:4.0.14-alpine
+        environment:
+
     steps:
 
       # apply the JCE unlimited strength policy to allow the PSK 256 bit key length
@@ -180,6 +184,10 @@ jobs:
             sudo mv -f /tmp/UnlimitedJCEPolicyJDK8/local_policy.jar $JAVA_HOME/jre/lib/security/local_policy.jar
 
       - checkout # check out source code to working directory
+
+      - run:
+          name: Wait for Redis to receive connections
+          command: dockerize -wait tcp://localhost:6379 -timeout 1m
 
       # Restore the saved cache after the first run or if `pom.xml` has changed. Read about caching dependencies:
       # https://circleci.com/docs/2.0/caching/
