@@ -57,7 +57,10 @@ public class RedisConfig {
       config.setPassword(new String(decryptedBytes, Charset.defaultCharset()));
     }
 
-    JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(config);
+    final JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(config);
+    jedisConnectionFactory.getPoolConfig().setMaxTotal(25); // TODO: Make this configurable
+    jedisConnectionFactory.getPoolConfig().setMinIdle(1); // TODO: Make this configurable
+    jedisConnectionFactory.getPoolConfig().setMaxIdle(2); // TODO: Make this configurable
 
     try {
       // Try to connect to Redis, but default to InMemoryBalanceTracker if there's no Redis...
