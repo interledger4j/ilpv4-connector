@@ -63,6 +63,13 @@ public class SettlementController {
    *
    * @param idempotencyKeyString The idempotence identifier defined in the SE RFC (typed as a {@link String}, but should
    *                             always be a Type4 UUID).
+   * @param accountId            The {@link AccountId} as supplied by the SettlementEngine. Note that settlment engines
+   *                             could theoretically store any type of identifier as supplied by the Connector during
+   *                             settlement engine account creation. However, this implementation simply uses the
+   *                             Connector's {@link AccountId} as this value.
+   * @param settlementQuantity   A {@link SettlementQuantity}, as supplied by the Settlement Engine, that contains
+   *                             information about underlying money received for this account inside of the ledger that
+   *                             the settlement engine is tracking.
    *
    * @return A {@link SettlementQuantity} (in clearing units) that allows the clearing/accounting system indicate the
    * amount it acknowledged receipt of so the settlement engine can track the amount leftover (e.g., if the accounting
@@ -82,10 +89,10 @@ public class SettlementController {
     @PathVariable final AccountId accountId,
     @RequestBody final SettlementQuantity settlementQuantity
   ) {
+    final UUID idempotencyKey = toUuid(idempotencyKeyString);
     Objects.requireNonNull(accountId);
     Objects.requireNonNull(settlementQuantity);
 
-    final UUID idempotencyKey = toUuid(idempotencyKeyString);
     final SettlementQuantity settledSettlementQuantity = settlementService.onLocalSettlementPayment(
       idempotencyKey, accountId, settlementQuantity
     );

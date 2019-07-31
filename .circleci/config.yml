@@ -197,6 +197,26 @@ jobs:
           key: v1-dependencies-{{ checksum "pom.xml" }}
 
       - run:
+          name: Install node and ganache
+          command: |
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
+            source ~/.nvm/nvm.sh
+            nvm install node
+            npm install -g ganache-cli
+
+      - run:
+          name: Install the XRPL Settlement Engine
+          command: |
+            sudo apt-get install git
+            git clone --single-branch -b ilp-rs-compat https://github.com/gakonst/settlement-xrp
+            # make the engine globally available
+            source ~/.nvm/nvm.sh
+            cd settlement-xrp && npm install
+            ./node_modules/typescript/bin/tsc && npm link
+            npm run build && LEDGER_ADDRESS=rdVEU3RfkW4q9Fg3BTBhaNJr8gy9pZRrw LEDGER_SECRET=shcuUXdrZKUvZXSvq3zuPxXRB5Hbs CONNECTOR_URL=http://localhost:9000 node ./build/run.js
+
+
+      - run:
           name: Create Database (Postgres)
           command: |
             cd ./ilpv4-connector-persistence
