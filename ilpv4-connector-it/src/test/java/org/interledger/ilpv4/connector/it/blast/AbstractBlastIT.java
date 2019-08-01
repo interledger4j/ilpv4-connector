@@ -4,6 +4,7 @@ import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.links.ping.PingLoopbackLink;
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
+import com.sappenin.interledger.ilpv4.connector.server.spring.settings.javamoney.SpringServiceProvider;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.CircuitBreakingLink;
@@ -23,6 +24,7 @@ import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 
+import javax.money.spi.Bootstrap;
 import java.math.BigInteger;
 import java.util.Objects;
 import java.util.Optional;
@@ -49,6 +51,12 @@ public abstract class AbstractBlastIT {
 
   @BeforeClass
   public static void setupClass() {
+    // For whatever reason, the JavaMoney Bootstrap mechanism doesn't pickup the service provider directive in
+    // `src/main/resources/META-INF/services/javax.money.spi.ServiceProvider` in the `ilpv4-connector-server` module.
+    // Thus, we need to programmatically wire-in JavaMoney into Spring using this manual call (before any JavaMoney
+    // code is engaged).
+    Bootstrap.init(new SpringServiceProvider());
+
     System.setProperty("spring.jpa.properties.hibernate.temp.use_jdbc_metadata_defaults", "false");
 
     System.setProperty(DEFAULT_JWT_TOKEN_ISSUER, "https://connie.example.com");

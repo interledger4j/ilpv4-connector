@@ -111,11 +111,11 @@ public class JavaMoneyConfig {
   // Currency Code SPI
   ////////////////////////
 
-    @Bean
-    @Qualifier(XRP)
-    XrpCurrencyProvider xrpCurrencyProviderSpi() {
-      return new XrpCurrencyProvider();
-    }
+  @Bean
+  @Qualifier(XRP)
+  XrpCurrencyProvider xrpCurrencyProviderSpi() {
+    return new XrpCurrencyProvider();
+  }
 
   @Bean
   @Qualifier(DEFAULT)
@@ -123,6 +123,7 @@ public class JavaMoneyConfig {
     return new JDKCurrencyProvider();
   }
 
+  // NOTE: This bean must have this name in order to properly bridge with JavaMoney.
   @Bean("javax.money.spi.MonetaryCurrenciesSingletonSpi")
   DefaultMonetaryConversionsSingletonSpi defaultMonetaryConversionsSingletonSpi() {
     return new DefaultMonetaryConversionsSingletonSpi();

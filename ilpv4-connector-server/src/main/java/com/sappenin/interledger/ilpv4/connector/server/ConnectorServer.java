@@ -39,8 +39,8 @@ public class ConnectorServer extends Server {
   @Override
   public void start() {
     super.start();
+    // ...only now is everything wired-up.
 
-    // Only now is everything wired-up.
     this.emitFxInfo();
 
     if (getConnectorSettings().get().getOperatorAddress().isPresent()) {
@@ -63,7 +63,6 @@ public class ConnectorServer extends Server {
       this.connectorSettingsOverride
         .ifPresent(cso -> ((ApplicationPreparedEvent) event).getApplicationContext().getBeanFactory()
           .registerSingleton(ConnectorSettings.OVERRIDE_BEAN_NAME, cso));
-
     }
   }
 

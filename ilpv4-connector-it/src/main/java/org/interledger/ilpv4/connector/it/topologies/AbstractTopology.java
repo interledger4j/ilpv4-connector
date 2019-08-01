@@ -56,7 +56,6 @@ public abstract class AbstractTopology {
     System.setProperty("spring.application.admin.enabled", "false");
   }
 
-
   /**
    * An AccountSettings object that represents a ping account on Bob.
    */
