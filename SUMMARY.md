@@ -1,13 +1,12 @@
 # Table of contents
 
-* [README2](README.md)
-* [Docs](docs-1.md)
+* [Java ILPv4 Connector](README.md)
+* [Untitled](untitled.md)
 * [ILP Connector Persistence](ilpv4-connector-persistence/README.md)
   * [README](ilpv4-connector-persistence/ddl.md)
-* [docs](docs/README.md)
-  * [Connector Configuration](docs/configuration.md)
-  * [Connector Architecture & Design](docs/connector-design.md)
-  * [Connector Development](docs/development.md)
+* [Documentation](documentation/README.md)
+  * [Connector Configuration](documentation/configuration.md)
+  * [Connector Development](documentation/development.md)
 * [ilpv4-connector-crypto](ilpv4-connector-crypto/README.md)
   * [README](ilpv4-connector-crypto/connector-crypto-cli.md)
 * [ilpv4-connector-server](ilpv4-connector-server/README.md)
@@ -21,8 +20,29 @@
           * [Connector Crypto](ilpv4-connector-server/src/main/resources/crypto/crypto.md)
         * [Spring Boot with TLS](ilpv4-connector-server/src/main/resources/tls.md)
 * [Connector Account Model](ilpv4-connector-accounts.md)
-* [.github](.github/README.md)
-  * [ISSUE\_TEMPLATE](.github/issue_template/README.md)
-    * [feature\_request](.github/issue_template/feature_request.md)
-    * [bug\_report](.github/issue_template/bug_report.md)
+
+## Operating a Connector
+
+* [Untitled](operating-a-connector/untitled.md)
+
+## API Reference
+
+* [Untitled](api-reference/untitled.md)
+
+## Design
+
+* [Connector Architecture & Design](design/connector-design.md)
+* [Untitled](design/untitled.md)
+
+## Security Guide
+
+* [Untitled](security-guide/untitled.md)
+
+## Contributing
+
+* [Untitled](contributing/untitled.md)
+
+## Release Notes <a id="docs-releasenotes"></a>
+
+* [Untitled](docs-releasenotes/untitled.md)
 

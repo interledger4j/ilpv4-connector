@@ -1,12 +1,12 @@
-# README2
+---
+description: A Java implementation of an Interledger v4 Connector.
+---
 
-![Java ILPv4 Connector](.gitbook/assets/interledger-logo.png)
+# Java ILPv4 Connector
 
 ## Java ILPv4 Connector [![](https://img.shields.io/badge/Discuss-Interledger%20Forum-blue.svg)](https://forum.interledger.org/tags/java-ilpv4-connector)
 
 [![](https://circleci.com/gh/sappenin/java-ilpv4-connector.svg?style=shield)](https://circleci.com/gh/sappenin/java-ilpv4-connector) [![](https://codecov.io/gh/sappenin/java-ilpv4-connector/branch/master/graph/badge.svg)](https://codecov.io/gh/sappenin/java-ilpv4-connector) [![](https://img.shields.io/github/license/sappenin/java-ilp-connector.svg)](https://github.com/sappenin/java-ilp-connector/blob/master/LICENSE) [![](https://api.codacy.com/project/badge/Grade/49e43210600d462f861e1813230d855d)](https://www.codacy.com/app/sappenin/java-ilpv4-connector?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=sappenin/java-ilpv4-connector&amp;utm_campaign=Badge_Grade) [![](https://img.shields.io/github/issues/sappenin/java-ilpv4-connector.svg)](https://github.com/sappenin/java-ilpv4-connector/issues) [![Total alerts](https://img.shields.io/lgtm/alerts/g/sappenin/java-ilpv4-connector.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/sappenin/java-ilpv4-connector/alerts/)
-
-A Java implementation of an [Interledger v4 Connector](https://github.com/interledger/rfcs/blob/master/0034-connector-requirements/0034-connector-requirements.md).
 
 ## Supported Features
 
@@ -20,17 +20,17 @@ This Connector implementation is intended for operation as a server-based ILSP, 
 
 ## Architecture & Design
 
-To learn more about how this implementation is designed, see the [docs](https://github.com/sappenin/java-ilpv4-connector/tree/8b48e3aba253bd604564d78deecc445f2ab2d3dc/docs/README.md) folder, specifically [Connector Design](docs/connector-design.md).
+To learn more about how this implementation is designed, see the [docs](https://github.com/sappenin/java-ilpv4-connector/tree/8b48e3aba253bd604564d78deecc445f2ab2d3dc/docs/README.md) folder, specifically [Connector Design](design/connector-design.md).
 
 ## Development
 
-To learn more about how to contribute to this project, see the [docs/development](docs/development.md) folder.
+To learn more about how to contribute to this project, see the [docs/development](documentation/development.md) folder.
 
 ## Operating a Connector
 
 **Disclaimer:** _**This implementation is currently a prototype and SHOULD NOT be used in a production deployment!**_
 
-To configure this connector, see [Configuration](docs/configuration.md) in the docs folder.
+To configure this connector, see [Configuration](documentation/configuration.md) in the docs folder.
 
 ## Connector Releases
 
