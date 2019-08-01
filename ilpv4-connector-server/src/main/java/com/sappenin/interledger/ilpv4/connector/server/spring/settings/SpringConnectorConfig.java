@@ -1,7 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings;
 
 import com.github.benmanes.caffeine.cache.Cache;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
@@ -86,8 +85,6 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import javax.annotation.PostConstruct;
-import javax.money.Monetary;
-import javax.money.convert.ExchangeRateProvider;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -96,7 +93,6 @@ import java.util.function.Supplier;
 import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.CCP;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.ILDCP;
-import static com.sappenin.interledger.javax.money.providers.XrpCurrencyProvider.XRP;
 
 /**
  * <p>Primary configuration for the ILPv4 Connector.</p>
@@ -119,39 +115,9 @@ import static com.sappenin.interledger.javax.money.providers.XrpCurrencyProvider
 public class SpringConnectorConfig {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
-  @Autowired
-  ExchangeRateProvider exchangeRateProvider;
+
   @Autowired
   private ApplicationContext applicationContext;
-
-  @PostConstruct
-  public void onStartup() {
-    // Sanity check to ensure that FX is configured properly...
-    try {
-      /////////////
-      // Tests that Spring-configured JavaMoney is working properly...
-      /////////////
-      Preconditions.checkNotNull(
-        this.exchangeRateProvider.getExchangeRate("XRP", "USD"),
-        "exchangeRateProvider not properly configured"
-      );
-
-      /////////////
-      // Tests that native JavaMoney is working properly...
-      /////////////
-      Preconditions.checkNotNull(Monetary.getCurrency(XRP), "XRP currency not configured");
-      Preconditions.checkNotNull(Monetary.getCurrency("USD"), "USD currency not configured");
-
-    } catch (Exception e) {
-      throw new RuntimeException("Currency support is not configured properly. Error: " + e.getMessage(), e);
-    }
-
-    if (connectorSettingsSupplier().get().getOperatorAddress().isPresent()) {
-      logger.info("STARTED ILPV4 CONNECTOR: `{}`", connectorSettingsSupplier().get().getOperatorAddress().get());
-    } else {
-      logger.info("STARTED ILPV4 CHILD CONNECTOR: [Operator Address pending IL-DCP]");
-    }
-  }
 
   /**
    * All internal Connector events propagate locally in this JVM using this EventBus.

@@ -1,4 +1,4 @@
 # JavaMoney Bootstrap ServiceLoader
 # See https://github.com/JavaMoney/javamoney-lib/blob/master/javamoney-cdi/src/main/resources/META-INF/services/javax.money.spi.ServiceProvider
 # To use Spring Beans as JavaMoney implementations.
-# com.sappenin.interledger.ilpv4.connector.server.spring.settings.javamoney.SpringServiceProvider
+com.sappenin.interledger.ilpv4.connector.server.spring.settings.javamoney.SpringServiceProvider

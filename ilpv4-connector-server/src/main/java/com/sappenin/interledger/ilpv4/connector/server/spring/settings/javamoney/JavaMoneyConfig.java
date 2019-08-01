@@ -6,10 +6,10 @@ import com.sappenin.interledger.ilpv4.connector.fx.JavaMoneyUtils;
 import com.sappenin.interledger.javax.money.providers.CryptoCompareRateProvider;
 import com.sappenin.interledger.javax.money.providers.DropRoundingProvider;
 import com.sappenin.interledger.javax.money.providers.XrpCurrencyProvider;
+import org.javamoney.moneta.convert.internal.DefaultMonetaryConversionsSingletonSpi;
+import org.javamoney.moneta.convert.internal.IdentityRateProvider;
 import org.javamoney.moneta.internal.DefaultRoundingProvider;
 import org.javamoney.moneta.internal.JDKCurrencyProvider;
-import org.javamoney.moneta.internal.convert.DefaultMonetaryConversionsSingletonSpi;
-import org.javamoney.moneta.internal.convert.IdentityRateProvider;
 import org.javamoney.moneta.spi.CompoundRateProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -111,11 +111,11 @@ public class JavaMoneyConfig {
   // Currency Code SPI
   ////////////////////////
 
-  @Bean
-  @Qualifier(XRP)
-  XrpCurrencyProvider xrpCurrencyProviderSpi() {
-    return new XrpCurrencyProvider();
-  }
+    @Bean
+    @Qualifier(XRP)
+    XrpCurrencyProvider xrpCurrencyProviderSpi() {
+      return new XrpCurrencyProvider();
+    }
 
   @Bean
   @Qualifier(DEFAULT)
@@ -123,8 +123,7 @@ public class JavaMoneyConfig {
     return new JDKCurrencyProvider();
   }
 
-
-  @Bean
+  @Bean("javax.money.spi.MonetaryCurrenciesSingletonSpi")
   DefaultMonetaryConversionsSingletonSpi defaultMonetaryConversionsSingletonSpi() {
     return new DefaultMonetaryConversionsSingletonSpi();
   }
