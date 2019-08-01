@@ -52,21 +52,33 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
   // SpringConverters
   ////////////////////////
 
+  /**
+   * Note: this bean must be registered below in {@link #addFormatters(FormatterRegistry)}.
+   */
   @Bean
   RateLimitSettingsConverter rateLimitSettingsConverter() {
     return new RateLimitSettingsConverter();
   }
 
+  /**
+   * Note: this bean must be registered below in {@link #addFormatters(FormatterRegistry)}.
+   */
   @Bean
   AccountBalanceSettingsConverter accountBalanceSettingsConverter() {
     return new AccountBalanceSettingsConverter();
   }
 
+  /**
+   * Note: this bean must be registered below in {@link #addFormatters(FormatterRegistry)}.
+   */
   @Bean
   SettlementEngineDetailsConverter settlementEngineDetailsConverter() {
     return new SettlementEngineDetailsConverter();
   }
 
+  /**
+   * Note: this bean must be registered below in {@link #addFormatters(FormatterRegistry)}.
+   */
   @Bean
   AccountSettingsConverter accountSettingsConverter(
   ) {
@@ -74,7 +86,6 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
       rateLimitSettingsConverter(), accountBalanceSettingsConverter(), settlementEngineDetailsConverter()
     );
   }
-
 
   ////////////////////////
   // HttpMessageConverters
@@ -107,6 +118,7 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
   public void addFormatters(FormatterRegistry registry) {
     registry.addConverter(rateLimitSettingsConverter());
     registry.addConverter(accountBalanceSettingsConverter());
+    registry.addConverter(settlementEngineDetailsConverter());
     registry.addConverter(accountSettingsConverter());
   }
 }

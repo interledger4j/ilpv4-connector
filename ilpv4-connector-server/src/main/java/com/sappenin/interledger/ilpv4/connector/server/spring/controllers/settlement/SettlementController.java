@@ -34,6 +34,7 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.we
 import static com.sappenin.interledger.ilpv4.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
 
 /**
  * Allows a Settlement Engine to make requests to this Connector. This Controller is structured in such a way that it
@@ -171,8 +172,8 @@ public class SettlementController {
   @RequestMapping(
     path = SLASH_ACCOUNTS + SLASH_ACCOUNT_ID + SLASH_MESSAGES,
     method = RequestMethod.POST,
-    consumes = {APPLICATION_JSON_VALUE},
-    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    consumes = {APPLICATION_OCTET_STREAM_VALUE},
+    produces = {APPLICATION_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   // Only one thread is guaranteed to succeed here if the underlying mechanism supports concurrent caching,
   // which Redis does.
