@@ -276,6 +276,9 @@ public interface AccountSettings {
     }
 
     @Override
+    public abstract Optional<SettlementEngineDetails> settlementEngineDetails();
+
+    @Override
     @JsonIgnore
     @Value.Derived
     public boolean isParentAccount() {

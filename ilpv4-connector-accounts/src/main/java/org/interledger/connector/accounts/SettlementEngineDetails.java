@@ -4,15 +4,15 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import okhttp3.HttpUrl;
 import org.immutables.value.Value;
-import org.interledger.core.InterledgerAddress;
-
-import java.util.Optional;
 
 /**
  * <p>Defines settings related to Settlement.</p>
  *
  * <p>This object is optionally-present on an account, since some accounts do not settle.</p>
  */
+@Value.Immutable(intern = true)
+@JsonSerialize(as = ImmutableSettlementEngineDetails.class)
+@JsonDeserialize(as = ImmutableSettlementEngineDetails.class)
 public interface SettlementEngineDetails {
 
   static ImmutableSettlementEngineDetails.Builder builder() {
@@ -50,11 +50,4 @@ public interface SettlementEngineDetails {
    * @return
    */
   HttpUrl baseUrl();
-
-  @Value.Immutable(intern = true)
-  @JsonSerialize(as = ImmutableSettlementEngineDetails.class)
-  @JsonDeserialize(as = ImmutableSettlementEngineDetails.class)
-  abstract class AbstractSettlementEngineDetails implements SettlementEngineDetails {
-
-  }
 }

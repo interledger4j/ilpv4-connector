@@ -53,8 +53,15 @@ public class AccountSettingsConverter implements Converter<AccountSettingsEntity
         .balanceSettings(accountBalanceSettingsConverter.convert(balanceSettingsEntity)));
 
     Optional.ofNullable(accountSettingsEntity.getSettlementEngineDetailsEntity())
-      .ifPresent(settlementEngineDetailsEntity -> builder
-        .settlementEngineDetails(settlementEngineDetailsConverter.convert(settlementEngineDetailsEntity)));
+      .ifPresent(settlementEngineDetailsEntity -> {
+        // Until https://github.com/sappenin/java-ilpv4-connector/issues/217 is fixed, we should not create a SE
+        // details object unless all properties in the DB are populated. This line can be removed once #217 is fixed.
+        if (
+          settlementEngineDetailsEntity.getBaseUrl() != null && settlementEngineDetailsEntity.getAccountId() != null
+        ) {
+          builder.settlementEngineDetails(settlementEngineDetailsConverter.convert(settlementEngineDetailsEntity));
+        }
+      });
 
     return builder.build();
   }
