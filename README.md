@@ -1,6 +1,4 @@
-<img src="docs/interledger-logo.png" width="100" alt="Java ILPv4 Connector"/>
-
-# Java ILPv4 Connector [![Discuss][forum-image]][forum-url] 
+# Java ILPv4 Connector
 [![issues][github-issues-image]][github-issues-url]
 [![circle-ci][circle-image]][circle-url] 
 [![codecov][codecov-image]][codecov-url] 
@@ -24,5 +22,9 @@
 A Java implementation of an Interledger v4 Connector.
 
 To learn more about this project, consult the [documentation here](https://interledger.gitbook.io/java-ilp-connector/). 
+
+For questions, ideas, or just to say hello, connect with us on the Interledger Forum
+
+[![Discuss][forum-image]][forum-url] 
 
 **Disclaimer: _This implementation is currently a prototype and SHOULD NOT be used in a production deployment!_**
