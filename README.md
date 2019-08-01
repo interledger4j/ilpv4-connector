@@ -21,8 +21,8 @@
 [github-issues-image]: https://img.shields.io/github/issues/sappenin/java-ilpv4-connector.svg
 [github-issues-url]: https://github.com/sappenin/java-ilpv4-connector/issues
 
-A Java implementation of an [Interledger v4 Connector](https://github.com/interledger/rfcs/blob/master/0034-connector-requirements/0034-connector-requirements.md).
+A Java implementation of an Interledger v4 Connector.
 
-Read the documentation for this project [here](https://interledger.gitbook.io/java-ilp-connector/). 
+To learn more about this project, consult the [documentation here](https://interledger.gitbook.io/java-ilp-connector/). 
 
 **Disclaimer: _This implementation is currently a prototype and SHOULD NOT be used in a production deployment!_**
