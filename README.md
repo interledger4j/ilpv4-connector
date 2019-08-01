@@ -20,7 +20,7 @@ This Connector implementation is intended for operation as a server-based ILSP, 
 
 ## Architecture & Design
 
-To learn more about how this implementation is designed, see the [docs](https://github.com/sappenin/java-ilpv4-connector/tree/8b48e3aba253bd604564d78deecc445f2ab2d3dc/docs/README.md) folder, specifically [Connector Design](design/connector-design.md).
+To learn more about how this implementation is designed, see the [docs](https://github.com/sappenin/java-ilpv4-connector/tree/8b48e3aba253bd604564d78deecc445f2ab2d3dc/docs/README.md) folder, specifically [Connector Design](documentation/connector-design.md).
 
 ## Development
 
