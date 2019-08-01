@@ -1,11 +1,11 @@
 # Java ILPv4 Connector
+[![Discuss][forum-image]][forum-url] 
 [![issues][github-issues-image]][github-issues-url]
 [![circle-ci][circle-image]][circle-url] 
 [![codecov][codecov-image]][codecov-url] 
 [![codacy][codacy-image]][codacy-url] 
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/sappenin/java-ilpv4-connector.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/sappenin/java-ilpv4-connector/alerts/)
 [![license-ci][license-image]][license-url]
-[![Discuss][forum-image]][forum-url] 
 
 [forum-url]: https://forum.interledger.org/tags/java-ilpv4-connector
 [forum-image]: https://img.shields.io/badge/Discuss-Interledger%20Forum-blue.svg
