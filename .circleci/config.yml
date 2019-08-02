@@ -208,7 +208,7 @@ jobs:
           name: Install the XRPL Settlement Engine
           command: |
             sudo apt-get install git
-            git clone --single-branch -b ilp-rs-compat https://github.com/gakonst/settlement-xrp
+            git clone --single-branch -b ilp-rs-compat https://github.com/interledgerjs/settlement-xrp
             # make the engine globally available
             source ~/.nvm/nvm.sh
             cd settlement-xrp && npm install
@@ -234,7 +234,7 @@ workflows:
     jobs:
       #- build
       #- test_postgresql
-      - integration_tests:
-          requires: # We only run the "integration_tests" job when the above non-IT builds have succeeded
-            - build
-            - test_postgresql
+      - integration_tests
+#          requires: # We only run the "integration_tests" job when the above non-IT builds have succeeded
+#            - build
+#            - test_postgresql
