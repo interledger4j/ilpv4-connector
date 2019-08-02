@@ -208,7 +208,7 @@ jobs:
           name: Install the XRPL Settlement Engine
           command: |
             sudo apt-get install git
-            git clone --single-branch -b ilp-rs-compat https://github.com/interledgerjs/settlement-xrp
+            git clone --single-branch https://github.com/interledgerjs/settlement-xrp
             # make the engine globally available
             source ~/.nvm/nvm.sh
             cd settlement-xrp && npm install
