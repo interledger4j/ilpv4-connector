@@ -29,10 +29,10 @@ jobs:
       - run:
           name: Getting JCE unlimited strength policy to allow the 256 bit keys
           command: |
-                curl -L --cookie 'oraclelicense=accept-securebackup-cookie;'  http://download.oracle.com/otn-pub/java/jce/8/jce_policy-8.zip -o /tmp/jce_policy.zip
-                unzip -o /tmp/jce_policy.zip -d /tmp
-                sudo mv -f /tmp/UnlimitedJCEPolicyJDK8/US_export_policy.jar $JAVA_HOME/jre/lib/security/US_export_policy.jar
-                sudo mv -f /tmp/UnlimitedJCEPolicyJDK8/local_policy.jar $JAVA_HOME/jre/lib/security/local_policy.jar
+            curl -L --cookie 'oraclelicense=accept-securebackup-cookie;'  http://download.oracle.com/otn-pub/java/jce/8/jce_policy-8.zip -o /tmp/jce_policy.zip
+            unzip -o /tmp/jce_policy.zip -d /tmp
+            sudo mv -f /tmp/UnlimitedJCEPolicyJDK8/US_export_policy.jar $JAVA_HOME/jre/lib/security/US_export_policy.jar
+            sudo mv -f /tmp/UnlimitedJCEPolicyJDK8/local_policy.jar $JAVA_HOME/jre/lib/security/local_policy.jar
 
       - checkout # check out source code to working directory
 
@@ -138,9 +138,9 @@ jobs:
           name: Full Build (Postgres minus ITs)
           command: mvn install -DskipITs -Dspring.datasource.url=jdbc:postgresql://localhost:5432/circle_test
 
-  # This job only runs the Integration Tests (ITs) found in the `ilpv4-connector-it` module using a Postgres DB and a
-  # real Redis server.
-  integration_tests:
+  # This job runs specific Ilp-over-HTTP Integration Tests (ITs) found in the `ilpv4-connector-it` module.
+  # by executing a special maven command that limits ITs to the test-group `IlpOverHttp`.
+  integration_tests_ilp_over_http:
     working_directory: ~/repo
 
     docker:
@@ -197,6 +197,82 @@ jobs:
           key: v1-dependencies-{{ checksum "pom.xml" }}
 
       - run:
+          name: Create Database (Postgres)
+          command: |
+            cd ./ilpv4-connector-persistence
+            mvn -DskipTests clean package -P liquibase-pg-sql liquibase:update
+
+      - run:
+          name: Run Integration Tests (ITs)
+          command: |
+            cd ./ilpv4-connector-it
+            mvn verify -Dspring.datasource.url=jdbc:postgresql://localhost:5432/circle_test -Dgroups="org.interledger.ilpv4.connector.it.markers.IlpOverHttp"
+
+  # This job runs specific Settlement-related Integration Tests (ITs) found in the `ilpv4-connector-it` module.
+  # by executing a special maven command that limits ITs to the test-group `Settlement`.
+  integration_tests_settlement:
+    working_directory: ~/repo
+
+    docker:
+      # Primary container image where all commands run
+      - image: circleci/openjdk:8-jdk
+        environment:
+          # Customize the JVM maximum heap limit
+          MAVEN_OPTS: -Xmx3200m
+          spring.datasrouce.user: circleci
+          spring.datasource.url: jdbc:postgresql://localhost:5432/circle_test
+
+      # Service container image available at `host: localhost`
+      - image: circleci/postgres:alpine
+        environment:
+          POSTGRES_USER: circleci
+          POSTGRES_DB: circle_test
+
+      # Service container image available at `tcp://localhost:6379`
+      - image: circleci/redis:4.0.14-alpine
+        environment:
+
+    steps:
+
+      # apply the JCE unlimited strength policy to allow the PSK 256 bit key length
+      # solution from http://qiita.com/yoskhdia/items/f4702a3abc4467de69b0
+      - run:
+          name: Getting JCE unlimited strength policy to allow the 256 bit keys
+          command: |
+            curl -L --cookie 'oraclelicense=accept-securebackup-cookie;'  http://download.oracle.com/otn-pub/java/jce/8/jce_policy-8.zip -o /tmp/jce_policy.zip
+            unzip -o /tmp/jce_policy.zip -d /tmp
+            sudo mv -f /tmp/UnlimitedJCEPolicyJDK8/US_export_policy.jar $JAVA_HOME/jre/lib/security/US_export_policy.jar
+            sudo mv -f /tmp/UnlimitedJCEPolicyJDK8/local_policy.jar $JAVA_HOME/jre/lib/security/local_policy.jar
+
+      - checkout # check out source code to working directory
+
+      - run:
+          name: Wait for Redis to receive connections
+          command: dockerize -wait tcp://localhost:6379 -timeout 1m
+
+      # Restore the saved cache after the first run or if `pom.xml` has changed. Read about caching dependencies:
+      # https://circleci.com/docs/2.0/caching/
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "pom.xml" }}
+
+      # gets the project dependencies and installs sub-module deps
+      - run:
+          name: Install Connector Dependencies
+          command: mvn dependency:go-offline -DskipTests -DskipITs install
+
+      - save_cache: # saves the project dependencies
+          paths:
+            - ~/.m2
+          key: v1-dependencies-{{ checksum "pom.xml" }}
+
+      - run:
+          name: Create Database (Postgres)
+          command: |
+            cd ./ilpv4-connector-persistence
+            mvn -DskipTests clean package -P liquibase-pg-sql liquibase:update
+
+      - run:
           name: Install node and ganache
           command: |
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
@@ -213,19 +289,22 @@ jobs:
             source ~/.nvm/nvm.sh
             cd settlement-xrp && npm install
             ./node_modules/typescript/bin/tsc && npm link
-            npm run build && LEDGER_ADDRESS=rdVEU3RfkW4q9Fg3BTBhaNJr8gy9pZRrw LEDGER_SECRET=shcuUXdrZKUvZXSvq3zuPxXRB5Hbs CONNECTOR_URL=http://localhost:9000 node ./build/run.js &
 
       - run:
-          name: Create Database (Postgres)
+          name: Run Alice SE
           command: |
-            cd ./ilpv4-connector-persistence
-            mvn -DskipTests clean package -P liquibase-pg-sql liquibase:update
+            npm run build && LEDGER_ADDRESS=rPtZP6jEcAMo2v1aVAJqoqqoZThRTx2voE LEDGER_SECRET=snH5tCJWYszQWRTBe61ssV617pzn6 CONNECTOR_URL=http://localhost:9000 node ./build/run.js &
+
+      - run:
+          name: Run Bob SE
+          command: |
+            npm run build && LEDGER_ADDRESS=rdVEU3RfkW4q9Fg3BTBhaNJr8gy9pZRrw LEDGER_SECRET=shcuUXdrZKUvZXSvq3zuPxXRB5Hbs CONNECTOR_URL=http://localhost:9001 node ./build/run.js &
 
       - run:
           name: Run Integration Tests (ITs)
           command: |
             cd ./ilpv4-connector-it
-            mvn verify -Dspring.datasource.url=jdbc:postgresql://localhost:5432/circle_test
+            mvn verify -Dspring.datasource.url=jdbc:postgresql://localhost:5432/circle_test -Dgroups="org.interledger.ilpv4.connector.it.markers.Settlement"
 
 
 workflows:
@@ -234,7 +313,11 @@ workflows:
     jobs:
       #- build
       #- test_postgresql
-      - integration_tests
+      #- integration_tests_ilp_over_http:
+      #  requires: # We only run the "integration_tests" job when the above non-IT builds have succeeded
+      #    - build
+      #    - test_postgresql
+      - integration_tests_settlement
 #          requires: # We only run the "integration_tests" job when the above non-IT builds have succeeded
 #            - build
 #            - test_postgresql

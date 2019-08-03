@@ -1,4 +1,4 @@
-package org.interledger.ilpv4.connector.it.topologies.blast;
+package org.interledger.ilpv4.connector.it.topologies.ilpoverhttp;
 
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServer;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.IlpHttpController;
@@ -51,38 +51,39 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
   public static Topology init() {
 
     // Some configuration must be done _after_ the topology starts...e.g., to grab the port that will be used.
-    final Topology topology = new Topology(new Topology.PostConstructListener() {
+    final Topology topology = new Topology(TwoConnectorParentChildBlastTopology.class.getSimpleName(),
+      new Topology.PostConstructListener() {
 
-      @Override
-      protected void doAfterTopologyStartup(Topology g) {
+        @Override
+        protected void doAfterTopologyStartup(Topology g) {
+          final ConnectorServerNode aliceServerNode = g.getNode(
+            ALICE_CONNECTOR_ADDRESS.getValue(), ConnectorServerNode.class
+          );
+          final int alicePort = aliceServerNode.getPort();
+          final ConnectorServerNode bobServerNode =
+            g.getNode(BOB_AT_ALICE_ADDRESS.getValue(), ConnectorServerNode.class);
+          final int bobPort = bobServerNode.getPort();
 
-        final ConnectorServerNode aliceServerNode = g.getNode(
-          ALICE_CONNECTOR_ADDRESS.getValue(), ConnectorServerNode.class
-        );
-        final int alicePort = aliceServerNode.getPort();
-        final ConnectorServerNode bobServerNode = g.getNode(BOB_AT_ALICE_ADDRESS.getValue(), ConnectorServerNode.class);
-        final int bobPort = bobServerNode.getPort();
+          // Delete all accounts before initializing the Topology otherwise we see sporadic CI build failures when
+          // building on Postgres. Only need to do this on one server since both servers share the same DB.
+          aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
 
-        // Delete all accounts before initializing the Topology otherwise we see sporadic CI build failures when
-        // building on Postgres. Only need to do this on one server since both servers share the same DB.
-        aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
+          // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
+          // NOTE: The Connector configures a Ping Account properly but this Topology deletes all accounts above
+          // before running, so we must create a new PING account here.
+          final AccountSettingsEntity pingAccountSettingsAtBob = constructPingAccountSettings();
+          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(pingAccountSettingsAtBob);
 
-        // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
-        // NOTE: The Connector configures a Ping Account properly but this Topology deletes all accounts above
-        // before running, so we must create a new PING account here.
-        final AccountSettingsEntity pingAccountSettingsAtBob = constructPingAccountSettings();
-        aliceServerNode.getILPv4Connector().getAccountManager().createAccount(pingAccountSettingsAtBob);
+          // Add Bob's account on Alice...
+          final AccountSettingsEntity bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort);
+          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
 
-        // Add Bob's account on Alice...
-        final AccountSettingsEntity bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort);
-        aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
-
-        // Add Alice's account on Bob...
-        final AccountSettingsEntity aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort);
-        // Will perform IL-DCP since the type is `PARENT`
-        bobServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
-      }
-    });
+          // Add Alice's account on Bob...
+          final AccountSettingsEntity aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort);
+          // Will perform IL-DCP since the type is `PARENT`
+          bobServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
+        }
+      });
 
     ///////////////////
     // Alice Connector Node

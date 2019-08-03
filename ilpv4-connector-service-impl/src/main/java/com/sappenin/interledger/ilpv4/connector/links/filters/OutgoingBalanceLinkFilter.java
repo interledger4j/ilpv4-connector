@@ -99,24 +99,31 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
                 return;
               }
 
-              final UUID idempotencyId = UUID.randomUUID();
+              // Only trigger settlement if there's a Threshold...
+              outgoingDestinationAccountSettings.getBalanceSettings().getSettleThreshold()
+                // ... and if the calculated clearingAmountToSettle is > the threshold (and not 0)
+                .filter(settleThreshold -> balanceForFulfillResponse.clearingAmountToSettle() > 0 &&
+                  balanceForFulfillResponse.clearingAmountToSettle() >= settleThreshold)
+                .ifPresent(settleThreshold -> {
+                  final UUID idempotencyId = UUID.randomUUID();
 
-              final SettlementQuantity settlementQuantityInClearingUnits = SettlementQuantity.builder()
-                .amount(balanceForFulfillResponse.clearingAmountToSettle())
-                .scale(outgoingDestinationAccountSettings.getAssetScale())
-                .build();
+                  final SettlementQuantity settlementQuantityInClearingUnits = SettlementQuantity.builder()
+                    .amount(balanceForFulfillResponse.clearingAmountToSettle())
+                    .scale(outgoingDestinationAccountSettings.getAssetScale())
+                    .build();
 
-              // NOTE: This method is tightly-coupled to the fulfill balance processing above. Since the
-              // SettlementService is already tightly coupled, this is tolerable, but it might be clearer to have the
-              // SettlementService not roll-back if there's a problem (small case to be made that this method should
-              // handle the rollback).
-              settlementService.initiateSettlementForFulfillThreshold(
-                idempotencyId, outgoingDestinationAccountSettings, settlementQuantityInClearingUnits
-              );
+                  // NOTE: This method is tightly-coupled to the fulfill balance processing above. Since the
+                  // SettlementService is already tightly coupled, this is tolerable, but it might be clearer to have the
+                  // SettlementService not roll-back if there's a problem (small case to be made that this method should
+                  // handle the rollback).
+                  settlementService.initiateSettlementForFulfillThreshold(
+                    idempotencyId, outgoingDestinationAccountSettings, settlementQuantityInClearingUnits
+                  );
+                });
             });
         } catch (Exception e) {
           logger.error(String.format(
-            "While trying to initiate settlement engine payment: PreparePacket: {}; FulfillPacket: {}; Error: {}",
+            "While trying to initiate settlement engine payment: PreparePacket: %s; FulfillPacket: %s; Error: %s",
             outgoingPreparePacket, interledgerFulfillPacket, e.getMessage()
             ), e // position the exception properly for logging.
           );

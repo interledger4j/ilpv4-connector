@@ -1,4 +1,4 @@
-package org.interledger.ilpv4.connector.it.blast;
+package org.interledger.ilpv4.connector.it;
 
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;

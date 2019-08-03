@@ -109,6 +109,10 @@
           <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
           <argLine>-Xmx1024m -Xms1024m -Djdk.net.URLClassPath.disableClassPathURLCheck=true
           </argLine>
+          <!-- Separate groups with a comma. By default, don't run the Settlement ITs because it requires a Settlement
+          Engine to be running, which may not be the case on a developer laptop. Note that this value is overidden in
+          the CI build. -->
+          <groups>org.interledger.ilpv4.connector.it.markers.IlpOverHttp</groups>
         </configuration>
       </plugin>
     </plugins>

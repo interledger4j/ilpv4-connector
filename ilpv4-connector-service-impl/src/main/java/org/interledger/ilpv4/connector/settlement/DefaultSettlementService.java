@@ -224,6 +224,12 @@ public class DefaultSettlementService implements SettlementService {
       return SettlementQuantity.builder().amount(0).scale(requestedSettlementQuantityInClearingUnits.scale()).build();
     }
 
+    // TODO: We don't want to block the ILP packet-flow thread here because the request to the SE might be a bit
+    //  latent. Thus, we probably want to execute this "maybe settle" logic in a separate thread. However, we need to
+    //  think a bit more about durability here. For example, the clearing balance has already been reduced, so if
+    //  this call fails, we need to be sure to reset it. For now, we block the ILP flow, but in production this
+    //  probably needs to be separated into a different thread so the ILP layer doesn't timeout accidentally.
+
     return accountSettings.settlementEngineDetails()
       .map(settlementEngineDetails -> {
         try {

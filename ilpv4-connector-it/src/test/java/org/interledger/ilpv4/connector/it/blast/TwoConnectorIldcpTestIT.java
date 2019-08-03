@@ -4,12 +4,15 @@ import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkSettings;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology;
+import org.interledger.ilpv4.connector.it.AbstractBlastIT;
+import org.interledger.ilpv4.connector.it.markers.IlpOverHttp;
+import org.interledger.ilpv4.connector.it.topologies.ilpoverhttp.TwoConnectorParentChildBlastTopology;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,34 +24,36 @@ import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALI
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_AT_ALICE_ADDRESS;
-import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.ALICE;
-import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorParentChildBlastTopology.BOB;
+import static org.interledger.ilpv4.connector.it.topologies.ilpoverhttp.TwoConnectorParentChildBlastTopology.ALICE;
+import static org.interledger.ilpv4.connector.it.topologies.ilpoverhttp.TwoConnectorParentChildBlastTopology.BOB;
 import static org.junit.Assert.assertThat;
 
 /**
  * Tests to verify that a single connector can become a child connector of a parent connector running IL-DCP. In this
  * IT, the Bob connector is a child of Alice.
  */
+@Category(IlpOverHttp.class)
 public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorIldcpTestIT.class);
   private static Topology topology = TwoConnectorParentChildBlastTopology.init();
+  private static String TOPOLOGY_NAME = topology.toString();
 
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
 
   @BeforeClass
   public static void startTopology() {
-    LOGGER.info("Starting test topology `{}`...", "TwoConnectorPeerBlastTopology");
+    LOGGER.info("Starting test topology `{}`...", topology.toString());
     topology.start();
-    LOGGER.info("Test topology `{}` started!", "TwoConnectorPeerBlastTopology");
+    LOGGER.info("Test topology `{}` started!", topology.toString());
   }
 
   @AfterClass
   public static void stopTopology() {
-    LOGGER.info("Stopping test topology `{}`...", "TwoConnectorPeerBlastTopology");
+    LOGGER.info("Stopping test topology `{}`...", topology.toString());
     topology.stop();
-    LOGGER.info("Test topology `{}` stopped!", "TwoConnectorPeerBlastTopology");
+    LOGGER.info("Test topology `{}` stopped!", topology.toString());
   }
 
   @Before

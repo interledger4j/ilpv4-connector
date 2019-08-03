@@ -1,4 +1,4 @@
-package org.interledger.ilpv4.connector.it.topologies.settlement;
+package org.interledger.ilpv4.connector.it.topologies.ilpoverhttp;
 
 import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.StaticRoute;
@@ -8,10 +8,9 @@ import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.GlobalRoutingSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ImmutableConnectorSettings;
-import okhttp3.HttpUrl;
+import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkSettings;
 import org.interledger.connector.link.blast.IncomingLinkSettings;
@@ -25,84 +24,80 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * <p>A very simple topology involving two Connectors that simulates ILP Settlement over XRP using a simulated
- * settlement engine.</p>
+ * <p>A very simple topology that simulates a single ILP-over-HTTP (BLAST) connection between two Connectors to
+ * enable a pinging entity (Paul) to issue a ping request using his connector (test.alice) to ping the `test.bob`
+ * Connector. In this way, Paul will pay units to Bob's ping account. .</p>
  *
  * <p>Nodes in this topology are connected as follows:</p>
  *
  * <pre>
- *                     ┌─────────┐
- *                     │   XRP   │
- *                     └─────────┘
- *
- * ┌──────────────┐                     ┌──────────────┐
- * │              ◁───────HTTP/2────────┤              │
- * │              │                     │              │
- * │  CONNECTOR   │                     │  CONNECTOR   │
- * │  test.alice  │                     │   test.bob   │
- * │              │                     │              │
- * │              ├──────HTTP/2─────────▷              │
- * └──────────────┘                     └──────────────┘
- *         │                                    │
- *         │                                    │
- *         │                                    │
- *         │      ┌──────────────────────┐      │
- *         │      │  Settlement Engine   │      │
- *         └─────▶│     (Simulated)      │◀─────┘
- *                └──────────────────────┘
+ *                                       ┌──────────────┐                     ┌──────────────┐
+ *                                       │              ◁───────HTTP/2────────┤              │
+ * ┌─────────────────┐                   │              │                     │              │
+ * │      Paul       │                   │  CONNECTOR   │                     │  CONNECTOR   │
+ * │(test.alice.paul)│◁──Ilp-over-Http──▷│  test.alice  │                     │   test.bob   │
+ * │                 │                   │              │                     │              │
+ * └─────────────────┘                   │              ├──────HTTP/2─────────▷              │
+ *                                       └──────────────┘                     └──────────────┘
  * </pre>
  */
-public class SimulatedSettlementTopology extends AbstractTopology {
+public class TwoConnectorPeerBlastTopology extends AbstractTopology {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(SimulatedSettlementTopology.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorPeerBlastTopology.class);
 
   /**
-   * In this topology, each Connector starts-up with an Account for the other connector. Each account is configured to
-   * enable settlement using a simulated settlement engine.
+   * In this topology, each Connector starts-up with an Account for the other connector. During initialization,
+   *
+   * @return
    */
   public static Topology init() {
 
     // Some configuration must be done _after_ the topology starts...e.g., to grab the port that will be used.
-    final Topology topology = new Topology(new Topology.PostConstructListener() {
-      @Override
-      protected void doAfterTopologyStartup(Topology g) {
-        final ConnectorServerNode aliceServerNode =
-          g.getNode(ALICE_CONNECTOR_ADDRESS.getValue(), ConnectorServerNode.class);
-        final int alicePort = aliceServerNode.getPort();
-        final ConnectorServerNode bobServerNode =
-          g.getNode(BOB_CONNECTOR_ADDRESS.getValue(), ConnectorServerNode.class);
-        final int bobPort = bobServerNode.getPort();
+    final Topology topology = new Topology(TwoConnectorPeerBlastTopology.class.getSimpleName(),
+      new Topology.PostConstructListener() {
+        @Override
+        protected void doAfterTopologyStartup(Topology g) {
+          final ConnectorServerNode aliceServerNode =
+            g.getNode(ALICE_CONNECTOR_ADDRESS.getValue(), ConnectorServerNode.class);
+          final int alicePort = aliceServerNode.getPort();
+          final ConnectorServerNode bobServerNode =
+            g.getNode(BOB_CONNECTOR_ADDRESS.getValue(), ConnectorServerNode.class);
+          final int bobPort = bobServerNode.getPort();
 
-        // Delete all accounts before initializing the Topology otherwise we see sporadic CI build failures when
-        // building on Postgres. Only need to do this on one server since both servers share the same DB.
-        aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
+          // Delete all accounts before initializing the Topology otherwise we see sporadic CI build failures when
+          // building on Postgres. Only need to do this on one server since both servers share the same DB.
+          aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
 
-        try {
-          // Add Bob's account on Alice...
-          final AccountSettingsEntity bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort);
-          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
+          try {
+            // Add Bob's account on Alice...
+            final AccountSettingsEntity bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort);
+            aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
 
-          // Add Alice's account on Bob...
-          final AccountSettingsEntity aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort);
-          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
+            // Add Paul's account on Alice (Paul is used for sending pings)
+            final AccountSettingsEntity paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice();
+            aliceServerNode.getILPv4Connector().getAccountManager().createAccount(paulAccountSettingsAtAlice);
 
-          // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
-          // NOTE: The Connector configures a Ping Account properly but this Topology deletes all accounts above
-          // before running, so we must create a new PING account here.
-          final AccountSettingsEntity pingAccountSettingsAtBob = constructPingAccountSettings();
-          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(pingAccountSettingsAtBob);
+            // Add Alice's account on Bob...
+            final AccountSettingsEntity aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort);
+            aliceServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
 
-          // Try to connect the bob account...
-          aliceServerNode.getILPv4Connector().getLinkManager().getOrCreateLink(bobAccountSettingsAtAlice);
+            // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
+            // NOTE: The Connector configures a Ping Account properly but this Topology deletes all accounts above
+            // before running, so we must create a new PING account here.
+            final AccountSettingsEntity pingAccountSettingsAtBob = constructPingAccountSettings();
+            aliceServerNode.getILPv4Connector().getAccountManager().createAccount(pingAccountSettingsAtBob);
 
-          // Try to connect the alice account...
-          bobServerNode.getILPv4Connector().getLinkManager().getOrCreateLink(aliceAccountSettingsAtBob);
+            // Try to connect the bob account...
+            aliceServerNode.getILPv4Connector().getLinkManager().getOrCreateLink(bobAccountSettingsAtAlice);
 
-        } catch (Exception e) {
-          throw new RuntimeException(e);
+            // Try to connect the alice account...
+            bobServerNode.getILPv4Connector().getLinkManager().getOrCreateLink(aliceAccountSettingsAtBob);
+
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
         }
-      }
-    });
+      });
 
     ///////////////////
     // Alice Connector Node
@@ -123,26 +118,15 @@ public class SimulatedSettlementTopology extends AbstractTopology {
     }
 
     LOGGER.info("\n" +
-      "\nSTARTING SETTLEMENT TOPOLOGY:                      \n" +
-      "                    ┌─────────┐                      \n" +
-      "                    │   XRP   │                      \n" +
-      "                    └─────────┘                      \n" +
-      "                                                     \n" +
-      "┌──────────────┐                     ┌──────────────┐\n" +
-      "│              ◁───────HTTP/2────────┤              │\n" +
-      "│              │                     │              │\n" +
-      "│  CONNECTOR   │                     │  CONNECTOR   │\n" +
-      "│  test.alice  │                     │   test.bob   │\n" +
-      "│              │                     │              │\n" +
-      "│              ├──────HTTP/2─────────▷              │\n" +
-      "└──────────────┘                     └──────────────┘\n" +
-      "        │                                    │       \n" +
-      "        │                                    │       \n" +
-      "        │                                    │       \n" +
-      "        │      ┌──────────────────────┐      │       \n" +
-      "        │      │  Settlement Engine   │      │       \n" +
-      "        └─────▶│     (Simulated)      │◀─────┘       \n" +
-      "               └──────────────────────┘              "
+      "\nSTARTING BLAST TOPOLOGY\n" +
+      "                                      ┌──────────────┐                     ┌──────────────┐\n" +
+      "                                      │              ◁───────HTTP/2────────┤              │\n" +
+      "┌─────────────────┐                   │              │                     │              │\n" +
+      "│      Paul       │                   │  CONNECTOR   │                     │  CONNECTOR   │\n" +
+      "│(test.alice.paul)│◁──Ilp-over-Http──▷│  test.alice  │                     │   test.bob   │\n" +
+      "└─────────────────┘                   │              │                     │              │\n" +
+      "                                      │              ├──────HTTP/2─────────▷              │\n" +
+      "                                      └──────────────┘                     └──────────────┘"
     );
     return topology;
   }
@@ -156,15 +140,9 @@ public class SimulatedSettlementTopology extends AbstractTopology {
     return new AccountSettingsEntity(
       AccountSettings.builder()
         .accountId(BOB_ACCOUNT)
-        .description("IlpOverHttp account for Bob")
+        .description("Blast account for Bob")
         .accountRelationship(AccountRelationship.PEER)
-        .settlementEngineDetails(
-          SettlementEngineDetails.builder()
-            .assetScale(6)
-            .settlementEngineAccountId(BOB_ACCOUNT.value())
-            .baseUrl(HttpUrl.parse("http://localhost:9000"))
-            .build()
-        )
+        .rateLimitSettings(AccountRateLimitSettings.builder().maxPacketsPerSecond(5000).build())
         .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
         .linkType(BlastLink.LINK_TYPE)
         .assetScale(9)
@@ -185,6 +163,36 @@ public class SimulatedSettlementTopology extends AbstractTopology {
         .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, EXPIRY_2MIN)
         .putCustomSettings(
           OutgoingLinkSettings.BLAST_OUTGOING_URL, "http://localhost:" + bobPort + IlpHttpController.ILP_PATH
+        )
+
+        .build()
+    );
+  }
+
+  /**
+   * An AccountSettings object that represents Paul's account at Alice. Since this account is only used to send, it does
+   * not require any incoming connection settings.
+   */
+  private static AccountSettingsEntity constructPaulAccountSettingsOnAlice() {
+    return new AccountSettingsEntity(
+      AccountSettings.builder()
+        .accountId(PAUL_ACCOUNT)
+        .description("Blast sender account for Paul")
+        .accountRelationship(AccountRelationship.CHILD)
+        .linkType(BlastLink.LINK_TYPE)
+        .assetScale(9)
+        .assetCode(XRP)
+
+        // Incoming
+        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
+        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
+
+        // Outgoing (dummy values since these are unused because the account never receives in this topology)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, PAUL)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
+        .putCustomSettings(
+          OutgoingLinkSettings.BLAST_OUTGOING_URL, "http://localhost:8080" + IlpHttpController.ILP_PATH
         )
 
         .build()
@@ -229,13 +237,7 @@ public class SimulatedSettlementTopology extends AbstractTopology {
       AccountSettings.builder()
         .accountId(ALICE_ACCOUNT)
         .description("Blast account for Alice")
-        .settlementEngineDetails(
-          SettlementEngineDetails.builder()
-            .assetScale(6)
-            .settlementEngineAccountId(BOB_ACCOUNT.value())
-            .baseUrl(HttpUrl.parse("http://localhost:9000"))
-            .build()
-        )
+        .rateLimitSettings(AccountRateLimitSettings.builder().maxPacketsPerSecond(5000).build())
         .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
         .accountRelationship(AccountRelationship.PEER)
         .linkType(BlastLink.LINK_TYPE)

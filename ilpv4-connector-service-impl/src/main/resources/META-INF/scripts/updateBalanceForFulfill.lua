@@ -26,7 +26,7 @@ local prepaid_amount = numberOrZero(redis.call('HGET', to_account_id, 'prepaid_a
 -- Check if we should send a settlement for this account
 local settle_amount = 0
 -- For context around the values in this if statement, see https://github.com/emschwartz/interledger-rs/pull/164
-if settle_threshold and (clearing_balance > settle_threshold) and (clearing_balance > settle_to) then
+if settle_threshold and (clearing_balance >= settle_threshold) and (clearing_balance >= settle_to) then
     settle_amount = clearing_balance - settle_to
 
     -- Update the clearing_balance _before_ sending the settlement so that we don't accidentally send

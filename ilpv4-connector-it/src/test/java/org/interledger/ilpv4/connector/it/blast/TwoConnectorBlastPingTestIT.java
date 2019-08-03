@@ -12,13 +12,16 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
-import org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology;
+import org.interledger.ilpv4.connector.it.AbstractBlastIT;
+import org.interledger.ilpv4.connector.it.markers.IlpOverHttp;
+import org.interledger.ilpv4.connector.it.topologies.ilpoverhttp.TwoConnectorPeerBlastTopology;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,10 +46,10 @@ import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALI
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PAUL_AT_ALICE_ADDRESS;
-import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.ALICE;
-import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.ALICE_CONNECTOR_ADDRESS;
-import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.BOB;
-import static org.interledger.ilpv4.connector.it.topologies.blast.TwoConnectorPeerBlastTopology.BOB_CONNECTOR_ADDRESS;
+import static org.interledger.ilpv4.connector.it.topologies.ilpoverhttp.TwoConnectorPeerBlastTopology.ALICE;
+import static org.interledger.ilpv4.connector.it.topologies.ilpoverhttp.TwoConnectorPeerBlastTopology.ALICE_CONNECTOR_ADDRESS;
+import static org.interledger.ilpv4.connector.it.topologies.ilpoverhttp.TwoConnectorPeerBlastTopology.BOB;
+import static org.interledger.ilpv4.connector.it.topologies.ilpoverhttp.TwoConnectorPeerBlastTopology.BOB_CONNECTOR_ADDRESS;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -57,6 +60,7 @@ import static org.junit.Assert.assertThat;
 // TODO: Once the PING protocol is specified via RFC, extract the PING tests into an abstract super-class. Every IT
 //  should exercise PING functionality as a baseline, but both BTP and BLAST duplicate the same PING tests.
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@Category(IlpOverHttp.class)
 public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorBlastPingTestIT.class);
@@ -67,16 +71,16 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
   @BeforeClass
   public static void startTopology() {
-    LOGGER.info("Starting test topology `{}`...", "TwoConnectorPeerBlastTopology");
+    LOGGER.info("Starting test topology `{}`...", topology.toString());
     topology.start();
-    LOGGER.info("Test topology `{}` started!", "TwoConnectorPeerBlastTopology");
+    LOGGER.info("Test topology `{}` started!", topology.toString());
   }
 
   @AfterClass
   public static void stopTopology() {
-    LOGGER.info("Stopping test topology `{}`...", "TwoConnectorPeerBlastTopology");
+    LOGGER.info("Stopping test topology `{}`...", topology.toString());
     topology.stop();
-    LOGGER.info("Test topology `{}` stopped!", "TwoConnectorPeerBlastTopology");
+    LOGGER.info("Test topology `{}` stopped!", topology.toString());
   }
 
   @Before

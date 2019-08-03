@@ -72,4 +72,12 @@ public abstract class AbstractTopology {
         .build()
     );
   }
+
+  /**
+   * Overridden for console emission, e.g., "Starting test topology `TwoConnectorParentChildBlastTopology`"
+   */
+  @Override
+  public String toString() {
+    return this.getClass().getSimpleName();
+  }
 }
