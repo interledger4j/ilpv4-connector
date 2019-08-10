@@ -53,6 +53,7 @@ import com.sappenin.interledger.ilpv4.connector.server.spring.settings.javamoney
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import com.sappenin.interledger.ilpv4.connector.server.spring.settings.web.SpringConnectorWebMvc;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
+import com.sappenin.interledger.ilpv4.connector.settlement.SettlementEngineClient;
 import com.sappenin.interledger.ilpv4.connector.settlement.SettlementService;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.interledger.connector.accounts.AccountId;
@@ -84,7 +85,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -221,10 +221,11 @@ public class SpringConnectorConfig {
     Supplier<ConnectorSettings> connectorSettingsSupplier,
     AccountSettingsRepository accountSettingsRepository,
     LinkManager linkManager,
-    ConversionService conversionService
+    ConversionService conversionService,
+    SettlementEngineClient settlementEngineClient
   ) {
     return new DefaultAccountManager(
-      connectorSettingsSupplier, conversionService, accountSettingsRepository, linkManager
+      connectorSettingsSupplier, conversionService, accountSettingsRepository, linkManager, settlementEngineClient
     );
   }
 

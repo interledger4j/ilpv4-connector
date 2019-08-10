@@ -1,11 +1,11 @@
 package org.interledger.ilpv4.connector.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.settlement.SettlementEngineClient;
 import okhttp3.ConnectionPool;
 import okhttp3.ConnectionSpec;
 import okhttp3.OkHttpClient;
+import org.interledger.ilpv4.connector.settlement.client.OkHttpSettlementEngineClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,10 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
@@ -61,13 +58,13 @@ public class SettlementEngineClientConfig {
    */
   @Bean
   @Qualifier(SETTLEMENT_ENGINE_CLIENT)
-  OkHttp3ClientHttpRequestFactory seOkHttp3ClientHttpRequestFactory(
+  OkHttpClient okHttpClient(
     @Qualifier(SETTLEMENT_ENGINE_CLIENT) final ConnectionPool settlementEngineConnectionPool,
-    @Value("${ilpv4.connector.settlementEngines.connectionDefaults.connectTimeoutMillis:1000}")
+    @Value("${ilpv4.connector.settlementEngines.connectionDefaults.connectTimeoutMillis:10000}")
     final long defaultConnectTimeoutMillis,
-    @Value("${ilpv4.connector.settlementEngines.connectionDefaults.readTimeoutMillis:1000}")
+    @Value("${ilpv4.connector.settlementEngines.connectionDefaults.readTimeoutMillis:10000}")
     final long defaultReadTimeoutMillis,
-    @Value("${ilpv4.connector.settlementEngines.connectionDefaults.writeTimeoutMillis:1000}")
+    @Value("${ilpv4.connector.settlementEngines.connectionDefaults.writeTimeoutMillis:10000}")
     final long defaultWriteTimeoutMillis
   ) {
     OkHttpClient.Builder builder = new OkHttpClient.Builder();
@@ -80,25 +77,13 @@ public class SettlementEngineClientConfig {
     builder.readTimeout(defaultReadTimeoutMillis, TimeUnit.MILLISECONDS);
     builder.writeTimeout(defaultWriteTimeoutMillis, TimeUnit.MILLISECONDS);
 
-    OkHttpClient client = builder.connectionPool(settlementEngineConnectionPool).build();
-    return new OkHttp3ClientHttpRequestFactory(client);
+    return builder.connectionPool(settlementEngineConnectionPool).build();
   }
 
   @Bean
-  @Qualifier(SETTLEMENT_ENGINE_CLIENT)
-  RestTemplate seRestTemplate(
-    ObjectMapper objectMapper,
-    @Qualifier(SETTLEMENT_ENGINE_CLIENT) OkHttp3ClientHttpRequestFactory okHttp3ClientHttpRequestFactory
-  ) {
-    MappingJackson2HttpMessageConverter httpMessageConverter = new MappingJackson2HttpMessageConverter(objectMapper);
-    RestTemplate restTemplate = new RestTemplate(okHttp3ClientHttpRequestFactory);
-    restTemplate.setMessageConverters(Lists.newArrayList(httpMessageConverter));
-    return restTemplate;
+  SettlementEngineClient settlementEngineClient(OkHttpClient okHttpClient, ObjectMapper objectMapper) {
+    return new OkHttpSettlementEngineClient(okHttpClient, objectMapper);
   }
 
   // TODO: Add security. See BlastConfig for one example.
-
-  @PostConstruct
-  public void startup() {
-  }
 }

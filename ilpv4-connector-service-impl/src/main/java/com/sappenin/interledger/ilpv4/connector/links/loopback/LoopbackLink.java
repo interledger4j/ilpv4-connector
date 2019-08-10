@@ -21,6 +21,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+import static org.interledger.ilpv4.connector.core.Ilpv4Constants.ALL_ZEROS_FULFILLMENT;
+
 /**
  * <p>A {@link Link} that always responds with a Fulfillment that contains the data supplied by the Prepare packet.</p>
  */
@@ -29,7 +31,7 @@ public class LoopbackLink extends AbstractLink<LinkSettings> implements Link<Lin
   public static final String LINK_TYPE_STRING = "LOOPBACK";
   public static final LinkType LINK_TYPE = LinkType.of(LINK_TYPE_STRING);
 
-  public static final InterledgerFulfillment LOOPBACK_FULFILLMENT = InterledgerFulfillment.of(new byte[32]);
+  public static final InterledgerFulfillment LOOPBACK_FULFILLMENT = ALL_ZEROS_FULFILLMENT;
   private static final String SIMULATE_TIMEOUT = "simulateTimeout";
 
   private final PacketRejector packetRejector;

@@ -3,6 +3,7 @@ package com.sappenin.interledger.ilpv4.connector.accounts;
 import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ModifiableConnectorSettings;
+import com.sappenin.interledger.ilpv4.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
@@ -18,7 +19,10 @@ import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
 import org.interledger.ildcp.IldcpUtils;
 import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.ilpv4.connector.persistence.entities.SettlementEngineDetailsEntity;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.ilpv4.connector.settlement.client.CreateSettlementAccountRequest;
+import org.interledger.ilpv4.connector.settlement.client.CreateSettlementAccountResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;
@@ -37,19 +41,23 @@ public class DefaultAccountManager implements AccountManager {
   private final AccountSettingsRepository accountSettingsRepository;
   private final LinkManager linkManager;
   private final ConversionService conversionService;
+  private final SettlementEngineClient settlementEngineClient;
 
   /**
    * Required-args Constructor.
    */
   public DefaultAccountManager(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final ConversionService conversionService, final AccountSettingsRepository accountSettingsRepository,
-    final LinkManager linkManager
+    final ConversionService conversionService,
+    final AccountSettingsRepository accountSettingsRepository,
+    final LinkManager linkManager,
+    final SettlementEngineClient settlementEngineClient
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.linkManager = Objects.requireNonNull(linkManager);
     this.conversionService = Objects.requireNonNull(conversionService);
+    this.settlementEngineClient = Objects.requireNonNull(settlementEngineClient);
   }
 
   @Override
@@ -62,25 +70,45 @@ public class DefaultAccountManager implements AccountManager {
     return linkManager;
   }
 
-  /**
-   * Create a new account in this connector.
-   *
-   * @param accountSettings The {@link AccountSettings} for this account.
-   *
-   * @return The newly-created settings.
-   */
   @Override
   public AccountSettings createAccount(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
 
     final AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity(accountSettings);
+    final SettlementEngineDetailsEntity settlementEngineDetailsEntity =
+      accountSettingsEntity.getSettlementEngineDetailsEntity();
+
+    if (settlementEngineDetailsEntity != null &&
+      settlementEngineDetailsEntity.getBaseUrl() != null // TODO: this line can be removed when #217 is fixed.
+    ) {
+      // Initialize an Account in the configured Settlement Engine, if that's enabled configured. This call is
+      // idempotent, so we do this first before saving anything to the DB. If this call fails, it will throw an
+      // exception, and no account will have been created in the Connector.
+
+      final CreateSettlementAccountResponse response = settlementEngineClient.createSettlementAccount(
+        accountSettings.getAccountId(),
+        settlementEngineDetailsEntity.baseUrl(),
+        CreateSettlementAccountRequest.builder()
+          .requestedSettlementAccountId(settlementEngineDetailsEntity.settlementEngineAccountId())
+          .build()
+      );
+      settlementEngineDetailsEntity.setSettlementEngineAccountId(response.settlementEngineAccountId().value());
+    }
+
+    ////////////////
+    // Persist the AccountSettingsEntity
+    ////////////////
     final AccountSettings returnableAccountSettings = this.conversionService.convert(
       this.accountSettingsRepository.save(accountSettingsEntity), AccountSettings.class
     );
 
     // It is _not_ a requirement that a Connector startup with any accounts configured. Thus, the first account added
     // to the connector with a relationship type `PARENT` should trigger IL-DCP, but only if the operator address has
-    // not already been populated.
+    // not already been populated. This scenario will only ever happen once (the connector starts-up with no ILP
+    // address configured, and a new account is added of type `PARENT`). Once this is done, subsequent restarts of
+    // the Connector will not enter into this code-block because if the connector has a PARENT account configured and
+    // no ILP address specified, then the Connector startup will trigger IL-DCP. In other words, this check is only
+    // required for the first-account-creation (under certain conditions).
     if (AccountRelationship.PARENT.equals(accountSettings.getAccountRelationship())) {
       if (!connectorSettingsSupplier.get().getOperatorAddress().isPresent()) {
         this.initializeParentAccountSettingsViaIlDcp(accountSettings.getAccountId());
@@ -88,7 +116,6 @@ public class DefaultAccountManager implements AccountManager {
     }
 
     // No need to prematurely connect to this account. When packets need to flow over it, it will become connected.
-
     return returnableAccountSettings;
   }
 

@@ -1,6 +1,5 @@
 package org.interledger.ilpv4.connector.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.slf4j.Logger;
@@ -12,8 +11,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.nio.charset.Charset;
 
@@ -35,9 +32,6 @@ public class RedisConfig {
 
   @Autowired
   protected Decryptor decryptor;
-
-  @Autowired
-  protected ObjectMapper objectMapper;
 
   @Bean
   protected JedisConnectionFactory jedisConnectionFactory() {
@@ -77,16 +71,5 @@ public class RedisConfig {
     // Even if unconnected, we return anyway because implementations that depend on this factory will detect this
     // condition and fallback to in-memory implementations.
     return jedisConnectionFactory;
-  }
-
-  @Bean
-  protected RedisTemplate<String, ?> jacksonRedisTemplate() {
-    final RedisTemplate<String, ?> template = new RedisTemplate<>();
-
-    template.setDefaultSerializer(new StringRedisSerializer());
-    template.setEnableDefaultSerializer(true);
-    template.setConnectionFactory(jedisConnectionFactory());
-
-    return template;
   }
 }

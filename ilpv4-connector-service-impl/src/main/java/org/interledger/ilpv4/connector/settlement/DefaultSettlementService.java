@@ -1,109 +1,70 @@
 package org.interledger.ilpv4.connector.settlement;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.common.annotations.VisibleForTesting;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.settlement.SettlementEngineClient;
 import com.sappenin.interledger.ilpv4.connector.settlement.SettlementService;
-import com.sappenin.interledger.ilpv4.connector.settlement.SettlementServiceException;
-import okhttp3.HttpUrl;
+import org.interledger.connector.accounts.AccountBySettlementEngineAccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.accounts.SettlementEngineNotConfiguredProblem;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkSettings;
-import org.interledger.core.InterledgerCondition;
-import org.interledger.core.InterledgerErrorCode;
-import org.interledger.core.InterledgerFulfillPacket;
-import org.interledger.core.InterledgerFulfillment;
 import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.ilpv4.connector.core.settlement.SettlementQuantity;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.ilpv4.connector.settlement.client.InitiateSettlementRequest;
+import org.interledger.ilpv4.connector.settlement.client.InitiateSettlementResponse;
+import org.interledger.ilpv4.connector.settlement.client.SendMessageRequest;
+import org.interledger.ilpv4.connector.settlement.client.SendMessageResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.Resource;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
 
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
-import static com.sappenin.interledger.ilpv4.connector.settlement.SettlementConstants.PEER_DOT_SETTLE;
+import static org.interledger.ilpv4.connector.core.Ilpv4Constants.ALL_ZEROS_CONDITION;
+import static org.interledger.ilpv4.connector.settlement.SettlementConstants.PEER_DOT_SETTLE;
 
 /**
  * The default implementation of {@link SettlementService}.
  */
 public class DefaultSettlementService implements SettlementService {
 
-  // We don't care about the condition/fulfillment in peer-wise packet sending, so we just use a fulfillment of all 0s
-  // and the corresponding condition.
-  private static final InterledgerFulfillment PEER_PROTOCOL_FULFILLMENT = InterledgerFulfillment.of(new byte[32]);
-  private static final InterledgerCondition PEER_PROTOCOL_CONDITION = PEER_PROTOCOL_FULFILLMENT.getCondition();
-
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final BalanceTracker balanceTracker;
   private final LinkManager linkManager;
   private final AccountSettingsRepository accountSettingsRepository;
-  private final RestTemplate settlementEngineRestTemplate;
-
-  // Every Account will potentially settle using a different Settlement Engine (though each account will only settle
-  // with a single engine). This Cache stores HTTP clients for each Settlement Engine on an as-needed basis.
-  private final Cache<HttpUrl, SettlementEngineClient> settlementEngineClientCache;
-
-  /**
-   * Exists only for testing
-   */
-  @VisibleForTesting
-  protected DefaultSettlementService(
-    final BalanceTracker balanceTracker,
-    final LinkManager linkManager,
-    final AccountSettingsRepository accountSettingsRepository,
-    final RestTemplate settlementEngineRestTemplate
-  ) {
-    this(
-      balanceTracker,
-      linkManager,
-      accountSettingsRepository,
-      settlementEngineRestTemplate,
-      Caffeine.newBuilder()
-        .expireAfterAccess(2, TimeUnit.MINUTES)
-        .maximumSize(5000)
-        .build()
-    );
-  }
+  private final SettlementEngineClient settlementEngineClient;
 
   public DefaultSettlementService(
     final BalanceTracker balanceTracker,
     final LinkManager linkManager,
     final AccountSettingsRepository accountSettingsRepository,
-    final RestTemplate settlementEngineRestTemplate,
-    final Cache<HttpUrl, SettlementEngineClient> settlementEngineClientCache
+    final SettlementEngineClient settlementEngineClient
   ) {
     this.balanceTracker = Objects.requireNonNull(balanceTracker);
     this.linkManager = Objects.requireNonNull(linkManager);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
-    this.settlementEngineRestTemplate = Objects.requireNonNull(settlementEngineRestTemplate);
-    this.settlementEngineClientCache = Objects.requireNonNull(settlementEngineClientCache);
+    this.settlementEngineClient = Objects.requireNonNull(settlementEngineClient);
   }
 
   @Override
   public SettlementQuantity onLocalSettlementPayment(
-    final UUID idempotencyKey, final AccountId accountId, final SettlementQuantity incomingSettlementInSettlementUnits
+    final String idempotencyKey, final SettlementEngineAccountId settlementEngineAccountId,
+    final SettlementQuantity incomingSettlementInSettlementUnits
   ) {
     Objects.requireNonNull(idempotencyKey, "idempotencyKey must not be null");
-    Objects.requireNonNull(accountId, "accountId must not be null");
+    Objects.requireNonNull(settlementEngineAccountId, "settlementEngineAccountId must not be null");
     Objects.requireNonNull(incomingSettlementInSettlementUnits, "incomingSettlement must not be null");
 
     final AccountSettings accountSettings = this.accountSettingsRepository
-      .findByAccountId(accountId).orElseThrow(() -> new AccountNotFoundProblem(accountId));
+      .findBySettlementEngineAccountId(settlementEngineAccountId)
+      .orElseThrow(() -> new AccountBySettlementEngineAccountNotFoundProblem(settlementEngineAccountId));
 
     // Determine the normalized SettlementQuantity (i.e., translate from Settlement Ledger units to ILP Clearing Ledger
     // units
@@ -120,14 +81,10 @@ public class DefaultSettlementService implements SettlementService {
   }
 
   @Override
-  public InterledgerResponsePacket onLocalSettlementMessage(
-    final UUID idempotencyKey,
-    final AccountId accountId,
-    final byte[] message
+  public byte[] onLocalSettlementMessage(
+    final SettlementEngineAccountId settlementEngineAccountId, final byte[] message
   ) {
-
-    Objects.requireNonNull(idempotencyKey, "idempotencyKey must not be null");
-    Objects.requireNonNull(accountId, "accountId must not be null");
+    Objects.requireNonNull(settlementEngineAccountId, "settlementEngineAccountId must not be null");
     Objects.requireNonNull(message, "message must not be null");
 
     // Send the message to the Peer's Settlement Engine (as an ILP packet) directly on a Link. In this fashion, we
@@ -139,7 +96,11 @@ public class DefaultSettlementService implements SettlementService {
     // no real benefit (SE messages don't need true routing or FX or any other functionality that the Connector
     // packet-switch provides).
 
-    final Link<? extends LinkSettings> link = linkManager.getOrCreateLink(accountId);
+    final AccountSettings accountSettings = this.accountSettingsRepository
+      .findBySettlementEngineAccountId(settlementEngineAccountId)
+      .orElseThrow(() -> new AccountBySettlementEngineAccountNotFoundProblem(settlementEngineAccountId));
+
+    final Link<? extends LinkSettings> link = linkManager.getOrCreateLink(accountSettings.getAccountId());
 
     InterledgerResponsePacket responsePacket = link.sendPacket(InterledgerPreparePacket.builder()
       .destination(PEER_DOT_SETTLE)
@@ -147,70 +108,44 @@ public class DefaultSettlementService implements SettlementService {
       .expiresAt(Instant.now().plusSeconds(30))
       .data(message)
       // We don't care about the condition/fulfillment in peer-wise packet sending, so we just use this default.
-      .executionCondition(PEER_PROTOCOL_CONDITION)
+      .executionCondition(ALL_ZEROS_CONDITION)
       .build());
 
     logger.trace(
-      "Received responsePacket from remote Settlement Engine for Account(`{}`): {}", accountId, responsePacket
+      "Received ILP response packet from our peer's settlement engine " +
+        "(`data` for the settlement engine is proxied in this response) accountId={} " +
+        "settlementEngineAccountId={} responsePacket={}",
+      accountSettings.getAccountId(), settlementEngineAccountId, responsePacket
     );
 
-    return responsePacket;
+    return responsePacket.getData();
   }
 
   @Override
-  public InterledgerResponsePacket onSettlementMessageFromPeer(
-    final AccountSettings accountSettings, final InterledgerPreparePacket packetFromPeer
+  public byte[] onSettlementMessageFromPeer(
+    final AccountSettings accountSettings, final byte[] messageFromPeerSettlementEngine
   ) {
 
     Objects.requireNonNull(accountSettings, "accountSettings must not be null");
-    Objects.requireNonNull(packetFromPeer, "packetFromPeer must not be null");
+    Objects.requireNonNull(messageFromPeerSettlementEngine, "messageFromPeerSettlementEngine must not be null");
 
     // Only handle the request to send a message if the account has a configured Settlement Engine...
     return accountSettings.settlementEngineDetails()
       .map(settlementEngineDetails -> {
-
-        // Send the message (i.e., the payload's data bytes) directly to the Settlement Engine...
-        // https://se.example.com/
-        try {
-          final SettlementEngineClient settlementEngineClient =
-            getSettlementEngineClientHelper(settlementEngineDetails.baseUrl());
-
-          // The `Prepare` packet's data was sent by the peer's settlement engine so we assume it is in a format that
-          // our settlement engine will understand
-          final byte[] seResponse = settlementEngineClient.sendMessageFromPeer(
-            accountSettings.getAccountId(), packetFromPeer.getData()
-          );
-
-          // If no error, then fulfill
-          return InterledgerFulfillPacket.builder()
-            .fulfillment(PEER_PROTOCOL_FULFILLMENT)
-            .data(seResponse)
-            .build();
-        } catch (Exception e) {
-          logger.error(e.getMessage(), e);
-          return InterledgerRejectPacket.builder()
-            .triggeredBy(PEER_DOT_SETTLE)
-            .message(String.format(
-              "Error sending message to settlement engine for Account %s: %s",
-              accountSettings.getAccountId(), e.getMessage()
-            ))
-            .code(InterledgerErrorCode.T00_INTERNAL_ERROR)
-            .build();
-        }
-      })
-      // Otherwise just reject...
-      .orElseGet(() -> {
-        final String errorMessage = String.format(
-          "Got settlement packet from account `%s` but there is no settlement engine configured for it",
-          accountSettings.getAccountId()
+        // The `Prepare` packet's data was sent by the peer's settlement engine so we assume it is in a format that
+        // our settlement engine will understand. Thus, simply send bytes directly to the Settlement Engine...
+        final SendMessageResponse sendMessageResponse = settlementEngineClient.sendMessageFromPeer(
+          accountSettings.getAccountId(),
+          settlementEngineDetails.settlementEngineAccountId()
+            .orElseGet(() -> SettlementEngineAccountId.of(accountSettings.getAccountId().value())),
+          settlementEngineDetails.baseUrl(),
+          SendMessageRequest.builder().data(messageFromPeerSettlementEngine).build()
         );
-        logger.error(errorMessage);
-        return InterledgerRejectPacket.builder()
-          .triggeredBy(PEER_DOT_SETTLE)
-          .message(errorMessage)
-          .code(InterledgerErrorCode.F02_UNREACHABLE)
-          .build();
-      });
+
+        return sendMessageResponse.data();
+      })
+      // Otherwise throw a settlement engine not-configured exception...
+      .orElseThrow(() -> new SettlementEngineNotConfiguredProblem(accountSettings.getAccountId()));
   }
 
   @Override
@@ -230,68 +165,63 @@ public class DefaultSettlementService implements SettlementService {
     //  this call fails, we need to be sure to reset it. For now, we block the ILP flow, but in production this
     //  probably needs to be separated into a different thread so the ILP layer doesn't timeout accidentally.
 
+    // TODO: https://github.com/sappenin/java-ilpv4-connector/issues/216
+    // This request should be async, and likely scheduled for retry in a queue, just in-case the connector crashes
+    // while this is being processed.
     return accountSettings.settlementEngineDetails()
       .map(settlementEngineDetails -> {
         try {
-          final SettlementEngineClient settlementEngineClient =
-            getSettlementEngineClientHelper(settlementEngineDetails.baseUrl());
 
-          // Convert the amount into a Quantity in the SE's scale...
-          final SettlementQuantity requestedSettlementQuantityInSettlementUnits = NumberScalingUtils.translate(
-            requestedSettlementQuantityInClearingUnits, settlementEngineDetails.assetScale()
+          /////////////////
+          // CONTEXTUAL NOTE: Any system (Router or Settlement Engine) that makes a request should use a `Quantity` in
+          // its own scaled units; and any response should be in the scale of the responder.
+
+          final InitiateSettlementRequest initiateSettlementRequest = InitiateSettlementRequest.builder()
+            .requestedSettlementAmount(BigInteger.valueOf(requestedSettlementQuantityInClearingUnits.amount()))
+            .connectorAccountScale(requestedSettlementQuantityInClearingUnits.scale())
+            .build();
+
+          // This response will be in settlement engine units...
+          // WARNING: the amount that the settlement engine commits to settle may diverge from the amount requested.
+          final InitiateSettlementResponse initiateSettlementResponse = settlementEngineClient.initiateSettlement(
+            accountSettings.getAccountId(),
+            settlementEngineDetails.settlementEngineAccountId()
+              .orElseGet(() -> SettlementEngineAccountId.of(accountSettings.getAccountId().value())),
+            idempotencyKey,
+            settlementEngineDetails.baseUrl(),
+            initiateSettlementRequest
           );
 
-          ////////////////////
-          // The actual HTTP request
-          ////////////////////
-          final ResponseEntity<Resource> response = settlementEngineClient.initiateSettlement(
-            accountSettings.getAccountId(), idempotencyKey, requestedSettlementQuantityInSettlementUnits
+          // Translate the Settled Amount into Clearing Units.
+          final BigInteger settledAmountInClearingUnits = NumberScalingUtils.translate(
+            initiateSettlementResponse.committedSettlementAmount(),
+            initiateSettlementResponse.settlementEngineScale(),
+            accountSettings.getAssetScale()
           );
 
-          // See https://github.com/sappenin/java-ilpv4-connector/issues/216
-          // Note that if the Connector crashes here, then the balance will not have been updated, and will be
-          // incorrect. We should devise a more robust recovery system here so that the settlement response
-          // can be durably processed even if the process crashes here.
-          if (response.getStatusCode().is2xxSuccessful()) {
-            // TODO: Validate response type/exception style from the actual response vs an exception.
+          final AccountId accountId = accountSettings.getAccountId();
+          final SettlementEngineAccountId settlementEngineAccountId =
+            settlementEngineDetails.settlementEngineAccountId()
+              .orElseThrow(() -> new SettlementEngineNotConfiguredProblem(accountId));
+          final int clearingScale = accountSettings.getAssetScale();
+          final int settlementScale = initiateSettlementResponse.settlementEngineScale();
+          final BigInteger requestedClearingUnits = initiateSettlementRequest.requestedSettlementAmount();
+          final BigInteger settledSettlementUnits = initiateSettlementResponse.committedSettlementAmount();
+          final BigInteger settledClearingUnits = settledAmountInClearingUnits;
 
-            // The amount settled may diverge from the amount requested (e.g., scale differences, etc).
-            final long settledSettlementUnits = new BigInteger(response.getBody().toString()).longValue();
+          logger.info(
+            "SETTLEMENT RESULT: " +
+              "AccountId={} SettlementEngineAccountId={} ClearingScale={} SettlementScale={} " +
+              "RequestedClearingUnits={} SettledSettlementUnits={} SettledClearingUnits={}",
+            accountId, settlementEngineAccountId, clearingScale, settlementScale,
+            requestedClearingUnits, settledSettlementUnits, settledClearingUnits
+          );
 
-            // Not translated - this return value is in settlement units...
-            final SettlementQuantity settledSettlementQuantityInSettlementUnits = SettlementQuantity.builder()
-              .amount(settledSettlementUnits)
-              .scale(settlementEngineDetails.assetScale())
-              .build();
+          return SettlementQuantity.builder()
+            .amount(settledClearingUnits.longValue()) // TODO: Use BigInt here?
+            .scale(clearingScale)
+            .build();
 
-            // Convert to clearing units...
-            final SettlementQuantity settledSettlementQuantityInClearingUnits = NumberScalingUtils.translate(
-              settledSettlementQuantityInSettlementUnits, accountSettings.getAssetScale()
-            );
-
-            logger.info(
-              "SETTLEMENT INITIATED (AccountId: `{}`): " +
-                "CLEARING units REQUESTED: `{}`; " +
-                "SETTLEMENT units REQUESTED: `{}`; " +
-                "SETTLEMENT units SETTLED: `{}`; " +
-                "CLEARING units SETTLED: `{}`",
-              accountSettings.getAccountId(),
-
-              requestedSettlementQuantityInClearingUnits,
-              requestedSettlementQuantityInSettlementUnits,
-              settledSettlementQuantityInSettlementUnits,
-              settledSettlementQuantityInClearingUnits
-            );
-
-            return settledSettlementQuantityInClearingUnits;
-          } else {
-            throw new SettlementServiceException(
-              String.format(
-                "Unable to initiate settlement payment for: %s", requestedSettlementQuantityInSettlementUnits
-              ),
-              accountSettings.getAccountId()
-            );
-          }
         } catch (Exception e) { // If anything goes wrong, rollback the preemptive balance update.
           //////////////////
           // Refund the Settlement
@@ -312,35 +242,20 @@ public class DefaultSettlementService implements SettlementService {
               accountSettings.getAccountId(), requestedSettlementQuantityInClearingUnits.amount()
             );
           } catch (Exception e2) {
-            // Swallowed by logged so that the errorMessage below is actually emitted...
-            logger.error("Swallowed Exception: " + e.getMessage(), e2);
+            // Swallowed (but logged) so that the other error message below is actually emitted too...
+            logger.error(
+              "Swallowed Exception while trying to roll-back balance transfer for failed settlement: "
+                + e.getMessage(), e2
+            );
           }
 
           final String errorMessage = String.format(
-            "SETTLEMENT INITIATION FAILED for requested settlement: %s", requestedSettlementQuantityInClearingUnits
+            "SETTLEMENT INITIATION FAILED requestedSettlementQuantityInClearingUnits=%s",
+            requestedSettlementQuantityInClearingUnits
           );
           throw new SettlementServiceException(errorMessage, e, accountSettings.getAccountId());
         }
       })
       .orElseThrow(() -> new SettlementEngineNotConfiguredProblem(accountSettings.getAccountId()));
-  }
-
-  /**
-   * Helper to access a {@link SettlementEngineClient} from the cache, or else create a new one.
-   *
-   * @param settlementEngineUrl The unique URL of the settlement engine to obtain. Note that a given settlement engine
-   *                            can be accessed by potentially multiple accounts.
-   *
-   * @return A {@link SettlementEngineClient}.
-   */
-  private SettlementEngineClient getSettlementEngineClientHelper(final HttpUrl settlementEngineUrl) {
-    Objects.requireNonNull(settlementEngineUrl);
-
-    return settlementEngineClientCache.get(
-      settlementEngineUrl,
-      (settlementEngineBaseUrl) -> new DefaultSettlementEngineClient(
-        settlementEngineRestTemplate, settlementEngineBaseUrl
-      )
-    );
   }
 }

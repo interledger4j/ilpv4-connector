@@ -1,6 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.controllers.converters;
 
 import okhttp3.HttpUrl;
+import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.ilpv4.connector.persistence.entities.SettlementEngineDetailsEntity;
 import org.junit.Before;
@@ -27,8 +28,8 @@ public class SettlementEngineDetailsConverterTest {
   public void convert() {
     final SettlementEngineDetails settlementEngineDetails = SettlementEngineDetails.builder()
       .baseUrl(HttpUrl.parse("https://example.com"))
-      .assetScale(2)
-      .settlementEngineAccountId(UUID.randomUUID().toString())
+      .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
+      .putCustomSettings("xrpAddress", "rsWs4m35EJctu7Go3FydVwQeGdMQX96XLH")
       .build();
     final SettlementEngineDetailsEntity entity = new SettlementEngineDetailsEntity(settlementEngineDetails);
 
@@ -36,6 +37,6 @@ public class SettlementEngineDetailsConverterTest {
 
     assertThat(actual.baseUrl(), is(settlementEngineDetails.baseUrl()));
     assertThat(actual.settlementEngineAccountId(), is(settlementEngineDetails.settlementEngineAccountId()));
-    assertThat(actual.assetScale(), is(settlementEngineDetails.assetScale()));
+    assertThat(actual.customSettings().get("xrpAddress"), is("rsWs4m35EJctu7Go3FydVwQeGdMQX96XLH"));
   }
 }

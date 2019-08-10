@@ -115,7 +115,7 @@ public class RedisBalanceTrackerIncomingSettlementTest extends AbstractRedisBala
   @Test(expected = NullPointerException.class)
   public void updateBalanceForIncomingSettlementWithNullAccountId() {
     try {
-      balanceTracker.updateBalanceForIncomingSettlement(UUID.randomUUID(), null, ONE);
+      balanceTracker.updateBalanceForIncomingSettlement(UUID.randomUUID().toString(), null, ONE);
     } catch (NullPointerException e) {
       assertThat(e.getMessage(), is("accountId must not be null"));
       throw e;
@@ -125,7 +125,7 @@ public class RedisBalanceTrackerIncomingSettlementTest extends AbstractRedisBala
   @Test(expected = NullPointerException.class)
   public void updateBalanceForIncomingSettlementWithNegativeAmount() {
     try {
-      balanceTracker.updateBalanceForIncomingSettlement(UUID.randomUUID(), null, -10L);
+      balanceTracker.updateBalanceForIncomingSettlement(UUID.randomUUID().toString(), null, -10L);
     } catch (NullPointerException e) {
       assertThat(e.getMessage(), is("accountId must not be null"));
       throw e;
@@ -142,7 +142,7 @@ public class RedisBalanceTrackerIncomingSettlementTest extends AbstractRedisBala
   @Test
   public void updateBalanceForIncomingSettlementWhenNoAccountInRedis() {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-    balanceTracker.updateBalanceForIncomingSettlement(UUID.randomUUID(), accountId, ONE);
+    balanceTracker.updateBalanceForIncomingSettlement(UUID.randomUUID().toString(), accountId, ONE);
 
     final AccountBalance loadedBalance = balanceTracker.getBalance(accountId);
     assertThat(loadedBalance.clearingBalance(), is(ZERO));
@@ -154,7 +154,7 @@ public class RedisBalanceTrackerIncomingSettlementTest extends AbstractRedisBala
   public void updateBalanceForIncomingSettlementWithParamterizedValues() {
     this.initializeAccount(ACCOUNT_ID, this.existingClearingBalance, this.existingPrepaidBalance);
 
-    balanceTracker.updateBalanceForIncomingSettlement(UUID.randomUUID(), ACCOUNT_ID, this.prepareAmount);
+    balanceTracker.updateBalanceForIncomingSettlement(UUID.randomUUID().toString(), ACCOUNT_ID, this.prepareAmount);
 
     final AccountBalance loadedBalance = balanceTracker.getBalance(ACCOUNT_ID);
     assertThat(loadedBalance.clearingBalance(), is(expectedClearingBalanceInRedis));

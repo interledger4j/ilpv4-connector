@@ -22,6 +22,7 @@ import org.junit.BeforeClass;
 import org.slf4j.Logger;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisKeyCommands;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import javax.money.spi.Bootstrap;
@@ -31,6 +32,7 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DEFAULT_JWT_TOKEN_ISSUER;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DOT;
@@ -42,6 +44,10 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ILPV4__CONNECTOR__KEYSTORE__JKS__SECRET0_PASSWORD;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
+import static org.interledger.ilpv4.connector.config.BalanceTrackerConfig.BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALICE;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PAUL;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -151,9 +157,10 @@ public abstract class AbstractBlastIT {
   }
 
   /**
-   * Helper method to obtain an instance of {@link RedisBalanceTracker} for a given node, if Redis is enabled.
+   * Helper method to obtain an instance of {@link RedisTemplate} that underpings the {@link BalanceTracker} for a given
+   * node, if Redis is enabled.
    *
-   * @param interledgerAddress
+   * @param interledgerAddress The Router ILP address of the node to obtain the tracker from.
    *
    * @return An optionally-present instance of {@link RedisBalanceTracker}.
    */
@@ -163,7 +170,7 @@ public abstract class AbstractBlastIT {
     Object redisTemplateObject =
       ((ConnectorServer) getTopology().getNode(interledgerAddress.getValue()).getContentObject())
         .getContext()
-        .getBean("jacksonRedisTemplate");
+        .getBean(BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME);
 
     if (redisTemplateObject != null) {
       return Optional.ofNullable((RedisTemplate) redisTemplateObject);
@@ -215,7 +222,7 @@ public abstract class AbstractBlastIT {
    * Helper method to reset any balance tracking accounts so that each test run can start off with a clean slate. Note
    * that we _could_ expose a method on {@link BalanceTracker} called "resetBalance", but this is not currently a
    * requirement for any business logic, so it was decided to not enable this behavior in order to avoid a potential
-   * footgun in production code (i.e., resetting balances is only something needed by integration tests at present).
+   * foot-gun in production code (i.e., resetting balances is only something needed by integration tests at present).
    */
   protected void resetBalanceTracking() {
     final ILPv4Connector aliceConnector = this.getILPv4NodeFromGraph(getAliceConnectorAddress());
@@ -227,12 +234,19 @@ public abstract class AbstractBlastIT {
       ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetAllBalances();
       ((InMemoryBalanceTracker) bobConnector.getBalanceTracker()).resetAllBalances();
     } else {
-      // Clear out the whole Redis datastore...
-      this.getRedisTemplate(getAliceConnectorAddress())
+      // Reset the balances for any peering accounts in the Topology.
+      RedisKeyCommands redisCommands = this.getRedisTemplate(getAliceConnectorAddress())
         .map(RedisTemplate::getConnectionFactory)
         .map(RedisConnectionFactory::getConnection)
-        .map(RedisConnection::serverCommands)
-        .ifPresent($ -> $.flushAll());
+        .map(RedisConnection::keyCommands)
+        .orElseThrow(() -> new RuntimeException("Unable to get redisHashCommands "));
+
+      redisCommands.del(
+        ("accounts:" + PING_ACCOUNT_ID).getBytes(),
+        ("accounts:" + ALICE).getBytes(),
+        ("accounts:" + BOB).getBytes(),
+        ("accounts:" + PAUL).getBytes()
+      );
     }
   }
 

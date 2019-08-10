@@ -108,7 +108,7 @@ public interface BalanceTracker {
    *
    * @throws BalanceTrackerException If anything prevents the balance updates to succeed atomically.
    */
-  void updateBalanceForIncomingSettlement(UUID idempotencyKey, AccountId accountId, long amount);
+  void updateBalanceForIncomingSettlement(String idempotencyKey, AccountId accountId, long amount);
 
   /**
    * <p>Reduce the balance for the account identified by {@code accountId} by {@code amount} in response to a

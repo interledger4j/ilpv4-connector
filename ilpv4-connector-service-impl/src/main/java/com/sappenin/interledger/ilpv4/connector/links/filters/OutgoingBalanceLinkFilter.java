@@ -69,7 +69,7 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
         } catch (Exception e) {
           logger.error(String.format(
             "RECONCILIATION REQUIRED: Unable to update balance in Redis after receiving a valid Fulfillment. " +
-              "OutgoingPreparePacket: {} FulfillmentPacket: {}. OriginalError: {}",
+              "outgoingPreparePacket=%s fulfillmentPacket=%s. error==%s",
             outgoingPreparePacket, interledgerFulfillPacket, e.getMessage()
             ), e // position the exception properly for logging.
           );
@@ -123,7 +123,7 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
             });
         } catch (Exception e) {
           logger.error(String.format(
-            "While trying to initiate settlement engine payment: PreparePacket: %s; FulfillPacket: %s; Error: %s",
+            "While trying to initiate settlement engine payment: PreparePacket=%s; FulfillPacket=%s; Error=%s",
             outgoingPreparePacket, interledgerFulfillPacket, e.getMessage()
             ), e // position the exception properly for logging.
           );

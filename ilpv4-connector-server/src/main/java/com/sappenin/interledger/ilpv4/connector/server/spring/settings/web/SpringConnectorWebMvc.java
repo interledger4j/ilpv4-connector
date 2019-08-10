@@ -1,6 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.converters.AccountBalanceSettingsConverter;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.converters.AccountSettingsConverter;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.converters.OerPreparePacketHttpMessageConverter;
@@ -17,6 +18,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.hateoas.config.EnableHypermediaSupport;
+import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -27,6 +29,7 @@ import java.util.List;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.CodecContextConfig.ILP;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.BLAST_ENABLED;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ENABLED_PROTOCOLS;
+import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 
 /**
  * Web config for the Spring Connector.
@@ -98,7 +101,12 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
 
   @Override
   public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-    converters.add(new MappingJackson2HttpMessageConverter(objectMapper));
+    // For any byte[] payloads (e.g., `/settlements`)
+    ByteArrayHttpMessageConverter octetStreamConverter = new ByteArrayHttpMessageConverter();
+    octetStreamConverter.setSupportedMediaTypes(Lists.newArrayList(APPLICATION_OCTET_STREAM));
+    converters.add(octetStreamConverter);
+
+    converters.add(new MappingJackson2HttpMessageConverter(objectMapper)); // For any JSON payloads.
     converters.add(oerPreparePacketHttpMessageConverter());
   }
 
@@ -106,8 +114,8 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
   public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
     converters.replaceAll(messageConverter -> {
       if (messageConverter instanceof MappingJackson2HttpMessageConverter) {
+        // Necessary to make sure the correct ObjectMapper is used in all Jackson Message Converters.
         return new MappingJackson2HttpMessageConverter(objectMapper);
-        //return messageConverter;
       } else {
         return messageConverter;
       }

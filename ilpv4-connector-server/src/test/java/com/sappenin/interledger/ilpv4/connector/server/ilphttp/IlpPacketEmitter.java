@@ -22,6 +22,8 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
+import static org.interledger.ilpv4.connector.core.Ilpv4Constants.ALL_ZEROS_FULFILLMENT;
+
 /**
  * Helper class to assemble binary packets for manual testing purposes. All packets are written to files in the `/tmp`
  * directory.
@@ -40,7 +42,7 @@ public class IlpPacketEmitter {
   }
 
   private static void emitPreparePacketBytes() {
-    final InterledgerFulfillment fulfillment = InterledgerFulfillment.of(new byte[32]);
+    final InterledgerFulfillment fulfillment = ALL_ZEROS_FULFILLMENT;
     final InterledgerCondition executionCondition = fulfillment.getCondition();
     final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
       .expiresAt(Instant.now().plus(365, ChronoUnit.DAYS))

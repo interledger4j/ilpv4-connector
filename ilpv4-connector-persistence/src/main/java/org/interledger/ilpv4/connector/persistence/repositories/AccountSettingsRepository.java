@@ -4,6 +4,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
@@ -20,7 +21,7 @@ import java.util.Optional;
 public interface AccountSettingsRepository extends CrudRepository<AccountSettingsEntity, Long> {
 
   /**
-   * Find an Account by its natural identifier (i.e., the accountId as a String).
+   * Find an {@link AccountSettingsEntity} by its natural identifier (i.e., the accountId as a String).
    *
    * @param naturalId A {@link String} corresponding to {@link AccountSettingsEntity#getNaturalId()}.
    *
@@ -29,42 +30,7 @@ public interface AccountSettingsRepository extends CrudRepository<AccountSetting
   Optional<AccountSettingsEntity> findByNaturalId(String naturalId);
 
   /**
-   * Find AccountSettings for all accounts that initiate connections.
-   *
-   * @return A {@link List} of {@link AccountSettings}.
-   */
-  List<AccountSettingsEntity> findAccountSettingsEntitiesByConnectionInitiatorIsTrue();
-
-  /**
-   * Find the first account that this connector has with a relationship of {@code relationship}.
-   *
-   * @param relationship An {@link AccountRelationship} to filter by.
-   *
-   * @return An optionally-present {@link AccountSettingsEntity}.
-   */
-  Optional<AccountSettingsEntity> findFirstByAccountRelationship(AccountRelationship relationship);
-
-  /**
-   * Find the first AccountSettings with a relationship of {@link AccountRelationship#PARENT}, if it exists.
-   *
-   * @return An optionally-present {@link AccountSettingsEntity}.
-   */
-  default Optional<AccountSettingsEntity> findPrimaryParentAccountSettings() {
-    return findFirstByAccountRelationship(AccountRelationship.PARENT);
-  }
-
-  /**
-   * Find all AccountSettings of type {@link AccountRelationship#CHILD}.
-   *
-   * @param relationship The type of AccountSettings to find.
-   *
-   * @return An unordered collection of {@link AccountSettingsEntity} that are of type {@link
-   * AccountRelationship#CHILD}.
-   */
-  Collection<AccountSettingsEntity> findByAccountRelationshipIs(AccountRelationship relationship);
-
-  /**
-   * Find an account by the supplied {@code accountId}.
+   * Find an {@link AccountSettingsEntity} by the supplied {@code accountId}.
    *
    * @param accountId The {@link AccountId} to lookup by.
    *
@@ -75,8 +41,8 @@ public interface AccountSettingsRepository extends CrudRepository<AccountSetting
   }
 
   /**
-   * Get the account settings for the specified {@code accountId} in a "safe" manner, meaning an exception will be
-   * thrown if the account is not found.
+   * Get the {@link AccountSettingsEntity} for the specified {@code accountId} in a "safe" manner, meaning an exception
+   * will be thrown if the account is not found.
    *
    * @param accountId The {@link AccountId} of the account to retrieve.
    *
@@ -87,6 +53,69 @@ public interface AccountSettingsRepository extends CrudRepository<AccountSetting
     return this.findByAccountId(accountId)
       .orElseThrow(() -> new AccountNotFoundProblem(accountId));
   }
+
+  /**
+   * Find an {@link AccountSettingsEntity} by its settlement engine identifier.
+   *
+   * @param settlementEngineAccountId A {@link SettlementEngineAccountId} to index by.
+   *
+   * @return An optionally present {@link AccountSettingsEntity}.
+   */
+  default Optional<AccountSettingsEntity> findBySettlementEngineAccountId(
+    SettlementEngineAccountId settlementEngineAccountId
+  ) {
+    return this.findAccountSettingsEntityBySettlementEngineDetailsSettlementEngineAccountId(
+      settlementEngineAccountId.value()
+    );
+  }
+
+  /**
+   * Find an {@link AccountSettingsEntity} by its settlement engine identifier.
+   *
+   * @param settlementEngineAccountId A {@link String} representation to index by.
+   *
+   * @return An optionally present {@link AccountSettingsEntity}.
+   */
+  Optional<AccountSettingsEntity> findAccountSettingsEntityBySettlementEngineDetailsSettlementEngineAccountId(
+    String settlementEngineAccountId
+  );
+
+
+  /**
+   * Find an {@link AccountSettingsEntity} for all accounts that initiate connections.
+   *
+   * @return A {@link List} of {@link AccountSettings}.
+   */
+  List<AccountSettingsEntity> findAccountSettingsEntitiesByConnectionInitiatorIsTrue();
+
+  /**
+   * Find the first {@link AccountSettingsEntity} that this connector has with a relationship of {@code relationship}.
+   *
+   * @param relationship An {@link AccountRelationship} to filter by.
+   *
+   * @return An optionally-present {@link AccountSettingsEntity}.
+   */
+  Optional<AccountSettingsEntity> findFirstByAccountRelationship(AccountRelationship relationship);
+
+  /**
+   * Find the first {@link AccountSettingsEntity} with a relationship of {@link AccountRelationship#PARENT}, if it
+   * exists.
+   *
+   * @return An optionally-present {@link AccountSettingsEntity}.
+   */
+  default Optional<AccountSettingsEntity> findPrimaryParentAccountSettings() {
+    return findFirstByAccountRelationship(AccountRelationship.PARENT);
+  }
+
+  /**
+   * Find all {@link AccountSettingsEntity} of type {@link AccountRelationship#CHILD}.
+   *
+   * @param relationship The type of AccountSettings to find.
+   *
+   * @return An unordered collection of {@link AccountSettingsEntity} that are of type {@link
+   * AccountRelationship#CHILD}.
+   */
+  Collection<AccountSettingsEntity> findByAccountRelationshipIs(AccountRelationship relationship);
 
   /**
    * Determines if the account represented by {@code accountId} is an internal account. This method is provided for

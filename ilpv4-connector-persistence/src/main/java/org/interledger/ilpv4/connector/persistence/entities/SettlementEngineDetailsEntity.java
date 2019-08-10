@@ -1,27 +1,34 @@
 package org.interledger.ilpv4.connector.persistence.entities;
 
 import okhttp3.HttpUrl;
+import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.accounts.SettlementEngineDetails;
+import org.interledger.ilpv4.connector.persistence.HashMapConverter;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Embeddable;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import static org.interledger.ilpv4.connector.persistence.entities.DataConstants.ColumnNames.SE_ACCOUNT_ID;
 
 @Access(AccessType.FIELD)
 @Embeddable
 public class SettlementEngineDetailsEntity implements SettlementEngineDetails {
 
-  // See Javadoc in AccountSettings for more details around the number types in this class.
-
-  @Column(name = "SE_ACCOUNT_ID", unique = true)
-  String accountId;
-
-  @Column(name = "SE_ASSET_SCALE")
-  int assetScale;
+  @Column(name = SE_ACCOUNT_ID, unique = true)
+  String settlementEngineAccountId;
 
   @Column(name = "SE_BASE_URL")
   String baseUrl;
+
+  @Convert(converter = HashMapConverter.class)
+  @Column(name = "SE_CUSTOM_SETTINGS", length = 8196)
+  private Map<String, Object> customSettings;
 
   /**
    * To satisfy Hibernate
@@ -29,26 +36,21 @@ public class SettlementEngineDetailsEntity implements SettlementEngineDetails {
   SettlementEngineDetailsEntity() {
   }
 
-  public SettlementEngineDetailsEntity(SettlementEngineDetails settlementEngineDetails) {
-    this.setAccountId(settlementEngineDetails.settlementEngineAccountId());
-    this.setAssetScale(settlementEngineDetails.assetScale());
+  public SettlementEngineDetailsEntity(final SettlementEngineDetails settlementEngineDetails) {
+    Objects.requireNonNull(settlementEngineDetails);
+
+    this.setSettlementEngineAccountId(
+      settlementEngineDetails.settlementEngineAccountId().map(SettlementEngineAccountId::value).orElse(null));
     this.setBaseUrl(settlementEngineDetails.baseUrl().toString());
+    this.setCustomSettings(settlementEngineDetails.customSettings());
   }
 
-  public String getAccountId() {
-    return accountId;
+  public String getSettlementEngineAccountId() {
+    return settlementEngineAccountId;
   }
 
-  public void setAccountId(String accountId) {
-    this.accountId = accountId;
-  }
-
-  public int getAssetScale() {
-    return assetScale;
-  }
-
-  public void setAssetScale(int assetScale) {
-    this.assetScale = assetScale;
+  public void setSettlementEngineAccountId(String settlementEngineAccountId) {
+    this.settlementEngineAccountId = settlementEngineAccountId;
   }
 
   public String getBaseUrl() {
@@ -64,17 +66,9 @@ public class SettlementEngineDetailsEntity implements SettlementEngineDetails {
    */
   @Override
   @Deprecated
-  public String settlementEngineAccountId() {
-    return this.getAccountId();
-  }
-
-  /**
-   * @deprecated Will be removed once #217 is fixed.
-   */
-  @Override
-  @Deprecated
-  public int assetScale() {
-    return this.getAssetScale();
+  public Optional<SettlementEngineAccountId> settlementEngineAccountId() {
+    return this.getSettlementEngineAccountId() == null ?
+      Optional.empty() : Optional.of(SettlementEngineAccountId.of(this.getSettlementEngineAccountId()));
   }
 
   /**
@@ -88,5 +82,14 @@ public class SettlementEngineDetailsEntity implements SettlementEngineDetails {
     } else {
       return HttpUrl.parse(this.getBaseUrl());
     }
+  }
+
+  @Override
+  public Map<String, Object> customSettings() {
+    return customSettings;
+  }
+
+  public void setCustomSettings(Map<String, Object> customSettings) {
+    this.customSettings = customSettings;
   }
 }

@@ -8,10 +8,12 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.connector.link.LinkType;
 import org.interledger.ilpv4.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.ilpv4.connector.persistence.entities.SettlementEngineDetailsEntity;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.not;
@@ -73,9 +76,9 @@ public class AccountSettingsRepositoryTest {
         .settleTo(10L)
         .build())
       .settlementEngineDetails(SettlementEngineDetails.builder()
-        .assetScale(2)
         .baseUrl(HttpUrl.parse("https://example.com"))
-        .settlementEngineAccountId(UUID.randomUUID().toString())
+        .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
+        .putCustomSettings("foo", "bar")
         .build())
       .ilpAddressSegment("foo")
       .customSettings(customSettings)
@@ -171,6 +174,83 @@ public class AccountSettingsRepositoryTest {
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getSettleTo(), is(0L));
     assertThat(loadedAccountSettingsEntity.getRateLimitSettings().getMaxPacketsPerSecond().isPresent(), is(false));
     assertThat(loadedAccountSettingsEntity.getIlpAddressSegment().isPresent(), is(false));
+  }
+
+  // TODO: No SE
+  // TODO: null SE url.
+  //
+
+  @Test
+  public void findBySettlementEngineAccountId() {
+    final SettlementEngineAccountId settlementEngineAccountId =
+      SettlementEngineAccountId.of(UUID.randomUUID().toString());
+
+    final AccountSettings accountSettings1 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PEER)
+      .settlementEngineDetails(
+        SettlementEngineDetails.builder()
+          .baseUrl(HttpUrl.parse("https://example.com"))
+          .settlementEngineAccountId(settlementEngineAccountId)
+          .build()
+      )
+      .build();
+    final AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity(accountSettings1);
+    accountSettingsRepository.save(accountSettingsEntity);
+
+    Optional<AccountSettingsEntity> actual = accountSettingsRepository
+      .findBySettlementEngineAccountId(settlementEngineAccountId);
+    assertThat(actual.isPresent(), is(true));
+
+    this.assertAllFieldsEqual(actual.get(), accountSettingsEntity);
+  }
+
+  @Test
+  public void findBySettlementEngineAccountIdWhenNonExistent() {
+    final SettlementEngineAccountId settlementEngineAccountId =
+      SettlementEngineAccountId.of(UUID.randomUUID().toString());
+
+    assertThat(
+      accountSettingsRepository.findBySettlementEngineAccountId(settlementEngineAccountId)
+        .isPresent(),
+      is(false)
+    );
+  }
+
+  @Test
+  public void findBySettlementEngineAccountIdWhenIdIsNull() {
+    final SettlementEngineAccountId settlementEngineAccountId =
+      SettlementEngineAccountId.of(UUID.randomUUID().toString());
+
+    final AccountSettings accountSettings = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PEER)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity(accountSettings);
+
+    // Construct a SettlementEngineDetailsEntity with null values....
+    SettlementEngineDetailsEntity nullValueSettlementEngineDetailsEntity = new SettlementEngineDetailsEntity(
+      SettlementEngineDetails.builder()
+        .baseUrl(HttpUrl.parse("https://example.com"))
+        .settlementEngineAccountId(settlementEngineAccountId)
+        .build()
+    );
+    nullValueSettlementEngineDetailsEntity.setBaseUrl(null);
+    nullValueSettlementEngineDetailsEntity.setSettlementEngineAccountId(null);
+    accountSettingsEntity.setSettlementEngineDetails(nullValueSettlementEngineDetailsEntity);
+    accountSettingsRepository.save(accountSettingsEntity);
+
+    assertThat(
+      accountSettingsRepository.findBySettlementEngineAccountId(settlementEngineAccountId)
+        .isPresent(),
+      is(false)
+    );
   }
 
   @Test
@@ -365,12 +445,12 @@ public class AccountSettingsRepositoryTest {
     // SettlementEngineSettings
     if (entity1.settlementEngineDetails().isPresent()) {
       assertThat(entity1.settlementEngineDetails().isPresent(), is(entity2.settlementEngineDetails().isPresent()));
-      assertThat(entity1.settlementEngineDetails().get().assetScale(),
-        is(entity2.settlementEngineDetails().get().assetScale()));
       assertThat(entity1.settlementEngineDetails().get().baseUrl(),
         is(entity2.settlementEngineDetails().get().baseUrl()));
       assertThat(entity1.settlementEngineDetails().get().settlementEngineAccountId(),
         is(entity2.settlementEngineDetails().get().settlementEngineAccountId()));
+      assertThat(entity1.getCustomSettings(), is(entity2.getCustomSettings()));
+
     } else {
       assertThat(entity1.settlementEngineDetails(), is(entity2.settlementEngineDetails()));
     }

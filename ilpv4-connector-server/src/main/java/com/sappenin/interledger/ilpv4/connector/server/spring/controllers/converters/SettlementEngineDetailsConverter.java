@@ -17,9 +17,9 @@ public class SettlementEngineDetailsConverter implements
   public SettlementEngineDetails convert(final SettlementEngineDetailsEntity settlementEngineDetailsEntity) {
     Objects.requireNonNull(settlementEngineDetailsEntity);
     return SettlementEngineDetails.builder()
-      .settlementEngineAccountId(settlementEngineDetailsEntity.getAccountId())
+      .settlementEngineAccountId(settlementEngineDetailsEntity.settlementEngineAccountId())
       .baseUrl(HttpUrl.parse(settlementEngineDetailsEntity.getBaseUrl()))
-      .assetScale(settlementEngineDetailsEntity.getAssetScale())
+      .customSettings(settlementEngineDetailsEntity.customSettings())
       .build();
   }
 }

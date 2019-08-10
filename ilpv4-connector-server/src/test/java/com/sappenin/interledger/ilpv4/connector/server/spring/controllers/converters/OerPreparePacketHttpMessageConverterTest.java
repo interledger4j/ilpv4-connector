@@ -26,6 +26,8 @@ import java.util.Collection;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.interledger.ilpv4.connector.core.Ilpv4Constants.ALL_ZEROS_FULFILLMENT;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -35,17 +37,15 @@ import static org.mockito.Mockito.when;
 @RunWith(Parameterized.class)
 public class OerPreparePacketHttpMessageConverterTest {
 
-  private static final InterledgerFulfillment FULFILLMENT = InterledgerFulfillment.of(new byte[32]);
-
   private static InterledgerPreparePacket PREPARE_PACKET = InterledgerPreparePacket.builder()
-    .executionCondition(FULFILLMENT.getCondition())
+    .executionCondition(ALL_ZEROS_FULFILLMENT.getCondition())
     .expiresAt(Instant.now())
     .destination(InterledgerAddress.of("example.receiver"))
     .amount(BigInteger.TEN)
     .data(new byte[32])
     .build();
   private static InterledgerFulfillPacket FULFILL_PACKET = InterledgerFulfillPacket.builder()
-    .fulfillment(FULFILLMENT)
+    .fulfillment(ALL_ZEROS_FULFILLMENT)
     .data(new byte[32])
     .build();
   private static InterledgerRejectPacket REJECT_PACKET = InterledgerRejectPacket.builder()
@@ -115,6 +115,11 @@ public class OerPreparePacketHttpMessageConverterTest {
     // Test read
     final InterledgerPacket actualPreparePacket = converter.read(null, null, inputMessageMock);
     assertThat(actualPreparePacket, is(expectedPacket));
+  }
+
+  @Test
+  public void testCanRead(){
+    fail();
   }
 
 }

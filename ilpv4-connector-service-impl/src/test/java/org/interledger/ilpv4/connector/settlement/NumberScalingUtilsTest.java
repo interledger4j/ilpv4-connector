@@ -34,6 +34,10 @@ public class NumberScalingUtilsTest {
     this.expectedSettlementQuantity = Objects.requireNonNull(expectedSettlementQuantity);
   }
 
+  // TODO: Add tests that excercise a loss of precision during the scaling operation, and ensure that the scaled
+  //  amount is _always_ rounded down.
+  // See https://github.com/sappenin/java-ilpv4-connector/issues/224
+
   @Parameterized.Parameters
   @SuppressWarnings("PMD")
   public static Collection<Object[]> testValue() {

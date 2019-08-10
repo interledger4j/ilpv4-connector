@@ -1,6 +1,9 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.settings.web;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.settlement.SettlementController;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.settlement.SettlementEngineIdempotencyKeyGenerator;
 import org.slf4j.Logger;
@@ -21,10 +24,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.time.Duration;
 import java.util.Arrays;
+import java.util.Map;
 
 /**
  * <p>Configuration for Spring Cache using spring-data-cache via @Cacheable annotations, primarily used on the {@link
@@ -38,9 +47,8 @@ import java.util.Arrays;
 @Configuration
 @EnableCaching
 public class IdempotenceCacheConfig extends CachingConfigurerSupport {
-
-  public static final String CACHE_NAME_SETTLEMENTS = "settlements";
-  public static final String CACHE_NAME_MESSAGES = "messages";
+  // Used to store Idempotent ResponseEntity data for `/settlements` requests...
+  public static final String SETTLEMENT_IDEMPOTENCE = "settlement_idempotence";
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -48,7 +56,10 @@ public class IdempotenceCacheConfig extends CachingConfigurerSupport {
   protected Environment environment;
 
   @Autowired
-  JedisConnectionFactory jedisConnectionFactory;
+  protected JedisConnectionFactory jedisConnectionFactory;
+
+  @Autowired
+  protected ObjectMapper objectMapper;
 
   @Override
   @Bean // important! See parent javadoc
@@ -58,15 +69,35 @@ public class IdempotenceCacheConfig extends CachingConfigurerSupport {
     if (Arrays.asList(environment.getActiveProfiles()).contains("test")) {
       final SimpleCacheManager cacheManager = new SimpleCacheManager();
       cacheManager.setCaches(Lists.newArrayList(
-        new ConcurrentMapCache(CACHE_NAME_SETTLEMENTS),
-        new ConcurrentMapCache(CACHE_NAME_MESSAGES)
+        new ConcurrentMapCache(SETTLEMENT_IDEMPOTENCE)
       ));
       return cacheManager;
     } else {
-      // Try to connect using Jedis. If this fails, fallback to an inmemory cache...
+      // Try to connect using Jedis. If this fails, fallback to an in-memory cache...
       try {
         jedisConnectionFactory.getConnection().ping();
-        return RedisCacheManager.create(jedisConnectionFactory);
+
+        RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+          .prefixKeysWith("idempotency:")
+          .entryTtl(Duration.ofMinutes(5)) // TODO: Make configurable.
+          .disableCachingNullValues()
+          .serializeKeysWith(
+            RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer())
+          )
+          // Required or else the JdkSerializer will be used, which throws SerializationFailedException because
+          // ResponseEntity is not Serializable.
+          .serializeValuesWith(RedisSerializationContext.SerializationPair
+            .fromSerializer(new GenericJackson2JsonRedisSerializer(objectMapper))
+          );
+
+        Map<String, RedisCacheConfiguration> initialDefaultConfigurations = Maps.newHashMap();
+        initialDefaultConfigurations.put(SETTLEMENT_IDEMPOTENCE, defaultCacheConfig);
+
+        return RedisCacheManager.builder(jedisConnectionFactory)
+          .initialCacheNames(Sets.newHashSet(SETTLEMENT_IDEMPOTENCE))
+          .cacheDefaults(defaultCacheConfig)
+          .withInitialCacheConfigurations(initialDefaultConfigurations)
+          .build();
       } catch (RedisConnectionFailureException e) {
         logger.warn(
           "Unable to communicate with Redis (HINT: Is Redis running on its configured port, by default 6379?). Using an" +
@@ -88,6 +119,7 @@ public class IdempotenceCacheConfig extends CachingConfigurerSupport {
     } else {
       NamedCacheResolver cacheResolver = new NamedCacheResolver();
       cacheResolver.setCacheManager(cacheManager());
+      cacheResolver.setCacheNames(Lists.newArrayList(SETTLEMENT_IDEMPOTENCE));
       return cacheResolver;
     }
   }
@@ -103,7 +135,7 @@ public class IdempotenceCacheConfig extends CachingConfigurerSupport {
   }
 
   @Override
-  @Bean
+  @Bean // important! See parent javadoc
   public CacheErrorHandler errorHandler() {
     return new SimpleCacheErrorHandler();
   }

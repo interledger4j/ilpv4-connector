@@ -83,13 +83,9 @@
       <column name="SE_ACCOUNT_ID" type="VARCHAR(255)">
         <constraints nullable="true" unique="true"/>
       </column>
-      <column name="SE_ASSET_SCALE" type="SMALLINT">
-        <constraints nullable="true"/>
-      </column>
       <column name="SE_BASE_URL" type="VARCHAR(2048)">
         <constraints nullable="true"/>
       </column>
-
       <column name="CUSTOM_SETTINGS" type="VARCHAR(8196)">
         <constraints nullable="true"/>
       </column>

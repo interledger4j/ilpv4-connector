@@ -1,11 +1,15 @@
-package com.sappenin.interledger.ilpv4.connector.settlement;
+package org.interledger.ilpv4.connector.settlement;
 
+import com.sappenin.interledger.ilpv4.connector.settlement.SettlementService;
 import org.interledger.connector.accounts.AccountId;
 
+import java.util.Objects;
+
 /**
- * Thrown by instances of {@link SettlementEngineClient}.
+ * Thrown by instances of {@link SettlementService}, such as when the Settlement service cannot communicate with a
+ * particular settlement engine.
  */
-public class SettlementEngineClientException extends RuntimeException {
+public class SettlementServiceException extends RuntimeException {
 
   /**
    * The {@link AccountId} of the account that threw an exception while communicating to a Settlment Engine.
@@ -18,9 +22,9 @@ public class SettlementEngineClientException extends RuntimeException {
    *
    * @param accountId
    */
-  public SettlementEngineClientException(AccountId accountId) {
-    super();
-    this.accountId = accountId;
+  public SettlementServiceException(AccountId accountId) {
+    super(message(null, accountId));
+    this.accountId = Objects.requireNonNull(accountId);
   }
 
   /**
@@ -31,9 +35,9 @@ public class SettlementEngineClientException extends RuntimeException {
    *                  method.
    * @param accountId
    */
-  public SettlementEngineClientException(String message, AccountId accountId) {
-    super(message);
-    this.accountId = accountId;
+  public SettlementServiceException(String message, AccountId accountId) {
+    super(message(message, accountId));
+    this.accountId = Objects.requireNonNull(accountId);
   }
 
   /**
@@ -47,9 +51,9 @@ public class SettlementEngineClientException extends RuntimeException {
    *
    * @since 1.4
    */
-  public SettlementEngineClientException(String message, Throwable cause, AccountId accountId) {
-    super(message, cause);
-    this.accountId = accountId;
+  public SettlementServiceException(String message, Throwable cause, AccountId accountId) {
+    super(message(message, accountId), cause);
+    this.accountId = Objects.requireNonNull(accountId);
   }
 
   /**
@@ -64,9 +68,8 @@ public class SettlementEngineClientException extends RuntimeException {
    *
    * @since 1.4
    */
-  public SettlementEngineClientException(Throwable cause, AccountId accountId) {
-    super(cause);
-    this.accountId = accountId;
+  public SettlementServiceException(Throwable cause, AccountId accountId) {
+    this(message(null, accountId), cause, accountId);
   }
 
   /**
@@ -82,9 +85,17 @@ public class SettlementEngineClientException extends RuntimeException {
    *
    * @since 1.7
    */
-  protected SettlementEngineClientException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace, AccountId accountId) {
-    super(message, cause, enableSuppression, writableStackTrace);
+  protected SettlementServiceException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace, AccountId accountId) {
+    super(message(message, accountId), cause, enableSuppression, writableStackTrace);
     this.accountId = accountId;
+  }
+
+  private static final String message(String message, AccountId accountId) {
+    if (message != null) {
+      return String.format("AccountId=%s message=%s", accountId, message);
+    } else {
+      return String.format("AccountId=%s", accountId);
+    }
   }
 
   public AccountId getAccountId() {

@@ -91,7 +91,7 @@ public class InMemoryBalanceTracker implements BalanceTracker {
   }
 
   @Override
-  public void updateBalanceForIncomingSettlement(UUID idempotencyKey, AccountId accountId, long amount) throws BalanceTrackerException {
+  public void updateBalanceForIncomingSettlement(String idempotencyKey, AccountId accountId, long amount) throws BalanceTrackerException {
     this.increment(this.clearingBalances, accountId, amount);
   }
 

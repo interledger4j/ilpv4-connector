@@ -12,7 +12,10 @@ import java.util.UUID;
 /**
  * Contains an Http response that will be persisted into a cache (e.g., Redis). The primary use-case for this datatype
  * is to determine if a remote API call has already been processed.
+ *
+ * @deprecated Remove this as part of the "remove request cache" todo.
  */
+@Deprecated
 @Value.Immutable
 @JsonSerialize(as = ImmutableHttpResponseInfo.class)
 @JsonDeserialize(as = ImmutableHttpResponseInfo.class)

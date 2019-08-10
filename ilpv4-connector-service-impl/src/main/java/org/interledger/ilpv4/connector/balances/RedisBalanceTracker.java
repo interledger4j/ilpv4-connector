@@ -16,7 +16,6 @@ import org.springframework.data.redis.core.script.RedisScript;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 
 import static java.util.Collections.singletonList;
 
@@ -99,8 +98,9 @@ public class RedisBalanceTracker implements BalanceTracker {
           updateBalanceForPrepareScript,
           singletonList(toRedisAccountsKey(sourceAccountId)),
           // Arg1: from_amount
+          amount + "",
           // Arg2: min_balance (optional)
-          amount + "", minBalance.orElse(0L) + ""
+          minBalance.map($ -> $ + "").orElse("0")
         );
       } else {
         result = stringRedisTemplate.execute(
@@ -146,7 +146,7 @@ public class RedisBalanceTracker implements BalanceTracker {
         // Arg1: amount
         amount + "",
         // Arg2: settleThreshold
-        destinationAccountSettings.getBalanceSettings().getSettleThreshold().orElse(null) + "",
+        destinationAccountSettings.getBalanceSettings().getSettleThreshold().map($ -> $ + "").orElse(""),
         // Arg3: settleTo
         destinationAccountSettings.getBalanceSettings().getSettleTo() + ""
       );
@@ -215,8 +215,7 @@ public class RedisBalanceTracker implements BalanceTracker {
 
   @Override
   public void updateBalanceForIncomingSettlement(
-    // TODO: If the controller-based cache works, then use that instead and remove this value?
-    final UUID idempotencyKey, final AccountId accountId, final long amount
+    final String idempotencyKey, final AccountId accountId, final long amount
   ) throws BalanceTrackerException {
     Objects.requireNonNull(idempotencyKey, "idempotencyKey must not be null");
     Objects.requireNonNull(accountId, "accountId must not be null");

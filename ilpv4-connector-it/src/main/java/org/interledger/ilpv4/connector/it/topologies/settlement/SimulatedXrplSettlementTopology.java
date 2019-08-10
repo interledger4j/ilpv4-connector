@@ -38,19 +38,20 @@ import org.slf4j.LoggerFactory;
  *
  *                            ┌──────────────┐                     ┌──────────────┐
  *                            │              ◁───────HTTP/2────────┤              │
- * ┌─────────────────┐        │              │                     │              │        ┌─────────────────┐
- * │      Paul       │   ILP  │  CONNECTOR   │                     │  CONNECTOR   │   ILP  │      Peter      │
- * │(test.alice.paul)│◁─over─▷│  test.alice  │                     │   test.bob   │◁─over─▷│(test.bob.peter) │
+ * ┌─────────────────┐        │  CONNECTOR   │                     │  CONNECTOR   │        ┌─────────────────┐
+ * │      Paul       │   ILP  │  test.alice  │                     │   test.bob   │   ILP  │      Peter      │
+ * │(test.alice.paul)│◁─over─▷│ (port:8080)  │                     │ (port: 8081) │◁─over─▷│(test.bob.peter) │
  * └─────────────────┘  HTTP  │              │                     │              │  HTTP  └─────────────────┘
  *                            │              ├──────HTTP/2─────────▷              │
  *                            └──────────────┘                     └──────────────┘
  *                                    │                                    │
  *                                    │                                    │
- *                                    │                                    │
- *                                    │      ┌──────────────────────┐      │
- *                                    │      │  Settlement Engine   │      │
- *                                    └─────▶│     (Simulated)      │◀─────┘
- *                                           └──────────────────────┘
+ *                                    ▼                                    ▼
+ *                           ┌─────────────────┐                  ┌─────────────────┐
+ *                           │Settlement Engine│                  │Settlement Engine│
+ *                           │  (port: 9000)   │                  │  (port: 9001)   │
+ *                           └─────────────────┘                  └─────────────────┘
+ * </pre>
  */
 public class SimulatedXrplSettlementTopology extends AbstractTopology {
 
@@ -134,19 +135,19 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
       "                                                                                                           \n" +
       "                           ┌──────────────┐                     ┌──────────────┐                           \n" +
       "                           │              ◁───────HTTP/2────────┤              │                           \n" +
-      "┌─────────────────┐        │              │                     │              │        ┌─────────────────┐\n" +
-      "│      Paul       │   ILP  │  CONNECTOR   │                     │  CONNECTOR   │   ILP  │      Peter      │\n" +
-      "│(test.alice.paul)│◁─over─▷│  test.alice  │                     │   test.bob   │◁─over─▷│(test.bob.peter) │\n" +
+      "┌─────────────────┐        │  CONNECTOR   │                     │  CONNECTOR   │        ┌─────────────────┐\n" +
+      "│      Paul       │   ILP  │  test.alice  │                     │   test.bob   │   ILP  │      Peter      │\n" +
+      "│(test.alice.paul)│◁─over─▷│ (port:8080)  │                     │ (port: 8081) │◁─over─▷│(test.bob.peter) │\n" +
       "└─────────────────┘  HTTP  │              │                     │              │  HTTP  └─────────────────┘\n" +
       "                           │              ├──────HTTP/2─────────▷              │                           \n" +
       "                           └──────────────┘                     └──────────────┘                           \n" +
       "                                   │                                    │                                  \n" +
       "                                   │                                    │                                  \n" +
-      "                                   │                                    │                                  \n" +
-      "                                   │      ┌──────────────────────┐      │                                  \n" +
-      "                                   │      │  Settlement Engine   │      │                                  \n" +
-      "                                   └─────▶│     (Simulated)      │◀─────┘                                  \n" +
-      "                                          └──────────────────────┘                                         "
+      "                                   ▼                                    ▼                                  \n" +
+      "                          ┌─────────────────┐                  ┌─────────────────┐                         \n" +
+      "                          │Settlement Engine│                  │Settlement Engine│                         \n" +
+      "                          │  (port: 9000)   │                  │  (port: 9001)   │                         \n" +
+      "                          └─────────────────┘                  └─────────────────┘                         "
     );
     return topology;
   }
@@ -164,8 +165,6 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
         .accountRelationship(AccountRelationship.PEER)
         .settlementEngineDetails(
           SettlementEngineDetails.builder()
-            .assetScale(6)
-            .settlementEngineAccountId(BOB_ACCOUNT.value())
             .baseUrl(HttpUrl.parse("http://localhost:9000"))
             .build()
         )
@@ -242,8 +241,6 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
         .description("Blast account for Alice")
         .settlementEngineDetails(
           SettlementEngineDetails.builder()
-            .assetScale(6)
-            .settlementEngineAccountId(ALICE_ACCOUNT.value())
             .baseUrl(HttpUrl.parse("http://localhost:9001"))
             .build()
         )

@@ -7,6 +7,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
 import org.junit.Before;
@@ -81,8 +82,7 @@ public class AccountSettingsConverterTest {
 
     final SettlementEngineDetails settlementEngineDetails = SettlementEngineDetails.builder()
       .baseUrl(HttpUrl.parse("https://example.com"))
-      .assetScale(2)
-      .settlementEngineAccountId(UUID.randomUUID().toString())
+      .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
       .build();
 
     final AccountSettings accountSettings = AccountSettings.builder()

@@ -98,7 +98,7 @@ public class RedisBalanceTrackerFulfillPacketSettlementTest extends AbstractRedi
       new Object[]{TEN, TEN, PREPARE_ONE, Optional.empty(), ONE, 0L}, //3
 
       // Threshold = 10, SettleTo=0
-      new Object[]{NINE, ZERO, PREPARE_ONE, Optional.of(10L), ZERO, 0L}, //4
+      new Object[]{NINE, ZERO, PREPARE_ONE, Optional.of(10L), ZERO, 10L}, //4
       new Object[]{TEN, ZERO, PREPARE_ONE, Optional.of(10L), ZERO, 11L}, //5
       new Object[]{11L, ZERO, PREPARE_ONE, Optional.of(10L), ZERO, 12L}, //6
       new Object[]{11L, ONE, PREPARE_ONE, Optional.of(10L), ONE, 11L}, //7
@@ -112,32 +112,44 @@ public class RedisBalanceTrackerFulfillPacketSettlementTest extends AbstractRedi
       new Object[]{5L, 10L, PREPARE_ONE, Optional.of(5L), 0L, 6L}, //12
 
       // clearing_balance (2) < settlement_threshold (3)
-      new Object[]{2L, ZERO, PREPARE_ONE, Optional.of(3L), 0L, 0L}, //13
-      new Object[]{2L, 2L, PREPARE_ONE, Optional.of(3L), 0L, 0L}, //14
+      new Object[]{1L, ZERO, PREPARE_ONE, Optional.of(3L), 0L, 0L}, //13
+      new Object[]{1L, 2L, PREPARE_ONE, Optional.of(3L), 0L, 0L}, //14
+
+      // clearing_balance (3) = settlement_threshold (3)
+      new Object[]{2L, ZERO, PREPARE_ONE, Optional.of(3L), 0L, 3L}, //15
+      new Object[]{2L, 2L, PREPARE_ONE, Optional.of(3L), 0L, 3L}, //16
+
+      // clearing_balance (4) > settlement_threshold (3)
+      new Object[]{3L, ZERO, PREPARE_ONE, Optional.of(3L), 0L, 4L}, //17
+      new Object[]{3L, 2L, PREPARE_ONE, Optional.of(3L), 0L, 4L}, //18
+
+      // clearing_balance (1) < settlement_threshold (2) (settle_to = 1)
+      new Object[]{0L, ZERO, PREPARE_ONE, Optional.of(2L), 1L, 0L}, //19
+      new Object[]{0L, 2L, PREPARE_ONE, Optional.of(2L), 1L, 0L}, //20
 
       // clearing_balance (2) = settlement_threshold (2)
-      new Object[]{2L, ZERO, PREPARE_ONE, Optional.of(2L), 0L, 3L}, //15
-      new Object[]{2L, 2L, PREPARE_ONE, Optional.of(2L), 0L, 3L}, //16
-      // clearing_balance(2) > settlement_threshold(1)
-      new Object[]{2L, ZERO, PREPARE_ONE, Optional.of(1L), 0L, 3L}, //17
-      new Object[]{2L, 2L, PREPARE_ONE, Optional.of(1L), 0L, 3L}, //18
+      new Object[]{1L, ZERO, PREPARE_ONE, Optional.of(2L), 1L, 1L}, //19
+      new Object[]{1L, 2L, PREPARE_ONE, Optional.of(2L), 1L, 1L}, //20
+
+      // clearing_balance(3) > settlement_threshold(1)
+      new Object[]{2L, ZERO, PREPARE_ONE, Optional.of(1L), 1L, 2L}, //21
+      new Object[]{2L, 2L, PREPARE_ONE, Optional.of(1L), 1L, 2L}, //22
 
       /////////
       // clearing_balance > settle_threshold AND ...
       /////////
 
       // clearing_balance = settle_to (script will add 1 to 9 and then evaluate)
-      new Object[]{9L, ZERO, PREPARE_ONE, Optional.of(5L), 10L, 0L}, //19
-      new Object[]{9L, 10L, PREPARE_ONE, Optional.of(5L), 10L, 0L}, //20
+      new Object[]{9L, ZERO, PREPARE_ONE, Optional.of(5L), 10L, 0L}, //23
+      new Object[]{9L, 10L, PREPARE_ONE, Optional.of(5L), 10L, 0L}, //24
 
       // clearing_balance < settle_to (script will add 1 to 8 and then evaluate)
-      new Object[]{8L, ZERO, PREPARE_ONE, Optional.of(5L), 20L, 0L}, //21
-      new Object[]{8L, 10L, PREPARE_ONE, Optional.of(5L), 20L, 0L}, //22
+      new Object[]{8L, ZERO, PREPARE_ONE, Optional.of(5L), 20L, 0L}, //25
+      new Object[]{8L, 10L, PREPARE_ONE, Optional.of(5L), 20L, 0L}, //26
 
       // clearing_balance > settle_to (script will add 1 to 10 and then evaluate)
-      new Object[]{10, ZERO, PREPARE_ONE, Optional.of(5L), 0L, 11L}, //23
-      new Object[]{10, 10, PREPARE_ONE, Optional.of(5L), 0L, 11L} //24
-
+      new Object[]{10, ZERO, PREPARE_ONE, Optional.of(5L), 0L, 11L}, //27
+      new Object[]{10, 10, PREPARE_ONE, Optional.of(5L), 0L, 11L} //28
     );
   }
 

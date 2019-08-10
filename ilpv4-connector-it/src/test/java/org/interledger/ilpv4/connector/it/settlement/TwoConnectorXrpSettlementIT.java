@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 
 import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
-import static java.math.BigInteger.TEN;
 import static java.math.BigInteger.ZERO;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,6 +37,7 @@ import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PAU
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
+  private static final BigInteger NINE_HUNDRED = BigInteger.valueOf(900L);
   private static final BigInteger THOUSAND = BigInteger.valueOf(1000L);
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorXrpSettlementIT.class);
@@ -110,74 +110,43 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, ZERO);
     assertAccountBalance(bobConnector, PING_ACCOUNT_ID, ZERO);
 
-    // Use the `paul` account on ALICE to ping BOB 10 times to get the balance up to 1000 (1 XRP Drop). This will take
+    // Use the `paul` account on ALICE to ping BOB 9 times to get the balance up to 1000 (1 XRP Drop). This will take
     // the balance from 0 to +1000 on `bob@ALICE`, and -1000 from the perspective of `alice@BOB`. There is technically
     // a receiver called "ping" who would have a balance of -1000 when everything is said and done, but the Connector
     // doesn't track this balance currently. The balance tracker from the perspective of the Connector will be +1000,
     // however, for the account called "ping", indicating that the Connector has received 1000 units with respect to
     // its ping account.
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 9; i++) {
       this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), new BigInteger("100"));
     }
 
+    assertAccountBalance(aliceConnector, PAUL_ACCOUNT, NINE_HUNDRED.negate());
+    assertAccountBalance(aliceConnector, BOB_ACCOUNT, NINE_HUNDRED);
+    assertAccountBalance(bobConnector, ALICE_ACCOUNT, NINE_HUNDRED.negate());
+    assertAccountBalance(bobConnector, PING_ACCOUNT_ID, NINE_HUNDRED);
+
+    // Use the `paul` account on ALICE to ping BOB 1 more time, which should trigger settlmeent.
+    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), new BigInteger("100"));
+
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, THOUSAND.negate());
-    assertAccountBalance(aliceConnector, BOB_ACCOUNT, THOUSAND);
+    // This amount is ZERO because the onFulfill script will preemptiely reduce this account by the settlement amount.
+    // In this test, the settle threshold is 1000, and settle_to is 0, so the new balance will be 0 because we expect
+    // a settlement payment to be made (note that on an exception, this amount should go back up).
+    assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO);
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, THOUSAND.negate());
     assertAccountBalance(bobConnector, PING_ACCOUNT_ID, THOUSAND);
 
     // Wait for Settlement to be triggered (XRPL closes a ledger every 3-4 seconds, so we probably need at least 10
     // seconds just to be safe).
-    Thread.sleep(10000);
+    Thread.sleep(20000);
 
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, THOUSAND.negate());
-    assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO);
-    assertAccountBalance(bobConnector, ALICE_ACCOUNT, ZERO);
+    assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO); // this amount was pre-emptively set to 0.
+    assertAccountBalance(bobConnector, ALICE_ACCOUNT, ZERO); // If settlement is successful, this should be 0 too.
     assertAccountBalance(bobConnector, PING_ACCOUNT_ID, THOUSAND);
   }
 
-  // Remaining Tests
-  // * Simulate what happens when Peter pings the other direction (clarifies that both nodes can trigger settlement)
-  // * Simulate what happens when the Connector settles for 1100 (scale = 9), but the SE can only settle 1000 units
-  // (scale = 6, which in XRP would be 1 drop).
-  // * Simulate loss of precision tests (e.g., threshold is 1000, but clear 1100 packets). This should settle down to
-  // 100.
-
-  //  /**
-  //   * <p>This test validates that settlement is triggered by Alice once her balance with Bob exceeds the settlement
-  //   * threshold (which is 10). To do this, Alice will ping Bob 10 times. If these packets fulfill, then Alice will see
-  //   * her balance with Bob go up (and Bob will see his balance with Alice go down).</p>
-  //   *
-  //   * <p>Once settlement is triggered, then the balance should go back down to 0.</p>
-  //   */
-  //  @Test
-  //  public void testTriggerSettlementOnBob() throws InterruptedException {
-  //    assertAccountBalance(aliceConnector, PAUL_ACCOUNT, ZERO);
-  //    assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO);
-  //    assertAccountBalance(bobConnector, ALICE_ACCOUNT, ZERO);
-  //    assertAccountBalance(bobConnector, PING_ACCOUNT_ID, ZERO);
-  //
-  //    // Use the `paul` account on Alice to ping Bob 10 times. This will take the balance from 0 to +10 on `bob@ALICE`,
-  //    // and -10 from the perspective of `alice@BOB. There is technically a receiver called "ping" who would have a
-  //    // balance of -10 when everything is said and done, but the Connector doesn't track this balance currently. The
-  //    // balance tracker from the perspective of the Connector will be +10, however, indicating that the Connector has
-  //    // received 10 units with respect to its ping account.
-  //    for (int i = 0; i < 10; i++) {
-  //      this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), BigInteger.ONE);
-  //    }
-  //
-  //    assertAccountBalance(aliceConnector, PAUL_ACCOUNT, TEN.negate());
-  //    assertAccountBalance(aliceConnector, BOB_ACCOUNT, TEN);
-  //    assertAccountBalance(bobConnector, ALICE_ACCOUNT, TEN.negate());
-  //    assertAccountBalance(bobConnector, PING_ACCOUNT_ID, TEN);
-  //
-  //    // Wait for Settlement to be triggered.
-  //    Thread.sleep(10000);
-  //
-  //    assertAccountBalance(aliceConnector, PAUL_ACCOUNT, TEN.negate());
-  //    assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO);
-  //    assertAccountBalance(bobConnector, ALICE_ACCOUNT, ZERO);
-  //    assertAccountBalance(bobConnector, PING_ACCOUNT_ID, TEN);
-  //  }
+  // TODO: Finish this test per https://github.com/sappenin/java-ilpv4-connector/projects/5
 
   /////////////////
   // Helper Methods

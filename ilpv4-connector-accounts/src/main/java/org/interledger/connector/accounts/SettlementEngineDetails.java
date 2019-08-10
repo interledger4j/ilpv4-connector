@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import okhttp3.HttpUrl;
 import org.immutables.value.Value;
 
+import java.util.Map;
+import java.util.Optional;
+
 /**
  * <p>Defines settings related to Settlement.</p>
  *
@@ -21,28 +24,9 @@ public interface SettlementEngineDetails {
 
   /**
    * The unique identifier of the Settlement Engine account, as created by calling `POST /accounts/:id` on the
-   * Settlement Engine.
-   *
-   * @return
+   * Settlement Engine. Optional because this value will not be present until an account is created.
    */
-  String settlementEngineAccountId();
-
-  /**
-   * <p>The asset scale the settlement engine is configured to use. This value is the order of magnitude that the
-   * Settlement Engine views 1 single unit of an underlying asset type. For example, if a Settlement Engine is operating
-   * in XRP, then the core unit of value is 1 XRP. Specifying a scale of 6 would mean that the engine will treat 1 unit
-   * as a "drop" (1 millionth of an XRP). Conversely, if the Connector instructs the Settlement Engine to settle 1 unit,
-   * then the Settlement Engine would settle only a single drop.</p>
-   *
-   * <p>The Connector's internal machinery can utilize the assetScale of an Account, and the assetScale of a
-   * corresponding Settlement Engine in order to be able to translate ILP clearing payment values into the correct scale
-   * for Settlement Engine transactions, and vice-versa.</p>
-   *
-   * // TODO: Once the RFC is finalized, update this Javadoc.
-   *
-   * @return An integer representing the SE's asset scale.
-   */
-  int assetScale();
+  Optional<SettlementEngineAccountId> settlementEngineAccountId();
 
   /**
    * The base URL of the Settlement Engine.
@@ -50,4 +34,10 @@ public interface SettlementEngineDetails {
    * @return
    */
   HttpUrl baseUrl();
+
+  /**
+   * Additional, custom settings that any plugin can define.
+   */
+  Map<String, Object> customSettings();
+
 }

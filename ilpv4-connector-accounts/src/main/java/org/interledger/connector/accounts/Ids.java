@@ -38,8 +38,34 @@ public class Ids {
   }
 
   /**
-   * A wrapper that defines a unique identifier for an account provider.
+   * A wrapper that defines a unique identifier for a settlement engine account.
    */
+  @Value.Immutable(intern = true)
+  @Wrapped
+  @JsonSerialize(as = SettlementEngineAccountId.class)
+  @JsonDeserialize(as = SettlementEngineAccountId.class)
+  static abstract class _SettlementEngineAccountId extends Wrapper<String> implements Serializable {
+    @Override
+    public String toString() {
+      return this.value();
+    }
+
+    @Value.Check
+    public _SettlementEngineAccountId enforceSize() {
+      Preconditions.checkArgument(
+        this.value().length() < 64,
+        "SettlementEngineAccountId must not be longer than 64 characters!"
+      );
+      return this;
+    }
+  }
+
+  /**
+   * A wrapper that defines a unique identifier for an account provider.
+   *
+   * @deprecated Will be removed as part of https://github.com/sappenin/java-ilpv4-connector/issues/87
+   */
+  @Deprecated
   @Value.Immutable(intern = true)
   @Wrapped
   @JsonSerialize(as = AccountProviderId.class)

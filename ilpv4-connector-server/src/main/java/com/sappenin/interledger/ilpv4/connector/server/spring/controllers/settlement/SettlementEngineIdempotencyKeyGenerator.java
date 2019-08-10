@@ -1,7 +1,7 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.controllers.settlement;
 
 import com.google.common.base.Preconditions;
-import com.sappenin.interledger.ilpv4.connector.settlement.SettlementConstants;
+import org.interledger.ilpv4.connector.settlement.SettlementConstants;
 import org.springframework.cache.interceptor.KeyGenerator;
 
 import java.lang.reflect.Method;

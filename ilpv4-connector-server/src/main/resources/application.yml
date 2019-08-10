@@ -73,15 +73,17 @@ ilpv4:
   connector:
     settlementEngines:
       connectionDefaults:
+        # Default connect timeout (in milliseconds).
+        # connectTimeoutMillis: 10000
         # Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must
         # be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If unspecified, defaults to 10.
         # This is applied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
         # otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If
         # unspecified, defaults to 10.
-        # readTimeoutMillis: 1000
+        # readTimeoutMillis: 10000
         # Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1
         # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
-        # writeTimeoutMillis: 1000
+        # writeTimeoutMillis: 10000
         # maxIdleConnections: 10
         # keepAliveMinutes: 1
     ilpOverHttp:
