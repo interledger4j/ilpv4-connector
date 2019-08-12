@@ -22,7 +22,7 @@
     <!-- By default, we run in prod mode, unless a different profile is specified. -->
     <activeProfile>prod</activeProfile>
     <java.version>1.8</java.version>
-    <ilp.version>0.16.0-SNAPSHOT</ilp.version>
+    <ilp.version>0.17.0-SNAPSHOT</ilp.version>
     <problem.version>0.23.0</problem.version>
     <problem-spring-web.version>0.24.0</problem-spring-web.version>
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>

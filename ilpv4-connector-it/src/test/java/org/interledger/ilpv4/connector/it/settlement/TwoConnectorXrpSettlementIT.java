@@ -138,7 +138,7 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
     // Wait for Settlement to be triggered (XRPL closes a ledger every 3-4 seconds, so we probably need at least 10
     // seconds just to be safe).
-    Thread.sleep(20000);
+    Thread.sleep(15000);
 
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, THOUSAND.negate());
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO); // this amount was pre-emptively set to 0.

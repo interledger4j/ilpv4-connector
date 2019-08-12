@@ -93,7 +93,7 @@ public class SettlementController {
     @PathVariable(ACCOUNT_ID) final SettlementEngineAccountId settlementEngineAccountId,
     @RequestBody final SettlementQuantity settlementQuantity
   ) {
-    //final UUID idempotencyKey = toUuid(idempotencyKeyString);
+    this.requireIdempotenceId(idempotencyKeyString);
     Objects.requireNonNull(settlementEngineAccountId);
     Objects.requireNonNull(settlementQuantity);
 
@@ -164,15 +164,13 @@ public class SettlementController {
    *
    * @return
    */
-  private UUID toUuid(final String idempotencyKey) {
+  private void requireIdempotenceId(final String idempotencyKey) {
     Objects.requireNonNull(idempotencyKey);
-    try {
-      return UUID.fromString(idempotencyKey);
-    } catch (Exception e) {
+    if (idempotencyKey == null || idempotencyKey.length() <= 0) {
       throw Problem.builder()
-        .withTitle("Invalid Idempotency Key Header: " + idempotencyKey)
+        .withTitle("Idempotency header required")
         .withStatus(Status.BAD_REQUEST)
-        .withDetail("The `" + IDEMPOTENCY_KEY + "` header must be a Type4 UUID")
+        .withDetail("The `" + IDEMPOTENCY_KEY + "` header must be supplied in order to accept a settlement")
         .build();
     }
   }

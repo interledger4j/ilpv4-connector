@@ -25,7 +25,7 @@ public class CcpCodecContextFactory {
    * @return A new instance of {@link CodecContext}.
    */
   public static CodecContext oer() {
-    final CodecContext ccpCodecContext = CodecContextFactory.getContext(CodecContextFactory.OCTET_ENCODING_RULES);
+    final CodecContext ccpCodecContext = CodecContextFactory.oer();
     return register(ccpCodecContext);
   }
 

@@ -26,7 +26,9 @@ public class NumberScalingUtilsTest {
   private SettlementQuantity expectedSettlementQuantity;
 
   public NumberScalingUtilsTest(
-    final String description, SettlementQuantity sourceSettlementQuantity, int destinationScale, SettlementQuantity expectedSettlementQuantity
+    final String description,
+    SettlementQuantity sourceSettlementQuantity, int destinationScale,
+    SettlementQuantity expectedSettlementQuantity
   ) {
     this.description = Objects.requireNonNull(description);
     this.sourceSettlementQuantity = Objects.requireNonNull(sourceSettlementQuantity);
@@ -34,7 +36,7 @@ public class NumberScalingUtilsTest {
     this.expectedSettlementQuantity = Objects.requireNonNull(expectedSettlementQuantity);
   }
 
-  // TODO: Add tests that excercise a loss of precision during the scaling operation, and ensure that the scaled
+  // TODO: Add tests that exercise a loss of precision during the scaling operation, and ensure that the scaled
   //  amount is _always_ rounded down.
   // See https://github.com/sappenin/java-ilpv4-connector/issues/224
 
@@ -97,31 +99,17 @@ public class NumberScalingUtilsTest {
       },
 
       new Object[]{
-        "Convert Hecto-Dollars (scale: -2) to Dollars (scale: 0)",
-        SettlementQuantity.builder().scale(-2).amount(1L).build(),
+        "Convert Dime-Dollars (scale: 1) to Dollars (scale: 0)",
+        SettlementQuantity.builder().scale(1).amount(10L).build(),
         0,
-        SettlementQuantity.builder().scale(0).amount(100L).build(),
-      },
-
-      new Object[]{
-        "Convert Hecto-Dollars (scale: -2) to Hecto-Dollars (scale: -2)",
-        SettlementQuantity.builder().scale(-2).amount(1L).build(),
-        -2,
-        SettlementQuantity.builder().scale(-2).amount(1L).build(),
-      },
-
-      new Object[]{
-        "Convert Hecto-Dollars (scale: -2) to Milli-Dollars (scale: 6)",
-        SettlementQuantity.builder().scale(-2).amount(1L).build(),
-        6,
-        SettlementQuantity.builder().scale(6).amount(100000000L).build(),
-      },
-
-      new Object[]{
-        "Convert 1 Dollar (scale: 0) to mega-dollars (scale: -6)",
         SettlementQuantity.builder().scale(0).amount(1L).build(),
-        -6,
-        SettlementQuantity.builder().scale(-6).amount(0L).build(),
+      },
+
+      new Object[]{
+        "Convert Dime-Dollars (scale: 1) to Milli-Dollars (scale: 6)",
+        SettlementQuantity.builder().scale(1).amount(1L).build(),
+        6,
+        SettlementQuantity.builder().scale(6).amount(100000L).build(),
       },
 
       ////////////
@@ -235,17 +223,40 @@ public class NumberScalingUtilsTest {
   @Test(expected = NullPointerException.class)
   public void translateWithNullSourceQuantity() {
     try {
-      NumberScalingUtils.translate(null, destinationScale);
+      NumberScalingUtils.translate(null, 1, destinationScale);
       fail("Should have thrown an NPE");
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("SettlementQuantity must not be null"));
+      assertThat(e.getMessage(), is("sourceAmount must not be null"));
+      throw e;
+    }
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void translateWithNegativeSourceScale() {
+    try {
+      NumberScalingUtils.translate(BigInteger.ZERO, -11, destinationScale);
+      fail("Should have thrown an NPE");
+    } catch (NullPointerException e) {
+      assertThat(e.getMessage(), is("sourceScale must not be negative"));
+      throw e;
+    }
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void translateWithNegativeDestinationScale() {
+    try {
+      NumberScalingUtils.translate(BigInteger.ZERO, 1, -1);
+      fail("Should have thrown an NPE");
+    } catch (NullPointerException e) {
+      assertThat(e.getMessage(), is("destinationScale must not be negative"));
       throw e;
     }
   }
 
   @Test
   public void translate() {
-    assertThat(description, NumberScalingUtils.translate(sourceSettlementQuantity, destinationScale), is(
-      expectedSettlementQuantity));
+    assertThat(description, NumberScalingUtils.translate(
+      BigInteger.valueOf(sourceSettlementQuantity.amount()), sourceSettlementQuantity.scale(), destinationScale
+    ), is(BigInteger.valueOf(expectedSettlementQuantity.amount())));
   }
 }

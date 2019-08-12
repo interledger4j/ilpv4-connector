@@ -68,16 +68,22 @@ public class DefaultSettlementService implements SettlementService {
 
     // Determine the normalized SettlementQuantity (i.e., translate from Settlement Ledger units to ILP Clearing Ledger
     // units
-    final SettlementQuantity settlementQuantityToAdjustInClearingLayer =
-      NumberScalingUtils.translate(incomingSettlementInSettlementUnits, accountSettings.getAssetScale());
+    final BigInteger settlementQuantityToAdjustInClearingLayer = NumberScalingUtils.translate(
+      BigInteger.valueOf(incomingSettlementInSettlementUnits.amount()),
+      incomingSettlementInSettlementUnits.scale(),
+      accountSettings.getAssetScale()
+    );
 
     // Update the balance in the clearing layer based upon what was settled to this account.
     this.balanceTracker.updateBalanceForIncomingSettlement(
-      idempotencyKey, accountSettings.getAccountId(), settlementQuantityToAdjustInClearingLayer.amount()
+      idempotencyKey, accountSettings.getAccountId(), settlementQuantityToAdjustInClearingLayer.longValue()
     );
 
     // This is the amount that was successfully adjusted in the clearing layer.
-    return settlementQuantityToAdjustInClearingLayer;
+    return SettlementQuantity.builder()
+      .amount(settlementQuantityToAdjustInClearingLayer.longValue())
+      .scale(accountSettings.getAssetScale())
+      .build();
   }
 
   @Override

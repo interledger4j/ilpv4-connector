@@ -18,8 +18,8 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Objects;
 
-import static org.interledger.connector.link.blast.BlastHeaders.ILP_HEADER_OCTET_STREAM;
-import static org.interledger.connector.link.blast.BlastHeaders.ILP_OCTET_STREAM;
+import static org.interledger.connector.link.blast.BlastHeaders.APPLICATION_ILP_HEADER_OCTET_STREAM;
+import static org.interledger.connector.link.blast.BlastHeaders.APPLICATON_ILP_OCTET_STREAM;
 
 /**
  * An {@link HttpMessageConverter} that handles instances of {@link InterledgerPreparePacket}.
@@ -30,7 +30,7 @@ public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMes
   private final CodecContext ilpCodecContext;
 
   public OerPreparePacketHttpMessageConverter(final CodecContext ilpCodecContext) {
-    super(MediaType.APPLICATION_OCTET_STREAM, ILP_OCTET_STREAM, ILP_HEADER_OCTET_STREAM);
+    super(MediaType.APPLICATION_OCTET_STREAM, APPLICATON_ILP_OCTET_STREAM, APPLICATION_ILP_HEADER_OCTET_STREAM);
     this.ilpCodecContext = Objects.requireNonNull(ilpCodecContext);
   }
 
@@ -39,7 +39,7 @@ public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMes
    */
   @Override
   public boolean canRead(Type type, Class<?> contextClass, MediaType mediaType) {
-    if (contextClass == null || IlpHttpController.class.isAssignableFrom(contextClass)) {
+    if (contextClass != null && IlpHttpController.class.isAssignableFrom(contextClass)) {
       return super.canRead(type, contextClass, mediaType);
     } else {
       return false;

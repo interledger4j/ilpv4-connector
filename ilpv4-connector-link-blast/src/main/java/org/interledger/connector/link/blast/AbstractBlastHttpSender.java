@@ -21,8 +21,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static org.interledger.connector.link.blast.BlastHeaders.ILP_HEADER_OCTET_STREAM;
-import static org.interledger.connector.link.blast.BlastHeaders.ILP_OCTET_STREAM;
+import static org.interledger.connector.link.blast.BlastHeaders.APPLICATION_ILP_HEADER_OCTET_STREAM;
+import static org.interledger.connector.link.blast.BlastHeaders.APPLICATON_ILP_OCTET_STREAM;
 import static org.interledger.connector.link.blast.BlastHeaders.ILP_OPERATOR_ADDRESS_VALUE;
 import static org.springframework.http.HttpMethod.POST;
 
@@ -39,7 +39,7 @@ public abstract class AbstractBlastHttpSender implements BlastHttpSender {
   private final OutgoingLinkSettings outgoingLinkSettings;
 
   // Determined via testConnection when the Connection starts-up, if possible.
-  private MediaType blastHeader = ILP_OCTET_STREAM;
+  private MediaType blastHeader = APPLICATON_ILP_OCTET_STREAM;
 
   /**
    * Required-args Constructor.
@@ -112,7 +112,8 @@ public abstract class AbstractBlastHttpSender implements BlastHttpSender {
       if (response.getStatusCode().is2xxSuccessful()) {
         // If there's one Accept header we can work with, then treat this as a successful test connection...
         boolean hasSupportedHeader = Optional.ofNullable(response.getHeaders().getContentType())
-          .filter(contentType -> contentType.equals(ILP_HEADER_OCTET_STREAM) || contentType.equals(ILP_OCTET_STREAM) ||
+          .filter(contentType -> contentType.equals(APPLICATION_ILP_HEADER_OCTET_STREAM) || contentType.equals(
+            APPLICATON_ILP_OCTET_STREAM) ||
             contentType.equals(MediaType.APPLICATION_OCTET_STREAM)
           ).map(ct -> true).orElse(false);
 
@@ -127,7 +128,8 @@ public abstract class AbstractBlastHttpSender implements BlastHttpSender {
               accountId, outgoingLinkSettings.url(), contentType
             );
           }
-          this.blastHeader = Optional.ofNullable(response.getHeaders().getContentType()).orElse(ILP_OCTET_STREAM);
+          this.blastHeader = Optional.ofNullable(response.getHeaders().getContentType()).orElse(
+            APPLICATON_ILP_OCTET_STREAM);
         } else {
           throw new HttpClientErrorException(
             HttpStatus.BAD_REQUEST,
