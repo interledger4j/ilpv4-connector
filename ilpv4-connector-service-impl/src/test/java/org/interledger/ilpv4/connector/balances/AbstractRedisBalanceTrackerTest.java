@@ -83,10 +83,11 @@ public abstract class AbstractRedisBalanceTrackerTest {
   public static void startRedisServer() {
     try {
       final JedisConnection connection = new JedisConnection(new Jedis());
+      LOGGER.debug("Pinging Redis to check if its up...");
       connection.ping();
-      LOGGER.warn("Redis was already running on port {}. This is fine, although this test suite supports an in-memory" +
-        " version of Redis if no existing Redis is available.", REDIS_PORT);
+      LOGGER.debug("Redis is running on port {}", REDIS_PORT);
     } catch (Exception e) {
+      LOGGER.debug("Redis was NOT running on port {}. Using in-memory version instead.", REDIS_PORT);
       redisServer = new RedisServerBuilder().port(REDIS_PORT)
         //.setting("maxheap 128M")
         .build();
