@@ -294,6 +294,7 @@ jobs:
           name: Run Alice SE
           command: |
             source ~/.nvm/nvm.sh
+            cd settlement-xrp
             npm run build && LEDGER_ADDRESS=rPtZP6jEcAMo2v1aVAJqoqqoZThRTx2voE LEDGER_SECRET=snH5tCJWYszQWRTBe61ssV617pzn6 ENGINE_PORT=9000 CONNECTOR_URL=http://localhost:8080 node ./build/run.js
           background: true
 
@@ -301,6 +302,7 @@ jobs:
           name: Run Bob SE
           command: |
             source ~/.nvm/nvm.sh
+            cd settlement-xrp
             npm run build && LEDGER_ADDRESS=rdVEU3RfkW4q9Fg3BTBhaNJr8gy9pZRrw LEDGER_SECRET=shcuUXdrZKUvZXSvq3zuPxXRB5Hbs ENGINE_PORT=9001 CONNECTOR_URL=http://localhost:8081 node ./build/run.js
           background: true
 
