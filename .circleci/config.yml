@@ -314,10 +314,10 @@ workflows:
       - test_postgresql
       # We only run the "integration_tests" job when the above non-IT builds have succeeded
       - integration_tests_ilp_over_http:
-        requires:
-          - build
-          - test_postgresql
+          requires:
+            - build
+            - test_postgresql
       - integration_tests_settlement:
-        requires:
-          - build
-          - test_postgresql
+          requires:
+            - build
+            - test_postgresql
