@@ -116,7 +116,8 @@
               </includes>
               <encoding>UTF-8</encoding>
               <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
-              <argLine>-Xmx1024m -Xms1024m -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <useSystemClassLoader>false</useSystemClassLoader>
               <!-- By default, don't run the Settlement ITs because it requires a Settlement Engine to
                be running, which may not be the case on a developer laptop. Note that this value is overridden in the
                CI build. Likewise for Performance. -->
@@ -159,10 +160,12 @@
               </includes>
               <encoding>UTF-8</encoding>
               <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
-              <argLine>-Xmx1024m -Xms1024m -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <useSystemClassLoader>false</useSystemClassLoader>
               <groups>
                 org.interledger.ilpv4.connector.it.markers.Performance
               </groups>
+<!--              <threadCount>1</threadCount>-->
             </configuration>
           </plugin>
         </plugins>
@@ -192,7 +195,8 @@
               <useSystemClassLoader>false</useSystemClassLoader>
               <encoding>UTF-8</encoding>
               <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
-              <argLine>-Xmx1024m -Xms1024m -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <useSystemClassLoader>false</useSystemClassLoader>
               <groups>
                 org.interledger.ilpv4.connector.it.markers.Settlement
               </groups>

@@ -502,7 +502,7 @@
           <useSystemClassLoader>false</useSystemClassLoader>
           <encoding>UTF-8</encoding>
           <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
-          <argLine>-Xmx4096m -Xms1024m -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+          <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
         </configuration>
       </plugin>
 

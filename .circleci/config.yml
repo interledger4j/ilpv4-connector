@@ -15,7 +15,7 @@ jobs:
       - image: circleci/openjdk:8-jdk
         environment:
           # Customize the JVM maximum heap limit
-          MAVEN_OPTS: -Xmx3200m
+          MAVEN_OPTS: -Xmx4096m
           spring.datasource.url: jdbc:h2:mem:connector-db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
 
       # Service container image available at `host: localhost`
@@ -81,7 +81,7 @@ jobs:
       - image: circleci/openjdk:8-jdk
         environment:
           # Customize the JVM maximum heap limit
-          MAVEN_OPTS: -Xmx3200m
+          MAVEN_OPTS: -Xmx4096m
           spring.datasrouce.user: circleci
           spring.datasource.url: jdbc:postgresql://localhost:5432/circle_test
 
@@ -148,7 +148,7 @@ jobs:
       - image: circleci/openjdk:8-jdk
         environment:
           # Customize the JVM maximum heap limit
-          MAVEN_OPTS: -Xmx3200m
+          MAVEN_OPTS: -Xmx4096m
           spring.datasrouce.user: circleci
           spring.datasource.url: jdbc:postgresql://localhost:5432/circle_test
 
@@ -218,7 +218,7 @@ jobs:
       - image: circleci/openjdk:8-jdk
         environment:
           # Customize the JVM maximum heap limit
-          MAVEN_OPTS: -Xmx3200m
+          MAVEN_OPTS: -Xmx4096m
           spring.datasrouce.user: circleci
           spring.datasource.url: jdbc:postgresql://localhost:5432/circle_test
 
@@ -305,20 +305,20 @@ jobs:
       # wait for the server to start responding. We expect 404 (NotFound) once it starts listening.
       # so override the shell and have the last command be the : { null } command to force exit code 0.
       - run:
-        name: Verify Alice SE Started
-        shell: /bin/sh
-        command: |
-          wget --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 -t 10 http://localhost:9000
-          :
+          name: Verify Alice SE Started
+          shell: /bin/sh
+          command: |
+            wget --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 -t 10 http://localhost:9000
+            :
 
       # wait for the server to start responding. We expect 404 (NotFound) once it starts listening.
       # so override the shell and have the last command be the : { null } command to force exit code 0.
       - run:
-        name: Verify Bob SE Started
-        shell: /bin/sh
-        command: |
-          wget --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 -t 10 http://localhost:9001
-          :
+          name: Verify Bob SE Started
+          shell: /bin/sh
+          command: |
+            wget --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 -t 10 http://localhost:9001
+            :
 
       - run:
           name: Run Integration Tests (ITs)
