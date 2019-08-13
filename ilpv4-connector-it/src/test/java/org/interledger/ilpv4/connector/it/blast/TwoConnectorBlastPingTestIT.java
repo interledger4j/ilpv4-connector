@@ -14,6 +14,7 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.core.InterledgerResponsePacketHandler;
 import org.interledger.ilpv4.connector.it.AbstractBlastIT;
 import org.interledger.ilpv4.connector.it.markers.IlpOverHttp;
+import org.interledger.ilpv4.connector.it.markers.Performance;
 import org.interledger.ilpv4.connector.it.topologies.ilpoverhttp.TwoConnectorPeerBlastTopology;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.AfterClass;
@@ -60,7 +61,7 @@ import static org.junit.Assert.assertThat;
 // TODO: Once the PING protocol is specified via RFC, extract the PING tests into an abstract super-class. Every IT
 //  should exercise PING functionality as a baseline, but both BTP and BLAST duplicate the same PING tests.
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@Category(IlpOverHttp.class)
+@Category({IlpOverHttp.class})
 public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorBlastPingTestIT.class);
@@ -531,6 +532,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
    * Note: this upper-bound may be adjusted as the Connector implementation has perf improvements or degradations.
    */
   @Test
+  @Category(Performance.class)
   public void zTestPingPerf() throws InterruptedException {
     final BlastLink paulToAliceLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
 

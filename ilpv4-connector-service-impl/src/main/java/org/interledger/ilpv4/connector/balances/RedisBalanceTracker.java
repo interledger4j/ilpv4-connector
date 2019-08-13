@@ -135,7 +135,7 @@ public class RedisBalanceTracker implements BalanceTracker {
     );
 
     // This is here so that we don't hit the balance tracker for any 0-value packets.
-    Preconditions.checkArgument(amount > 0, "destinationAmount must be positive");
+    Preconditions.checkArgument(amount > 0, "destinationAmount must be positive, but was " + amount);
 
     try {
       // Response Format: `{ clearing_balance, prepaid_amount, settle_amount }`

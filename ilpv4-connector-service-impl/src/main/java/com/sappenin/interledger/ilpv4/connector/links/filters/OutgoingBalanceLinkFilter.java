@@ -13,6 +13,7 @@ import org.interledger.ilpv4.connector.core.settlement.SettlementQuantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -53,6 +54,11 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
 
       @Override
       protected InterledgerResponsePacket mapFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
+
+        if (outgoingPreparePacket.getAmount().equals(BigInteger.ZERO)) {
+          // No need to settle 0-value packets...
+          return interledgerFulfillPacket;
+        }
 
         /////////////////////////////
         // Update Balance for Fulfill

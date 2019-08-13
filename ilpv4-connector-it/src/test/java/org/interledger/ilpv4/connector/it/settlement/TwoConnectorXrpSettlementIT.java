@@ -33,8 +33,8 @@ import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PAU
  *
  * @see "https://github.com/interledgerjs/settlement-xrp"
  */
-@Category(Settlement.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@Category(Settlement.class)
 public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
   private static final BigInteger NINE_HUNDRED = BigInteger.valueOf(900L);
