@@ -293,13 +293,15 @@ jobs:
       - run:
           name: Run Alice SE
           command: |
-            npm run build && LEDGER_ADDRESS=rPtZP6jEcAMo2v1aVAJqoqqoZThRTx2voE LEDGER_SECRET=snH5tCJWYszQWRTBe61ssV617pzn6 CONNECTOR_URL=http://localhost:9000 node ./build/run.js
+            source ~/.nvm/nvm.sh
+            npm run build && LEDGER_ADDRESS=rPtZP6jEcAMo2v1aVAJqoqqoZThRTx2voE LEDGER_SECRET=snH5tCJWYszQWRTBe61ssV617pzn6 ENGINE_PORT=9000 CONNECTOR_URL=http://localhost:8080 node ./build/run.js
           background: true
 
       - run:
           name: Run Bob SE
           command: |
-            npm run build && LEDGER_ADDRESS=rdVEU3RfkW4q9Fg3BTBhaNJr8gy9pZRrw LEDGER_SECRET=shcuUXdrZKUvZXSvq3zuPxXRB5Hbs CONNECTOR_URL=http://localhost:9001 node ./build/run.js
+            source ~/.nvm/nvm.sh
+            npm run build && LEDGER_ADDRESS=rdVEU3RfkW4q9Fg3BTBhaNJr8gy9pZRrw LEDGER_SECRET=shcuUXdrZKUvZXSvq3zuPxXRB5Hbs ENGINE_PORT=9001 CONNECTOR_URL=http://localhost:8081 node ./build/run.js
           background: true
 
       # wait for the server to start responding. We expect 404 (NotFound) once it starts listening.
