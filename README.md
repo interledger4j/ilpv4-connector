@@ -1,12 +1,11 @@
-<img src="docs/interledger-logo.png" width="100" alt="Java ILPv4 Connector"/>
-
-# Java ILPv4 Connector [![Discuss][forum-image]][forum-url] 
+# Java ILPv4 Connector
+[![Discuss][forum-image]][forum-url] 
+[![issues][github-issues-image]][github-issues-url]
 [![circle-ci][circle-image]][circle-url] 
 [![codecov][codecov-image]][codecov-url] 
-[![license-ci][license-image]][license-url]
 [![codacy][codacy-image]][codacy-url] 
-[![issues][github-issues-image]][github-issues-url]
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/sappenin/java-ilpv4-connector.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/sappenin/java-ilpv4-connector/alerts/)
+[![license-ci][license-image]][license-url]
 
 [forum-url]: https://forum.interledger.org/tags/java-ilpv4-connector
 [forum-image]: https://img.shields.io/badge/Discuss-Interledger%20Forum-blue.svg
@@ -21,32 +20,10 @@
 [github-issues-image]: https://img.shields.io/github/issues/sappenin/java-ilpv4-connector.svg
 [github-issues-url]: https://github.com/sappenin/java-ilpv4-connector/issues
 
-A Java implementation of an [Interledger v4 Connector](https://github.com/interledger/rfcs/blob/master/0034-connector-requirements/0034-connector-requirements.md).
+A Java implementation of an Interledger v4 Connector.
 
-# Supported Features
-This Connector implementation is intended for operation as a server-based ILSP, meaning it will listen for, and accept, and respond to potentially _many_ incoming connections. Specifically, this implementation supports the follwoing ILP features:
+To learn more about this project, consult the [documentation here](https://interledger.gitbook.io/java-ilp-connector/). 
 
-* **ILDCP**: Interledger Dynamic Configuration Protocol as specified in [IL-RFC-0031](https://github.com/interledger/rfcs/blob/master/0031-dynamic-configuration-protocol/0031-dynamic-configuration-protocol.md).
+For questions, ideas, or just to say hello, connect with us on the [Interledger Forum](https://forum.interledger.org).
 
-* **ILP-over-HTTP**: Also known as BLAST (**B**i**L**ateral **A**synchronous **S**eder **T**ransport), defined in [IL-RFC-0030](https://github.com/interledger/rfcs/pull/504).
-
-* **Route Broadcast Protocol**: Defines how Connectors can exchange routing table updates as defined in [Route Broadcast Protocol](https://github.com/interledger/rfcs/pull/455).
-
-* **Balance Tracking**: [Redis](https://redis.io) is used to durably track balance updates in a high-performance 
-manner.
-
-* **Persistent Data Storage**: Account and other data can be stored using Postgres, MySQL, Oracle, MSSQL, and more.
-  
-# Architecture & Design
-To learn more about how this implementation is designed, see the [docs](./docs) folder, specifically [Connector Design](./docs/connector-design.md).
-
-# Development
-To learn more about how to contribute to this project, see the [docs/development](docs/development.md) folder.
-
-# Operating a Connector
 **Disclaimer: _This implementation is currently a prototype and SHOULD NOT be used in a production deployment!_**
-
-To configure this connector, see [Configuration](docs/configuration.md) in the docs folder.
-
-# Connector Releases
-This implementation follows [Semantic Versioning](https://semver.org/) as closely as possible. To view releases, see [here](https://github.com/sappenin/java-ilpv4-connector/releases).
