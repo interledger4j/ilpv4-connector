@@ -117,17 +117,22 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
     // however, for the account called "ping", indicating that the Connector has received 1000 units with respect to
     // its ping account.
     for (int i = 0; i < 9; i++) {
+      getLogger().info("Ping {} of of 9", i + 1);
       this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), new BigInteger("100"));
     }
 
+    getLogger().info("Checking balances...");
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, NINE_HUNDRED.negate());
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, NINE_HUNDRED);
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, NINE_HUNDRED.negate());
     assertAccountBalance(bobConnector, PING_ACCOUNT_ID, NINE_HUNDRED);
 
     // Use the `paul` account on ALICE to ping BOB 1 more time, which should trigger settlmeent.
+    getLogger().info("Ping 10 of of 10 (should trigger settlement)");
     this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), new BigInteger("100"));
 
+
+    getLogger().info("Pre-settlement balances checks...");
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, THOUSAND.negate());
     // This amount is ZERO because the onFulfill script will preemptiely reduce this account by the settlement amount.
     // In this test, the settle threshold is 1000, and settle_to is 0, so the new balance will be 0 because we expect
@@ -138,8 +143,12 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
     // Wait for Settlement to be triggered (XRPL closes a ledger every 3-4 seconds, so we probably need at least 10
     // seconds just to be safe).
-    Thread.sleep(15000);
+    getLogger().info("Sleeping 15s to wait for settlement...");
+    Thread.sleep(10000);
 
+    getLogger().info("Waking from 15s sleep...");
+
+    getLogger().info("Post-settlement balances checks...");
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, THOUSAND.negate());
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO); // this amount was pre-emptively set to 0.
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, ZERO); // If settlement is successful, this should be 0 too.
