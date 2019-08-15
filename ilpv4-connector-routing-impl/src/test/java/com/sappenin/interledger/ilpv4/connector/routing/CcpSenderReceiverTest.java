@@ -403,7 +403,7 @@ public class CcpSenderReceiverTest {
               }
 
               logger.debug(
-                "Received getRoute control message. sender={}, tableId={} getEpoch={} features={}",
+                "Received getRoute control message. sender={}, tableId={} epoch={} features={}",
                 operatorAddressSupplier,
                 routeControlRequest.lastKnownRoutingTableId(), routeControlRequest.lastKnownEpoch(),
                 routeControlRequest.features()

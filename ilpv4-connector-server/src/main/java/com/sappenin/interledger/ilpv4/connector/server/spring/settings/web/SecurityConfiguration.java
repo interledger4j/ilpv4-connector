@@ -30,6 +30,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import static com.sappenin.interledger.ilpv4.connector.server.spring.auth.blast.AuthConstants.Authorities.CONNECTOR_ADMIN;
@@ -104,7 +105,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     if (adminPassword != null && adminPassword.startsWith(EncryptedSecret.ENCODING_PREFIX)) {
       pwBytes = decryptor.decrypt(EncryptedSecret.fromEncodedValue(adminPassword));
     } else {
-      pwBytes = adminPassword.getBytes();
+      pwBytes = Objects.requireNonNull(adminPassword).getBytes();
     }
 
     auth.inMemoryAuthentication()

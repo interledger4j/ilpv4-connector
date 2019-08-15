@@ -29,6 +29,11 @@ public abstract class Wrapper<T extends Comparable<T>> implements Comparable<Wra
   }
 
   @Override
+  public int hashCode() {
+    return value().hashCode();
+  }
+
+  @Override
   public String toString() {
     return getClass().getSimpleName() + "(" + value() + ")";
   }

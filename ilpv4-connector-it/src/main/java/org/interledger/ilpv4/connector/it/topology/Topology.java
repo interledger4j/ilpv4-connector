@@ -52,7 +52,7 @@ public class Topology {
   }
 
   public Node getNode(String key) {
-    return nodes.get(key);
+    return getNode(key, Node.class);
   }
 
   public <T> T getNode(String key, Class<T> clazz) {
@@ -60,11 +60,11 @@ public class Topology {
   }
 
   public Node getNode(InterledgerAddress key) {
-    return getNode(key.getValue());
+    return getNode(key, Node.class);
   }
 
   public <T> T getNode(InterledgerAddress key, Class<T> clazz) {
-    return (T) nodes.get(key);
+    return (T) nodes.get(key.getValue());
   }
 
   public Collection<Node> getNodeValues() {

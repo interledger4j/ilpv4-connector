@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface RouteUpdate extends BaseRoute {
 
   /**
-   * The getEpoch index for this getRoute update.¬
+   * The epoch index for this getRoute update.¬
    *
    * @return
    */

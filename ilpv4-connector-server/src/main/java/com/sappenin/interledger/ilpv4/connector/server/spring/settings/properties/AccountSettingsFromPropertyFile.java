@@ -154,7 +154,7 @@ public class AccountSettingsFromPropertyFile implements AccountSettings {
     return this.settlementEngineDetails();
   }
 
-  public void setSettlementEngineDetails(SettlementEngineDetailsFromPropertyFile balanceSettings) {
+  public void setSettlementEngineDetails(SettlementEngineDetailsFromPropertyFile settlementEngineDetails) {
     this.settlementEngineDetails = settlementEngineDetails;
   }
 

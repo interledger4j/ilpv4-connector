@@ -22,9 +22,9 @@ public class AsnCcpRouteUpdateRequestCodec extends AsnSequenceCodec<CcpRouteUpda
   public AsnCcpRouteUpdateRequestCodec() {
     super(
       new AsnUuidCodec(), // RoutingTableId (UUID)
-      new AsnUint32Codec(), // current getEpoch index
-      new AsnUint32Codec(), // from getEpoch index
-      new AsnUint32Codec(), // to getEpoch index
+      new AsnUint32Codec(), // current epoch index
+      new AsnUint32Codec(), // from epoch index
+      new AsnUint32Codec(), // to epoch index
       new AsnUint32Codec(), // hold down time
       new AsnInterledgerAddressCodec(), // speaker
       new AsnSequenceOfSequenceCodec(Lists::newArrayList, AsnCcpRouteCodec::new), // new routes
