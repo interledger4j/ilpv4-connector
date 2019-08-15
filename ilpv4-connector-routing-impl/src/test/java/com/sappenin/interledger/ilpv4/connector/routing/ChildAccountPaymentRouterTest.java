@@ -35,7 +35,7 @@ public class ChildAccountPaymentRouterTest {
   private ChildAccountPaymentRouter childAccountPaymentRouter;
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
 
     when(connectorSettingsMock.getEnabledProtocols().isPingProtocolEnabled()).thenReturn(true);

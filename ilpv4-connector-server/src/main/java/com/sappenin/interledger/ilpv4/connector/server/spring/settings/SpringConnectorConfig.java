@@ -250,27 +250,26 @@ public class SpringConnectorConfig {
 
     // If the Ping Protocol is enabled, we need to ensure that there is a Ping account suitable to accept value for
     // Ping requests.
-    if (connectorSettingsSupplier.get().getEnabledProtocols().isPingProtocolEnabled()) {
-      if (!accountSettingsRepository.findByAccountId(PING_ACCOUNT_ID).isPresent()) {
-        // Create this account.
+    if (connectorSettingsSupplier.get().getEnabledProtocols().isPingProtocolEnabled() &&
+      !accountSettingsRepository.findByAccountId(PING_ACCOUNT_ID).isPresent()) {
+      // Create this account.
 
-        final AccountSettings pingAccountSettings = AccountSettings.builder()
-          .accountId(PING_ACCOUNT_ID)
-          .accountRelationship(AccountRelationship.CHILD)
-          .assetCode("USD") // TODO: Make this configurable, or else the same as the Connector's base currency.
-          .assetScale(2) // TODO: Make this configurable, or else the same as the Connector's base currency.
-          .description("A receiver-like child account for collecting all Ping protocol revenues.")
-          // TODO: In theory we don't need a rate limit for ping requests because they should always contain value.
-          //  However, some systems may ping with a 0-value packet. Also, consider the case where 1M accounts each
-          //  ping a Connector cluster every 5 or 10 or 60 seconds.
-          .rateLimitSettings(AccountRateLimitSettings.builder()
-            .maxPacketsPerSecond(1) // TODO: Make Configurable, per the above comment.
-            .build())
-          .linkType(PingLoopbackLink.LINK_TYPE)
-          .build();
+      final AccountSettings pingAccountSettings = AccountSettings.builder()
+        .accountId(PING_ACCOUNT_ID)
+        .accountRelationship(AccountRelationship.CHILD)
+        .assetCode("USD") // TODO: Make this configurable, or else the same as the Connector's base currency.
+        .assetScale(2) // TODO: Make this configurable, or else the same as the Connector's base currency.
+        .description("A receiver-like child account for collecting all Ping protocol revenues.")
+        // TODO: In theory we don't need a rate limit for ping requests because they should always contain value.
+        //  However, some systems may ping with a 0-value packet. Also, consider the case where 1M accounts each
+        //  ping a Connector cluster every 5 or 10 or 60 seconds.
+        .rateLimitSettings(AccountRateLimitSettings.builder()
+          .maxPacketsPerSecond(1) // TODO: Make Configurable, per the above comment.
+          .build())
+        .linkType(PingLoopbackLink.LINK_TYPE)
+        .build();
 
-        accountSettingsRepository.save(new AccountSettingsEntity(pingAccountSettings));
-      }
+      accountSettingsRepository.save(new AccountSettingsEntity(pingAccountSettings));
     }
 
     return new ChildAccountPaymentRouter(connectorSettingsSupplier, accountSettingsRepository, decryptor);

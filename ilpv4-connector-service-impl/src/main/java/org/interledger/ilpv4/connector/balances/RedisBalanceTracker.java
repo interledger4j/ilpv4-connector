@@ -231,7 +231,7 @@ public class RedisBalanceTracker implements BalanceTracker {
         // Arg1: amount
         amount + "",
         // Arg2: idempotency_key
-        idempotencyKey.toString()
+        idempotencyKey
       );
 
       logger.debug(

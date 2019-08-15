@@ -32,7 +32,7 @@ public class DefaultLinkSettingsFactoryTest {
   DefaultLinkSettingsFactory factory;
 
   @Before
-  public void setup() {
+  public void setUp() {
     this.factory = new DefaultLinkSettingsFactory();
   }
 

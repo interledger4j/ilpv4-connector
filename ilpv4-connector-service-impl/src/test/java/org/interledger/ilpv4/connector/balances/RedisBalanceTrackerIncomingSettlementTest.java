@@ -37,10 +37,10 @@ public class RedisBalanceTrackerIncomingSettlementTest extends AbstractRedisBala
   public final SpringMethodRule springMethodRule = new SpringMethodRule();
 
   @Autowired
-  RedisBalanceTracker balanceTracker;
+  private RedisBalanceTracker balanceTracker;
 
   @Autowired
-  RedisTemplate<String, String> redisTemplate;
+  private RedisTemplate<String, String> redisTemplate;
 
   /**
    * Required-args Constructor.
@@ -159,7 +159,8 @@ public class RedisBalanceTrackerIncomingSettlementTest extends AbstractRedisBala
     final AccountBalance loadedBalance = balanceTracker.getBalance(ACCOUNT_ID);
     assertThat(loadedBalance.clearingBalance(), is(expectedClearingBalanceInRedis));
     assertThat(loadedBalance.prepaidAmount(), is(expectedPrepaidAmountInRedis));
-    assertThat(loadedBalance.netBalance().longValue(), is(expectedClearingBalanceInRedis + expectedPrepaidAmountInRedis));
+    assertThat(loadedBalance.netBalance().longValue(),
+      is(expectedClearingBalanceInRedis + expectedPrepaidAmountInRedis));
   }
 
 }

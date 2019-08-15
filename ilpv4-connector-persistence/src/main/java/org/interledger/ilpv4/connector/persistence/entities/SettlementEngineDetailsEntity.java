@@ -21,10 +21,10 @@ import static org.interledger.ilpv4.connector.persistence.entities.DataConstants
 public class SettlementEngineDetailsEntity implements SettlementEngineDetails {
 
   @Column(name = SE_ACCOUNT_ID, unique = true)
-  String settlementEngineAccountId;
+  private String settlementEngineAccountId;
 
   @Column(name = "SE_BASE_URL")
-  String baseUrl;
+  private String baseUrl;
 
   @Convert(converter = HashMapConverter.class)
   @Column(name = "SE_CUSTOM_SETTINGS", length = 8196)

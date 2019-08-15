@@ -16,7 +16,7 @@ public class AccountBalanceSettingsConverterTest {
   private AccountBalanceSettingsConverter converter;
 
   @Before
-  public void setup() {
+  public void setUp() {
     this.converter = new AccountBalanceSettingsConverter();
   }
 

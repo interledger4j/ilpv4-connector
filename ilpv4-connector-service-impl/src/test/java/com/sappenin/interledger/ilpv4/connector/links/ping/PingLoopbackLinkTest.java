@@ -56,7 +56,7 @@ public class PingLoopbackLinkTest {
   private PingLoopbackLink link;
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
     this.link = new PingLoopbackLink(() -> Optional.of(OPERATOR_ADDRESS), linkSettingsMock, linkEventEmitterMock);
   }

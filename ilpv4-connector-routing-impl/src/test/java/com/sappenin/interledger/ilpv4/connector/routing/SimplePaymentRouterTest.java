@@ -25,7 +25,7 @@ public class SimplePaymentRouterTest {
 //  private PaymentRouter<Route> paymentRouter;
 //
 //  @Before
-//  public void setup() {
+//  public void setUp() {
 //    MockitoAnnotations.initMocks(this);
 //    this.paymentRouter = new SimplePaymentRouter(routingTableMock);
 //  }

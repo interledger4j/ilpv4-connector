@@ -38,7 +38,7 @@ public class SimulatedBppConnectionTest {
 //  private SimulatedBppConnection connection;
 //
 //  @Before
-//  public void setup() {
+//  public void setUp() {
 //    connection = new SimulatedBppConnection(OPERATOR_ADDRESS);
 //    // By default, simulate this connection is UP!
 //    connection.setExpectedConnectionState(SimulatedBppConnection.ExpectedConnectionState.UP);

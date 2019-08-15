@@ -40,15 +40,15 @@ public class DefaultSettlementServiceTest {
     SettlementQuantity.builder().amount(1L).scale(6).build();
 
   @Mock
-  AccountSettingsRepository accountSettingsRepositoryMock;
+  private AccountSettingsRepository accountSettingsRepositoryMock;
   @Mock
-  BalanceTracker balanceTrackerMock;
+  private BalanceTracker balanceTrackerMock;
   @Mock
-  LinkManager linkManagerMock;
+  private LinkManager linkManagerMock;
   @Mock
-  SettlementEngineClient settlementEngineClientMock;
+  private SettlementEngineClient settlementEngineClientMock;
 
-  DefaultSettlementService settlementService;
+  private DefaultSettlementService settlementService;
 
   @Before
   public void setUp() {

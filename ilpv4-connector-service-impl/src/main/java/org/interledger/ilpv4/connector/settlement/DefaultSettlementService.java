@@ -155,7 +155,7 @@ public class DefaultSettlementService implements SettlementService {
   }
 
   @Override
-  public SettlementQuantity initiateSettlementForFulfillThreshold(
+  public SettlementQuantity initiateLocalSettlement(
     UUID idempotencyKey, AccountSettings accountSettings, SettlementQuantity requestedSettlementQuantityInClearingUnits
   ) throws SettlementServiceException {
 

@@ -92,7 +92,7 @@ public interface SettlementService {
    *
    * @throws SettlementServiceException if the settlement cannot be initiated for any reason.
    */
-  SettlementQuantity initiateSettlementForFulfillThreshold(
+  SettlementQuantity initiateLocalSettlement(
     UUID idempotencyKey, AccountSettings accountSettings, SettlementQuantity settlementQuantityInClearingUnits
   ) throws SettlementServiceException;
 }

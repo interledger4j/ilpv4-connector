@@ -5,7 +5,6 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
 
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * <p>Tracks balances for accounts held at this connector.</p>

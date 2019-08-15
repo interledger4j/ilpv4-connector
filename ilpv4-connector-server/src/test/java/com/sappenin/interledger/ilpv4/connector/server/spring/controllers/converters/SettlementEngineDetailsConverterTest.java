@@ -20,7 +20,7 @@ public class SettlementEngineDetailsConverterTest {
   private SettlementEngineDetailsConverter converter;
 
   @Before
-  public void setup() {
+  public void setUp() {
     this.converter = new SettlementEngineDetailsConverter();
   }
 

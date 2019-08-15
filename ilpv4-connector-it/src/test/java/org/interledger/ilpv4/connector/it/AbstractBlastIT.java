@@ -10,6 +10,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.CircuitBreakingLink;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.blast.BlastLink;
+import org.interledger.connector.link.exceptions.LinkException;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerRejectPacket;
@@ -20,6 +21,7 @@ import org.interledger.ilpv4.connector.balances.RedisBalanceTracker;
 import org.interledger.ilpv4.connector.it.topology.Topology;
 import org.junit.BeforeClass;
 import org.slf4j.Logger;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisKeyCommands;
@@ -202,8 +204,9 @@ public abstract class AbstractBlastIT {
         return (BlastLink) link;
       }
     } else {
-      throw new RuntimeException(
-        "Link was not of Type(BLAST), but was instead: " + link.getLinkSettings().getLinkType());
+      throw new LinkException(
+        "Link was not of Type(BLAST), but was instead: " + link.getLinkSettings().getLinkType().value(),
+        link.getLinkId());
     }
   }
 
@@ -239,7 +242,7 @@ public abstract class AbstractBlastIT {
         .map(RedisTemplate::getConnectionFactory)
         .map(RedisConnectionFactory::getConnection)
         .map(RedisConnection::keyCommands)
-        .orElseThrow(() -> new RuntimeException("Unable to get redisHashCommands "));
+        .orElseThrow(() -> new RedisConnectionFailureException("Unable to get redisHashCommands "));
 
       redisCommands.del(
         ("accounts:" + PING_ACCOUNT_ID).getBytes(),

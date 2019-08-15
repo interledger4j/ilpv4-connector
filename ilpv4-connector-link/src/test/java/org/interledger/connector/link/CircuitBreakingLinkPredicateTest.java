@@ -101,7 +101,7 @@ public class CircuitBreakingLinkPredicateTest {
   }
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
 
     this.circuitBreakerConfig = CircuitBreakerConfig.custom()

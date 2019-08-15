@@ -17,15 +17,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class SettlementEngineIdempotencyKeyGeneratorTest {
 
   @Mock
-  Object objectMock;
+  private Object objectMock;
 
   @Mock
-  SettlementController settlementControllerMock;
+  private SettlementController settlementControllerMock;
 
   private SettlementEngineIdempotencyKeyGenerator generator;
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
     this.generator = new SettlementEngineIdempotencyKeyGenerator();
   }

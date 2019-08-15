@@ -58,7 +58,7 @@ public class SimpleBearerBlastEndpointTest extends AbstractEndpointTest {
   AccountSettingsRepository accountSettingsRepository;
 
   @Before
-  public void setup() {
+  public void setUp() {
     // Add the Bob Account to the Connector.
     final Map<String, Object> customSettings = Maps.newHashMap();
     customSettings.put(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.SIMPLE.name());

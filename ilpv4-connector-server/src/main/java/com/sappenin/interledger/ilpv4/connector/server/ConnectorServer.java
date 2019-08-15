@@ -71,67 +71,63 @@ public class ConnectorServer extends Server {
    */
   private void emitFxInfo() {
     // Sanity check to ensure that FX is configured properly...
-    try {
-      final CurrencyUnit CURRENCY_XRP = Monetary.getCurrency("XRP");
-      final CurrencyUnit CURRENCY_USD = Monetary.getCurrency("USD");
-      final CurrencyUnit CURRENCY_EUR = Monetary.getCurrency("EUR");
+    final CurrencyUnit CURRENCY_XRP = Monetary.getCurrency("XRP");
+    final CurrencyUnit CURRENCY_USD = Monetary.getCurrency("USD");
+    final CurrencyUnit CURRENCY_EUR = Monetary.getCurrency("EUR");
 
-      Preconditions.checkNotNull(CURRENCY_XRP, "XRP currency not configured");
-      Preconditions.checkNotNull(CURRENCY_USD, "USD currency not configured");
-      Preconditions.checkNotNull(CURRENCY_EUR, "EUR currency not configured");
+    Preconditions.checkNotNull(CURRENCY_XRP, "XRP currency not configured");
+    Preconditions.checkNotNull(CURRENCY_USD, "USD currency not configured");
+    Preconditions.checkNotNull(CURRENCY_EUR, "EUR currency not configured");
 
-      /////////////
-      // Tests that Spring-configured JavaMoney is working properly...
-      // these values will come from whatever is configured in JavaMoneyConfig (e.g., CryptoCompare).
-      /////////////
-      final CurrencyConversion usdConversion = MonetaryConversions.getConversion("USD");
+    /////////////
+    // Tests that Spring-configured JavaMoney is working properly...
+    // these values will come from whatever is configured in JavaMoneyConfig (e.g., CryptoCompare).
+    /////////////
+    final CurrencyConversion usdConversion = MonetaryConversions.getConversion("USD");
 
-      final Money xrpInUsd = Money.of(1, CURRENCY_XRP).with(usdConversion);
-      logger.info("Current FX: 1 XRP => ${}", xrpInUsd);
+    final Money xrpInUsd = Money.of(1, CURRENCY_XRP).with(usdConversion);
+    logger.info("Current FX: 1 XRP => ${}", xrpInUsd);
 
-      final Money eurInUsd = Money.of(1, CURRENCY_EUR).with(usdConversion);
-      logger.info("Current FX: 1 EUR => ${}", eurInUsd);
+    final Money eurInUsd = Money.of(1, CURRENCY_EUR).with(usdConversion);
+    logger.info("Current FX: 1 EUR => ${}", eurInUsd);
 
-      final Money usdInUsd = Money.of(1, CURRENCY_USD).with(usdConversion);
-      logger.info("Current FX: 1 USD => ${}", usdInUsd);
+    final Money usdInUsd = Money.of(1, CURRENCY_USD).with(usdConversion);
+    logger.info("Current FX: 1 USD => ${}", usdInUsd);
 
-      // Round `XRP` to the nearest `Drop`
-      // (see https://jaxenter.de/go-for-the-money-einfuehrung-in-das-money-and-currency-api-38668)
-      {
-        final Money preRounded = Money.of(new BigDecimal("1.1234567898"), CURRENCY_XRP);
-        final String expected = "1.123457";
-        final MonetaryAmount postRounded = preRounded.with(Monetary.getRounding(preRounded.getCurrency()));
-        Preconditions.checkArgument(postRounded.getNumber().toString().equalsIgnoreCase(expected),
-          String.format(
-            "XRP Rounding is mis-configured. %s should have rounded up to %s, but was instead %s",
-            preRounded, expected, postRounded.getNumber().toString())
-        );
-        logger.info("{} XRP rounds up to => {} (rounded to the nearest drop)", preRounded, postRounded);
-      }
-      {
-        final Money preRounded = Money.of(new BigDecimal("1.1234561"), CURRENCY_XRP);
-        final String expected = "1.123456";
-        final MonetaryAmount postRounded = preRounded.with(Monetary.getRounding(preRounded.getCurrency()));
-        Preconditions.checkArgument(postRounded.getNumber().toString().equalsIgnoreCase(expected),
-          String.format(
-            "XRP Rounding is mis-configured. %s should have rounded down to %s, but was instead %s",
-            preRounded, expected, postRounded.getNumber().toString())
-        );
-        logger.info("{} XRP rounds down to => {} (rounded to the nearest drop)", preRounded, postRounded);
-      }
-      {
-        final Money preRounded = Money.of(new BigDecimal("1.123456000"), CURRENCY_XRP);
-        final String expected = "1.123456";
-        final MonetaryAmount postRounded = preRounded.with(Monetary.getRounding(preRounded.getCurrency()));
-        Preconditions.checkArgument(postRounded.getNumber().toString().equalsIgnoreCase(expected),
-          String.format(
-            "XRP Rounding is mis-configured. %s should have rounded evently to %s, but was instead %s",
-            preRounded, expected, postRounded.getNumber().toString())
-        );
-        logger.info("{} XRP rounds evenly to => {} (rounded to the nearest drop)", preRounded, postRounded);
-      }
-    } catch (Exception e) {
-      throw new RuntimeException("Currency support is not configured properly. Error: " + e.getMessage(), e);
+    // Round `XRP` to the nearest `Drop`
+    // (see https://jaxenter.de/go-for-the-money-einfuehrung-in-das-money-and-currency-api-38668)
+    {
+      final Money preRounded = Money.of(new BigDecimal("1.1234567898"), CURRENCY_XRP);
+      final String expected = "1.123457";
+      final MonetaryAmount postRounded = preRounded.with(Monetary.getRounding(preRounded.getCurrency()));
+      Preconditions.checkArgument(postRounded.getNumber().toString().equalsIgnoreCase(expected),
+        String.format(
+          "XRP Rounding is mis-configured. %s should have rounded up to %s, but was instead %s",
+          preRounded, expected, postRounded.getNumber().toString())
+      );
+      logger.info("{} XRP rounds up to => {} (rounded to the nearest drop)", preRounded, postRounded);
+    }
+    {
+      final Money preRounded = Money.of(new BigDecimal("1.1234561"), CURRENCY_XRP);
+      final String expected = "1.123456";
+      final MonetaryAmount postRounded = preRounded.with(Monetary.getRounding(preRounded.getCurrency()));
+      Preconditions.checkArgument(postRounded.getNumber().toString().equalsIgnoreCase(expected),
+        String.format(
+          "XRP Rounding is mis-configured. %s should have rounded down to %s, but was instead %s",
+          preRounded, expected, postRounded.getNumber().toString())
+      );
+      logger.info("{} XRP rounds down to => {} (rounded to the nearest drop)", preRounded, postRounded);
+    }
+    {
+      final Money preRounded = Money.of(new BigDecimal("1.123456000"), CURRENCY_XRP);
+      final String expected = "1.123456";
+      final MonetaryAmount postRounded = preRounded.with(Monetary.getRounding(preRounded.getCurrency()));
+      Preconditions.checkArgument(postRounded.getNumber().toString().equalsIgnoreCase(expected),
+        String.format(
+          "XRP Rounding is mis-configured. %s should have rounded evently to %s, but was instead %s",
+          preRounded, expected, postRounded.getNumber().toString())
+      );
+      logger.info("{} XRP rounds evenly to => {} (rounded to the nearest drop)", preRounded, postRounded);
     }
   }
 }

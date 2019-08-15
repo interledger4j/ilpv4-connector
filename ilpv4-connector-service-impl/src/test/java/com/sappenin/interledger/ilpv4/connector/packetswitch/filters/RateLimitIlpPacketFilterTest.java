@@ -75,7 +75,7 @@ public class RateLimitIlpPacketFilterTest {
   private RateLimitIlpPacketFilter filterWithMockCache;
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
 
     when(filterChainMock.doFilter(accountSettingsMock, PREPARE_PACKET)).thenReturn(responsePacketMock);

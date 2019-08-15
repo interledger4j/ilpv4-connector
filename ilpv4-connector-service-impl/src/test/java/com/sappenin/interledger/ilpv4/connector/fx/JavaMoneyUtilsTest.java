@@ -20,7 +20,7 @@ public class JavaMoneyUtilsTest {
   private JavaMoneyUtils javaMoneyUtils;
 
   @Before
-  public void setup() {
+  public void setUp() {
     this.javaMoneyUtils = new JavaMoneyUtils();
   }
 

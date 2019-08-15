@@ -28,11 +28,11 @@ public class SettlementEngineClientConfig {
   public static final String SETTLEMENT_ENGINE_CLIENT = "SETTLEMENT_ENGINE_CLIENT";
 
   @Autowired
-  Environment environment;
+  private Environment environment;
 
   @Bean
   @Qualifier(SETTLEMENT_ENGINE_CLIENT)
-  public ConnectionPool seConnectionPool(
+  protected ConnectionPool seConnectionPool(
     @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.maxIdleConnections:5}")
     final int defaultMaxIdleConnections,
     @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.keepAliveMinutes:1}")
@@ -58,7 +58,7 @@ public class SettlementEngineClientConfig {
    */
   @Bean
   @Qualifier(SETTLEMENT_ENGINE_CLIENT)
-  OkHttpClient okHttpClient(
+  protected OkHttpClient okHttpClient(
     @Qualifier(SETTLEMENT_ENGINE_CLIENT) final ConnectionPool settlementEngineConnectionPool,
     @Value("${ilpv4.connector.settlementEngines.connectionDefaults.connectTimeoutMillis:10000}")
     final long defaultConnectTimeoutMillis,
@@ -81,7 +81,7 @@ public class SettlementEngineClientConfig {
   }
 
   @Bean
-  SettlementEngineClient settlementEngineClient(OkHttpClient okHttpClient, ObjectMapper objectMapper) {
+  protected SettlementEngineClient settlementEngineClient(OkHttpClient okHttpClient, ObjectMapper objectMapper) {
     return new OkHttpSettlementEngineClient(okHttpClient, objectMapper);
   }
 

@@ -61,7 +61,7 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
   }
 
   @Before
-  public void setup() {
+  public void setUp() {
     aliceConnector = this.getILPv4NodeFromGraph(getAliceConnectorAddress());
     bobConnector = this.getILPv4NodeFromGraph(getBobConnectorAddress());
     this.resetBalanceTracking();
@@ -79,7 +79,6 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
   @Test
   public void testNodeSettings() throws InterruptedException {
-    final ILPv4Connector connector = getILPv4NodeFromGraph(getAliceConnectorAddress());
     assertThat(
       aliceConnector.getConnectorSettings().getOperatorAddress().get(),
       is(getAliceConnectorAddress())

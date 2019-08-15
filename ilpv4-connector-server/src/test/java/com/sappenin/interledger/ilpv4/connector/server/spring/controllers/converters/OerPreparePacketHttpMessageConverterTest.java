@@ -82,7 +82,7 @@ public class OerPreparePacketHttpMessageConverterTest {
   }
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
     this.converter = new OerPreparePacketHttpMessageConverter(InterledgerCodecContextFactory.oer());
   }

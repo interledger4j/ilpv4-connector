@@ -12,20 +12,19 @@ import org.interledger.core.InterledgerResponsePacket;
  */
 public interface LinkFilter {
 
-  // TODO: Init and Destroy?
-
   /**
    * Applies logic to an incoming Prepare packet, optionally preventing the packet from being processed by the packet
    * switching framework.
    *
-   * @param destinationAccountSettings The source {@link AccountSettings} that this outgoing Prepare packet is being
-   *                                   processed for.
-   * @param destinationPreparePacket   The outgoing {@link InterledgerPreparePacket} that should be sent to the Link
-   *                                   (this is the packet adjusted by the packet-switch containing the proper units and
-   *                                   expiry for the outbound Link associated to this filter).
+   * @param destinationAccountSettings The destination {@link AccountSettings} that this outgoing Prepare packet is
+   *                                   being processed on.
+   * @param destinationPreparePacket   The outgoing {@link InterledgerPreparePacket} that will be forwarded on this link
+   *                                   (this is the packet as adjusted by the packet-switch containing, so it will
+   *                                   contain the proper units and expiry for the outbound Link associated to this
+   *                                   filter).
    * @param filterChain                The {@link LinkFilterChain} that this filter is operating inside of.
    *
-   * @return An optionally-present ILP response packet.
+   * @return The ILP response packet as returned by the outbound peer.
    */
   InterledgerResponsePacket doFilter(
     AccountSettings destinationAccountSettings,

@@ -44,15 +44,15 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
   public final SpringMethodRule springMethodRule = new SpringMethodRule();
 
   @Autowired
-  RedisBalanceTracker balanceTracker;
+  private RedisBalanceTracker balanceTracker;
 
   @Autowired
-  RedisTemplate<String, String> redisTemplate;
+  private RedisTemplate<String, String> redisTemplate;
 
   @Mock
-  AccountSettings accountSettingsMock;
+  private AccountSettings accountSettingsMock;
   @Mock
-  AccountBalance accountBalanceMock;
+  private AccountBalance accountBalanceMock;
 
   /**
    * Required-args Constructor.
@@ -107,7 +107,7 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
   }
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
 
     AccountBalanceSettings balanceSettingsMock = mock(AccountBalanceSettings.class);
@@ -166,7 +166,8 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
     final AccountBalance loadedBalance = balanceTracker.getBalance(ACCOUNT_ID);
     assertThat(loadedBalance.clearingBalance(), is(expectedClearingBalanceInRedis));
     assertThat(loadedBalance.prepaidAmount(), is(expectedPrepaidAmountInRedis));
-    assertThat(loadedBalance.netBalance().longValue(), is(expectedClearingBalanceInRedis + expectedPrepaidAmountInRedis));
+    assertThat(loadedBalance.netBalance().longValue(),
+      is(expectedClearingBalanceInRedis + expectedPrepaidAmountInRedis));
   }
 
 }

@@ -85,7 +85,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   }
 
   @Before
-  public void setup() {
+  public void setUp() {
     aliceConnector = this.getILPv4NodeFromGraph(getAliceConnectorAddress());
     // Note Bob's Connector's address is purposefully a child of Alice due to IL-DCP
     bobConnector = this.getILPv4NodeFromGraph(getBobConnectorAddress());
@@ -271,7 +271,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
    */
   @Test
   public void testPaulPingsBobWith10Units() throws InterruptedException {
-    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), BigInteger.TEN);
+    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), TEN);
 
     // test.alice.paul: Should be -10 because that account initiated and paid for the ping.
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, TEN.negate());

@@ -116,7 +116,7 @@ public class PeerProtocolPacketFilterTest {
   }
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
     when(connectorSettingsMock.getEnabledProtocols()).thenReturn(enabledProtocolSettingsMock);
 

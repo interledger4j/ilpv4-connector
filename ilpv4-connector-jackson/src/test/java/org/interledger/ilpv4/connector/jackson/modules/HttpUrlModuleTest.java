@@ -35,7 +35,7 @@ public class HttpUrlModuleTest {
   }
 
   @Test
-  public void testSerializeDeserializeHttpUrl_WeirdEncoding() throws Exception {
+  public void testSerializeDeserializeHttpUrlWeirdEncoding() throws Exception {
     final Earl earl = Earl.builder().href(HttpUrl.parse("https://api.example.com").newBuilder()
       .addEncodedPathSegment("foo").addEncodedPathSegment("http:%2F%2Fwww.cnn.com%2Fstory%2F123").build()).build();
 
@@ -48,7 +48,7 @@ public class HttpUrlModuleTest {
   }
 
   @Test
-  public void testSerializeDeserializeHttpUrl_MandarinEncoding() throws Exception {
+  public void testSerializeDeserializeHttpUrlMandarinEncoding() throws Exception {
     final Earl earl =
       Earl.builder().href(HttpUrl.parse("https://api.example.com").newBuilder().addEncodedPathSegment("foo")
         .addEncodedPathSegment("诶比西迪伊").build()).build();

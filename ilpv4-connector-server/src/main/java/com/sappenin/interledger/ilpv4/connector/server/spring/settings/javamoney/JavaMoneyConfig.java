@@ -42,15 +42,15 @@ public class JavaMoneyConfig {
   private static final String DROP = "DROP";
 
   @Autowired
-  Environment environment;
+  private Environment environment;
 
   @Bean
-  JavaMoneyUtils javaMoneyUtils() {
+  protected JavaMoneyUtils javaMoneyUtils() {
     return new JavaMoneyUtils();
   }
 
   @Bean
-  ApplicationContextProvider applicationContextProvider() {
+  protected ApplicationContextProvider applicationContextProvider() {
     return new ApplicationContextProvider();
   }
 
@@ -59,7 +59,7 @@ public class JavaMoneyConfig {
    */
   @Bean
   @Qualifier(FX)
-  RestTemplate fxRestTemplate(ObjectMapper objectMapper) {
+  protected RestTemplate fxRestTemplate(ObjectMapper objectMapper) {
     final MappingJackson2HttpMessageConverter httpMessageConverter =
       new MappingJackson2HttpMessageConverter(objectMapper);
     return new RestTemplate(Lists.newArrayList(httpMessageConverter));
@@ -67,17 +67,17 @@ public class JavaMoneyConfig {
 
   @Bean
   @Qualifier(CRYPTO_COMPARE)
-  Supplier<String> apiKeySupplier() {
+  protected Supplier<String> apiKeySupplier() {
     return () -> environment.getProperty("cryptocompare.api.key");
   }
 
   @Bean
-  IdentityRateProvider identityRateProvider() {
+  protected IdentityRateProvider identityRateProvider() {
     return new IdentityRateProvider();
   }
 
   @Bean
-  CryptoCompareRateProvider cryptoCompareRateProvider(
+  protected CryptoCompareRateProvider cryptoCompareRateProvider(
     @Qualifier(CRYPTO_COMPARE) Supplier<String> cryptoCompareApiKeySupplier,
     @Qualifier(FX) RestTemplate restTemplate
   ) {
@@ -85,7 +85,7 @@ public class JavaMoneyConfig {
   }
 
   @Bean
-  ExchangeRateProvider exchangeRateProvider(CryptoCompareRateProvider cryptoCompareRateProvider) {
+  protected ExchangeRateProvider exchangeRateProvider(CryptoCompareRateProvider cryptoCompareRateProvider) {
     return new CompoundRateProvider(
       Lists.newArrayList(cryptoCompareRateProvider, new IdentityRateProvider())
     );
@@ -97,13 +97,13 @@ public class JavaMoneyConfig {
 
   @Bean
   @Qualifier(DROP)
-  RoundingProviderSpi dropRoundingProvider() {
+  protected RoundingProviderSpi dropRoundingProvider() {
     return new DropRoundingProvider();
   }
 
   @Bean
   @Qualifier(DEFAULT)
-  RoundingProviderSpi defaultRoundingProvider() {
+  protected RoundingProviderSpi defaultRoundingProvider() {
     return new DefaultRoundingProvider();
   }
 
@@ -113,19 +113,19 @@ public class JavaMoneyConfig {
 
   @Bean
   @Qualifier(XRP)
-  XrpCurrencyProvider xrpCurrencyProviderSpi() {
+  protected XrpCurrencyProvider xrpCurrencyProviderSpi() {
     return new XrpCurrencyProvider();
   }
 
   @Bean
   @Qualifier(DEFAULT)
-  JDKCurrencyProvider jdkCurrencyProvider() {
+  protected JDKCurrencyProvider jdkCurrencyProvider() {
     return new JDKCurrencyProvider();
   }
 
   // NOTE: This bean must have this name in order to properly bridge with JavaMoney.
   @Bean("javax.money.spi.MonetaryCurrenciesSingletonSpi")
-  DefaultMonetaryConversionsSingletonSpi defaultMonetaryConversionsSingletonSpi() {
+  protected DefaultMonetaryConversionsSingletonSpi defaultMonetaryConversionsSingletonSpi() {
     return new DefaultMonetaryConversionsSingletonSpi();
   }
 }

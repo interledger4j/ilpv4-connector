@@ -49,15 +49,15 @@ public class RedisBalanceTrackerFulfillPacketSettlementTest extends AbstractRedi
   public final SpringMethodRule springMethodRule = new SpringMethodRule();
 
   @Autowired
-  RedisBalanceTracker balanceTracker;
+  private RedisBalanceTracker balanceTracker;
 
   @Autowired
-  RedisTemplate<String, String> redisTemplate;
+  private RedisTemplate<String, String> redisTemplate;
 
   @Mock
-  AccountSettings accountSettingsMock;
+  private AccountSettings accountSettingsMock;
   @Mock
-  AccountBalance accountBalanceMock;
+  private AccountBalance accountBalanceMock;
 
   private Optional<Long> settleThreshold;
   private long settleTo;
@@ -154,7 +154,7 @@ public class RedisBalanceTrackerFulfillPacketSettlementTest extends AbstractRedi
   }
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
 
     AccountBalanceSettings balanceSettingsMock = mock(AccountBalanceSettings.class);

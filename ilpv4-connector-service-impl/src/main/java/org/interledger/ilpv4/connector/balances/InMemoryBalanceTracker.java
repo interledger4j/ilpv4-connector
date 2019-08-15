@@ -13,7 +13,6 @@ import org.interledger.ilpv4.connector.core.settlement.SettlementQuantity;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**

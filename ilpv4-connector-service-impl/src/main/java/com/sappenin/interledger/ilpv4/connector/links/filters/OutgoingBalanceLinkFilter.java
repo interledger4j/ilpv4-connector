@@ -40,16 +40,16 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
 
   @Override
   public InterledgerResponsePacket doFilter(
-    final AccountSettings outgoingDestinationAccountSettings,
+    final AccountSettings destinationAccountSettings,
     final InterledgerPreparePacket outgoingPreparePacket,
     final LinkFilterChain filterChain
   ) {
-    Objects.requireNonNull(outgoingDestinationAccountSettings);
+    Objects.requireNonNull(destinationAccountSettings);
     Objects.requireNonNull(outgoingPreparePacket);
     Objects.requireNonNull(filterChain);
 
     final InterledgerResponsePacket responsePacket =
-      filterChain.doFilter(outgoingDestinationAccountSettings, outgoingPreparePacket);
+      filterChain.doFilter(destinationAccountSettings, outgoingPreparePacket);
     return new InterledgerResponsePacketMapper<InterledgerResponsePacket>() {
 
       @Override
@@ -67,7 +67,7 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
         final BalanceTracker.UpdateBalanceForFulfillResponse balanceForFulfillResponse;
         try {
           balanceForFulfillResponse = balanceTracker.updateBalanceForFulfill(
-            outgoingDestinationAccountSettings, outgoingPreparePacket.getAmount().longValue()
+            destinationAccountSettings, outgoingPreparePacket.getAmount().longValue()
           );
 
           // TODO: Stats
@@ -93,7 +93,7 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
         try {
           // SettlementService throws an exception if no SE is configured, so only trigger it if there's an SE
           // configured.
-          outgoingDestinationAccountSettings.settlementEngineDetails().ifPresent(
+          destinationAccountSettings.settlementEngineDetails().ifPresent(
             settlementEngineDetails -> {
 
               // TODO: Hibernate is using default composites currently, so it will errant populate a
@@ -106,7 +106,7 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
               }
 
               // Only trigger settlement if there's a Threshold...
-              outgoingDestinationAccountSettings.getBalanceSettings().getSettleThreshold()
+              destinationAccountSettings.getBalanceSettings().getSettleThreshold()
                 // ... and if the calculated clearingAmountToSettle is > the threshold (and not 0)
                 .filter(settleThreshold -> balanceForFulfillResponse.clearingAmountToSettle() > 0 &&
                   balanceForFulfillResponse.clearingAmountToSettle() >= settleThreshold)
@@ -115,15 +115,15 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
 
                   final SettlementQuantity settlementQuantityInClearingUnits = SettlementQuantity.builder()
                     .amount(balanceForFulfillResponse.clearingAmountToSettle())
-                    .scale(outgoingDestinationAccountSettings.getAssetScale())
+                    .scale(destinationAccountSettings.getAssetScale())
                     .build();
 
                   // NOTE: This method is tightly-coupled to the fulfill balance processing above. Since the
                   // SettlementService is already tightly coupled, this is tolerable, but it might be clearer to have the
                   // SettlementService not roll-back if there's a problem (small case to be made that this method should
                   // handle the rollback).
-                  settlementService.initiateSettlementForFulfillThreshold(
-                    idempotencyId, outgoingDestinationAccountSettings, settlementQuantityInClearingUnits
+                  settlementService.initiateLocalSettlement(
+                    idempotencyId, destinationAccountSettings, settlementQuantityInClearingUnits
                   );
                 });
             });
@@ -143,9 +143,9 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
       protected InterledgerResponsePacket mapRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
         logger.warn(
           "Outgoing packet not applied due to ILP Reject. outgoingDestinationAccount={} amount={} newBalance={} preparePacket={} rejectPacket={}",
-          outgoingDestinationAccountSettings,
+          destinationAccountSettings,
           outgoingPreparePacket.getAmount(),
-          balanceTracker.getBalance(outgoingDestinationAccountSettings.getAccountId()),
+          balanceTracker.getBalance(destinationAccountSettings.getAccountId()),
           outgoingPreparePacket,
           interledgerRejectPacket
         );

@@ -53,7 +53,7 @@ public class InterledgerAddressPrefixMapTest {
   private InterledgerAddressPrefixMap<Route> prefixMap;
 
   @Before
-  public void setup() {
+  public void setUp() {
     this.prefixMap = new InterledgerAddressPrefixMap<>();
   }
 

@@ -58,7 +58,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
   private MockMvc mvc;
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
   }
 

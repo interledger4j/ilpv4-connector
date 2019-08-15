@@ -36,8 +36,8 @@ import java.util.Arrays;
 import java.util.Map;
 
 /**
- * <p>Configuration for Spring Cache using spring-data-cache via @Cacheable annotations, primarily used on the {@link
- * SettlementController}.</p>
+ * <p>Configuration for Spring Cache using spring-data-cache via @Cacheable annotations, primarily used on the
+ * {@link SettlementController}.</p>
  *
  * <p>NOTE: If Redis is not available (i.e., not operating on the configured port), an InMemory cache will be used,
  * but this type of idempotent caching is not suitable for HA environments.</p>

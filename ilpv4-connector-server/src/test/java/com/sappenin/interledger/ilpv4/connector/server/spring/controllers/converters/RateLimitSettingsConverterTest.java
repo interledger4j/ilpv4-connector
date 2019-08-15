@@ -16,7 +16,7 @@ public class RateLimitSettingsConverterTest {
   private RateLimitSettingsConverter converter;
 
   @Before
-  public void setup() {
+  public void setUp() {
     this.converter = new RateLimitSettingsConverter();
   }
 

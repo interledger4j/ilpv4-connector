@@ -23,25 +23,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class AccountSettingsConverterTest {
 
-  private RateLimitSettingsConverter rateLimitSettingsConverter;
-  private AccountBalanceSettingsConverter accountBalanceSettingsConverter;
-  private SettlementEngineDetailsConverter settlementEngineDetailsConverter;
-
   private AccountSettingsConverter converter;
 
   @Before
-  public void setup() {
-    this.rateLimitSettingsConverter = new RateLimitSettingsConverter();
-    this.accountBalanceSettingsConverter = new AccountBalanceSettingsConverter();
-    this.settlementEngineDetailsConverter = new SettlementEngineDetailsConverter();
-
+  public void setUp() {
     this.converter = new AccountSettingsConverter(
-      rateLimitSettingsConverter, accountBalanceSettingsConverter, settlementEngineDetailsConverter
+      new RateLimitSettingsConverter(), new AccountBalanceSettingsConverter(), new SettlementEngineDetailsConverter()
     );
   }
 
   @Test
   public void convertWithEmptyEmbeds() {
+
     final AccountSettings accountSettings = AccountSettings.builder()
       .accountId(AccountId.of("123"))
       .description("test description")

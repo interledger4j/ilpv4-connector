@@ -12,9 +12,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Categories;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +37,6 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorIldcpTestIT.class);
   private static Topology topology = TwoConnectorParentChildBlastTopology.init();
-  private static String TOPOLOGY_NAME = topology.toString();
 
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
@@ -59,7 +56,7 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
   }
 
   @Before
-  public void setup() {
+  public void setUp() {
     aliceConnector = this.getILPv4NodeFromGraph(getAliceConnectorAddress());
     bobConnector = this.getILPv4NodeFromGraph(getBobConnectorAddress());
     this.resetBalanceTracking();

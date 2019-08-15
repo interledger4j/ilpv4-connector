@@ -68,34 +68,29 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
           // building on Postgres. Only need to do this on one server since both servers share the same DB.
           aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
 
-          try {
-            // Add Bob's account on Alice...
-            final AccountSettingsEntity bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort);
-            aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
+          // Add Bob's account on Alice...
+          final AccountSettingsEntity bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort);
+          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
 
-            // Add Paul's account on Alice (Paul is used for sending pings)
-            final AccountSettingsEntity paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice();
-            aliceServerNode.getILPv4Connector().getAccountManager().createAccount(paulAccountSettingsAtAlice);
+          // Add Paul's account on Alice (Paul is used for sending pings)
+          final AccountSettingsEntity paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice();
+          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(paulAccountSettingsAtAlice);
 
-            // Add Alice's account on Bob...
-            final AccountSettingsEntity aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort);
-            aliceServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
+          // Add Alice's account on Bob...
+          final AccountSettingsEntity aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort);
+          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
 
-            // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
-            // NOTE: The Connector configures a Ping Account properly but this Topology deletes all accounts above
-            // before running, so we must create a new PING account here.
-            final AccountSettingsEntity pingAccountSettingsAtBob = constructPingAccountSettings();
-            aliceServerNode.getILPv4Connector().getAccountManager().createAccount(pingAccountSettingsAtBob);
+          // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
+          // NOTE: The Connector configures a Ping Account properly but this Topology deletes all accounts above
+          // before running, so we must create a new PING account here.
+          final AccountSettingsEntity pingAccountSettingsAtBob = constructPingAccountSettings();
+          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(pingAccountSettingsAtBob);
 
-            // Try to connect the bob account...
-            aliceServerNode.getILPv4Connector().getLinkManager().getOrCreateLink(bobAccountSettingsAtAlice);
+          // Try to connect the bob account...
+          aliceServerNode.getILPv4Connector().getLinkManager().getOrCreateLink(bobAccountSettingsAtAlice);
 
-            // Try to connect the alice account...
-            bobServerNode.getILPv4Connector().getLinkManager().getOrCreateLink(aliceAccountSettingsAtBob);
-
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
+          // Try to connect the alice account...
+          bobServerNode.getILPv4Connector().getLinkManager().getOrCreateLink(aliceAccountSettingsAtBob);
         }
       });
 

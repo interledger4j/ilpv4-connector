@@ -1,6 +1,5 @@
 package com.sappenin.interledger.ilpv4.connector.packetswitch;
 
-import com.google.common.cache.LoadingCache;
 import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.ConnectorExceptionHandler;
 import com.sappenin.interledger.ilpv4.connector.links.LinkManager;

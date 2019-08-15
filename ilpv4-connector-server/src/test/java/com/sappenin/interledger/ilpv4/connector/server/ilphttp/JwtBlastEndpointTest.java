@@ -77,7 +77,7 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
   AccountManager accountManager;
 
   @Before
-  public void setup() {
+  public void setUp() {
 
     ////////////////
     // Add the Alice Account to the Connector.
