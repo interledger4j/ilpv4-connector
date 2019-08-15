@@ -6,10 +6,10 @@ import com.sappenin.interledger.ilpv4.connector.fx.JavaMoneyUtils;
 import com.sappenin.interledger.javax.money.providers.CryptoCompareRateProvider;
 import com.sappenin.interledger.javax.money.providers.DropRoundingProvider;
 import com.sappenin.interledger.javax.money.providers.XrpCurrencyProvider;
+import org.javamoney.moneta.convert.internal.DefaultMonetaryConversionsSingletonSpi;
+import org.javamoney.moneta.convert.internal.IdentityRateProvider;
 import org.javamoney.moneta.internal.DefaultRoundingProvider;
 import org.javamoney.moneta.internal.JDKCurrencyProvider;
-import org.javamoney.moneta.internal.convert.DefaultMonetaryConversionsSingletonSpi;
-import org.javamoney.moneta.internal.convert.IdentityRateProvider;
 import org.javamoney.moneta.spi.CompoundRateProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -23,9 +23,15 @@ import javax.money.convert.ExchangeRateProvider;
 import javax.money.spi.RoundingProviderSpi;
 import java.util.function.Supplier;
 
+import static com.sappenin.interledger.javax.money.providers.XrpCurrencyProvider.XRP;
+
 /**
- * Configures JavaMoney beans so they can be connected into the JavaMoney subsystem using
- * <tt>SpringServiceProvider</tt>.
+ * Configures JavaMoney.
+ *
+ * Note that it is technically possible to connect Spring bean implementations of the JavaMoney SPI (i.e., {@link
+ * javax.money.spi.ServiceProvider} into the JavaMoney bootstrapping framework. One such attempt was using {@link
+ * SpringServiceProvider} although it doesn't quite work properly, so is current disabled in the SPI file called
+ * `javax.money.spi.ServiceProvider`.
  */
 @Configuration
 public class JavaMoneyConfig {
@@ -33,25 +39,18 @@ public class JavaMoneyConfig {
   private static final String DEFAULT = "default";
   private static final String CRYPTO_COMPARE = "cryptocompare";
   private static final String FX = "fx";
+  private static final String DROP = "DROP";
 
   @Autowired
-  Environment environment;
-
-  //  @PostConstruct
-  //  public void setup() {
-  //    CurrencyUnit xrp = Monetary.getCurrency("XRP");
-  //    Preconditions.checkNotNull(xrp != null);
-  //    CurrencyUnit usd = Monetary.getCurrency("USD");
-  //    Preconditions.checkNotNull(usd != null);
-  //  }
+  private Environment environment;
 
   @Bean
-  JavaMoneyUtils javaMoneyUtils() {
+  protected JavaMoneyUtils javaMoneyUtils() {
     return new JavaMoneyUtils();
   }
 
   @Bean
-  ApplicationContextProvider applicationContextProvider() {
+  protected ApplicationContextProvider applicationContextProvider() {
     return new ApplicationContextProvider();
   }
 
@@ -60,7 +59,7 @@ public class JavaMoneyConfig {
    */
   @Bean
   @Qualifier(FX)
-  RestTemplate fxRestTemplate(ObjectMapper objectMapper) {
+  protected RestTemplate fxRestTemplate(ObjectMapper objectMapper) {
     final MappingJackson2HttpMessageConverter httpMessageConverter =
       new MappingJackson2HttpMessageConverter(objectMapper);
     return new RestTemplate(Lists.newArrayList(httpMessageConverter));
@@ -68,17 +67,17 @@ public class JavaMoneyConfig {
 
   @Bean
   @Qualifier(CRYPTO_COMPARE)
-  Supplier<String> apiKeySupplier() {
+  protected Supplier<String> apiKeySupplier() {
     return () -> environment.getProperty("cryptocompare.api.key");
   }
 
   @Bean
-  IdentityRateProvider identityRateProvider() {
+  protected IdentityRateProvider identityRateProvider() {
     return new IdentityRateProvider();
   }
 
   @Bean
-  CryptoCompareRateProvider cryptoCompareRateProvider(
+  protected CryptoCompareRateProvider cryptoCompareRateProvider(
     @Qualifier(CRYPTO_COMPARE) Supplier<String> cryptoCompareApiKeySupplier,
     @Qualifier(FX) RestTemplate restTemplate
   ) {
@@ -86,7 +85,7 @@ public class JavaMoneyConfig {
   }
 
   @Bean
-  ExchangeRateProvider exchangeRateProvider(CryptoCompareRateProvider cryptoCompareRateProvider) {
+  protected ExchangeRateProvider exchangeRateProvider(CryptoCompareRateProvider cryptoCompareRateProvider) {
     return new CompoundRateProvider(
       Lists.newArrayList(cryptoCompareRateProvider, new IdentityRateProvider())
     );
@@ -97,14 +96,14 @@ public class JavaMoneyConfig {
   ////////////////////////
 
   @Bean
-  @Qualifier("drop")
-  RoundingProviderSpi dropRoundingProvider() {
+  @Qualifier(DROP)
+  protected RoundingProviderSpi dropRoundingProvider() {
     return new DropRoundingProvider();
   }
 
   @Bean
   @Qualifier(DEFAULT)
-  RoundingProviderSpi defaultRoundingProvider() {
+  protected RoundingProviderSpi defaultRoundingProvider() {
     return new DefaultRoundingProvider();
   }
 
@@ -113,20 +112,20 @@ public class JavaMoneyConfig {
   ////////////////////////
 
   @Bean
-  @Qualifier("xrp")
-  XrpCurrencyProvider xrpCurrencyProviderSpi() {
+  @Qualifier(XRP)
+  protected XrpCurrencyProvider xrpCurrencyProviderSpi() {
     return new XrpCurrencyProvider();
   }
 
   @Bean
   @Qualifier(DEFAULT)
-  JDKCurrencyProvider jdkCurrencyProvider() {
+  protected JDKCurrencyProvider jdkCurrencyProvider() {
     return new JDKCurrencyProvider();
   }
 
-
-  @Bean
-  DefaultMonetaryConversionsSingletonSpi defaultMonetaryConversionsSingletonSpi() {
+  // NOTE: This bean must have this name in order to properly bridge with JavaMoney.
+  @Bean("javax.money.spi.MonetaryCurrenciesSingletonSpi")
+  protected DefaultMonetaryConversionsSingletonSpi defaultMonetaryConversionsSingletonSpi() {
     return new DefaultMonetaryConversionsSingletonSpi();
   }
 }

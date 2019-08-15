@@ -29,7 +29,8 @@ public interface AccountManager {
   LinkManager getLinkManager();
 
   /**
-   * Create a new account in this connector.
+   * Create a new account in this connector by storing all account details into the persistent store. This method should
+   * also create a Settlement Account inside any configured settlement engines, if appropriate.
    *
    * @param accountSettings The {@link AccountSettings} for this account.
    *

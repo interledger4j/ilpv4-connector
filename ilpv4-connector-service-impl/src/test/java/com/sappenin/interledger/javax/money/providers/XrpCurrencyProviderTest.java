@@ -22,7 +22,7 @@ public class XrpCurrencyProviderTest {
   private XrpCurrencyProvider provider;
 
   @Before
-  public void setup() {
+  public void setUp() {
     provider = new XrpCurrencyProvider();
   }
 

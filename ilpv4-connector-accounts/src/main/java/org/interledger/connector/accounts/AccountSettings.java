@@ -139,6 +139,13 @@ public interface AccountSettings {
   AccountBalanceSettings getBalanceSettings();
 
   /**
+   * <p>Optionally present information about how this account can be settled.</p>
+   *
+   * @return
+   */
+  Optional<SettlementEngineDetails> settlementEngineDetails();
+
+  /**
    * Defines any rate-limiting in effect for this account.
    *
    * @return The parameters for rate-limiting this account.
@@ -267,6 +274,9 @@ public interface AccountSettings {
     public AccountRateLimitSettings getRateLimitSettings() {
       return AccountRateLimitSettings.builder().build();
     }
+
+    @Override
+    public abstract Optional<SettlementEngineDetails> settlementEngineDetails();
 
     @Override
     @JsonIgnore

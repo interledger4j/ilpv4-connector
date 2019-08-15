@@ -59,6 +59,10 @@
       <artifactId>okhttp</artifactId>
     </dependency>
     <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+    <dependency>
       <groupId>javax.money</groupId>
       <artifactId>money-api</artifactId>
     </dependency>
@@ -68,16 +72,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>ilp-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.javamoney</groupId>
-      <artifactId>moneta</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -89,21 +85,130 @@
     </dependency>
   </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <includes>
-            <include>**/Test*.java</include>
-            <include>**/*Test.java</include>
-            <include>**/*Tests.java</include>
-            <include>**/*TestCase.java</include>
-            <include>**/IT*.java</include>
-            <include>**/*IT.java</include>
-          </includes>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
+  <profiles>
+    <profile>
+      <id>default</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <!-- Actually runs Integration Tests (use -DskipITs to skip) -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>run-integration-tests</id>
+                <phase>integration-test</phase>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <skipTests>${skipTests}</skipTests>
+              <skipITs>${skipITs}</skipITs>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <includes>
+                <include>**/*TestSuite.java</include>
+              </includes>
+              <encoding>UTF-8</encoding>
+              <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
+              <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <!-- By default, don't run the Settlement ITs because it requires a Settlement Engine to
+               be running, which may not be the case on a developer laptop. Note that this value is overridden in the
+               CI build. Likewise for Performance. -->
+              <groups>
+                org.interledger.ilpv4.connector.it.markers.IlpOverHttp,
+                org.interledger.ilpv4.connector.it.markers.Performance
+              </groups>
+              <excludedGroups>
+                org.interledger.ilpv4.connector.it.markers.Settlement,
+              </excludedGroups>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>performance</id>
+      <build>
+        <plugins>
+          <!-- Actually runs Integration Tests (use -DskipITs to skip) -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>run-integration-tests</id>
+                <phase>integration-test</phase>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <skipTests>${skipTests}</skipTests>
+              <skipITs>${skipITs}</skipITs>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <includes>
+                <include>**/*TestSuite.java</include>
+              </includes>
+              <encoding>UTF-8</encoding>
+              <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
+              <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <groups>
+                org.interledger.ilpv4.connector.it.markers.Performance
+              </groups>
+<!--              <threadCount>1</threadCount>-->
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>settlement</id>
+      <build>
+        <plugins>
+          <!-- Actually runs Integration Tests (use -DskipITs to skip) -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>run-integration-tests</id>
+                <phase>integration-test</phase>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <skipTests>${skipTests}</skipTests>
+              <skipITs>${skipITs}</skipITs>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <encoding>UTF-8</encoding>
+              <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
+              <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <groups>
+                org.interledger.ilpv4.connector.it.markers.Settlement
+              </groups>
+              <excludedGroups>
+                org.interledger.ilpv4.connector.it.markers.IlpOverHttp,
+                org.interledger.ilpv4.connector.it.markers.Performance
+              </excludedGroups>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
 </project>

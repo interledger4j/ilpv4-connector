@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.server;
 
+import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ApplicationListener;
@@ -8,14 +9,13 @@ import org.springframework.core.env.PropertiesPropertySource;
 
 import java.util.ArrayList;
 import java.util.Properties;
+import java.util.function.Supplier;
 
 /**
  * A Server that runs on a particular port, with various properties. This class is used to be able to operate multiple
  * instances on different ports in the same JVM, which is especially useful for integration testing purposes.
  */
 public abstract class Server implements ApplicationListener {
-
-  //public static final String ILP_SERVER_PORT = "interledger.server.port";
 
   private final Properties properties;
   protected SpringApplication application;
@@ -69,5 +69,13 @@ public abstract class Server implements ApplicationListener {
 
   public void setPort(int port) {
     this.setProperty("server.port", port + "");
+  }
+
+  /**
+   * Allows sub-classes to access the {@link ConnectorSettings}. Note that the {@code context} object will not be
+   * available until after {@link #start()} completes, so callers should be careful when calling this method.
+   */
+  protected Supplier<ConnectorSettings> getConnectorSettings() {
+    return (Supplier<ConnectorSettings>) context.getBean("connectorSettingsSupplier");
   }
 }

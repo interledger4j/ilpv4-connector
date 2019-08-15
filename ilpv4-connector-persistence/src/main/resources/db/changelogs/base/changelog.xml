@@ -18,7 +18,7 @@
       <column name="MODIFIED_DTTM" type="DATETIME">
         <constraints nullable="false"/>
       </column>
-      <column name="VERSION" type="SMALLINT UNSIGNED">
+      <column name="VERSION" type="SMALLINT">
         <constraints nullable="false"/>
       </column>
 
@@ -38,7 +38,7 @@
       <column name="ILP_ADDR_SEGMENT" type="VARCHAR(512)">
         <constraints nullable="true"/>
       </column>
-      <column name="ACCOUNT_RELATIONSHIP" type="SMALLINT UNSIGNED">
+      <column name="ACCOUNT_RELATIONSHIP" type="SMALLINT">
         <constraints nullable="false"/>
       </column>
       <column name="LINK_TYPE" type="VARCHAR(255)">
@@ -47,7 +47,7 @@
       <column name="ASSET_CODE" type="VARCHAR(12)">
         <constraints nullable="false"/>
       </column>
-      <column name="ASSET_SCALE" type="SMALLINT UNSIGNED">
+      <column name="ASSET_SCALE" type="SMALLINT">
         <constraints nullable="false"/>
       </column>
       <column name="SEND_ROUTES" type="BOOLEAN" defaultValueBoolean="false">
@@ -57,6 +57,9 @@
         <constraints nullable="false"/>
       </column>
       <column name="MAX_PACKET_AMT" type="BIGINT">
+        <constraints nullable="true"/>
+      </column>
+      <column name="CUSTOM_SETTINGS" type="VARCHAR(8196)">
         <constraints nullable="true"/>
       </column>
 
@@ -79,9 +82,18 @@
         <constraints nullable="true"/>
       </column>
 
-      <column name="CUSTOM_SETTINGS" type="VARCHAR(8196)">
+      <!-- SettlementEngineDetails-->
+      <column name="SE_ACCOUNT_ID" type="VARCHAR(255)">
+        <constraints nullable="true" unique="true"/>
+      </column>
+      <column name="SE_BASE_URL" type="VARCHAR(2048)">
         <constraints nullable="true"/>
       </column>
+      <column name="SE_CUSTOM_SETTINGS" type="VARCHAR(8196)">
+        <constraints nullable="true"/>
+      </column>
+
+
 
     </createTable>
   </changeSet>

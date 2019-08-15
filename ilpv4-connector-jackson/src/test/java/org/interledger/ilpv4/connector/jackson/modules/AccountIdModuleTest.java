@@ -3,7 +3,6 @@ package org.interledger.ilpv4.connector.jackson.modules;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.ilpv4.connector.jackson.ObjectMapperFactory;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -18,13 +17,6 @@ import static org.hamcrest.core.Is.is;
 public class AccountIdModuleTest extends AbstractIdTest {
 
   private static final AccountId ACCOUNT_ID = AccountId.of(UUID.randomUUID().toString());
-  protected ObjectMapper objectMapperWithoutModule;
-
-  @Before
-  public void setUp() {
-    objectMapperWithoutModule = ObjectMapperFactory.create();
-    objectMapper.registerModule(new AccountIdModule());
-  }
 
   @Test
   public void shouldSerializeAndDeserialize() throws IOException {
@@ -41,6 +33,7 @@ public class AccountIdModuleTest extends AbstractIdTest {
 
   @Test
   public void shouldNotSerializeAndDeserialize() throws IOException {
+    ObjectMapper objectMapperWithoutModule = ObjectMapperFactory.create();
     final AccountIdContainer expectedContainer = ImmutableAccountIdContainer.builder()
       .accountId(ACCOUNT_ID)
       .build();

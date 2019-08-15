@@ -2,7 +2,6 @@ package com.sappenin.interledger.ilpv4.connector.server.spring.settings.properti
 
 import org.interledger.connector.accounts.AccountBalanceSettings;
 
-import java.math.BigInteger;
 import java.util.Optional;
 
 /**
@@ -13,7 +12,7 @@ public class AccountBalanceSettingsFromPropertyFile implements AccountBalanceSet
   private Optional<Long> minBalance = Optional.empty();
   private Optional<Long> maxBalance = Optional.empty();
   private Optional<Long> settleThreshold = Optional.empty();
-  private Optional<Long> settleTo = Optional.empty();
+  private long settleTo = 0L;
 
   @Override
   public Optional<Long> getMinBalance() {
@@ -43,11 +42,11 @@ public class AccountBalanceSettingsFromPropertyFile implements AccountBalanceSet
   }
 
   @Override
-  public Optional<Long> getSettleTo() {
+  public long getSettleTo() {
     return settleTo;
   }
 
-  public void setSettleTo(Optional<Long> settleTo) {
+  public void setSettleTo(long settleTo) {
     this.settleTo = settleTo;
   }
 }

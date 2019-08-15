@@ -55,7 +55,7 @@ public class CircuitBreakingLinkTest {
   private CircuitBreakingLink link;
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
 
     when(linkMock.getLinkId()).thenReturn(LinkId.of(LINK_ID));

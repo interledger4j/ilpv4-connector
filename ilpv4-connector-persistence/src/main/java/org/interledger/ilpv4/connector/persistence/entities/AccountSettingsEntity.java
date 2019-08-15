@@ -6,6 +6,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.connector.link.LinkType;
 import org.interledger.ilpv4.connector.persistence.AccountRelationshipConverter;
 import org.interledger.ilpv4.connector.persistence.HashMapConverter;
@@ -87,6 +88,9 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
   @Embedded
   private AccountRateLimitSettingsEntity rateLimitSettings;
 
+  @Embedded
+  private SettlementEngineDetailsEntity settlementEngineDetails;
+
   @Convert(converter = HashMapConverter.class)
   @Column(name = "CUSTOM_SETTINGS", length = 8196)
   private Map<String, Object> customSettings;
@@ -112,6 +116,9 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     this.maximumPacketAmount = accountSettings.getMaximumPacketAmount().orElse(null);
     this.balanceSettings = new AccountBalanceSettingsEntity(accountSettings.getBalanceSettings());
     this.rateLimitSettings = new AccountRateLimitSettingsEntity(accountSettings.getRateLimitSettings());
+    this.settlementEngineDetails =
+      accountSettings.settlementEngineDetails().map(SettlementEngineDetailsEntity::new).orElse(null);
+
     this.sendRoutes = accountSettings.isSendRoutes();
     this.receiveRoutes = accountSettings.isReceiveRoutes();
     this.customSettings = accountSettings.getCustomSettings();
@@ -235,6 +242,19 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
 
   public AccountRateLimitSettingsEntity getRateLimitSettingsEntity() {
     return rateLimitSettings;
+  }
+
+  public SettlementEngineDetailsEntity getSettlementEngineDetailsEntity() {
+    return settlementEngineDetails;
+  }
+
+  @Override
+  public Optional<SettlementEngineDetails> settlementEngineDetails() {
+    return Optional.ofNullable(settlementEngineDetails);
+  }
+
+  public void setSettlementEngineDetails(SettlementEngineDetailsEntity settlementEngineDetails) {
+    this.settlementEngineDetails = settlementEngineDetails;
   }
 
   @Override

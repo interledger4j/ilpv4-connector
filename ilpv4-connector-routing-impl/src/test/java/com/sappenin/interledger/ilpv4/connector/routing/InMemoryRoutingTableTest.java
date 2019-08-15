@@ -21,7 +21,7 @@ public class InMemoryRoutingTableTest {
 //  private InMemoryRoutingTable routingTable;
 //
 //  @Before
-//  public void setup() {
+//  public void setUp() {
 //    MockitoAnnotations.initMocks(this);
 //    this.routingTable = new InMemoryRoutingTable(interledgerPrefixMapMock);
 //  }

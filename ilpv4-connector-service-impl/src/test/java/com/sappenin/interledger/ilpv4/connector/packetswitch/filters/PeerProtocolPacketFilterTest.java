@@ -13,6 +13,7 @@ import com.sappenin.interledger.ilpv4.connector.routing.RouteBroadcaster;
 import com.sappenin.interledger.ilpv4.connector.routing.RoutingTableId;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.EnabledProtocolSettings;
+import com.sappenin.interledger.ilpv4.connector.settlement.SettlementService;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
@@ -88,6 +89,8 @@ public class PeerProtocolPacketFilterTest {
   AccountSettings accountSettingsMock;
   @Mock
   PacketSwitchFilterChain filterChainMock;
+  @Mock
+  SettlementService settlementService;
 
   private boolean sendRoutesEnabled;
   private boolean receiveRoutesEnabled;
@@ -113,7 +116,7 @@ public class PeerProtocolPacketFilterTest {
   }
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
     when(connectorSettingsMock.getEnabledProtocols()).thenReturn(enabledProtocolSettingsMock);
 
@@ -124,7 +127,8 @@ public class PeerProtocolPacketFilterTest {
       packetRejectorMock,
       routeBroadcasterMock,
       CcpCodecContextFactory.oer(),
-      IldcpCodecContextFactory.oer()
+      IldcpCodecContextFactory.oer(),
+      settlementService
     );
 
     when(accountSettingsMock.getAccountId()).thenReturn(ACCOUNT_ID);
@@ -292,12 +296,12 @@ public class PeerProtocolPacketFilterTest {
             .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
           assertThat(errorCodeArgumentCaptor.getValue(), is(InterledgerErrorCode.F00_BAD_REQUEST));
           assertThat(errorMessageCaptor.getValue(),
-            is("CCP sending is not enabled for this account. destination=`peer.route.control`."));
+            is("CCP sending is not enabled for this account. destinationAddress=peer.route.control"));
 
           assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
           assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(OPERATOR_ADDRESS));
         } else {
-          fail(String.format("Should not have rejected when sendRoutes is enabled!", interledgerRejectPacket));
+          fail(String.format("Should not have rejected when sendRoutes is enabled", interledgerRejectPacket));
         }
       }
     }.handle(result);
@@ -356,7 +360,7 @@ public class PeerProtocolPacketFilterTest {
             .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
           assertThat(errorCodeArgumentCaptor.getValue(), is(InterledgerErrorCode.F00_BAD_REQUEST));
           assertThat(errorMessageCaptor.getValue(),
-            is("CCP receiving is not enabled for this account. destination=`peer.route.update`."));
+            is("CCP receiving is not enabled for this account. destinationAddress=peer.route.update"));
 
           assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
           assertThat(interledgerRejectPacket.getTriggeredBy().get(), is(OPERATOR_ADDRESS));
@@ -411,4 +415,10 @@ public class PeerProtocolPacketFilterTest {
       .expiresAt(Instant.now().plusSeconds(30))
       .build();
   }
+
+
+  // TODO: UPDATE TEST FOR SETTLEMENT SERVICE FUNCTIONALITY!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
 }

@@ -13,9 +13,11 @@ public class AccountNotFoundProblem extends AccountProblem {
   public AccountNotFoundProblem(final AccountId accountId) {
     super(
       URI.create(TYPE_PREFIX + ACCOUNTS_PATH + "/account-not-found"),
-      "Account Not Found",
+      "Account Not Found (`" + accountId + "`)",
       Status.NOT_FOUND,
       Objects.requireNonNull(accountId)
     );
   }
+
+
 }

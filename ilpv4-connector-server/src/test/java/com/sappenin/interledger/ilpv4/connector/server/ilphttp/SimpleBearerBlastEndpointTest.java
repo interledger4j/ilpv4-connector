@@ -39,11 +39,6 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.bl
 //  classes = {ConnectorServerConfig.class}
 //)
 //@ActiveProfiles({"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
-//@TestPropertySource(
-//  properties = {
-//    ILPV4__CONNECTOR__INMEMORY_BALANCE_TRACKER__ENABLED + "=" + TRUE
-//  }
-//)
 public class SimpleBearerBlastEndpointTest extends AbstractEndpointTest {
 
   @LocalServerPort
@@ -63,7 +58,7 @@ public class SimpleBearerBlastEndpointTest extends AbstractEndpointTest {
   AccountSettingsRepository accountSettingsRepository;
 
   @Before
-  public void setup() {
+  public void setUp() {
     // Add the Bob Account to the Connector.
     final Map<String, Object> customSettings = Maps.newHashMap();
     customSettings.put(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.SIMPLE.name());

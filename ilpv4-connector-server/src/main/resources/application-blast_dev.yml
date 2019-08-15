@@ -78,23 +78,26 @@ redis:
   #port: 6379
   #password: shh
 
+  ilpv4.connector.ilpOverHttp.connectionDefaults.maxIdleConnections
+
+
 ilpv4:
   connector:
     # Connector-wide defaults for ilp-over-http Links
-    #ilpOverHttp:
-      #connectionDefaults:
+    ilpOverHttp:
+      connectionDefaults: # Must not be commented out in order for Spring Props to work.
         # Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must
         # be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If unspecified, defaults to 10.
         #connectTimeoutMillis: 2000
-        # This is pplied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
+        # This is applied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
         # otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If
         # unspecified, defaults to 10.
         #readTimeoutMillis: 1000
         # Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1
         # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
         #writeTimeoutMillis: 1000
-        #maxIdleConnections: 10
-        #keepAliveMillis: 10000
+        maxIdleConnections: 10
+        #keepAliveMinutes: 1
 
     # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
     adminPassword: password
@@ -131,7 +134,7 @@ ilpv4:
         # ILP address prefix that this static route applies to. Configured routes take precedence over the same or
         # shorter prefixes that are local or published by peers. More specific prefixes will still take precedence.
         # NOTE: Prefixes should NOT include a trailing period.
-        - targetPrefix: test.ilpv4-dev.alice
+        - targetPrefix: test.connie.alice
           # ID of the account that destinations matching `targetPrefix` should be forwarded to. Must be one of the
           # accounts in `accounts`.
           peerAccountId: alice

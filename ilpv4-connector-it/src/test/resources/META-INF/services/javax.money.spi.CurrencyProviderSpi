@@ -1,3 +1,4 @@
 # JavaMoney fully-qualified provider names
-com.sappenin.interledger.ilpv4.connector.javax.money.providers.GuinCurrencyProvider
-com.sappenin.interledger.ilpv4.connector.javax.money.providers.SabCurrencyProvider
+# Note that the Connector natively supports various fiat and digital assets/currencies, but more can be added here for
+# simulation and/or testing purposes. For Example:
+# org.interledger.connector.javax.money.providers.XyzCurrencyProvider

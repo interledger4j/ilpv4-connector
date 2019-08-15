@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.function.Supplier;
 
-import static org.interledger.connector.link.blast.BlastHeaders.ILP_OCTET_STREAM;
+import static org.interledger.connector.link.blast.BlastHeaders.APPLICATON_ILP_OCTET_STREAM;
 
 /**
  * WARNING: Only handle HTTP-related exceptions here. General Connector exceptions MUST be handled in the PacketSwitch
@@ -45,7 +45,7 @@ public class WebExceptionHandler {
       .build();
 
     return ResponseEntity.badRequest()
-      .contentType(ILP_OCTET_STREAM)
+      .contentType(APPLICATON_ILP_OCTET_STREAM)
       .body(rejectPacket);
   }
 

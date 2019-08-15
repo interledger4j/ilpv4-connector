@@ -1,0 +1,8 @@
+# JavaMoney fq provider names
+# See https://jaxenter.de/go-for-the-money-einfuehrung-in-das-money-and-currency-api-38668
+# (to display Bitcoin as Satoshis, for example).
+
+# NOTE: this SPI is commented out because XrpCurrencyProvider is configured as a Spring bean, and enabled via
+# SpringServiceProvider, which connects the JavaMoney SPI interface into Spring.
+
+# com.sappenin.interledger.javax.money.providers.DropRoundingProvider

@@ -17,7 +17,7 @@ if(isempty(from_amount)) then
     error("from_amount was nil!")
 end
 
-local balance = redis.call('HINCRBY', from_account_id, 'balance', from_amount)
+local clearing_balance = redis.call('HINCRBY', from_account_id, 'clearing_balance', from_amount)
 local prepaid_amount = numberOrZero(redis.call('HGET', from_account_id, 'prepaid_amount'))
 
-return balance + prepaid_amount
+return clearing_balance + prepaid_amount

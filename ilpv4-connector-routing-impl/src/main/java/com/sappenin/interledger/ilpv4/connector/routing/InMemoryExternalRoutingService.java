@@ -83,6 +83,9 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
   private final ChildAccountPaymentRouter childAccountPaymentRouter;
 
+  // Used to limit the number of warnings emitted for a missing default route.
+  private int numDefaultRouteWarnings = 0;
+
   /**
    * Required-args Constructor.
    */
@@ -365,7 +368,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
         this.outgoingRoutingTable.addRoute(newBestRouteUpdate);
         logger.debug("Logging route update. update={}", newBestRouteUpdate);
 
-        // If there's a current-best, null-out the getEpoch.
+        // If there's a current-best, null-out the epoch.
         currentBest.ifPresent(ru -> outgoingRoutingTable.resetEpochValue(ru.getEpoch()));
 
         // Set the new best into the new epoch.
@@ -499,7 +502,12 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
         .orElseThrow(() -> new RuntimeException("Connector was configured to use a default address as the nextHop " +
           "for the default route, but no Account was configured for this address!"));
     } else {
-      logger.warn("No Default Route configured.");
+      if (numDefaultRouteWarnings++ <= 0) {
+        logger.warn(
+          "No Default Route configured (A default route provides a fallback upstream link for any packets that are not" +
+            " intrinsically routable)."
+        );
+      }
       nextHopForDefaultRoute = Optional.empty();
     }
 

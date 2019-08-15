@@ -17,12 +17,13 @@ import java.util.Objects;
  */
 public class Topology {
 
+  private final String topologyName;
   private final Map<String, Node> nodes = new HashMap<>();
   private final List<Edge> edges = new ArrayList<>();
   private final PostConstructListener postConstructListener;
 
-  public Topology() {
-    this(new PostConstructListener() {
+  public Topology(final String topologyName) {
+    this(topologyName, new PostConstructListener() {
       @Override
       protected void doAfterTopologyStartup(Topology topology) {
         // do nothing by default.
@@ -30,7 +31,8 @@ public class Topology {
     });
   }
 
-  public Topology(final PostConstructListener postConstructListener) {
+  public Topology(final String topologyName, final PostConstructListener postConstructListener) {
+    this.topologyName = Objects.requireNonNull(topologyName);
     this.postConstructListener = Objects.requireNonNull(postConstructListener);
   }
 
@@ -50,7 +52,7 @@ public class Topology {
   }
 
   public Node getNode(String key) {
-    return nodes.get(key);
+    return getNode(key, Node.class);
   }
 
   public <T> T getNode(String key, Class<T> clazz) {
@@ -58,11 +60,11 @@ public class Topology {
   }
 
   public Node getNode(InterledgerAddress key) {
-    return getNode(key.getValue());
+    return getNode(key, Node.class);
   }
 
   public <T> T getNode(InterledgerAddress key, Class<T> clazz) {
-    return (T) nodes.get(key);
+    return (T) nodes.get(key.getValue());
   }
 
   public Collection<Node> getNodeValues() {
@@ -95,6 +97,11 @@ public class Topology {
     for (Node node : nodes.values()) {
       node.stop();
     }
+  }
+
+  @Override
+  public String toString() {
+    return this.topologyName;
   }
 
   /**

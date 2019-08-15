@@ -1,6 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.links.filters;
 
-import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 
@@ -17,11 +17,14 @@ public interface LinkFilterChain {
    * Applies logic to an incoming Prepare packet, optionally preventing the packet from being processed by the packet
    * switching framework.
    *
-   * @param destinationAccountId The  {@link AccountId} that this Prepare packet is being sent to.
-   * @param destinationPreparePacket  The {@link InterledgerPreparePacket} about to be processed.
+   * @param destinationAccountSettings The source {@link AccountSettings} that this outgoing Prepare packet is being
+   *                                   processed for.
+   * @param destinationPreparePacket   The outgoing {@link InterledgerPreparePacket} about to be processed.
    *
-   * @return An optionally-present ILP response packet.
+   * @return An optionally-present {@link InterledgerResponsePacket}.
    */
-  InterledgerResponsePacket doFilter(AccountId destinationAccountId, InterledgerPreparePacket destinationPreparePacket);
+  InterledgerResponsePacket doFilter(
+    AccountSettings destinationAccountSettings, InterledgerPreparePacket destinationPreparePacket
+  );
 
 }

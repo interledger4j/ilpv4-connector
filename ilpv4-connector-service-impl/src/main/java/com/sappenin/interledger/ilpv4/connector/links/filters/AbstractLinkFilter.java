@@ -30,13 +30,14 @@ public abstract class AbstractLinkFilter implements LinkFilter {
   /**
    * Helper-method to reject an incoming request.
    *
-   * @param accountId    The account that the reject is coming from (in this case, the system was unable to get a
-   *                     fulfill response from the target account, so the Connector is simulating a reject from that
-   *                     account).
-   * @param errorCode
-   * @param errorMessage
+   * @param accountId     The account identifier that the reject is coming from.
+   * @param preparePacket The outgoing {@link InterledgerPreparePacket} that should be sent to the Link (this is the
+   *                      packet adjusted by the packet-switch containing the proper units and expiry for the outbound
+   *                      Link associated to this filter).
+   * @param errorCode     An {@link InterledgerErrorCode} describing why {@code preparePacket} was rejected.
+   * @param errorMessage  A {@link String} providing custom details for why {@code preparePacket} was rejected.
    *
-   * @return
+   * @return An {@link InterledgerRejectPacket} with information about why {@code preparePacket} was reject.
    */
   protected InterledgerRejectPacket reject(
     final AccountId accountId, final InterledgerPreparePacket preparePacket,

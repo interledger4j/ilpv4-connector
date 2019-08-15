@@ -22,16 +22,26 @@
     <!-- By default, we run in prod mode, unless a different profile is specified. -->
     <activeProfile>prod</activeProfile>
     <java.version>1.8</java.version>
-    <ilp.version>0.16.0-SNAPSHOT</ilp.version>
+    <ilp.version>0.17.0-SNAPSHOT</ilp.version>
     <problem.version>0.23.0</problem.version>
     <problem-spring-web.version>0.24.0</problem-spring-web.version>
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
     <spring-cloud.version>Greenwich.SR1</spring-cloud.version>
     <resilience4j.version>0.17.0</resilience4j.version>
+    <moneta.version>1.3</moneta.version>
 
     <!-- org.jacoco:jacoc-maven-plugin -->
     <jacoco.propertyName>argLine</jacoco.propertyName>
     <start-class>com.sappenin.interledger.ilpv4.connector.server.ConnectorApplication</start-class>
+
+    <!--
+      -DskipUTs=true for skipping surefire tests.
+      -DskipITs=true for skipping failsafe tests.
+      -DskipTests=true for skipping all tests.
+    -->
+    <skipTests>false</skipTests>
+    <skipITs>${skipTests}</skipITs>
+    <skipUTs>${skipTests}</skipUTs>
   </properties>
 
   <modules>
@@ -292,9 +302,14 @@
         <version>${ilp.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.javamoney</groupId>
-        <artifactId>moneta</artifactId>
-        <version>1.1</version>
+        <groupId>org.javamoney.moneta</groupId>
+        <artifactId>moneta-core</artifactId>
+        <version>${moneta.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.javamoney.moneta</groupId>
+        <artifactId>moneta-convert</artifactId>
+        <version>${moneta.version}</version>
       </dependency>
       <dependency>
         <groupId>org.liquibase</groupId>
@@ -380,10 +395,15 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <configuration>
-            <useSystemClassLoader>false</useSystemClassLoader>
-          </configuration>
+          <version>3.0.0-M3</version>
         </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>3.0.0-M3</version>
+        </plugin>
+
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
@@ -413,16 +433,19 @@
                   <ignoredDependency>com.h2database:h2:jar</ignoredDependency>
                   <ignoredDependency>org.hibernate:hibernate-entitymanager</ignoredDependency>
                   <ignoredDependency>org.postgresql:postgresql:jar</ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-starter-cache</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-data-redis</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-web</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-jetty</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-websocket</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-security</ignoredDependency>
-                  <ignoredDependency>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure</ignoredDependency>
+                  <ignoredDependency>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure
+                  </ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-jpa:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-test:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-data-jpa:jar</ignoredDependency>
-                  <ignoredDependency>org.springframework.boot:spring-boot-configuration-processor:jar</ignoredDependency>
+                  <ignoredDependency>org.springframework.boot:spring-boot-configuration-processor:jar
+                  </ignoredDependency>
                   <ignoredDependency>org.springframework.plugin:spring-plugin-core:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.data:spring-data-redis:jar</ignoredDependency>
                   <ignoredDependency>redis.clients:jedis:jar</ignoredDependency>
@@ -469,6 +492,19 @@
       </plugins>
     </pluginManagement>
     <plugins>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <skipTests>${skipUTs}</skipTests>
+          <useSystemClassLoader>false</useSystemClassLoader>
+          <encoding>UTF-8</encoding>
+          <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
+          <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+        </configuration>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.interledger.ilpv4.connector.jackson.modules.AccountIdModule;
+import org.interledger.ilpv4.connector.jackson.modules.HttpUrlModule;
 import org.interledger.ilpv4.connector.jackson.modules.LinkIdModule;
 import org.interledger.ilpv4.connector.jackson.modules.LinkTypeModule;
 import org.zalando.problem.ProblemModule;
@@ -20,6 +21,7 @@ public class ObjectMapperFactory {
   public static ObjectMapper create() {
     final ObjectMapper objectMapper = new ObjectMapper()
       .registerModule(new Jdk8Module())
+      .registerModule(new HttpUrlModule())
       .registerModule(new JavaTimeModule())
       .registerModule(new GuavaModule())
       .registerModule(new ProblemModule())

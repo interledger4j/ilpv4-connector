@@ -34,8 +34,6 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.pr
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.DEFAULT_JWT_TOKEN_ISSUER;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties.ENABLED_PROTOCOLS;
 import static okhttp3.CookieJar.NO_COOKIES;
-import static org.interledger.ilpv4.connector.core.ConfigConstants.DOT;
-import static org.interledger.ilpv4.connector.core.ConfigConstants.ILPV4__CONNECTOR;
 import static org.interledger.ilpv4.connector.core.ConfigConstants.TRUE;
 
 /**
@@ -49,74 +47,67 @@ import static org.interledger.ilpv4.connector.core.ConfigConstants.TRUE;
 @ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = BLAST_ENABLED, havingValue = TRUE)
 public class BlastConfig {
 
+  /**
+   * @see "https://github.com/sappenin/java-ilpv4-connector/issues/221"
+   * @deprecated See #221
+   */
+  @Deprecated
   public static final String BLAST = "blast";
-  private static final String ILPV4__CONNECTOR__ILP_OVER_HTTP = ILPV4__CONNECTOR + DOT + "ilpOverHttp";
-  private static final String ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS
-    = ILPV4__CONNECTOR__ILP_OVER_HTTP + DOT + "connectionDefaults";
-  private static final String ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__CONNECT_TIMEOUT_MILLIS =
-    ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS + DOT + "connectTimeoutMillis";
-  private static final String ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__READ_TIMEOUT_MILLIS =
-    ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS + DOT + "readTimeoutMillis";
-  private static final String ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__WRITE_TIMEOUT_MILLIS =
-    ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS + DOT + "writeTimeoutMillis";
-  private static final String ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__MAX_IDLE_CONNECTIONS =
-    ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS + DOT + "maxIdleConnections";
-  private static final String ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__KEEP_ALIVE_MINUTES =
-    ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS + DOT + "keepAliveMinutes";
-
-  /**
-   * Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must be
-   * between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
-   */
-  @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__CONNECT_TIMEOUT_MILLIS + ":1000}")
-  private long defaultConnectTimeoutMillis;
-
-  /**
-   * Applied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout, otherwise
-   * values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to
-   * 10.
-   */
-  @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__READ_TIMEOUT_MILLIS + ":1000}")
-  private long defaultReadTimeoutMillis;
-
-  /**
-   * Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1 and
-   * {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
-   */
-  @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__WRITE_TIMEOUT_MILLIS + ":1000}")
-  private long defaultWriteTimeoutMillis;
-
-  @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__MAX_IDLE_CONNECTIONS + ":5}")
-  private int defaultMaxIdleConnections;
-
-  @Value("${" + ILPV4__CONNECTOR__ILP_OVER_HTTP__CONNECTION_DEFAULTS__KEEP_ALIVE_MINUTES + ":5}")
-  private long defaultConnectionKeepAliveMinutes;
 
   @Autowired
   Environment environment;
-
   @Autowired
   LinkEventEmitter linkEventEmitter;
-
   @Autowired
   LinkFactoryProvider linkFactoryProvider;
-
   @Autowired
   @Qualifier(BLAST)
   RestTemplate blastRestTemplate;
-
   @Autowired
   Decryptor decryptor;
 
   @Bean
   @Qualifier(BLAST)
-  public ConnectionPool connectionPool() {
-    return new ConnectionPool(defaultMaxIdleConnections, defaultConnectionKeepAliveMinutes, TimeUnit.MINUTES);
+  public ConnectionPool blastConnectionPool(
+    @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.maxIdleConnections:5}")
+    final int defaultMaxIdleConnections,
+    @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.keepAliveMinutes:1}")
+    final long defaultConnectionKeepAliveMinutes
+  ) {
+    return new ConnectionPool(
+      defaultMaxIdleConnections,
+      defaultConnectionKeepAliveMinutes, TimeUnit.MINUTES
+    );
   }
 
+  /**
+   * @param ilpOverHttpConnectionPool   A {@link ConnectionPool} as configured above.
+   * @param defaultConnectTimeoutMillis Applied when connecting a TCP socket to the target host. A value of 0 means no
+   *                                    timeout, otherwise values must be between 1 and {@link Integer#MAX_VALUE} when
+   *                                    converted to milliseconds. If unspecified, defaults to 10.
+   * @param defaultReadTimeoutMillis    Applied to both the TCP socket and for individual read IO operations. A value of
+   *                                    0 means no timeout, otherwise values must be between 1 and {@link
+   *                                    Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to
+   *                                    10.
+   * @param defaultWriteTimeoutMillis   Applied to individual write IO operations. A value of 0 means no timeout,
+   *                                    otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted
+   *                                    to milliseconds. If unspecified, defaults to 10.
+   *
+   * @return A {@link OkHttp3ClientHttpRequestFactory}.
+   */
   @Bean
   @Qualifier(BLAST)
-  OkHttp3ClientHttpRequestFactory okHttp3ClientHttpRequestFactory(final ConnectionPool ilpOverHttpConnectionPool) {
+  OkHttp3ClientHttpRequestFactory blastOkHttp3ClientHttpRequestFactory(
+
+    @Qualifier(BLAST) final ConnectionPool ilpOverHttpConnectionPool,
+
+    @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.connectTimeoutMillis:1000}")
+    final long defaultConnectTimeoutMillis,
+    @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.readTimeoutMillis:1000}")
+    final long defaultReadTimeoutMillis,
+    @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.writeTimeoutMillis:1000}")
+    final long defaultWriteTimeoutMillis
+  ) {
     OkHttpClient.Builder builder = new OkHttpClient.Builder();
     ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).build();
 
@@ -133,9 +124,10 @@ public class BlastConfig {
 
   @Bean
   @Qualifier(BLAST)
-  RestTemplate restTemplate(
-    ObjectMapper objectMapper, OerPreparePacketHttpMessageConverter oerPreparePacketHttpMessageConverter,
-    OkHttp3ClientHttpRequestFactory okHttp3ClientHttpRequestFactory
+  RestTemplate blastRestTemplate(
+    ObjectMapper objectMapper,
+    OerPreparePacketHttpMessageConverter oerPreparePacketHttpMessageConverter,
+    @Qualifier(BLAST) OkHttp3ClientHttpRequestFactory okHttp3ClientHttpRequestFactory
   ) {
     MappingJackson2HttpMessageConverter httpMessageConverter = new MappingJackson2HttpMessageConverter(objectMapper);
     RestTemplate restTemplate = new RestTemplate(okHttp3ClientHttpRequestFactory);

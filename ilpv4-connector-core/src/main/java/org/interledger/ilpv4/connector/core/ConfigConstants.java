@@ -12,7 +12,4 @@ public interface ConfigConstants {
 
   String ILPV4__CONNECTOR = "ilpv4.connector";
 
-  String ILPV4__CONNECTOR__INMEMORY_BALANCE_TRACKER__ENABLED =
-    ILPV4__CONNECTOR + DOT + "inmem-balance-tracker" + DOT + "enabled";
-
 }

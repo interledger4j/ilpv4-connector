@@ -24,7 +24,7 @@ public class DropRoundingProviderTest {
   private DropRoundingProvider dropRoundingProvider;
 
   @Before
-  public void setup() {
+  public void setUp() {
     dropRoundingProvider = new DropRoundingProvider();
   }
 

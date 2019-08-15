@@ -15,13 +15,16 @@ public class AccountSettingsConverter implements Converter<AccountSettingsEntity
 
   private final RateLimitSettingsConverter rateLimitSettingsConverter;
   private final AccountBalanceSettingsConverter accountBalanceSettingsConverter;
+  private final SettlementEngineDetailsConverter settlementEngineDetailsConverter;
 
   public AccountSettingsConverter(
-    RateLimitSettingsConverter rateLimitSettingsConverter,
-    AccountBalanceSettingsConverter accountBalanceSettingsConverter
+    final RateLimitSettingsConverter rateLimitSettingsConverter,
+    final AccountBalanceSettingsConverter accountBalanceSettingsConverter,
+    final SettlementEngineDetailsConverter settlementEngineDetailsConverter
   ) {
-    this.rateLimitSettingsConverter = rateLimitSettingsConverter;
-    this.accountBalanceSettingsConverter = accountBalanceSettingsConverter;
+    this.rateLimitSettingsConverter = Objects.requireNonNull(rateLimitSettingsConverter);
+    this.accountBalanceSettingsConverter = Objects.requireNonNull(accountBalanceSettingsConverter);
+    this.settlementEngineDetailsConverter = Objects.requireNonNull(settlementEngineDetailsConverter);
   }
 
   @Override
@@ -30,6 +33,7 @@ public class AccountSettingsConverter implements Converter<AccountSettingsEntity
 
     final ImmutableAccountSettings.Builder builder = AccountSettings.builder()
       .accountId(accountSettingsEntity.getAccountId())
+      .description(accountSettingsEntity.getDescription())
       .assetScale(accountSettingsEntity.getAssetScale())
       .assetCode(accountSettingsEntity.getAssetCode())
       .linkType(accountSettingsEntity.getLinkType())
@@ -41,10 +45,23 @@ public class AccountSettingsConverter implements Converter<AccountSettingsEntity
       .putAllCustomSettings(accountSettingsEntity.getCustomSettings());
 
     Optional.ofNullable(accountSettingsEntity.getRateLimitSettingsEntity())
-      .ifPresent(entity -> builder.rateLimitSettings(rateLimitSettingsConverter.convert(entity)));
+      .ifPresent(rateLimitSettingsEntity -> builder
+        .rateLimitSettings(rateLimitSettingsConverter.convert(rateLimitSettingsEntity)));
 
     Optional.ofNullable(accountSettingsEntity.getBalanceSettingsEntity())
-      .ifPresent(entity -> builder.balanceSettings(accountBalanceSettingsConverter.convert(entity)));
+      .ifPresent(balanceSettingsEntity -> builder
+        .balanceSettings(accountBalanceSettingsConverter.convert(balanceSettingsEntity)));
+
+    Optional.ofNullable(accountSettingsEntity.getSettlementEngineDetailsEntity())
+      .ifPresent(settlementEngineDetailsEntity -> {
+        // Until https://github.com/sappenin/java-ilpv4-connector/issues/217 is fixed, we should not create a SE
+        // details object unless all properties in the DB are populated. This line can be removed once #217 is fixed.
+        if (
+          settlementEngineDetailsEntity.getBaseUrl() != null && settlementEngineDetailsEntity.getSettlementEngineAccountId() != null
+        ) {
+          builder.settlementEngineDetails(settlementEngineDetailsConverter.convert(settlementEngineDetailsEntity));
+        }
+      });
 
     return builder.build();
   }

@@ -26,21 +26,21 @@ public interface CcpRouteUpdateRequest {
   RoutingTableId routingTableId();
 
   /**
-   * The current getEpoch index that the requesting node has for the specified routing table identifier.
+   * The current epoch index that the requesting node has for the specified routing table identifier.
    *
    * @return A <tt>long</tt>.
    */
   int currentEpochIndex();
 
   /**
-   * The getEpoch index that the log of this update request starts from.
+   * The epoch index that the log of this update request starts from.
    *
    * @return A <tt>long</tt>.
    */
   int fromEpochIndex();
 
   /**
-   * The getEpoch index that the log of this update request ends at.
+   * The epoch index that the log of this update request ends at.
    *
    * @return A <tt>long</tt>.
    */

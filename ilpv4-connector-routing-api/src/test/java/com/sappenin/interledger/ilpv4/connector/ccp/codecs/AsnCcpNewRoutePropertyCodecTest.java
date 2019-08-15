@@ -85,7 +85,7 @@ public class AsnCcpNewRoutePropertyCodecTest extends AbstractAsnCodecTest<CcpRou
   }
 
   @Before
-  public void setup() {
+  public void setUp() {
     codec = new AsnCcpRoutePropertyCodec();
   }
 

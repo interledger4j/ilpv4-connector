@@ -119,11 +119,11 @@ public class DefaultCcpSender implements CcpSender {
         this.forwardingRoutingTable.getRoutingTableId());
       this.lastKnownEpoch.set(0);
     } else {
-      logger
-        .debug("Peer getEpoch set. getEpoch={} currentEpoch={}",
-          peerAccountId,
-          lastKnownEpoch,
-          this.forwardingRoutingTable.getCurrentEpoch());
+      logger.debug("Peer epoch set. peerAccountId={} lastKnownEpoch={} currentEpoch={}",
+        peerAccountId,
+        lastKnownEpoch,
+        this.forwardingRoutingTable.getCurrentEpoch()
+      );
       this.lastKnownEpoch.set(routeControlRequest.lastKnownEpoch());
     }
 

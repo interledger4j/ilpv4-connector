@@ -1,7 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.server.javamoney;
 
 import com.sappenin.interledger.ilpv4.connector.server.ConnectorServerConfig;
-import com.sappenin.interledger.ilpv4.connector.server.spring.settings.properties.ConnectorProperties;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,10 +12,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.admin.AccountsController.SLASH_ACCOUNTS;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -29,11 +27,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
   classes = {ConnectorServerConfig.class}
 )
 @ActiveProfiles({"test"})
-@TestPropertySource(
-  properties = {
-    ConnectorProperties.ENABLED_PROTOCOLS + "." + ConnectorProperties.BLAST_ENABLED + "=false"
-  }
-)
 public class AdminApiSecurityTest {
 
   private static final String FOO = "/foo";

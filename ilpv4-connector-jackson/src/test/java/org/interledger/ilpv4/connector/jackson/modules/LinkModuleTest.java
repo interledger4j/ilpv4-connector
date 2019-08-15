@@ -3,7 +3,6 @@ package org.interledger.ilpv4.connector.jackson.modules;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.interledger.connector.link.LinkId;
 import org.interledger.ilpv4.connector.jackson.ObjectMapperFactory;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -18,13 +17,6 @@ import static org.hamcrest.core.Is.is;
 public class LinkModuleTest extends AbstractIdTest {
 
   private static final LinkId LINK_ID = LinkId.of(UUID.randomUUID().toString());
-  protected ObjectMapper objectMapperWithoutModule;
-
-  @Before
-  public void setUp() {
-    objectMapperWithoutModule = ObjectMapperFactory.create();
-    objectMapper.registerModule(new LinkIdModule());
-  }
 
   @Test
   public void shouldSerializeAndDeserialize() throws IOException {
@@ -41,6 +33,7 @@ public class LinkModuleTest extends AbstractIdTest {
 
   @Test
   public void shouldNotSerializeAndDeserialize() throws IOException {
+    ObjectMapper objectMapperWithoutModule = ObjectMapperFactory.create();
     final LinkIdContainer expectedContainer = ImmutableLinkIdContainer.builder()
       .linkId(LINK_ID)
       .build();

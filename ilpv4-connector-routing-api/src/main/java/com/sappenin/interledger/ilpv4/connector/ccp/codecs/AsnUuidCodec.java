@@ -5,6 +5,7 @@ import org.interledger.encoding.asn.codecs.AsnOctetStringBasedObjectCodec;
 import org.interledger.encoding.asn.codecs.AsnSizeConstraint;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 import java.util.UUID;
 
 public class AsnUuidCodec extends AsnOctetStringBasedObjectCodec<UUID> {
@@ -13,7 +14,7 @@ public class AsnUuidCodec extends AsnOctetStringBasedObjectCodec<UUID> {
    * Default constructor.
    */
   public AsnUuidCodec() {
-    super(new AsnSizeConstraint(16,16));
+    super(new AsnSizeConstraint(16, 16));
   }
 
   /**
@@ -41,9 +42,10 @@ public class AsnUuidCodec extends AsnOctetStringBasedObjectCodec<UUID> {
    */
   @VisibleForTesting
   protected final static UUID getUUIDFromBytes(final byte[] bytes) {
+    Objects.requireNonNull(bytes);
     final ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
-    final Long high = byteBuffer.getLong();
-    final Long low = byteBuffer.getLong();
+    final long high = byteBuffer.getLong();
+    final long low = byteBuffer.getLong();
 
     return new UUID(high, low);
   }

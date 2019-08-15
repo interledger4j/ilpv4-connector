@@ -19,7 +19,7 @@ public abstract class AbstractIdTest {
   protected ObjectMapper objectMapper;
 
   @Before
-  public void setup() {
+  public void setUp() {
     objectMapper = ObjectMapperFactory.create();
   }
 

@@ -2,14 +2,18 @@ package org.interledger.ilpv4.connector.persistence.repositories;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
+import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.SettlementEngineAccountId;
+import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.connector.link.LinkType;
 import org.interledger.ilpv4.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.ilpv4.connector.persistence.entities.SettlementEngineDetailsEntity;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +27,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.not;
@@ -68,7 +73,12 @@ public class AccountSettingsRepositoryTest {
         .maxBalance(10L)
         .minBalance(0L)
         .settleThreshold(100L)
-        .settleTo(150L)
+        .settleTo(10L)
+        .build())
+      .settlementEngineDetails(SettlementEngineDetails.builder()
+        .baseUrl(HttpUrl.parse("https://example.com"))
+        .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
+        .putCustomSettings("foo", "bar")
         .build())
       .ilpAddressSegment("foo")
       .customSettings(customSettings)
@@ -77,7 +87,7 @@ public class AccountSettingsRepositoryTest {
     final AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity(accountSettings);
     assertThat(accountSettingsEntity.getId(), is(nullValue()));
     assertThat(accountSettingsEntity.getNaturalId(), is(accountSettings.getAccountId().value()));
-    assertAllFieldsEqual(accountSettingsEntity, accountSettings);
+    assertAllFieldsEqual(accountSettingsEntity, new AccountSettingsEntity(accountSettings));
 
     // Equals methods are not the same, so verify this.
     assertThat(accountSettingsEntity, is(not(accountSettings)));
@@ -86,19 +96,19 @@ public class AccountSettingsRepositoryTest {
     assertThat(savedAccountSettingsEntity, is(accountSettingsEntity));
     assertThat(savedAccountSettingsEntity.getId() > 0, is(true));
     assertThat(savedAccountSettingsEntity.getNaturalId(), is(accountSettings.getAccountId().value()));
-    assertAllFieldsEqual(savedAccountSettingsEntity, accountSettings);
+    assertAllFieldsEqual(savedAccountSettingsEntity, new AccountSettingsEntity(accountSettings));
 
     final AccountSettingsEntity loadedAccountSettingsEntity =
       accountSettingsRepository.findById(savedAccountSettingsEntity.getId()).get();
     assertThat(loadedAccountSettingsEntity.getId() > 0, is(true));
     assertThat(loadedAccountSettingsEntity.getNaturalId(), is(accountSettings.getAccountId().value()));
-    assertAllFieldsEqual(loadedAccountSettingsEntity, accountSettings);
+    assertAllFieldsEqual(loadedAccountSettingsEntity, new AccountSettingsEntity(accountSettings));
 
     final AccountSettingsEntity loadedAccountSettingsEntity2 =
       accountSettingsRepository.findByNaturalId(accountSettings.getAccountId().value()).get();
     assertThat(loadedAccountSettingsEntity2.getId(), is(loadedAccountSettingsEntity.getId()));
     assertThat(loadedAccountSettingsEntity2.getNaturalId(), is(loadedAccountSettingsEntity.getNaturalId()));
-    assertAllFieldsEqual(loadedAccountSettingsEntity2, accountSettings);
+    assertAllFieldsEqual(loadedAccountSettingsEntity2, new AccountSettingsEntity(accountSettings));
   }
 
   @Test
@@ -114,7 +124,7 @@ public class AccountSettingsRepositoryTest {
     final AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity(accountSettings);
     assertThat(accountSettingsEntity.getId(), is(nullValue()));
     assertThat(accountSettingsEntity.getNaturalId(), is(accountSettings.getAccountId().value()));
-    assertAllFieldsEqual(accountSettingsEntity, accountSettings);
+    assertAllFieldsEqual(accountSettingsEntity, new AccountSettingsEntity(accountSettings));
 
     // Equals methods are not the same, so verify this.
     assertThat(accountSettingsEntity, is(not(accountSettings)));
@@ -123,13 +133,13 @@ public class AccountSettingsRepositoryTest {
     assertThat(savedAccountSettingsEntity, is(accountSettingsEntity));
     assertThat(savedAccountSettingsEntity.getId() > 0, is(true));
     assertThat(savedAccountSettingsEntity.getNaturalId(), is(accountSettings.getAccountId().value()));
-    assertAllFieldsEqual(savedAccountSettingsEntity, accountSettings);
+    assertAllFieldsEqual(savedAccountSettingsEntity, new AccountSettingsEntity(accountSettings));
 
     final AccountSettingsEntity loadedAccountSettingsEntity =
       accountSettingsRepository.findById(savedAccountSettingsEntity.getId()).get();
     assertThat(loadedAccountSettingsEntity.getId() > 0, is(true));
     assertThat(loadedAccountSettingsEntity.getNaturalId(), is(accountSettings.getAccountId().value()));
-    assertAllFieldsEqual(loadedAccountSettingsEntity, accountSettings);
+    assertAllFieldsEqual(loadedAccountSettingsEntity, new AccountSettingsEntity(accountSettings));
 
     // Assert actual loaded values...
     assertThat(loadedAccountSettingsEntity.getAccountRelationship(), is(AccountRelationship.PEER));
@@ -141,15 +151,16 @@ public class AccountSettingsRepositoryTest {
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getMaxBalance().isPresent(), is(false));
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getMinBalance().isPresent(), is(false));
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getSettleThreshold().isPresent(), is(false));
-    assertThat(loadedAccountSettingsEntity.getBalanceSettings().getSettleTo().isPresent(), is(false));
+    assertThat(loadedAccountSettingsEntity.getBalanceSettings().getSettleTo(), is(0L));
     assertThat(loadedAccountSettingsEntity.getRateLimitSettings().getMaxPacketsPerSecond().isPresent(), is(false));
+    assertThat(loadedAccountSettingsEntity.settlementEngineDetails().isPresent(), is(false));
     assertThat(loadedAccountSettingsEntity.getIlpAddressSegment().isPresent(), is(false));
 
     final AccountSettingsEntity loadedAccountSettingsEntity2 =
       accountSettingsRepository.findByNaturalId(accountSettings.getAccountId().value()).get();
     assertThat(loadedAccountSettingsEntity2.getId(), is(loadedAccountSettingsEntity.getId()));
     assertThat(loadedAccountSettingsEntity2.getNaturalId(), is(loadedAccountSettingsEntity.getNaturalId()));
-    assertAllFieldsEqual(loadedAccountSettingsEntity2, accountSettings);
+    assertAllFieldsEqual(loadedAccountSettingsEntity2, new AccountSettingsEntity(accountSettings));
 
     assertThat(loadedAccountSettingsEntity.getAccountRelationship(), is(AccountRelationship.PEER));
     assertThat(loadedAccountSettingsEntity.getLinkType(), is(LinkType.of("Loopback")));
@@ -160,9 +171,86 @@ public class AccountSettingsRepositoryTest {
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getMaxBalance().isPresent(), is(false));
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getMinBalance().isPresent(), is(false));
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getSettleThreshold().isPresent(), is(false));
-    assertThat(loadedAccountSettingsEntity.getBalanceSettings().getSettleTo().isPresent(), is(false));
+    assertThat(loadedAccountSettingsEntity.getBalanceSettings().getSettleTo(), is(0L));
     assertThat(loadedAccountSettingsEntity.getRateLimitSettings().getMaxPacketsPerSecond().isPresent(), is(false));
     assertThat(loadedAccountSettingsEntity.getIlpAddressSegment().isPresent(), is(false));
+  }
+
+  // TODO: No SE
+  // TODO: null SE url.
+  //
+
+  @Test
+  public void findBySettlementEngineAccountId() {
+    final SettlementEngineAccountId settlementEngineAccountId =
+      SettlementEngineAccountId.of(UUID.randomUUID().toString());
+
+    final AccountSettings accountSettings1 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PEER)
+      .settlementEngineDetails(
+        SettlementEngineDetails.builder()
+          .baseUrl(HttpUrl.parse("https://example.com"))
+          .settlementEngineAccountId(settlementEngineAccountId)
+          .build()
+      )
+      .build();
+    final AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity(accountSettings1);
+    accountSettingsRepository.save(accountSettingsEntity);
+
+    Optional<AccountSettingsEntity> actual = accountSettingsRepository
+      .findBySettlementEngineAccountId(settlementEngineAccountId);
+    assertThat(actual.isPresent(), is(true));
+
+    this.assertAllFieldsEqual(actual.get(), accountSettingsEntity);
+  }
+
+  @Test
+  public void findBySettlementEngineAccountIdWhenNonExistent() {
+    final SettlementEngineAccountId settlementEngineAccountId =
+      SettlementEngineAccountId.of(UUID.randomUUID().toString());
+
+    assertThat(
+      accountSettingsRepository.findBySettlementEngineAccountId(settlementEngineAccountId)
+        .isPresent(),
+      is(false)
+    );
+  }
+
+  @Test
+  public void findBySettlementEngineAccountIdWhenIdIsNull() {
+    final SettlementEngineAccountId settlementEngineAccountId =
+      SettlementEngineAccountId.of(UUID.randomUUID().toString());
+
+    final AccountSettings accountSettings = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PEER)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity(accountSettings);
+
+    // Construct a SettlementEngineDetailsEntity with null values....
+    SettlementEngineDetailsEntity nullValueSettlementEngineDetailsEntity = new SettlementEngineDetailsEntity(
+      SettlementEngineDetails.builder()
+        .baseUrl(HttpUrl.parse("https://example.com"))
+        .settlementEngineAccountId(settlementEngineAccountId)
+        .build()
+    );
+    nullValueSettlementEngineDetailsEntity.setBaseUrl(null);
+    nullValueSettlementEngineDetailsEntity.setSettlementEngineAccountId(null);
+    accountSettingsEntity.setSettlementEngineDetails(nullValueSettlementEngineDetailsEntity);
+    accountSettingsRepository.save(accountSettingsEntity);
+
+    assertThat(
+      accountSettingsRepository.findBySettlementEngineAccountId(settlementEngineAccountId)
+        .isPresent(),
+      is(false)
+    );
   }
 
   @Test
@@ -330,25 +418,43 @@ public class AccountSettingsRepositoryTest {
    *
    * @return {@code true} if the two objects have equivalent fields, {@code false} otherwise.
    */
-  private void assertAllFieldsEqual(final AccountSettings entity1, final AccountSettings entity2) {
+  private void assertAllFieldsEqual(final AccountSettingsEntity entity1, final AccountSettingsEntity entity2) {
     Objects.requireNonNull(entity1);
     Objects.requireNonNull(entity2);
 
     assertThat(entity1.getAccountId(), is(entity2.getAccountId()));
+    assertThat(entity1.getAccountRelationship(), is(entity2.getAccountRelationship()));
     assertThat(entity1.getDescription(), is(entity2.getDescription()));
+    assertThat(entity1.getLinkType(), is(entity2.getLinkType()));
     assertThat(entity1.getAssetCode(), is(entity2.getAssetCode()));
     assertThat(entity1.getAssetScale(), is(entity2.getAssetScale()));
+    assertThat(entity1.getIlpAddressSegment(), is(entity2.getIlpAddressSegment()));
+    assertThat(entity1.getMaximumPacketAmount(), is(entity2.getMaximumPacketAmount()));
+
+    // BalanceSettings
     assertThat(entity1.getBalanceSettings().getMaxBalance(), is(entity2.getBalanceSettings().getMaxBalance()));
     assertThat(entity1.getBalanceSettings().getMinBalance(), is(entity2.getBalanceSettings().getMinBalance()));
     assertThat(entity1.getBalanceSettings().getSettleThreshold(),
       is(entity2.getBalanceSettings().getSettleThreshold()));
     assertThat(entity1.getBalanceSettings().getSettleTo(), is(entity2.getBalanceSettings().getSettleTo()));
+
+    // RateLimitSettings
     assertThat(entity1.getRateLimitSettings().getMaxPacketsPerSecond(),
       is(entity2.getRateLimitSettings().getMaxPacketsPerSecond()));
-    assertThat(entity1.getLinkType(), is(entity2.getLinkType()));
-    assertThat(entity1.getIlpAddressSegment(), is(entity2.getIlpAddressSegment()));
-    assertThat(entity1.getAccountRelationship(), is(entity2.getAccountRelationship()));
-    assertThat(entity1.getMaximumPacketAmount(), is(entity2.getMaximumPacketAmount()));
+
+    // SettlementEngineSettings
+    if (entity1.settlementEngineDetails().isPresent()) {
+      assertThat(entity1.settlementEngineDetails().isPresent(), is(entity2.settlementEngineDetails().isPresent()));
+      assertThat(entity1.settlementEngineDetails().get().baseUrl(),
+        is(entity2.settlementEngineDetails().get().baseUrl()));
+      assertThat(entity1.settlementEngineDetails().get().settlementEngineAccountId(),
+        is(entity2.settlementEngineDetails().get().settlementEngineAccountId()));
+      assertThat(entity1.getCustomSettings(), is(entity2.getCustomSettings()));
+
+    } else {
+      assertThat(entity1.settlementEngineDetails(), is(entity2.settlementEngineDetails()));
+    }
+    // CustomSettings
     assertThat(entity1.getCustomSettings(), is(entity2.getCustomSettings()));
   }
 

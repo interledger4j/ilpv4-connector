@@ -2,8 +2,11 @@ package org.interledger.connector.accounts;
 
 /**
  * Provides new accounts for the connector to track.
+ *
+ * @deprecated
  */
 // TODO: Remove AccountProviders
+@Deprecated
 public interface AccountProvider {
 
   /**

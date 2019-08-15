@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector.server.spring.controllers.converters;
 
+import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.core.InterledgerPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
@@ -17,8 +18,8 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Objects;
 
-import static org.interledger.connector.link.blast.BlastHeaders.ILP_HEADER_OCTET_STREAM;
-import static org.interledger.connector.link.blast.BlastHeaders.ILP_OCTET_STREAM;
+import static org.interledger.connector.link.blast.BlastHeaders.APPLICATION_ILP_HEADER_OCTET_STREAM;
+import static org.interledger.connector.link.blast.BlastHeaders.APPLICATON_ILP_OCTET_STREAM;
 
 /**
  * An {@link HttpMessageConverter} that handles instances of {@link InterledgerPreparePacket}.
@@ -29,8 +30,20 @@ public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMes
   private final CodecContext ilpCodecContext;
 
   public OerPreparePacketHttpMessageConverter(final CodecContext ilpCodecContext) {
-    super(MediaType.APPLICATION_OCTET_STREAM, ILP_OCTET_STREAM, ILP_HEADER_OCTET_STREAM);
+    super(MediaType.APPLICATION_OCTET_STREAM, APPLICATON_ILP_OCTET_STREAM, APPLICATION_ILP_HEADER_OCTET_STREAM);
     this.ilpCodecContext = Objects.requireNonNull(ilpCodecContext);
+  }
+
+  /**
+   * Overridden so that this converter only kicks-in when on calls that use {@link IlpHttpController}.
+   */
+  @Override
+  public boolean canRead(Type type, Class<?> contextClass, MediaType mediaType) {
+    if (contextClass != null && IlpHttpController.class.isAssignableFrom(contextClass)) {
+      return super.canRead(type, contextClass, mediaType);
+    } else {
+      return false;
+    }
   }
 
   /**
