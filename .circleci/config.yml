@@ -330,18 +330,23 @@ jobs:
             cd ./ilpv4-connector-it
             mvn verify -Psettlement -Dspring.datasource.url=jdbc:postgresql://localhost:5432/circle_test
 
+
 workflows:
   version: 2
   build_and_test:
     jobs:
       - build
       - test_postgresql
-      # We only run the "integration_tests" job when the above non-IT builds have succeeded
       - integration_tests_ilp_over_http:
           requires:
             - build
             - test_postgresql
       - integration_tests_settlement:
           requires:
+            - build
+            - test_postgresql
+      - hold: # <<< A job that will require manual approval in the CircleCI web application.
+          type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
+          requires: # We only run the "hold" job when test2 has succeeded
             - build
             - test_postgresql
