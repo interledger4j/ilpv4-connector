@@ -156,13 +156,15 @@ public class DefaultSettlementService implements SettlementService {
 
   @Override
   public SettlementQuantity initiateLocalSettlement(
-    UUID idempotencyKey, AccountSettings accountSettings, SettlementQuantity requestedSettlementQuantityInClearingUnits
+    final UUID idempotencyKey,
+    final AccountSettings accountSettings,
+    final SettlementQuantity settlementQuantityInClearingUnits
   ) throws SettlementServiceException {
 
     // 0 amount settlements should be ignored (negative values are not allowed in `SettlementQuantity`)
-    if (requestedSettlementQuantityInClearingUnits.amount() <= 0) {
+    if (settlementQuantityInClearingUnits.amount() <= 0) {
       logger.warn("SETTLEMENT initiated with 0 value");
-      return SettlementQuantity.builder().amount(0).scale(requestedSettlementQuantityInClearingUnits.scale()).build();
+      return SettlementQuantity.builder().amount(0).scale(settlementQuantityInClearingUnits.scale()).build();
     }
 
     // TODO: We don't want to block the ILP packet-flow thread here because the request to the SE might be a bit
@@ -183,8 +185,8 @@ public class DefaultSettlementService implements SettlementService {
           // its own scaled units; and any response should be in the scale of the responder.
 
           final InitiateSettlementRequest initiateSettlementRequest = InitiateSettlementRequest.builder()
-            .requestedSettlementAmount(BigInteger.valueOf(requestedSettlementQuantityInClearingUnits.amount()))
-            .connectorAccountScale(requestedSettlementQuantityInClearingUnits.scale())
+            .requestedSettlementAmount(BigInteger.valueOf(settlementQuantityInClearingUnits.amount()))
+            .connectorAccountScale(settlementQuantityInClearingUnits.scale())
             .build();
 
           // This response will be in settlement engine units...
@@ -245,7 +247,7 @@ public class DefaultSettlementService implements SettlementService {
           // occurs here.
           try {
             balanceTracker.updateBalanceForOutgoingSettlementRefund(
-              accountSettings.getAccountId(), requestedSettlementQuantityInClearingUnits.amount()
+              accountSettings.getAccountId(), settlementQuantityInClearingUnits.amount()
             );
           } catch (Exception e2) {
             // Swallowed (but logged) so that the other error message below is actually emitted too...
@@ -256,8 +258,8 @@ public class DefaultSettlementService implements SettlementService {
           }
 
           final String errorMessage = String.format(
-            "SETTLEMENT INITIATION FAILED requestedSettlementQuantityInClearingUnits=%s",
-            requestedSettlementQuantityInClearingUnits
+            "SETTLEMENT INITIATION FAILED settlementQuantityInClearingUnits=%s",
+            settlementQuantityInClearingUnits
           );
           throw new SettlementServiceException(errorMessage, e, accountSettings.getAccountId());
         }

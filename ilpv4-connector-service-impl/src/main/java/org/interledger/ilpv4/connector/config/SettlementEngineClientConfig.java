@@ -27,9 +27,6 @@ public class SettlementEngineClientConfig {
 
   public static final String SETTLEMENT_ENGINE_CLIENT = "SETTLEMENT_ENGINE_CLIENT";
 
-  @Autowired
-  private Environment environment;
-
   @Bean
   @Qualifier(SETTLEMENT_ENGINE_CLIENT)
   protected ConnectionPool seConnectionPool(
