@@ -333,7 +333,11 @@ jobs:
 
 workflows:
   version: 2
-  build_and_test:
+
+  # In CircleCI v2.1, when no workflow is provided in config, an implicit one is used. However, if you declare a
+  #  workflow to run a scheduled build, the implicit workflow is no longer run. You must add the job workflow to your
+  # config in order for CircleCI to also build on every commit.
+  commit:
     jobs:
       - build
       - test_postgresql
@@ -343,10 +347,28 @@ workflows:
             - test_postgresql
       - integration_tests_settlement:
           requires:
-            - build
+            - integration_tests_ilp_over_http
             - test_postgresql
       - hold: # <<< A job that will require manual approval in the CircleCI web application.
           type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
           requires: # We only run the "hold" job when test2 has succeeded
             - build
             - test_postgresql
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - build
+      - test_postgresql
+      - integration_tests_ilp_over_http:
+          requires:
+            - build
+            - test_postgresql
+      - integration_tests_settlement:
+          requires:
+            - integration_tests_ilp_over_http
