@@ -26,7 +26,6 @@ public class AccountBalanceSettingsConverterTest {
       .settleThreshold(100L)
       .settleTo(1L)
       .minBalance(50L)
-      .maxBalance(100L)
       .build();
     final AccountBalanceSettingsEntity entity = new AccountBalanceSettingsEntity(accountBalanceSettings);
 
@@ -35,6 +34,5 @@ public class AccountBalanceSettingsConverterTest {
     assertThat(actual.getSettleThreshold(), is(accountBalanceSettings.getSettleThreshold()));
     assertThat(actual.getSettleTo(), is(accountBalanceSettings.getSettleTo()));
     assertThat(actual.getMinBalance(), is(accountBalanceSettings.getMinBalance()));
-    assertThat(actual.getMaxBalance(), is(accountBalanceSettings.getMaxBalance()));
   }
 }

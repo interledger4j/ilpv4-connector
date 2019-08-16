@@ -67,9 +67,6 @@
       <column name="MIN_BALANCE" type="BIGINT">
         <constraints nullable="true"/>
       </column>
-      <column name="MAX_BALANCE" type="BIGINT">
-        <constraints nullable="true"/>
-      </column>
       <column name="SETTLE_THRESHOLD" type="BIGINT">
         <constraints nullable="true"/>
       </column>

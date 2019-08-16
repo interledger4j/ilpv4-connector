@@ -10,7 +10,6 @@ import java.util.Optional;
 public class AccountBalanceSettingsFromPropertyFile implements AccountBalanceSettings {
 
   private Optional<Long> minBalance = Optional.empty();
-  private Optional<Long> maxBalance = Optional.empty();
   private Optional<Long> settleThreshold = Optional.empty();
   private long settleTo = 0L;
 
@@ -21,15 +20,6 @@ public class AccountBalanceSettingsFromPropertyFile implements AccountBalanceSet
 
   public void setMinBalance(Optional<Long> minBalance) {
     this.minBalance = minBalance;
-  }
-
-  @Override
-  public Optional<Long> getMaxBalance() {
-    return maxBalance;
-  }
-
-  public void setMaxBalance(Optional<Long> maxBalance) {
-    this.maxBalance = maxBalance;
   }
 
   @Override

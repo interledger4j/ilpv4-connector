@@ -70,7 +70,6 @@ public class AccountSettingsRepositoryTest {
         .maxPacketsPerSecond(10)
         .build())
       .balanceSettings(AccountBalanceSettings.builder()
-        .maxBalance(10L)
         .minBalance(0L)
         .settleThreshold(100L)
         .settleTo(10L)
@@ -148,7 +147,6 @@ public class AccountSettingsRepositoryTest {
     assertThat(loadedAccountSettingsEntity.getAssetScale(), is(9));
     assertThat(loadedAccountSettingsEntity.getCustomSettings().size(), is(0));
     assertThat(loadedAccountSettingsEntity.getMaximumPacketAmount().isPresent(), is(false));
-    assertThat(loadedAccountSettingsEntity.getBalanceSettings().getMaxBalance().isPresent(), is(false));
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getMinBalance().isPresent(), is(false));
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getSettleThreshold().isPresent(), is(false));
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getSettleTo(), is(0L));
@@ -168,7 +166,6 @@ public class AccountSettingsRepositoryTest {
     assertThat(loadedAccountSettingsEntity.getAssetScale(), is(9));
     assertThat(loadedAccountSettingsEntity.getCustomSettings().size(), is(0));
     assertThat(loadedAccountSettingsEntity.getMaximumPacketAmount().isPresent(), is(false));
-    assertThat(loadedAccountSettingsEntity.getBalanceSettings().getMaxBalance().isPresent(), is(false));
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getMinBalance().isPresent(), is(false));
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getSettleThreshold().isPresent(), is(false));
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getSettleTo(), is(0L));
@@ -432,7 +429,6 @@ public class AccountSettingsRepositoryTest {
     assertThat(entity1.getMaximumPacketAmount(), is(entity2.getMaximumPacketAmount()));
 
     // BalanceSettings
-    assertThat(entity1.getBalanceSettings().getMaxBalance(), is(entity2.getBalanceSettings().getMaxBalance()));
     assertThat(entity1.getBalanceSettings().getMinBalance(), is(entity2.getBalanceSettings().getMinBalance()));
     assertThat(entity1.getBalanceSettings().getSettleThreshold(),
       is(entity2.getBalanceSettings().getSettleThreshold()));
