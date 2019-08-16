@@ -9,7 +9,6 @@ import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.connector.link.Link;
 import org.interledger.ilpv4.ILPv4Node;
-import org.interledger.ilpv4.connector.core.events.ConnectorEvent;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 
 /**
@@ -47,7 +46,7 @@ public interface ILPv4Connector extends ILPv4Node {
 
   /**
    * Accessor for the {@link EventBus} that this Connector uses to propagate internal events of type {@link
-   * ConnectorEvent}.
+   * org.interledger.ilpv4.connector.core.events.ConnectorEvent}.
    */
   EventBus getEventBus();
 }
