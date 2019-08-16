@@ -4,9 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
-import com.sappenin.interledger.ilpv4.connector.events.IlpNodeEvent;
 import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
-import com.sappenin.interledger.ilpv4.connector.links.LinkSettingsFactory;
 import com.sappenin.interledger.ilpv4.connector.packetswitch.ILPv4PacketSwitch;
 import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
@@ -18,7 +16,6 @@ import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntit
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.event.EventListener;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -64,7 +61,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   private final AccountManager accountManager;
   private final AccountSettingsRepository accountSettingsRepository;
   private final LinkManager linkManager;
-  private final LinkSettingsFactory linkSettingsFactory;
+  private final EventBus eventBus;
 
   private final ExternalRoutingService externalRoutingService;
   private final BalanceTracker balanceTracker;
@@ -79,8 +76,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     final LinkManager linkManager,
     final ExternalRoutingService externalRoutingService,
     final ILPv4PacketSwitch ilpPacketSwitch,
-    final BalanceTracker balanceTracker,
-    final LinkSettingsFactory linkSettingsFactory
+    final BalanceTracker balanceTracker
   ) {
     this(
       connectorSettingsSupplier,
@@ -90,7 +86,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       externalRoutingService,
       ilpPacketSwitch,
       balanceTracker,
-      linkSettingsFactory,
       new EventBus()
     );
   }
@@ -106,7 +101,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     final ExternalRoutingService externalRoutingService,
     final ILPv4PacketSwitch ilpPacketSwitch,
     final BalanceTracker balanceTracker,
-    final LinkSettingsFactory linkSettingsFactory,
     final EventBus eventBus
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
@@ -116,8 +110,9 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
     this.ilpPacketSwitch = Objects.requireNonNull(ilpPacketSwitch);
     this.balanceTracker = Objects.requireNonNull(balanceTracker);
-    this.linkSettingsFactory = Objects.requireNonNull(linkSettingsFactory);
-    Objects.requireNonNull(eventBus).register(this);
+
+    this.eventBus = Objects.requireNonNull(eventBus);
+    this.eventBus.register(this);
   }
 
   /**
@@ -173,6 +168,11 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   }
 
   @Override
+  public EventBus getEventBus() {
+    return this.eventBus;
+  }
+
+  @Override
   public ILPv4PacketSwitch getIlpPacketSwitch() {
     return this.ilpPacketSwitch;
   }
@@ -180,19 +180,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   @Override
   public Optional<InterledgerAddress> getNodeIlpAddress() {
     return this.connectorSettingsSupplier.get().getOperatorAddress();
-  }
-
-  /**
-   * Handle an event of type {@link IlpNodeEvent}.
-   *
-   * @param event the event to respond to.
-   *
-   * @deprecated TODO Determine if this method is necessary. It may be desirable to instead use the EventBus.
-   */
-  @EventListener
-  @Deprecated
-  public void onApplicationEvent(final IlpNodeEvent event) {
-
   }
 
   /**

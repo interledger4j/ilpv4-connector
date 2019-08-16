@@ -1,6 +1,8 @@
 package org.interledger.ilpv4.connector.it.settlement;
 
+import com.google.common.eventbus.Subscribe;
 import com.sappenin.interledger.ilpv4.connector.ILPv4Connector;
+import com.sappenin.interledger.ilpv4.connector.events.LocalSettlementProcessedEvent;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.ilpv4.connector.it.AbstractBlastIT;
 import org.interledger.ilpv4.connector.it.markers.Settlement;
@@ -17,6 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static com.sappenin.interledger.ilpv4.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static java.math.BigInteger.ZERO;
@@ -27,6 +32,7 @@ import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALI
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB_CONNECTOR_ADDRESS;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PETER_ACCOUNT;
 
 /**
  * Tests to verify that two connectors can make settlement packets to each other using an XRP Ledger Settlement Engine.
@@ -37,6 +43,7 @@ import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PAU
 @Category(Settlement.class)
 public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
+  private static final BigInteger ONE_HUNDRED = BigInteger.valueOf(100L);
   private static final BigInteger NINE_HUNDRED = BigInteger.valueOf(900L);
   private static final BigInteger THOUSAND = BigInteger.valueOf(1000L);
 
@@ -97,8 +104,8 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
   /**
    * <p>This test validates that settlement is triggered by Alice once her balance with Bob exceeds the settlement
-   * threshold (which is 10). To do this, Alice will ping Bob 10 times. If these packets fulfill, then Alice will see
-   * her balance with Bob go up (and Bob will see his balance with Alice go down).</p>
+   * threshold (which is 10). To do this, Paul will ping Bob (via Alice) 10 times. If these packets fulfill, then Alice
+   * will see her balance with Bob go up (and Bob will see his balance with Alice go down).</p>
    *
    * <p>Once settlement is triggered, then the balance should go back down to 0.</p>
    */
@@ -116,45 +123,171 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
     // however, for the account called "ping", indicating that the Connector has received 1000 units with respect to
     // its ping account.
     for (int i = 0; i < 9; i++) {
-      getLogger().info("Ping {} of of 9", i + 1);
-      this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), new BigInteger("100"));
+      getLogger().info("Ping {} of 9", i + 1);
+      this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), ONE_HUNDRED);
     }
 
-    getLogger().info("Checking balances...");
+    getLogger().info("Checking balances after 9 pings...");
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, NINE_HUNDRED.negate());
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, NINE_HUNDRED);
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, NINE_HUNDRED.negate());
     assertAccountBalance(bobConnector, PING_ACCOUNT_ID, NINE_HUNDRED);
 
-    // Use the `paul` account on ALICE to ping BOB 1 more time, which should trigger settlmeent.
-    getLogger().info("Ping 10 of of 10 (should trigger settlement)");
-    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), new BigInteger("100"));
+    // Use this latch to wait for the Connector to receive a SettlementEvent...
+    final CountDownLatch latch = new CountDownLatch(1);
+    final Consumer<LocalSettlementProcessedEvent> settlementSucceededCallback =
+      new Consumer<LocalSettlementProcessedEvent>() {
+        @Override
+        @Subscribe
+        public void accept(LocalSettlementProcessedEvent localSettlementProcessedEvent) {
+          getLogger().info("Alice's Settlement Received by Bob: {}", localSettlementProcessedEvent);
+          latch.countDown();
+        }
+      };
+    // Wait for Alice to receive the settlement...
+    bobConnector.getEventBus().register(settlementSucceededCallback);
+
+    // Use the `paul` account on ALICE to ping BOB 1 more time, which should trigger settlement.
+    getLogger().info("Ping 10 of 10 (should trigger settlement)");
+    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), ONE_HUNDRED);
 
 
     getLogger().info("Pre-settlement balances checks...");
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, THOUSAND.negate());
-    // This amount is ZERO because the onFulfill script will preemptiely reduce this account by the settlement amount.
+    // This amount is ZERO because the onFulfill script will preemptively reduce this account by the settlement amount.
     // In this test, the settle threshold is 1000, and settle_to is 0, so the new balance will be 0 because we expect
     // a settlement payment to be made (note that on an exception, this amount should go back up).
+    // TODO: See https://github.com/sappenin/java-ilpv4-connector/issues/216 for tracking
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO);
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, THOUSAND.negate());
     assertAccountBalance(bobConnector, PING_ACCOUNT_ID, THOUSAND);
 
-    // Wait for Settlement to be triggered (XRPL closes a ledger every 3-4 seconds, so we probably need at least 10
-    // seconds just to be safe).
-    getLogger().info("Sleeping 10s to wait for settlement...");
-    Thread.sleep(10000);
-
-    getLogger().info("Waking from 10s sleep...");
+    getLogger().info("Waiting up to 20 seconds for Settlement to be processed...");
+    latch.await(20, TimeUnit.SECONDS);
+    bobConnector.getEventBus().unregister(settlementSucceededCallback); // for cleanup...
 
     getLogger().info("Post-settlement balances checks...");
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, THOUSAND.negate());
-    assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO); // this amount was pre-emptively set to 0.
+    assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO); // this amount was preemptively set to 0.
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, ZERO); // If settlement is successful, this should be 0 too.
     assertAccountBalance(bobConnector, PING_ACCOUNT_ID, THOUSAND);
   }
 
-  // TODO: Finish this test per https://github.com/sappenin/java-ilpv4-connector/projects/5
+  /**
+   * <p>This test validates that settlement is triggered by Bob once his balance with Alice exceeds the settlement
+   * threshold (which is 10). To do this, Peter will ping Alice 10 times (via Bob). If these packets fulfill, then Bob
+   * will see his balance with Alice go up (and Alice will see her balance with Bob go down).</p>
+   *
+   * <p>Once settlement is triggered, then the balance should go back down to 0.</p>
+   */
+  @Test
+  public void testTriggerSettlementOnBob() throws InterruptedException {
+    assertAccountBalance(bobConnector, PETER_ACCOUNT, ZERO);
+    assertAccountBalance(bobConnector, ALICE_ACCOUNT, ZERO);
+    assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO);
+    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, ZERO);
+
+    // Use the `peter` account on BOB to ping ALICE 9 times to get the balance up to 1000 (1 XRP Drop). This will take
+    // the balance from 0 to +1000 on `alice@BOB`, and -1000 from the perspective of `bob@ALICE`. There is technically
+    // a receiver called "ping" who would have a balance of -1000 when everything is said and done, but the Connector
+    // doesn't track this balance currently. The balance tracker from the perspective of the Connector will be +1000,
+    // however, for the account called "ping", indicating that the Connector has received 1000 units with respect to
+    // its ping account.
+    for (int i = 0; i < 9; i++) {
+      getLogger().info("Ping {} of {}", i + 1, 9);
+      this.testPing(PETER_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(), ONE_HUNDRED);
+    }
+
+    getLogger().info("Checking balances after 9 pings...");
+    assertAccountBalance(bobConnector, PETER_ACCOUNT, NINE_HUNDRED.negate());
+    assertAccountBalance(bobConnector, ALICE_ACCOUNT, NINE_HUNDRED);
+    assertAccountBalance(aliceConnector, BOB_ACCOUNT, NINE_HUNDRED.negate());
+    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, NINE_HUNDRED);
+
+    // Use this latch to wait for the Connector to receive a SettlementEvent...
+    final CountDownLatch latch = new CountDownLatch(1);
+    final Consumer<LocalSettlementProcessedEvent> settlementSucceededCallback =
+      new Consumer<LocalSettlementProcessedEvent>() {
+        @Override
+        @Subscribe
+        public void accept(LocalSettlementProcessedEvent localSettlementProcessedEvent) {
+          getLogger().info("Bob's Settlement Received by Alice: {}", localSettlementProcessedEvent);
+          latch.countDown();
+        }
+      };
+    // Wait for Alice to receive the settlement...
+    aliceConnector.getEventBus().register(settlementSucceededCallback);
+
+    // Use the `peter` account on ALICE to ping BOB 1 more time, which should trigger settlement.
+    getLogger().info("Ping 10 of 10 (should trigger settlement)");
+    this.testPing(PETER_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(), ONE_HUNDRED);
+
+    getLogger().info("Pre-settlement balances checks...");
+    assertAccountBalance(bobConnector, PETER_ACCOUNT, THOUSAND.negate());
+    // This amount is ZERO because the onFulfill script will preemptiely reduce this account by the settlement amount.
+    // In this test, the settle threshold is 1000, and settle_to is 0, so the new balance will be 0 because we expect
+    // a settlement payment to be made (note that on an exception, this amount should go back up).
+    assertAccountBalance(bobConnector, ALICE_ACCOUNT, ZERO);
+    assertAccountBalance(aliceConnector, BOB_ACCOUNT, THOUSAND.negate());
+    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, THOUSAND);
+
+    getLogger().info("Waiting up to 20 seconds for Settlement to be processed...");
+    latch.await(20, TimeUnit.SECONDS);
+    aliceConnector.getEventBus().unregister(settlementSucceededCallback); // for cleanup...
+
+    getLogger().info("Post-settlement balances checks...");
+    assertAccountBalance(bobConnector, PETER_ACCOUNT, THOUSAND.negate());
+    assertAccountBalance(bobConnector, ALICE_ACCOUNT, ZERO); // If settlement is successful, this should be 0 too.
+    assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO); // this amount was pre-emptively set to 0.
+    assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, THOUSAND);
+  }
+
+  /**
+   * <p>This test validates that if settlement is triggered while more packets are flowing, that the balances will be
+   * correct. To do this, Paul ping Alice until the settlement notification is encountered. The test asserts that the
+   * balances are all correct for each participant.</p>
+   */
+  @Test
+  public void testTriggerSettlementOnBobWithMorePacketsThanThreshold() throws InterruptedException {
+    assertAccountBalance(aliceConnector, PAUL_ACCOUNT, ZERO);
+    assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO);
+    assertAccountBalance(bobConnector, ALICE_ACCOUNT, ZERO);
+    assertAccountBalance(bobConnector, PING_ACCOUNT_ID, ZERO);
+
+    int totalPings = 19;
+
+    // Use this latch to wait for the Connector to receive a SettlementEvent...
+    final CountDownLatch latch = new CountDownLatch(1);
+    final Consumer<LocalSettlementProcessedEvent> settlementSucceededCallback =
+      new Consumer<LocalSettlementProcessedEvent>() {
+        @Override
+        @Subscribe
+        public void accept(LocalSettlementProcessedEvent localSettlementProcessedEvent) {
+          getLogger().info("Alice's Settlement Received by Bob: {}", localSettlementProcessedEvent);
+          latch.countDown();
+        }
+      };
+    // Wait for Alice to receive the settlement...
+    bobConnector.getEventBus().register(settlementSucceededCallback);
+
+    // Ping 19 times, expecting settlement to be triggered at 10.
+    for (int pingNumber = 1; pingNumber <= totalPings; pingNumber++) {
+      getLogger().info("Ping {} of {}", pingNumber, totalPings);
+      this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), ONE_HUNDRED);
+    }
+
+    getLogger().info("Waiting up to 20 seconds for Settlement to be processed...");
+    latch.await(20, TimeUnit.SECONDS);
+    bobConnector.getEventBus().unregister(settlementSucceededCallback); // for cleanup...
+
+    getLogger().info("Post-settlement balances checks...");
+    // -900
+    assertAccountBalance(aliceConnector, PAUL_ACCOUNT, BigInteger.valueOf(totalPings).multiply(ONE_HUNDRED).negate());
+    assertAccountBalance(aliceConnector, BOB_ACCOUNT, NINE_HUNDRED); // 1900 - 1000 (settlement)
+    assertAccountBalance(bobConnector, ALICE_ACCOUNT, NINE_HUNDRED.negate()); // -1900 + 1000 (settlement)
+    // 900
+    assertAccountBalance(bobConnector, PING_ACCOUNT_ID, BigInteger.valueOf(totalPings).multiply(ONE_HUNDRED));
+  }
 
   /////////////////
   // Helper Methods

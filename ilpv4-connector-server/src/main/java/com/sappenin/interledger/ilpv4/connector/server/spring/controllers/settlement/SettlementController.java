@@ -119,9 +119,6 @@ public class SettlementController {
    * <p>Called by the Settlement Engine as a means of proxying messages from it (i.e., this Connector's Settlement
    * Engine) to this account's peer's Settlement Engine instance. All messages are tranmitted using ILPv4 links.</p>
    *
-   * <p>Caching Note: By setting {@link Cacheable#sync()} to true, this ensures that only one request will be able
-   * to populate the cache, thus maintaing our idempotence requirements.</p>
-   *
    * @param settlementEngineAccountId The {@link SettlementEngineAccountId} as supplied by the settlement engine. Note
    *                                  that settlement engines could theoretically store any type of identifier(either
    *                                  supplied by the Connector, or created by the engine). Thus, this implementation
@@ -140,7 +137,6 @@ public class SettlementController {
     consumes = {APPLICATION_OCTET_STREAM_VALUE},
     produces = {APPLICATION_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  @Cacheable(cacheNames = SETTLEMENT_IDEMPOTENCE, sync = true)
   public ResponseEntity<byte[]> processOutgoingMessageFromLocalSettlementEngine(
     @PathVariable(ACCOUNT_ID) final SettlementEngineAccountId settlementEngineAccountId,
     @RequestBody final byte[] settlementEngineMessage

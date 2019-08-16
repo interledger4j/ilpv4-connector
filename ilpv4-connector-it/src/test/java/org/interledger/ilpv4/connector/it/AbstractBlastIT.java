@@ -50,6 +50,7 @@ import static org.interledger.ilpv4.connector.config.BalanceTrackerConfig.BALANC
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.ALICE;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.BOB;
 import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PAUL;
+import static org.interledger.ilpv4.connector.it.topologies.AbstractTopology.PETER;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -104,7 +105,8 @@ public abstract class AbstractBlastIT {
    * @param numUnits           A {@link BigInteger} representing the number of units to ping with.
    */
   protected void testPing(
-    final AccountId senderAccountId, final InterledgerAddress senderNodeAddress,
+    final AccountId senderAccountId,
+    final InterledgerAddress senderNodeAddress,
     final InterledgerAddress destinationAddress,
     final BigInteger numUnits
   )
@@ -248,7 +250,8 @@ public abstract class AbstractBlastIT {
         ("accounts:" + PING_ACCOUNT_ID).getBytes(),
         ("accounts:" + ALICE).getBytes(),
         ("accounts:" + BOB).getBytes(),
-        ("accounts:" + PAUL).getBytes()
+        ("accounts:" + PAUL).getBytes(),
+        ("accounts:" + PETER).getBytes()
       );
     }
   }

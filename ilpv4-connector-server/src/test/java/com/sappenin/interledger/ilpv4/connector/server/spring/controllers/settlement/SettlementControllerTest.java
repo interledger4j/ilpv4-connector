@@ -8,6 +8,7 @@ import org.interledger.ilpv4.connector.settlement.NumberScalingUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -170,7 +171,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
   }
 
   @Test
-  public void sendSettlementMessageWithoutIdempotenceKey() throws Exception {
+  public void sendSettlementMessage() throws Exception {
     SettlementEngineAccountId settlementEngineAccountId =
       SettlementEngineAccountId.of(UUID.randomUUID().toString());
     when(settlementServiceMock.onLocalSettlementMessage(settlementEngineAccountId, MESSAGE)).thenReturn(MESSAGE);
@@ -211,8 +212,6 @@ public class SettlementControllerTest extends AbstractControllerTest {
       .andExpect(header().doesNotExist(IDEMPOTENCY_KEY))
       .andExpect(content().bytes(MESSAGE));
 
-    verify(settlementServiceMock).onLocalSettlementMessage(eq(settlementEngineAccountId), any());
-
     // Call the endpoint a second time...
     this.mvc
       .perform(post(SLASH_ACCOUNTS + SLASH + settlementEngineAccountId.value() + SLASH_MESSAGES)
@@ -224,7 +223,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
       .andExpect(header().string(HeaderConstants.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE))
       .andExpect(header().doesNotExist(IDEMPOTENCY_KEY));
 
-    // Due to request caching, the Controller should not be triggered more than once.
+    verify(settlementServiceMock, Mockito.times(2)).onLocalSettlementMessage(eq(settlementEngineAccountId), any());
     verifyNoMoreInteractions(settlementServiceMock);
   }
 }

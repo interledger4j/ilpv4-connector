@@ -1,6 +1,9 @@
 package org.interledger.ilpv4.connector.settlement;
 
+import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
+import com.sappenin.interledger.ilpv4.connector.events.LocalSettlementProcessedEvent;
+import com.sappenin.interledger.ilpv4.connector.events.SettlementInitiatedEvent;
 import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.settlement.SettlementEngineClient;
 import com.sappenin.interledger.ilpv4.connector.settlement.SettlementService;
@@ -13,6 +16,7 @@ import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkSettings;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.ilpv4.connector.core.settlement.ImmutableSettlementQuantity;
 import org.interledger.ilpv4.connector.core.settlement.SettlementQuantity;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.ilpv4.connector.settlement.client.InitiateSettlementRequest;
@@ -25,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
 
 import static org.interledger.ilpv4.connector.core.Ilpv4Constants.ALL_ZEROS_CONDITION;
 import static org.interledger.ilpv4.connector.settlement.SettlementConstants.PEER_DOT_SETTLE;
@@ -40,17 +43,20 @@ public class DefaultSettlementService implements SettlementService {
   private final LinkManager linkManager;
   private final AccountSettingsRepository accountSettingsRepository;
   private final SettlementEngineClient settlementEngineClient;
+  private final EventBus eventBus;
 
   public DefaultSettlementService(
     final BalanceTracker balanceTracker,
     final LinkManager linkManager,
     final AccountSettingsRepository accountSettingsRepository,
-    final SettlementEngineClient settlementEngineClient
+    final SettlementEngineClient settlementEngineClient,
+    final EventBus eventBus
   ) {
     this.balanceTracker = Objects.requireNonNull(balanceTracker);
     this.linkManager = Objects.requireNonNull(linkManager);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.settlementEngineClient = Objects.requireNonNull(settlementEngineClient);
+    this.eventBus = Objects.requireNonNull(eventBus);
   }
 
   @Override
@@ -79,11 +85,22 @@ public class DefaultSettlementService implements SettlementService {
       idempotencyKey, accountSettings.getAccountId(), settlementQuantityToAdjustInClearingLayer.longValue()
     );
 
+    final ImmutableSettlementQuantity settledQuantity =
+      SettlementQuantity.builder()
+        .amount(settlementQuantityToAdjustInClearingLayer.longValue())
+        .scale(accountSettings.getAssetScale())
+        .build();
+
+    // Notify the system that a settlement was processed...
+    eventBus.post(LocalSettlementProcessedEvent.builder()
+      .idempotencyKey(idempotencyKey)
+      .settlementEngineAccountId(settlementEngineAccountId)
+      .incomingSettlementInSettlementUnits(incomingSettlementInSettlementUnits)
+      .processedQuantity(settledQuantity)
+      .build());
+
     // This is the amount that was successfully adjusted in the clearing layer.
-    return SettlementQuantity.builder()
-      .amount(settlementQuantityToAdjustInClearingLayer.longValue())
-      .scale(accountSettings.getAssetScale())
-      .build();
+    return settledQuantity;
   }
 
   @Override
@@ -131,7 +148,6 @@ public class DefaultSettlementService implements SettlementService {
   public byte[] onSettlementMessageFromPeer(
     final AccountSettings accountSettings, final byte[] messageFromPeerSettlementEngine
   ) {
-
     Objects.requireNonNull(accountSettings, "accountSettings must not be null");
     Objects.requireNonNull(messageFromPeerSettlementEngine, "messageFromPeerSettlementEngine must not be null");
 
@@ -156,13 +172,19 @@ public class DefaultSettlementService implements SettlementService {
 
   @Override
   public SettlementQuantity initiateLocalSettlement(
-    UUID idempotencyKey, AccountSettings accountSettings, SettlementQuantity requestedSettlementQuantityInClearingUnits
+    final String idempotencyKey,
+    final AccountSettings accountSettings,
+    final SettlementQuantity settlementQuantityInClearingUnits
   ) throws SettlementServiceException {
 
+    Objects.requireNonNull(idempotencyKey, "idempotencyKey must not be null");
+    Objects.requireNonNull(accountSettings, "accountSettings must not be null");
+    Objects.requireNonNull(settlementQuantityInClearingUnits, "settlementQuantityInClearingUnits must not be null");
+
     // 0 amount settlements should be ignored (negative values are not allowed in `SettlementQuantity`)
-    if (requestedSettlementQuantityInClearingUnits.amount() <= 0) {
+    if (settlementQuantityInClearingUnits.amount() <= 0) {
       logger.warn("SETTLEMENT initiated with 0 value");
-      return SettlementQuantity.builder().amount(0).scale(requestedSettlementQuantityInClearingUnits.scale()).build();
+      return SettlementQuantity.builder().amount(0).scale(settlementQuantityInClearingUnits.scale()).build();
     }
 
     // TODO: We don't want to block the ILP packet-flow thread here because the request to the SE might be a bit
@@ -183,8 +205,8 @@ public class DefaultSettlementService implements SettlementService {
           // its own scaled units; and any response should be in the scale of the responder.
 
           final InitiateSettlementRequest initiateSettlementRequest = InitiateSettlementRequest.builder()
-            .requestedSettlementAmount(BigInteger.valueOf(requestedSettlementQuantityInClearingUnits.amount()))
-            .connectorAccountScale(requestedSettlementQuantityInClearingUnits.scale())
+            .requestedSettlementAmount(BigInteger.valueOf(settlementQuantityInClearingUnits.amount()))
+            .connectorAccountScale(settlementQuantityInClearingUnits.scale())
             .build();
 
           // This response will be in settlement engine units...
@@ -223,10 +245,19 @@ public class DefaultSettlementService implements SettlementService {
             requestedClearingUnits, settledSettlementUnits, settledClearingUnits
           );
 
-          return SettlementQuantity.builder()
+          final ImmutableSettlementQuantity settledQuantity = SettlementQuantity.builder()
             .amount(settledClearingUnits.longValue()) // TODO: Use BigInt here?
             .scale(clearingScale)
             .build();
+
+          eventBus.post(SettlementInitiatedEvent.builder()
+            .idempotencyKey(idempotencyKey)
+            .accountSettings(accountSettings)
+            .settlementQuantityInClearingUnits(settlementQuantityInClearingUnits)
+            .processedQuantity(settledQuantity)
+            .build());
+
+          return settledQuantity;
 
         } catch (Exception e) { // If anything goes wrong, rollback the preemptive balance update.
           //////////////////
@@ -245,7 +276,7 @@ public class DefaultSettlementService implements SettlementService {
           // occurs here.
           try {
             balanceTracker.updateBalanceForOutgoingSettlementRefund(
-              accountSettings.getAccountId(), requestedSettlementQuantityInClearingUnits.amount()
+              accountSettings.getAccountId(), settlementQuantityInClearingUnits.amount()
             );
           } catch (Exception e2) {
             // Swallowed (but logged) so that the other error message below is actually emitted too...
@@ -256,8 +287,8 @@ public class DefaultSettlementService implements SettlementService {
           }
 
           final String errorMessage = String.format(
-            "SETTLEMENT INITIATION FAILED requestedSettlementQuantityInClearingUnits=%s",
-            requestedSettlementQuantityInClearingUnits
+            "SETTLEMENT INITIATION FAILED settlementQuantityInClearingUnits=%s",
+            settlementQuantityInClearingUnits
           );
           throw new SettlementServiceException(errorMessage, e, accountSettings.getAccountId());
         }

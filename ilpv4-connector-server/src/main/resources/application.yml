@@ -79,27 +79,27 @@ ilpv4:
         # be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If unspecified, defaults to 10.
         # This is applied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
         # otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If
-        # unspecified, defaults to 10.
+        # unspecified, defaults to 10000.
         # readTimeoutMillis: 10000
         # Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1
         # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
-        # writeTimeoutMillis: 10000
-        # maxIdleConnections: 10
-        # keepAliveMinutes: 1
+        # writeTimeoutMillis: 30000
+        # maxIdleConnections: 5
+        # keepAliveMinutes: 5
     ilpOverHttp:
       connectionDefaults:
         # Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must
         # be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If unspecified, defaults to 10.
-        # connectTimeoutMillis: 2000
+        # connectTimeoutMillis: 10000
         # This is applied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
         # otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If
         # unspecified, defaults to 10.
-        # readTimeoutMillis: 1000
+        # readTimeoutMillis: 60000
         # Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1
         # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
-        # writeTimeoutMillis: 1000
-        # maxIdleConnections: 10
-        # keepAliveMinutes: 1
+        # writeTimeoutMillis: 60000
+        # maxIdleConnections: 5
+        # keepAliveMinutes: 5
     btp.enabled: false
     enabledProtocols:
       blastEnabled: true

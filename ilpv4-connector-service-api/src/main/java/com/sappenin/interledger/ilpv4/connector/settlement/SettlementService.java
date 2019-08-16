@@ -7,8 +7,6 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.ilpv4.connector.core.settlement.SettlementQuantity;
 import org.interledger.ilpv4.connector.settlement.SettlementServiceException;
 
-import java.util.UUID;
-
 /**
  * A service for handling interactions with the Settlement Service that allows a separation of HTTP caching and
  * idempotence from actual settlement logic.
@@ -36,7 +34,8 @@ public interface SettlementService {
    * @throws BalanceTrackerException If anything goes wrong while attempting to update the clearingBalance.
    */
   SettlementQuantity onLocalSettlementPayment(
-    String idempotencyKey, SettlementEngineAccountId settlementEngineAccountId,
+    String idempotencyKey,
+    SettlementEngineAccountId settlementEngineAccountId,
     SettlementQuantity incomingSettlementInSettlementUnits
   ) throws BalanceTrackerException;
 
@@ -83,7 +82,7 @@ public interface SettlementService {
   /**
    * Communicate with the appropriate settlement engine to initiate a settlement payment.
    *
-   * @param idempotencyKey                    A {@link UUID} used for idempotency.
+   * @param idempotencyKey                    A {@link String} used for idempotency.
    * @param accountSettings                   An {@link AccountSettings} that identifies the account to settle.
    * @param settlementQuantityInClearingUnits A {@link SettlementQuantity} in clearing-layer units so that this service
    *                                          can deal only with settlement-layer units.
@@ -93,6 +92,6 @@ public interface SettlementService {
    * @throws SettlementServiceException if the settlement cannot be initiated for any reason.
    */
   SettlementQuantity initiateLocalSettlement(
-    UUID idempotencyKey, AccountSettings accountSettings, SettlementQuantity settlementQuantityInClearingUnits
+    String idempotencyKey, AccountSettings accountSettings, SettlementQuantity settlementQuantityInClearingUnits
   ) throws SettlementServiceException;
 }

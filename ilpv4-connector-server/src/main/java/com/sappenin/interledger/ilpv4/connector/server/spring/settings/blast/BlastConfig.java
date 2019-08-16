@@ -84,14 +84,14 @@ public class BlastConfig {
    * @param ilpOverHttpConnectionPool   A {@link ConnectionPool} as configured above.
    * @param defaultConnectTimeoutMillis Applied when connecting a TCP socket to the target host. A value of 0 means no
    *                                    timeout, otherwise values must be between 1 and {@link Integer#MAX_VALUE} when
-   *                                    converted to milliseconds. If unspecified, defaults to 10.
+   *                                    converted to milliseconds. If unspecified, defaults to 10000.
    * @param defaultReadTimeoutMillis    Applied to both the TCP socket and for individual read IO operations. A value of
    *                                    0 means no timeout, otherwise values must be between 1 and {@link
    *                                    Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to
-   *                                    10.
+   *                                    60000.
    * @param defaultWriteTimeoutMillis   Applied to individual write IO operations. A value of 0 means no timeout,
    *                                    otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted
-   *                                    to milliseconds. If unspecified, defaults to 10.
+   *                                    to milliseconds. If unspecified, defaults to 60000.
    *
    * @return A {@link OkHttp3ClientHttpRequestFactory}.
    */
@@ -103,9 +103,9 @@ public class BlastConfig {
 
     @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.connectTimeoutMillis:1000}")
     final long defaultConnectTimeoutMillis,
-    @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.readTimeoutMillis:1000}")
+    @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.readTimeoutMillis:60000}")
     final long defaultReadTimeoutMillis,
-    @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.writeTimeoutMillis:1000}")
+    @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.writeTimeoutMillis:60000}")
     final long defaultWriteTimeoutMillis
   ) {
     OkHttpClient.Builder builder = new OkHttpClient.Builder();

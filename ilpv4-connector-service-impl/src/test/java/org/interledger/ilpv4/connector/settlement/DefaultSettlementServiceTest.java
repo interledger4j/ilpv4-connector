@@ -1,5 +1,6 @@
 package org.interledger.ilpv4.connector.settlement;
 
+import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.settlement.SettlementEngineClient;
@@ -47,6 +48,8 @@ public class DefaultSettlementServiceTest {
   private LinkManager linkManagerMock;
   @Mock
   private SettlementEngineClient settlementEngineClientMock;
+  @Mock
+  private EventBus eventBus;
 
   private DefaultSettlementService settlementService;
 
@@ -55,7 +58,7 @@ public class DefaultSettlementServiceTest {
     MockitoAnnotations.initMocks(this);
 
     this.settlementService = new DefaultSettlementService(
-      balanceTrackerMock, linkManagerMock, accountSettingsRepositoryMock, settlementEngineClientMock
+      balanceTrackerMock, linkManagerMock, accountSettingsRepositoryMock, settlementEngineClientMock, eventBus
     );
   }
 

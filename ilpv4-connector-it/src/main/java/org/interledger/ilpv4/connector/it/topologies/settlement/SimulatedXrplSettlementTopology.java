@@ -37,20 +37,23 @@ import org.slf4j.LoggerFactory;
  *                  └─────────┘                   └─────────┘                    └─────────┘
  *
  *                            ┌──────────────┐                     ┌──────────────┐
- *                            │              ◁───────HTTP/2────────┤              │
+ *                            │              │                     │              │
  * ┌─────────────────┐        │  CONNECTOR   │                     │  CONNECTOR   │        ┌─────────────────┐
  * │      Paul       │   ILP  │  test.alice  │                     │   test.bob   │   ILP  │      Peter      │
- * │(test.alice.paul)│◁─over─▷│ (port:8080)  │                     │ (port: 8081) │◁─over─▷│(test.bob.peter) │
+ * │(test.alice.paul)│◁─over─▷│ (port:8080)  │───Ilp-over-Http────▷│ (port: 8081) │◁─over─▷│(test.bob.peter) │
  * └─────────────────┘  HTTP  │              │                     │              │  HTTP  └─────────────────┘
- *                            │              ├──────HTTP/2─────────▷              │
+ *                            │              │                     │              │
  *                            └──────────────┘                     └──────────────┘
- *                                    │                                    │
  *                                    │                                    │
  *                                    ▼                                    ▼
  *                           ┌─────────────────┐                  ┌─────────────────┐
  *                           │Settlement Engine│                  │Settlement Engine│
  *                           │  (port: 9000)   │                  │  (port: 9001)   │
  *                           └─────────────────┘                  └─────────────────┘
+ *                                    △             ┌─────────┐            △
+ *                                    │             │   XRP   │            │
+ *                                    └────────────▷│ Ledger  │◁───────────┘
+ *                                                  └─────────┘
  * </pre>
  */
 public class SimulatedXrplSettlementTopology extends AbstractTopology {
@@ -89,7 +92,11 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
 
           // Add Alice's account on Bob...
           final AccountSettingsEntity aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort);
-          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
+          bobServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
+
+          // Add Peter's account on Bob (Peter is used for sending pings)
+          final AccountSettingsEntity peterAccountSettingsAtAlice = constructPeterAccountSettingsOnBob();
+          bobServerNode.getILPv4Connector().getAccountManager().createAccount(peterAccountSettingsAtAlice);
 
           // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
           // NOTE: The Connector configures a Ping Account properly but this Topology deletes all accounts above
@@ -129,20 +136,23 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
       "                 └─────────┘                   └─────────┘                    └─────────┘                  \n" +
       "                                                                                                           \n" +
       "                           ┌──────────────┐                     ┌──────────────┐                           \n" +
-      "                           │              ◁───────HTTP/2────────┤              │                           \n" +
+      "                           │              │                     │              │                           \n" +
       "┌─────────────────┐        │  CONNECTOR   │                     │  CONNECTOR   │        ┌─────────────────┐\n" +
       "│      Paul       │   ILP  │  test.alice  │                     │   test.bob   │   ILP  │      Peter      │\n" +
-      "│(test.alice.paul)│◁─over─▷│ (port:8080)  │                     │ (port: 8081) │◁─over─▷│(test.bob.peter) │\n" +
+      "│(test.alice.paul)│◁─over─▷│ (port:8080)  │───Ilp-over-Http────▷│ (port: 8081) │◁─over─▷│(test.bob.peter) │\n" +
       "└─────────────────┘  HTTP  │              │                     │              │  HTTP  └─────────────────┘\n" +
-      "                           │              ├──────HTTP/2─────────▷              │                           \n" +
+      "                           │              │                     │              │                           \n" +
       "                           └──────────────┘                     └──────────────┘                           \n" +
-      "                                   │                                    │                                  \n" +
       "                                   │                                    │                                  \n" +
       "                                   ▼                                    ▼                                  \n" +
       "                          ┌─────────────────┐                  ┌─────────────────┐                         \n" +
       "                          │Settlement Engine│                  │Settlement Engine│                         \n" +
       "                          │  (port: 9000)   │                  │  (port: 9001)   │                         \n" +
-      "                          └─────────────────┘                  └─────────────────┘                         "
+      "                          └─────────────────┘                  └─────────────────┘                         \n" +
+      "                                   △             ┌─────────┐            △                                  \n" +
+      "                                   │             │   XRP   │            │                                  \n" +
+      "                                   └────────────▷│ Ledger  │◁───────────┘                                  \n" +
+      "                                                 └─────────┘                                               "
     );
     return topology;
   }
@@ -324,7 +334,37 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
         .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, PAUL)
         .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
         .putCustomSettings(
-          OutgoingLinkSettings.BLAST_OUTGOING_URL, "http://localhost:8080" + IlpHttpController.ILP_PATH
+          OutgoingLinkSettings.BLAST_OUTGOING_URL, ALICE_HTTP_BASE_URL + IlpHttpController.ILP_PATH
+        )
+
+        .build()
+    );
+  }
+
+  /**
+   * An AccountSettings object that represents Paul's account at Alice. Since this account is only used to send, it does
+   * not require any incoming connection settings.
+   */
+  private static AccountSettingsEntity constructPeterAccountSettingsOnBob() {
+    return new AccountSettingsEntity(
+      AccountSettings.builder()
+        .accountId(PETER_ACCOUNT)
+        .description("Blast sender account for Peter")
+        .accountRelationship(AccountRelationship.CHILD)
+        .linkType(BlastLink.LINK_TYPE)
+        .assetScale(9)
+        .assetCode(XRP)
+
+        // Incoming
+        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
+        .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
+
+        // Outgoing (dummy values since these are unused because the account never receives in this topology)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, PETER)
+        .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
+        .putCustomSettings(
+          OutgoingLinkSettings.BLAST_OUTGOING_URL, BOB_HTTP_BASE_URL + IlpHttpController.ILP_PATH
         )
 
         .build()

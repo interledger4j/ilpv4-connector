@@ -123,7 +123,7 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
                   // SettlementService not roll-back if there's a problem (small case to be made that this method should
                   // handle the rollback).
                   settlementService.initiateLocalSettlement(
-                    idempotencyId, destinationAccountSettings, settlementQuantityInClearingUnits
+                    idempotencyId.toString(), destinationAccountSettings, settlementQuantityInClearingUnits
                   );
                 });
             });

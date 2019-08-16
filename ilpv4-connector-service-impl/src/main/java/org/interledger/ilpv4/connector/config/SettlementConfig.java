@@ -1,5 +1,6 @@
 package org.interledger.ilpv4.connector.config;
 
+import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.settlement.SettlementEngineClient;
@@ -22,9 +23,12 @@ public class SettlementConfig {
     BalanceTracker balanceTracker,
     LinkManager linkManager,
     AccountSettingsRepository accountSettingsRepository,
-    SettlementEngineClient settlementEngineClient
+    SettlementEngineClient settlementEngineClient,
+    EventBus eventBus
   ) {
-    return new DefaultSettlementService(balanceTracker, linkManager, accountSettingsRepository, settlementEngineClient);
+    return new DefaultSettlementService(
+      balanceTracker, linkManager, accountSettingsRepository, settlementEngineClient, eventBus
+    );
   }
 
 }
