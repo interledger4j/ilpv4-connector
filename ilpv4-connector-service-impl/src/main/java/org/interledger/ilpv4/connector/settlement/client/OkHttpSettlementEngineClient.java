@@ -17,7 +17,6 @@ import org.springframework.http.MediaType;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.interledger.ilpv4.connector.settlement.SettlementConstants.ACCOUNTS;
 import static org.interledger.ilpv4.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
@@ -108,7 +107,7 @@ public class OkHttpSettlementEngineClient implements SettlementEngineClient {
   public InitiateSettlementResponse initiateSettlement(
     final AccountId accountId,
     final SettlementEngineAccountId settlementEngineAccountId,
-    final UUID idempotencyKey,
+    final String idempotencyKey,
     final HttpUrl settlementEngineBaseUrl,
     final InitiateSettlementRequest initiateSettlementRequest
   ) {
@@ -126,7 +125,7 @@ public class OkHttpSettlementEngineClient implements SettlementEngineClient {
     try {
       okHttpRequest = new Request.Builder()
         .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-        .header(IDEMPOTENCY_KEY, idempotencyKey.toString())
+        .header(IDEMPOTENCY_KEY, idempotencyKey)
         .url(requestUrl)
         .post(RequestBody.create(
           objectMapper.writeValueAsString(initiateSettlementRequest),

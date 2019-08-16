@@ -30,9 +30,9 @@ public class SettlementEngineClientConfig {
   @Bean
   @Qualifier(SETTLEMENT_ENGINE_CLIENT)
   protected ConnectionPool seConnectionPool(
-    @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.maxIdleConnections:5}")
+    @Value("${ilpv4.connector.settlementEngines.connectionDefaults.maxIdleConnections:5}")
     final int defaultMaxIdleConnections,
-    @Value("${ilpv4.connector.ilpOverHttp.connectionDefaults.keepAliveMinutes:1}")
+    @Value("${ilpv4.connector.settlementEngines.connectionDefaults.keepAliveMinutes:5}")
     final long defaultConnectionKeepAliveMinutes
   ) {
     return new ConnectionPool(defaultMaxIdleConnections, defaultConnectionKeepAliveMinutes, TimeUnit.MINUTES);
@@ -42,14 +42,14 @@ public class SettlementEngineClientConfig {
    * @param settlementEngineConnectionPool A {@link ConnectionPool} as configured above.
    * @param defaultConnectTimeoutMillis    Applied when connecting a TCP socket to the target host. A value of 0 means
    *                                       no timeout, otherwise values must be between 1 and {@link Integer#MAX_VALUE}
-   *                                       when converted to milliseconds. If unspecified, defaults to 10.
+   *                                       when converted to milliseconds. If unspecified, defaults to 10000.
    * @param defaultReadTimeoutMillis       Applied to both the TCP socket and for individual read IO operations. A value
    *                                       of 0 means no timeout, otherwise values must be between 1 and {@link
    *                                       Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults
-   *                                       to 10.
+   *                                       to 30000.
    * @param defaultWriteTimeoutMillis      Applied to individual write IO operations. A value of 0 means no timeout,
    *                                       otherwise values must be between 1 and {@link Integer#MAX_VALUE} when
-   *                                       converted to milliseconds. If unspecified, defaults to 10.
+   *                                       converted to milliseconds. If unspecified, defaults to 30000.
    *
    * @return A {@link OkHttp3ClientHttpRequestFactory}.
    */
@@ -59,9 +59,9 @@ public class SettlementEngineClientConfig {
     @Qualifier(SETTLEMENT_ENGINE_CLIENT) final ConnectionPool settlementEngineConnectionPool,
     @Value("${ilpv4.connector.settlementEngines.connectionDefaults.connectTimeoutMillis:10000}")
     final long defaultConnectTimeoutMillis,
-    @Value("${ilpv4.connector.settlementEngines.connectionDefaults.readTimeoutMillis:10000}")
+    @Value("${ilpv4.connector.settlementEngines.connectionDefaults.readTimeoutMillis:30000}")
     final long defaultReadTimeoutMillis,
-    @Value("${ilpv4.connector.settlementEngines.connectionDefaults.writeTimeoutMillis:10000}")
+    @Value("${ilpv4.connector.settlementEngines.connectionDefaults.writeTimeoutMillis:30000}")
     final long defaultWriteTimeoutMillis
   ) {
     OkHttpClient.Builder builder = new OkHttpClient.Builder();

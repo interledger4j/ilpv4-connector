@@ -1,5 +1,6 @@
 package com.sappenin.interledger.ilpv4.connector;
 
+import com.google.common.eventbus.EventBus;
 import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
@@ -8,6 +9,7 @@ import com.sappenin.interledger.ilpv4.connector.routing.ExternalRoutingService;
 import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import org.interledger.connector.link.Link;
 import org.interledger.ilpv4.ILPv4Node;
+import org.interledger.ilpv4.connector.core.events.ConnectorEvent;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
 
 /**
@@ -31,10 +33,6 @@ public interface ILPv4Connector extends ILPv4Node {
 
   ConnectorSettings getConnectorSettings();
 
-  /**
-   * @deprecated This method appears to be unused. Consider removing it.
-   */
-  @Deprecated
   ILPv4PacketSwitch getIlpPacketSwitch();
 
   LinkManager getLinkManager();
@@ -46,4 +44,10 @@ public interface ILPv4Connector extends ILPv4Node {
   ExternalRoutingService getExternalRoutingService();
 
   BalanceTracker getBalanceTracker();
+
+  /**
+   * Accessor for the {@link EventBus} that this Connector uses to propagate internal events of type {@link
+   * ConnectorEvent}.
+   */
+  EventBus getEventBus();
 }

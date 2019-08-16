@@ -65,7 +65,7 @@ public interface SettlementEngineClient {
   InitiateSettlementResponse initiateSettlement(
     AccountId accountId,
     SettlementEngineAccountId settlementEngineAccountId,
-    UUID idempotencyKey,
+    String idempotencyKey,
     HttpUrl endpointUrl,
     InitiateSettlementRequest initiateSettlementRequest
   ) throws SettlementEngineClientException;

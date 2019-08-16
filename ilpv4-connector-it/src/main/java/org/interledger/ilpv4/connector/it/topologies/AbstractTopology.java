@@ -24,11 +24,13 @@ public abstract class AbstractTopology {
   public static final String ALICE = "alice";
   public static final String BOB = "bob";
   public static final String PAUL = "paul";
+  public static final String PETER = "peter";
   public static final AccountId ALICE_ACCOUNT = AccountId.of(ALICE);
   public static final AccountId BOB_ACCOUNT = AccountId.of(BOB);
 
   // Used for sending Pings from an account that is neither Alice nor Bob.
   public static final AccountId PAUL_ACCOUNT = AccountId.of(PAUL);
+  public static final AccountId PETER_ACCOUNT = AccountId.of(PETER);
 
   public static final String TEST = InterledgerAddress.AllocationScheme.TEST.getValue();
 
@@ -37,11 +39,16 @@ public abstract class AbstractTopology {
   public static final InterledgerAddress BOB_CONNECTOR_ADDRESS = InterledgerAddress.of(TEST + DOT + BOB);
   public static final InterledgerAddress ALICE_AT_BOB_ADDRESS = BOB_CONNECTOR_ADDRESS.with(ALICE);
   public static final InterledgerAddress PAUL_AT_ALICE_ADDRESS = ALICE_CONNECTOR_ADDRESS.with(PAUL);
+  public static final InterledgerAddress PETER_AT_BOB_ADDRESS = BOB_CONNECTOR_ADDRESS.with(PETER);
 
   public static final String ALICE_TOKEN_ISSUER = HttpUrl.parse("https://" + ALICE + ".example.com").toString();
   public static final String BOB_TOKEN_ISSUER = HttpUrl.parse("https://" + BOB + ".example.com").toString();
+
   public static final int ALICE_PORT = 8080;
   public static final int BOB_PORT = 8081;
+
+  public static final String ALICE_HTTP_BASE_URL = "http://localhost:" + ALICE_PORT;
+  public static final String BOB_HTTP_BASE_URL = "http://localhost:" + BOB_PORT;
 
   /**
    * The String `shh`, encrypted with the `secret0` key in the `crypto/crypto.p12` keystore.
