@@ -341,19 +341,18 @@ workflows:
     jobs:
       - build
       - test_postgresql
-      - integration_tests_ilp_over_http:
-          requires:
-            - build
-            - test_postgresql
-      - integration_tests_settlement:
-          requires:
-            - integration_tests_ilp_over_http
-            - test_postgresql
       - hold: # <<< A job that will require manual approval in the CircleCI web application.
           type: approval # <<< This key-value pair will set your workflow to a status of "On Hold"
           requires: # We only run the "hold" job when test2 has succeeded
             - build
             - test_postgresql
+      - integration_tests_ilp_over_http:
+          requires:
+            - hold
+      - integration_tests_settlement:
+          requires:
+            - hold
+
   nightly:
     triggers:
       - schedule:
@@ -371,4 +370,5 @@ workflows:
             - test_postgresql
       - integration_tests_settlement:
           requires:
-            - integration_tests_ilp_over_http
+            - build
+            - test_postgresql
