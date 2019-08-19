@@ -17,9 +17,11 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.math.BigInteger;
 import java.util.Optional;
 import java.util.UUID;
 
+import static java.math.BigInteger.ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.Mockito.mock;
@@ -38,7 +40,7 @@ public class DefaultSettlementServiceTest {
     SettlementEngineAccountId.of(UUID.randomUUID().toString());
 
   private static final SettlementQuantity INCOMING_SETTLEMENT =
-    SettlementQuantity.builder().amount(1L).scale(6).build();
+    SettlementQuantity.builder().amount(ONE).scale(6).build();
 
   @Mock
   private AccountSettingsRepository accountSettingsRepositoryMock;
@@ -119,7 +121,10 @@ public class DefaultSettlementServiceTest {
     when(accountSettingsRepositoryMock.findBySettlementEngineAccountId(SETTLEMENT_ACCOUNT_ID))
       .thenReturn(Optional.of(accountSettingsEntityMock));
 
-    SettlementQuantity expectedClearedSettlementQuantity = SettlementQuantity.builder().amount(1000L).scale(9).build();
+    SettlementQuantity expectedClearedSettlementQuantity = SettlementQuantity.builder()
+      .amount(BigInteger.valueOf(1000L))
+      .scale(9)
+      .build();
 
     SettlementQuantity actualClearedSettlementQuantity =
       settlementService.onLocalSettlementPayment(idempotencyKey, SETTLEMENT_ACCOUNT_ID, INCOMING_SETTLEMENT);
@@ -127,7 +132,7 @@ public class DefaultSettlementServiceTest {
     assertThat(actualClearedSettlementQuantity, is(expectedClearedSettlementQuantity));
     verify(accountSettingsRepositoryMock).findBySettlementEngineAccountId(SETTLEMENT_ACCOUNT_ID);
     verify(balanceTrackerMock).updateBalanceForIncomingSettlement(
-      idempotencyKey, ACCOUNT_ID, expectedClearedSettlementQuantity.amount()
+      idempotencyKey, ACCOUNT_ID, expectedClearedSettlementQuantity.amount().longValue()
     );
     verifyNoMoreInteractions(balanceTrackerMock);
     verifyNoMoreInteractions(accountSettingsRepositoryMock);

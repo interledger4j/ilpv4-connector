@@ -11,10 +11,8 @@ import org.interledger.ilpv4.connector.settlement.client.InitiateSettlementRespo
 import org.interledger.ilpv4.connector.settlement.client.SendMessageRequest;
 import org.interledger.ilpv4.connector.settlement.client.SendMessageResponse;
 
-import java.util.UUID;
-
 /**
- * Defines a client that can interact with a Settlement Engine.
+ * Defines a client that can interact with a Settlement Engine, from the perspective of a Connector.
  */
 public interface SettlementEngineClient {
 

@@ -90,8 +90,6 @@
         <constraints nullable="true"/>
       </column>
 
-
-
     </createTable>
   </changeSet>
 

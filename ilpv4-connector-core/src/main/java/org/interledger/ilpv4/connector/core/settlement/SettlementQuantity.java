@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.Preconditions;
 import org.immutables.value.Value;
 
+import java.math.BigInteger;
+
 /**
  * Models the `Quantity` JSON object as defined in the Settlement Engine RFC.
  *
@@ -30,8 +32,7 @@ public interface SettlementQuantity {
    *
    * @return A {@link String} representing the amount.
    */
-  // TODO: Make a BigInteger per this RFC comment: https://github.com/interledger/rfcs/pull/536/files#r310810982
-  long amount();
+  BigInteger amount();
 
   /**
    * <p>The difference in orders of magnitude between a **standard unit** and a corresponding **fractional unit**. More
@@ -48,7 +49,7 @@ public interface SettlementQuantity {
 
   @Value.Check
   default SettlementQuantity check() {
-    Preconditions.checkArgument(amount() >= 0, "amount must not be negative");
+    Preconditions.checkArgument(amount().compareTo(BigInteger.ZERO) >= 0, "amount must not be negative");
 
     // Scale can theoretically be negative, though we don't have any uses-cases at present. Thus we enforce it be
     // non-negative.
