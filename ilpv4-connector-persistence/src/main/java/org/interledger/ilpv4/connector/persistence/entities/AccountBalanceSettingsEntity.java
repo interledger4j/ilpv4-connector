@@ -17,9 +17,6 @@ public class AccountBalanceSettingsEntity implements AccountBalanceSettings {
   @Column(name = "MIN_BALANCE")
   Long minBalance;
 
-  @Column(name = "MAX_BALANCE")
-  Long maxBalance;
-
   @Column(name = "SETTLE_THRESHOLD")
   Long settleThreshold;
 
@@ -34,7 +31,6 @@ public class AccountBalanceSettingsEntity implements AccountBalanceSettings {
 
   public AccountBalanceSettingsEntity(AccountBalanceSettings accountBalanceSettings) {
     this.setMinBalance(accountBalanceSettings.getMinBalance());
-    this.setMaxBalance(accountBalanceSettings.getMaxBalance());
     this.setSettleThreshold(accountBalanceSettings.getSettleThreshold());
     this.setSettleTo(accountBalanceSettings.getSettleTo());
   }
@@ -46,15 +42,6 @@ public class AccountBalanceSettingsEntity implements AccountBalanceSettings {
 
   public void setMinBalance(Optional<Long> minBalance) {
     this.minBalance = minBalance.orElse(null);
-  }
-
-  @Override
-  public Optional<Long> getMaxBalance() {
-    return Optional.ofNullable(maxBalance);
-  }
-
-  public void setMaxBalance(Optional<Long> maxBalance) {
-    this.maxBalance = maxBalance.orElse(null);
   }
 
   @Override

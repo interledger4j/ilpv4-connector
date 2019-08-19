@@ -88,11 +88,6 @@ ilpv4:
           # this balance. The format is a string containing an integer (which may be prefixed with
           # - to indicate a negative value).
           minBalance: 1
-          # Maximum balance (in this account's indivisible base units) the connector will allow.
-          # The connector will reject incoming packets if they would putEntry it above this balance.
-          # The format is a string containing an integer (which may be prefixed with - to indicate
-          # a negative value).
-          maxBalance: 2
           # Optional Balance (in this account's indivisible base units) numerically below which
           # the connector will automatically initiate a settlement. The format is a string
           # containing an integer (which may be prefixed with - to indicate a negative value).
@@ -133,11 +128,6 @@ ilpv4:
           # this balance. The format is a string containing an integer (which may be prefixed with
           # - to indicate a negative value).
           minBalance: -7
-          # Maximum balance (in this account's indivisible base units) the connector will allow.
-          # The connector will reject incoming packets if they would putEntry it above this balance.
-          # The format is a string containing an integer (which may be prefixed with - to indicate
-          # a negative value).
-          maxBalance: -3
           # Optional Balance (in this account's indivisible base units) numerically below which
           # the connector will automatically initiate a settlement. The format is a string
           # containing an integer (which may be prefixed with - to indicate a negative value).
@@ -193,11 +183,6 @@ ilpv4:
           # this balance. The format is a string containing an integer (which may be prefixed with
           # - to indicate a negative value).
           minBalance: 1
-          # Maximum balance (in this account's indivisible base units) the connector will allow.
-          # The connector will reject incoming packets if they would putEntry it above this balance.
-          # The format is a string containing an integer (which may be prefixed with - to indicate
-          # a negative value).
-          maxBalance: 2
           # Optional Balance (in this account's indivisible base units) numerically below which
           # the connector will automatically initiate a settlement. The format is a string
           # containing an integer (which may be prefixed with - to indicate a negative value).

@@ -66,7 +66,6 @@ public class AccountSettingsConverterTest {
       .settleThreshold(100L)
       .settleTo(1L)
       .minBalance(50L)
-      .maxBalance(100L)
       .build();
 
     final AccountRateLimitSettings rateLimitSettings = AccountRateLimitSettings.builder()

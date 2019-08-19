@@ -21,7 +21,6 @@ public class AccountBalanceSettingsConverter implements
       .settleTo(accountSettingsEntity.getSettleTo())
       .settleThreshold(accountSettingsEntity.getSettleThreshold())
       .minBalance(accountSettingsEntity.getMinBalance())
-      .maxBalance(accountSettingsEntity.getMaxBalance())
       .build();
   }
 }

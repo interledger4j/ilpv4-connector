@@ -372,3 +372,4 @@ workflows:
           requires:
             - build
             - test_postgresql
+            - integration_tests_ilp_over_http

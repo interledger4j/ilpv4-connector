@@ -34,22 +34,6 @@ public interface AccountBalanceSettings {
   Optional<Long> getMinBalance();
 
   /**
-   * <p>Maximum balance (in this account's indivisible base units) the connector will allow. For example, the connector
-   * will reject outgoing packets if the transaction would put the account balance above this number. If this value is
-   * not present, then the connector will assume no maximum balance.</p>
-   *
-   * <p>Note that it is permissible to use a {@link Long} here since this value represents a minimum value, which is
-   * sign-less. Thus, we can use the largest long to represent the largest minimum balance.</p>
-   *
-   * @return The maximum balance, or {@link Optional#empty()} if there is no maximum.
-   *
-   * @see "https://github.com/sappenin/java-ilpv4-connector/issues/215"
-   * @deprecated No longer needed since Settlement values can provide for this.
-   */
-  @Deprecated
-  Optional<Long> getMaxBalance();
-
-  /**
    * <p>Optional Balance (in this account's indivisible base units) numerically below which the connector will
    * automatically initiate a settlement.</p>
    *

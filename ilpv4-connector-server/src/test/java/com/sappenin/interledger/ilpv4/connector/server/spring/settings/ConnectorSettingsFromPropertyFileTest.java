@@ -97,7 +97,6 @@ public class ConnectorSettingsFromPropertyFileTest {
 
       final AccountBalanceSettings balanceSettings = account.getBalanceSettings();
       assertThat(balanceSettings.getMinBalance(), is(Optional.of(1L)));
-      assertThat(balanceSettings.getMaxBalance(), is(Optional.of((2L))));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.of(10000001L)));
       assertThat(balanceSettings.getSettleTo(), is(3L));
 
@@ -123,7 +122,6 @@ public class ConnectorSettingsFromPropertyFileTest {
 
       final AccountBalanceSettings balanceSettings = account.getBalanceSettings();
       assertThat(balanceSettings.getMinBalance(), is(Optional.of(-7L)));
-      assertThat(balanceSettings.getMaxBalance(), is(Optional.of(-3L)));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.of(-10000001L)));
       assertThat(balanceSettings.getSettleTo(), is(54L));
 
@@ -148,7 +146,6 @@ public class ConnectorSettingsFromPropertyFileTest {
 
       final AccountBalanceSettings balanceSettings = account.getBalanceSettings();
       assertThat(balanceSettings.getMinBalance(), is(Optional.empty()));
-      assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleTo(), is(0L));
 
@@ -173,7 +170,6 @@ public class ConnectorSettingsFromPropertyFileTest {
 
       final AccountBalanceSettings balanceSettings = account.getBalanceSettings();
       assertThat(balanceSettings.getMinBalance(), is(Optional.empty()));
-      assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleTo(), is(0L));
 
@@ -202,7 +198,6 @@ public class ConnectorSettingsFromPropertyFileTest {
 
       final AccountBalanceSettings balanceSettings = settings.getBalanceSettings();
       assertThat(balanceSettings.getMinBalance(), is(Optional.of(1L)));
-      assertThat(balanceSettings.getMaxBalance(), is(Optional.of(2L)));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.of(10000001L)));
       assertThat(balanceSettings.getSettleTo(), is(3L));
 
@@ -227,7 +222,6 @@ public class ConnectorSettingsFromPropertyFileTest {
 
       final AccountBalanceSettings balanceSettings = settings.getBalanceSettings();
       assertThat(balanceSettings.getMinBalance(), is(Optional.empty()));
-      assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleTo(), is(0L));
 
@@ -253,7 +247,6 @@ public class ConnectorSettingsFromPropertyFileTest {
 
       final AccountBalanceSettings balanceSettings = settings.getBalanceSettings();
       assertThat(balanceSettings.getMinBalance(), is(Optional.empty()));
-      assertThat(balanceSettings.getMaxBalance(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleThreshold(), is(Optional.empty()));
       assertThat(balanceSettings.getSettleTo(), is(0L));
 
