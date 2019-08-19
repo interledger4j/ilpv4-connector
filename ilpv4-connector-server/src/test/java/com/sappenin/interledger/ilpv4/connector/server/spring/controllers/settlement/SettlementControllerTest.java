@@ -69,7 +69,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
       SettlementEngineAccountId.of(UUID.randomUUID().toString());
 
     SettlementQuantity settledSettlementQuantity = SettlementQuantity.builder()
-      .amount(1L)
+      .amount(BigInteger.ONE)
       .scale(6)
       .build();
 
@@ -96,7 +96,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
       SettlementEngineAccountId.of(UUID.randomUUID().toString());
     String idempotenceId = "123";
     SettlementQuantity settledSettlementQuantity = SettlementQuantity.builder()
-      .amount(1L)
+      .amount(BigInteger.ONE)
       .scale(6)
       .build();
 
@@ -123,20 +123,20 @@ public class SettlementControllerTest extends AbstractControllerTest {
 
     final String idempotenceId = UUID.randomUUID().toString();
     final SettlementQuantity settledSettlementQuantity = SettlementQuantity.builder()
-      .amount(1L)
+      .amount(BigInteger.ONE)
       .scale(6)
       .build();
 
     final HttpHeaders headers = this.testJsonHeaders(idempotenceId.toString());
     final BigInteger clearedSettlementQuantity = NumberScalingUtils.translate(
-      BigInteger.valueOf(settledSettlementQuantity.amount()),
+      settledSettlementQuantity.amount(),
       settledSettlementQuantity.scale(),
       9);
     when(settlementServiceMock
       .onLocalSettlementPayment(idempotenceId, settlementEngineAccountId, settledSettlementQuantity))
       .thenReturn(
         SettlementQuantity.builder()
-          .amount(clearedSettlementQuantity.longValue())
+          .amount(clearedSettlementQuantity)
           .scale(9)
           .build()
       );
