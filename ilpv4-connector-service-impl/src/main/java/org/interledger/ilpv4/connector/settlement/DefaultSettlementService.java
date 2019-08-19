@@ -75,7 +75,7 @@ public class DefaultSettlementService implements SettlementService {
     // Determine the normalized SettlementQuantity (i.e., translate from Settlement Ledger units to ILP Clearing Ledger
     // units
     final BigInteger settlementQuantityToAdjustInClearingLayer = NumberScalingUtils.translate(
-      BigInteger.valueOf(incomingSettlementInSettlementUnits.amount()),
+      incomingSettlementInSettlementUnits.amount(),
       incomingSettlementInSettlementUnits.scale(),
       accountSettings.getAssetScale()
     );
@@ -87,7 +87,7 @@ public class DefaultSettlementService implements SettlementService {
 
     final ImmutableSettlementQuantity settledQuantity =
       SettlementQuantity.builder()
-        .amount(settlementQuantityToAdjustInClearingLayer.longValue())
+        .amount(settlementQuantityToAdjustInClearingLayer)
         .scale(accountSettings.getAssetScale())
         .build();
 
@@ -182,9 +182,10 @@ public class DefaultSettlementService implements SettlementService {
     Objects.requireNonNull(settlementQuantityInClearingUnits, "settlementQuantityInClearingUnits must not be null");
 
     // 0 amount settlements should be ignored (negative values are not allowed in `SettlementQuantity`)
-    if (settlementQuantityInClearingUnits.amount() <= 0) {
-      logger.warn("SETTLEMENT initiated with 0 value");
-      return SettlementQuantity.builder().amount(0).scale(settlementQuantityInClearingUnits.scale()).build();
+    if (settlementQuantityInClearingUnits.amount().compareTo(BigInteger.ZERO) <= 0) {
+      logger.warn("SETTLEMENT initiated with non-positive value: {}", settlementQuantityInClearingUnits);
+      return SettlementQuantity.builder().amount(BigInteger.ZERO).scale(settlementQuantityInClearingUnits.scale())
+        .build();
     }
 
     // TODO: We don't want to block the ILP packet-flow thread here because the request to the SE might be a bit
@@ -205,7 +206,7 @@ public class DefaultSettlementService implements SettlementService {
           // its own scaled units; and any response should be in the scale of the responder.
 
           final InitiateSettlementRequest initiateSettlementRequest = InitiateSettlementRequest.builder()
-            .requestedSettlementAmount(BigInteger.valueOf(settlementQuantityInClearingUnits.amount()))
+            .requestedSettlementAmount(settlementQuantityInClearingUnits.amount())
             .connectorAccountScale(settlementQuantityInClearingUnits.scale())
             .build();
 
@@ -246,7 +247,7 @@ public class DefaultSettlementService implements SettlementService {
           );
 
           final ImmutableSettlementQuantity settledQuantity = SettlementQuantity.builder()
-            .amount(settledClearingUnits.longValue()) // TODO: Use BigInt here?
+            .amount(settledClearingUnits)
             .scale(clearingScale)
             .build();
 
@@ -276,7 +277,7 @@ public class DefaultSettlementService implements SettlementService {
           // occurs here.
           try {
             balanceTracker.updateBalanceForOutgoingSettlementRefund(
-              accountSettings.getAccountId(), settlementQuantityInClearingUnits.amount()
+              accountSettings.getAccountId(), settlementQuantityInClearingUnits.amount().longValue()
             );
           } catch (Exception e2) {
             // Swallowed (but logged) so that the other error message below is actually emitted too...

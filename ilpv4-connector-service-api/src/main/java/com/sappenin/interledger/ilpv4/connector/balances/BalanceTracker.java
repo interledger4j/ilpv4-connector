@@ -109,23 +109,6 @@ public interface BalanceTracker {
    */
   void updateBalanceForIncomingSettlement(String idempotencyKey, AccountId accountId, long amount);
 
-  /**
-   * <p>Reduce the balance for the account identified by {@code accountId} by {@code amount} in response to a
-   * successfully sent settlement payment.</p>
-   *
-   * <p>When the Connector detects that a settlement payment should be made, the Connector will first prompt the
-   * engine to make an actual payment. If this payment succeeds, then this method is called to reduce the balance by the
-   * settled amount. Otherwise, nothing happens and the Connector can retry settlement later.</p>
-   *
-   * @param accountId The {@link AccountId} of the account balance to adjust.
-   * @param amount    An unsigned {@link long} that reflects the number of units to increment. Note that this value
-   *                  should be in the proper scale for the ILP account as found in {@link
-   *                  AccountSettings#getAssetScale()}.
-   *
-   * @throws BalanceTrackerException If anything prevents the balance updates to succeed atomically.
-   */
-  //void updateBalanceForIncomingSettlement(AccountId accountId, long amount) throws BalanceTrackerException;
-
   // TODO: Add javadoc!
   void updateBalanceForOutgoingSettlementRefund(AccountId accountId, long amount) throws BalanceTrackerException;
 

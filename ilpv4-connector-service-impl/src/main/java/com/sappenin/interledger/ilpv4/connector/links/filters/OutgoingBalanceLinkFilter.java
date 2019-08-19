@@ -114,7 +114,7 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
                   final UUID idempotencyId = UUID.randomUUID();
 
                   final SettlementQuantity settlementQuantityInClearingUnits = SettlementQuantity.builder()
-                    .amount(balanceForFulfillResponse.clearingAmountToSettle())
+                    .amount(BigInteger.valueOf(balanceForFulfillResponse.clearingAmountToSettle()))
                     .scale(destinationAccountSettings.getAssetScale())
                     .build();
 
