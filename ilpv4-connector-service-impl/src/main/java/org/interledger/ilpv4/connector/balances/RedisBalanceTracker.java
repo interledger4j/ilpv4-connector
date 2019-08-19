@@ -96,7 +96,7 @@ public class RedisBalanceTracker implements BalanceTracker {
     // sensitive performance requirements, so any computational savings we can get in ILPv4 the happy-path is preferred.
     Preconditions.checkArgument(
       amount >= 0,
-      "amount must be a positive signed long!"
+      String.format("amount `%s` must be a positive signed long!", amount)
     );
     minBalance.ifPresent($ ->  Preconditions.checkArgument(
       amount >= 0,
@@ -144,7 +144,7 @@ public class RedisBalanceTracker implements BalanceTracker {
     // See note in updateBalanceForPrepare for why this is not using unsigned longs
     Preconditions.checkArgument(
       amount >= 0,
-      "amount must be a positive signed long!"
+      String.format("amount `%s` must be a positive signed long!", amount)
     );
 
     // This is here so that we don't hit the balance tracker for any 0-value packets.
@@ -204,7 +204,7 @@ public class RedisBalanceTracker implements BalanceTracker {
     // See note in updateBalanceForPrepare for why this is not using unsigned longs
     Preconditions.checkArgument(
       amount >= 0,
-      "amount must be a positive signed long!"
+      String.format("amount `%s` must be a positive signed long!", amount)
     );
 
     try {
@@ -237,7 +237,7 @@ public class RedisBalanceTracker implements BalanceTracker {
     // See note in updateBalanceForPrepare for why this is not using unsigned longs
     Preconditions.checkArgument(
       amount >= 0,
-      "amount must be a positive signed long!"
+      String.format("amount `%s` must be a positive signed long!", amount)
     );
 
     try {
@@ -270,7 +270,7 @@ public class RedisBalanceTracker implements BalanceTracker {
     // See note in updateBalanceForPrepare for why this is not using unsigned longs
     Preconditions.checkArgument(
       amount >= 0,
-      "amount must be a positive signed long!"
+      String.format("amount `%s` must be a positive signed long!", amount)
     );
 
     try {
