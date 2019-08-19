@@ -17,9 +17,12 @@ public class SettlementEngineClientException extends RuntimeException {
    * The {@link AccountId} of the account that threw an exception while communicating to a Settlment Engine.
    */
   private final AccountId accountId;
+
   /**
    * The optionally-present {@link SettlementEngineAccountId} of the account that threw an exception while communicating
-   * to a Settlment Engine.
+   * with a Settlement Engine. Note that this identifier is optional because this exception can be thrown in scenarios
+   * where the settlement engine account identifier is unknown, such as when create a new account in the settlement
+   * engine.
    */
   private final Optional<SettlementEngineAccountId> settlementEngineAccountId;
 
@@ -123,7 +126,7 @@ public class SettlementEngineClientException extends RuntimeException {
 
   @Override
   public String toString() {
-    return new StringJoiner(", ", SettlementServiceException.class.getSimpleName() + "[", "]")
+    return new StringJoiner(", ", SettlementEngineClientException.class.getSimpleName() + "[", "]")
       .add("accountId=" + accountId)
       .add("settlementAccountId=" + settlementEngineAccountId.map(SettlementEngineAccountId::value).orElse("n/a"))
       .add(super.toString())

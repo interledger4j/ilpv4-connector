@@ -290,7 +290,9 @@ public class DefaultSettlementService implements SettlementService {
             "SETTLEMENT INITIATION FAILED settlementQuantityInClearingUnits=%s",
             settlementQuantityInClearingUnits
           );
-          throw new SettlementServiceException(errorMessage, e, accountSettings.getAccountId());
+          throw new SettlementServiceException(
+            errorMessage, e, accountSettings.getAccountId(), settlementEngineDetails.settlementEngineAccountId()
+          );
         }
       })
       .orElseThrow(() -> new SettlementEngineNotConfiguredProblem(accountSettings.getAccountId()));
