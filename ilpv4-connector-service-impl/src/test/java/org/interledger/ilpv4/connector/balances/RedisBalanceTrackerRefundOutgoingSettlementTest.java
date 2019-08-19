@@ -117,7 +117,7 @@ public class RedisBalanceTrackerRefundOutgoingSettlementTest extends AbstractRed
     try {
       balanceTracker.updateBalanceForOutgoingSettlementRefund(ACCOUNT_ID, -10L);
     } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(), is("value (-10) is outside the range for an unsigned long value"));
+      assertThat(e.getMessage(), is("amount `-10` must be a positive signed long!"));
       throw e;
     }
   }

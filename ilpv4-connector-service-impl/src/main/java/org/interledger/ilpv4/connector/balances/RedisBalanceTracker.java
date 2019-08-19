@@ -1,7 +1,6 @@
 package org.interledger.ilpv4.connector.balances;
 
 import com.google.common.base.Preconditions;
-import com.google.common.primitives.UnsignedLong;
 import com.sappenin.interledger.ilpv4.connector.balances.AccountBalance;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTrackerException;
@@ -20,7 +19,9 @@ import java.util.Optional;
 import static java.util.Collections.singletonList;
 
 /**
- * An implementation of {@link BalanceTracker} that uses Redis to track all balances.
+ * An implementation of {@link BalanceTracker} that uses Redis to track all balances. Note that Redis does not support
+ * INCR/DECR operations on unsigned longs, but is instead limited to sign-longs. This is an implementation detail of
+ * this particular balance tracker, which will throw an exception if any negative amounts are supplied.
  */
 public class RedisBalanceTracker implements BalanceTracker {
 
@@ -85,11 +86,17 @@ public class RedisBalanceTracker implements BalanceTracker {
   ) throws BalanceTrackerException {
 
     Objects.requireNonNull(sourceAccountId, "sourceAccountId must not be null");
-    Preconditions.checkArgument(
-      UnsignedLong.valueOf(amount).compareTo(UnsignedLong.ZERO) >= 0,
-      "amount must be a positive unsigned in!"
-    );
     Objects.requireNonNull(minBalance, "minBalance must not be null");
+
+    // This implementation doesn't support unsigned longs because Redis doesn't natively support unsigned longs, and
+    // this implementation allows Redis to perform all arithmetic natively via Lua scripts. While we could
+    // theoretically try to make this work, we dont expect _very large_ packet amounts in ILP, and if we encounter
+    // them, it probably means the scaling is mis-configured. Additionally, balance tracking has particularly
+    // sensitive performance requirements, so any computational savings we can get in ILPv4 the happy-path is preferred.
+    Preconditions.checkArgument(amount >= 0, String.format("amount `%s` must be a positive signed long!", amount));
+    minBalance.ifPresent($ -> Preconditions.checkArgument(
+      amount >= 0, String.format("minBalance `%s` must be a positive signed long!", $)
+    ));
 
     try {
       long result;
@@ -129,9 +136,10 @@ public class RedisBalanceTracker implements BalanceTracker {
   ) throws BalanceTrackerException {
 
     Objects.requireNonNull(destinationAccountSettings, "destinationAccountSettings must not be null");
+    // See note in updateBalanceForPrepare for why this is not using unsigned longs
     Preconditions.checkArgument(
-      UnsignedLong.valueOf(amount).compareTo(UnsignedLong.ZERO) >= 0,
-      "amount must be a positive unsigned in!"
+      amount >= 0,
+      String.format("amount `%s` must be a positive signed long!", amount)
     );
 
     // This is here so that we don't hit the balance tracker for any 0-value packets.
@@ -188,9 +196,10 @@ public class RedisBalanceTracker implements BalanceTracker {
   @Override
   public void updateBalanceForReject(AccountId sourceAccountId, long amount) throws BalanceTrackerException {
     Objects.requireNonNull(sourceAccountId, "sourceAccountId must not be null");
+    // See note in updateBalanceForPrepare for why this is not using unsigned longs
     Preconditions.checkArgument(
-      UnsignedLong.valueOf(amount).compareTo(UnsignedLong.ZERO) >= 0,
-      "amount must be a positive unsigned in!"
+      amount >= 0,
+      String.format("amount `%s` must be a positive signed long!", amount)
     );
 
     try {
@@ -219,9 +228,11 @@ public class RedisBalanceTracker implements BalanceTracker {
   ) throws BalanceTrackerException {
     Objects.requireNonNull(idempotencyKey, "idempotencyKey must not be null");
     Objects.requireNonNull(accountId, "accountId must not be null");
+
+    // See note in updateBalanceForPrepare for why this is not using unsigned longs
     Preconditions.checkArgument(
-      UnsignedLong.valueOf(amount).compareTo(UnsignedLong.ZERO) >= 0,
-      "amount must be a positive unsigned in!"
+      amount >= 0,
+      String.format("amount `%s` must be a positive signed long!", amount)
     );
 
     try {
@@ -250,9 +261,11 @@ public class RedisBalanceTracker implements BalanceTracker {
   @Override
   public void updateBalanceForOutgoingSettlementRefund(AccountId accountId, long amount) throws BalanceTrackerException {
     Objects.requireNonNull(accountId, "accountId must not be null");
+
+    // See note in updateBalanceForPrepare for why this is not using unsigned longs
     Preconditions.checkArgument(
-      UnsignedLong.valueOf(amount).compareTo(UnsignedLong.ZERO) >= 0,
-      "amount must be a positive unsigned in!"
+      amount >= 0,
+      String.format("amount `%s` must be a positive signed long!", amount)
     );
 
     try {
@@ -301,7 +314,7 @@ public class RedisBalanceTracker implements BalanceTracker {
     if (numAsString == null || numAsString.length() == 0) {
       return 0L;
     } else {
-      // TODO return UnsignedLong.valueOf(numAsString);
+      // See note in updateBalanceForPrepare for why this is not Long.parseUnsignedLong
       return Long.parseLong(numAsString);
     }
   }
