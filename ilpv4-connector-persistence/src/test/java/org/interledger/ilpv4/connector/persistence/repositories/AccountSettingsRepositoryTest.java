@@ -173,10 +173,6 @@ public class AccountSettingsRepositoryTest {
     assertThat(loadedAccountSettingsEntity.getIlpAddressSegment().isPresent(), is(false));
   }
 
-  // TODO: No SE
-  // TODO: null SE url.
-  //
-
   @Test
   public void findBySettlementEngineAccountId() {
     final SettlementEngineAccountId settlementEngineAccountId =
