@@ -20,7 +20,9 @@ public class NumberScalingUtils {
    * @param sourceScale      An int representing a source scale.
    * @param destinationScale An int representing a destination scale
    *
-   * @return A new {@link BigInteger} containing an amount scaled into the {@code destinationScale} units.
+   * @return A new {@link BigInteger} containing an amount scaled into the {@code destinationScale} units. Note that if
+   * there are any remainder units after performing the conversion, these will not be present in this return value (they
+   * will be left in the balance tracker to be dealt with in future adjustments).
    *
    * @see "https://java-router.ilpv4.dev/overview/terminology#scale"
    */
@@ -36,12 +38,10 @@ public class NumberScalingUtils {
     final int scaleDifference = destinationScale - sourceScale;
 
     final BigInteger scaledAmount = scaleDifference > 0 ?
-      // value * (10^scaleDifference)
+      // value * (10^scaleDifference), always rounds to floor via BigInteger
       sourceAmount.multiply(BigInteger.TEN.pow(scaleDifference)) :
       // value / (10^-scaleDifference))
       sourceAmount.divide((BigInteger.TEN.pow(scaleDifference * -1)));
-
-    // TODO: Consider Overflow?
 
     return scaledAmount;
   }

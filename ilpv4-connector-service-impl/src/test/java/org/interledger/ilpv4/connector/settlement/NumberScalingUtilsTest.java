@@ -22,23 +22,17 @@ public class NumberScalingUtilsTest {
 
   private String description;
   private SettlementQuantity sourceSettlementQuantity;
-  private int destinationScale;
   private SettlementQuantity expectedSettlementQuantity;
 
   public NumberScalingUtilsTest(
     final String description,
-    SettlementQuantity sourceSettlementQuantity, int destinationScale,
-    SettlementQuantity expectedSettlementQuantity
+    final SettlementQuantity sourceSettlementQuantity,
+    final SettlementQuantity expectedSettlementQuantity
   ) {
     this.description = Objects.requireNonNull(description);
     this.sourceSettlementQuantity = Objects.requireNonNull(sourceSettlementQuantity);
-    this.destinationScale = destinationScale;
     this.expectedSettlementQuantity = Objects.requireNonNull(expectedSettlementQuantity);
   }
-
-  // TODO: Add tests that exercise a loss of precision during the scaling operation, and ensure that the scaled
-  //  amount is _always_ rounded down.
-  // See https://github.com/sappenin/java-ilpv4-connector/issues/224
 
   @Parameterized.Parameters
   @SuppressWarnings("PMD")
@@ -52,63 +46,54 @@ public class NumberScalingUtilsTest {
       new Object[]{
         "Convert 1 Dollars (scale: 0) to cents (scale: 2)",
         SettlementQuantity.builder().scale(0).amount(1L).build(),
-        2,
         SettlementQuantity.builder().scale(2).amount(100L).build(),
       },
 
       new Object[]{
         "Convert 2 Dollars (scale: 0) to cents (scale: 2)",
         SettlementQuantity.builder().scale(0).amount(BigInteger.valueOf(2).longValueExact()).build(),
-        2,
         SettlementQuantity.builder().scale(2).amount(BigInteger.valueOf(200).longValueExact()).build(),
       },
 
       new Object[]{
         "Convert Dollars (scale: 0) to Dollars (scale: 0)",
         SettlementQuantity.builder().scale(0).amount(1L).build(),
-        0,
         SettlementQuantity.builder().scale(0).amount(1L).build(),
       },
 
       new Object[]{
         "Convert 99 Cents (scale: 2) to Dollars (scale: 0)",
         SettlementQuantity.builder().scale(2).amount(BigInteger.valueOf(99).longValueExact()).build(),
-        0,
         SettlementQuantity.builder().scale(0).amount(0L).build(),
       },
 
       new Object[]{
         "Convert 100 Cents (scale: 2) to Dollars (scale: 0)",
         SettlementQuantity.builder().scale(2).amount(100L).build(),
-        0,
         SettlementQuantity.builder().scale(0).amount(1L).build(),
       },
 
       new Object[]{
         "Convert 101 Cents (scale: 2) to Dollars (scale: 0)",
         SettlementQuantity.builder().scale(2).amount(BigInteger.valueOf(101).longValueExact()).build(),
-        0,
         SettlementQuantity.builder().scale(0).amount(1L).build(),
       },
 
       new Object[]{
         "Convert 501 Cents (scale: 2) to Dollars (scale: 0)",
         SettlementQuantity.builder().scale(2).amount(BigInteger.valueOf(501).longValueExact()).build(),
-        0,
         SettlementQuantity.builder().scale(0).amount(BigInteger.valueOf(5).longValueExact()).build(),
       },
 
       new Object[]{
         "Convert Dime-Dollars (scale: 1) to Dollars (scale: 0)",
         SettlementQuantity.builder().scale(1).amount(10L).build(),
-        0,
         SettlementQuantity.builder().scale(0).amount(1L).build(),
       },
 
       new Object[]{
         "Convert Dime-Dollars (scale: 1) to Milli-Dollars (scale: 6)",
         SettlementQuantity.builder().scale(1).amount(1L).build(),
-        6,
         SettlementQuantity.builder().scale(6).amount(100000L).build(),
       },
 
@@ -119,63 +104,54 @@ public class NumberScalingUtilsTest {
       new Object[]{
         "Convert 100 Drops (scale: 6) to Drops (scale: 6)",
         SettlementQuantity.builder().scale(6).amount(100L).build(),
-        6,
         SettlementQuantity.builder().scale(6).amount(100L).build(),
       },
 
       new Object[]{
         "Convert 1 Drop (scale: 6) to XRP (scale: 0)",
         SettlementQuantity.builder().scale(6).amount(1L).build(),
-        0,
         SettlementQuantity.builder().scale(0).amount(0L).build(),
       },
 
       new Object[]{
         "Convert 100 Drops (scale: 6) to XRP (scale: 0)",
         SettlementQuantity.builder().scale(6).amount(100L).build(),
-        0,
         SettlementQuantity.builder().scale(0).amount(0L).build(),
       },
 
       new Object[]{
         "Convert 999 Drops (scale: 6) to XRP (scale: 0)",
         SettlementQuantity.builder().scale(6).amount(100L).build(),
-        0,
         SettlementQuantity.builder().scale(0).amount(0L).build(),
       },
 
       new Object[]{
         "Convert 999999 Drops (scale: 6) to XRP (scale: 0)",
         SettlementQuantity.builder().scale(6).amount(999999L).build(),
-        0,
         SettlementQuantity.builder().scale(0).amount(0L).build(),
       },
 
       new Object[]{
         "Convert 1M Drops (scale: 6) to XRP (scale: 0)",
         SettlementQuantity.builder().scale(6).amount(1000000L).build(),
-        0,
         SettlementQuantity.builder().scale(0).amount(1L).build(),
       },
 
       new Object[]{
         "Convert 1 Milli-Drop (scale: 9) to Drops (scale: 6)",
         SettlementQuantity.builder().scale(9).amount(1L).build(),
-        6,
         SettlementQuantity.builder().scale(6).amount(0L).build(),
       },
 
       new Object[]{
         "Convert 999 Milli-Drops (scale: 9) to Drops (scale: 6)",
         SettlementQuantity.builder().scale(9).amount(999L).build(),
-        6,
         SettlementQuantity.builder().scale(6).amount(0L).build(),
       },
 
       new Object[]{
         "Convert 1000 Milli-Drops (scale: 9) to Drops (scale: 6)",
         SettlementQuantity.builder().scale(9).amount(1000L).build(),
-        6,
         SettlementQuantity.builder().scale(6).amount(1L).build(),
       },
 
@@ -186,44 +162,74 @@ public class NumberScalingUtilsTest {
       new Object[]{
         "Convert 1 Wei (scale: 18) to Gwei (scale: 9)",
         SettlementQuantity.builder().scale(18).amount(1L).build(),
-        9,
         SettlementQuantity.builder().scale(9).amount(0L).build(),
       },
 
       new Object[]{
         "Convert 1B Wei (scale: 18) to Gwei (scale: 9)",
         SettlementQuantity.builder().scale(18).amount(1000000000L).build(),
-        9,
         SettlementQuantity.builder().scale(9).amount(1L).build(),
       },
 
       new Object[]{
         "Convert 1B+1 Wei (scale: 18) to Gwei (scale: 9)",
         SettlementQuantity.builder().scale(18).amount(1000000001L).build(),
-        9,
         SettlementQuantity.builder().scale(9).amount(1L).build(),
       },
 
       new Object[]{
         "Convert Wei (scale: 18) to Eth (scale: 0)",
         SettlementQuantity.builder().scale(18).amount(new BigInteger("1000000000000000000").longValueExact()).build(),
-        0,
         SettlementQuantity.builder().scale(0).amount(1L).build(),
       },
 
       new Object[]{
         "Convert  Wei (scale: 18) to Eth (scale: 0)",
         SettlementQuantity.builder().scale(9).amount(1L).build(),
-        18,
         SettlementQuantity.builder().scale(18).amount(1000000000L).build(),
+      },
+
+      ////////////////
+      // Rounding Validations
+      // Number scaling utils MUST always round to the floor. The current implementation guarantees this in two ways.
+      // First, if the difference between the destination and source currencies is positive, then the source amount will
+      // be multiplied by (10^diff), which will always yield a whole number. If the difference between the destination
+      // and source currencies is negative, then the source amount will be divided by (10^-diff), which might produce
+      // a remainder. In these scenarios, the implementation will round to the "floor", producing a whole number and
+      // a leftover that can be ignored (and processed later).
+      ////////////////
+
+      new Object[]{
+        "Convert $1.03 to $1 Dollars (rounding down)",
+        SettlementQuantity.builder().scale(2).amount(103L).build(),
+        SettlementQuantity.builder().scale(0).amount(1).build(),
+      },
+
+      new Object[]{
+        "Convert $0.99 to $0 Dollars (rounding down)",
+        SettlementQuantity.builder().scale(2).amount(99L).build(),
+        SettlementQuantity.builder().scale(0).amount(0).build(),
+      },
+
+      new Object[]{
+        "Convert 1,000,001 drops to 1 XRP (rounding down)",
+        SettlementQuantity.builder().scale(6).amount(1000001L).build(),
+        SettlementQuantity.builder().scale(0).amount(1L).build(),
+      },
+
+      new Object[]{
+        "Convert 999,999 to $0 XRP (rounding down)",
+        SettlementQuantity.builder().scale(6).amount(999999L).build(),
+        SettlementQuantity.builder().scale(0).amount(0L).build(),
       }
+
     );
   }
 
   @Test(expected = NullPointerException.class)
   public void translateWithNullSourceQuantity() {
     try {
-      NumberScalingUtils.translate(null, 1, destinationScale);
+      NumberScalingUtils.translate(null, 1, 2);
       fail("Should have thrown an NPE");
     } catch (NullPointerException e) {
       assertThat(e.getMessage(), is("sourceAmount must not be null"));
@@ -234,7 +240,7 @@ public class NumberScalingUtilsTest {
   @Test(expected = IllegalArgumentException.class)
   public void translateWithNegativeSourceScale() {
     try {
-      NumberScalingUtils.translate(BigInteger.ZERO, -11, destinationScale);
+      NumberScalingUtils.translate(BigInteger.ZERO, -11, 2);
       fail("Should have thrown an NPE");
     } catch (NullPointerException e) {
       assertThat(e.getMessage(), is("sourceScale must not be negative"));
@@ -256,7 +262,7 @@ public class NumberScalingUtilsTest {
   @Test
   public void translate() {
     assertThat(description, NumberScalingUtils.translate(
-      BigInteger.valueOf(sourceSettlementQuantity.amount()), sourceSettlementQuantity.scale(), destinationScale
-    ), is(BigInteger.valueOf(expectedSettlementQuantity.amount())));
+      BigInteger.valueOf(sourceSettlementQuantity.amount()), sourceSettlementQuantity.scale(),
+      expectedSettlementQuantity.scale()), is(BigInteger.valueOf(expectedSettlementQuantity.amount())));
   }
 }
