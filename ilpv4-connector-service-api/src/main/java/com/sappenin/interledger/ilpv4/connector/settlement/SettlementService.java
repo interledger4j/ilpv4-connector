@@ -8,8 +8,7 @@ import org.interledger.ilpv4.connector.core.settlement.SettlementQuantity;
 import org.interledger.ilpv4.connector.settlement.SettlementServiceException;
 
 /**
- * A service for handling interactions with the Settlement Service that allows a separation of HTTP caching and
- * idempotence from actual settlement logic.
+ * A service for handling interactions with the Settlement Service that from the perspective of a Connector.
  */
 public interface SettlementService {
 
