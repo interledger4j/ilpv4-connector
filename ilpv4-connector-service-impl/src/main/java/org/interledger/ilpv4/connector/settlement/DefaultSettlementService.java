@@ -292,7 +292,8 @@ public class DefaultSettlementService implements SettlementService {
             settlementQuantityInClearingUnits
           );
           throw new SettlementServiceException(
-            errorMessage, e, accountSettings.getAccountId(), settlementEngineDetails.settlementEngineAccountId()
+            errorMessage, e, accountSettings.getAccountId(),
+            settlementEngineDetails.settlementEngineAccountId().orElseGet(() -> SettlementEngineAccountId.of("n/a"))
           );
         }
       })
