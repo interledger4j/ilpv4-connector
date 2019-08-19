@@ -1,7 +1,6 @@
 package org.interledger.ilpv4.connector.balances;
 
 import com.google.common.base.Preconditions;
-import com.google.common.primitives.UnsignedLong;
 import com.sappenin.interledger.ilpv4.connector.balances.AccountBalance;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTracker;
 import com.sappenin.interledger.ilpv4.connector.balances.BalanceTrackerException;
@@ -94,13 +93,9 @@ public class RedisBalanceTracker implements BalanceTracker {
     // theoretically try to make this work, we dont expect _very large_ packet amounts in ILP, and if we encounter
     // them, it probably means the scaling is mis-configured. Additionally, balance tracking has particularly
     // sensitive performance requirements, so any computational savings we can get in ILPv4 the happy-path is preferred.
-    Preconditions.checkArgument(
-      amount >= 0,
-      String.format("amount `%s` must be a positive signed long!", amount)
-    );
-    minBalance.ifPresent($ ->  Preconditions.checkArgument(
-      amount >= 0,
-      "minBalance must be a positive signed long!"
+    Preconditions.checkArgument(amount >= 0, String.format("amount `%s` must be a positive signed long!", amount));
+    minBalance.ifPresent($ -> Preconditions.checkArgument(
+      amount >= 0, String.format("minBalance `%s` must be a positive signed long!", $)
     ));
 
     try {
