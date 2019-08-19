@@ -2,6 +2,7 @@ package com.sappenin.interledger.ilpv4.connector.packetswitch.filters;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.annotations.VisibleForTesting;
 import com.sappenin.interledger.ilpv4.connector.links.LinkManager;
 import com.sappenin.interledger.ilpv4.connector.links.NextHopInfo;
 import com.sappenin.interledger.ilpv4.connector.links.NextHopPacketMapper;
@@ -55,6 +56,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
   /**
    * For testing purposes only.
    */
+  @VisibleForTesting
   protected DefaultPacketSwitchFilterChain(
     final List<PacketSwitchFilter> packetSwitchFilters,
     final List<LinkFilter> linkFilters,
