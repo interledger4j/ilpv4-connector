@@ -45,7 +45,6 @@ public class AccountSettingsTest {
       "\"description\":\"\"," +
       "\"balanceSettings\":{" +
       "\"minBalance\":null," +
-      "\"maxBalance\":null," +
       "\"settleThreshold\":null," +
       "\"settleTo\":\"0\"" +
       "}," +
