@@ -25,6 +25,7 @@ import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers
 import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.PathConstants.SLASH_MESSAGES;
 import static com.sappenin.interledger.ilpv4.connector.server.spring.controllers.PathConstants.SLASH_SETTLEMENTS;
+import static com.sappenin.interledger.ilpv4.connector.server.spring.settings.web.IdempotenceCacheConfig.SETTLEMENT_IDEMPOTENCE;
 import static org.interledger.ilpv4.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -112,8 +113,11 @@ public class SettlementControllerTest extends AbstractControllerTest {
       .andExpect(header().string(HeaderConstants.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE))
       .andExpect(header().string(IDEMPOTENCY_KEY, idempotenceId));
 
-    verify(settlementServiceMock)
-      .onLocalSettlementPayment(idempotenceId, settlementEngineAccountId, settledSettlementQuantity);
+    verify(settlementServiceMock).onLocalSettlementPayment(
+      SETTLEMENT_IDEMPOTENCE + ":" + idempotenceId,
+      settlementEngineAccountId,
+      settledSettlementQuantity
+    );
   }
 
   @Test
@@ -152,8 +156,11 @@ public class SettlementControllerTest extends AbstractControllerTest {
       .andExpect(header().string(HeaderConstants.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE))
       .andExpect(header().string(IDEMPOTENCY_KEY, idempotenceId));
 
-    verify(settlementServiceMock)
-      .onLocalSettlementPayment(idempotenceId, settlementEngineAccountId, settledSettlementQuantity);
+    verify(settlementServiceMock).onLocalSettlementPayment(
+      SETTLEMENT_IDEMPOTENCE + ":" + idempotenceId,
+      settlementEngineAccountId,
+      settledSettlementQuantity
+    );
 
     // Call the endpoint a second time...
     this.mvc

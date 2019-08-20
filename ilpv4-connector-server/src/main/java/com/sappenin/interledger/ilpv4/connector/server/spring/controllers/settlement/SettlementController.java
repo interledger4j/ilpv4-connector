@@ -98,7 +98,9 @@ public class SettlementController {
     Objects.requireNonNull(settlementQuantity);
 
     final SettlementQuantity settledSettlementQuantity = settlementService.onLocalSettlementPayment(
-      idempotencyKeyString, settlementEngineAccountId, settlementQuantity
+      SETTLEMENT_IDEMPOTENCE + ":" + idempotencyKeyString,
+      settlementEngineAccountId,
+      settlementQuantity
     );
 
     final HttpHeaders headers = new HttpHeaders();
