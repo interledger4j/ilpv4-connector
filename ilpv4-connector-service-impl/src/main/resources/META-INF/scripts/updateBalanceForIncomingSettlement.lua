@@ -13,6 +13,7 @@ end
 -- The redis id of the `from` account, of the form `accounts:{account_id}`, is where funds will be subtracted from
 local account_id = KEYS[1]
 local amount = numberOrZero(ARGV[1])
+-- NOTE: The prefix `SETTLEMENT_IDEMPOTENCE:` is appended in the controller layer.
 local idempotency_key = ARGV[2]
 
 local clearing_balance, prepaid_amount = unpack(redis.call('HMGET', account_id, 'clearing_balance', 'prepaid_amount'))

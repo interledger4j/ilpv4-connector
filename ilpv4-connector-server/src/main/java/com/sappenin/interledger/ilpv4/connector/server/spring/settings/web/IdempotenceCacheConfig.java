@@ -78,7 +78,7 @@ public class IdempotenceCacheConfig extends CachingConfigurerSupport {
         jedisConnectionFactory.getConnection().ping();
 
         RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
-          .prefixKeysWith("idempotency:")
+          .prefixKeysWith(SETTLEMENT_IDEMPOTENCE + ":")
           .entryTtl(Duration.ofMinutes(5)) // TODO: Make configurable.
           .disableCachingNullValues()
           .serializeKeysWith(
