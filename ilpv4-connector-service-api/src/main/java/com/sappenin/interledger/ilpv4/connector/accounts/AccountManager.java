@@ -34,9 +34,22 @@ public interface AccountManager {
    *
    * @param accountSettings The {@link AccountSettings} for this account.
    *
-   * @return The newly-created settings.
+   * @return The newly-created {@link AccountSettings}.
    */
   AccountSettings createAccount(AccountSettings accountSettings);
+
+  /**
+   * Update an existing account in this connector by storing all account details into the persistent store. This method
+   * should also update a Settlement Account inside any configured settlement engines, if appropriate.
+   *
+   * @param accountId       The {@link AccountId} to update settings for. Note this value trumps {@link
+   *                        AccountSettings#getAccountId()} so that the value specified in the URL paths can always be
+   *                        directly supplied to this method.
+   * @param accountSettings The {@link AccountSettings} for this account.
+   *
+   * @return The update {@link AccountSettings}.
+   */
+  AccountSettings updateAccount(AccountId accountId, AccountSettings accountSettings);
 
   /**
    * Helper method to initialize the parent account using IL-DCP. If this Connector is starting in `child` mode, it will

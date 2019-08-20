@@ -63,7 +63,6 @@ public class OkHttpSettlementEngineClient implements SettlementEngineClient {
     final Request okHttpRequest;
     try {
       okHttpRequest = new Request.Builder()
-        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
         .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
         .url(requestUrl)
         .post(RequestBody.create(
@@ -100,6 +99,112 @@ public class OkHttpSettlementEngineClient implements SettlementEngineClient {
 
     } catch (Exception e) {
       throw new SettlementEngineClientException(e.getMessage(), e, accountId, Optional.empty());
+    }
+  }
+
+  @Override
+  public SettlementAccount updateSettlementAccount(
+    final AccountId accountId,
+    final SettlementEngineAccountId settlementEngineAccountId,
+    final HttpUrl settlementEngineBaseUrl,
+    final SettlementAccount settlementAccount
+  ) throws SettlementEngineClientException {
+
+    Objects.requireNonNull(accountId);
+    Objects.requireNonNull(settlementEngineAccountId);
+    Objects.requireNonNull(settlementEngineBaseUrl);
+    Objects.requireNonNull(settlementAccount);
+
+    HttpUrl requestUrl = settlementEngineBaseUrl.newBuilder()
+      .addPathSegment(ACCOUNTS)
+      .addPathSegment(settlementEngineAccountId.value())
+      .build();
+
+    final Request okHttpRequest;
+    try {
+      okHttpRequest = new Request.Builder()
+        .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+        .url(requestUrl)
+        .put(RequestBody.create(
+          objectMapper.writeValueAsString(settlementAccount),
+          APPLICATION_JSON
+        ))
+        .build();
+    } catch (Exception e) {
+      throw new SettlementEngineClientException(e.getMessage(), e, accountId, Optional.empty());
+    }
+
+    try (Response okHttpResponse = okHttpClient.newCall(okHttpRequest).execute()) {
+      if (!okHttpResponse.isSuccessful()) {
+        final String errorMessage = String.format("Unable to update account in settlement engine. " +
+            "settlementAccount=%s okHttpRequest=%s okHttpResponse=%s",
+          settlementAccount, okHttpRequest, okHttpResponse
+        );
+        throw new SettlementEngineClientException(errorMessage, accountId, Optional.empty());
+      }
+
+      // Marshal the okHttpResponse to the correct object.
+      final SettlementAccount updateSettlementAccountResponse =
+        objectMapper.readValue(okHttpResponse.body().charStream(), SettlementAccount.class);
+
+      logger.trace("Settlement account updated successfully. settlementAccount={} okHttpRequest={} " +
+          "okHttpResponse={} settlementResponse={}",
+        settlementAccount,
+        okHttpRequest,
+        okHttpResponse,
+        updateSettlementAccountResponse
+      );
+
+      return updateSettlementAccountResponse;
+
+    } catch (Exception e) {
+      throw new SettlementEngineClientException(e.getMessage(), e, accountId, settlementEngineAccountId);
+    }
+  }
+
+  @Override
+  public void deleteSettlementAccount(
+    final AccountId accountId,
+    final SettlementEngineAccountId settlementEngineAccountId,
+    final HttpUrl settlementEngineBaseUrl
+  ) throws SettlementEngineClientException {
+    Objects.requireNonNull(settlementEngineAccountId);
+    Objects.requireNonNull(settlementEngineBaseUrl);
+
+    HttpUrl requestUrl = settlementEngineBaseUrl.newBuilder()
+      .addPathSegment(ACCOUNTS)
+      .addPathSegment(settlementEngineAccountId.value())
+      .build();
+
+    final Request okHttpRequest;
+    try {
+      okHttpRequest = new Request.Builder()
+        .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+        .url(requestUrl)
+        .delete()
+        .build();
+    } catch (Exception e) {
+      throw new SettlementEngineClientException(e.getMessage(), e, accountId, Optional.empty());
+    }
+
+    try (Response okHttpResponse = okHttpClient.newCall(okHttpRequest).execute()) {
+      if (!okHttpResponse.isSuccessful()) {
+        final String errorMessage = String.format("Unable to delete account in settlement engine. " +
+            "accountId=%s settlementEngineAccountId=%s okHttpRequest=%s okHttpResponse=%s",
+          accountId, settlementEngineAccountId, okHttpRequest, okHttpResponse
+        );
+        throw new SettlementEngineClientException(errorMessage, accountId, Optional.empty());
+      }
+
+      logger.trace("Settlement account deleted successfully. " +
+          "accountId=%s settlementEngineAccountId=%s okHttpRequest={} okHttpResponse={}",
+        accountId,
+        settlementEngineAccountId,
+        okHttpRequest,
+        okHttpResponse
+      );
+    } catch (Exception e) {
+      throw new SettlementEngineClientException(e.getMessage(), e, accountId, settlementEngineAccountId);
     }
   }
 

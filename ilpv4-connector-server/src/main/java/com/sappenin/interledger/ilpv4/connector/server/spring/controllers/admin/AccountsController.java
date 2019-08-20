@@ -4,8 +4,6 @@ import com.sappenin.interledger.ilpv4.connector.accounts.AccountManager;
 import com.sappenin.interledger.ilpv4.connector.server.spring.controllers.model.problems.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.ilpv4.connector.persistence.entities.AccountBalanceSettingsEntity;
-import org.interledger.ilpv4.connector.persistence.entities.AccountRateLimitSettingsEntity;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.PagedResources;
@@ -134,36 +132,7 @@ public class AccountsController {
     @PathVariable(ACCOUNT_ID) final AccountId accountId,
     @RequestBody final AccountSettings.AbstractAccountSettings accountSettings
   ) {
-
-    return accountManager.getAccountSettingsRepository().findByAccountId(accountId)
-      .map(entity -> {
-
-        // Ignore update accountId
-
-        entity.setAssetCode(accountSettings.getAssetCode());
-        entity.setAssetScale(accountSettings.getAssetScale());
-        entity.setAccountRelationship(accountSettings.getAccountRelationship());
-        entity.setBalanceSettings(
-          new AccountBalanceSettingsEntity(accountSettings.getBalanceSettings())
-        );
-        entity.setConnectionInitiator(accountSettings.isConnectionInitiator());
-        entity.setDescription(accountSettings.getDescription());
-        entity.setCustomSettings(accountSettings.getCustomSettings());
-        entity.setIlpAddressSegment(accountSettings.getIlpAddressSegment());
-        entity.setInternal(accountSettings.isInternal());
-        entity.setLinkType(accountSettings.getLinkType());
-        entity.setMaximumPacketAmount(accountSettings.getMaximumPacketAmount());
-        entity.setRateLimitSettings(
-          new AccountRateLimitSettingsEntity(accountSettings.getRateLimitSettings())
-        );
-        entity.setReceiveRoutes(accountSettings.isReceiveRoutes());
-        entity.setSendRoutes(accountSettings.isSendRoutes());
-
-        return accountManager.getAccountSettingsRepository().save(entity);
-      })
-      .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
-      .map(this::toResource)
-      .orElseThrow(() -> new AccountNotFoundProblem(accountId));
+    return this.toResource(accountManager.updateAccount(accountId, accountSettings));
   }
 
   private Resource<AccountSettings> toResource(final AccountSettings accountSettings) {

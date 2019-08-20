@@ -5,6 +5,7 @@ import com.sappenin.interledger.ilpv4.connector.settings.ConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settings.ModifiableConnectorSettings;
 import com.sappenin.interledger.ilpv4.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.Link;
@@ -18,6 +19,8 @@ import org.interledger.ildcp.IldcpRequest;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
 import org.interledger.ildcp.IldcpUtils;
+import org.interledger.ilpv4.connector.persistence.entities.AccountBalanceSettingsEntity;
+import org.interledger.ilpv4.connector.persistence.entities.AccountRateLimitSettingsEntity;
 import org.interledger.ilpv4.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.ilpv4.connector.persistence.entities.SettlementEngineDetailsEntity;
 import org.interledger.ilpv4.connector.persistence.repositories.AccountSettingsRepository;
@@ -119,13 +122,80 @@ public class DefaultAccountManager implements AccountManager {
     return returnableAccountSettings;
   }
 
-  /**
-   * Initialize a parent account with new settings from the parent connector.
-   *
-   * @param accountId The {@link AccountId} to initialize via IL-DCP.
-   *
-   * @return The new {@link AccountSettings} after performing IL-DCP.
-   */
+  @Override
+  public AccountSettings updateAccount(
+    final AccountId accountId, final AccountSettings accountSettings
+  ) {
+    Objects.requireNonNull(accountSettings);
+
+    // Make sure this account exists first, and only update it if it exists...
+    return this.getAccountSettingsRepository().findByAccountId(accountId)
+      .map(entity -> {
+        // Ignore update accountId
+        entity.setAssetCode(accountSettings.getAssetCode());
+        entity.setAssetScale(accountSettings.getAssetScale());
+        entity.setAccountRelationship(accountSettings.getAccountRelationship());
+        entity.setConnectionInitiator(accountSettings.isConnectionInitiator());
+        entity.setDescription(accountSettings.getDescription());
+        entity.setCustomSettings(accountSettings.getCustomSettings());
+        entity.setIlpAddressSegment(accountSettings.getIlpAddressSegment());
+        entity.setInternal(accountSettings.isInternal());
+        entity.setLinkType(accountSettings.getLinkType());
+        entity.setMaximumPacketAmount(accountSettings.getMaximumPacketAmount());
+        entity.setRateLimitSettings(
+          new AccountRateLimitSettingsEntity(accountSettings.getRateLimitSettings())
+        );
+        entity.setBalanceSettings(
+          new AccountBalanceSettingsEntity(accountSettings.getBalanceSettings())
+        );
+        accountSettings.settlementEngineDetails().ifPresent(settlementEngineDetails ->
+          entity.setSettlementEngineDetails(new SettlementEngineDetailsEntity(settlementEngineDetails))
+        );
+        entity.setReceiveRoutes(accountSettings.isReceiveRoutes());
+        entity.setSendRoutes(accountSettings.isSendRoutes());
+
+        // Save the account...if this fails, then the SE will not have been updated, but a caller _could_ try again
+        // with the same request.
+        accountSettingsRepository.save(entity);
+
+        //////////////////////
+        // TODO: See https://github.com/sappenin/java-ilpv4-connector/issues/270
+        //  In the current version of the SE RFC, there is nothing to update on a settlement engine account
+        //  other than the identifier. However, this implementation doesn't allow the id to be updated because there
+        //  currently isn't a good way to guard against this being abused from a security perspective, and it doesn't
+        //  seem like a valid use-case anyway. Thus, once the RFC if finalized, we might have webhooks that need to
+        //  be updated. If that's the case, then we should update this code here. If webhooks don't make their way
+        //  into the RFC, then this can be removed.
+        // Update the account on the settlement engine, but don't allow the identifier to be updated!
+        //        accountSettings.settlementEngineDetails().ifPresent(settlementEngineDetails -> {
+        //
+        //          // WARNING: This value MUST be source from the DB entity in order to avoid settlement engine account
+        //          // hijacking!
+        //          final SettlementEngineAccountId settlementEngineAccountId = SettlementEngineAccountId.of(
+        //            entity.getSettlementEngineDetailsEntity().getSettlementEngineAccountId()
+        //          );
+        //
+        //          // Update the account in the Settlement Engine
+        //          final SettlementAccount response = settlementEngineClient.updateSettlementAccount(
+        //            accountSettings.getAccountId(),
+        //            // WARNING: This value MUST be source from the DB entity in order to avoid settlement engine account
+        //            // hijacking!
+        //            settlementEngineAccountId,
+        //            settlementEngineDetails.baseUrl(),
+        //            SettlementAccount.builder().settlementAccountId(settlementEngineAccountId).build()
+        //          );
+        //
+        //          // There is nothing to update in the SettlementEngineAccount at present, but this will change once the RFC
+        //          // is completed.
+        //
+        //        });
+
+        return entity;
+      })
+      .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
+      .orElseThrow(() -> new AccountNotFoundProblem(accountId));
+  }
+
   @Override
   public AccountSettings initializeParentAccountSettingsViaIlDcp(final AccountId accountId) {
     Objects.requireNonNull(accountId);

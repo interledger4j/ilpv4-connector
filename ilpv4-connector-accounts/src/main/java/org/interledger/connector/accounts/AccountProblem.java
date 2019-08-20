@@ -23,6 +23,11 @@ public abstract class AccountProblem extends AbstractConnectorProblem {
     this.accountId = Objects.requireNonNull(accountId, "accountId must not be null!");
   }
 
+  public AccountProblem(URI type, String title, StatusType status, AccountId accountId, String details) {
+    super(type, title, status, details);
+    this.accountId = Objects.requireNonNull(accountId, "accountId must not be null!");
+  }
+
   /**
    * The {@link AccountId} of the account that threw this exception.
    */

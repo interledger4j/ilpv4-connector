@@ -14,7 +14,7 @@ import java.util.StringJoiner;
 public class SettlementEngineClientException extends RuntimeException {
 
   /**
-   * The {@link AccountId} of the account that threw an exception while communicating to a Settlment Engine.
+   * The {@link AccountId} of the account that threw an exception while communicating to a Settlement Engine.
    */
   private final AccountId accountId;
 
@@ -73,6 +73,27 @@ public class SettlementEngineClientException extends RuntimeException {
     super(message, cause);
     this.accountId = Objects.requireNonNull(accountId);
     this.settlementEngineAccountId = Objects.requireNonNull(settlementEngineAccountId);
+  }
+
+  /**
+   * Constructs a new runtime exception with the specified detail message and cause.  <p>Note that the detail message
+   * associated with {@code cause} is <i>not</i> automatically incorporated in this runtime exception's detail message.
+   *
+   * @param message                   the detail message (which is saved for later retrieval by the {@link
+   *                                  #getMessage()} method).
+   * @param cause                     the cause (which is saved for later retrieval by the {@link #getCause()} method).
+   *                                  (A
+   *                                  <tt>null</tt> value is permitted, and indicates that the cause is nonexistent or
+   *                                  unknown.)
+   * @param accountId
+   * @param settlementEngineAccountId
+   *
+   * @since 1.4
+   */
+  public SettlementEngineClientException(String message, Throwable cause, AccountId accountId, SettlementEngineAccountId settlementEngineAccountId) {
+    super(message, cause);
+    this.accountId = Objects.requireNonNull(accountId);
+    this.settlementEngineAccountId = Optional.ofNullable(settlementEngineAccountId);
   }
 
   /**

@@ -10,6 +10,7 @@ import org.interledger.ilpv4.connector.settlement.client.InitiateSettlementReque
 import org.interledger.ilpv4.connector.settlement.client.InitiateSettlementResponse;
 import org.interledger.ilpv4.connector.settlement.client.SendMessageRequest;
 import org.interledger.ilpv4.connector.settlement.client.SendMessageResponse;
+import org.interledger.ilpv4.connector.settlement.client.SettlementAccount;
 
 /**
  * Defines a client that can interact with a Settlement Engine, from the perspective of a Connector.
@@ -45,6 +46,59 @@ public interface SettlementEngineClient {
   ) throws SettlementEngineClientException;
 
   /**
+   * Update a settlement account in the settlement engine.
+   *
+   * @param accountId                 The {@link AccountId} of the Connector account this request is being executed on
+   *                                  behalf of (for logging purposes).
+   * @param settlementEngineAccountId The {@link SettlementEngineAccountId} that identifies the account in the
+   *                                  settlement engine.
+   * @param settlementEngineBaseUrl   A {@link HttpUrl} for the settlement engine. This value is in this API contract
+   *                                  because this interface merely provides a type-safe implementation over the
+   *                                  underlying client, which will manage HTTP connections internally based upon http
+   *                                  host.
+   * @param settlementAccount         The identifier that a Connector uses to correlate a Connector Account to the
+   *                                  account in the Settlement Engine. For example, a Connector with accountId of `123`
+   *                                  might use a settlementEngineAccountId of `peer.settle.123`. Alternatively, it
+   *                                  might re-used the same identifier for convenience.
+   *
+   * @return A {@link CreateSettlementAccountResponse} that contains a settlement engine accountId as chosen by the
+   * settlement engine. Note that this identifier _may_ match the value supplied by {@code accountId}, although some SE
+   * implementations may choose to not honor this and generate a new identifeir. As such, all implementations SHOULD
+   * assume that the identifier used by the settlement engine is different from the {@code accountId} supplied to this
+   * method.
+   *
+   * @throws SettlementEngineClientException if the account is unable to be updated.
+   */
+  SettlementAccount updateSettlementAccount(
+    AccountId accountId,
+    SettlementEngineAccountId settlementEngineAccountId,
+    HttpUrl settlementEngineBaseUrl,
+    SettlementAccount settlementAccount
+  ) throws SettlementEngineClientException;
+
+  /**
+   * Create a settlement account in the settlement engine.
+   *
+   * @param accountId                 The {@link AccountId} of the Connector account this request is being executed on
+   *                                  behalf of (for logging purposes).
+   * @param settlementEngineAccountId The {@link SettlementEngineAccountId} that identifies the account in the
+   *                                  settlement engine.
+   * @param settlementEngineBaseUrl   A {@link HttpUrl} for the settlement engine. This value is in this API contract
+   *                                  because this interface merely provides a type-safe implementation over the
+   *                                  underlying client, which will manage HTTP connections internally based upon http
+   *                                  host.
+   *
+   * @return
+   *
+   * @throws SettlementEngineClientException if the account is unable to be deleted.
+   */
+  void deleteSettlementAccount(
+    AccountId accountId,
+    SettlementEngineAccountId settlementEngineAccountId,
+    HttpUrl settlementEngineBaseUrl
+  ) throws SettlementEngineClientException;
+
+  /**
    * Send a request to the settlement engine to initiate a settlement payment.
    *
    * @param accountId                 The {@link AccountId} of the Router account making this request.
@@ -53,7 +107,7 @@ public interface SettlementEngineClient {
    *                                  creation on the settlement engine, so this field allows this value to diverge from
    *                                  {@code accountId}.
    * @param idempotencyKey
-   * @param endpointUrl               A {@link HttpUrl} for the settlement engine. This value is in this API contract
+   * @param settlementEngineBaseUrl   A {@link HttpUrl} for the settlement engine. This value is in this API contract
    *                                  because this interface merely provides a type-safe implementation over the
    *                                  underlying client, which will manage HTTP connections internally based upon http
    *                                  host.
@@ -68,7 +122,7 @@ public interface SettlementEngineClient {
     AccountId accountId,
     SettlementEngineAccountId settlementEngineAccountId,
     String idempotencyKey,
-    HttpUrl endpointUrl,
+    HttpUrl settlementEngineBaseUrl,
     InitiateSettlementRequest initiateSettlementRequest
   ) throws SettlementEngineClientException;
 
