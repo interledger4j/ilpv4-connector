@@ -48,6 +48,7 @@ import java.util.Map;
 @EnableCaching
 public class IdempotenceCacheConfig extends CachingConfigurerSupport {
   // Used to store Idempotent ResponseEntity data for `/settlements` requests...
+  // NOTE: This is both the cache name (in the JVM) as well as the prefix for the Redis key.
   public static final String SETTLEMENT_IDEMPOTENCE = "settlement_idempotence";
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
