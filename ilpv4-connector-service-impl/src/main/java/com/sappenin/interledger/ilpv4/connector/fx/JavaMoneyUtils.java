@@ -38,8 +38,8 @@ public class JavaMoneyUtils {
   }
 
   /**
-   * * Take an amount (typically sourced from an JavaMoney) and convert it to a proper {@link BigInteger} that can work
-   * with Interledger.
+   * Takes {@code monetaryAmount} (typically sourced from an JavaMoney) and converts it to a proper {@link BigInteger}
+   * that can work with Interledger.
    *
    * @param monetaryAmount A {@link MonetaryAmount} representing a value in a particular currency.
    * @param assetScale     The order of magnitude used to express one full currency unit in the currency's base units.
