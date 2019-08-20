@@ -30,7 +30,11 @@ public interface SettlementEngineClient {
    *                                       `123` might use a settlementEngineAccountId of `peer.settle.123`.
    *                                       Alternatively, it might re-used the same identifier for convenience.
    *
-   * @return A {@link CreateSettlementAccountResponse}
+   * @return A {@link CreateSettlementAccountResponse} that contains a settlement engine accountId as chosen by the
+   * settlement engine. Note that this identifier _may_ match the value supplied by {@code accountId}, although some SE
+   * implementations may choose to not honor this and generate a new identifeir. As such, all implementations SHOULD
+   * assume that the identifier used by the settlement engine is different from the {@code accountId} supplied to this
+   * method.
    *
    * @throws SettlementEngineClientException if the account is unable to be created.
    */
