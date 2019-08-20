@@ -23,7 +23,10 @@ local settle_to = numberOrZero(ARGV[3]) -- 0 if not present.
 local clearing_balance = redis.call('HINCRBY', to_account_id, 'clearing_balance', amount)
 local prepaid_amount = numberOrZero(redis.call('HGET', to_account_id, 'prepaid_amount'))
 
--- Check if we should send a settlement for this account
+-- Check if we should send a settlement for this account (The logic for trigering settlement is as follows):
+-- 1. settle_threshold must be non-nil (if it's nil, then settlement was perhaps disabled on the account).
+-- 2. clearing_balance must be greater than settle_threshold (this is the core of the 'should I settle logic')
+-- 3. clearing_balance must be greater than settle_to (e.g., clearing_balance=10, settleThreshold=6)
 local settle_amount = 0
 -- For context around the values in this if statement, see https://github.com/emschwartz/interledger-rs/pull/164
 if settle_threshold and (clearing_balance >= settle_threshold) and (clearing_balance >= settle_to) then

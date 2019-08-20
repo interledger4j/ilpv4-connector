@@ -203,7 +203,7 @@ public class RedisBalanceTracker implements BalanceTracker {
     );
 
     try {
-      Object result = stringRedisTemplate.execute(
+      long clearingBalance = stringRedisTemplate.execute(
         updateBalanceForRejectScript,
         singletonList(toRedisAccountsKey(sourceAccountId)),
         // Arg1: from_amount
@@ -212,7 +212,7 @@ public class RedisBalanceTracker implements BalanceTracker {
 
       logger.debug(
         "Processed reject for incoming amount: `{}`. Account `{}` has clearingBalance (including prepaid amount): `{}`",
-        amount, sourceAccountId, result
+        amount, sourceAccountId, clearingBalance
       );
     } catch (Exception e) {
       final String errorMessage = String.format(
