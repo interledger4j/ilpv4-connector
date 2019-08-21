@@ -149,6 +149,7 @@
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-maven-plugin</artifactId>
             <configuration>
+              <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
               <driver>org.postgresql.Driver</driver>
               <changeLogFile>db/changelog-master.xml</changeLogFile>
               <url>jdbc:postgresql://localhost:5432/circle_test</url>
