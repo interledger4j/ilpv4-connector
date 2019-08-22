@@ -10,8 +10,8 @@
     <version>2.1.7.RELEASE</version>
   </parent>
 
-  <groupId>com.sappenin.ilpv4</groupId>
-  <artifactId>ilpv4-connector</artifactId>
+  <groupId>org.interledger.connector</groupId>
+  <artifactId>connector-parent</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
@@ -45,22 +45,22 @@
   </properties>
 
   <modules>
-    <module>ilpv4-api</module>
-    <module>ilpv4-connector-core</module>
-    <module>ilpv4-connector-crypto</module>
-    <module>ilpv4-connector-crypto/connector-crypto-cli</module>
-    <module>ilpv4-connector-accounts</module>
-    <module>ilpv4-connector-link</module>
-    <module>ilpv4-connector-link-blast</module>
-    <module>ilpv4-connector-model</module>
-    <module>ilpv4-connector-jackson</module>
-    <module>ilpv4-connector-routing-api</module>
-    <module>ilpv4-connector-service-api</module>
-    <module>ilpv4-connector-persistence</module>
-    <module>ilpv4-connector-routing-impl</module>
-    <module>ilpv4-connector-service-impl</module>
-    <module>ilpv4-connector-server</module>
-    <module>ilpv4-connector-it</module>
+    <module>connector-ilpv4-api</module>
+    <module>connector-core</module>
+    <module>connector-crypto</module>
+    <module>connector-crypto/connector-crypto-cli</module>
+    <module>connector-accounts</module>
+    <module>connector-link</module>
+    <module>connector-link-blast</module>
+    <module>connector-model</module>
+    <module>connector-jackson</module>
+    <module>connector-routing-api</module>
+    <module>connector-service-api</module>
+    <module>connector-persistence</module>
+    <module>connector-routing-impl</module>
+    <module>connector-service-impl</module>
+    <module>connector-server</module>
+    <module>connector-it</module>
   </modules>
 
   <dependencyManagement>
@@ -84,72 +84,72 @@
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-accounts</artifactId>
+        <artifactId>connector-accounts</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-core</artifactId>
+        <artifactId>connector-core</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-crypto</artifactId>
+        <artifactId>connector-crypto</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-jackson</artifactId>
+        <artifactId>connector-jackson</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-model</artifactId>
+        <artifactId>connector-model</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-persistence</artifactId>
+        <artifactId>connector-persistence</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-routing-api</artifactId>
+        <artifactId>connector-routing-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-routing-impl</artifactId>
+        <artifactId>connector-routing-impl</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-service-api</artifactId>
+        <artifactId>connector-service-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-service-impl</artifactId>
+        <artifactId>connector-service-impl</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-server</artifactId>
+        <artifactId>connector-server</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-it</artifactId>
+        <artifactId>connector-it</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-link</artifactId>
+        <artifactId>connector-link</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-connector-link-blast</artifactId>
+        <artifactId>connector-link-blast</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
