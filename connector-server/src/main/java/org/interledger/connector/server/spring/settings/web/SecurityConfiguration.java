@@ -1,13 +1,13 @@
 package org.interledger.connector.server.spring.settings.web;
 
 import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
+import org.interledger.connector.core.ConfigConstants;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.server.spring.auth.blast.IlpOverHttpAuthenticationProvider;
 import org.interledger.connector.server.spring.controllers.HealthController;
 import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.connector.server.spring.auth.blast.AuthConstants;
 import org.interledger.connector.server.spring.controllers.PathConstants;
-import org.interledger.connector.server.spring.settings.properties.ConnectorProperties;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
@@ -63,7 +63,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
    * Will be removed once a formal authentication mechanism is added for admin API calls.
    */
   @Deprecated
-  @Value("${" + ConnectorProperties.ADMIN_PASSWORD + "}")
+  @Value("${" + ConfigConstants.ADMIN_PASSWORD + "}")
   private String adminPassword;
 
   /////////////////

@@ -27,8 +27,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
 
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.BLAST_ENABLED;
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.ENABLED_PROTOCOLS;
+import static org.interledger.connector.core.ConfigConstants.BLAST_ENABLED;
+import static org.interledger.connector.core.ConfigConstants.ENABLED_PROTOCOLS;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 
 /**

@@ -30,9 +30,9 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.BLAST_ENABLED;
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.DEFAULT_JWT_TOKEN_ISSUER;
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.ENABLED_PROTOCOLS;
+import static org.interledger.connector.core.ConfigConstants.BLAST_ENABLED;
+import static org.interledger.connector.core.ConfigConstants.DEFAULT_JWT_TOKEN_ISSUER;
+import static org.interledger.connector.core.ConfigConstants.ENABLED_PROTOCOLS;
 import static okhttp3.CookieJar.NO_COOKIES;
 import static org.interledger.connector.core.ConfigConstants.TRUE;
 

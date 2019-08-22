@@ -1,5 +1,6 @@
 package org.interledger.connector.it.topologies;
 
+import org.interledger.connector.core.ConfigConstants;
 import org.interledger.connector.links.ping.PingLoopbackLink;
 import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountId;
@@ -17,7 +18,7 @@ import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
  */
 public abstract class AbstractTopology {
 
-  public static final String DOT = ".";
+  public static final String DOT = ConfigConstants.DOT;
   public static final String XRP = "XRP";
   public static final String EXPIRY_2MIN = "PT2M";
 
