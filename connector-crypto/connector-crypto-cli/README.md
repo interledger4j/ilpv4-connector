@@ -18,7 +18,7 @@ To execute the CLI, perform the following steps:
 
 1. Checkout the code and navigate to this director.
 1. Build the project: `> mvn clean install`
-1. Run the CLI: `> java -jar /target/ilpv4-connector-crypto-0.1.0-SNAPSHOT.jar`
+1. Run the CLI: `> java -jar /target/connector-crypto-0.1.0-SNAPSHOT.jar`
 
 # Create a Keystore
 To create a Keystore that the CLI can use, issue the following command to create a new keystore with an AES-256 SecretKey inside:

@@ -43,7 +43,7 @@ spring:
   datasource:
     #url: jdbc:h2:mem:ilpv4-connector;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     # Stores H2 to a file for persistence across server restarts
-    url: jdbc:h2:/tmp/ilpv4-connector.bin;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:/tmp/connector-db.bin;DB_CLOSE_ON_EXIT=FALSE
     #platform: h2
     #username: sa
     #password:
