@@ -1,6 +1,6 @@
-package org.interledger.ilpv4.connector.crypto.cli;
+package org.interledger.connector.crypto.cli;
 
-import org.interledger.ilpv4.connector.crypto.cli.shell.CryptoCliConfig;
+import org.interledger.connector.crypto.cli.shell.CryptoCliConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;

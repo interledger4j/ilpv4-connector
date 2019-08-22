@@ -3,7 +3,7 @@ package org.interledger.connector.link.exceptions;
 import org.interledger.connector.link.LinkId;
 
 /**
- * A root exception for all exceptions relating to ILPv4A Links.
+ * A root exception for all exceptions relating to ILPv4 Links.
  */
 public class LinkException extends RuntimeException {
 

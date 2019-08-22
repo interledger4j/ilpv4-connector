@@ -12,7 +12,7 @@
 
   <artifactId>connector-server</artifactId>
 
-  <name>ILPv4 :: Connector :: Server</name>
+  <name>Connector :: Server</name>
   <description>A Spring Boot server runtime for an ILPv4 Connector.</description>
 
   <build>

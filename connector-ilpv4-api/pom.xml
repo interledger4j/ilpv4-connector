@@ -9,9 +9,9 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>ilpv4-api</artifactId>
-  <name>ILPv4 :: API</name>
-  <description>ILPv4 API interfaces</description>
+  <artifactId>connector-ilpv4-api</artifactId>
+  <name>Connector :: API</name>
+  <description>Connector API interfaces</description>
 
   <dependencies>
     <dependency>

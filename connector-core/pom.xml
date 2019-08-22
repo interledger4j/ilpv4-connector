@@ -11,7 +11,7 @@
 
   <artifactId>connector-core</artifactId>
 
-  <name>ILPv4 :: Connector :: Core</name>
+  <name>Connector :: Core</name>
   <description>
     Core classes for all modules in the Connector.
   </description>

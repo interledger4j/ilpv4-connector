@@ -1,4 +1,4 @@
-package org.interledger.ilpv4.connector.crypto.cli.shell.commands;
+package org.interledger.connector.crypto.cli.shell.commands;
 
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionAlgorithm;

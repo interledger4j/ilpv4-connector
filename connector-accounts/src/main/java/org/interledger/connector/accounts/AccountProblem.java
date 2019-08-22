@@ -1,6 +1,6 @@
 package org.interledger.connector.accounts;
 
-import org.interledger.ilpv4.connector.core.problems.AbstractConnectorProblem;
+import org.interledger.connector.core.problems.AbstractConnectorProblem;
 import org.zalando.problem.StatusType;
 
 import java.net.URI;

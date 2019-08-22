@@ -11,7 +11,7 @@
 
   <artifactId>connector-crypto</artifactId>
 
-  <name>ILPv4 :: Connector :: Crypto</name>
+  <name>Connector :: Crypto</name>
   <description>
     Encryption, decryption, signing and verification services using various underlying key-stores.
   </description>

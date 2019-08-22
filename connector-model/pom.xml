@@ -11,13 +11,13 @@
 
   <artifactId>connector-model</artifactId>
 
-  <name>ILPv4 :: Connector :: Model</name>
+  <name>Connector :: Model</name>
   <description>Model objects for the ILPv4 Connectors.</description>
 
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>ilpv4-api</artifactId>
+      <artifactId>connector-ilpv4-api</artifactId>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>

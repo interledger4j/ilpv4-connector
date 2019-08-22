@@ -10,7 +10,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>connector-service-impl</artifactId>
-  <name>ILPv4 :: Connector :: Services Impl</name>
+  <name>Connector :: Services Impl</name>
   <description>Service implementations for the ILPv4 Connector.</description>
 
   <dependencies>

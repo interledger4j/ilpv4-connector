@@ -2,4 +2,4 @@
 # NOTE: this SPI is commented out because XrpCurrencyProvider is configured as a Spring bean, and enabled via
 # SpringServiceProvider, which connects the JavaMoney SPI interface into Spring.
 
-# com.sappenin.interledger.javax.money.providers.XrpCurrencyProvider
+# org.interledger.connector.javax.money.providers.XrpCurrencyProvider

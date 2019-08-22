@@ -11,8 +11,8 @@
 
   <artifactId>connector-persistence</artifactId>
 
-  <name>ILPv4 :: Connector :: Persistence</name>
-  <description>A persistence layer for the ILPv4 Connectors.</description>
+  <name>Connector :: Persistence</name>
+  <description>A persistence layer for Interledger Connectors.</description>
   <build>
     <pluginManagement>
       <plugins>

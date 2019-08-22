@@ -11,7 +11,7 @@
 
   <artifactId>connector-link</artifactId>
 
-  <name>ILPv4 :: Connector :: Link</name>
+  <name>Connector :: Link</name>
   <description>
     Java implementation of Interledger Link-layer interfaces.
   </description>
@@ -23,7 +23,7 @@
     </dependency>
     <dependency>
       <groupId>org.interledger.connector</groupId>
-      <artifactId>ilpv4-api</artifactId>
+      <artifactId>connector-ilpv4-api</artifactId>
     </dependency>
     <dependency>
       <groupId>io.github.resilience4j</groupId>

@@ -11,13 +11,13 @@
 
   <artifactId>connector-routing-api</artifactId>
 
-  <name>ILPv4 :: Connector :: Routing API</name>
-  <description>Routing infrastructure for ILPv4 Connectors.</description>
+  <name>Connector :: Routing API</name>
+  <description>Routing infrastructure for Interledger Connectors.</description>
 
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>ilpv4-api</artifactId>
+      <artifactId>connector-ilpv4-api</artifactId>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
