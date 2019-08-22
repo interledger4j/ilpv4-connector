@@ -131,7 +131,7 @@ jobs:
       - run:
           name: Create Database (Postgres)
           command: |
-            cd ./ilpv4-connector-persistence
+            cd ./connector-persistence
             mvn -P liquibase-pg-sql -DskipTests liquibase:update
 
       - run:
@@ -199,13 +199,13 @@ jobs:
       - run:
           name: Create Database (Postgres)
           command: |
-            cd ./ilpv4-connector-persistence
+            cd ./connector-persistence
             mvn -DskipTests clean package -P liquibase-pg-sql liquibase:update
 
       - run:
           name: Run Integration Tests (ITs)
           command: |
-            cd ./ilpv4-connector-it
+            cd ./connector-it
             mvn verify -Dspring.datasource.url=jdbc:postgresql://localhost:5432/circle_test -Dgroups="org.interledger.ilpv4.connector.it.markers.IlpOverHttp"
 
   # This job runs specific Settlement-related Integration Tests (ITs) found in the `ilpv4-connector-it` module.
@@ -269,7 +269,7 @@ jobs:
       - run:
           name: Create Database (Postgres)
           command: |
-            cd ./ilpv4-connector-persistence
+            cd ./connector-persistence
             mvn -DskipTests clean package -P liquibase-pg-sql liquibase:update
 
       - run:
@@ -327,7 +327,7 @@ jobs:
       - run:
           name: Run Integration Tests (ITs)
           command: |
-            cd ./ilpv4-connector-it
+            cd ./connector-it
             mvn verify -Psettlement -Dspring.datasource.url=jdbc:postgresql://localhost:5432/circle_test
 
 
