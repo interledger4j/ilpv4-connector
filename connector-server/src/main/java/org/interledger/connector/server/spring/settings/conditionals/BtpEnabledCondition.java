@@ -1,6 +1,6 @@
 package org.interledger.connector.server.spring.settings.conditionals;
 
-import org.interledger.connector.server.spring.settings.properties.ConnectorProperties;
+import org.interledger.connector.core.ConfigConstants;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
@@ -8,10 +8,10 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.MethodMetadata;
 
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.BTP_ENABLED;
+import static org.interledger.connector.core.ConfigConstants.BTP_ENABLED;
 
 /**
- * A Spring conditional that triggers when BTP is enabled via {@link ConnectorProperties#BTP_ENABLED}.
+ * A Spring conditional that triggers when BTP is enabled via {@link ConfigConstants#BTP_ENABLED}.
  *
  * @deprecated Just use @ConditionalOnProperty intstead?
  */

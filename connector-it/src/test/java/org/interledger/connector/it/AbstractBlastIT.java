@@ -2,10 +2,10 @@ package org.interledger.connector.it;
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.balances.BalanceTracker;
+import org.interledger.connector.core.ConfigConstants;
 import org.interledger.connector.links.ping.PingLoopbackLink;
 import org.interledger.connector.server.ConnectorServer;
 import org.interledger.connector.server.spring.settings.javamoney.SpringServiceProvider;
-import org.interledger.connector.server.spring.settings.properties.ConnectorProperties;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.CircuitBreakingLink;
 import org.interledger.connector.link.Link;
@@ -35,15 +35,15 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.DEFAULT_JWT_TOKEN_ISSUER;
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.DOT;
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.INTERLEDGER__CONNECTOR__GLOBAL_ROUTING_SETTINGS__ROUTING_SECRET;
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__ENABLED;
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__FILENAME;
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__PASSWORD;
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__SECRET0_ALIAS;
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__SECRET0_PASSWORD;
+import static org.interledger.connector.core.ConfigConstants.ADMIN_PASSWORD;
+import static org.interledger.connector.core.ConfigConstants.DEFAULT_JWT_TOKEN_ISSUER;
+import static org.interledger.connector.core.ConfigConstants.DOT;
+import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__GLOBAL_ROUTING_SETTINGS__ROUTING_SECRET;
+import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__ENABLED;
+import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__FILENAME;
+import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__PASSWORD;
+import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__SECRET0_ALIAS;
+import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__SECRET0_PASSWORD;
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.connector.config.BalanceTrackerConfig.BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME;
@@ -85,7 +85,7 @@ public abstract class AbstractBlastIT {
       "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=");
 
     // Required to get the conditional-config to work for this topology...
-    System.setProperty(ConnectorProperties.ENABLED_PROTOCOLS + DOT + ConnectorProperties.BLAST_ENABLED, "true");
+    System.setProperty(ConfigConstants.ENABLED_PROTOCOLS + DOT + ConfigConstants.BLAST_ENABLED, "true");
   }
 
   protected abstract Logger getLogger();

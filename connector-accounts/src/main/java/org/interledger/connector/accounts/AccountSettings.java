@@ -24,33 +24,6 @@ public interface AccountSettings {
   }
 
   /**
-   * Construct an instance of {@link ImmutableAccountSettings.Builder} from a supplied instance of {@link
-   * AccountProviderSettings}.
-   *
-   * @param accountProviderSettings The account provider settings to source configuration from.
-   *
-   * @return A {@link ImmutableAccountSettings.Builder}.
-   *
-   * @deprecated AccountSettingsProvider will go away.
-   */
-  @Deprecated
-  static ImmutableAccountSettings.Builder from(final AccountProviderSettings accountProviderSettings) {
-    Objects.requireNonNull(accountProviderSettings);
-
-    return builder()
-      .assetScale(accountProviderSettings.getAssetScale())
-      .assetCode(accountProviderSettings.getAssetCode())
-      .linkType(accountProviderSettings.getLinkType())
-      .accountRelationship(accountProviderSettings.getRelationship())
-      .putAllCustomSettings(accountProviderSettings.getCustomSettings())
-      .balanceSettings(accountProviderSettings.getBalanceSettings())
-      .maximumPacketAmount(accountProviderSettings.getMaximumPacketAmount())
-      .ilpAddressSegment(accountProviderSettings.getIlpAddressSegment())
-      .isSendRoutes(accountProviderSettings.isSendRoutes())
-      .isReceiveRoutes(accountProviderSettings.isReceiveRoutes());
-  }
-
-  /**
    * An optionally present unique identifier for this account. For example, <tt>alice</tt> or <tt>123456789</tt>. Note
    * that this is not an {@link InterledgerAddress} because an account's address is assigned when a connection is made,
    * generally using information from the client and this identifier.

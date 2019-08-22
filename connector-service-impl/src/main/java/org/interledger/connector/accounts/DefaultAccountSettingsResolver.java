@@ -27,10 +27,9 @@ public class DefaultAccountSettingsResolver implements AccountSettingsResolver {
   }
 
   /**
-   * For a given link, it will either be fully-defined in the ConnectorSettings as an "account", or it will be partially
-   * defined in an AccountProvider.
+   * Resolve account settings for the supplied {@code link}.
    *
-   * @param link The Link to resolve Account Settings for.
+   * @param link The {@link Link} to resolve Account Settings for.
    *
    * @return
    */

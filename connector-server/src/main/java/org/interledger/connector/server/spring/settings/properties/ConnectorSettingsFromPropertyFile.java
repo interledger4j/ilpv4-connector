@@ -1,20 +1,17 @@
 package org.interledger.connector.server.spring.settings.properties;
 
 import com.google.common.collect.Lists;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountProviderSettings;
-import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Pojo class for automatic mapping of configuration properties via Spring's {@link ConfigurationProperties}
@@ -46,11 +43,6 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   private InterledgerAddressPrefix globalPrefix = InterledgerAddressPrefix.TEST;
 
   private GlobalRoutingSettingsFromPropertyFile globalRoutingSettings = new GlobalRoutingSettingsFromPropertyFile();
-
-  private List<AccountSettingsFromPropertyFile> accounts = Lists.newArrayList();
-
-  @Deprecated
-  private List<AccountProviderSettingsFromPropertyFile> accountProviders = Lists.newArrayList();
 
   @Override
   public Optional<InterledgerAddress> getOperatorAddress() {
@@ -125,28 +117,6 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   public void setGlobalRoutingSettings(GlobalRoutingSettingsFromPropertyFile globalRoutingSettings) {
     this.globalRoutingSettings = globalRoutingSettings;
-  }
-
-  public List<AccountSettings> getAccountSettings() {
-    return accounts.stream()
-      .map(accountSettings -> (AccountSettings) accountSettings)
-      .collect(Collectors.toList());
-  }
-
-  public void setAccounts(List<AccountSettingsFromPropertyFile> accounts) {
-    this.accounts = accounts;
-  }
-
-  @Deprecated
-  public List<AccountProviderSettings> getAccountProviderSettings() {
-    return accountProviders.stream()
-      .map(accountSettings -> (AccountProviderSettings) accountSettings)
-      .collect(Collectors.toList());
-  }
-
-  @Deprecated
-  public void setAccountProviders(List<AccountProviderSettingsFromPropertyFile> accountProviders) {
-    this.accountProviders = accountProviders;
   }
 
   /**

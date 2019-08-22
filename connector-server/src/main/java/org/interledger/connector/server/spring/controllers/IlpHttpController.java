@@ -17,8 +17,8 @@ import org.zalando.problem.spring.common.MediaTypes;
 
 import java.util.Objects;
 
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.BLAST_ENABLED;
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.ENABLED_PROTOCOLS;
+import static org.interledger.connector.core.ConfigConstants.BLAST_ENABLED;
+import static org.interledger.connector.core.ConfigConstants.ENABLED_PROTOCOLS;
 import static org.interledger.connector.link.blast.BlastHeaders.APPLICATION_ILP_OCTET_STREAM_VALUE;
 
 /**

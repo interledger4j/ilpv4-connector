@@ -60,21 +60,4 @@ public class Ids {
     }
   }
 
-  /**
-   * A wrapper that defines a unique identifier for an account provider.
-   *
-   * @deprecated Will be removed as part of https://github.com/sappenin/java-ilpv4-connector/issues/87
-   */
-  @Deprecated
-  @Value.Immutable(intern = true)
-  @Wrapped
-  @JsonSerialize(as = AccountProviderId.class)
-  @JsonDeserialize(as = AccountProviderId.class)
-  static abstract class _AccountProviderId extends Wrapper<String> implements Serializable {
-    @Override
-    public String toString() {
-      return this.value();
-    }
-  }
-
 }

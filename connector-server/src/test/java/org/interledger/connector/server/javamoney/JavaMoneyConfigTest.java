@@ -1,7 +1,7 @@
 package org.interledger.connector.server.javamoney;
 
+import org.interledger.connector.core.ConfigConstants;
 import org.interledger.connector.server.ConnectorServerConfig;
-import org.interledger.connector.server.spring.settings.properties.ConnectorProperties;
 import org.javamoney.moneta.spi.DefaultNumberValue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,7 +19,7 @@ import javax.money.convert.ExchangeRateProvider;
 import javax.money.convert.RateType;
 import java.math.BigInteger;
 
-import static org.interledger.connector.server.spring.settings.properties.ConnectorProperties.ADMIN_PASSWORD;
+import static org.interledger.connector.core.ConfigConstants.ADMIN_PASSWORD;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_FILENAME;
@@ -43,7 +43,7 @@ import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR
 @TestPropertySource(
   properties = {
     ADMIN_PASSWORD + "=password",
-    ConnectorProperties.ENABLED_PROTOCOLS + "." + ConnectorProperties.BLAST_ENABLED + "=true",
+    ConfigConstants.ENABLED_PROTOCOLS + "." + ConfigConstants.BLAST_ENABLED + "=true",
     INTERLEDGER_CONNECTOR_KEYSTORE_JKS_FILENAME + "=" + INTERLEDGER_CONNECTOR_KEYSTORE_JKS_FILENAME_DEFAULT,
     INTERLEDGER_CONNECTOR_KEYSTORE_JKS_PASSWORD + "=" + INTERLEDGER_CONNECTOR_KEYSTORE_JKS_PASSWORD_DEFAULT,
     INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS + "=" + INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS_DEFAULT,

@@ -10,9 +10,7 @@ import java.util.Objects;
 
 /**
  * Default implementation of {@link AccountIdResolver} that looks in the connector config to find corresponding
- * AccountId/AccountProviderId definitions. If none is found, it returns a default account settings.
- *
- * TODO: Use Java SPI here so custom resolvers can be added.
+ * AccountId definitions. If none is found, it returns a default account settings.
  */
 public class DefaultAccountIdResolver implements BtpAccountIdResolver, BlastAccountIdResolver, AccountIdResolver {
 
@@ -45,35 +43,6 @@ public class DefaultAccountIdResolver implements BtpAccountIdResolver, BlastAcco
       //      }
     }
   }
-
-  //  /**
-  //   * Determine the {@link AccountId} for the supplied plugin
-  //   *
-  //   * @param plugin The plugin to introspect to determine the accountId that it represents.
-  //   *
-  //   * @return The {@link AccountId} for the supplied plugin.
-  //   */
-  //  @Override
-  //  public AccountId resolveAccountProviderId(Plugin<?> plugin) {
-  //    Objects.requireNonNull(plugin);
-  //
-  //    //    if (plugin instanceof LoopbackPlugin) {
-  //    //      // Connected Btp Plugins will have a BTP Session that can be used to get the accountId.
-  //    //      final LoopbackPlugin loopbackPlugin = (LoopbackPlugin) plugin;
-  //    //      return AccountProviderId.of(loopbackPlugin.getPluginId().get().value());
-  //    //    }
-  //    //    if (plugin instanceof AbstractBtpPlugin) {
-  //    //      // Connected Btp Plugins will have a BTP Session that can be used to get the accountId.
-  //    //      final AbstractBtpPlugin abstractBtpPlugin = (AbstractBtpPlugin) plugin;
-  //    //      return this.resolveAccountId(abstractBtpPlugin.getBtpSessionCredentials());
-  //    //    }
-  //    if (plugin instanceof PingProtocolPlugin) {
-  //      final PingProtocolPlugin pingProtocolPlugin = (PingProtocolPlugin) plugin;
-  //      return AccountId.of(pingProtocolPlugin.getPluginId().get().value());
-  //    } else {
-  //      throw new RuntimeException("Unsupported Plugin Class: " + plugin.getClass());
-  //    }
-  //  }
 
   /**
    * Determine the {@link AccountId} for the supplied plugin.
