@@ -138,7 +138,7 @@ jobs:
           name: Full Build (Postgres minus ITs)
           command: mvn install -DskipITs -Dspring.datasource.url=jdbc:postgresql://localhost:5432/circle_test
 
-  # This job runs specific Ilp-over-HTTP Integration Tests (ITs) found in the `ilpv4-connector-it` module.
+  # This job runs specific Ilp-over-HTTP Integration Tests (ITs) found in the `connector-it` module.
   # by executing a special maven command that limits ITs to the test-group `IlpOverHttp`.
   integration_tests_ilp_over_http:
     working_directory: ~/repo
@@ -208,7 +208,7 @@ jobs:
             cd ./connector-it
             mvn verify -Dspring.datasource.url=jdbc:postgresql://localhost:5432/circle_test -Dgroups="org.interledger.ilpv4.connector.it.markers.IlpOverHttp"
 
-  # This job runs specific Settlement-related Integration Tests (ITs) found in the `ilpv4-connector-it` module.
+  # This job runs specific Settlement-related Integration Tests (ITs) found in the `connector-it` module.
   # by executing a special maven command that limits ITs to the test-group `Settlement`.
   integration_tests_settlement:
     working_directory: ~/repo

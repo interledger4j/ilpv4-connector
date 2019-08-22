@@ -10,7 +10,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>connector-accounts</artifactId>
-  <name>ILPv4 :: Connector :: Accounts</name>
+  <name>Connector :: Accounts</name>
   <description>
     A bilateral accounting relationship between the two Interledger parties.
   </description>
@@ -48,7 +48,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>ilpv4-api</artifactId>
+      <artifactId>connector-ilpv4-api</artifactId>
     </dependency>
     <dependency>
       <groupId>org.interledger.connector</groupId>

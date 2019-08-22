@@ -63,7 +63,7 @@ h2:
       trace: false
       web-allow-others: false
 
-ilpv4:
+interledger:
   connector:
     # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
     adminPassword: password

@@ -2,7 +2,6 @@
 logging:
   level:
     ROOT: INFO
-    com.sappenin: INFO
     org.interledger: INFO
     org.springframework: INFO
     org.springframework.security: INFO
@@ -60,7 +59,7 @@ spring:
         temp:
           use_jdbc_metadata_defaults: false
 
-ilpv4:
+interledger:
   connector:
     adminPassword: password
     keystore:

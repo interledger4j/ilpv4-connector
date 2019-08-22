@@ -12,7 +12,7 @@
   <artifactId>connector-jackson</artifactId>
 
 
-  <name>ILPv4 :: Connector :: Jackson</name>
+  <name>Connector :: Jackson</name>
   <description>
     Classes to support JSON marshalling/unmarshalling using Jackson.
   </description>

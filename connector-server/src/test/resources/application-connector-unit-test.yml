@@ -1,5 +1,5 @@
 # Test settings to validate loading configuration properties.
-ilpv4:
+interledger:
   connector:
     # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
     adminPassword: password

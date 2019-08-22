@@ -10,7 +10,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>connector-service-api</artifactId>
-  <name>ILPv4 :: Connector :: Services API</name>
+  <name>Connector :: Services API</name>
   <description>All service object interfaces for the ILPv4 Connector.</description>
 
   <dependencies>
@@ -20,7 +20,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>ilpv4-api</artifactId>
+      <artifactId>connector-ilpv4-api</artifactId>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>

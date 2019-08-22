@@ -11,7 +11,7 @@
 
   <artifactId>connector-link-blast</artifactId>
 
-  <name>ILPv4 :: Connector :: Link :: BLAST</name>
+  <name>Connector :: Link :: BLAST</name>
   <description>
     Java implementation of BLAST Link layer interface (Bilateral ASynchronous Transfer (BLAST) protocol,
     also known as `ILP over HTTP`).

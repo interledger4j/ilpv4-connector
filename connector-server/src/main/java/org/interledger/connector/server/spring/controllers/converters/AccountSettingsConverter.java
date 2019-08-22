@@ -1,0 +1,68 @@
+package org.interledger.connector.server.spring.controllers.converters;
+
+import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.ImmutableAccountSettings;
+import org.interledger.connector.persistence.entities.AccountSettingsEntity;
+import org.springframework.core.convert.converter.Converter;
+
+import java.util.Objects;
+import java.util.Optional;
+
+/**
+ * A converter from {@link AccountSettingsEntity} to {@link AccountSettings}.
+ */
+public class AccountSettingsConverter implements Converter<AccountSettingsEntity, AccountSettings> {
+
+  private final RateLimitSettingsConverter rateLimitSettingsConverter;
+  private final AccountBalanceSettingsConverter accountBalanceSettingsConverter;
+  private final SettlementEngineDetailsConverter settlementEngineDetailsConverter;
+
+  public AccountSettingsConverter(
+    final RateLimitSettingsConverter rateLimitSettingsConverter,
+    final AccountBalanceSettingsConverter accountBalanceSettingsConverter,
+    final SettlementEngineDetailsConverter settlementEngineDetailsConverter
+  ) {
+    this.rateLimitSettingsConverter = Objects.requireNonNull(rateLimitSettingsConverter);
+    this.accountBalanceSettingsConverter = Objects.requireNonNull(accountBalanceSettingsConverter);
+    this.settlementEngineDetailsConverter = Objects.requireNonNull(settlementEngineDetailsConverter);
+  }
+
+  @Override
+  public AccountSettings convert(final AccountSettingsEntity accountSettingsEntity) {
+    Objects.requireNonNull(accountSettingsEntity);
+
+    final ImmutableAccountSettings.Builder builder = AccountSettings.builder()
+      .accountId(accountSettingsEntity.getAccountId())
+      .description(accountSettingsEntity.getDescription())
+      .assetScale(accountSettingsEntity.getAssetScale())
+      .assetCode(accountSettingsEntity.getAssetCode())
+      .linkType(accountSettingsEntity.getLinkType())
+      .accountRelationship(accountSettingsEntity.getAccountRelationship())
+      .maximumPacketAmount(accountSettingsEntity.getMaximumPacketAmount())
+      .ilpAddressSegment(accountSettingsEntity.getIlpAddressSegment())
+      .isSendRoutes(accountSettingsEntity.isSendRoutes())
+      .isReceiveRoutes(accountSettingsEntity.isReceiveRoutes())
+      .putAllCustomSettings(accountSettingsEntity.getCustomSettings());
+
+    Optional.ofNullable(accountSettingsEntity.getRateLimitSettingsEntity())
+      .ifPresent(rateLimitSettingsEntity -> builder
+        .rateLimitSettings(rateLimitSettingsConverter.convert(rateLimitSettingsEntity)));
+
+    Optional.ofNullable(accountSettingsEntity.getBalanceSettingsEntity())
+      .ifPresent(balanceSettingsEntity -> builder
+        .balanceSettings(accountBalanceSettingsConverter.convert(balanceSettingsEntity)));
+
+    Optional.ofNullable(accountSettingsEntity.getSettlementEngineDetailsEntity())
+      .ifPresent(settlementEngineDetailsEntity -> {
+        // Until https://github.com/sappenin/java-ilpv4-connector/issues/217 is fixed, we should not create a SE
+        // details object unless all properties in the DB are populated. This line can be removed once #217 is fixed.
+        if (
+          settlementEngineDetailsEntity.getBaseUrl() != null && settlementEngineDetailsEntity.getSettlementEngineAccountId() != null
+        ) {
+          builder.settlementEngineDetails(settlementEngineDetailsConverter.convert(settlementEngineDetailsEntity));
+        }
+      });
+
+    return builder.build();
+  }
+}

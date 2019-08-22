@@ -10,8 +10,8 @@
   </parent>
 
   <artifactId>connector-it</artifactId>
-  <name>ILPv4 :: Connector :: Integration Tests</name>
-  <description>Integration Tests for the ILPv4 Connectors.</description>
+  <name>Connector :: Integration Tests</name>
+  <description>Integration Tests for Interledger Connectors.</description>
 
   <dependencies>
     <dependency>
@@ -122,11 +122,11 @@
                be running, which may not be the case on a developer laptop. Note that this value is overridden in the
                CI build. Likewise for Performance. -->
               <groups>
-                org.interledger.ilpv4.connector.it.markers.IlpOverHttp,
-                org.interledger.ilpv4.connector.it.markers.Performance
+                org.interledger.connector.it.markers.IlpOverHttp,
+                org.interledger.connector.it.markers.Performance
               </groups>
               <excludedGroups>
-                org.interledger.ilpv4.connector.it.markers.Settlement,
+                org.interledger.connector.it.markers.Settlement,
               </excludedGroups>
             </configuration>
           </plugin>
@@ -163,7 +163,7 @@
               <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
               <useSystemClassLoader>false</useSystemClassLoader>
               <groups>
-                org.interledger.ilpv4.connector.it.markers.Performance
+                org.interledger.connector.it.markers.Performance
               </groups>
 <!--              <threadCount>1</threadCount>-->
             </configuration>
@@ -198,11 +198,11 @@
               <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
               <useSystemClassLoader>false</useSystemClassLoader>
               <groups>
-                org.interledger.ilpv4.connector.it.markers.Settlement
+                org.interledger.connector.it.markers.Settlement
               </groups>
               <excludedGroups>
-                org.interledger.ilpv4.connector.it.markers.IlpOverHttp,
-                org.interledger.ilpv4.connector.it.markers.Performance
+                org.interledger.connector.it.markers.IlpOverHttp,
+                org.interledger.connector.it.markers.Performance
               </excludedGroups>
             </configuration>
           </plugin>

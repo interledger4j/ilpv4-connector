@@ -11,7 +11,7 @@
 
   <artifactId>connector-routing-impl</artifactId>
 
-  <name>ILPv4 :: Connector :: Routing Impl</name>
+  <name>Connector :: Routing Impl</name>
   <description>Routing infrastructure for ILPv4 Connectors.</description>
 
   <dependencies>

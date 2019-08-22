@@ -15,8 +15,8 @@
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <name>ILPv4 :: Connector :: Parent</name>
-  <description>The parent pom for this ILPv4 Connector.</description>
+  <name>Connector :: Parent</name>
+  <description>The parent pom for this Connector.</description>
 
   <properties>
     <!-- By default, we run in prod mode, unless a different profile is specified. -->
@@ -32,7 +32,7 @@
 
     <!-- org.jacoco:jacoc-maven-plugin -->
     <jacoco.propertyName>argLine</jacoco.propertyName>
-    <start-class>com.sappenin.interledger.ilpv4.connector.server.ConnectorApplication</start-class>
+    <start-class>org.interledger.connector.server.ConnectorApplication</start-class>
 
     <!--
       -DskipUTs=true for skipping surefire tests.
@@ -74,12 +74,7 @@
       <!--      </dependency>-->
       <dependency>
         <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-api</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>ilpv4-node</artifactId>
+        <artifactId>connector-ilpv4-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

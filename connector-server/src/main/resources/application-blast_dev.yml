@@ -41,7 +41,7 @@ spring:
     throw-exception-if-no-handler-found: true
   # Database Settings
   datasource:
-    #url: jdbc:h2:mem:ilpv4-connector;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    #url: jdbc:h2:mem:connector-db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     # Stores H2 to a file for persistence across server restarts
     url: jdbc:h2:/tmp/connector-db.bin;DB_CLOSE_ON_EXIT=FALSE
     #platform: h2
@@ -78,10 +78,10 @@ redis:
   #port: 6379
   #password: shh
 
-  ilpv4.connector.ilpOverHttp.connectionDefaults.maxIdleConnections
+  interledger.connector.ilpOverHttp.connectionDefaults.maxIdleConnections
 
 
-ilpv4:
+interledger:
   connector:
     # Connector-wide defaults for ilp-over-http Links
     ilpOverHttp:
