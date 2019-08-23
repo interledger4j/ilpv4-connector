@@ -5,8 +5,6 @@ import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.core.InterledgerResponsePacketHandler;
-import org.interledger.core.InterledgerResponsePacketMapper;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -23,10 +21,6 @@ public interface ILPv4MulitSender extends ILPv4Node {
 
   /**
    * <p>Sends an ILPv4 request packet to the connected peer and returns the response packet.</p>
-   *
-   * <p>This method supports one of three responses, which can be handled by using utility classes such as  {@link
-   * InterledgerResponsePacketMapper} or {@link InterledgerResponsePacketHandler}:
-   * </p>
    *
    * <pre>
    * <ol>
@@ -49,21 +43,21 @@ public interface ILPv4MulitSender extends ILPv4Node {
     InterledgerAddress sourceAddress, InterledgerPreparePacket sourcePreparePacket
   );
 
-  /**
-   * <p>Sends an ILPv4 request packet to the connected peer and handles the response, if any.</p>
-   *
-   * @param sourceAddress An {@link InterledgerAddress} for the sender of this packet (note that a node may * support
-   *                      sending from multiple addresses).
-   * @param preparePacket An {@link InterledgerPreparePacket} to send to the remote peer.
-   *
-   * @return A {@link CompletableFuture} that resolves to an optionally-present {@link InterledgerResponsePacket}, which
-   * represents either
-   */
-  default void sendData(
-    InterledgerAddress sourceAddress, InterledgerPreparePacket preparePacket,
-    InterledgerResponsePacketHandler packetHandler
-  ) {
-    packetHandler.handle(sendData(sourceAddress, preparePacket).join());
-  }
+  //  /**
+  //   * <p>Sends an ILPv4 request packet to the connected peer and handles the response, if any.</p>
+  //   *
+  //   * @param sourceAddress An {@link InterledgerAddress} for the sender of this packet (note that a node may * support
+  //   *                      sending from multiple addresses).
+  //   * @param preparePacket An {@link InterledgerPreparePacket} to send to the remote peer.
+  //   *
+  //   * @return A {@link CompletableFuture} that resolves to an optionally-present {@link InterledgerResponsePacket}, which
+  //   * represents either
+  //   */
+  //  default void sendData(
+  //    InterledgerAddress sourceAddress, InterledgerPreparePacket preparePacket,
+  //    InterledgerResponsePacketHandler packetHandler
+  //  ) {
+  //    packetHandler.handle(sendData(sourceAddress, preparePacket).join());
+  //  }
 
 }

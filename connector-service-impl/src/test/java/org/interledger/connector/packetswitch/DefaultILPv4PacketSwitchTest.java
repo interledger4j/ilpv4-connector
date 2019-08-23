@@ -2,26 +2,23 @@ package org.interledger.connector.packetswitch;
 
 import com.google.common.eventbus.EventBus;
 import org.interledger.connector.ConnectorExceptionHandler;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.link.AbstractLink;
+import org.interledger.connector.link.Link;
+import org.interledger.connector.link.LinkSettings;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.NextHopInfo;
 import org.interledger.connector.links.NextHopPacketMapper;
 import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.links.loopback.LoopbackLink;
 import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.link.AbstractLink;
-import org.interledger.connector.link.Link;
-import org.interledger.connector.link.LinkSettings;
+import org.interledger.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
-import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
-import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.core.InterledgerResponsePacketHandler;
-import org.interledger.connector.persistence.entities.AccountSettingsEntity;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -177,19 +174,10 @@ public class DefaultILPv4PacketSwitchTest {
     // Do the send numReps times to prove that the cache is working...
     final int numReps = 5;
     for (int i = 0; i < numReps; i++) {
-      final InterledgerResponsePacket actual = packetSwitch.switchPacket(INCOMING_ACCOUNT_ID, PREPARE_PACKET);
-      new InterledgerResponsePacketHandler() {
-
-        @Override
-        protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-          assertThat(interledgerFulfillPacket.getFulfillment(), is(LoopbackLink.LOOPBACK_FULFILLMENT));
-        }
-
-        @Override
-        protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-          fail("Should have fulfilled but rejected!");
-        }
-      }.handle(actual);
+      packetSwitch.switchPacket(INCOMING_ACCOUNT_ID, PREPARE_PACKET).handle(
+        fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(LoopbackLink.LOOPBACK_FULFILLMENT)),
+        rejectPacket -> fail("Should have fulfilled but rejected!")
+      );
     }
 
     verify(packetSwitchFiltersMock, times(numReps)).size();
@@ -230,19 +218,10 @@ public class DefaultILPv4PacketSwitchTest {
       // Re-use same link for all 5 outgoing accounts...
       when(linkManagerMock.getOrCreateLink(outgoingAccountId)).thenReturn(outgoingLink);
 
-      final InterledgerResponsePacket actual = packetSwitch.switchPacket(incomingAccountId, PREPARE_PACKET);
-      new InterledgerResponsePacketHandler() {
-
-        @Override
-        protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-          assertThat(interledgerFulfillPacket.getFulfillment(), is(LoopbackLink.LOOPBACK_FULFILLMENT));
-        }
-
-        @Override
-        protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-          fail("Should have fulfilled but rejected!");
-        }
-      }.handle(actual);
+      packetSwitch.switchPacket(incomingAccountId, PREPARE_PACKET).handle(
+        fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(LoopbackLink.LOOPBACK_FULFILLMENT)),
+        rejectPacket -> fail("Should have fulfilled but rejected!")
+      );
 
       verify(linkManagerMock).getOrCreateLink(outgoingAccountId);
       verify(nextHopPacketMapperMock).getNextHopPacket(incomingAccountId, PREPARE_PACKET);

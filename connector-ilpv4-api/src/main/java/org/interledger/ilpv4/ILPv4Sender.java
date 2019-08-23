@@ -4,11 +4,11 @@ import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.core.InterledgerResponsePacketHandler;
-import org.interledger.core.InterledgerResponsePacketMapper;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * <p>When two parties want to do business online, the one who sends money is the <tt>sender</tt>.</p>
@@ -38,8 +38,9 @@ public interface ILPv4Sender extends ILPv4Node {
   /**
    * <p>Sends an ILPv4 request packet to the connected peer and returns the response packet.</p>
    *
-   * <p>This method supports one of three responses, which can be handled by using utility classes such as  {@link
-   * InterledgerResponsePacketMapper} or {@link InterledgerResponsePacketHandler}:
+   * <p>This method supports one of three responses, which can be handled by using the
+   * {@link InterledgerResponsePacket#handle(Consumer, Consumer)} and {@link InterledgerResponsePacket#map(Function,
+   * Function)}.
    * </p>
    *
    * <pre>

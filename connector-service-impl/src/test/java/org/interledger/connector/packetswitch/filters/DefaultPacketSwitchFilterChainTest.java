@@ -2,6 +2,12 @@ package org.interledger.connector.packetswitch.filters;
 
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountRelationship;
+import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.link.AbstractLink;
+import org.interledger.connector.link.Link;
+import org.interledger.connector.link.LinkSettings;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.NextHopInfo;
 import org.interledger.connector.links.NextHopPacketMapper;
@@ -9,21 +15,11 @@ import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.links.loopback.LoopbackLink;
 import org.interledger.connector.links.ping.PingLoopbackLink;
 import org.interledger.connector.packetswitch.PacketRejector;
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountRelationship;
-import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.link.AbstractLink;
-import org.interledger.connector.link.Link;
-import org.interledger.connector.link.LinkSettings;
-import org.interledger.core.InterledgerAddress;
-import org.interledger.core.InterledgerCondition;
-import org.interledger.core.InterledgerFulfillPacket;
-import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerRejectPacket;
-import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.core.InterledgerResponsePacketHandler;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerCondition;
+import org.interledger.core.InterledgerPreparePacket;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -34,10 +30,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-import static org.interledger.connector.links.ping.PingLoopbackLink.PING_PROTOCOL_CONDITION;
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.interledger.connector.links.ping.PingLoopbackLink.PING_PROTOCOL_CONDITION;
+import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -149,19 +145,10 @@ public class DefaultPacketSwitchFilterChainTest {
     final AccountSettingsEntity accountSettingsEntityMock = mock(AccountSettingsEntity.class);
     when(accountSettingsEntityMock.getAccountId()).thenReturn(INCOMING_ACCOUNT_ID);
 
-    final InterledgerResponsePacket actual = filterChain.doFilter(accountSettingsEntityMock, PREPARE_PACKET);
-    new InterledgerResponsePacketHandler() {
-
-      @Override
-      protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-        assertThat(interledgerFulfillPacket.getFulfillment(), is(LoopbackLink.LOOPBACK_FULFILLMENT));
-      }
-
-      @Override
-      protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-        fail("Should have fulfilled but rejected!");
-      }
-    }.handle(actual);
+    filterChain.doFilter(accountSettingsEntityMock, PREPARE_PACKET).handle(
+      fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(LoopbackLink.LOOPBACK_FULFILLMENT)),
+      rejectPacket -> fail("Should have fulfilled but rejected!")
+    );
 
     verify(linkFiltersMock).size();
     verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_ID);
@@ -195,19 +182,10 @@ public class DefaultPacketSwitchFilterChainTest {
     when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_ID), eq(PREPARE_PACKET))).thenReturn(nextHopInfo);
     when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_ID)).thenReturn(outgoingLink);
 
-    final InterledgerResponsePacket actual = filterChain.doFilter(accountSettingsEntityMock, PREPARE_PACKET);
-    new InterledgerResponsePacketHandler() {
-
-      @Override
-      protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-        assertThat(interledgerFulfillPacket.getFulfillment(), is(LoopbackLink.LOOPBACK_FULFILLMENT));
-      }
-
-      @Override
-      protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-        fail("Should have fulfilled but rejected!");
-      }
-    }.handle(actual);
+    filterChain.doFilter(accountSettingsEntityMock, PREPARE_PACKET).handle(
+      fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(LoopbackLink.LOOPBACK_FULFILLMENT)),
+      rejectPacket -> fail("Should have fulfilled but rejected!")
+    );
 
     // Each filter should only be called once...
     verify(linkFiltersMock).size();
@@ -246,20 +224,10 @@ public class DefaultPacketSwitchFilterChainTest {
       .thenReturn(nextHopInfo);
     when(linkManagerMock.getPingLink()).thenReturn(outgoingLink);
 
-    final InterledgerResponsePacket actual = filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket);
-    new InterledgerResponsePacketHandler() {
-
-      @Override
-      protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-        assertThat(interledgerFulfillPacket.getFulfillment(), is(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT));
-      }
-
-      @Override
-      protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-        fail("Should have fulfilled but rejected!");
-      }
-    }.handle(actual);
-
+    filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket).handle(
+      fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT)),
+      rejectPacket -> fail("Should have fulfilled but rejected!")
+    );
 
     verify(linkFiltersMock).size();
     verify(linkManagerMock).getPingLink();

@@ -1,15 +1,13 @@
 package org.interledger.connector.packetswitch;
 
-import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.Link;
+import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.core.InterledgerResponsePacketHandler;
-import org.interledger.core.InterledgerResponsePacketMapper;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -94,10 +92,6 @@ public interface ILPv4PacketSwitch {
   /**
    * <p>Routes an incoming ILPv4 request packet to a connected peer and returns the response packet (if one is
    * returned).</p>
-   *
-   * <p>This method supports one of two responses, which can be handled by using utility classes such as {@link
-   * InterledgerResponsePacketMapper} or {@link InterledgerResponsePacketHandler}:
-   * </p>
    *
    * <pre>
    * <ol>

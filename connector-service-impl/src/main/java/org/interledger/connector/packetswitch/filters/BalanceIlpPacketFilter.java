@@ -1,15 +1,12 @@
 package org.interledger.connector.packetswitch.filters;
 
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.balances.BalanceTrackerException;
 import org.interledger.connector.packetswitch.PacketRejector;
-import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerErrorCode;
-import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.core.InterledgerResponsePacketMapper;
 
 import java.util.Objects;
 
@@ -54,21 +51,19 @@ public class BalanceIlpPacketFilter extends AbstractPacketFilter implements Pack
       );
     }
 
-    final InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
-
-    // Handle Fulfill or Reject, but return `responsePacket` in either case.
-    return new InterledgerResponsePacketMapper<InterledgerResponsePacket>() {
-
-      @Override
-      protected InterledgerResponsePacket mapFulfillPacket(final InterledgerFulfillPacket interledgerFulfillPacket) {
+    return filterChain.doFilter(sourceAccountSettings, sourcePreparePacket).map(
+      //////////////////////
+      // If FulfillPacket...
+      //////////////////////
+      (interledgerFulfillPacket) -> {
         // If a packet is fulfilled, then the Receiver's balance is always adjusted in the outgoing LinkFilter, so
         // there's nothing to do here.
-
         return interledgerFulfillPacket;
-      }
-
-      @Override
-      protected InterledgerResponsePacket mapRejectPacket(final InterledgerRejectPacket interledgerRejectPacket) {
+      },
+      //////////////////////
+      // If Reject Packet...
+      //////////////////////
+      (interledgerRejectPacket) -> {
         // Only reverse the sender on a reject (The outgoing balance will be untouched).
         try {
           balanceTracker.updateBalanceForReject(
@@ -89,6 +84,6 @@ public class BalanceIlpPacketFilter extends AbstractPacketFilter implements Pack
 
         return interledgerRejectPacket;
       }
-    }.map(responsePacket);
+    );
   }
 }

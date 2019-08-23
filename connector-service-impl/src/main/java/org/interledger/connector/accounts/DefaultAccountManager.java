@@ -1,25 +1,21 @@
 package org.interledger.connector.accounts;
 
+import org.interledger.connector.link.Link;
 import org.interledger.connector.links.LinkManager;
+import org.interledger.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.connector.persistence.entities.SettlementEngineDetailsEntity;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.ModifiableConnectorSettings;
 import org.interledger.connector.settlement.SettlementEngineClient;
-import org.interledger.connector.link.Link;
-import org.interledger.core.InterledgerFulfillPacket;
+import org.interledger.connector.settlement.client.CreateSettlementAccountRequest;
+import org.interledger.connector.settlement.client.CreateSettlementAccountResponse;
 import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerRejectPacket;
-import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.core.InterledgerResponsePacketMapper;
 import org.interledger.ildcp.IldcpFetcher;
 import org.interledger.ildcp.IldcpRequest;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
 import org.interledger.ildcp.IldcpUtils;
-import org.interledger.connector.persistence.entities.AccountSettingsEntity;
-import org.interledger.connector.persistence.entities.SettlementEngineDetailsEntity;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.connector.settlement.client.CreateSettlementAccountRequest;
-import org.interledger.connector.settlement.client.CreateSettlementAccountResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;
@@ -127,33 +123,37 @@ public class DefaultAccountManager implements AccountManager {
   public AccountSettings initializeParentAccountSettingsViaIlDcp(final AccountId accountId) {
     Objects.requireNonNull(accountId);
 
-    // For IL-DCP to work, there MUST be a pre-exising parent account configured in the AccountSettingsRepository.
+    // For IL-DCP to work, there MUST be a pre-existing parent account configured in the AccountSettingsRepository.
     // It's fine to preemptively load from the data-store here because these settings will naturally be updated later
     // in this method.
     final AccountSettingsEntity parentAccountSettingsEntity =
       getAccountSettingsRepository().safeFindByAccountId(accountId);
 
     final Link<?> link = this.getLinkManager().getOrCreateLink(parentAccountSettingsEntity);
-    final IldcpResponse ildcpResponse = ((IldcpFetcher) ildcpRequest -> {
+
+    // Construct a lambda that implements the Fetch logic for IL-DCP.
+    IldcpFetcher ildcpFetcher = ildcpRequest -> {
       Objects.requireNonNull(ildcpRequest);
 
       final IldcpRequestPacket ildcpRequestPacket = IldcpRequestPacket.builder().build();
       final InterledgerPreparePacket preparePacket =
         InterledgerPreparePacket.builder().from(ildcpRequestPacket).build();
-      final InterledgerResponsePacket response = link.sendPacket(preparePacket);
-      return new InterledgerResponsePacketMapper<IldcpResponse>() {
-        @Override
-        protected IldcpResponse mapFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-          return IldcpUtils.toIldcpResponse(interledgerFulfillPacket);
-        }
 
-        @Override
-        protected IldcpResponse mapRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-          throw new RuntimeException(String.format("IL-DCP negotiation failed! Reject: %s", interledgerRejectPacket));
-        }
-      }.map(response);
+      // Fetch the IL-DCP response using the Link.
+      return link.sendPacket(preparePacket)
+        .map(
+          // If FulfillPacket...
+          IldcpUtils::toIldcpResponse,
+          // If Reject Packet...
+          (interledgerRejectPacket) -> {
+            throw new RuntimeException(
+              String.format("IL-DCP negotiation failed! Reject: %s", interledgerRejectPacket)
+            );
+          }
+        );
+    };
 
-    }).fetch(IldcpRequest.builder().build());
+    final IldcpResponse ildcpResponse = ildcpFetcher.fetch(IldcpRequest.builder().build());
 
     //////////////////////////////////
     // Update the Operator address with data returned by IL-DCP!

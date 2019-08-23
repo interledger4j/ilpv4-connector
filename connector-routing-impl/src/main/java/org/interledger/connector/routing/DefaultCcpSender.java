@@ -3,7 +3,8 @@ package org.interledger.connector.routing;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import org.interledger.connector.routing.RoutingTableId;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.ccp.CcpConstants;
 import org.interledger.connector.ccp.CcpNewRoute;
 import org.interledger.connector.ccp.CcpRouteControlRequest;
@@ -14,21 +15,11 @@ import org.interledger.connector.ccp.ImmutableCcpNewRoute;
 import org.interledger.connector.ccp.ImmutableCcpRoutePathPart;
 import org.interledger.connector.ccp.ImmutableCcpRouteUpdateRequest;
 import org.interledger.connector.ccp.ImmutableCcpWithdrawnRoute;
-import org.interledger.connector.routing.CcpSender;
-import org.interledger.connector.routing.ForwardingRoutingTable;
-import org.interledger.connector.routing.Route;
-import org.interledger.connector.routing.RouteUpdate;
-import org.interledger.connector.settings.ConnectorSettings;
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.Link;
-import org.interledger.core.InterledgerFulfillPacket;
-import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerRejectPacket;
-import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.core.InterledgerResponsePacketHandler;
-import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.encoding.asn.framework.CodecContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
@@ -106,10 +97,10 @@ public class DefaultCcpSender implements CcpSender {
   public void handleRouteControlRequest(final CcpRouteControlRequest routeControlRequest) {
     Preconditions.checkNotNull(link, "Link must be assigned before using a CcpSender!");
 
-    logger.debug("Peer `{}` sent CcpRouteControlRequest: {}", peerAccountId, routeControlRequest);
+    logger.debug("Peer {} sent CcpRouteControlRequest: {}", peerAccountId, routeControlRequest);
     if (syncMode.get() != routeControlRequest.getMode()) {
       logger.debug(
-        "Peer `{}` requested changing routing mode. oldMode={} newMode={}",
+        "Peer {} requested changing routing mode. oldMode={} newMode={}",
         peerAccountId, this.syncMode.get(), routeControlRequest.getMode()
       );
     }
@@ -118,7 +109,7 @@ public class DefaultCcpSender implements CcpSender {
 
     if (lastKnownRoutingTableId.get().equals(this.forwardingRoutingTable.getRoutingTableId()) == false) {
       logger.debug(
-        "Peer `{}` has old routing table id, resetting lastKnownEpoch to 0. theirTableId=`{}` correctTableId=`{}`",
+        "Peer {} has old routing table id, resetting lastKnownEpoch to 0. theirTableId={} correctTableId={}",
         peerAccountId,
         lastKnownRoutingTableId,
         this.forwardingRoutingTable.getRoutingTableId());
@@ -312,27 +303,15 @@ public class DefaultCcpSender implements CcpSender {
         "CcpSender sending RouteUpdate Request: targetPeerAccountId={}. ccpRouteUpdateRequest={} preparePacket={}",
         this.peerAccountId, ccpRouteUpdateRequest, preparePacket
       );
+      
+      this.link.sendPacket(preparePacket).handle(fulfillPacket -> {
+        logger.debug("Route update succeeded. targetPeerAccountId={} fulfillPacket={}", peerAccountId, fulfillPacket);
+      }, rejectPacket -> {
+        logger.error("Route update failed! targetPeerAccountId={} rejectPacket={}", peerAccountId, rejectPacket);
+      });
 
-      final InterledgerResponsePacket response = this.link.sendPacket(preparePacket);
-      new InterledgerResponsePacketHandler() {
-
-        @Override
-        protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-          logger.debug(
-            "Route update succeeded. ttargetPeerAccountId=`{}` fulfillPacket={}", peerAccountId,
-            interledgerFulfillPacket
-          );
-        }
-
-        @Override
-        protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-          logger.error(
-            "Route update failed! targetPeerAccountId=`{}` rejectPacket={}", peerAccountId, interledgerRejectPacket
-          );
-        }
-      }.handle(response);
     } catch (RuntimeException e) {
-      logger.error("Failed to broadcast route information to peer. targetPeerAccountId=`{}`", peerAccountId, e);
+      logger.error("Failed to broadcast route information to peer. targetPeerAccountId={}", peerAccountId, e);
       throw e;
     }
   }
