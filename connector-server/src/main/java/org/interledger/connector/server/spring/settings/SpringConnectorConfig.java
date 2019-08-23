@@ -1,21 +1,32 @@
 package org.interledger.connector.server.spring.settings;
 
-import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.interledger.connector.ConnectorExceptionHandler;
 import org.interledger.connector.DefaultILPv4Connector;
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.accounts.AccountIdResolver;
 import org.interledger.connector.accounts.AccountManager;
+import org.interledger.connector.accounts.AccountRateLimitSettings;
+import org.interledger.connector.accounts.AccountRelationship;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.AccountSettingsResolver;
 import org.interledger.connector.accounts.BtpAccountIdResolver;
 import org.interledger.connector.accounts.DefaultAccountIdResolver;
 import org.interledger.connector.accounts.DefaultAccountManager;
 import org.interledger.connector.accounts.DefaultAccountSettingsResolver;
 import org.interledger.connector.balances.BalanceTracker;
+import org.interledger.connector.caching.AccountSettingsLoadingCache;
+import org.interledger.connector.config.BalanceTrackerConfig;
+import org.interledger.connector.config.CaffeineCacheConfig;
+import org.interledger.connector.config.RedisConfig;
+import org.interledger.connector.config.SettlementConfig;
 import org.interledger.connector.fx.JavaMoneyUtils;
+import org.interledger.connector.link.AbstractLink;
+import org.interledger.connector.link.LinkFactoryProvider;
+import org.interledger.connector.link.events.LinkEventEmitter;
 import org.interledger.connector.links.DefaultLinkManager;
 import org.interledger.connector.links.DefaultLinkSettingsFactory;
 import org.interledger.connector.links.DefaultNextHopPacketMapper;
@@ -40,6 +51,9 @@ import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
 import org.interledger.connector.packetswitch.filters.PeerProtocolPacketFilter;
 import org.interledger.connector.packetswitch.filters.RateLimitIlpPacketFilter;
 import org.interledger.connector.packetswitch.filters.ValidateFulfillmentPacketFilter;
+import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
+import org.interledger.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ChildAccountPaymentRouter;
 import org.interledger.connector.routing.DefaultRouteBroadcaster;
 import org.interledger.connector.routing.ExternalRoutingService;
@@ -55,24 +69,9 @@ import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMv
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.SettlementService;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountRateLimitSettings;
-import org.interledger.connector.accounts.AccountRelationship;
-import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.link.AbstractLink;
-import org.interledger.connector.link.LinkFactoryProvider;
-import org.interledger.connector.link.events.LinkEventEmitter;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.crypto.Decryptor;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.interledger.connector.config.BalanceTrackerConfig;
-import org.interledger.connector.config.CaffeineCacheConfig;
-import org.interledger.connector.config.RedisConfig;
-import org.interledger.connector.config.SettlementConfig;
-import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
-import org.interledger.connector.persistence.entities.AccountSettingsEntity;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,7 +85,6 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
@@ -362,7 +360,8 @@ public class SpringConnectorConfig {
     BalanceTracker balanceTracker,
     PacketRejector packetRejector,
     SettlementService settlementService,
-    @Qualifier(CodecContextConfig.CCP) CodecContext ccpCodecContext, @Qualifier(CodecContextConfig.ILDCP) CodecContext ildcpCodecContext
+    @Qualifier(CodecContextConfig.CCP) CodecContext ccpCodecContext,
+    @Qualifier(CodecContextConfig.ILDCP) CodecContext ildcpCodecContext
   ) {
     final ConnectorSettings connectorSettings = connectorSettingsSupplier().get();
     final ImmutableList.Builder<PacketSwitchFilter> filterList = ImmutableList.builder();
@@ -420,15 +419,14 @@ public class SpringConnectorConfig {
 
   @Bean
   NextHopPacketMapper nextHopLinkMapper(
-    final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    //@Qualifier("externalPaymentRouter")
+    Supplier<ConnectorSettings> connectorSettingsSupplier,
     ExternalRoutingService externalRoutingService,
-    final AccountSettingsRepository accountSettingsRepository,
-    final InterledgerAddressUtils addressUtils,
-    final JavaMoneyUtils javaMoneyUtils
+    InterledgerAddressUtils addressUtils,
+    JavaMoneyUtils javaMoneyUtils,
+    AccountSettingsLoadingCache accountSettingsLoadingCache
   ) {
     return new DefaultNextHopPacketMapper(
-      connectorSettingsSupplier, externalRoutingService, accountSettingsRepository, addressUtils, javaMoneyUtils
+      connectorSettingsSupplier, externalRoutingService, addressUtils, javaMoneyUtils, accountSettingsLoadingCache
     );
   }
 
@@ -441,15 +439,17 @@ public class SpringConnectorConfig {
 
   @Bean
   ILPv4PacketSwitch ilpPacketSwitch(
-    List<PacketSwitchFilter> packetSwitchFilters, List<LinkFilter> linkFilters,
-    LinkManager linkManager, NextHopPacketMapper nextHopPacketMapper,
-    ConnectorExceptionHandler connectorExceptionHandler, PacketRejector packetRejector,
-    AccountSettingsRepository accountSettingsRepository,
-    Cache<AccountId, Optional<? extends AccountSettings>> accountSettingsCache
+    List<PacketSwitchFilter> packetSwitchFilters,
+    List<LinkFilter> linkFilters,
+    LinkManager linkManager,
+    NextHopPacketMapper nextHopPacketMapper,
+    ConnectorExceptionHandler connectorExceptionHandler,
+    PacketRejector packetRejector,
+    AccountSettingsLoadingCache accountSettingsLoadingCache
   ) {
     return new DefaultILPv4PacketSwitch(
       packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler,
-      packetRejector, accountSettingsRepository, accountSettingsCache
+      packetRejector, accountSettingsLoadingCache
     );
   }
 

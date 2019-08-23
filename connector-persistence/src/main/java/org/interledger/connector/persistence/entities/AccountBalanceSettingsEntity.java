@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @Access(AccessType.FIELD)
 @Embeddable
-public class AccountBalanceSettingsEntity implements AccountBalanceSettings {
+public class AccountBalanceSettingsEntity {
 
   // See Javadoc in AccountSettings for more details around the number types in this class.
 
@@ -35,7 +35,6 @@ public class AccountBalanceSettingsEntity implements AccountBalanceSettings {
     this.setSettleTo(accountBalanceSettings.getSettleTo());
   }
 
-  @Override
   public Optional<Long> getMinBalance() {
     return Optional.ofNullable(minBalance);
   }
@@ -44,7 +43,6 @@ public class AccountBalanceSettingsEntity implements AccountBalanceSettings {
     this.minBalance = minBalance.orElse(null);
   }
 
-  @Override
   public Optional<Long> getSettleThreshold() {
     return Optional.ofNullable(settleThreshold);
   }
@@ -53,7 +51,6 @@ public class AccountBalanceSettingsEntity implements AccountBalanceSettings {
     this.settleThreshold = settleThreshold.orElse(null);
   }
 
-  @Override
   public long getSettleTo() {
     return settleTo;
   }

@@ -37,6 +37,7 @@
     <dependency>
       <groupId>org.immutables</groupId>
       <artifactId>value</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
@@ -45,11 +46,6 @@
     <dependency>
       <groupId>org.zalando</groupId>
       <artifactId>problem</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.immutables</groupId>
-      <artifactId>value</artifactId>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

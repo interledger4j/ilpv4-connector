@@ -1,13 +1,12 @@
 package org.interledger.connector.it.topologies;
 
-import org.interledger.connector.core.ConfigConstants;
-import org.interledger.connector.links.ping.PingLoopbackLink;
 import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.core.ConfigConstants;
+import org.interledger.connector.links.ping.PingLoopbackLink;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 
 import java.util.Optional;
 
@@ -67,18 +66,16 @@ public abstract class AbstractTopology {
   /**
    * An AccountSettings object that represents a ping account on Bob.
    */
-  protected static AccountSettingsEntity constructPingAccountSettings() {
-    return new AccountSettingsEntity(
-      AccountSettings.builder()
-        .accountId(PING_ACCOUNT_ID)
-        .accountRelationship(AccountRelationship.CHILD)
-        .settlementEngineDetails(Optional.empty())
-        .assetCode("USD")
-        .assetScale(2)
-        .description("A receiver-like child account for collecting all Ping protocol revenues.")
-        .linkType(PingLoopbackLink.LINK_TYPE)
-        .build()
-    );
+  protected static AccountSettings constructPingAccountSettings() {
+    return AccountSettings.builder()
+      .accountId(PING_ACCOUNT_ID)
+      .accountRelationship(AccountRelationship.CHILD)
+      .settlementEngineDetails(Optional.empty())
+      .assetCode("USD")
+      .assetScale(2)
+      .description("A receiver-like child account for collecting all Ping protocol revenues.")
+      .linkType(PingLoopbackLink.LINK_TYPE)
+      .build();
   }
 
   /**

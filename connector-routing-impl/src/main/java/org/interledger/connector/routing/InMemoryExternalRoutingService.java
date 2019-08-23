@@ -4,8 +4,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.eventbus.EventBus;
 import com.google.common.hash.Hashing;
-import org.interledger.connector.routing.ImmutableRoute;
-import org.interledger.connector.routing.ImmutableRouteUpdate;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
@@ -183,7 +181,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     // All eligible PEER accounts are registered for CCP (if appropriate). Unless there is a static route configured,
     // then only CCP will populate routes amongst peers.
-    accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.PEER).stream()
+    accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PEER).stream()
       .forEach(routeBroadcaster::registerCcpEnabledAccount);
 
     //////////////////
@@ -491,7 +489,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   private Optional<Route> determineDefaultRoute() {
     final Optional<AccountId> nextHopForDefaultRoute;
     if (connectorSettingsSupplier.get().getGlobalRoutingSettings().isUseParentForDefaultRoute()) {
-      nextHopForDefaultRoute = this.accountSettingsRepository.findFirstByAccountRelationship(AccountRelationship.PARENT)
+      nextHopForDefaultRoute =
+        this.accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PARENT)
         .map(AccountSettings::getAccountId)
         .map(Optional::of)
         .orElseThrow(() -> new RuntimeException(

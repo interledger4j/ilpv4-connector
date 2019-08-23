@@ -1,4 +1,4 @@
-package org.interledger.connector.server.spring.controllers.converters;
+package org.interledger.connector.persistence.converters;
 
 import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountSettings;
@@ -11,7 +11,7 @@ import java.util.Objects;
 /**
  * A converter from {@link AccountSettingsEntity} to {@link AccountSettings}.
  */
-public class AccountBalanceSettingsConverter implements
+public class AccountBalanceSettingsEntityConverter implements
   Converter<AccountBalanceSettingsEntity, AccountBalanceSettings> {
 
   @Override

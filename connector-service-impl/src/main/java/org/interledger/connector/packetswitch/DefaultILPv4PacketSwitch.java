@@ -1,26 +1,22 @@
 package org.interledger.connector.packetswitch;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import org.interledger.connector.ConnectorExceptionHandler;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.caching.AccountSettingsLoadingCache;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.NextHopPacketMapper;
 import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.packetswitch.filters.DefaultPacketSwitchFilterChain;
 import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A default implementation of {@link ILPv4PacketSwitch}.
@@ -33,14 +29,11 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   private final NextHopPacketMapper nextHopPacketMapper;
   private final ConnectorExceptionHandler connectorExceptionHandler;
   private final PacketRejector packetRejector;
-  private final AccountSettingsRepository accountSettingsRepository;
 
   // Loading from the Database is somewhat expensive, so we don't want to do this on every packet processed for a
   // given account. Instead, for higher performance, we only load account settings once per period, and otherwise
-  // rely upon AccountSettings found in this cache. This design is preferable to using Hibernate's 2nd-level cache
-  // because in-general, we don't want to Cache accountSettings to support clustered Connector environments (though
-  // this may change in the future depending on benchmark results).
-  private final Cache<AccountId, Optional<? extends AccountSettings>> accountSettingsCache;
+  // rely upon AccountSettings found in this cache.
+  private final AccountSettingsLoadingCache accountSettingsLoadingCache;
 
   /**
    * For testing purposes.
@@ -57,10 +50,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   ) {
     this(
       packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler, packetRejector,
-      accountSettingsRepository, Caffeine.newBuilder()
-        .expireAfterAccess(15, TimeUnit.MINUTES)
-        .maximumSize(5000)
-        .build(accountSettingsRepository::findByAccountId)
+      new AccountSettingsLoadingCache(accountSettingsRepository)
     );
   }
 
@@ -71,8 +61,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     final NextHopPacketMapper nextHopPacketMapper,
     final ConnectorExceptionHandler connectorExceptionHandler,
     final PacketRejector packetRejector,
-    final AccountSettingsRepository accountSettingsRepository,
-    final Cache<AccountId, Optional<? extends AccountSettings>> accountSettingsCache
+    final AccountSettingsLoadingCache accountSettingsLoadingCache
   ) {
     this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
     this.linkFilters = Objects.requireNonNull(linkFilters);
@@ -80,8 +69,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     this.nextHopPacketMapper = Objects.requireNonNull(nextHopPacketMapper);
     this.connectorExceptionHandler = Objects.requireNonNull(connectorExceptionHandler);
     this.packetRejector = Objects.requireNonNull(packetRejector);
-    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
-    this.accountSettingsCache = Objects.requireNonNull(accountSettingsCache);
+    this.accountSettingsLoadingCache = Objects.requireNonNull(accountSettingsLoadingCache);
   }
 
   /**
@@ -101,17 +89,18 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     Objects.requireNonNull(sourceAccountId);
     Objects.requireNonNull(incomingSourcePreparePacket);
 
-    return this.accountSettingsCache.get(sourceAccountId, accountSettingsRepository::findByAccountId)
-      .map(accountSettingsEntity -> {
+    // The value stored in the Cache is the AccountSettings converted from the entity so we don't have to convert
+    // on every ILPv4 packet switch.
+    return this.accountSettingsLoadingCache.getAccount(sourceAccountId)
+      .map(accountSettings -> {
         try {
           return new DefaultPacketSwitchFilterChain(
             packetSwitchFilters,
             linkFilters,
             linkManager,
             nextHopPacketMapper,
-            accountSettingsRepository,
-            accountSettingsCache
-          ).doFilter(accountSettingsEntity, incomingSourcePreparePacket);
+            accountSettingsLoadingCache // Necessary to load the 'next-hop' account.
+          ).doFilter(accountSettings, incomingSourcePreparePacket);
 
         } catch (Exception e) {
           // Any rejections should be caught here, and returned as such....

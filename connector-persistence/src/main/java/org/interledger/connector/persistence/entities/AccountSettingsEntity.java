@@ -1,12 +1,10 @@
 package org.interledger.connector.persistence.entities;
 
 import org.hibernate.annotations.NaturalId;
-import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.connector.link.LinkType;
 import org.interledger.connector.persistence.AccountRelationshipConverter;
 import org.interledger.connector.persistence.HashMapConverter;
@@ -36,7 +34,7 @@ import static org.interledger.connector.persistence.entities.DataConstants.Table
   @Index(name = ACCT_REL_IDX, columnList = ACCOUNT_RELATIONSHIP)
 })
 @SuppressWarnings({"PMD"})
-public class AccountSettingsEntity extends AbstractEntity implements AccountSettings {
+public class AccountSettingsEntity extends AbstractEntity {
 
   @Id
   @GeneratedValue
@@ -108,7 +106,7 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     this.description = accountSettings.getDescription();
     this.internal = accountSettings.isInternal();
     this.connectionInitiator = accountSettings.isConnectionInitiator();
-    this.ilpAddressSegment = accountSettings.getIlpAddressSegment().orElse(null);
+    this.ilpAddressSegment = accountSettings.getIlpAddressSegment();
     this.accountRelationship = accountSettings.getAccountRelationship();
     this.linkType = accountSettings.getLinkType();
     this.assetCode = accountSettings.getAssetCode();
@@ -124,7 +122,6 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     this.customSettings = accountSettings.getCustomSettings();
   }
 
-  @Override
   public AccountId getAccountId() {
     return AccountId.of(getNaturalId());
   }
@@ -137,7 +134,6 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     return naturalId;
   }
 
-  @Override
   public String getDescription() {
     return description;
   }
@@ -146,7 +142,6 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     this.description = description;
   }
 
-  @Override
   public boolean isInternal() {
     return internal;
   }
@@ -155,7 +150,6 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     this.internal = internal;
   }
 
-  @Override
   public boolean isConnectionInitiator() {
     return connectionInitiator;
   }
@@ -164,16 +158,14 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     this.connectionInitiator = connectionInitiator;
   }
 
-  @Override
-  public Optional<String> getIlpAddressSegment() {
-    return Optional.ofNullable(ilpAddressSegment);
+  public String getIlpAddressSegment() {
+    return ilpAddressSegment;
   }
 
-  public void setIlpAddressSegment(Optional<String> ilpAddressSegment) {
-    this.ilpAddressSegment = ilpAddressSegment.orElse(null);
+  public void setIlpAddressSegment(String ilpAddressSegment) {
+    this.ilpAddressSegment = ilpAddressSegment;
   }
 
-  @Override
   public AccountRelationship getAccountRelationship() {
     return accountRelationship;
   }
@@ -182,7 +174,6 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     this.accountRelationship = accountRelationship;
   }
 
-  @Override
   public LinkType getLinkType() {
     return linkType;
   }
@@ -191,7 +182,6 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     this.linkType = linkType;
   }
 
-  @Override
   public String getAssetCode() {
     return assetCode;
   }
@@ -200,7 +190,6 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     this.assetCode = assetCode;
   }
 
-  @Override
   public int getAssetScale() {
     return assetScale;
   }
@@ -209,7 +198,6 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     this.assetScale = assetScale;
   }
 
-  @Override
   public Optional<Long> getMaximumPacketAmount() {
     return Optional.ofNullable(maximumPacketAmount);
   }
@@ -218,8 +206,7 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     this.maximumPacketAmount = maximumPacketAmount.orElse(null);
   }
 
-  @Override
-  public AccountBalanceSettings getBalanceSettings() {
+  public AccountBalanceSettingsEntity getBalanceSettings() {
     return balanceSettings;
   }
 
@@ -231,8 +218,7 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     return balanceSettings;
   }
 
-  @Override
-  public AccountRateLimitSettings getRateLimitSettings() {
+  public AccountRateLimitSettingsEntity getRateLimitSettings() {
     return rateLimitSettings;
   }
 
@@ -248,8 +234,7 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     return settlementEngineDetails;
   }
 
-  @Override
-  public Optional<SettlementEngineDetails> settlementEngineDetails() {
+  public Optional<SettlementEngineDetailsEntity> settlementEngineDetails() {
     return Optional.ofNullable(settlementEngineDetails);
   }
 
@@ -257,7 +242,6 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     this.settlementEngineDetails = settlementEngineDetails;
   }
 
-  @Override
   public boolean isSendRoutes() {
     return sendRoutes;
   }
@@ -266,7 +250,6 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     this.sendRoutes = sendRoutes;
   }
 
-  @Override
   public boolean isReceiveRoutes() {
     return receiveRoutes;
   }
@@ -275,7 +258,6 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     this.receiveRoutes = receiveRoutes;
   }
 
-  @Override
   public Map<String, Object> getCustomSettings() {
     return customSettings;
   }
@@ -284,6 +266,11 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
     this.customSettings = customSettings;
   }
 
+  /**
+   * Overridden to use natural identifier.
+   *
+   * @see "https://vladmihalcea.com/the-best-way-to-implement-equals-hashcode-and-tostring-with-jpa-and-hibernate/"
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -306,7 +293,7 @@ public class AccountSettingsEntity extends AbstractEntity implements AccountSett
    */
   @Override
   public int hashCode() {
-    return getNaturalId().hashCode();
+    return Objects.hash(getNaturalId());
   }
 }
 

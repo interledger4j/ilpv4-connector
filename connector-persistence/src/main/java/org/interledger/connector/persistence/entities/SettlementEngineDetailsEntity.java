@@ -1,6 +1,5 @@
 package org.interledger.connector.persistence.entities;
 
-import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.connector.persistence.HashMapConverter;
@@ -12,13 +11,12 @@ import javax.persistence.Convert;
 import javax.persistence.Embeddable;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 import static org.interledger.connector.persistence.entities.DataConstants.ColumnNames.SE_ACCOUNT_ID;
 
 @Access(AccessType.FIELD)
 @Embeddable
-public class SettlementEngineDetailsEntity implements SettlementEngineDetails {
+public class SettlementEngineDetailsEntity {
 
   @Column(name = SE_ACCOUNT_ID, unique = true)
   private String settlementEngineAccountId;
@@ -61,31 +59,7 @@ public class SettlementEngineDetailsEntity implements SettlementEngineDetails {
     this.baseUrl = baseUrl;
   }
 
-  /**
-   * @deprecated Will be removed once #217 is fixed.
-   */
-  @Override
-  @Deprecated
-  public Optional<SettlementEngineAccountId> settlementEngineAccountId() {
-    return this.getSettlementEngineAccountId() == null ?
-      Optional.empty() : Optional.of(SettlementEngineAccountId.of(this.getSettlementEngineAccountId()));
-  }
-
-  /**
-   * @deprecated Will be removed once #217 is fixed.
-   */
-  @Override
-  @Deprecated
-  public HttpUrl baseUrl() {
-    if (this.getBaseUrl() == null) {
-      return null;
-    } else {
-      return HttpUrl.parse(this.getBaseUrl());
-    }
-  }
-
-  @Override
-  public Map<String, Object> customSettings() {
+  public Map<String, Object> getCustomSettings() {
     return customSettings;
   }
 

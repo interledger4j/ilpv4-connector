@@ -14,7 +14,6 @@ import org.interledger.connector.link.blast.IncomingLinkSettings;
 import org.interledger.connector.link.blast.JwtBlastHttpSender;
 import org.interledger.connector.link.blast.OutgoingLinkSettings;
 import org.interledger.connector.links.loopback.LoopbackLink;
-import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerPreparePacket;
@@ -102,7 +101,7 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
         .assetScale(2)
         .assetCode("XRP")
         .build();
-      accountManager.createAccount(new AccountSettingsEntity(accountSettings));
+      accountManager.createAccount(accountSettings);
     }
 
     ///////////////////////
@@ -131,7 +130,7 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
         .assetScale(2)
         .assetCode("XRP")
         .build();
-      accountManager.createAccount(new AccountSettingsEntity(accountSettings));
+      accountManager.createAccount(accountSettings);
     }
   }
 

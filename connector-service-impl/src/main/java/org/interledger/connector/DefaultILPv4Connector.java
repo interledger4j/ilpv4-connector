@@ -206,7 +206,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   private void configureAccounts() {
     // Connect any Links for accounts that are the connection initiator. Links that require an incoming and outgoing
     // connection will emit a LinkConnectedEvent when the incoming connection is connected.
-    this.accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrue().stream()
+    this.accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrueWithConversion().stream()
       .map(linkManager::getOrCreateLink)
       .forEach(Link::connect);
   }

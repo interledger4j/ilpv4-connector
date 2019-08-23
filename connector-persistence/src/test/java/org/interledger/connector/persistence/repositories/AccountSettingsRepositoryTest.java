@@ -12,6 +12,10 @@ import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.connector.link.LinkType;
 import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
+import org.interledger.connector.persistence.converters.AccountBalanceSettingsEntityConverter;
+import org.interledger.connector.persistence.converters.AccountSettingsEntityConverter;
+import org.interledger.connector.persistence.converters.RateLimitSettingsEntityConverter;
+import org.interledger.connector.persistence.converters.SettlementEngineDetailsEntityConverter;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.entities.SettlementEngineDetailsEntity;
 import org.junit.Test;
@@ -20,11 +24,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.support.ConfigurableConversionService;
+import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -112,8 +119,9 @@ public class AccountSettingsRepositoryTest {
 
   @Test
   public void whenSaveAndLoadWithMinimalFieldsPopulated() {
+    final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     final AccountSettings accountSettings = AccountSettings.builder()
-      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .accountId(accountId)
       .assetCode("XRP")
       .assetScale(9)
       .linkType(LinkType.of("Loopback"))
@@ -152,7 +160,7 @@ public class AccountSettingsRepositoryTest {
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getSettleTo(), is(0L));
     assertThat(loadedAccountSettingsEntity.getRateLimitSettings().getMaxPacketsPerSecond().isPresent(), is(false));
     assertThat(loadedAccountSettingsEntity.settlementEngineDetails().isPresent(), is(false));
-    assertThat(loadedAccountSettingsEntity.getIlpAddressSegment().isPresent(), is(false));
+    assertThat(loadedAccountSettingsEntity.getIlpAddressSegment(), is(accountId.value()));
 
     final AccountSettingsEntity loadedAccountSettingsEntity2 =
       accountSettingsRepository.findByNaturalId(accountSettings.getAccountId().value()).get();
@@ -170,7 +178,7 @@ public class AccountSettingsRepositoryTest {
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getSettleThreshold().isPresent(), is(false));
     assertThat(loadedAccountSettingsEntity.getBalanceSettings().getSettleTo(), is(0L));
     assertThat(loadedAccountSettingsEntity.getRateLimitSettings().getMaxPacketsPerSecond().isPresent(), is(false));
-    assertThat(loadedAccountSettingsEntity.getIlpAddressSegment().isPresent(), is(false));
+    assertThat(loadedAccountSettingsEntity.getIlpAddressSegment(), is(accountId.value()));
   }
 
   @Test
@@ -401,6 +409,332 @@ public class AccountSettingsRepositoryTest {
     }
   }
 
+  @Test
+  public void findByIdWithConversion() {
+    final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
+    final AccountSettings accountSettings1 = AccountSettings.builder()
+      .accountId(accountId)
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PEER)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity1 = new AccountSettingsEntity(accountSettings1);
+    accountSettingsRepository.save(accountSettingsEntity1);
+
+    Optional<AccountSettings> loadedAccountSettings =
+      accountSettingsRepository.findByAccountIdWithConversion(accountId);
+    assertThat(loadedAccountSettings.isPresent(), is(true));
+
+    assertThat(loadedAccountSettings.get(), is(accountSettings1));
+  }
+
+  @Test
+  public void findAccountSettingsEntitiesByConnectionInitiatorIsTrue() {
+    final AccountSettings accountSettings1 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .isConnectionInitiator(true)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PEER)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity1 = new AccountSettingsEntity(accountSettings1);
+    accountSettingsRepository.save(accountSettingsEntity1);
+
+    ///////////////
+    // When 1 of 1 is an initiator...
+    ///////////////
+    List<AccountSettingsEntity> initiatorAccounts =
+      accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrue();
+    assertThat(initiatorAccounts.size(), is(1));
+    assertThat(initiatorAccounts.get(0), is(accountSettingsEntity1));
+    assertThat(initiatorAccounts.contains(accountSettingsEntity1), is(true));
+
+    ///////////////
+    // When 1 of 2 is an initiator...
+    ///////////////
+    final AccountSettings accountSettings2 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .isConnectionInitiator(false)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.CHILD)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity2 = new AccountSettingsEntity(accountSettings2);
+    accountSettingsRepository.save(accountSettingsEntity2);
+
+    initiatorAccounts = accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrue();
+    assertThat(initiatorAccounts.size(), is(1));
+    assertThat(initiatorAccounts.get(0), is(accountSettingsEntity1));
+    assertThat(initiatorAccounts.contains(accountSettingsEntity1), is(true));
+    assertThat(initiatorAccounts.contains(accountSettingsEntity2), is(false));
+
+    ///////////////
+    // When 2 of 3 are initiators...
+    ///////////////
+    final AccountSettings accountSettings3 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .isConnectionInitiator(true)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.CHILD)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity3 = new AccountSettingsEntity(accountSettings3);
+    accountSettingsRepository.save(accountSettingsEntity3);
+
+    initiatorAccounts = accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrue();
+    assertThat(initiatorAccounts.size(), is(2));
+    assertThat(initiatorAccounts.contains(accountSettingsEntity1), is(true));
+    assertThat(initiatorAccounts.contains(accountSettingsEntity2), is(false));
+    assertThat(initiatorAccounts.contains(accountSettingsEntity3), is(true));
+  }
+
+  @Test
+  public void findAccountSettingsEntitiesByConnectionInitiatorIsTrueWithConversion() {
+    final AccountSettings accountSettings1 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .isConnectionInitiator(true)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PEER)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity1 = new AccountSettingsEntity(accountSettings1);
+    accountSettingsRepository.save(accountSettingsEntity1);
+
+    ///////////////
+    // When 1 of 1 is an initiator...
+    ///////////////
+    List<AccountSettings> initiatorAccounts =
+      accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrueWithConversion();
+    assertThat(initiatorAccounts.size(), is(1));
+    assertThat(initiatorAccounts.get(0), is(accountSettings1));
+    assertThat(initiatorAccounts.contains(accountSettings1), is(true));
+
+    ///////////////
+    // When 1 of 2 is an initiator...
+    ///////////////
+    final AccountSettings accountSettings2 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .isConnectionInitiator(false)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.CHILD)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity2 = new AccountSettingsEntity(accountSettings2);
+    accountSettingsRepository.save(accountSettingsEntity2);
+
+    initiatorAccounts =
+      accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrueWithConversion();
+    assertThat(initiatorAccounts.size(), is(1));
+    assertThat(initiatorAccounts.get(0), is(accountSettings1));
+    assertThat(initiatorAccounts.contains(accountSettings1), is(true));
+    assertThat(initiatorAccounts.contains(accountSettings2), is(false));
+
+    ///////////////
+    // When 2 of 3 are initiators...
+    ///////////////
+    final AccountSettings accountSettings3 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .isConnectionInitiator(true)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.CHILD)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity3 = new AccountSettingsEntity(accountSettings3);
+    accountSettingsRepository.save(accountSettingsEntity3);
+
+    initiatorAccounts =
+      accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrueWithConversion();
+    assertThat(initiatorAccounts.size(), is(2));
+    assertThat(initiatorAccounts.contains(accountSettings1), is(true));
+    assertThat(initiatorAccounts.contains(accountSettings2), is(false));
+    assertThat(initiatorAccounts.contains(accountSettings3), is(true));
+  }
+
+  @Test
+  public void findBySettlementEngineAccountIdWithConversion() {
+    final SettlementEngineAccountId settlementEngineAccountId =
+      SettlementEngineAccountId.of(UUID.randomUUID().toString());
+
+    final AccountSettings accountSettings1 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PEER)
+      .settlementEngineDetails(
+        SettlementEngineDetails.builder()
+          .baseUrl(HttpUrl.parse("https://example.com"))
+          .settlementEngineAccountId(settlementEngineAccountId)
+          .build()
+      )
+      .build();
+    final AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity(accountSettings1);
+    accountSettingsRepository.save(accountSettingsEntity);
+
+    Optional<AccountSettings> actual = accountSettingsRepository
+      .findBySettlementEngineAccountIdWithConversion(settlementEngineAccountId);
+    assertThat(actual.isPresent(), is(true));
+
+    assertThat(actual.get(), is(accountSettings1));
+  }
+
+  @Test
+  public void whenFindByAccountRelationshipWithConversion() {
+    final AccountSettings accountSettings1 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PEER)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity1 = new AccountSettingsEntity(accountSettings1);
+    accountSettingsRepository.save(accountSettingsEntity1);
+    assertThat(
+      accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PARENT).isPresent(),
+      is(false));
+    assertThat(
+      accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.CHILD).isPresent(),
+      is(false));
+    assertThat(
+      accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PEER).isPresent(),
+      is(true));
+
+    final AccountSettings accountSettings1b = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.CHILD)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity1b = new AccountSettingsEntity(accountSettings1b);
+    accountSettingsRepository.save(accountSettingsEntity1b);
+    assertThat(
+      accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PARENT).isPresent(),
+      is(false));
+    assertThat(
+      accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.CHILD).isPresent(),
+      is(true));
+    assertThat(
+      accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PEER).isPresent(),
+      is(true));
+
+    final AccountSettings accountSettings2 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PARENT)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity2 = new AccountSettingsEntity(accountSettings2);
+    accountSettingsRepository.save(accountSettingsEntity2);
+    assertThat(accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PARENT).get(),
+      is(accountSettings2)); // Always finds the first `PARENT`
+    assertThat(
+      accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.CHILD).isPresent(),
+      is(true));
+    assertThat(
+      accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PEER).isPresent(),
+      is(true));
+
+    final AccountSettings accountSettings3 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PARENT)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity3 = new AccountSettingsEntity(accountSettings3);
+    accountSettingsRepository.save(accountSettingsEntity3);
+    assertThat(accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PARENT).get(),
+      is(accountSettings2)); // Always finds the first `PARENT`
+    assertThat(
+      accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.CHILD).isPresent(),
+      is(true));
+    assertThat(
+      accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PEER).isPresent(),
+      is(true));
+
+    final AccountSettings accountSettings4 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PARENT)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity4 = new AccountSettingsEntity(accountSettings4);
+    accountSettingsRepository.save(accountSettingsEntity4);
+    assertThat(accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PARENT).get(),
+      is(accountSettings2)); // Always finds the first `PARENT`
+    assertThat(
+      accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.CHILD).isPresent(),
+      is(true));
+    assertThat(
+      accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PEER).isPresent(),
+      is(true));
+  }
+
+  @Test
+  public void whenFindAllByAccountRelationshipWithConversion() {
+    final AccountSettings accountSettings1 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PEER)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity1 = new AccountSettingsEntity(accountSettings1);
+    accountSettingsRepository.save(accountSettingsEntity1);
+    assertThat(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PARENT).size(),
+      is(0));
+    assertThat(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.CHILD).size(),
+      is(0));
+    assertThat(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PEER).size(),
+      is(1));
+
+    final AccountSettings accountSettings2 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PARENT)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity2 = new AccountSettingsEntity(accountSettings2);
+    accountSettingsRepository.save(accountSettingsEntity2);
+    assertThat(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PARENT).size(),
+      is(1));
+    assertThat(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.CHILD).size(),
+      is(0));
+    assertThat(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PEER).size(),
+      is(1));
+
+    final AccountSettings accountSettings3 = AccountSettings.builder()
+      .accountId(AccountId.of(UUID.randomUUID().toString()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.CHILD)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity3 = new AccountSettingsEntity(accountSettings3);
+    accountSettingsRepository.save(accountSettingsEntity3);
+    assertThat(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PARENT).size(),
+      is(1));
+    assertThat(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.CHILD).size(),
+      is(1));
+    assertThat(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PEER).size(),
+      is(1));
+  }
+
+  //////////////////
+  // Private Helpers
+  //////////////////
+
   /**
    * Helper method to ensure two entities are equal by manually comparing each field. This is necessary because the
    * {@link AccountSettings#equals(Object)} does not compare the same fields as {@link
@@ -437,10 +771,10 @@ public class AccountSettingsRepositoryTest {
     // SettlementEngineSettings
     if (entity1.settlementEngineDetails().isPresent()) {
       assertThat(entity1.settlementEngineDetails().isPresent(), is(entity2.settlementEngineDetails().isPresent()));
-      assertThat(entity1.settlementEngineDetails().get().baseUrl(),
-        is(entity2.settlementEngineDetails().get().baseUrl()));
-      assertThat(entity1.settlementEngineDetails().get().settlementEngineAccountId(),
-        is(entity2.settlementEngineDetails().get().settlementEngineAccountId()));
+      assertThat(entity1.settlementEngineDetails().get().getBaseUrl(),
+        is(entity2.settlementEngineDetails().get().getBaseUrl()));
+      assertThat(entity1.settlementEngineDetails().get().getSettlementEngineAccountId(),
+        is(entity2.settlementEngineDetails().get().getSettlementEngineAccountId()));
       assertThat(entity1.getCustomSettings(), is(entity2.getCustomSettings()));
 
     } else {
@@ -452,9 +786,36 @@ public class AccountSettingsRepositoryTest {
 
   @Configuration("application.yml")
   public static class TestPersistenceConfig {
+
+    ////////////////////////
+    // SpringConverters
+    ////////////////////////
+
+    @Autowired
+    private RateLimitSettingsEntityConverter rateLimitSettingsEntityConverter;
+
+    @Autowired
+    private AccountBalanceSettingsEntityConverter accountBalanceSettingsEntityConverter;
+
+    @Autowired
+    private SettlementEngineDetailsEntityConverter settlementEngineDetailsEntityConverter;
+
+    @Autowired
+    private AccountSettingsEntityConverter accountSettingsConverter;
+
     @Bean
     ObjectMapper objectMapper() {
       return new ObjectMapper();
+    }
+
+    @Bean
+    ConfigurableConversionService conversionService() {
+      ConfigurableConversionService conversionService = new DefaultConversionService();
+      conversionService.addConverter(rateLimitSettingsEntityConverter);
+      conversionService.addConverter(accountBalanceSettingsEntityConverter);
+      conversionService.addConverter(settlementEngineDetailsEntityConverter);
+      conversionService.addConverter(accountSettingsConverter);
+      return conversionService;
     }
   }
 }

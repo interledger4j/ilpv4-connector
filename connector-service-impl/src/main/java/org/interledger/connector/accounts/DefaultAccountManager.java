@@ -1,5 +1,6 @@
 package org.interledger.connector.accounts;
 
+import okhttp3.HttpUrl;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
@@ -71,18 +72,27 @@ public class DefaultAccountManager implements AccountManager {
     final SettlementEngineDetailsEntity settlementEngineDetailsEntity =
       accountSettingsEntity.getSettlementEngineDetailsEntity();
 
-    if (settlementEngineDetailsEntity != null &&
-      settlementEngineDetailsEntity.getBaseUrl() != null // TODO: this line can be removed when #217 is fixed.
+    if (settlementEngineDetailsEntity != null
     ) {
       // Initialize an Account in the configured Settlement Engine, if that's enabled configured. This call is
       // idempotent, so we do this first before saving anything to the DB. If this call fails, it will throw an
       // exception, and no account will have been created in the Connector.
 
+      final HttpUrl baseUrl;
+      try {
+        baseUrl = HttpUrl.parse(settlementEngineDetailsEntity.getBaseUrl());
+      } catch (Exception e) {
+        throw new InvalidAccountSettingsProblem(
+          "Settlement Engine BaseURL was invalid: " + settlementEngineDetailsEntity.getBaseUrl(),
+          accountSettings.getAccountId());
+      }
+
       final CreateSettlementAccountResponse response = settlementEngineClient.createSettlementAccount(
         accountSettings.getAccountId(),
-        settlementEngineDetailsEntity.baseUrl(),
+        baseUrl,
         CreateSettlementAccountRequest.builder()
-          .requestedSettlementAccountId(settlementEngineDetailsEntity.settlementEngineAccountId())
+          .requestedSettlementAccountId(
+            SettlementEngineAccountId.of(settlementEngineDetailsEntity.getSettlementEngineAccountId()))
           .build()
       );
       settlementEngineDetailsEntity.setSettlementEngineAccountId(response.settlementEngineAccountId().value());
@@ -129,7 +139,9 @@ public class DefaultAccountManager implements AccountManager {
     final AccountSettingsEntity parentAccountSettingsEntity =
       getAccountSettingsRepository().safeFindByAccountId(accountId);
 
-    final Link<?> link = this.getLinkManager().getOrCreateLink(parentAccountSettingsEntity);
+    final Link<?> link = this.getLinkManager().getOrCreateLink(
+      conversionService.convert(parentAccountSettingsEntity, AccountSettings.class)
+    );
 
     // Construct a lambda that implements the Fetch logic for IL-DCP.
     IldcpFetcher ildcpFetcher = ildcpRequest -> {
@@ -170,12 +182,13 @@ public class DefaultAccountManager implements AccountManager {
     parentAccountSettingsEntity.setAssetScale(ildcpResponse.getAssetScale());
 
     // Modify Account Settings by removing and re-creating the parent account.
-    final AccountSettings updatedAccountSettings = getAccountSettingsRepository().save(parentAccountSettingsEntity);
+    final AccountSettingsEntity updatedAccountSettings =
+      getAccountSettingsRepository().save(parentAccountSettingsEntity);
 
     logger.info(
       "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().getOperatorAddress().get()
     );
 
-    return updatedAccountSettings;
+    return conversionService.convert(updatedAccountSettings, AccountSettings.class);
   }
 }

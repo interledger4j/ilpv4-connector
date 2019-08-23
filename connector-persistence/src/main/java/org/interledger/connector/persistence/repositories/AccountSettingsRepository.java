@@ -18,7 +18,8 @@ import java.util.Optional;
  * Allows Accounts to be persisted to a datastore.
  */
 @Repository
-public interface AccountSettingsRepository extends CrudRepository<AccountSettingsEntity, Long> {
+public interface AccountSettingsRepository
+  extends CrudRepository<AccountSettingsEntity, Long>, AccountSettingsRepositoryCustom {
 
   /**
    * Find an {@link AccountSettingsEntity} by its natural identifier (i.e., the accountId as a String).
@@ -80,9 +81,8 @@ public interface AccountSettingsRepository extends CrudRepository<AccountSetting
     String settlementEngineAccountId
   );
 
-
   /**
-   * Find an {@link AccountSettingsEntity} for all accounts that initiate connections.
+   * Find all {@link AccountSettingsEntity} objects for all accounts that initiate connections.
    *
    * @return A {@link List} of {@link AccountSettings}.
    */
@@ -130,7 +130,7 @@ public interface AccountSettingsRepository extends CrudRepository<AccountSetting
     Objects.requireNonNull(accountId);
 
     return this.findByNaturalId(accountId.value())
-      .map(AccountSettings::isInternal)
+      .map(AccountSettingsEntity::isInternal)
       .map(Optional::ofNullable)
       .orElse(Optional.empty());
   }

@@ -2,7 +2,6 @@ package org.interledger.connector.routing;
 
 import com.google.common.collect.Maps;
 import org.interledger.connector.links.LinkManager;
-import org.interledger.connector.routing.ImmutableRoutableAccount;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
@@ -68,7 +67,7 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
   @Override
   public Optional<RoutableAccount> registerCcpEnabledAccount(final AccountId accountId) {
     Objects.requireNonNull(accountId);
-    return accountSettingsRepository.findByAccountId(accountId)
+    return accountSettingsRepository.findByAccountIdWithConversion(accountId)
       .map(this::registerCcpEnabledAccount)
       .filter(Optional::isPresent)
       .map(Optional::get);

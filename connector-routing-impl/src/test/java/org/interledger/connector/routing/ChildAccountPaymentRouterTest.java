@@ -1,7 +1,5 @@
 package org.interledger.connector.routing;
 
-import org.interledger.connector.routing.ChildAccountPaymentRouter;
-import org.interledger.connector.routing.Route;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;

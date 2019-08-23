@@ -1,8 +1,9 @@
-package org.interledger.connector.server.spring.controllers.converters;
+package org.interledger.connector.persistence.converters;
 
 import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.accounts.SettlementEngineDetails;
+import org.interledger.connector.persistence.converters.SettlementEngineDetailsEntityConverter;
 import org.interledger.connector.persistence.entities.SettlementEngineDetailsEntity;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,15 +14,15 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Unit tests for {@link SettlementEngineDetailsConverter}.
+ * Unit tests for {@link SettlementEngineDetailsEntityConverter}.
  */
-public class SettlementEngineDetailsConverterTest {
+public class SettlementEngineDetailsEntityConverterTest {
 
-  private SettlementEngineDetailsConverter converter;
+  private SettlementEngineDetailsEntityConverter converter;
 
   @Before
   public void setUp() {
-    this.converter = new SettlementEngineDetailsConverter();
+    this.converter = new SettlementEngineDetailsEntityConverter();
   }
 
   @Test

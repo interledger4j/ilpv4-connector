@@ -135,15 +135,6 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
       destinationAccountSettings.settlementEngineDetails().ifPresent(
         settlementEngineDetails -> {
 
-          // TODO: Hibernate is using default composites currently, so it will errant populate a
-          // settlementEngineDetails when this value should be `empty`. Once
-          // https://github.com/sappenin/java-ilpv4-connector/issues/217 is fixed, this check can be removed
-          // because the above `.ifPresent` line will work properly.
-          if (settlementEngineDetails.baseUrl() == null) {
-            logger.warn("TODO: Fix #217 to eliminate this WARN");
-            return;
-          }
-
           // Only trigger settlement if there's a Threshold...
           destinationAccountSettings.getBalanceSettings().getSettleThreshold()
             // ... and if the calculated clearingAmountToSettle is > the threshold (and not 0)

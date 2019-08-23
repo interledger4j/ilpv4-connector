@@ -2,8 +2,6 @@ package org.interledger.connector.routing;
 
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
-import org.interledger.connector.routing.ImmutableRoute;
-import org.interledger.connector.routing.ImmutableRouteUpdate;
 import org.interledger.connector.ccp.CcpConstants;
 import org.interledger.connector.ccp.CcpRouteControlRequest;
 import org.interledger.connector.ccp.CcpRouteUpdateRequest;

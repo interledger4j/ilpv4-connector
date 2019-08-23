@@ -1,7 +1,5 @@
 package org.interledger.connector.persistence.repositories;
 
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-
 /**
  * Unit tests for {@link AccountSettingsRepository}.
  */

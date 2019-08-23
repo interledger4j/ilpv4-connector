@@ -16,6 +16,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EnableJpaRepositories(basePackages = "org.interledger.connector.persistence.repositories")
 @EntityScan("org.interledger.connector.persistence.entities")
 @Import({
+          ConvertersConfig.class
           // Placeholders for now (enable if we ever want custom processing that Spring Boot can't easily provide).
           //H2ConnectorPersistenceConfig.class,
           //PostgresqlConnectorPersistenceConfig.class

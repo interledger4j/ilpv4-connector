@@ -4,6 +4,8 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.caching.AccountSettingsLoadingCache;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,6 +24,11 @@ public class CaffeineCacheConfig {
       .expireAfterAccess(15, TimeUnit.MINUTES) // TODO Make this duration configurable
       .maximumSize(5000) // TODO: Make size configurable.
       .build();
+  }
+
+  @Bean
+  AccountSettingsLoadingCache accountSettingsLoadingCache(AccountSettingsRepository accountSettingsRepository) {
+    return new AccountSettingsLoadingCache(accountSettingsRepository);
   }
 
 }

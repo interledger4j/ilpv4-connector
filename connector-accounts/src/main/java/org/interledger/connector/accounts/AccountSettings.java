@@ -1,6 +1,7 @@
 package org.interledger.connector.accounts;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -9,8 +10,8 @@ import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkType;
 import org.interledger.core.InterledgerAddress;
 
+import java.time.Instant;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -31,6 +32,24 @@ public interface AccountSettings {
    * @see {@link #getIlpAddressSegment()}.
    */
   AccountId getAccountId();
+
+  /**
+   * The date/time this Account was created.
+   *
+   * @return An {@link Instant}.
+   */
+  default Instant createdAt() {
+    return Instant.now();
+  }
+
+  /**
+   * The date/time this Account was last modified.
+   *
+   * @return An {@link Instant}.
+   */
+  default Instant modifiedAt() {
+    return Instant.now();
+  }
 
   /**
    * Determines if this account is <tt>internal</tt> or <tt>external</tt>. Internal accounts are allowed to process
@@ -55,14 +74,18 @@ public interface AccountSettings {
    *
    * @return {@code true} if this Connector is the connection initiator for this {@link Link}; {@code false} otherwise.
    */
-  boolean isConnectionInitiator();
+  default boolean isConnectionInitiator() {
+    return true;
+  }
 
   /**
    * The segment that will be appended to the connector's ILP address to form this account's ILP address. Only
-   * applicable to accounts with relation={@link AccountRelationship#CHILD}. By default, this will be the identifier of
-   * the account, i.e. the key used in the accounts config object.
+   * applicable to accounts with relation of {@link AccountRelationship#CHILD}. By default, this will be the identifier
+   * of the account.
    */
-  Optional<String> getIlpAddressSegment();
+  default String getIlpAddressSegment() {
+    return this.getAccountId().value();
+  }
 
   /**
    * A human-readable description of this account.
@@ -91,9 +114,8 @@ public interface AccountSettings {
    * This property defines how many Interledger units make # up one regular unit. For dollars, this would usually be set
    * to 9, so that Interledger # amounts are expressed in nano-dollars.
    *
-   * @return
+   * @return an int representing this account's asset scale.
    */
-  // TODO: Make this a short or a byte?! It's limited to Uint8 per IL-DCP.
   int getAssetScale();
 
   /**
@@ -114,7 +136,8 @@ public interface AccountSettings {
   /**
    * <p>Optionally present information about how this account can be settled.</p>
    *
-   * @return
+   * @return An optionally present {@link SettlementEngineDetails}. If this value is absent, then this account does not
+   * support settlement.
    */
   Optional<SettlementEngineDetails> settlementEngineDetails();
 
@@ -191,27 +214,25 @@ public interface AccountSettings {
   @Value.Modifiable
   @JsonSerialize(as = ImmutableAccountSettings.class)
   @JsonDeserialize(as = ImmutableAccountSettings.class)
-  @JsonPropertyOrder({"accountId", "linkType", "ilpAddressSegment", "accountRelationship", "assetCode", "assetScale",
-                       "maximumPacketAmount", "customSettings", "description", "balanceSettings", "rateLimitSettings",
-                       "isConnectionInitiator", "isInternal", "isSendRoutes", "isReceiveRoutes"})
+  @JsonPropertyOrder({"accountId", "createdAt", "modifiedAt", "description", "accountRelationship", "assetCode",
+                       "assetScale", "maximumPacketAmount", "linkType", "ilpAddressSegment", "connectionInitiator",
+                       "internal", "sendRoutes", "receiveRoutes", "balanceSettings", "rateLimitSettings",
+                       "settlementEngineDetails", "customSettings"})
   abstract class AbstractAccountSettings implements AccountSettings {
 
     @Override
     public abstract AccountId getAccountId();
 
     @Override
-    public abstract LinkType getLinkType();
-
-    @Override
     @Value.Default
-    public boolean isInternal() {
-      return false;
+    public Instant createdAt() {
+      return Instant.now();
     }
 
     @Override
     @Value.Default
-    public boolean isConnectionInitiator() {
-      return false;
+    public Instant modifiedAt() {
+      return Instant.now();
     }
 
     @Value.Default
@@ -220,14 +241,39 @@ public interface AccountSettings {
       return "";
     }
 
+    @Override
+    public abstract LinkType getLinkType();
+
+    @Override
+    @Value.Default
+    @JsonProperty("internal")
+    public boolean isInternal() {
+      return false;
+    }
+
+    @Override
+    @Value.Default
+    @JsonProperty("connectionInitiator")
+    public boolean isConnectionInitiator() {
+      return true;
+    }
+
     @Value.Default
     @Override
+    public String getIlpAddressSegment() {
+      return this.getAccountId().value();
+    }
+
+    @Value.Default
+    @Override
+    @JsonProperty("sendRoutes")
     public boolean isSendRoutes() {
       return false;
     }
 
     @Value.Default
     @Override
+    @JsonProperty("receiveRoutes")
     public boolean isReceiveRoutes() {
       return false;
     }

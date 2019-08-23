@@ -4,10 +4,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import org.interledger.connector.accounts.AccountIdResolver;
-import org.interledger.connector.links.ping.PingLoopbackLink;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountIdResolver;
+import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.AbstractLink;
 import org.interledger.connector.link.CircuitBreakingLink;
@@ -20,11 +20,12 @@ import org.interledger.connector.link.events.LinkDisconnectedEvent;
 import org.interledger.connector.link.events.LinkErrorEvent;
 import org.interledger.connector.link.events.LinkEventListener;
 import org.interledger.connector.link.exceptions.LinkNotConnectedException;
-import org.interledger.core.InterledgerAddress;
-import org.interledger.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.connector.links.ping.PingLoopbackLink;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.core.InterledgerAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.convert.ConversionService;
 
 import java.util.Map;
 import java.util.Objects;
@@ -36,6 +37,9 @@ import java.util.stream.Collectors;
 
 /**
  * A default implementation of {@link LinkManager} that stores all connectedLinks in-memory.
+ *
+ * TODO: Consider making this Manager stateless. See https://github.com/sappenin/java-ilpv4-connector/issues/290 for
+ * more details.
  */
 public class DefaultLinkManager implements LinkManager, LinkEventListener {
 
@@ -49,6 +53,8 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
 
   private final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier;
 
+  // NOTE: Note using the AccountSettings cache because Links are typically created infrequently, and it's better to
+  // have the most up-to-date data here.
   private final AccountSettingsRepository accountSettingsRepository;
   private final LinkSettingsFactory linkSettingsFactory;
   private final LinkFactoryProvider linkFactoryProvider;
@@ -73,6 +79,7 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
     this.linkFactoryProvider = Objects.requireNonNull(linkFactoryProvider);
     this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
     this.defaultCircuitBreakerConfig = Objects.requireNonNull(defaultCircuitBreakerConfig);
+
     Objects.requireNonNull(eventBus).register(this);
 
     this.pingLink = linkFactoryProvider.getLinkFactory(PingLoopbackLink.LINK_TYPE)
@@ -91,7 +98,9 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
     return Optional.ofNullable(this.connectedLinks.get(accountId))
       .orElseGet(() -> {
         // Convert to LinkSettings...
-        final AccountSettingsEntity accountSettings = accountSettingsRepository.safeFindByAccountId(accountId);
+        final AccountSettings accountSettings = accountSettingsRepository.findByAccountIdWithConversion(accountId)
+          .orElseThrow(() -> new AccountNotFoundProblem(accountId));
+
         return (Link) getOrCreateLink(accountSettings);
       });
   }
