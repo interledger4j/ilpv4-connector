@@ -3,8 +3,7 @@ package org.interledger.connector.routing;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import org.interledger.connector.routing.ImmutableIncomingRoute;
-import org.interledger.connector.routing.RoutingTableId;
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.ccp.CcpConstants;
 import org.interledger.connector.ccp.CcpRouteControlRequest;
 import org.interledger.connector.ccp.CcpRoutePathPart;
@@ -12,16 +11,13 @@ import org.interledger.connector.ccp.CcpRouteUpdateRequest;
 import org.interledger.connector.ccp.CcpSyncMode;
 import org.interledger.connector.ccp.CcpWithdrawnRoute;
 import org.interledger.connector.ccp.ImmutableCcpRouteControlRequest;
-import org.interledger.connector.settings.ConnectorSettings;
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.link.Link;
+import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerAddressPrefix;
-import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.core.InterledgerResponsePacketMapper;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -213,20 +209,13 @@ public class DefaultCcpReceiver implements CcpReceiver {
         preparePacket
       );
 
-      InterledgerResponsePacket responsePacket = this.link.sendPacket(preparePacket);
-      return new InterledgerResponsePacketMapper<InterledgerResponsePacket>() {
-        @Override
-        protected InterledgerResponsePacket mapFulfillPacket(InterledgerFulfillPacket fulfillPacket) {
+      return this.link.sendPacket(preparePacket)
+        .handleAndReturn(fulfillPacket -> {
           logger.debug("Successfully sent route control message. peer={}", peerAccountId);
-          return fulfillPacket;
-        }
-
-        @Override
-        protected InterledgerResponsePacket mapRejectPacket(InterledgerRejectPacket rejectPacket) {
+        }, rejectPacket -> {
           logger.debug("Route control message was rejected. rejection={}", rejectPacket.getMessage());
-          return rejectPacket;
-        }
-      }.map(responsePacket);
+        });
+
     } catch (Exception e) {
       if (e instanceof InterledgerProtocolException) {
         final InterledgerRejectPacket rejectPacket =

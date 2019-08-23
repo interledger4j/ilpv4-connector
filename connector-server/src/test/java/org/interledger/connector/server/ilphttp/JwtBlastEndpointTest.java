@@ -1,11 +1,9 @@
 package org.interledger.connector.server.ilphttp;
 
 import com.google.common.collect.Maps;
-import org.interledger.connector.accounts.AccountManager;
-import org.interledger.connector.links.loopback.LoopbackLink;
-import org.interledger.connector.server.ConnectorServerConfig;
 import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.blast.BlastHttpSender;
@@ -15,14 +13,12 @@ import org.interledger.connector.link.blast.ImmutableOutgoingLinkSettings;
 import org.interledger.connector.link.blast.IncomingLinkSettings;
 import org.interledger.connector.link.blast.JwtBlastHttpSender;
 import org.interledger.connector.link.blast.OutgoingLinkSettings;
-import org.interledger.core.InterledgerAddress;
-import org.interledger.core.InterledgerFulfillPacket;
-import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerRejectPacket;
-import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.core.InterledgerResponsePacketHandler;
-import org.interledger.crypto.Decryptor;
+import org.interledger.connector.links.loopback.LoopbackLink;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.connector.server.ConnectorServerConfig;
+import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.crypto.Decryptor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,10 +38,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.interledger.connector.links.loopback.LoopbackLink.LOOPBACK_FULFILLMENT;
-import static org.interledger.connector.server.spring.settings.blast.BlastConfig.BLAST;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.interledger.connector.links.loopback.LoopbackLink.LOOPBACK_FULFILLMENT;
+import static org.interledger.connector.server.spring.settings.blast.BlastConfig.BLAST;
 import static org.junit.Assert.fail;
 
 /**
@@ -148,26 +144,17 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
   public void bobPaysAliceUsingIlpOverHttp() {
     final BlastHttpSender blastHttpSender = jwtBlastHttpSenderForBob();
 
-    final InterledgerResponsePacket result = blastHttpSender.sendData(
+    blastHttpSender.sendData(
       InterledgerPreparePacket.builder()
         .destination(InterledgerAddress.of("test.connie.alice"))
         .amount(BigInteger.ONE)
         .expiresAt(Instant.now().plus(5, ChronoUnit.MINUTES))
         .executionCondition(LOOPBACK_FULFILLMENT.getCondition())
         .build()
+    ).handle(
+      fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(LOOPBACK_FULFILLMENT)),
+      rejectPacket -> fail("Packet rejected but should not have!")
     );
-
-    new InterledgerResponsePacketHandler() {
-      @Override
-      protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-        assertThat(interledgerFulfillPacket.getFulfillment(), is(LOOPBACK_FULFILLMENT));
-      }
-
-      @Override
-      protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
-        fail("Packet rejected but should not have!");
-      }
-    }.handle(result);
   }
 
 

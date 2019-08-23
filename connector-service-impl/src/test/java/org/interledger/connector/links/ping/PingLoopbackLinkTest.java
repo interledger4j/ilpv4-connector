@@ -5,12 +5,9 @@ import org.interledger.connector.link.events.LinkEventEmitter;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;
-import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerFulfillment;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
-import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.core.InterledgerResponsePacketHandler;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -25,11 +22,11 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-import static org.interledger.connector.links.ping.PingLoopbackLink.PING_PROTOCOL_CONDITION;
-import static org.interledger.connector.links.ping.PingLoopbackLink.PING_PROTOCOL_FULFILLMENT;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
+import static org.interledger.connector.links.ping.PingLoopbackLink.PING_PROTOCOL_CONDITION;
+import static org.interledger.connector.links.ping.PingLoopbackLink.PING_PROTOCOL_FULFILLMENT;
 import static org.junit.Assert.fail;
 
 /**
@@ -131,22 +128,16 @@ public class PingLoopbackLinkTest {
       .expiresAt(Instant.now())
       .build();
 
-    final InterledgerResponsePacket response = link.sendPacket(preparePacket);
-    new InterledgerResponsePacketHandler() {
-
-      @Override
-      protected void handleFulfillPacket(final InterledgerFulfillPacket interledgerFulfillPacket) {
-        logger.error("InterledgerFulfillPacket: {}", interledgerFulfillPacket);
+    link.sendPacket(preparePacket).handle(fulfillPacket -> {
+        logger.error("InterledgerFulfillPacket: {}", fulfillPacket);
         fail("Expected a Reject!");
+      },
+      rejectPacket -> {
+        assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
+        assertThat(rejectPacket.getTriggeredBy().isPresent(), is(true));
+        assertThat(rejectPacket.getTriggeredBy(), is(EXPECTED_REJECT_PACKET.getTriggeredBy()));
       }
-
-      @Override
-      protected void handleRejectPacket(final InterledgerRejectPacket interledgerRejectPacket) {
-        assertThat(interledgerRejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
-        assertThat(interledgerRejectPacket.getTriggeredBy().isPresent(), is(true));
-        assertThat(interledgerRejectPacket.getTriggeredBy(), is(EXPECTED_REJECT_PACKET.getTriggeredBy()));
-      }
-    }.handle(response);
+    );
   }
 
   /**
@@ -162,20 +153,14 @@ public class PingLoopbackLinkTest {
       .destination(InterledgerAddress.of("example.foo"))
       .expiresAt(Instant.now())
       .build();
-    final InterledgerResponsePacket response = link.sendPacket(preparePacket);
-    new InterledgerResponsePacketHandler() {
 
-      @Override
-      protected void handleFulfillPacket(final InterledgerFulfillPacket interledgerFulfillPacket) {
-        assertThat(interledgerFulfillPacket.getFulfillment(), is(PING_PROTOCOL_FULFILLMENT));
-      }
-
-      @Override
-      protected void handleRejectPacket(final InterledgerRejectPacket interledgerRejectPacket) {
-        logger.error("InterledgerRejectPacket: {}", interledgerRejectPacket);
+    link.sendPacket(preparePacket).handle(
+      fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(PING_PROTOCOL_FULFILLMENT)),
+      rejectPacket -> {
+        logger.error("InterledgerRejectPacket: {}", rejectPacket);
         fail("Expected a Fulfill!");
       }
-    }.handle(response);
+    );
   }
 
   @Test
@@ -187,22 +172,13 @@ public class PingLoopbackLinkTest {
       .expiresAt(Instant.now())
       .build();
 
-    final InterledgerResponsePacket response = link.sendPacket(preparePacket);
-    new InterledgerResponsePacketHandler() {
-
-      @Override
-      protected void handleFulfillPacket(final InterledgerFulfillPacket interledgerFulfillPacket) {
-        assertThat(interledgerFulfillPacket.getFulfillment(), is(PING_PROTOCOL_FULFILLMENT));
-      }
-
-      @Override
-      protected void handleRejectPacket(final InterledgerRejectPacket interledgerRejectPacket) {
-        logger.error("InterledgerRejectPacket: {}", interledgerRejectPacket);
+    link.sendPacket(preparePacket).handle(
+      fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(PING_PROTOCOL_FULFILLMENT)),
+      rejectPacket -> {
+        logger.error("InterledgerRejectPacket: {}", rejectPacket);
         fail("Expected a Fulfill!");
       }
-    }.handle(response);
-
-    //verifyZeroInteractions(filterChainMock);
+    );
   }
 
 }

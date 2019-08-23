@@ -1,24 +1,20 @@
 package org.interledger.connector.it;
 
 import org.interledger.connector.ILPv4Connector;
-import org.interledger.connector.balances.BalanceTracker;
-import org.interledger.connector.core.ConfigConstants;
-import org.interledger.connector.links.ping.PingLoopbackLink;
-import org.interledger.connector.server.ConnectorServer;
-import org.interledger.connector.server.spring.settings.javamoney.SpringServiceProvider;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.balances.BalanceTracker;
+import org.interledger.connector.balances.InMemoryBalanceTracker;
+import org.interledger.connector.balances.RedisBalanceTracker;
+import org.interledger.connector.core.ConfigConstants;
+import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.link.CircuitBreakingLink;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.exceptions.LinkException;
+import org.interledger.connector.links.ping.PingLoopbackLink;
+import org.interledger.connector.server.ConnectorServer;
+import org.interledger.connector.server.spring.settings.javamoney.SpringServiceProvider;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.core.InterledgerFulfillPacket;
-import org.interledger.core.InterledgerRejectPacket;
-import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.core.InterledgerResponsePacketHandler;
-import org.interledger.connector.balances.InMemoryBalanceTracker;
-import org.interledger.connector.balances.RedisBalanceTracker;
-import org.interledger.connector.it.topology.Topology;
 import org.junit.BeforeClass;
 import org.slf4j.Logger;
 import org.springframework.data.redis.RedisConnectionFailureException;
@@ -34,7 +30,9 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
+import static junit.framework.TestCase.fail;
+import static org.hamcrest.CoreMatchers.is;
+import static org.interledger.connector.config.BalanceTrackerConfig.BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME;
 import static org.interledger.connector.core.ConfigConstants.ADMIN_PASSWORD;
 import static org.interledger.connector.core.ConfigConstants.DEFAULT_JWT_TOKEN_ISSUER;
 import static org.interledger.connector.core.ConfigConstants.DOT;
@@ -44,13 +42,11 @@ import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNEC
 import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__PASSWORD;
 import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__SECRET0_ALIAS;
 import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__SECRET0_PASSWORD;
-import static junit.framework.TestCase.fail;
-import static org.hamcrest.CoreMatchers.is;
-import static org.interledger.connector.config.BalanceTrackerConfig.BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB;
 import static org.interledger.connector.it.topologies.AbstractTopology.PAUL;
 import static org.interledger.connector.it.topologies.AbstractTopology.PETER;
+import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -120,26 +116,19 @@ public abstract class AbstractBlastIT {
     final long start = System.currentTimeMillis();
 
     final BlastLink blastLink = getBlastLinkFromGraph(senderNodeAddress, senderAccountId);
-    final InterledgerResponsePacket responsePacket = blastLink.ping(destinationAddress, numUnits);
-
-    new InterledgerResponsePacketHandler() {
-      @Override
-      protected void handleFulfillPacket(InterledgerFulfillPacket interledgerFulfillPacket) {
-        assertThat(interledgerFulfillPacket.getFulfillment(), is(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT));
+    blastLink.ping(destinationAddress, numUnits).handle(
+      fulfillPacket -> {
+        assertThat(fulfillPacket.getFulfillment(), is(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT));
         assertThat(
-          interledgerFulfillPacket.getFulfillment().validateCondition(PingLoopbackLink.PING_PROTOCOL_CONDITION),
+          fulfillPacket.getFulfillment().validateCondition(PingLoopbackLink.PING_PROTOCOL_CONDITION),
           is(true)
         );
         latch.countDown();
-      }
-
-      @Override
-      protected void handleRejectPacket(InterledgerRejectPacket interledgerRejectPacket) {
+      }, interledgerRejectPacket -> {
         fail(String.format("Ping request rejected, but should have fulfilled: %s", interledgerRejectPacket));
         latch.countDown();
       }
-
-    }.handle(responsePacket);
+    );
 
     latch.await(5, TimeUnit.SECONDS);
     final long end = System.currentTimeMillis();
