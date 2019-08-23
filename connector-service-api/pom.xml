@@ -20,10 +20,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>connector-ilpv4-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>connector-core</artifactId>
     </dependency>
     <dependency>

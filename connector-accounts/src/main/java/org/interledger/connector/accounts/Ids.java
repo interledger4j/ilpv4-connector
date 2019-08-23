@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.Preconditions;
 import org.immutables.value.Value;
-import org.interledger.support.immutables.Wrapped;
-import org.interledger.support.immutables.Wrapper;
+import org.interledger.connector.core.immutables.Wrapped;
+import org.interledger.connector.core.immutables.Wrapper;
 
 import java.io.Serializable;
 

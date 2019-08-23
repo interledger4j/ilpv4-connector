@@ -1,4 +1,4 @@
-package org.interledger.support.immutables;
+package org.interledger.connector.core.immutables;
 
 import org.immutables.value.Value;
 
