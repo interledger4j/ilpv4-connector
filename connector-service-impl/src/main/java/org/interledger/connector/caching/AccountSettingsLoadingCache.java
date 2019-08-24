@@ -41,7 +41,7 @@ public class AccountSettingsLoadingCache {
   @VisibleForTesting
   public AccountSettingsLoadingCache(final AccountSettingsRepository accountSettingsRepository) {
     this(accountSettingsRepository, Caffeine.newBuilder()
-      .expireAfterAccess(15, TimeUnit.MINUTES)
+      .expireAfterAccess(15, TimeUnit.MINUTES) // Set very high just for testing...
       .maximumSize(5000)
       // The value stored in the Cache is the AccountSettings converted from the entity so we don't have to convert
       // on every ILPv4 packet switch.
@@ -75,11 +75,11 @@ public class AccountSettingsLoadingCache {
   }
 
   /**
-   * Get
+   * Get an AccountSettings from the cache, or load it from the {@link AccountSettingsRepository} if it's not cached.
    *
-   * @param accountId
+   * @param accountId The {@link AccountId} to lookup.
    *
-   * @return
+   * @return An {@link AccountSettings} from the cache.
    */
   public AccountSettings safeGetAccountId(final AccountId accountId) {
     return this.getAccount(accountId).orElseThrow(() -> new AccountNotFoundProblem(accountId));

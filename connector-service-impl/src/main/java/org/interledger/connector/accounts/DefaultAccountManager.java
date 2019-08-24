@@ -90,10 +90,7 @@ public class DefaultAccountManager implements AccountManager {
       final CreateSettlementAccountResponse response = settlementEngineClient.createSettlementAccount(
         accountSettings.getAccountId(),
         baseUrl,
-        CreateSettlementAccountRequest.builder()
-          .requestedSettlementAccountId(
-            SettlementEngineAccountId.of(settlementEngineDetailsEntity.getSettlementEngineAccountId()))
-          .build()
+        CreateSettlementAccountRequest.builder().build()
       );
       settlementEngineDetailsEntity.setSettlementEngineAccountId(response.settlementEngineAccountId().value());
     }
