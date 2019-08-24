@@ -2,13 +2,13 @@ package org.interledger.connector.server.spring.settings.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import org.interledger.connector.server.spring.controllers.converters.AccountBalanceSettingsConverter;
-import org.interledger.connector.server.spring.controllers.converters.AccountSettingsConverter;
+import org.interledger.connector.persistence.converters.AccountBalanceSettingsEntityConverter;
+import org.interledger.connector.persistence.converters.AccountSettingsEntityConverter;
+import org.interledger.connector.persistence.converters.RateLimitSettingsEntityConverter;
+import org.interledger.connector.persistence.converters.SettlementEngineDetailsEntityConverter;
 import org.interledger.connector.server.spring.controllers.converters.OerPreparePacketHttpMessageConverter;
-import org.interledger.connector.server.spring.controllers.converters.RateLimitSettingsConverter;
-import org.interledger.connector.server.spring.controllers.converters.SettlementEngineDetailsConverter;
-import org.interledger.connector.server.spring.settings.blast.BlastConfig;
 import org.interledger.connector.server.spring.settings.CodecContextConfig;
+import org.interledger.connector.server.spring.settings.blast.BlastConfig;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -55,40 +55,17 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
   // SpringConverters
   ////////////////////////
 
-  /**
-   * Note: this bean must be registered below in {@link #addFormatters(FormatterRegistry)}.
-   */
-  @Bean
-  RateLimitSettingsConverter rateLimitSettingsConverter() {
-    return new RateLimitSettingsConverter();
-  }
+  @Autowired
+  private RateLimitSettingsEntityConverter rateLimitSettingsEntityConverter;
 
-  /**
-   * Note: this bean must be registered below in {@link #addFormatters(FormatterRegistry)}.
-   */
-  @Bean
-  AccountBalanceSettingsConverter accountBalanceSettingsConverter() {
-    return new AccountBalanceSettingsConverter();
-  }
+  @Autowired
+  private AccountBalanceSettingsEntityConverter accountBalanceSettingsEntityConverter;
 
-  /**
-   * Note: this bean must be registered below in {@link #addFormatters(FormatterRegistry)}.
-   */
-  @Bean
-  SettlementEngineDetailsConverter settlementEngineDetailsConverter() {
-    return new SettlementEngineDetailsConverter();
-  }
+  @Autowired
+  private SettlementEngineDetailsEntityConverter settlementEngineDetailsEntityConverter;
 
-  /**
-   * Note: this bean must be registered below in {@link #addFormatters(FormatterRegistry)}.
-   */
-  @Bean
-  AccountSettingsConverter accountSettingsConverter(
-  ) {
-    return new AccountSettingsConverter(
-      rateLimitSettingsConverter(), accountBalanceSettingsConverter(), settlementEngineDetailsConverter()
-    );
-  }
+  @Autowired
+  private AccountSettingsEntityConverter accountSettingsConverter;
 
   ////////////////////////
   // HttpMessageConverters
@@ -124,9 +101,9 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
 
   @Override
   public void addFormatters(FormatterRegistry registry) {
-    registry.addConverter(rateLimitSettingsConverter());
-    registry.addConverter(accountBalanceSettingsConverter());
-    registry.addConverter(settlementEngineDetailsConverter());
-    registry.addConverter(accountSettingsConverter());
+    registry.addConverter(rateLimitSettingsEntityConverter);
+    registry.addConverter(accountBalanceSettingsEntityConverter);
+    registry.addConverter(settlementEngineDetailsEntityConverter);
+    registry.addConverter(accountSettingsConverter);
   }
 }

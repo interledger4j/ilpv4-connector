@@ -215,7 +215,7 @@ public class DefaultCcpSender implements CcpSender {
 
             // Don't advertise Peer or Supplier (Parent) routes to Suppliers (Parents).
             final boolean nextHopRelationIsPeerOrParent = this
-              .accountSettingsRepository.findByAccountId(actualRoute.getNextHopAccountId())
+              .accountSettingsRepository.findByAccountIdWithConversion(actualRoute.getNextHopAccountId())
               .map(AccountSettings::isPeerOrParentAccount)
               .orElseGet(() -> {
                 logger.error("NextHop Route {} was not found in the PeerManager!", actualRoute.getNextHopAccountId());
@@ -223,7 +223,7 @@ public class DefaultCcpSender implements CcpSender {
               });
 
             final boolean thisLinkIsParent = this
-              .accountSettingsRepository.findByAccountId(peerAccountId)
+              .accountSettingsRepository.findByAccountIdWithConversion(peerAccountId)
               .map(AccountSettings::isParentAccount)
               .orElse(false);
 

@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @Access(AccessType.FIELD)
 @Embeddable
-public class AccountRateLimitSettingsEntity implements AccountRateLimitSettings {
+public class AccountRateLimitSettingsEntity {
 
   @Column(name = "MAX_PACKETS_PER_SEC")
   Integer maxPacketsPerSecond;
@@ -25,7 +25,6 @@ public class AccountRateLimitSettingsEntity implements AccountRateLimitSettings 
     this.setMaxPacketsPerSecondlance(accountRateLimitSettings.getMaxPacketsPerSecond());
   }
 
-  @Override
   public Optional<Integer> getMaxPacketsPerSecond() {
     return Optional.ofNullable(maxPacketsPerSecond);
   }

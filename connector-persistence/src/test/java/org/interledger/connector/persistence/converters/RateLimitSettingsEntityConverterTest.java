@@ -1,6 +1,7 @@
-package org.interledger.connector.server.spring.controllers.converters;
+package org.interledger.connector.persistence.converters;
 
 import org.interledger.connector.accounts.AccountRateLimitSettings;
+import org.interledger.connector.persistence.converters.RateLimitSettingsEntityConverter;
 import org.interledger.connector.persistence.entities.AccountRateLimitSettingsEntity;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,15 +10,15 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Unit tests for {@link RateLimitSettingsConverter}.
+ * Unit tests for {@link RateLimitSettingsEntityConverter}.
  */
-public class RateLimitSettingsConverterTest {
+public class RateLimitSettingsEntityConverterTest {
 
-  private RateLimitSettingsConverter converter;
+  private RateLimitSettingsEntityConverter converter;
 
   @Before
   public void setUp() {
-    this.converter = new RateLimitSettingsConverter();
+    this.converter = new RateLimitSettingsEntityConverter();
   }
 
   @Test

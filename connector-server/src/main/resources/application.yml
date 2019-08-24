@@ -44,8 +44,6 @@ spring:
         show_sql: false
         use_sql_comments: false
         format_sql: false
-        create_empty_composites:
-          enabled: true
   mvc:
     throw-exception-if-no-handler-found: true
   resources:

@@ -1,8 +1,8 @@
 package org.interledger.connector.routing;
 
 import org.immutables.value.Value;
-import org.interledger.support.immutables.Wrapped;
-import org.interledger.support.immutables.Wrapper;
+import org.interledger.connector.core.immutables.Wrapped;
+import org.interledger.connector.core.immutables.Wrapper;
 
 import java.util.UUID;
 

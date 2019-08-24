@@ -5,6 +5,7 @@ import com.google.common.eventbus.EventBus;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.caching.AccountSettingsLoadingCache;
 import org.interledger.connector.link.AbstractLink;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkSettings;
@@ -15,8 +16,6 @@ import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.links.loopback.LoopbackLink;
 import org.interledger.connector.links.ping.PingLoopbackLink;
 import org.interledger.connector.packetswitch.PacketRejector;
-import org.interledger.connector.persistence.entities.AccountSettingsEntity;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerPreparePacket;
@@ -94,7 +93,7 @@ public class DefaultPacketSwitchFilterChainTest {
   @Mock
   private NextHopPacketMapper nextHopPacketMapperMock;
   @Mock
-  private AccountSettingsRepository accountSettingsRepositoryMock;
+  private AccountSettingsLoadingCache accountSettingsLoadingCacheMock;
 
   private Link outgoingLink;
 
@@ -120,15 +119,15 @@ public class DefaultPacketSwitchFilterChainTest {
       linkFiltersMock,
       linkManagerMock,
       nextHopPacketMapperMock,
-      accountSettingsRepositoryMock
+      accountSettingsLoadingCacheMock
     );
 
-    when(accountSettingsRepositoryMock.findByAccountId(INCOMING_ACCOUNT_ID))
-      .thenReturn(Optional.of(new AccountSettingsEntity(INCOMING_ACCOUNT_SETTINGS)));
-    when(accountSettingsRepositoryMock.findByAccountId(OUTGOING_ACCOUNT_ID))
-      .thenReturn(Optional.of(new AccountSettingsEntity(OUTGOING_ACCOUNT_SETTINGS)));
-    when(accountSettingsRepositoryMock.findByAccountId(PING_ACCOUNT_ID))
-      .thenReturn(Optional.of(new AccountSettingsEntity(PING_ACCOUNT_SETTINGS)));
+    when(accountSettingsLoadingCacheMock.getAccount(INCOMING_ACCOUNT_ID))
+      .thenReturn(Optional.of(INCOMING_ACCOUNT_SETTINGS));
+    when(accountSettingsLoadingCacheMock.getAccount(OUTGOING_ACCOUNT_ID))
+      .thenReturn(Optional.of(OUTGOING_ACCOUNT_SETTINGS));
+    when(accountSettingsLoadingCacheMock.getAccount(PING_ACCOUNT_ID))
+      .thenReturn(Optional.of(PING_ACCOUNT_SETTINGS));
   }
 
   @Test
@@ -139,20 +138,18 @@ public class DefaultPacketSwitchFilterChainTest {
       .nextHopAccountId(OUTGOING_ACCOUNT_ID)
       .nextHopPacket(PREPARE_PACKET)
       .build();
-    when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_ID), eq(PREPARE_PACKET))).thenReturn(nextHopInfo);
+    when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_SETTINGS), eq(PREPARE_PACKET)))
+      .thenReturn(nextHopInfo);
     when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_ID)).thenReturn(outgoingLink);
 
-    final AccountSettingsEntity accountSettingsEntityMock = mock(AccountSettingsEntity.class);
-    when(accountSettingsEntityMock.getAccountId()).thenReturn(INCOMING_ACCOUNT_ID);
-
-    filterChain.doFilter(accountSettingsEntityMock, PREPARE_PACKET).handle(
+    filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET).handle(
       fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(LoopbackLink.LOOPBACK_FULFILLMENT)),
       rejectPacket -> fail("Should have fulfilled but rejected!")
     );
 
     verify(linkFiltersMock).size();
     verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_ID);
-    verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_ID, PREPARE_PACKET);
+    verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET);
 
     assertThat(this.packetSwitchFilters.size(), is(0));
     verifyNoMoreInteractions(nextHopPacketMapperMock);
@@ -161,9 +158,6 @@ public class DefaultPacketSwitchFilterChainTest {
 
   @Test
   public void filterPacketWithMultipleFilters() {
-    final AccountSettingsEntity accountSettingsEntityMock = mock(AccountSettingsEntity.class);
-    when(accountSettingsEntityMock.getAccountId()).thenReturn(INCOMING_ACCOUNT_ID);
-
     final PacketSwitchFilter packetSwitchFilter1 =
       (sourceAccountSettings, sourcePreparePacket, filterChain) -> filterChain
         .doFilter(sourceAccountSettings, sourcePreparePacket);
@@ -179,10 +173,10 @@ public class DefaultPacketSwitchFilterChainTest {
       .nextHopAccountId(OUTGOING_ACCOUNT_ID)
       .nextHopPacket(PREPARE_PACKET)
       .build();
-    when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_ID), eq(PREPARE_PACKET))).thenReturn(nextHopInfo);
+    when(nextHopPacketMapperMock.getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET)).thenReturn(nextHopInfo);
     when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_ID)).thenReturn(outgoingLink);
 
-    filterChain.doFilter(accountSettingsEntityMock, PREPARE_PACKET).handle(
+    filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET).handle(
       fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(LoopbackLink.LOOPBACK_FULFILLMENT)),
       rejectPacket -> fail("Should have fulfilled but rejected!")
     );
@@ -190,7 +184,7 @@ public class DefaultPacketSwitchFilterChainTest {
     // Each filter should only be called once...
     verify(linkFiltersMock).size();
     verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_ID);
-    verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_ID, PREPARE_PACKET);
+    verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET);
 
     verifyNoMoreInteractions(nextHopPacketMapperMock);
     verifyNoMoreInteractions(linkFiltersMock);
@@ -220,7 +214,7 @@ public class DefaultPacketSwitchFilterChainTest {
       .nextHopAccountId(PING_ACCOUNT_ID)
       .nextHopPacket(pingPreparePacket)
       .build();
-    when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_ID), eq(pingPreparePacket)))
+    when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_SETTINGS), eq(pingPreparePacket)))
       .thenReturn(nextHopInfo);
     when(linkManagerMock.getPingLink()).thenReturn(outgoingLink);
 
@@ -231,7 +225,7 @@ public class DefaultPacketSwitchFilterChainTest {
 
     verify(linkFiltersMock).size();
     verify(linkManagerMock).getPingLink();
-    verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_ID, pingPreparePacket);
+    verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket);
 
     assertThat(this.packetSwitchFilters.size(), is(0));
     verifyNoMoreInteractions(nextHopPacketMapperMock);

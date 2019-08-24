@@ -1,6 +1,7 @@
-package org.interledger.connector.server.spring.controllers.converters;
+package org.interledger.connector.persistence.converters;
 
 import org.interledger.connector.accounts.AccountBalanceSettings;
+import org.interledger.connector.persistence.converters.AccountBalanceSettingsEntityConverter;
 import org.interledger.connector.persistence.entities.AccountBalanceSettingsEntity;
 import org.junit.Before;
 import org.junit.Test;
@@ -11,13 +12,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Unit test for {@linkn AccountBalanceSettingsConverter}.
  */
-public class AccountBalanceSettingsConverterTest {
+public class AccountBalanceSettingsEntityConverterTest {
 
-  private AccountBalanceSettingsConverter converter;
+  private AccountBalanceSettingsEntityConverter converter;
 
   @Before
   public void setUp() {
-    this.converter = new AccountBalanceSettingsConverter();
+    this.converter = new AccountBalanceSettingsEntityConverter();
   }
 
   @Test

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.jackson.ObjectMapperFactory;
 import org.interledger.connector.link.LinkId;
 import org.interledger.connector.link.LinkType;
@@ -30,6 +31,15 @@ public abstract class AbstractIdTest {
 
     @JsonProperty("account_id")
     AccountId getAccountId();
+  }
+
+  @Value.Immutable
+  @JsonSerialize(as = ImmutableSettlementAccountIdContainer.class)
+  @JsonDeserialize(as = ImmutableSettlementAccountIdContainer.class)
+  public interface SettlementAccountIdContainer {
+
+    @JsonProperty("settlement_account_id")
+    SettlementEngineAccountId getSettlementAccountId();
   }
 
   @Value.Immutable

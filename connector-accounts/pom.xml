@@ -21,6 +21,10 @@
       <artifactId>connector-core</artifactId>
     </dependency>
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>connector-link</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
     </dependency>
@@ -45,14 +49,6 @@
       <groupId>org.immutables</groupId>
       <artifactId>value</artifactId>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>connector-ilpv4-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.interledger.connector</groupId>
-      <artifactId>connector-link</artifactId>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

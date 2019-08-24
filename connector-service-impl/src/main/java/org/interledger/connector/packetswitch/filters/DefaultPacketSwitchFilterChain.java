@@ -1,29 +1,25 @@
 package org.interledger.connector.packetswitch.filters;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
+import org.interledger.connector.accounts.AccountNotFoundProblem;
+import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.caching.AccountSettingsLoadingCache;
+import org.interledger.connector.link.Link;
+import org.interledger.connector.link.LinkSettings;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.NextHopInfo;
 import org.interledger.connector.links.NextHopPacketMapper;
 import org.interledger.connector.links.filters.DefaultLinkFilterChain;
 import org.interledger.connector.links.filters.LinkFilter;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.PaymentRouter;
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountNotFoundProblem;
-import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.link.Link;
-import org.interledger.connector.link.LinkSettings;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A default implementation of {@link PacketSwitchFilterChain}.
@@ -43,12 +39,8 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
 
   // Loading from the Database is somewhat expensive, so we don't want to do this on every packet processed for a
   // given account. Instead, for higher performance, we only load account settings once per period, and otherwise
-  // rely upon AccountSettings found in this cache. This design is preferable to using Hibernate's 2nd-level cache
-  // because in-general, we don't want to Cache accountSettings to support clustered Connector environments (though
-  // this may change in the future depending on benchmark results).
-  private final Cache<AccountId, Optional<? extends AccountSettings>> accountSettingsCache;
-
-  private final AccountSettingsRepository accountSettingsRepository;
+  // rely upon AccountSettings found in this cache.
+  private final AccountSettingsLoadingCache accountSettingsLoadingCache;
 
   // The index of the filter to call next...
   private int _filterIndex;
@@ -64,11 +56,9 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
     final NextHopPacketMapper nextHopPacketMapper,
     final AccountSettingsRepository accountSettingsRepository
   ) {
-    this(packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, accountSettingsRepository,
-      Caffeine.newBuilder()
-        .expireAfterAccess(15, TimeUnit.MINUTES)
-        .maximumSize(5000)
-        .build()
+    this(
+      packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper,
+      new AccountSettingsLoadingCache(accountSettingsRepository)
     );
   }
 
@@ -81,16 +71,14 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
     final List<LinkFilter> linkFilters,
     final LinkManager linkManager,
     final NextHopPacketMapper nextHopPacketMapper,
-    final AccountSettingsRepository accountSettingsRepository,
-    final Cache<AccountId, Optional<? extends AccountSettings>> accountSettingsCache
+    final AccountSettingsLoadingCache accountSettingsLoadingCache
   ) {
     this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
     this.linkFilters = Objects.requireNonNull(linkFilters);
     this.linkManager = Objects.requireNonNull(linkManager);
     this.nextHopPacketMapper = nextHopPacketMapper;
-    this.accountSettingsRepository = accountSettingsRepository;
     this._filterIndex = 0;
-    this.accountSettingsCache = Objects.requireNonNull(accountSettingsCache);
+    this.accountSettingsLoadingCache = Objects.requireNonNull(accountSettingsLoadingCache);
   }
 
   @Override
@@ -112,7 +100,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
 
       // Here, use the link-mapper to get the `next-hop`, create a LinkFilterChain, and then send.
       final NextHopInfo nextHopInfo = this.nextHopPacketMapper.getNextHopPacket(
-        sourceAccountSettings.getAccountId(), preparePacket
+        sourceAccountSettings, preparePacket
       );
 
       final Link<? extends LinkSettings> link;
@@ -127,8 +115,8 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
         sourceAccountSettings.getAccountId(), link, preparePacket
       );
 
-      final AccountSettings nextHopAccountSettings = accountSettingsCache
-        .get(nextHopInfo.nextHopAccountId(), accountSettingsRepository::findByAccountId)
+      final AccountSettings nextHopAccountSettings = accountSettingsLoadingCache
+        .getAccount(nextHopInfo.nextHopAccountId())
         .orElseThrow(() -> new AccountNotFoundProblem(nextHopInfo.nextHopAccountId()));
 
       // The final operation in the filter-chain is `link.sendPacket(newPreparePacket)`.

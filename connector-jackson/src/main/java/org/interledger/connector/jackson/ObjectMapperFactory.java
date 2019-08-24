@@ -7,9 +7,10 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.interledger.connector.jackson.modules.AccountIdModule;
-import org.interledger.connector.jackson.modules.LinkIdModule;
 import org.interledger.connector.jackson.modules.HttpUrlModule;
+import org.interledger.connector.jackson.modules.LinkIdModule;
 import org.interledger.connector.jackson.modules.LinkTypeModule;
+import org.interledger.connector.jackson.modules.SettlementAccountIdModule;
 import org.zalando.problem.ProblemModule;
 import org.zalando.problem.violations.ConstraintViolationProblemModule;
 
@@ -27,6 +28,7 @@ public class ObjectMapperFactory {
       .registerModule(new ProblemModule())
       .registerModule(new ConstraintViolationProblemModule())
       .registerModule(new AccountIdModule())
+      .registerModule(new SettlementAccountIdModule())
       .registerModule(new LinkIdModule())
       .registerModule(new LinkTypeModule());
 

@@ -9,17 +9,17 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 import com.google.common.hash.Hashing;
-import org.interledger.connector.links.LinkSettingsFactory;
-import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.blast.BlastLinkSettings;
 import org.interledger.connector.link.blast.IncomingLinkSettings;
 import org.interledger.connector.link.blast.tokenSettings.SharedSecretTokenSettings;
+import org.interledger.connector.links.LinkSettingsFactory;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
-import org.interledger.connector.persistence.entities.AccountSettingsEntity;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -98,8 +98,9 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
             try {
               final AccountId authPrincipal =
                 AccountId.of(authenticationRequest.incomingAuthentication().getPrincipal().toString());
-              final AccountSettingsEntity accountSettings =
-                accountSettingsRepository.safeFindByAccountId(authPrincipal);
+              final AccountSettings accountSettings =
+                accountSettingsRepository.findByAccountIdWithConversion(authPrincipal)
+                  .orElseThrow(() -> new AccountNotFoundProblem(authPrincipal));
 
               // Discover the BlastSettings
               final BlastLinkSettings blastLinkSettings =

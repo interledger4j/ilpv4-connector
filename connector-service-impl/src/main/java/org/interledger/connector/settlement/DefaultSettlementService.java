@@ -66,7 +66,7 @@ public class DefaultSettlementService implements SettlementService {
     Objects.requireNonNull(incomingSettlementInSettlementUnits, "incomingSettlement must not be null");
 
     final AccountSettings accountSettings = this.accountSettingsRepository
-      .findBySettlementEngineAccountId(settlementEngineAccountId)
+      .findBySettlementEngineAccountIdWithConversion(settlementEngineAccountId)
       .orElseThrow(() -> new AccountBySettlementEngineAccountNotFoundProblem(settlementEngineAccountId));
 
     // Determine the normalized SettlementQuantity (i.e., translate from Settlement Ledger units to ILP Clearing Ledger
@@ -117,7 +117,7 @@ public class DefaultSettlementService implements SettlementService {
     // packet-switch provides).
 
     final AccountSettings accountSettings = this.accountSettingsRepository
-      .findBySettlementEngineAccountId(settlementEngineAccountId)
+      .findBySettlementEngineAccountIdWithConversion(settlementEngineAccountId)
       .orElseThrow(() -> new AccountBySettlementEngineAccountNotFoundProblem(settlementEngineAccountId));
 
     final Link<? extends LinkSettings> link = linkManager.getOrCreateLink(accountSettings.getAccountId());

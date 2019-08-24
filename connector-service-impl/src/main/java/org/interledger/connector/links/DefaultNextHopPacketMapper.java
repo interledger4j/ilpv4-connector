@@ -1,19 +1,18 @@
 package org.interledger.connector.links;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.caching.AccountSettingsLoadingCache;
 import org.interledger.connector.fx.JavaMoneyUtils;
 import org.interledger.connector.packetswitch.InterledgerAddressUtils;
 import org.interledger.connector.routing.PaymentRouter;
 import org.interledger.connector.routing.Route;
 import org.interledger.connector.settings.ConnectorSettings;
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,22 +36,22 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final PaymentRouter<Route> externalRoutingService;
-  private final AccountSettingsRepository accountSettingsRepository;
   private final InterledgerAddressUtils addressUtils;
   private final JavaMoneyUtils javaMoneyUtils;
+  private final AccountSettingsLoadingCache accountSettingsLoadingCache;
 
   public DefaultNextHopPacketMapper(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final PaymentRouter<Route> externalRoutingService,
-    final AccountSettingsRepository accountSettingsRepository,
     final InterledgerAddressUtils addressUtils,
-    final JavaMoneyUtils javaMoneyUtils
+    final JavaMoneyUtils javaMoneyUtils,
+    final AccountSettingsLoadingCache accountSettingsLoadingCache
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
-    this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.addressUtils = Objects.requireNonNull(addressUtils);
     this.javaMoneyUtils = Objects.requireNonNull(javaMoneyUtils);
+    this.accountSettingsLoadingCache = Objects.requireNonNull(accountSettingsLoadingCache);
   }
 
   /**
@@ -63,20 +62,20 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
    * Given a previous ILP prepare packet (i.e., a {@code sourcePacket}), return the next ILP prepare packet in the
    * chain.
    *
-   * @param sourceAccountId The {@link AccountId} of the peer who sent this packet into the Connector. This is typically
-   *                        the remote peer-address configured in a link.
-   * @param sourcePacket    The {@link InterledgerPreparePacket} that we received from the source address.
+   * @param sourceAccountSettings The {@link AccountSettings} of the peer who sent this packet into the Connector. This
+   *                              is typically the remote peer-address configured in a link.
+   * @param sourcePacket          The {@link InterledgerPreparePacket} that we received from the source address.
    *
    * @return A {@link InterledgerPreparePacket} that can be sent to the next-hop.
    */
   public NextHopInfo getNextHopPacket(
-    final AccountId sourceAccountId, final InterledgerPreparePacket sourcePacket
+    final AccountSettings sourceAccountSettings, final InterledgerPreparePacket sourcePacket
   ) throws RuntimeException {
 
     if (logger.isDebugEnabled()) {
       logger.debug(
-        "Constructing NextHop InterledgerPreparePacket for source: {} from packet: {}",
-        sourceAccountId, sourcePacket
+        "Constructing NextHop InterledgerPreparePacket. sourceAccountSettings={} packet={}",
+        sourceAccountSettings, sourcePacket
       );
     }
 
@@ -89,8 +88,10 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
             .code(InterledgerErrorCode.F02_UNREACHABLE)
             .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
             .build(),
-          String.format("No route found from accountId(`%s`) to destination(`%s`).", sourceAccountId,
-            destinationAddress.getValue())
+          String.format(
+            "No route found from accountId to destination. sourceAccountSettings=%s destinationAddress=%s",
+            sourceAccountSettings, destinationAddress.getValue()
+          )
         )
       );
 
@@ -98,20 +99,25 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       logger.debug("Determined next hop: {}", nextHopRoute);
     }
 
-    if (sourceAccountId.equals(nextHopRoute.getNextHopAccountId())) {
+    if (sourceAccountSettings.getAccountId().equals(nextHopRoute.getNextHopAccountId())) {
       throw new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
           .triggeredBy(connectorSettingsSupplier.get().getOperatorAddressSafe())
           .code(InterledgerErrorCode.F02_UNREACHABLE)
           .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
           .build(),
-        String.format("Refusing to route payments back to sender. sourceAccount=`%s` destinationAccount=`%s`",
-          sourceAccountId, nextHopRoute.getNextHopAccountId())
+        String.format(
+          "Refusing to route payments back to sender. sourceAccountSettings=%s destinationAccount=%s",
+          sourceAccountSettings, nextHopRoute.getNextHopAccountId()
+        )
       );
     }
 
+    final AccountSettings destinationAccountSettings =
+      this.accountSettingsLoadingCache.safeGetAccountId(nextHopRoute.getNextHopAccountId());
+
     final BigInteger nextAmount = this.determineNextAmount(
-      sourceAccountId, nextHopRoute.getNextHopAccountId(), sourcePacket
+      sourceAccountSettings, destinationAccountSettings, sourcePacket
     );
 
     return NextHopInfo.builder()
@@ -126,35 +132,34 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
   }
 
   /**
-   * Given a source address, determine the exchange-rate and new amount that should be returned in order to create the
-   * next packet in the chain.
+   * Given a source account, determine the exchange-rate and new amount that should be returned in order to create the
+   * next packet in the chain for the destination account.
    *
-   * @param sourceAccountId
+   * @param sourceAccountSettings
+   * @param destinationAccountSettings
    * @param sourcePacket
    *
    * @return A BigInteger is the correct units for the source account.
    */
   @VisibleForTesting
   protected BigInteger determineNextAmount(
-    final AccountId sourceAccountId, final AccountId destinationAccountId, final InterledgerPreparePacket sourcePacket
+    final AccountSettings sourceAccountSettings, final AccountSettings destinationAccountSettings,
+    final InterledgerPreparePacket sourcePacket
   ) {
+    Objects.requireNonNull(sourceAccountSettings);
+    Objects.requireNonNull(destinationAccountSettings);
     Objects.requireNonNull(sourcePacket);
 
     if (!this.addressUtils.isExternalForwardingAllowed(sourcePacket.getDestination())) {
       return sourcePacket.getAmount();
     } else {
-      // TODO: Consider a cache here for the source/dest conversion?
-
-      // TODO: Consider using an injected instance of ExchangeRateProvider here.
-      //  See https://github.com/sappenin/java-ilpv4-connector/issues/223
-      final AccountSettings sourceAccountSettings = this.accountSettingsRepository.safeFindByAccountId(sourceAccountId);
+      // TODO: Consider a cache here for the source/dest conversion or perhaps an injected instance of
+      //  ExchangeRateProvider here (See https://github.com/sappenin/java-ilpv4-connector/issues/223)
       final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.getAssetCode());
       final int sourceScale = sourceAccountSettings.getAssetScale();
       final MonetaryAmount sourceAmount =
         javaMoneyUtils.toMonetaryAmount(sourceCurrencyUnit, sourcePacket.getAmount(), sourceScale);
 
-      final AccountSettings destinationAccountSettings =
-        this.accountSettingsRepository.safeFindByAccountId(destinationAccountId);
       final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAccountSettings.getAssetCode());
       final int destinationScale = destinationAccountSettings.getAssetScale();
       final CurrencyConversion destCurrencyConversion = MonetaryConversions.getConversion(destinationCurrencyUnit);

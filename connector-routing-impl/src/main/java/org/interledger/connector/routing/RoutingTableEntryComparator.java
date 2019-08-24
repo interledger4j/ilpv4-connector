@@ -2,7 +2,6 @@ package org.interledger.connector.routing;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.connector.routing.IncomingRoute;
 
 import java.util.Comparator;
 import java.util.Objects;

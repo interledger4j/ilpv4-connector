@@ -207,7 +207,7 @@ public abstract class AbstractBlastIT {
     final BigInteger expectedAmount
   ) {
     assertThat(
-      String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.getNodeIlpAddress().get().getValue()),
+      String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.toString()),
       connector.getBalanceTracker().getBalance(accountId).netBalance(), is(expectedAmount)
     );
   }

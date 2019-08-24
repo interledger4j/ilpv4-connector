@@ -10,8 +10,6 @@ import java.util.Objects;
 /**
  * Default implementation of {@link AccountSettingsResolver} that looks in the connector config to find an {@link
  * AccountSettings} object. If none is found, it returns a default account settings.
- *
- * TODO: Use Java SPI here so custom resolvers can be added.
  */
 public class DefaultAccountSettingsResolver implements AccountSettingsResolver {
   private final AccountSettingsRepository accountSettingsRepository;
@@ -31,7 +29,7 @@ public class DefaultAccountSettingsResolver implements AccountSettingsResolver {
    *
    * @param link The {@link Link} to resolve Account Settings for.
    *
-   * @return
+   * @return An {@link AccountSettings} resolved for the specified {@link Link}.
    */
   @Override
   public AccountSettings resolveAccountSettings(final Link<?> link) {
@@ -40,10 +38,10 @@ public class DefaultAccountSettingsResolver implements AccountSettingsResolver {
     logger.debug("Resolving AccountSettings for Link: `{}`", link);
 
     final AccountId accountId = accountIdResolver.resolveAccountId(link);
-    return this.accountSettingsRepository.findByAccountId(accountId)
-      // TODO: Change to AccountSettingsNotFoundException
-      .orElseThrow(() -> new RuntimeException(String.format(
-        "Unable to locate an AccountSettings for LinkId: `%s`", link.getLinkId())
+    return this.accountSettingsRepository.findByAccountIdWithConversion(accountId)
+      .orElseThrow(() -> new AccountNotFoundProblem(
+        String.format("Unable to locate an AccountSettings for LinkId: `%s`", link.getLinkId()),
+        accountId
       ));
   }
 }

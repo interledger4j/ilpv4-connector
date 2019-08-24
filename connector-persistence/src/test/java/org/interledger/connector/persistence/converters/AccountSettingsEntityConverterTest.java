@@ -1,6 +1,5 @@
-package org.interledger.connector.server.spring.controllers.converters;
+package org.interledger.connector.persistence.converters;
 
-import org.interledger.connector.links.loopback.LoopbackLink;
 import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountId;
@@ -9,26 +8,29 @@ import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.accounts.SettlementEngineDetails;
+import org.interledger.connector.link.LinkType;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Unit tests for {@link AccountSettingsConverter}.
+ * Unit tests for {@link AccountSettingsEntityConverter}.
  */
-public class AccountSettingsConverterTest {
+public class AccountSettingsEntityConverterTest {
 
-  private AccountSettingsConverter converter;
+  private AccountSettingsEntityConverter converter;
 
   @Before
   public void setUp() {
-    this.converter = new AccountSettingsConverter(
-      new RateLimitSettingsConverter(), new AccountBalanceSettingsConverter(), new SettlementEngineDetailsConverter()
+    this.converter = new AccountSettingsEntityConverter(
+      new RateLimitSettingsEntityConverter(), new AccountBalanceSettingsEntityConverter(),
+      new SettlementEngineDetailsEntityConverter()
     );
   }
 
@@ -42,7 +44,7 @@ public class AccountSettingsConverterTest {
       .assetScale(2)
       .accountRelationship(AccountRelationship.PEER)
       .ilpAddressSegment("g.foo")
-      .linkType(LoopbackLink.LINK_TYPE)
+      .linkType(LinkType.of("foo"))
       .build();
     final AccountSettingsEntity entity = new AccountSettingsEntity(accountSettings);
 
@@ -79,12 +81,14 @@ public class AccountSettingsConverterTest {
 
     final AccountSettings accountSettings = AccountSettings.builder()
       .accountId(AccountId.of("123"))
+      .createdAt(Instant.MAX)
+      .modifiedAt(Instant.MAX)
       .description("test description")
       .assetCode("USD")
       .assetScale(2)
       .accountRelationship(AccountRelationship.PEER)
       .ilpAddressSegment("g.foo")
-      .linkType(LoopbackLink.LINK_TYPE)
+      .linkType(LinkType.of("foo"))
       .balanceSettings(balanceSettings)
       .rateLimitSettings(rateLimitSettings)
       .settlementEngineDetails(settlementEngineDetails)
@@ -94,6 +98,9 @@ public class AccountSettingsConverterTest {
     AccountSettings actual = converter.convert(entity);
 
     assertThat(actual.getAccountId(), is(accountSettings.getAccountId()));
+    // These will be set to "now", but it's not possible to know the value exactly, so we don't assert them to finely.
+    assertThat(actual.createdAt().minusSeconds(1).isBefore(Instant.now()), is(true));
+    assertThat(actual.modifiedAt().minusSeconds(1).isBefore(Instant.now()), is(true));
     assertThat(actual.getDescription(), is(accountSettings.getDescription()));
     assertThat(actual.getAssetScale(), is(accountSettings.getAssetScale()));
     assertThat(actual.getAssetCode(), is(accountSettings.getAssetCode()));

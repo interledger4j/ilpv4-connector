@@ -1,17 +1,18 @@
 package org.interledger.connector.settlement;
 
 import com.google.common.eventbus.EventBus;
-import org.interledger.connector.balances.BalanceTracker;
-import org.interledger.connector.links.LinkManager;
-import org.interledger.connector.settlement.DefaultSettlementService;
-import org.interledger.connector.settlement.SettlementEngineClient;
+import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountBySettlementEngineAccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
+import org.interledger.connector.accounts.AccountRelationship;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.SettlementEngineAccountId;
+import org.interledger.connector.accounts.SettlementEngineDetails;
+import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.core.settlement.SettlementQuantity;
-import org.interledger.connector.persistence.entities.AccountSettingsEntity;
-import org.interledger.connector.persistence.entities.SettlementEngineDetailsEntity;
+import org.interledger.connector.links.LinkManager;
+import org.interledger.connector.links.loopback.LoopbackLink;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,7 +26,6 @@ import java.util.UUID;
 import static java.math.BigInteger.ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -113,14 +113,23 @@ public class DefaultSettlementServiceTest {
   @Test
   public void onLocalSettlementPayment() {
     String idempotencyKey = UUID.randomUUID().toString();
-    AccountSettingsEntity accountSettingsEntityMock = mock(AccountSettingsEntity.class);
-    SettlementEngineDetailsEntity settlementEngineDetailsEntityMock = mock(SettlementEngineDetailsEntity.class);
-    when(accountSettingsEntityMock.getAccountId()).thenReturn(ACCOUNT_ID);
-    when(accountSettingsEntityMock.getAssetScale()).thenReturn(9);
-    when(accountSettingsEntityMock.getSettlementEngineDetailsEntity()).thenReturn(settlementEngineDetailsEntityMock);
-    when(settlementEngineDetailsEntityMock.getSettlementEngineAccountId()).thenReturn(SETTLEMENT_ACCOUNT_ID.value());
-    when(accountSettingsRepositoryMock.findBySettlementEngineAccountId(SETTLEMENT_ACCOUNT_ID))
-      .thenReturn(Optional.of(accountSettingsEntityMock));
+
+    final AccountSettings accountSettings = AccountSettings.builder()
+      .accountId(ACCOUNT_ID)
+      .accountRelationship(AccountRelationship.PEER)
+      .assetCode("USD")
+      .assetScale(9)
+      .linkType(LoopbackLink.LINK_TYPE)
+      .settlementEngineDetails(
+        SettlementEngineDetails.builder()
+          .settlementEngineAccountId(SettlementEngineAccountId.of(ACCOUNT_ID.value()))
+          .baseUrl(HttpUrl.parse("https://example.com"))
+          .build()
+      )
+      .build();
+
+    when(accountSettingsRepositoryMock.findBySettlementEngineAccountIdWithConversion(SETTLEMENT_ACCOUNT_ID))
+      .thenReturn(Optional.of(accountSettings));
 
     SettlementQuantity expectedClearedSettlementQuantity = SettlementQuantity.builder()
       .amount(BigInteger.valueOf(1000L))
@@ -131,7 +140,7 @@ public class DefaultSettlementServiceTest {
       settlementService.onLocalSettlementPayment(idempotencyKey, SETTLEMENT_ACCOUNT_ID, INCOMING_SETTLEMENT);
 
     assertThat(actualClearedSettlementQuantity, is(expectedClearedSettlementQuantity));
-    verify(accountSettingsRepositoryMock).findBySettlementEngineAccountId(SETTLEMENT_ACCOUNT_ID);
+    verify(accountSettingsRepositoryMock).findBySettlementEngineAccountIdWithConversion(SETTLEMENT_ACCOUNT_ID);
     verify(balanceTrackerMock).updateBalanceForIncomingSettlement(
       idempotencyKey, ACCOUNT_ID, expectedClearedSettlementQuantity.amount().longValue()
     );

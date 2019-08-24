@@ -2,19 +2,17 @@ package org.interledger.connector;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
-import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.balances.BalanceTracker;
-import org.interledger.connector.links.LinkManager;
-import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
-import org.interledger.connector.routing.ExternalRoutingService;
-import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.LinkFactoryProvider;
 import org.interledger.connector.link.events.LinkConnectedEvent;
-import org.interledger.core.InterledgerAddress;
+import org.interledger.connector.links.LinkManager;
+import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.routing.ExternalRoutingService;
+import org.interledger.connector.settings.ConnectorSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,11 +176,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     return this.ilpPacketSwitch;
   }
 
-  @Override
-  public Optional<InterledgerAddress> getNodeIlpAddress() {
-    return this.connectorSettingsSupplier.get().getOperatorAddress();
-  }
-
   /**
    * Configure the parent account for this Connector using IL-DCP.
    */
@@ -213,7 +206,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   private void configureAccounts() {
     // Connect any Links for accounts that are the connection initiator. Links that require an incoming and outgoing
     // connection will emit a LinkConnectedEvent when the incoming connection is connected.
-    this.accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrue().stream()
+    this.accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrueWithConversion().stream()
       .map(linkManager::getOrCreateLink)
       .forEach(Link::connect);
   }
