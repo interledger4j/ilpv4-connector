@@ -171,7 +171,7 @@
       <dependency>
         <groupId>com.google.cloud</groupId>
         <artifactId>google-cloud-kms</artifactId>
-        <version>1.23.0</version>
+        <version>1.25.0</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
