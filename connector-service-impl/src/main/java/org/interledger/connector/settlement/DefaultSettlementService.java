@@ -20,6 +20,8 @@ import org.interledger.connector.settlement.client.InitiateSettlementRequest;
 import org.interledger.connector.settlement.client.InitiateSettlementResponse;
 import org.interledger.connector.settlement.client.SendMessageRequest;
 import org.interledger.connector.settlement.client.SendMessageResponse;
+
+import com.google.common.primitives.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,7 +126,7 @@ public class DefaultSettlementService implements SettlementService {
 
     InterledgerResponsePacket responsePacket = link.sendPacket(InterledgerPreparePacket.builder()
       .destination(PEER_DOT_SETTLE)
-      .amount(BigInteger.ZERO)
+      .amount(UnsignedLong.ZERO)
       .expiresAt(Instant.now().plusSeconds(30))
       .data(message)
       // We don't care about the condition/fulfillment in peer-wise packet sending, so we just use this default.

@@ -5,7 +5,8 @@ import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 
-import java.math.BigInteger;
+import com.google.common.primitives.UnsignedLong;
+
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Objects;
@@ -33,7 +34,7 @@ public interface PingableLink<LS extends LinkSettings> extends Link<LS> {
    *
    * @param destinationAddress
    */
-  default InterledgerResponsePacket ping(final InterledgerAddress destinationAddress, final BigInteger pingAmount) {
+  default InterledgerResponsePacket ping(final InterledgerAddress destinationAddress, final UnsignedLong pingAmount) {
     Objects.requireNonNull(destinationAddress);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()

@@ -22,7 +22,7 @@
     <!-- By default, we run in prod mode, unless a different profile is specified. -->
     <activeProfile>prod</activeProfile>
     <java.version>1.8</java.version>
-    <ilp.version>0.17.0-SNAPSHOT</ilp.version>
+    <ilp.version>1.0.0</ilp.version>
     <problem.version>0.23.0</problem.version>
     <problem-spring-web.version>0.24.0</problem-spring-web.version>
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
@@ -248,17 +248,17 @@
       </dependency>
       <dependency>
         <groupId>org.interledger</groupId>
-        <artifactId>codec-framework</artifactId>
+        <artifactId>codecs-framework</artifactId>
         <version>${ilp.version}</version>
       </dependency>
       <dependency>
         <groupId>org.interledger</groupId>
-        <artifactId>ilp-core-codecs</artifactId>
+        <artifactId>codecs-ilp</artifactId>
         <version>${ilp.version}</version>
       </dependency>
       <dependency>
         <groupId>org.interledger</groupId>
-        <artifactId>ildcp-core-codecs</artifactId>
+        <artifactId>codecs-ildcp</artifactId>
         <version>${ilp.version}</version>
       </dependency>
       <dependency>

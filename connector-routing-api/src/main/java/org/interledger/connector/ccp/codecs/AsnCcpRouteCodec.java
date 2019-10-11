@@ -1,10 +1,10 @@
 package org.interledger.connector.ccp.codecs;
 
 import com.google.common.collect.Lists;
+import org.interledger.codecs.ilp.AsnInterledgerAddressPrefixCodec;
 import org.interledger.connector.ccp.CcpNewRoute;
 import org.interledger.connector.ccp.CcpRouteUpdateRequest;
 import org.interledger.connector.ccp.ImmutableCcpNewRoute;
-import org.interledger.core.asn.codecs.AsnInterledgerAddressPrefixCodec;
 import org.interledger.encoding.asn.codecs.AsnOctetStringCodec;
 import org.interledger.encoding.asn.codecs.AsnSequenceCodec;
 import org.interledger.encoding.asn.codecs.AsnSequenceOfSequenceCodec;

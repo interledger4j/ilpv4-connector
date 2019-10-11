@@ -15,6 +15,8 @@ import org.interledger.connector.links.ping.PingLoopbackLink;
 import org.interledger.connector.server.ConnectorServer;
 import org.interledger.connector.server.spring.settings.javamoney.SpringServiceProvider;
 import org.interledger.core.InterledgerAddress;
+
+import com.google.common.primitives.UnsignedLong;
 import org.junit.BeforeClass;
 import org.slf4j.Logger;
 import org.springframework.data.redis.RedisConnectionFailureException;
@@ -104,7 +106,7 @@ public abstract class AbstractBlastIT {
     final AccountId senderAccountId,
     final InterledgerAddress senderNodeAddress,
     final InterledgerAddress destinationAddress,
-    final BigInteger numUnits
+    final UnsignedLong numUnits
   )
     throws InterruptedException {
 

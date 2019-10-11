@@ -13,6 +13,8 @@ import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
+
+import com.google.common.primitives.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,7 +118,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     final AccountSettings destinationAccountSettings =
       this.accountSettingsLoadingCache.safeGetAccountId(nextHopRoute.getNextHopAccountId());
 
-    final BigInteger nextAmount = this.determineNextAmount(
+    final UnsignedLong nextAmount = this.determineNextAmount(
       sourceAccountSettings, destinationAccountSettings, sourcePacket
     );
 
@@ -142,7 +144,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
    * @return A BigInteger is the correct units for the source account.
    */
   @VisibleForTesting
-  protected BigInteger determineNextAmount(
+  protected UnsignedLong determineNextAmount(
     final AccountSettings sourceAccountSettings, final AccountSettings destinationAccountSettings,
     final InterledgerPreparePacket sourcePacket
   ) {
@@ -158,13 +160,14 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.getAssetCode());
       final int sourceScale = sourceAccountSettings.getAssetScale();
       final MonetaryAmount sourceAmount =
-        javaMoneyUtils.toMonetaryAmount(sourceCurrencyUnit, sourcePacket.getAmount(), sourceScale);
+        javaMoneyUtils.toMonetaryAmount(sourceCurrencyUnit, sourcePacket.getAmount().bigIntegerValue(), sourceScale);
 
       final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAccountSettings.getAssetCode());
       final int destinationScale = destinationAccountSettings.getAssetScale();
       final CurrencyConversion destCurrencyConversion = MonetaryConversions.getConversion(destinationCurrencyUnit);
 
-      return javaMoneyUtils.toInterledgerAmount(sourceAmount.with(destCurrencyConversion), destinationScale);
+      return UnsignedLong.valueOf(
+          javaMoneyUtils.toInterledgerAmount(sourceAmount.with(destCurrencyConversion), destinationScale));
     }
   }
 
