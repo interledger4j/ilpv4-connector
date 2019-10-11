@@ -8,6 +8,8 @@ import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillment;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
+
+import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -122,7 +124,7 @@ public class PingLoopbackLinkTest {
   @Test
   public void sendPacketWithInvalidCondition() {
     final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
-      .amount(BigInteger.TEN)
+      .amount(UnsignedLong.valueOf(10))
       .executionCondition(InterledgerCondition.of(new byte[32]))
       .destination(OPERATOR_ADDRESS)
       .expiresAt(Instant.now())
@@ -148,7 +150,7 @@ public class PingLoopbackLinkTest {
   @Test
   public void sendPacketWithInvalidAddress() {
     final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
-      .amount(BigInteger.TEN)
+      .amount(UnsignedLong.valueOf(10))
       .executionCondition(PING_PROTOCOL_CONDITION)
       .destination(InterledgerAddress.of("example.foo"))
       .expiresAt(Instant.now())
@@ -166,7 +168,7 @@ public class PingLoopbackLinkTest {
   @Test
   public void sendPacket() {
     final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
-      .amount(BigInteger.TEN)
+      .amount(UnsignedLong.valueOf(10))
       .executionCondition(PING_PROTOCOL_CONDITION)
       .destination(OPERATOR_ADDRESS)
       .expiresAt(Instant.now())

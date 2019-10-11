@@ -19,11 +19,12 @@ import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
+
+import com.google.common.primitives.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
-import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -192,7 +193,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
       .build();
 
     final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
-      .amount(BigInteger.ZERO)
+      .amount(UnsignedLong.ZERO)
       .destination(CcpConstants.CCP_CONTROL_DESTINATION_ADDRESS)
       .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
       .expiresAt(Instant.now().plus(connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteExpiry()))

@@ -1,6 +1,7 @@
 package org.interledger.connector.packetswitch.filters;
 
 import com.google.common.collect.ImmutableList;
+import org.interledger.codecs.ildcp.IldcpCodecContextFactory;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.ccp.CcpRouteControlRequest;
@@ -23,7 +24,8 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponsePacket;
-import org.interledger.ildcp.asn.framework.IldcpCodecContextFactory;
+
+import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,7 +36,6 @@ import org.mockito.MockitoAnnotations;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Objects;
@@ -239,7 +240,7 @@ public class PeerProtocolPacketFilterTest {
     final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
       .destination(CCP_CONTROL_DESTINATION_ADDRESS)
       .executionCondition(PEER_PROTOCOL_EXECUTION_CONDITION)
-      .amount(BigInteger.TEN)
+      .amount(UnsignedLong.valueOf(10))
       .expiresAt(Instant.now().plusSeconds(30))
       .data(os.toByteArray())
       .build();
@@ -297,7 +298,7 @@ public class PeerProtocolPacketFilterTest {
     final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
       .destination(CCP_UPDATE_DESTINATION_ADDRESS)
       .executionCondition(PEER_PROTOCOL_EXECUTION_CONDITION)
-      .amount(BigInteger.TEN)
+      .amount(UnsignedLong.valueOf(10))
       .expiresAt(Instant.now().plusSeconds(30))
       .data(os.toByteArray())
       .build();
@@ -364,7 +365,7 @@ public class PeerProtocolPacketFilterTest {
     return InterledgerPreparePacket.builder()
       .destination(destinationAddress)
       .executionCondition(InterledgerCondition.of(new byte[32]))
-      .amount(BigInteger.TEN)
+      .amount(UnsignedLong.valueOf(10))
       .expiresAt(Instant.now().plusSeconds(30))
       .build();
   }

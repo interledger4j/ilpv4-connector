@@ -8,6 +8,8 @@ import org.interledger.core.InterledgerAddress;
 import org.interledger.connector.it.markers.IlpOverHttp;
 import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorParentChildBlastTopology;
 import org.interledger.connector.it.topology.Topology;
+
+import com.google.common.primitives.UnsignedLong;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -115,7 +117,7 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
    */
   @Test
   public void testAlicePingsBob() throws InterruptedException {
-    this.testPing(BOB_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), BigInteger.ONE);
+    this.testPing(BOB_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), UnsignedLong.ONE);
 
     // Bob@ALICE (this account is 0 because using it to ping does not engage any balance tracking).
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, BigInteger.valueOf(0L));
@@ -135,7 +137,7 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
    */
   @Test
   public void testBobPingsAlice() throws InterruptedException {
-    this.testPing(ALICE_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(), BigInteger.ONE);
+    this.testPing(ALICE_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(), UnsignedLong.ONE);
 
     // bob@ALICE (this account is 0 because using it to ping does not engage any balance tracking).
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, BigInteger.valueOf(0));

@@ -1,6 +1,7 @@
 package org.interledger.connector.server.ilphttp;
 
 import com.google.common.collect.Maps;
+import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountManager;
@@ -146,7 +147,7 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
     blastHttpSender.sendData(
       InterledgerPreparePacket.builder()
         .destination(InterledgerAddress.of("test.connie.alice"))
-        .amount(BigInteger.ONE)
+        .amount(UnsignedLong.ONE)
         .expiresAt(Instant.now().plus(5, ChronoUnit.MINUTES))
         .executionCondition(LOOPBACK_FULFILLMENT.getCondition())
         .build()

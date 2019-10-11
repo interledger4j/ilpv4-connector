@@ -13,6 +13,8 @@ import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
+
+import com.google.common.primitives.UnsignedLong;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -136,7 +138,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final long start = System.currentTimeMillis();
 
     // Note Bob's Connector's address is purposefully a child of Alice due to IL-DCP
-    blastLink.ping(PAUL_AT_ALICE_ADDRESS, ONE).handle(
+    blastLink.ping(PAUL_AT_ALICE_ADDRESS, UnsignedLong.ONE).handle(
       fulfillPacket -> {
         fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
         latch.countDown();
@@ -159,7 +161,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
    */
   @Test
   public void testPaulPingsAliceConnector() throws InterruptedException {
-    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getAliceConnectorAddress(), ONE);
+    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getAliceConnectorAddress(), UnsignedLong.ONE);
 
     // test.alice.paul: Should be -1 because that account initiated and paid for the ping.
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, ONE.negate());
@@ -187,7 +189,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    blastLink.ping(getAliceConnectorAddress(), ONE).handle(
+    blastLink.ping(getAliceConnectorAddress(), UnsignedLong.ONE).handle(
       fulfillPacket -> {
         fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
         latch.countDown();
@@ -210,7 +212,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
    */
   @Test
   public void testPaulPingsBobConnectorWith0Units() throws InterruptedException {
-    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), ZERO);
+    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), UnsignedLong.ZERO);
 
     // test.alice.paul: Should be 0 because the packet units are 0
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, ZERO);
@@ -233,7 +235,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   public void testPaulPingsBobConnectorWith1Units() throws InterruptedException {
     // After the Ping, the balances should look like this:
     // [[PAUL]][1] <-> [-1][[ALICE]][1] <-> [-1][BOB][1] <-> [-1][[PING_ACT]]
-    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), ONE);
+    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), UnsignedLong.ONE);
 
     // test.alice.paul: SHOULD BE -1 because that account initiated and paid for the ping.
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, ONE.negate());
@@ -255,7 +257,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
    */
   @Test
   public void testPaulPingsBobWith10Units() throws InterruptedException {
-    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), TEN);
+    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), UnsignedLong.valueOf(10));
 
     // test.alice.paul: Should be -10 because that account initiated and paid for the ping.
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, TEN.negate());
@@ -285,7 +287,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    blastLink.ping(randomDestination, ONE).handle(
+    blastLink.ping(randomDestination, UnsignedLong.ONE).handle(
       fulfillPacket -> {
         fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
         latch.countDown();
@@ -316,7 +318,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    blastLink.ping(randomDestination, ONE).handle(
+    blastLink.ping(randomDestination, UnsignedLong.ONE).handle(
       fulfillPacket -> {
         fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
         latch.countDown();
@@ -347,7 +349,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
       .executionCondition(PING_PROTOCOL_CONDITION)
       .expiresAt(Instant.now().minusSeconds(500))
-      .amount(BigInteger.valueOf(1L)) // Ping with the smallest unit...
+      .amount(UnsignedLong.ONE) // Ping with the smallest unit...
       .destination(getBobConnectorAddress())
       .build();
 
@@ -381,7 +383,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
       .executionCondition(PING_PROTOCOL_CONDITION)
       .expiresAt(Instant.now().plusSeconds(30))
-      .amount(BigInteger.valueOf(100000000000L)) // Ping with a unit that's too large...
+      .amount(UnsignedLong.valueOf(100000000000L)) // Ping with a unit that's too large...
       .destination(getBobConnectorAddress())
       .build();
 
@@ -415,7 +417,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
       .executionCondition(PING_PROTOCOL_CONDITION)
       .expiresAt(Instant.now().plusSeconds(30))
-      .amount(BigInteger.valueOf(1L)) // Ping with a unit that's too large...
+      .amount(UnsignedLong.valueOf(1L)) // Ping with a unit that's too large...
       .destination(InterledgerAddress.of("self.foo"))
       .build();
 
@@ -449,7 +451,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
       .executionCondition(InterledgerCondition.of(new byte[32]))
       .expiresAt(Instant.now().plusSeconds(30))
-      .amount(BigInteger.valueOf(1L)) // Ping with the smallest unit...
+      .amount(UnsignedLong.valueOf(1L)) // Ping with the smallest unit...
       .destination(getBobConnectorAddress())
       .build();
 
@@ -495,7 +497,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final Runnable runnable = () -> {
       final long start = System.currentTimeMillis();
 
-      paulToAliceLink.ping(getBobConnectorAddress(), ONE).handle(
+      paulToAliceLink.ping(getBobConnectorAddress(), UnsignedLong.ONE).handle(
         fulfillPacket -> {
           assertThat(fulfillPacket.getFulfillment().validateCondition(PING_PROTOCOL_CONDITION), is(true));
           latch.countDown();

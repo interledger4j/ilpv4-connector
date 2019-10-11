@@ -80,11 +80,11 @@
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
-      <artifactId>codec-framework</artifactId>
+      <artifactId>codecs-framework</artifactId>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
-      <artifactId>ilp-core-codecs</artifactId>
+      <artifactId>codecs-ilp</artifactId>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
