@@ -1,6 +1,6 @@
 package org.interledger.connector.packetswitch.filters;
 
-import com.google.common.cache.Cache;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.util.concurrent.RateLimiter;
 import org.interledger.connector.packetswitch.PacketRejector;
 import org.interledger.connector.accounts.AccountId;
@@ -65,7 +65,7 @@ public class RateLimitIlpPacketFilterTest {
   private PacketSwitchFilterChain filterChainMock;
 
   @Mock
-  private Cache<AccountId, Optional<RateLimiter>> cacheMock;
+  private LoadingCache<AccountId, Optional<RateLimiter>> cacheMock;
 
   @Mock
   private RateLimiter rateLimiterMock;

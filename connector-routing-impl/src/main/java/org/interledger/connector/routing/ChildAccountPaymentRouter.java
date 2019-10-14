@@ -1,9 +1,8 @@
 package org.interledger.connector.routing;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import org.apache.commons.lang3.StringUtils;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
@@ -19,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -52,42 +50,38 @@ public class ChildAccountPaymentRouter implements PaymentRouter<Route> {
     Objects.requireNonNull(accountSettingsRepository);
     Objects.requireNonNull(decryptor);
 
-    this.childAccountRoutes = CacheBuilder.newBuilder()
+    this.childAccountRoutes = Caffeine.newBuilder()
       .maximumSize(5000) // TODO: Make size configurable
       // Expire after this duration, which will correspond to the last incoming request from the peer.
       .expireAfterAccess(30, TimeUnit.SECONDS) // TODO: Make this configurable
-      .build(
-        new CacheLoader<InterledgerAddress, Optional<Route>>() {
+      /**
+       * Given a {@code finalDestinationAddress}, find the child account that should be used for routing, and
+       * return it. Currently this implementation is very simple, as it assumes the last segment of the ILP
+       * address is the accountId.
+       */
+      .build((finalDestinationAddress) -> {
+          Objects.requireNonNull(finalDestinationAddress);
 
-          /**
-           * Given a {@code finalDestinationAddress}, find the child account that should be used for routing, and
-           * return it. Currently this implementation is very simple, as it assumes the last segment of the ILP
-           * address is the accountId.
-           */
-          public Optional<Route> load(final InterledgerAddress finalDestinationAddress) {
-            Objects.requireNonNull(finalDestinationAddress);
+          final AccountId accountId = parseChildAccountId(finalDestinationAddress);
 
-            final AccountId accountId = parseChildAccountId(finalDestinationAddress);
+          // Decrypt the routingSecret, but only momentarily...
+          final byte[] routingSecret = decryptor.decrypt(EncryptedSecret.fromEncodedValue(
+            connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret()
+          ));
 
-            // Decrypt the routingSecret, but only momentarily...
-            final byte[] routingSecret = decryptor.decrypt(EncryptedSecret.fromEncodedValue(
-              connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret()
-            ));
-
-            try {
-              return accountSettingsRepository.findByAccountId(accountId)
-                .map(accountSettingsEntity ->
-                  ImmutableRoute.builder()
-                    .routePrefix(InterledgerAddressPrefix.of(finalDestinationAddress.getValue()))
-                    .nextHopAccountId(accountId)
-                    // No Path
-                    .auth(HMAC(routingSecret, InterledgerAddressPrefix.of(finalDestinationAddress.getValue())))
-                    .build()
-                );
-            } finally {
-              // Zero-out all bytes in the `sharedSecretBytes` array.
-              Arrays.fill(routingSecret, (byte) 0);
-            }
+          try {
+            return accountSettingsRepository.findByAccountId(accountId)
+              .map(accountSettingsEntity ->
+                ImmutableRoute.builder()
+                  .routePrefix(InterledgerAddressPrefix.of(finalDestinationAddress.getValue()))
+                  .nextHopAccountId(accountId)
+                  // No Path
+                  .auth(HMAC(routingSecret, InterledgerAddressPrefix.of(finalDestinationAddress.getValue())))
+                  .build()
+              );
+          } finally {
+            // Zero-out all bytes in the `sharedSecretBytes` array.
+            Arrays.fill(routingSecret, (byte) 0);
           }
         });
   }
@@ -135,11 +129,6 @@ public class ChildAccountPaymentRouter implements PaymentRouter<Route> {
     }
 
     // Try child accounts.
-    try {
       return this.childAccountRoutes.get(finalDestinationAddress);
-    } catch (ExecutionException e) {
-      logger.error(e.getMessage(), e);
-      return Optional.empty();
-    }
   }
 }
