@@ -1,5 +1,13 @@
 package org.interledger.connector.server.spring.auth.blast;
 
+import com.auth0.jwt.exceptions.InvalidClaimException;
+import com.auth0.jwt.exceptions.SignatureVerificationException;
+import com.auth0.spring.security.api.authentication.JwtAuthentication;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.RemovalListener;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.hash.Hashing;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
@@ -11,15 +19,6 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
-
-import com.auth0.jwt.exceptions.InvalidClaimException;
-import com.auth0.jwt.exceptions.SignatureVerificationException;
-import com.auth0.spring.security.api.authentication.JwtAuthentication;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.github.benmanes.caffeine.cache.RemovalListener;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.hash.Hashing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -85,9 +84,10 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       // Expire after this duration, which will correspond to the last incoming request from the peer.
       // TODO: This value should be configurable and match the server-global token expiry.
       .expireAfterAccess(30, TimeUnit.MINUTES)
-      .removalListener((RemovalListener<AuthenticationRequest, AuthenticationDecision>) (key, value, cause) ->
+      .removalListener((RemovalListener<AuthenticationRequest, AuthenticationDecision>)
+          (authenticationRequest, authenticationDecision, cause) ->
           logger.debug("Removing IlpOverHttp AuthenticationDecision from Cache for Principal: {}",
-            value.principal()))
+            authenticationDecision.principal()))
       .build(
         authenticationRequest -> {
           Objects.requireNonNull(authenticationRequest);
