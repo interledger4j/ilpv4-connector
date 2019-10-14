@@ -8,6 +8,8 @@ import org.interledger.core.InterledgerAddress;
 import org.interledger.connector.it.markers.Settlement;
 import org.interledger.connector.it.topologies.settlement.SimulatedXrplSettlementTopology;
 import org.interledger.connector.it.topology.Topology;
+
+import com.google.common.primitives.UnsignedLong;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -98,8 +100,8 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
     // This is somewhat wonky because doing ping this way won't update the source balance properly. Thus, no balances
     // are asserted here.
-    this.testPing(BOB_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), ZERO);
-    this.testPing(ALICE_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(), ZERO);
+    this.testPing(BOB_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), UnsignedLong.ZERO);
+    this.testPing(ALICE_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(), UnsignedLong.ZERO);
   }
 
   /**
@@ -124,7 +126,7 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
     // its ping account.
     for (int i = 0; i < 9; i++) {
       getLogger().info("Ping {} of 9", i + 1);
-      this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), ONE_HUNDRED);
+      this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), UnsignedLong.valueOf(100));
     }
 
     getLogger().info("Checking balances after 9 pings...");
@@ -149,7 +151,7 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
     // Use the `paul` account on ALICE to ping BOB 1 more time, which should trigger settlement.
     getLogger().info("Ping 10 of 10 (should trigger settlement)");
-    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), ONE_HUNDRED);
+    this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), UnsignedLong.valueOf(100));
 
 
     getLogger().info("Pre-settlement balances checks...");
@@ -195,7 +197,7 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
     // its ping account.
     for (int i = 0; i < 9; i++) {
       getLogger().info("Ping {} of {}", i + 1, 9);
-      this.testPing(PETER_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(), ONE_HUNDRED);
+      this.testPing(PETER_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(), UnsignedLong.valueOf(100));
     }
 
     getLogger().info("Checking balances after 9 pings...");
@@ -220,7 +222,7 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
     // Use the `peter` account on ALICE to ping BOB 1 more time, which should trigger settlement.
     getLogger().info("Ping 10 of 10 (should trigger settlement)");
-    this.testPing(PETER_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(), ONE_HUNDRED);
+    this.testPing(PETER_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(), UnsignedLong.valueOf(100));
 
     getLogger().info("Pre-settlement balances checks...");
     assertAccountBalance(bobConnector, PETER_ACCOUNT, THOUSAND.negate());
@@ -273,7 +275,7 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
     // Ping 19 times, expecting settlement to be triggered at 10.
     for (int pingNumber = 1; pingNumber <= totalPings; pingNumber++) {
       getLogger().info("Ping {} of {}", pingNumber, totalPings);
-      this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), ONE_HUNDRED);
+      this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), UnsignedLong.valueOf(100));
     }
 
     getLogger().info("Waiting up to 20 seconds for Settlement to be processed...");

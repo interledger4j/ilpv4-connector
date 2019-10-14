@@ -1,5 +1,6 @@
 package org.interledger.connector.link;
 
+import com.google.common.primitives.UnsignedLong;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
@@ -35,7 +36,7 @@ public class CircuitBreakingLinkTest {
 
   private static final InterledgerPreparePacket PREPARE_PACKET = InterledgerPreparePacket.builder()
     .destination(InterledgerAddress.of("test.foo"))
-    .amount(BigInteger.TEN)
+    .amount(UnsignedLong.valueOf(10))
     .executionCondition(InterledgerCondition.of(new byte[32]))
     .expiresAt(Instant.now().plusSeconds(50))
     .build();

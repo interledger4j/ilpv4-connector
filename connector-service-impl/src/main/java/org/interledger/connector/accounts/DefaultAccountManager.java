@@ -1,6 +1,7 @@
 package org.interledger.connector.accounts;
 
 import okhttp3.HttpUrl;
+import org.interledger.codecs.ildcp.IldcpUtils;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
@@ -16,7 +17,6 @@ import org.interledger.ildcp.IldcpFetcher;
 import org.interledger.ildcp.IldcpRequest;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
-import org.interledger.ildcp.IldcpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;

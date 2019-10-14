@@ -1,9 +1,9 @@
 package org.interledger.connector.server.spring.settings;
 
+import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
+import org.interledger.codecs.ildcp.IldcpCodecContextFactory;
 import org.interledger.connector.ccp.codecs.CcpCodecContextFactory;
-import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.interledger.ildcp.asn.framework.IldcpCodecContextFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -1,7 +1,9 @@
 package org.interledger.connector.server.ilphttp;
 
 import com.google.common.io.BaseEncoding;
+import com.google.common.primitives.UnsignedLong;
 import org.apache.commons.io.FileUtils;
+import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;
@@ -10,7 +12,6 @@ import org.interledger.core.InterledgerFulfillment;
 import org.interledger.core.InterledgerPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
-import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +48,7 @@ public class IlpPacketEmitter {
     final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
       .expiresAt(Instant.now().plus(365, ChronoUnit.DAYS))
       .destination(DESTINATION)
-      .amount(BigInteger.valueOf(1L))
+      .amount(UnsignedLong.ONE)
       .executionCondition(executionCondition)
       .build();
 
