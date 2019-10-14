@@ -1,5 +1,8 @@
 package org.interledger.connector.javax.money.providers;
 
+import static org.javamoney.moneta.spi.AbstractCurrencyConversion.KEY_SCALE;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
@@ -14,6 +17,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import javax.money.MonetaryException;
 import javax.money.convert.ConversionContext;
 import javax.money.convert.ConversionQuery;
@@ -22,15 +31,6 @@ import javax.money.convert.ExchangeRateProvider;
 import javax.money.convert.ProviderContext;
 import javax.money.convert.ProviderContextBuilder;
 import javax.money.convert.RateType;
-import java.math.BigDecimal;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
-
-import static org.javamoney.moneta.spi.AbstractCurrencyConversion.KEY_SCALE;
-import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 /**
  * A {@link ExchangeRateProvider} that loads FX data from CryptoCompare. This provider loads all available rates,

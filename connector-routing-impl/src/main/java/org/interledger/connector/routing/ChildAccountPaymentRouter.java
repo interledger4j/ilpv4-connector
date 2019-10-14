@@ -1,9 +1,7 @@
 package org.interledger.connector.routing;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.lang3.StringUtils;
+import static org.interledger.connector.routing.Route.HMAC;
+
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -12,6 +10,11 @@ import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
+
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,8 +23,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-
-import static org.interledger.connector.routing.Route.HMAC;
 
 /**
  * An implementation of {@link PaymentRouter} that finds the next best-hop account for an Interledger address that
