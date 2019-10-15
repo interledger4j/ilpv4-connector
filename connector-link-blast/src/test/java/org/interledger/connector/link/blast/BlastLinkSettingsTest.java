@@ -31,7 +31,7 @@ public class BlastLinkSettingsTest extends AbstractBlastLinkTest {
     assertThat(blastLinkSettings.incomingBlastLinkSettings().tokenAudience().get(),
       is(HttpUrl.parse("https://incoming-audience.example.com/")));
     assertThat(blastLinkSettings.incomingBlastLinkSettings().encryptedTokenSharedSecret(), is("incoming-credential"));
-    assertThat(blastLinkSettings.incomingBlastLinkSettings().getMinMessageWindow(), is(Duration.ofSeconds(1)));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().minMessageWindow(), is(Duration.ofSeconds(1)));
 
     assertThat(blastLinkSettings.outgoingBlastLinkSettings().authType(), is(BlastLinkSettings.AuthType.SIMPLE));
     assertThat(blastLinkSettings.outgoingBlastLinkSettings().tokenIssuer().get(),
@@ -62,7 +62,7 @@ public class BlastLinkSettingsTest extends AbstractBlastLinkTest {
       is(HttpUrl.parse("https://incoming-audience.example.com/")));
     assertThat(blastLinkSettings.incomingBlastLinkSettings().encryptedTokenSharedSecret(),
       is("incoming-credential"));
-    assertThat(blastLinkSettings.incomingBlastLinkSettings().getMinMessageWindow(), is(Duration.ofSeconds(1)));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().minMessageWindow(), is(Duration.ofSeconds(1)));
 
     assertThat(blastLinkSettings.outgoingBlastLinkSettings().authType(), is(BlastLinkSettings.AuthType.SIMPLE));
     assertThat(blastLinkSettings.outgoingBlastLinkSettings().tokenIssuer().get(),
@@ -112,7 +112,7 @@ public class BlastLinkSettingsTest extends AbstractBlastLinkTest {
     assertThat(blastLinkSettings.incomingBlastLinkSettings().tokenAudience().get(),
       is(HttpUrl.parse("https://incoming-audience.example.com/")));
     assertThat(blastLinkSettings.incomingBlastLinkSettings().encryptedTokenSharedSecret(), is("incoming-credential"));
-    assertThat(blastLinkSettings.incomingBlastLinkSettings().getMinMessageWindow(), is(Duration.ofMillis(30)));
+    assertThat(blastLinkSettings.incomingBlastLinkSettings().minMessageWindow(), is(Duration.ofMillis(30)));
 
     assertThat(blastLinkSettings.outgoingBlastLinkSettings().authType(), is(BlastLinkSettings.AuthType.SIMPLE));
     assertThat(blastLinkSettings.outgoingBlastLinkSettings().tokenIssuer().get(),

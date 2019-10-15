@@ -198,7 +198,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       // We will set the next transfer's expiry based on the source expiry and our minMessageWindow, but cap it at our
       // maxHoldTime.
       ////////////////////
-      final int minMessageWindow = 5000; //TODO: Enable this --> accountSettings.get().getMinMessageWindow();
+      final int minMessageWindow = 5000; //TODO: Enable this --> accountSettings.get().minMessageWindow();
       final int maxHoldTime = 5000; //TODO: Enable this --> accountSettings.get().getMaxHoldTime();
 
       // The expiry of the packet, reduced by the minMessageWindow, which is "the minimum time the connector wants to
