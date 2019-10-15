@@ -295,7 +295,7 @@ jobs:
           command: |
             source ~/.nvm/nvm.sh
             cd settlement-xrp
-            npm run build && LEDGER_ADDRESS=rN5qLUcyXvGrhMW5s2T76aiP4gAf3hZKbd LEDGER_SECRET=shHZhGCpSTVgwFwy5q3S3R3eyH8i5 ENGINE_PORT=9000 CONNECTOR_URL=http://localhost:8080 node ./build/run.js
+            npm run build && LEDGER_ADDRESS=rN5qLUcyXvGrhMW5s2T76aiP4gAf3hZKbd LEDGER_SECRET=shHZhGCpSTVgwFwy5q3S3R3eyH8i5 ENGINE_PORT=9000 CONNECTOR_URL=http://localhost:8080 node ./bin/run.js
           background: true
 
       - run:
@@ -303,7 +303,7 @@ jobs:
           command: |
             source ~/.nvm/nvm.sh
             cd settlement-xrp
-            npm run build && LEDGER_ADDRESS=rEkie9PCNGmrrGeLTNWSq2zTYUrYrsozcw LEDGER_SECRET=snFpR7TQST5BLy4GeYNejApSZ8S9Y ENGINE_PORT=9001 CONNECTOR_URL=http://localhost:8081 node ./build/run.js
+            npm run build && LEDGER_ADDRESS=rEkie9PCNGmrrGeLTNWSq2zTYUrYrsozcw LEDGER_SECRET=snFpR7TQST5BLy4GeYNejApSZ8S9Y ENGINE_PORT=9001 CONNECTOR_URL=http://localhost:8081 node ./bin/run.js
           background: true
 
       # wait for the server to start responding. We expect 404 (NotFound) once it starts listening.
