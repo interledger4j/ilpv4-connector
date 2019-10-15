@@ -156,11 +156,11 @@ public class RedisBalanceTrackerFulfillPacketSettlementTest extends AbstractRedi
     MockitoAnnotations.initMocks(this);
 
     AccountBalanceSettings balanceSettingsMock = mock(AccountBalanceSettings.class);
-    when(balanceSettingsMock.getSettleTo()).thenReturn(settleTo);
-    when(balanceSettingsMock.getSettleThreshold()).thenReturn(settleThreshold);
-    when(accountSettingsMock.getAccountId()).thenReturn(ACCOUNT_ID);
-    when(accountSettingsMock.getBalanceSettings()).thenReturn(balanceSettingsMock);
-    when(accountSettingsMock.getAssetScale()).thenReturn(2); // Hard-coded since this is not being tested in this class.
+    when(balanceSettingsMock.settleTo()).thenReturn(settleTo);
+    when(balanceSettingsMock.settleThreshold()).thenReturn(settleThreshold);
+    when(accountSettingsMock.accountId()).thenReturn(ACCOUNT_ID);
+    when(accountSettingsMock.balanceSettings()).thenReturn(balanceSettingsMock);
+    when(accountSettingsMock.assetScale()).thenReturn(2); // Hard-coded since this is not being tested in this class.
 
     when(accountBalanceMock.clearingBalance()).thenReturn(existingClearingBalance);
     when(accountBalanceMock.prepaidAmount()).thenReturn(existingPrepaidBalance);
@@ -195,7 +195,7 @@ public class RedisBalanceTrackerFulfillPacketSettlementTest extends AbstractRedi
   @Test
   public void updateBalanceForFulfillWhenNoAccountInRedis() {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-    when(accountSettingsMock.getAccountId()).thenReturn(accountId);
+    when(accountSettingsMock.accountId()).thenReturn(accountId);
     balanceTracker.updateBalanceForFulfill(accountSettingsMock, ONE);
 
     final AccountBalance loadedBalance = balanceTracker.getBalance(accountId);
@@ -211,8 +211,8 @@ public class RedisBalanceTrackerFulfillPacketSettlementTest extends AbstractRedi
   public void computeSettlementQuantityWithParamterizedValues() {
     this.initializeAccount(ACCOUNT_ID, this.existingClearingBalance, this.existingPrepaidBalance);
 
-    assertThat(accountSettingsMock.getBalanceSettings().getSettleTo(), Is.is(settleTo));
-    assertThat(accountSettingsMock.getBalanceSettings().getSettleThreshold(), Is.is(settleThreshold));
+    assertThat(accountSettingsMock.balanceSettings().settleTo(), Is.is(settleTo));
+    assertThat(accountSettingsMock.balanceSettings().settleThreshold(), Is.is(settleThreshold));
 
     BalanceTracker.UpdateBalanceForFulfillResponse prepareResponse =
       balanceTracker.updateBalanceForFulfill(accountSettingsMock, prepareAmount);

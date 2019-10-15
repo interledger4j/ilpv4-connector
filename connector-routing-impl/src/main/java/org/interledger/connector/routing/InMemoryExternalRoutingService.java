@@ -491,7 +491,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     if (connectorSettingsSupplier.get().getGlobalRoutingSettings().isUseParentForDefaultRoute()) {
       nextHopForDefaultRoute =
         this.accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PARENT)
-        .map(AccountSettings::getAccountId)
+        .map(AccountSettings::accountId)
         .map(Optional::of)
         .orElseThrow(() -> new RuntimeException(
           "Connector was configured to use a Parent account as the nextHop for the default route, but no Parent " +

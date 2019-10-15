@@ -23,7 +23,6 @@ import javax.money.Monetary;
 import javax.money.MonetaryAmount;
 import javax.money.convert.CurrencyConversion;
 import javax.money.convert.MonetaryConversions;
-import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -101,7 +100,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       logger.debug("Determined next hop: {}", nextHopRoute);
     }
 
-    if (sourceAccountSettings.getAccountId().equals(nextHopRoute.getNextHopAccountId())) {
+    if (sourceAccountSettings.accountId().equals(nextHopRoute.getNextHopAccountId())) {
       throw new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
           .triggeredBy(connectorSettingsSupplier.get().getOperatorAddressSafe())
@@ -157,13 +156,13 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     } else {
       // TODO: Consider a cache here for the source/dest conversion or perhaps an injected instance of
       //  ExchangeRateProvider here (See https://github.com/sappenin/java-ilpv4-connector/issues/223)
-      final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.getAssetCode());
-      final int sourceScale = sourceAccountSettings.getAssetScale();
+      final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.assetCode());
+      final int sourceScale = sourceAccountSettings.assetScale();
       final MonetaryAmount sourceAmount =
         javaMoneyUtils.toMonetaryAmount(sourceCurrencyUnit, sourcePacket.getAmount().bigIntegerValue(), sourceScale);
 
-      final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAccountSettings.getAssetCode());
-      final int destinationScale = destinationAccountSettings.getAssetScale();
+      final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAccountSettings.assetCode());
+      final int destinationScale = destinationAccountSettings.assetScale();
       final CurrencyConversion destCurrencyConversion = MonetaryConversions.getConversion(destinationCurrencyUnit);
 
       return UnsignedLong.valueOf(

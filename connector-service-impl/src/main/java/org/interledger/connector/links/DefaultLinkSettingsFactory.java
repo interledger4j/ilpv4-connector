@@ -17,20 +17,20 @@ public class DefaultLinkSettingsFactory implements LinkSettingsFactory {
   @Override
   public LinkSettings construct(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
-    switch (accountSettings.getLinkType().value().toUpperCase()) {
+    switch (accountSettings.linkType().value().toUpperCase()) {
       case BlastLink.LINK_TYPE_STRING: {
-        return BlastLinkSettings.fromCustomSettings(accountSettings.getCustomSettings()).build();
+        return BlastLinkSettings.fromCustomSettings(accountSettings.customSettings()).build();
       }
       case LoopbackLink.LINK_TYPE_STRING: {
-        return LinkSettings.builder().customSettings(accountSettings.getCustomSettings())
+        return LinkSettings.builder().customSettings(accountSettings.customSettings())
           .linkType(LoopbackLink.LINK_TYPE).build();
       }
       case PingLoopbackLink.LINK_TYPE_STRING: {
-        return LinkSettings.builder().customSettings(accountSettings.getCustomSettings())
+        return LinkSettings.builder().customSettings(accountSettings.customSettings())
           .linkType(PingLoopbackLink.LINK_TYPE).build();
       }
       default: {
-        throw new IllegalArgumentException("Unsupported LinkType: " + accountSettings.getLinkType());
+        throw new IllegalArgumentException("Unsupported LinkType: " + accountSettings.linkType());
       }
     }
   }

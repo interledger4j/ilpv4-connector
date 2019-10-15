@@ -29,6 +29,8 @@
     <!-- <spring-cloud.version>Greenwich.SR1</spring-cloud.version> -->
     <resilience4j.version>1.1.0</resilience4j.version>
     <moneta.version>1.3</moneta.version>
+    <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
+    <checkstyle.violationSeverity>error</checkstyle.violationSeverity>
 
     <!-- org.jacoco:jacoc-maven-plugin -->
     <jacoco.propertyName>argLine</jacoco.propertyName>
@@ -443,6 +445,16 @@
           <artifactId>maven-checkstyle-plugin</artifactId>
           <version>3.1.0</version>
           <inherited>true</inherited>
+          <configuration>
+            <encoding>UTF-8</encoding>
+            <consoleOutput>true</consoleOutput>
+            <linkXRef>false</linkXRef>
+            <excludes>**/generated-sources/**/*,**/generated-test-sources/**/*</excludes>
+            <sourceDirectories>
+              <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+            </sourceDirectories>
+            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+          </configuration>
           <dependencies>
             <dependency>
               <groupId>com.puppycrawl.tools</groupId>

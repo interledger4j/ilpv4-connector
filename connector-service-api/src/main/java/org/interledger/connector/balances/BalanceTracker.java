@@ -103,7 +103,7 @@ public interface BalanceTracker {
    * @param accountId The {@link AccountId} of the account balance to adjust.
    * @param amount    An unsigned {@link long} that reflects the number of balance units to adjust. Note that this value
    *                  should be in the proper scale for the ILP account as found in {@link
-   *                  AccountSettings#getAssetScale()}.
+   *                  AccountSettings#assetScale()}.
    *
    * @throws BalanceTrackerException If anything prevents the balance updates to succeed atomically.
    */

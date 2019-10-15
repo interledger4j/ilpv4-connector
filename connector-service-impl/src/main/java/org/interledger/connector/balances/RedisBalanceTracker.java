@@ -1,9 +1,7 @@
 package org.interledger.connector.balances;
 
 import com.google.common.base.Preconditions;
-import org.interledger.connector.balances.AccountBalance;
-import org.interledger.connector.balances.BalanceTracker;
-import org.interledger.connector.balances.BalanceTrackerException;
+
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
 import org.slf4j.Logger;
@@ -150,13 +148,13 @@ public class RedisBalanceTracker implements BalanceTracker {
       final List<Long> response = jacksonRedisTemplate.execute(
         updateBalanceForFulfillScript,
         // Key1: accountId.
-        singletonList(toRedisAccountsKey(destinationAccountSettings.getAccountId())),
+        singletonList(toRedisAccountsKey(destinationAccountSettings.accountId())),
         // Arg1: amount
         amount + "",
         // Arg2: settleThreshold
-        destinationAccountSettings.getBalanceSettings().getSettleThreshold().map($ -> $ + "").orElse(""),
+        destinationAccountSettings.balanceSettings().settleThreshold().map($ -> $ + "").orElse(""),
         // Arg3: settleTo
-        destinationAccountSettings.getBalanceSettings().getSettleTo() + ""
+        destinationAccountSettings.balanceSettings().settleTo() + ""
       );
 
       Preconditions.checkArgument(
@@ -171,7 +169,7 @@ public class RedisBalanceTracker implements BalanceTracker {
       final UpdateBalanceForFulfillResponse typedResponse =
         UpdateBalanceForFulfillResponse.builder()
           .accountBalance(AccountBalance.builder()
-            .accountId(destinationAccountSettings.getAccountId())
+            .accountId(destinationAccountSettings.accountId())
             .clearingBalance(response.get(0))
             .prepaidAmount(response.get(1))
             .build()

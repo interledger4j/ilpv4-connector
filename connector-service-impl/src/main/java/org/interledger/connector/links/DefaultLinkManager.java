@@ -25,7 +25,6 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.core.InterledgerAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.convert.ConversionService;
 
 import java.util.Map;
 import java.util.Objects;
@@ -108,7 +107,7 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
   @Override
   public Link<? extends LinkSettings> getOrCreateLink(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
-    final AccountId accountId = accountSettings.getAccountId();
+    final AccountId accountId = accountSettings.accountId();
     return Optional.ofNullable(this.connectedLinks.get(accountId))
       .orElseGet(() -> {
         // Convert to LinkSettings...

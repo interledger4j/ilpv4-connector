@@ -2,7 +2,6 @@ package org.interledger.connector.persistence.entities;
 
 import org.hibernate.annotations.NaturalId;
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.link.LinkType;
@@ -102,24 +101,24 @@ public class AccountSettingsEntity extends AbstractEntity {
   public AccountSettingsEntity(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
 
-    this.naturalId = accountSettings.getAccountId().value();
-    this.description = accountSettings.getDescription();
+    this.naturalId = accountSettings.accountId().value();
+    this.description = accountSettings.description();
     this.internal = accountSettings.isInternal();
     this.connectionInitiator = accountSettings.isConnectionInitiator();
-    this.ilpAddressSegment = accountSettings.getIlpAddressSegment();
-    this.accountRelationship = accountSettings.getAccountRelationship();
-    this.linkType = accountSettings.getLinkType();
-    this.assetCode = accountSettings.getAssetCode();
-    this.assetScale = accountSettings.getAssetScale();
-    this.maximumPacketAmount = accountSettings.getMaximumPacketAmount().orElse(null);
-    this.balanceSettings = new AccountBalanceSettingsEntity(accountSettings.getBalanceSettings());
-    this.rateLimitSettings = new AccountRateLimitSettingsEntity(accountSettings.getRateLimitSettings());
+    this.ilpAddressSegment = accountSettings.ilpAddressSegment();
+    this.accountRelationship = accountSettings.accountRelationship();
+    this.linkType = accountSettings.linkType();
+    this.assetCode = accountSettings.assetCode();
+    this.assetScale = accountSettings.assetScale();
+    this.maximumPacketAmount = accountSettings.maximumPacketAmount().orElse(null);
+    this.balanceSettings = new AccountBalanceSettingsEntity(accountSettings.balanceSettings());
+    this.rateLimitSettings = new AccountRateLimitSettingsEntity(accountSettings.rateLimitSettings());
     this.settlementEngineDetails =
       accountSettings.settlementEngineDetails().map(SettlementEngineDetailsEntity::new).orElse(null);
 
     this.sendRoutes = accountSettings.isSendRoutes();
     this.receiveRoutes = accountSettings.isReceiveRoutes();
-    this.customSettings = accountSettings.getCustomSettings();
+    this.customSettings = accountSettings.customSettings();
   }
 
   public AccountId getAccountId() {

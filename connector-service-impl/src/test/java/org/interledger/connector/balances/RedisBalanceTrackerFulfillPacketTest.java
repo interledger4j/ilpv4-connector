@@ -110,9 +110,9 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
     MockitoAnnotations.initMocks(this);
 
     AccountBalanceSettings balanceSettingsMock = mock(AccountBalanceSettings.class);
-    when(accountSettingsMock.getBalanceSettings()).thenReturn(balanceSettingsMock);
-    when(accountSettingsMock.getAccountId()).thenReturn(ACCOUNT_ID);
-    when(accountSettingsMock.getAssetScale()).thenReturn(2); // Hard-coded since this is not being tested in this class.
+    when(accountSettingsMock.balanceSettings()).thenReturn(balanceSettingsMock);
+    when(accountSettingsMock.accountId()).thenReturn(ACCOUNT_ID);
+    when(accountSettingsMock.assetScale()).thenReturn(2); // Hard-coded since this is not being tested in this class.
 
     when(accountBalanceMock.clearingBalance()).thenReturn(existingClearingBalance);
     when(accountBalanceMock.prepaidAmount()).thenReturn(existingPrepaidBalance);
@@ -147,7 +147,7 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
   @Test
   public void updateBalanceForFulfillWhenNoAccountInRedis() {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-    when(accountSettingsMock.getAccountId()).thenReturn(accountId);
+    when(accountSettingsMock.accountId()).thenReturn(accountId);
     balanceTracker.updateBalanceForFulfill(accountSettingsMock, ONE);
 
     final AccountBalance loadedBalance = balanceTracker.getBalance(accountId);

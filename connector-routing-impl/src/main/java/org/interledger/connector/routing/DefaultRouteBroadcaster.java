@@ -77,7 +77,7 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
   public Optional<RoutableAccount> registerCcpEnabledAccount(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
 
-    final AccountId accountId = accountSettings.getAccountId();
+    final AccountId accountId = accountSettings.accountId();
     final boolean sendRoutes = this.shouldSendRoutes(accountSettings);
     final boolean receiveRoutes = this.shouldReceiveRoutes(accountSettings);
     if (!sendRoutes && !receiveRoutes) {
@@ -106,8 +106,8 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
           );
           final RoutableAccount newPeerAccount = ImmutableRoutableAccount.builder()
             .accountId(accountId)
-            .ccpSender(constructCcpSender(accountSettings.getAccountId(), link))
-            .ccpReceiver(constructCcpReceiver(accountSettings.getAccountId(), link))
+            .ccpSender(constructCcpSender(accountSettings.accountId(), link))
+            .ccpReceiver(constructCcpReceiver(accountSettings.accountId(), link))
             .build();
 
           this.setCcpEnabledAccount(newPeerAccount);

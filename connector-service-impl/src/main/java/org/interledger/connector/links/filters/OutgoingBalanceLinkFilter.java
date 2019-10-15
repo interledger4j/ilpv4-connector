@@ -97,7 +97,7 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
           "Outgoing packet not applied due to ILP Reject. outgoingDestinationAccount={} amount={} newBalance={} preparePacket={} rejectPacket={}",
           destinationAccountSettings,
           outgoingPreparePacket.getAmount(),
-          balanceTracker.getBalance(destinationAccountSettings.getAccountId()),
+          balanceTracker.getBalance(destinationAccountSettings.accountId()),
           outgoingPreparePacket,
           interledgerRejectPacket
         );
@@ -136,7 +136,7 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
         settlementEngineDetails -> {
 
           // Only trigger settlement if there's a Threshold...
-          destinationAccountSettings.getBalanceSettings().getSettleThreshold()
+          destinationAccountSettings.balanceSettings().settleThreshold()
             // ... and if the calculated clearingAmountToSettle is > the threshold (and not 0)
             .filter(settleThreshold -> balanceForFulfillResponse.clearingAmountToSettle() > 0 &&
               balanceForFulfillResponse.clearingAmountToSettle() >= settleThreshold)
@@ -145,7 +145,7 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
 
               final SettlementQuantity settlementQuantityInClearingUnits = SettlementQuantity.builder()
                 .amount(BigInteger.valueOf(balanceForFulfillResponse.clearingAmountToSettle()))
-                .scale(destinationAccountSettings.getAssetScale())
+                .scale(destinationAccountSettings.assetScale())
                 .build();
 
               // NOTE: This method is tightly-coupled to the fulfill balance processing above. Since the

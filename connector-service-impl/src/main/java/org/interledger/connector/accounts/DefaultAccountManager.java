@@ -84,11 +84,11 @@ public class DefaultAccountManager implements AccountManager {
       } catch (Exception e) {
         throw new InvalidAccountSettingsProblem(
           "Settlement Engine BaseURL was invalid: " + settlementEngineDetailsEntity.getBaseUrl(),
-          accountSettings.getAccountId());
+          accountSettings.accountId());
       }
 
       final CreateSettlementAccountResponse response = settlementEngineClient.createSettlementAccount(
-        accountSettings.getAccountId(),
+        accountSettings.accountId(),
         baseUrl,
         CreateSettlementAccountRequest.builder().build()
       );
@@ -109,9 +109,9 @@ public class DefaultAccountManager implements AccountManager {
     // the Connector will not enter into this code-block because if the connector has a PARENT account configured and
     // no ILP address specified, then the Connector startup will trigger IL-DCP. In other words, this check is only
     // required for the first-account-creation (under certain conditions).
-    if (AccountRelationship.PARENT.equals(accountSettings.getAccountRelationship())) {
+    if (AccountRelationship.PARENT.equals(accountSettings.accountRelationship())) {
       if (!connectorSettingsSupplier.get().getOperatorAddress().isPresent()) {
-        this.initializeParentAccountSettingsViaIlDcp(accountSettings.getAccountId());
+        this.initializeParentAccountSettingsViaIlDcp(accountSettings.accountId());
       }
     }
 

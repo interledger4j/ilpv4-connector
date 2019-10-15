@@ -129,9 +129,9 @@ public class PeerProtocolPacketFilterTest {
       settlementService
     );
 
-    when(accountSettingsMock.getAccountId()).thenReturn(ACCOUNT_ID);
-    when(accountSettingsMock.getAssetScale()).thenReturn(9);
-    when(accountSettingsMock.getAssetCode()).thenReturn("XRP");
+    when(accountSettingsMock.accountId()).thenReturn(ACCOUNT_ID);
+    when(accountSettingsMock.assetScale()).thenReturn(9);
+    when(accountSettingsMock.assetCode()).thenReturn("XRP");
     when(accountSettingsMock.isSendRoutes()).thenReturn(sendRoutesEnabled);
     when(accountSettingsMock.isReceiveRoutes()).thenReturn(receiveRoutesEnabled);
 

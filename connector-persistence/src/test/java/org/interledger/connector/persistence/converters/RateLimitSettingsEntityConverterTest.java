@@ -1,7 +1,6 @@
 package org.interledger.connector.persistence.converters;
 
 import org.interledger.connector.accounts.AccountRateLimitSettings;
-import org.interledger.connector.persistence.converters.RateLimitSettingsEntityConverter;
 import org.interledger.connector.persistence.entities.AccountRateLimitSettingsEntity;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +29,6 @@ public class RateLimitSettingsEntityConverterTest {
 
     AccountRateLimitSettings actual = converter.convert(entity);
 
-    assertThat(actual.getMaxPacketsPerSecond(), is(rateLimitSettings.getMaxPacketsPerSecond()));
+    assertThat(actual.maxPacketsPerSecond(), is(rateLimitSettings.maxPacketsPerSecond()));
   }
 }

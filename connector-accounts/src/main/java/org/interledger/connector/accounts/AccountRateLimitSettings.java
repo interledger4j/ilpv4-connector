@@ -27,7 +27,7 @@ public interface AccountRateLimitSettings {
    *
    * @return The maximum number of packets-per-second that is allowed for this account.
    */
-  Optional<Integer> getMaxPacketsPerSecond();
+  Optional<Integer> maxPacketsPerSecond();
 
   @Value.Immutable(intern = true)
   @Value.Modifiable

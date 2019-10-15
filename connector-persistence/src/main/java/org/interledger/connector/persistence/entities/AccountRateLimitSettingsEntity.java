@@ -22,7 +22,7 @@ public class AccountRateLimitSettingsEntity {
   }
 
   public AccountRateLimitSettingsEntity(AccountRateLimitSettings accountRateLimitSettings) {
-    this.setMaxPacketsPerSecondlance(accountRateLimitSettings.getMaxPacketsPerSecond());
+    this.setMaxPacketsPerSecondlance(accountRateLimitSettings.maxPacketsPerSecond());
   }
 
   public Optional<Integer> getMaxPacketsPerSecond() {

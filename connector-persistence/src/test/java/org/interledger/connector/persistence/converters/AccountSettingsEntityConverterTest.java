@@ -50,15 +50,15 @@ public class AccountSettingsEntityConverterTest {
 
     AccountSettings actual = converter.convert(entity);
 
-    assertThat(actual.getAccountId(), is(accountSettings.getAccountId()));
-    assertThat(actual.getDescription(), is(accountSettings.getDescription()));
-    assertThat(actual.getAssetScale(), is(accountSettings.getAssetScale()));
-    assertThat(actual.getAssetCode(), is(accountSettings.getAssetCode()));
-    assertThat(actual.getAccountRelationship(), is(accountSettings.getAccountRelationship()));
-    assertThat(actual.getIlpAddressSegment(), is(accountSettings.getIlpAddressSegment()));
-    assertThat(actual.getLinkType(), is(accountSettings.getLinkType()));
-    assertThat(actual.getRateLimitSettings(), is(accountSettings.getRateLimitSettings()));
-    assertThat(actual.getBalanceSettings(), is(accountSettings.getBalanceSettings()));
+    assertThat(actual.accountId(), is(accountSettings.accountId()));
+    assertThat(actual.description(), is(accountSettings.description()));
+    assertThat(actual.assetScale(), is(accountSettings.assetScale()));
+    assertThat(actual.assetCode(), is(accountSettings.assetCode()));
+    assertThat(actual.accountRelationship(), is(accountSettings.accountRelationship()));
+    assertThat(actual.ilpAddressSegment(), is(accountSettings.ilpAddressSegment()));
+    assertThat(actual.linkType(), is(accountSettings.linkType()));
+    assertThat(actual.rateLimitSettings(), is(accountSettings.rateLimitSettings()));
+    assertThat(actual.balanceSettings(), is(accountSettings.balanceSettings()));
     assertThat(actual.settlementEngineDetails(), is(accountSettings.settlementEngineDetails()));
   }
 
@@ -97,18 +97,18 @@ public class AccountSettingsEntityConverterTest {
 
     AccountSettings actual = converter.convert(entity);
 
-    assertThat(actual.getAccountId(), is(accountSettings.getAccountId()));
+    assertThat(actual.accountId(), is(accountSettings.accountId()));
     // These will be set to "now", but it's not possible to know the value exactly, so we don't assert them to finely.
     assertThat(actual.createdAt().minusSeconds(1).isBefore(Instant.now()), is(true));
     assertThat(actual.modifiedAt().minusSeconds(1).isBefore(Instant.now()), is(true));
-    assertThat(actual.getDescription(), is(accountSettings.getDescription()));
-    assertThat(actual.getAssetScale(), is(accountSettings.getAssetScale()));
-    assertThat(actual.getAssetCode(), is(accountSettings.getAssetCode()));
-    assertThat(actual.getAccountRelationship(), is(accountSettings.getAccountRelationship()));
-    assertThat(actual.getIlpAddressSegment(), is(accountSettings.getIlpAddressSegment()));
-    assertThat(actual.getLinkType(), is(accountSettings.getLinkType()));
-    assertThat(actual.getRateLimitSettings(), is(accountSettings.getRateLimitSettings()));
-    assertThat(actual.getBalanceSettings(), is(accountSettings.getBalanceSettings()));
+    assertThat(actual.description(), is(accountSettings.description()));
+    assertThat(actual.assetScale(), is(accountSettings.assetScale()));
+    assertThat(actual.assetCode(), is(accountSettings.assetCode()));
+    assertThat(actual.accountRelationship(), is(accountSettings.accountRelationship()));
+    assertThat(actual.ilpAddressSegment(), is(accountSettings.ilpAddressSegment()));
+    assertThat(actual.linkType(), is(accountSettings.linkType()));
+    assertThat(actual.rateLimitSettings(), is(accountSettings.rateLimitSettings()));
+    assertThat(actual.balanceSettings(), is(accountSettings.balanceSettings()));
     assertThat(actual.settlementEngineDetails(), is(accountSettings.settlementEngineDetails()));
   }
 }
