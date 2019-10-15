@@ -19,6 +19,8 @@ import org.interledger.connector.packetswitch.PacketRejector;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerPreparePacket;
+
+import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -81,7 +83,7 @@ public class DefaultPacketSwitchFilterChainTest {
 
   private static final InterledgerPreparePacket PREPARE_PACKET = InterledgerPreparePacket.builder()
     .destination(InterledgerAddress.of("test.foo"))
-    .amount(BigInteger.ONE)
+    .amount(UnsignedLong.ONE)
     .expiresAt(Instant.now().plusSeconds(30))
     .executionCondition(InterledgerCondition.of(new byte[32]))
     .build();
@@ -199,7 +201,7 @@ public class DefaultPacketSwitchFilterChainTest {
 
     final InterledgerPreparePacket pingPreparePacket = InterledgerPreparePacket.builder()
       .destination(OPERATOR_ADDRESS)
-      .amount(BigInteger.ONE)
+      .amount(UnsignedLong.ONE)
       .expiresAt(Instant.now().plusSeconds(30))
       .executionCondition(PING_PROTOCOL_CONDITION)
       .build();

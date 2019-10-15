@@ -1,7 +1,7 @@
 package org.interledger.connector.ccp.codecs;
 
 import com.google.common.io.BaseEncoding;
-import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
+import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.junit.Assert;
 import org.junit.Test;

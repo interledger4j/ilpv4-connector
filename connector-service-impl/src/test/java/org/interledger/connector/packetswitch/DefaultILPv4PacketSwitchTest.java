@@ -21,6 +21,8 @@ import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
+
+import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -64,7 +66,7 @@ public class DefaultILPv4PacketSwitchTest {
 
   private static final InterledgerPreparePacket PREPARE_PACKET = InterledgerPreparePacket.builder()
     .destination(InterledgerAddress.of("test.foo"))
-    .amount(BigInteger.ONE)
+    .amount(UnsignedLong.ONE)
     .expiresAt(Instant.now().plusSeconds(30))
     .executionCondition(InterledgerCondition.of(new byte[32]))
     .build();

@@ -9,6 +9,8 @@ import org.interledger.connector.ccp.CcpSyncMode;
 import org.interledger.connector.routing.RoutingTableId;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerPreparePacket;
+
+import com.google.common.primitives.UnsignedLong;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -62,7 +64,7 @@ public class IlpCcpNewRouteControlRequestCodecTest extends AbstractAsnCodecTest<
       {
         InterledgerPreparePacket.builder()
           .destination(CcpConstants.CCP_CONTROL_DESTINATION_ADDRESS)
-          .amount(BigInteger.ZERO)
+          .amount(UnsignedLong.ZERO)
           .executionCondition(
             InterledgerCondition.of(BaseEncoding.base16().decode(EXECUTION_CONDITION_HEX))
           )

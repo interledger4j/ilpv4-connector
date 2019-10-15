@@ -1,8 +1,8 @@
 package org.interledger.connector.ccp.codecs;
 
+import org.interledger.codecs.ilp.AsnInterledgerAddressCodec;
 import org.interledger.connector.ccp.CcpRoutePathPart;
 import org.interledger.connector.ccp.ImmutableCcpRoutePathPart;
-import org.interledger.core.asn.codecs.AsnInterledgerAddressCodec;
 import org.interledger.encoding.asn.codecs.AsnSequenceCodec;
 
 import java.util.Objects;

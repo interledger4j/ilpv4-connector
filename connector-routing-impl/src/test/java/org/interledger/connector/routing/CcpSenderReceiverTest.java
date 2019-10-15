@@ -2,6 +2,7 @@ package org.interledger.connector.routing;
 
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
+import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.connector.ccp.CcpConstants;
 import org.interledger.connector.ccp.CcpRouteControlRequest;
 import org.interledger.connector.ccp.CcpRouteUpdateRequest;
@@ -23,7 +24,6 @@ import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerResponsePacket;
-import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.junit.Before;

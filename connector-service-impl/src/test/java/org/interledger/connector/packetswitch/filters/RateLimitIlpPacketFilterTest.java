@@ -1,11 +1,17 @@
 package org.interledger.connector.packetswitch.filters;
 
-import com.google.common.cache.Cache;
-import com.google.common.util.concurrent.RateLimiter;
-import org.interledger.connector.packetswitch.PacketRejector;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
+
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.packetswitch.PacketRejector;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;
@@ -13,6 +19,9 @@ import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
+
+import com.github.benmanes.caffeine.cache.Cache;
+import com.google.common.util.concurrent.RateLimiter;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -21,14 +30,6 @@ import org.mockito.MockitoAnnotations;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link RateLimitIlpPacketFilter}.
