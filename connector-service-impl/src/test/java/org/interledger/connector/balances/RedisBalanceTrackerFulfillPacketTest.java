@@ -150,7 +150,7 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
     when(accountSettingsMock.accountId()).thenReturn(accountId);
     balanceTracker.updateBalanceForFulfill(accountSettingsMock, ONE);
 
-    final AccountBalance loadedBalance = balanceTracker.getBalance(accountId);
+    final AccountBalance loadedBalance = balanceTracker.balance(accountId);
     assertThat(loadedBalance.clearingBalance(), is(ONE));
     assertThat(loadedBalance.prepaidAmount(), is(ZERO));
     assertThat(loadedBalance.netBalance().longValue(), is(ONE));
@@ -162,7 +162,7 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
 
     balanceTracker.updateBalanceForFulfill(accountSettingsMock, this.prepareAmount);
 
-    final AccountBalance loadedBalance = balanceTracker.getBalance(ACCOUNT_ID);
+    final AccountBalance loadedBalance = balanceTracker.balance(ACCOUNT_ID);
     assertThat(loadedBalance.clearingBalance(), is(expectedClearingBalanceInRedis));
     assertThat(loadedBalance.prepaidAmount(), is(expectedPrepaidAmountInRedis));
     assertThat(loadedBalance.netBalance().longValue(),

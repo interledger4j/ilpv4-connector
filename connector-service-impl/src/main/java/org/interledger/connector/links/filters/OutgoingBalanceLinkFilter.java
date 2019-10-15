@@ -97,7 +97,7 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
           "Outgoing packet not applied due to ILP Reject. outgoingDestinationAccount={} amount={} newBalance={} preparePacket={} rejectPacket={}",
           destinationAccountSettings,
           outgoingPreparePacket.getAmount(),
-          balanceTracker.getBalance(destinationAccountSettings.accountId()),
+          balanceTracker.balance(destinationAccountSettings.accountId()),
           outgoingPreparePacket,
           interledgerRejectPacket
         );

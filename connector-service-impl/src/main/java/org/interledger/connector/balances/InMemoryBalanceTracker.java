@@ -29,7 +29,7 @@ public class InMemoryBalanceTracker implements BalanceTracker {
   }
 
   @Override
-  public AccountBalance getBalance(AccountId accountId) {
+  public AccountBalance balance(AccountId accountId) {
     return AccountBalance.builder()
       .accountId(accountId)
       .clearingBalance(getOrCreateBalance(this.clearingBalances, accountId).longValue())
@@ -41,7 +41,7 @@ public class InMemoryBalanceTracker implements BalanceTracker {
   public void updateBalanceForPrepare(
     AccountId sourceAccountId, long amount, Optional<Long> minBalance
   ) throws BalanceTrackerException {
-    final AccountBalance accountBalance = this.getBalance(sourceAccountId);
+    final AccountBalance accountBalance = this.balance(sourceAccountId);
 
     // Throw an exception if minBalance is violated....
     minBalance.ifPresent(mb -> {
@@ -72,7 +72,7 @@ public class InMemoryBalanceTracker implements BalanceTracker {
   ) throws BalanceTrackerException {
     this.increment(this.clearingBalances, destinationAccountSettings.accountId(), amount);
 
-    final AccountBalance currentBalance = this.getBalance(destinationAccountSettings.accountId());
+    final AccountBalance currentBalance = this.balance(destinationAccountSettings.accountId());
     final long amountToSettle = this.computeSettlementQuantity(destinationAccountSettings, currentBalance);
 
     return UpdateBalanceForFulfillResponse.builder()

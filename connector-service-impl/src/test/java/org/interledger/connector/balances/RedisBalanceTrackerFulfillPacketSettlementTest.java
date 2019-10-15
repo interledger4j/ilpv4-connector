@@ -198,7 +198,7 @@ public class RedisBalanceTrackerFulfillPacketSettlementTest extends AbstractRedi
     when(accountSettingsMock.accountId()).thenReturn(accountId);
     balanceTracker.updateBalanceForFulfill(accountSettingsMock, ONE);
 
-    final AccountBalance loadedBalance = balanceTracker.getBalance(accountId);
+    final AccountBalance loadedBalance = balanceTracker.balance(accountId);
     assertThat(loadedBalance.clearingBalance(), is(ONE));
     assertThat(loadedBalance.prepaidAmount(), is(ZERO));
     assertThat(loadedBalance.netBalance().longValue(), is(ONE));

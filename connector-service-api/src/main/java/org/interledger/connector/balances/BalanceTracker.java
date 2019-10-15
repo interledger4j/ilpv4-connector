@@ -42,7 +42,7 @@ public interface BalanceTracker {
    *
    * @return An instance of {@link AccountBalance}.
    */
-  AccountBalance getBalance(AccountId accountId);
+  AccountBalance balance(AccountId accountId);
 
   /**
    * Called in response to an ILP Prepare packet, this function atomically updates the balance for the account

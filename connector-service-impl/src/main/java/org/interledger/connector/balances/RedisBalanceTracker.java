@@ -65,7 +65,7 @@ public class RedisBalanceTracker implements BalanceTracker {
   }
 
   @Override
-  public AccountBalance getBalance(final AccountId accountId) {
+  public AccountBalance balance(final AccountId accountId) {
     Objects.requireNonNull(accountId);
 
     final BoundHashOperations<String, String, String> result =

@@ -210,7 +210,7 @@ public abstract class AbstractBlastIT {
   ) {
     assertThat(
       String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.toString()),
-      connector.getBalanceTracker().getBalance(accountId).netBalance(), is(expectedAmount)
+      connector.getBalanceTracker().balance(accountId).netBalance(), is(expectedAmount)
     );
   }
 
