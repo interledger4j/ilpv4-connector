@@ -30,9 +30,9 @@ public class AccountBalanceSettingsEntity {
   }
 
   public AccountBalanceSettingsEntity(AccountBalanceSettings accountBalanceSettings) {
-    this.setMinBalance(accountBalanceSettings.getMinBalance());
-    this.setSettleThreshold(accountBalanceSettings.getSettleThreshold());
-    this.setSettleTo(accountBalanceSettings.getSettleTo());
+    this.setMinBalance(accountBalanceSettings.minBalance());
+    this.setSettleThreshold(accountBalanceSettings.settleThreshold());
+    this.setSettleTo(accountBalanceSettings.settleTo());
   }
 
   public Optional<Long> getMinBalance() {

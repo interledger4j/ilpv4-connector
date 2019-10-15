@@ -14,7 +14,7 @@ public interface LinkEvent {
   /**
    * Accessor for the DataLink that emitted this event.
    */
-  Link<?> getLink();
+  Link<?> link();
 
   /**
    * Custom properties that can be added to any DataLink event.
@@ -22,7 +22,7 @@ public interface LinkEvent {
    * @return
    */
   @Default
-  default Map<String, Object> getCustomSettings() {
+  default Map<String, Object> customSettings() {
     return Maps.newConcurrentMap();
   }
 

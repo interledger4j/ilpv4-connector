@@ -25,10 +25,10 @@ public class RoutingTableEntryTest {
 //      .nextHopAccount(CONNECTOR_ACCOUNT_CONNIE)
 //      .build();
 //
-//    assertThat(routingTableEntry1.getRoutePrefix(), is(GLOBAL_TARGET_PREFIX));
-//    assertThat(routingTableEntry1.getNextHopAccountId(), is(CONNECTOR_ACCOUNT_CONNIE));
-//    assertThat(routingTableEntry1.getExpiresAt().isPresent(), is(false));
-//    assertThat(routingTableEntry1.getSourcePrefixRestrictionRegex().pattern(),
+//    assertThat(routingTableEntry1.routePrefix(), is(GLOBAL_TARGET_PREFIX));
+//    assertThat(routingTableEntry1.nextHopAccountId(), is(CONNECTOR_ACCOUNT_CONNIE));
+//    assertThat(routingTableEntry1.expiresAt().isPresent(), is(false));
+//    assertThat(routingTableEntry1.sourcePrefixRestrictionRegex().pattern(),
 //      is(ACCEPT_ALL_SOURCES_PATTERN.pattern()));
 //  }
 //

@@ -105,7 +105,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   @Test
   public void testAliceNodeSettings() {
     final ILPv4Connector connector = getILPv4NodeFromGraph(getAliceConnectorAddress());
-    assertThat(connector.getConnectorSettings().getOperatorAddress().get(), is(getAliceConnectorAddress()));
+    assertThat(connector.getConnectorSettings().operatorAddress().get(), is(getAliceConnectorAddress()));
 
     final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), BOB_ACCOUNT);
     assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(ALICE));
@@ -118,7 +118,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   @Test
   public void testBobNodeSettings() {
     final ILPv4Connector connector = getILPv4NodeFromGraph(getBobConnectorAddress());
-    assertThat(connector.getConnectorSettings().getOperatorAddress().get(), is(getBobConnectorAddress()));
+    assertThat(connector.getConnectorSettings().operatorAddress().get(), is(getBobConnectorAddress()));
 
     final BlastLink blastLink = getBlastLinkFromGraph(getBobConnectorAddress(), ALICE_ACCOUNT);
     assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(BOB));

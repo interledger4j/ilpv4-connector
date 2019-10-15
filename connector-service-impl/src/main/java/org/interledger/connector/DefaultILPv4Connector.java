@@ -120,7 +120,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   @PostConstruct
   private final void init() {
     // If an operator address is specified, then we use that. Otherwise, attempt to use IL-DCP.
-    if (connectorSettingsSupplier.get().getOperatorAddress().isPresent()) {
+    if (connectorSettingsSupplier.get().operatorAddress().isPresent()) {
       this.configureAccounts();
     } else {
       // ^^ IL-DCP ^^
@@ -192,7 +192,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       // Connector should not startup.
       this.accountManager.initializeParentAccountSettingsViaIlDcp(primaryParentAccountSettings.get().getAccountId());
       logger.info(
-        "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().getOperatorAddress().get()
+        "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().operatorAddress().get()
       );
     } else {
       logger.warn("At least one `parent` account must be defined if no operator address is specified at startup. " +

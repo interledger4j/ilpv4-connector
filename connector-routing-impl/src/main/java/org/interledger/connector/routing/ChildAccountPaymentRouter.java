@@ -67,7 +67,7 @@ public class ChildAccountPaymentRouter implements PaymentRouter<Route> {
 
           // Decrypt the routingSecret, but only momentarily...
           final byte[] routingSecret = decryptor.decrypt(EncryptedSecret.fromEncodedValue(
-            connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret()
+            connectorSettingsSupplier.get().globalRoutingSettings().routingSecret()
           ));
 
           try {
@@ -106,21 +106,21 @@ public class ChildAccountPaymentRouter implements PaymentRouter<Route> {
 
   boolean isChildAccount(final InterledgerAddress interledgerAddress) {
     Objects.requireNonNull(interledgerAddress, "interledgerAddress must not be null!");
-    return interledgerAddress.startsWith(connectorSettingsSupplier.get().getOperatorAddressSafe());
+    return interledgerAddress.startsWith(connectorSettingsSupplier.get().operatorAddressSafe());
   }
 
   @Override
   public Optional<Route> findBestNexHop(final InterledgerAddress finalDestinationAddress) {
     Objects.requireNonNull(finalDestinationAddress, "finalDestinationAddress must not be null!");
 
-    final EnabledProtocolSettings enabledProtocolSettings = this.connectorSettingsSupplier.get().getEnabledProtocols();
+    final EnabledProtocolSettings enabledProtocolSettings = this.connectorSettingsSupplier.get().enabledProtocols();
 
     /////////////////
     // Ping Protocol
     if (enabledProtocolSettings.isPingProtocolEnabled()) {
       // The ChildAccount router will only ever be engaged for addresses that start with the Connector address. We
       // need one final check to see if there's an exact match, and only then utilize the ping protocol link.
-      if (connectorSettingsSupplier.get().getOperatorAddressSafe().equals(finalDestinationAddress)) {
+      if (connectorSettingsSupplier.get().operatorAddressSafe().equals(finalDestinationAddress)) {
         return Optional.of(
           PING_ROUTE_BUILDER
             .routePrefix(InterledgerAddressPrefix.of(finalDestinationAddress.getValue()))

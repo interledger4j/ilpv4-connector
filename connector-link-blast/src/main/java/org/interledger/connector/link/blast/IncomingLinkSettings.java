@@ -1,16 +1,5 @@
 package org.interledger.connector.link.blast;
 
-import okhttp3.HttpUrl;
-import org.immutables.value.Value;
-import org.immutables.value.Value.Modifiable;
-import org.interledger.connector.link.blast.tokenSettings.SharedSecretTokenSettings;
-
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-
 import static org.interledger.connector.link.blast.BlastLinkSettings.AUTH_TYPE;
 import static org.interledger.connector.link.blast.BlastLinkSettings.BLAST;
 import static org.interledger.connector.link.blast.BlastLinkSettings.DOT;
@@ -18,6 +7,18 @@ import static org.interledger.connector.link.blast.BlastLinkSettings.INCOMING;
 import static org.interledger.connector.link.blast.BlastLinkSettings.SHARED_SECRET;
 import static org.interledger.connector.link.blast.BlastLinkSettings.TOKEN_AUDIENCE;
 import static org.interledger.connector.link.blast.BlastLinkSettings.TOKEN_ISSUER;
+
+import org.interledger.connector.link.blast.tokenSettings.SharedSecretTokenSettings;
+
+import okhttp3.HttpUrl;
+import org.immutables.value.Value;
+import org.immutables.value.Value.Modifiable;
+
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * An extension of {@link SharedSecretTokenSettings} for incoming ILP-over-HTTP Links. Note that this interface
@@ -125,7 +126,7 @@ public interface IncomingLinkSettings extends SharedSecretTokenSettings {
    *
    * @return A {@link Duration}.
    */
-  default Duration getMinMessageWindow() {
+  default Duration minMessageWindow() {
     return Duration.of(1000, ChronoUnit.MILLIS);
   }
 
@@ -135,7 +136,7 @@ public interface IncomingLinkSettings extends SharedSecretTokenSettings {
 
     @Override
     @Value.Default
-    public Duration getMinMessageWindow() {
+    public Duration minMessageWindow() {
       return Duration.of(1000, ChronoUnit.MILLIS);
     }
 

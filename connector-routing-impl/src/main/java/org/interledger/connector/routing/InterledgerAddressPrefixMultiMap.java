@@ -3,7 +3,7 @@ package org.interledger.connector.routing;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import org.apache.commons.collections4.trie.PatriciaTrie;
-import org.interledger.connector.routing.BaseRoute;
+
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.slf4j.Logger;
@@ -43,15 +43,15 @@ public class InterledgerAddressPrefixMultiMap<R extends BaseRoute> {
     Objects.requireNonNull(route);
 
     final Collection<R> prefixedRouteSet;
-    // Only allow a single thread to add a new getRoute into this map at a time because the PatriciaTrie is not
+    // Only allow a single thread to add a new route into this map at a time because the PatriciaTrie is not
     // thread-safe during puts.
     synchronized (prefixMap) {
       prefixedRouteSet = Optional.ofNullable(
-        this.prefixMap.get(toTrieKey(route.getRoutePrefix())))
+        this.prefixMap.get(toTrieKey(route.routePrefix())))
         .orElseGet(() -> {
           final Set<R> newPrefixedRoutes = Sets.newConcurrentHashSet();
-          // Synchronized so that another thread doesn't add an identical getRoute prefix from underneath us.
-          this.prefixMap.put(toTrieKey(route.getRoutePrefix()), newPrefixedRoutes);
+          // Synchronized so that another thread doesn't add an identical route prefix from underneath us.
+          this.prefixMap.put(toTrieKey(route.routePrefix()), newPrefixedRoutes);
           return newPrefixedRoutes;
         });
     }

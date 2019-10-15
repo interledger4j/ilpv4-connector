@@ -40,16 +40,16 @@ public class BlastLinkFactory implements LinkFactory {
   ) {
     Objects.requireNonNull(linkSettings);
 
-    if (!this.supports(linkSettings.getLinkType())) {
+    if (!this.supports(linkSettings.linkType())) {
       throw new RuntimeException(
-        String.format("LinkType `%s` not supported by this factory!", linkSettings.getLinkType())
+        String.format("LinkType `%s` not supported by this factory!", linkSettings.linkType())
       );
     }
 
     // Translate from Link.customSettings, being sure to apply custom settings from the incoming link.
     final ImmutableBlastLinkSettings.Builder builder = BlastLinkSettings.builder().from(linkSettings);
     final BlastLinkSettings blastLinkSettings =
-      BlastLinkSettings.applyCustomSettings(builder, linkSettings.getCustomSettings()).build();
+      BlastLinkSettings.applyCustomSettings(builder, linkSettings.customSettings()).build();
 
     final BlastHttpSender blastHttpSender;
     if (blastLinkSettings.outgoingBlastLinkSettings().authType().equals(BlastLinkSettings.AuthType.SIMPLE)) {

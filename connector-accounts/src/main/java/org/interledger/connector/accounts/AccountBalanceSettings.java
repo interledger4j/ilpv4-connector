@@ -31,7 +31,7 @@ public interface AccountBalanceSettings {
    *
    * @return The minimum balance, or {@link Optional#empty()} if there is no minimum.
    */
-  Optional<Long> getMinBalance();
+  Optional<Long> minBalance();
 
   /**
    * <p>Optional Balance (in this account's indivisible base units) numerically below which the connector will
@@ -44,7 +44,7 @@ public interface AccountBalanceSettings {
    * @return The settlement threshold balance, or {@link Optional#empty()} if there is no threshold (i.e., the account
    * should never settle).
    */
-  Optional<Long> getSettleThreshold();
+  Optional<Long> settleThreshold();
 
   /**
    * <p>The account balance (in this account's indivisible base units) the connector will attempt to reach when
@@ -55,7 +55,7 @@ public interface AccountBalanceSettings {
    *
    * @return The amount that triggers settlement.
    */
-  default long getSettleTo() {
+  default long settleTo() {
     return 0L;
   }
 
@@ -67,14 +67,14 @@ public interface AccountBalanceSettings {
 
     @Override
     @Value.Default
-    public long getSettleTo() {
+    public long settleTo() {
       return 0L;
     }
 
     @Value.Check
     public AbstractAccountBalanceSettings check() {
-      this.getSettleThreshold()
-        .ifPresent(settleThreshold -> Preconditions.checkArgument(settleThreshold >= getSettleTo(),
+      this.settleThreshold()
+        .ifPresent(settleThreshold -> Preconditions.checkArgument(settleThreshold >= settleTo(),
           "settleThreshold must be greater than or equal to the settleTo"
         ));
       return this;

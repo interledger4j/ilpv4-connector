@@ -194,7 +194,7 @@ public abstract class AbstractBlastIT {
     final Link link = getILPv4NodeFromGraph(nodeAddress).getLinkManager()
         .getOrCreateLink(accountId);
 
-    if (BlastLink.LINK_TYPE.equals(link.getLinkSettings().getLinkType())) {
+    if (BlastLink.LINK_TYPE.equals(link.getLinkSettings().linkType())) {
       // Most of the time, this link is a CircuitBreaking link, in which case the BlastLink is the Delegate.
       if (CircuitBreakingLink.class.isAssignableFrom(link.getClass())) {
         return ((CircuitBreakingLink) link).getLinkDelegateTyped();
@@ -203,7 +203,7 @@ public abstract class AbstractBlastIT {
       }
     } else {
       throw new LinkException(
-          "Link was not of Type(BLAST), but was instead: " + link.getLinkSettings().getLinkType().value(),
+          "Link was not of Type(BLAST), but was instead: " + link.getLinkSettings().linkType().value(),
           link.getLinkId());
     }
   }
@@ -215,7 +215,7 @@ public abstract class AbstractBlastIT {
   ) {
     assertThat(
         String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.toString()),
-        connector.getBalanceTracker().getBalance(accountId).netBalance(), is(expectedAmount)
+        connector.getBalanceTracker().balance(accountId).netBalance(), is(expectedAmount)
     );
   }
 

@@ -42,7 +42,7 @@ public class ConnectorExceptionHandler {
       final InterledgerRejectPacket rejectPacket = ((InterledgerProtocolException) e).getInterledgerRejectPacket();
       logger.warn(
         "[OPERATOR: `{}`]: Rejecting PREPARE Packet from `{}`: PREPARE_PACKET: {} REJECT_PACKET: {} ERROR: {}",
-        connectorSettingsSupplier.get().getOperatorAddress().map(InterledgerAddress::getValue).orElse("unknown"),
+        connectorSettingsSupplier.get().operatorAddress().map(InterledgerAddress::getValue).orElse("unknown"),
         sourceAccountId,
         preparePacket,
         rejectPacket,

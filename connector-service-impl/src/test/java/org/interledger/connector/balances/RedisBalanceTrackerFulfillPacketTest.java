@@ -110,9 +110,9 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
     MockitoAnnotations.initMocks(this);
 
     AccountBalanceSettings balanceSettingsMock = mock(AccountBalanceSettings.class);
-    when(accountSettingsMock.getBalanceSettings()).thenReturn(balanceSettingsMock);
-    when(accountSettingsMock.getAccountId()).thenReturn(ACCOUNT_ID);
-    when(accountSettingsMock.getAssetScale()).thenReturn(2); // Hard-coded since this is not being tested in this class.
+    when(accountSettingsMock.balanceSettings()).thenReturn(balanceSettingsMock);
+    when(accountSettingsMock.accountId()).thenReturn(ACCOUNT_ID);
+    when(accountSettingsMock.assetScale()).thenReturn(2); // Hard-coded since this is not being tested in this class.
 
     when(accountBalanceMock.clearingBalance()).thenReturn(existingClearingBalance);
     when(accountBalanceMock.prepaidAmount()).thenReturn(existingPrepaidBalance);
@@ -147,10 +147,10 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
   @Test
   public void updateBalanceForFulfillWhenNoAccountInRedis() {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-    when(accountSettingsMock.getAccountId()).thenReturn(accountId);
+    when(accountSettingsMock.accountId()).thenReturn(accountId);
     balanceTracker.updateBalanceForFulfill(accountSettingsMock, ONE);
 
-    final AccountBalance loadedBalance = balanceTracker.getBalance(accountId);
+    final AccountBalance loadedBalance = balanceTracker.balance(accountId);
     assertThat(loadedBalance.clearingBalance(), is(ONE));
     assertThat(loadedBalance.prepaidAmount(), is(ZERO));
     assertThat(loadedBalance.netBalance().longValue(), is(ONE));
@@ -162,7 +162,7 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
 
     balanceTracker.updateBalanceForFulfill(accountSettingsMock, this.prepareAmount);
 
-    final AccountBalance loadedBalance = balanceTracker.getBalance(ACCOUNT_ID);
+    final AccountBalance loadedBalance = balanceTracker.balance(ACCOUNT_ID);
     assertThat(loadedBalance.clearingBalance(), is(expectedClearingBalanceInRedis));
     assertThat(loadedBalance.prepaidAmount(), is(expectedPrepaidAmountInRedis));
     assertThat(loadedBalance.netBalance().longValue(),

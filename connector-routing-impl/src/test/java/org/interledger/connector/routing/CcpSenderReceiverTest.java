@@ -181,11 +181,11 @@ public class CcpSenderReceiverTest {
    * NodeB will immediately begin broadcasting routes to NodeA.
    * 3. NodeA sends a heartbeat, which should have no effect.
    * 4. NodeB sends a heartbeat, which should extend the routing table of NodeA.
-   * 5. NodeB adds 2 routes, and sends a getRoute update request to NodeA.
+   * 5. NodeB adds 2 routes, and sends a route update request to NodeA.
    *
    *
    * 3. NodeB moves NodeA to idle.
-   * 4. NodeB adds a 3rd getRoute, expects an error.
+   * 4. NodeB adds a 3rd route, expects an error.
    * 5. NodeB moves NodeA to sync-mode.
    * 6. NodeB withdraws all routes.
    * 7. NodeB sends a heartbeat.
@@ -361,7 +361,7 @@ public class CcpSenderReceiverTest {
   }
 
   /**
-   * A lpi2 that directly connects ¬two Connectors via Inter-process Communication (IPC), for testing of getRoute
+   * A lpi2 that directly connects ¬two Connectors via Inter-process Communication (IPC), for testing of route
    * control messages. Each Connector in a bilateral relationship will have an instance of this Link.
    */
   private static class IpcRouteHandlingLink extends AbstractLink<LinkSettings> implements Link<LinkSettings> {
@@ -403,7 +403,7 @@ public class CcpSenderReceiverTest {
               }
 
               logger.debug(
-                "Received getRoute control message. sender={}, tableId={} epoch={} features={}",
+                "Received route control message. sender={}, tableId={} epoch={} features={}",
                 operatorAddressSupplier,
                 routeControlRequest.lastKnownRoutingTableId(), routeControlRequest.lastKnownEpoch(),
                 routeControlRequest.features()
@@ -445,7 +445,7 @@ public class CcpSenderReceiverTest {
                 this.localConnector.ccpReceiver.handleRouteUpdateRequest(routeUpdateRequest);
 
               // TODO: In the real connector, we would update the local routing table via the following two calls in
-              // getRoute-broadcaster.js->updatePrefix(prefix:String) {
+              // route-broadcaster.js->updatePrefix(prefix:String) {
               // const newBest = this.getCurrentBestPeerRouteForPrefix(prefix)
               // return this.updateLocalRoute(prefix, newBest)
               // }

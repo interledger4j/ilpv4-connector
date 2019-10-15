@@ -99,14 +99,14 @@ public class DefaultCcpSender implements CcpSender {
     Preconditions.checkNotNull(link, "Link must be assigned before using a CcpSender!");
 
     logger.debug("Peer {} sent CcpRouteControlRequest: {}", peerAccountId, routeControlRequest);
-    if (syncMode.get() != routeControlRequest.getMode()) {
+    if (syncMode.get() != routeControlRequest.mode()) {
       logger.debug(
         "Peer {} requested changing routing mode. oldMode={} newMode={}",
-        peerAccountId, this.syncMode.get(), routeControlRequest.getMode()
+        peerAccountId, this.syncMode.get(), routeControlRequest.mode()
       );
     }
 
-    this.syncMode.set(routeControlRequest.getMode());
+    this.syncMode.set(routeControlRequest.mode());
 
     if (lastKnownRoutingTableId.get().equals(this.forwardingRoutingTable.getRoutingTableId()) == false) {
       logger.debug(
@@ -146,7 +146,7 @@ public class DefaultCcpSender implements CcpSender {
       if (scheduledTask == null) {
         scheduledTask = this.scheduler.scheduleWithFixedDelay(
           this::sendRouteUpdateRequest,
-          this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteBroadcastInterval()
+          this.connectorSettingsSupplier.get().globalRoutingSettings().routeBroadcastInterval()
         );
         logger.info("CcpSender now broadcasting to Peer: {}", this.peerAccountId);
       } else {
@@ -193,7 +193,7 @@ public class DefaultCcpSender implements CcpSender {
       int limit = 0;
       // TODO:FIXME
       //        (int) (nextRequestedEpoch + this.connectorSettingsSupplier.get().getRouteBroadcastSettings()
-      //          .getMaxEpochsPerRoutingTable());
+      //          .maxEpochsPerRoutingTable());
       final Iterable<RouteUpdate> allUpdatesToSend = this.forwardingRoutingTable.getPartialRouteLog(skip, limit);
 
       // Despite asking for N updates, there may not be that many to send, so compute the `toEpoch` properly.
@@ -205,21 +205,21 @@ public class DefaultCcpSender implements CcpSender {
         .map(routeUpdate -> {
 
           // If there are no routes in the update, then skip it...
-          if (!routeUpdate.getRoute().isPresent()) {
+          if (!routeUpdate.route().isPresent()) {
             return routeUpdate;
           } else {
-            final Route actualRoute = routeUpdate.getRoute().get();
+            final Route actualRoute = routeUpdate.route().get();
             // Don't send peer their own routes (i.e., withdraw this route)
-            if (actualRoute.getNextHopAccountId().equals(peerAccountId)) {
+            if (actualRoute.nextHopAccountId().equals(peerAccountId)) {
               return null;
             }
 
             // Don't advertise Peer or Supplier (Parent) routes to Suppliers (Parents).
             final boolean nextHopRelationIsPeerOrParent = this
-              .accountSettingsRepository.findByAccountIdWithConversion(actualRoute.getNextHopAccountId())
+              .accountSettingsRepository.findByAccountIdWithConversion(actualRoute.nextHopAccountId())
               .map(AccountSettings::isPeerOrParentAccount)
               .orElseGet(() -> {
-                logger.error("NextHop Route {} was not found in the PeerManager!", actualRoute.getNextHopAccountId());
+                logger.error("NextHop Route {} was not found in the PeerManager!", actualRoute.nextHopAccountId());
                 return false;
               });
 
@@ -244,16 +244,16 @@ public class DefaultCcpSender implements CcpSender {
 
       // Populate newRoutesBuilder....
       filteredUpdatesToSend.stream()
-        .filter(routeUpdate -> routeUpdate.getRoute().isPresent())
-        .map(RouteUpdate::getRoute)
+        .filter(routeUpdate -> routeUpdate.route().isPresent())
+        .map(RouteUpdate::route)
         .filter(Optional::isPresent)
         .map(Optional::get)
         .map(routingTableEntry ->
           ImmutableCcpNewRoute.builder()
-            .prefix(routingTableEntry.getRoutePrefix())
-            .auth(routingTableEntry.getAuth())
+            .prefix(routingTableEntry.routePrefix())
+            .auth(routingTableEntry.auth())
             .path(
-              routingTableEntry.getPath().stream()
+              routingTableEntry.path().stream()
                 .map(address -> ImmutableCcpRoutePathPart.builder()
                   .routePathPart(address)
                   .build()
@@ -265,18 +265,18 @@ public class DefaultCcpSender implements CcpSender {
 
       // Populate withdrawnRoutesBuilder....
       filteredUpdatesToSend.stream()
-        .filter(routeUpdate -> !routeUpdate.getRoute().isPresent())
+        .filter(routeUpdate -> !routeUpdate.route().isPresent())
         .map(routingTableEntry ->
           ImmutableCcpWithdrawnRoute.builder()
-            .prefix(routingTableEntry.getRoutePrefix())
+            .prefix(routingTableEntry.routePrefix())
             .build()
         ).forEach(withdrawnRoutesBuilder::add);
 
       // Construct RouteUpdateRequest
       final CcpRouteUpdateRequest ccpRouteUpdateRequest = ImmutableCcpRouteUpdateRequest.builder()
-        .speaker(this.connectorSettingsSupplier.get().getOperatorAddressSafe())
+        .speaker(this.connectorSettingsSupplier.get().operatorAddressSafe())
         .routingTableId(this.forwardingRoutingTable.getRoutingTableId())
-        .holdDownTime(this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteExpiry().toMillis())
+        .holdDownTime(this.connectorSettingsSupplier.get().globalRoutingSettings().routeExpiry().toMillis())
         .currentEpochIndex(this.forwardingRoutingTable.getCurrentEpoch())
         .fromEpochIndex(this.lastKnownEpoch.get())
         .toEpochIndex(toEpoch)
@@ -296,7 +296,7 @@ public class DefaultCcpSender implements CcpSender {
         .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
         .expiresAt(Instant.now().plus(
           // TODO: Verify this is correct. Should the packet just have a normal expiration?
-          this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteExpiry()
+          this.connectorSettingsSupplier.get().globalRoutingSettings().routeExpiry()
         ))
         .data(serializeCcpPacket(ccpRouteUpdateRequest))
         .build();

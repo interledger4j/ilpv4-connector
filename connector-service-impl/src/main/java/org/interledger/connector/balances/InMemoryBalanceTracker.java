@@ -29,7 +29,7 @@ public class InMemoryBalanceTracker implements BalanceTracker {
   }
 
   @Override
-  public AccountBalance getBalance(AccountId accountId) {
+  public AccountBalance balance(AccountId accountId) {
     return AccountBalance.builder()
       .accountId(accountId)
       .clearingBalance(getOrCreateBalance(this.clearingBalances, accountId).longValue())
@@ -41,7 +41,7 @@ public class InMemoryBalanceTracker implements BalanceTracker {
   public void updateBalanceForPrepare(
     AccountId sourceAccountId, long amount, Optional<Long> minBalance
   ) throws BalanceTrackerException {
-    final AccountBalance accountBalance = this.getBalance(sourceAccountId);
+    final AccountBalance accountBalance = this.balance(sourceAccountId);
 
     // Throw an exception if minBalance is violated....
     minBalance.ifPresent(mb -> {
@@ -70,9 +70,9 @@ public class InMemoryBalanceTracker implements BalanceTracker {
   public UpdateBalanceForFulfillResponse updateBalanceForFulfill(
     final AccountSettings destinationAccountSettings, final long amount
   ) throws BalanceTrackerException {
-    this.increment(this.clearingBalances, destinationAccountSettings.getAccountId(), amount);
+    this.increment(this.clearingBalances, destinationAccountSettings.accountId(), amount);
 
-    final AccountBalance currentBalance = this.getBalance(destinationAccountSettings.getAccountId());
+    final AccountBalance currentBalance = this.balance(destinationAccountSettings.accountId());
     final long amountToSettle = this.computeSettlementQuantity(destinationAccountSettings, currentBalance);
 
     return UpdateBalanceForFulfillResponse.builder()
@@ -134,7 +134,7 @@ public class InMemoryBalanceTracker implements BalanceTracker {
 
   /**
    * <p>Compute a {@link SettlementQuantity} based upon the current balance of an account. Using the {@link
-   * AccountBalanceSettings#getSettleThreshold()} and {@link AccountBalanceSettings#getSettleTo()}, this method can
+   * AccountBalanceSettings#settleThreshold()} and {@link AccountBalanceSettings#settleTo()}, this method can
    * compute the amount of a settlement payment by determining if the current balance exceeds the settlement threshold,
    * and if so, by how much.</p>
    *
@@ -153,10 +153,10 @@ public class InMemoryBalanceTracker implements BalanceTracker {
     Objects.requireNonNull(accountSettings, "accountSettings must not be null");
     Objects.requireNonNull(accountBalance, "accountBalance must not be null");
 
-    final long settleTo = accountSettings.getBalanceSettings().getSettleTo();
+    final long settleTo = accountSettings.balanceSettings().settleTo();
     final long clearingBalance = accountBalance.clearingBalance();
 
-    return accountSettings.getBalanceSettings().getSettleThreshold()
+    return accountSettings.balanceSettings().settleThreshold()
       // If there is a settle_threshold, we need to return the propert settlement quantity, if any.
       .map(settleThreshold -> {
         final long settlementAmount;
