@@ -33,12 +33,12 @@ public class ConnectorSettingsFromPropertyFileTest {
 
   @Test
   public void testConfig() {
-    assertThat(connectorSettings.getOperatorAddress().get(), is(InterledgerAddress.of("test.example")));
-    assertThat(connectorSettings.getOperatorAddressSafe(), is(InterledgerAddress.of("test.example")));
-    assertThat(connectorSettings.getGlobalPrefix(), is(InterledgerAddressPrefix.of("test")));
+    assertThat(connectorSettings.operatorAddress().get(), is(InterledgerAddress.of("test.example")));
+    assertThat(connectorSettings.operatorAddressSafe(), is(InterledgerAddress.of("test.example")));
+    assertThat(connectorSettings.globalPrefix(), is(InterledgerAddressPrefix.of("test")));
 
     // Enabled Protocol Settings
-    final EnabledProtocolSettings enabledProtocolSettings = connectorSettings.getEnabledProtocols();
+    final EnabledProtocolSettings enabledProtocolSettings = connectorSettings.enabledProtocols();
     assertThat(enabledProtocolSettings.isBlastEnabled(), is(true));
     assertThat(enabledProtocolSettings.isPeerConfigEnabled(), is(true));
     assertThat(enabledProtocolSettings.isPeerRoutingEnabled(), is(true));
@@ -46,25 +46,25 @@ public class ConnectorSettingsFromPropertyFileTest {
     assertThat(enabledProtocolSettings.isIldcpEnabled(), is(true));
 
     // Enabled Features
-    final EnabledFeatureSettings enabledFeatureSettings = connectorSettings.getEnabledFeatures();
+    final EnabledFeatureSettings enabledFeatureSettings = connectorSettings.enabledFeatures();
     assertThat(enabledFeatureSettings.isRateLimitingEnabled(), is(true));
 
     // Global Routing Settings
-    final GlobalRoutingSettings globalRoutingSettings = connectorSettings.getGlobalRoutingSettings();
-    assertThat(globalRoutingSettings.getDefaultRoute().get(), is(AccountId.of("self.internal")));
+    final GlobalRoutingSettings globalRoutingSettings = connectorSettings.globalRoutingSettings();
+    assertThat(globalRoutingSettings.defaultRoute().get(), is(AccountId.of("self.internal")));
     assertThat(globalRoutingSettings.isUseParentForDefaultRoute(), is(true));
-    assertThat(globalRoutingSettings.getRoutingSecret(), is("shh"));
-    assertThat(globalRoutingSettings.getRouteBroadcastInterval(), is(Duration.ofMillis(30001L)));
-    assertThat(globalRoutingSettings.getRouteCleanupInterval(), is(Duration.ofMillis(30002L)));
-    assertThat(globalRoutingSettings.getRouteExpiry(), is(Duration.ofMillis(30003L)));
-    assertThat(globalRoutingSettings.getMaxEpochsPerRoutingTable(), is(77));
-    assertThat(globalRoutingSettings.getStaticRoutes().size(), is(1));
+    assertThat(globalRoutingSettings.routingSecret(), is("shh"));
+    assertThat(globalRoutingSettings.routeBroadcastInterval(), is(Duration.ofMillis(30001L)));
+    assertThat(globalRoutingSettings.routeCleanupInterval(), is(Duration.ofMillis(30002L)));
+    assertThat(globalRoutingSettings.routeExpiry(), is(Duration.ofMillis(30003L)));
+    assertThat(globalRoutingSettings.maxEpochsPerRoutingTable(), is(77));
+    assertThat(globalRoutingSettings.staticRoutes().size(), is(1));
     assertThat(
-      globalRoutingSettings.getStaticRoutes().stream().findFirst().get().getTargetPrefix(),
+      globalRoutingSettings.staticRoutes().stream().findFirst().get().targetPrefix(),
       is(InterledgerAddressPrefix.of("test.parent"))
     );
     assertThat(
-      globalRoutingSettings.getStaticRoutes().stream().findFirst().get().getPeerAccountId(),
+      globalRoutingSettings.staticRoutes().stream().findFirst().get().peerAccountId(),
       is(AccountId.of("bob"))
     );
   }

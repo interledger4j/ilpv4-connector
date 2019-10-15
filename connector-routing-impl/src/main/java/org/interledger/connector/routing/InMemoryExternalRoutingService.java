@@ -160,7 +160,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     // TODO: No need to add a route for our own address because this is currently handled via Filter, but determine
     //  if this works correctly with CCP (e.g., we want to broadcast routes that are our children).
-    // final InterledgerAddress ourAddress = this.connectorSettingsSupplier.get().getOperatorAddress();
+    // final InterledgerAddress ourAddress = this.connectorSettingsSupplier.get().operatorAddress();
 
     //////////////////
     // Parent Accounts
@@ -196,14 +196,14 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     //////////////////
 
     // For any statically configured route...
-    this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getStaticRoutes().stream()
+    this.connectorSettingsSupplier.get().globalRoutingSettings().staticRoutes().stream()
       .forEach(staticRoute -> {
 
         // ...attempt to register a CCP-enabled account (duplicate requests are fine).
-        routeBroadcaster.registerCcpEnabledAccount(staticRoute.getPeerAccountId());
+        routeBroadcaster.registerCcpEnabledAccount(staticRoute.peerAccountId());
 
         // This will add the prefix correctly _and_ update the forwarding table...
-        updatePrefix(staticRoute.getTargetPrefix());
+        updatePrefix(staticRoute.targetPrefix());
       });
 
     ////////////////////
@@ -298,7 +298,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
       .map(nblr -> {
         // Inject ourselves into the path that we'll send to remote peers...
         final List<InterledgerAddress> newPath = ImmutableList.<InterledgerAddress>builder()
-          .add(connectorSettingsSupplier.get().getOperatorAddressSafe())
+          .add(connectorSettingsSupplier.get().operatorAddressSafe())
           .addAll(nblr.getPath()).build();
 
         return ImmutableRoute.builder()
@@ -312,7 +312,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
           .build();
       })
       .map(nblr -> {
-        final InterledgerAddressPrefix globalPrefix = connectorSettingsSupplier.get().getGlobalPrefix();
+        final InterledgerAddressPrefix globalPrefix = connectorSettingsSupplier.get().globalPrefix();
         final boolean hasGlobalPrefix = addressPrefix.getRootPrefix().equals(globalPrefix);
         final boolean isDefaultRoute = determineDefaultRoute()
           .map(Route::getRoutePrefix)
@@ -322,7 +322,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
         // Don't advertise local customer routes that we originated. Packets for these destinations should still
         // reach us because we are advertising our own address as a prefix.
         final boolean isLocalCustomerRoute = addressPrefix.getValue()
-          .startsWith(this.connectorSettingsSupplier.get().getOperatorAddressSafe().getValue()) &&
+          .startsWith(this.connectorSettingsSupplier.get().operatorAddressSafe().getValue()) &&
           nblr.getPath().size() == 1;
 
         final boolean canDragonFilter = false; // TODO: Dragon!
@@ -414,8 +414,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     // Static-routes have highest priority...
     return Optional.ofNullable(
-      connectorSettingsSupplier.get().getGlobalRoutingSettings().getStaticRoutes().stream()
-        .filter(staticRoute -> staticRoute.getTargetPrefix().equals(addressPrefix))
+      connectorSettingsSupplier.get().globalRoutingSettings().staticRoutes().stream()
+        .filter(staticRoute -> staticRoute.targetPrefix().equals(addressPrefix))
         .findFirst()
         .map(staticRoute -> {
           // If there's a static route, then use it, even if the account doesn't exist. In this
@@ -423,7 +423,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
           // comes into existence, then the Router and/or Link will simply reject if anything is attempted.
           return (Route) ImmutableRoute.builder()
             .routePrefix(addressPrefix)
-            .nextHopAccountId(staticRoute.getPeerAccountId())
+            .nextHopAccountId(staticRoute.peerAccountId())
             .auth(this.constructRouteAuth(addressPrefix))
             .build();
         })
@@ -472,7 +472,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     // Decrypt the routingSecret, but only momentarily...
     final byte[] routingSecret = decryptor.decrypt(EncryptedSecret.fromEncodedValue(
-      connectorSettingsSupplier.get().getGlobalRoutingSettings().getRoutingSecret()
+      connectorSettingsSupplier.get().globalRoutingSettings().routingSecret()
     ));
 
     try {
@@ -488,7 +488,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
    */
   private Optional<Route> determineDefaultRoute() {
     final Optional<AccountId> nextHopForDefaultRoute;
-    if (connectorSettingsSupplier.get().getGlobalRoutingSettings().isUseParentForDefaultRoute()) {
+    if (connectorSettingsSupplier.get().globalRoutingSettings().isUseParentForDefaultRoute()) {
       nextHopForDefaultRoute =
         this.accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PARENT)
         .map(AccountSettings::accountId)
@@ -497,8 +497,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
           "Connector was configured to use a Parent account as the nextHop for the default route, but no Parent " +
             "Account was configured!"
         ));
-    } else if (connectorSettingsSupplier.get().getGlobalRoutingSettings().getDefaultRoute().isPresent()) {
-      nextHopForDefaultRoute = connectorSettingsSupplier.get().getGlobalRoutingSettings().getDefaultRoute()
+    } else if (connectorSettingsSupplier.get().globalRoutingSettings().defaultRoute().isPresent()) {
+      nextHopForDefaultRoute = connectorSettingsSupplier.get().globalRoutingSettings().defaultRoute()
         .map(Optional::of)
         .orElseThrow(() -> new RuntimeException("Connector was configured to use a default address as the nextHop " +
           "for the default route, but no Account was configured for this address!"));
@@ -515,7 +515,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     // Emit the default route.
     nextHopForDefaultRoute.ifPresent(defaultRoute -> logger.info("Default Route Configured: " + defaultRoute));
 
-    final InterledgerAddressPrefix globalPrefix = connectorSettingsSupplier.get().getGlobalPrefix();
+    final InterledgerAddressPrefix globalPrefix = connectorSettingsSupplier.get().globalPrefix();
     final Optional<Route> defaultRoute = nextHopForDefaultRoute.map(nextHopAccountId ->
       ImmutableRoute.builder()
         .routePrefix(globalPrefix)

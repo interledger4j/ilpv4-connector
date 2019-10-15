@@ -85,7 +85,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     final Route nextHopRoute = this.externalRoutingService.findBestNexHop(destinationAddress)
       .orElseThrow(() -> new InterledgerProtocolException(
           InterledgerRejectPacket.builder()
-            .triggeredBy(connectorSettingsSupplier.get().getOperatorAddressSafe())
+            .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
             .code(InterledgerErrorCode.F02_UNREACHABLE)
             .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
             .build(),
@@ -103,7 +103,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     if (sourceAccountSettings.accountId().equals(nextHopRoute.getNextHopAccountId())) {
       throw new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
-          .triggeredBy(connectorSettingsSupplier.get().getOperatorAddressSafe())
+          .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
           .code(InterledgerErrorCode.F02_UNREACHABLE)
           .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
           .build(),
@@ -186,7 +186,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       if (sourceExpiry.isBefore(nowTime)) {
         throw new InterledgerProtocolException(
           InterledgerRejectPacket.builder()
-            .triggeredBy(connectorSettingsSupplier.get().getOperatorAddressSafe())
+            .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
             .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
             .message(String.format(
               "Source transfer has already expired. sourceExpiry: {%s}, currentTime: {%s}", sourceExpiry, nowTime))
@@ -212,7 +212,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       if (destinationExpiryTime.minusMillis(minMessageWindow).isBefore(nowTime)) {
         throw new InterledgerProtocolException(
           InterledgerRejectPacket.builder()
-            .triggeredBy(connectorSettingsSupplier.get().getOperatorAddressSafe())
+            .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
             .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
             .message(String.format(
               "Source transfer expires too soon to complete payment. SourceExpiry: {%s}, " +

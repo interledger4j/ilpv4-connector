@@ -45,7 +45,7 @@ public abstract class AbstractBilateralConnection {//<IT extends MultiplexedBila
   //  }
   //
   //  @Override
-  //  public InterledgerAddress getOperatorAddress() {
+  //  public InterledgerAddress operatorAddress() {
   //    return this.operatorAddress;
   //  }
   //

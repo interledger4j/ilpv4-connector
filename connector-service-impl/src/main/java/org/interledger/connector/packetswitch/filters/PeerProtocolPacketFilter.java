@@ -80,7 +80,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
       // `peer.config`
       if (sourcePreparePacket.getDestination().equals(IldcpRequestPacket.PEER_DOT_CONFIG)) {
-        if (connectorSettingsSupplier.get().getEnabledProtocols().isPeerConfigEnabled()) {
+        if (connectorSettingsSupplier.get().enabledProtocols().isPeerConfigEnabled()) {
           return this.handleIldcpRequest(sourceAccountSettings, sourcePreparePacket);
         } else {
           return packetRejector.reject(sourceAccountSettings.accountId(), sourcePreparePacket,
@@ -91,7 +91,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
       // `peer.routing`
       else if (sourcePreparePacket.getDestination().startsWith(PEER_DOT_ROUTE)) {
-        if (connectorSettingsSupplier.get().getEnabledProtocols().isPeerRoutingEnabled()) {
+        if (connectorSettingsSupplier.get().enabledProtocols().isPeerRoutingEnabled()) {
           //CCP via `peer.routing`
           return handlePeerRouting(sourceAccountSettings, sourcePreparePacket);
         } else {

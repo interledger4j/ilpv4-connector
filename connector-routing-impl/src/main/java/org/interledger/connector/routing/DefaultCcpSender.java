@@ -146,7 +146,7 @@ public class DefaultCcpSender implements CcpSender {
       if (scheduledTask == null) {
         scheduledTask = this.scheduler.scheduleWithFixedDelay(
           this::sendRouteUpdateRequest,
-          this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteBroadcastInterval()
+          this.connectorSettingsSupplier.get().globalRoutingSettings().routeBroadcastInterval()
         );
         logger.info("CcpSender now broadcasting to Peer: {}", this.peerAccountId);
       } else {
@@ -193,7 +193,7 @@ public class DefaultCcpSender implements CcpSender {
       int limit = 0;
       // TODO:FIXME
       //        (int) (nextRequestedEpoch + this.connectorSettingsSupplier.get().getRouteBroadcastSettings()
-      //          .getMaxEpochsPerRoutingTable());
+      //          .maxEpochsPerRoutingTable());
       final Iterable<RouteUpdate> allUpdatesToSend = this.forwardingRoutingTable.getPartialRouteLog(skip, limit);
 
       // Despite asking for N updates, there may not be that many to send, so compute the `toEpoch` properly.
@@ -274,9 +274,9 @@ public class DefaultCcpSender implements CcpSender {
 
       // Construct RouteUpdateRequest
       final CcpRouteUpdateRequest ccpRouteUpdateRequest = ImmutableCcpRouteUpdateRequest.builder()
-        .speaker(this.connectorSettingsSupplier.get().getOperatorAddressSafe())
+        .speaker(this.connectorSettingsSupplier.get().operatorAddressSafe())
         .routingTableId(this.forwardingRoutingTable.getRoutingTableId())
-        .holdDownTime(this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteExpiry().toMillis())
+        .holdDownTime(this.connectorSettingsSupplier.get().globalRoutingSettings().routeExpiry().toMillis())
         .currentEpochIndex(this.forwardingRoutingTable.getCurrentEpoch())
         .fromEpochIndex(this.lastKnownEpoch.get())
         .toEpochIndex(toEpoch)
@@ -296,7 +296,7 @@ public class DefaultCcpSender implements CcpSender {
         .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
         .expiresAt(Instant.now().plus(
           // TODO: Verify this is correct. Should the packet just have a normal expiration?
-          this.connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteExpiry()
+          this.connectorSettingsSupplier.get().globalRoutingSettings().routeExpiry()
         ))
         .data(serializeCcpPacket(ccpRouteUpdateRequest))
         .build();

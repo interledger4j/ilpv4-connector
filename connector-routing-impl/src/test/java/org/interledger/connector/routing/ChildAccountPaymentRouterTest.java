@@ -38,9 +38,9 @@ public class ChildAccountPaymentRouterTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
 
-    when(connectorSettingsMock.getEnabledProtocols().isPingProtocolEnabled()).thenReturn(true);
-    when(connectorSettingsMock.getOperatorAddressSafe()).thenReturn(OPERATOR_ADDRESS);
-    when(connectorSettingsMock.getGlobalRoutingSettings().getRoutingSecret()).thenReturn(
+    when(connectorSettingsMock.enabledProtocols().isPingProtocolEnabled()).thenReturn(true);
+    when(connectorSettingsMock.operatorAddressSafe()).thenReturn(OPERATOR_ADDRESS);
+    when(connectorSettingsMock.globalRoutingSettings().routingSecret()).thenReturn(
       "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0="
     );
 
@@ -100,7 +100,7 @@ public class ChildAccountPaymentRouterTest {
 
   @Test
   public void isChildAccount() {
-    when(connectorSettingsMock.getOperatorAddressSafe()).thenReturn(OPERATOR_ADDRESS);
+    when(connectorSettingsMock.operatorAddressSafe()).thenReturn(OPERATOR_ADDRESS);
 
     assertThat(childAccountPaymentRouter.isChildAccount(OPERATOR_ADDRESS), is(true));
     assertThat(childAccountPaymentRouter.isChildAccount(InterledgerAddress.of("test.foo.bar")), is(true));
@@ -130,7 +130,7 @@ public class ChildAccountPaymentRouterTest {
    */
   @Test
   public void findBestNexHopForUniPingWhenPingDisabled() {
-    when(connectorSettingsMock.getEnabledProtocols().isPingProtocolEnabled()).thenReturn(false);
+    when(connectorSettingsMock.enabledProtocols().isPingProtocolEnabled()).thenReturn(false);
     Optional<Route> actual = childAccountPaymentRouter.findBestNexHop(OPERATOR_ADDRESS);
     assertThat(actual.isPresent(), is(false));
   }

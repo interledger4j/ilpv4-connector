@@ -110,7 +110,7 @@ public class DefaultAccountManager implements AccountManager {
     // no ILP address specified, then the Connector startup will trigger IL-DCP. In other words, this check is only
     // required for the first-account-creation (under certain conditions).
     if (AccountRelationship.PARENT.equals(accountSettings.accountRelationship())) {
-      if (!connectorSettingsSupplier.get().getOperatorAddress().isPresent()) {
+      if (!connectorSettingsSupplier.get().operatorAddress().isPresent()) {
         this.initializeParentAccountSettingsViaIlDcp(accountSettings.accountId());
       }
     }
@@ -183,7 +183,7 @@ public class DefaultAccountManager implements AccountManager {
       getAccountSettingsRepository().save(parentAccountSettingsEntity);
 
     logger.info(
-      "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().getOperatorAddress().get()
+      "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().operatorAddress().get()
     );
 
     return conversionService.convert(updatedAccountSettings, AccountSettings.class);

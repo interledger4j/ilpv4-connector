@@ -269,7 +269,7 @@ public class SingleConnectorMultiAccountBtpTopology {
   //  //          return BtpSingleAccountConnectorProfile.this.getAccountAddress();
   //  //        }
   //  //      },
-  //  //      new BtpMultiAuthenticator.AlwaysAllowedBtpMultiAuthenticator(connectorSettings.getOperatorAddress())
+  //  //      new BtpMultiAuthenticator.AlwaysAllowedBtpMultiAuthenticator(connectorSettings.operatorAddress())
   //  //    );
   //  //
   //  //    final AuthBtpSubprotocolHandler authBtpSubprotocolHandler = new ServerAuthBtpSubprotocolHandler();

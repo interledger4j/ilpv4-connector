@@ -196,7 +196,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
       .amount(UnsignedLong.ZERO)
       .destination(CcpConstants.CCP_CONTROL_DESTINATION_ADDRESS)
       .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
-      .expiresAt(Instant.now().plus(connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteExpiry()))
+      .expiresAt(Instant.now().plus(connectorSettingsSupplier.get().globalRoutingSettings().routeExpiry()))
       .data(serializeCcpPacket(request))
       .build();
 
