@@ -76,18 +76,18 @@ public class DefaultSettlementService implements SettlementService {
     final BigInteger settlementQuantityToAdjustInClearingLayer = NumberScalingUtils.translate(
       incomingSettlementInSettlementUnits.amount(),
       incomingSettlementInSettlementUnits.scale(),
-      accountSettings.getAssetScale()
+      accountSettings.assetScale()
     );
 
     // Update the balance in the clearing layer based upon what was settled to this account.
     this.balanceTracker.updateBalanceForIncomingSettlement(
-      idempotencyKey, accountSettings.getAccountId(), settlementQuantityToAdjustInClearingLayer.longValue()
+      idempotencyKey, accountSettings.accountId(), settlementQuantityToAdjustInClearingLayer.longValue()
     );
 
     final SettlementQuantity settledQuantity =
       SettlementQuantity.builder()
         .amount(settlementQuantityToAdjustInClearingLayer)
-        .scale(accountSettings.getAssetScale())
+        .scale(accountSettings.assetScale())
         .build();
 
     // Notify the system that a settlement was processed...
@@ -122,7 +122,7 @@ public class DefaultSettlementService implements SettlementService {
       .findBySettlementEngineAccountIdWithConversion(settlementEngineAccountId)
       .orElseThrow(() -> new AccountBySettlementEngineAccountNotFoundProblem(settlementEngineAccountId));
 
-    final Link<? extends LinkSettings> link = linkManager.getOrCreateLink(accountSettings.getAccountId());
+    final Link<? extends LinkSettings> link = linkManager.getOrCreateLink(accountSettings.accountId());
 
     InterledgerResponsePacket responsePacket = link.sendPacket(InterledgerPreparePacket.builder()
       .destination(PEER_DOT_SETTLE)
@@ -137,7 +137,7 @@ public class DefaultSettlementService implements SettlementService {
       "Received ILP response packet from our peer's settlement engine " +
         "(`data` for the settlement engine is proxied in this response) accountId={} " +
         "settlementEngineAccountId={} responsePacket={}",
-      accountSettings.getAccountId(), settlementEngineAccountId, responsePacket
+      accountSettings.accountId(), settlementEngineAccountId, responsePacket
     );
 
     return responsePacket.getData();
@@ -156,9 +156,9 @@ public class DefaultSettlementService implements SettlementService {
         // The `Prepare` packet's data was sent by the peer's settlement engine so we assume it is in a format that
         // our settlement engine will understand. Thus, simply send bytes directly to the Settlement Engine...
         final SendMessageResponse sendMessageResponse = settlementEngineClient.sendMessageFromPeer(
-          accountSettings.getAccountId(),
+          accountSettings.accountId(),
           settlementEngineDetails.settlementEngineAccountId()
-            .orElseGet(() -> SettlementEngineAccountId.of(accountSettings.getAccountId().value())),
+            .orElseGet(() -> SettlementEngineAccountId.of(accountSettings.accountId().value())),
           settlementEngineDetails.baseUrl(),
           SendMessageRequest.builder().data(messageFromPeerSettlementEngine).build()
         );
@@ -166,7 +166,7 @@ public class DefaultSettlementService implements SettlementService {
         return sendMessageResponse.data();
       })
       // Otherwise throw a settlement engine not-configured exception...
-      .orElseThrow(() -> new SettlementEngineNotConfiguredProblem(accountSettings.getAccountId()));
+      .orElseThrow(() -> new SettlementEngineNotConfiguredProblem(accountSettings.accountId()));
   }
 
   @Override
@@ -212,9 +212,9 @@ public class DefaultSettlementService implements SettlementService {
           // This response will be in settlement engine units...
           // WARNING: the amount that the settlement engine commits to settle may diverge from the amount requested.
           final InitiateSettlementResponse initiateSettlementResponse = settlementEngineClient.initiateSettlement(
-            accountSettings.getAccountId(),
+            accountSettings.accountId(),
             settlementEngineDetails.settlementEngineAccountId()
-              .orElseGet(() -> SettlementEngineAccountId.of(accountSettings.getAccountId().value())),
+              .orElseGet(() -> SettlementEngineAccountId.of(accountSettings.accountId().value())),
             idempotencyKey,
             settlementEngineDetails.baseUrl(),
             initiateSettlementRequest
@@ -224,14 +224,14 @@ public class DefaultSettlementService implements SettlementService {
           final BigInteger settledAmountInClearingUnits = NumberScalingUtils.translate(
             initiateSettlementResponse.committedSettlementAmount(),
             initiateSettlementResponse.settlementEngineScale(),
-            accountSettings.getAssetScale()
+            accountSettings.assetScale()
           );
 
-          final AccountId accountId = accountSettings.getAccountId();
+          final AccountId accountId = accountSettings.accountId();
           final SettlementEngineAccountId settlementEngineAccountId =
             settlementEngineDetails.settlementEngineAccountId()
               .orElseThrow(() -> new SettlementEngineNotConfiguredProblem(accountId));
-          final int clearingScale = accountSettings.getAssetScale();
+          final int clearingScale = accountSettings.assetScale();
           final int settlementScale = initiateSettlementResponse.settlementEngineScale();
           final BigInteger requestedClearingUnits = initiateSettlementRequest.requestedSettlementAmount();
           final BigInteger settledSettlementUnits = initiateSettlementResponse.committedSettlementAmount();
@@ -276,7 +276,7 @@ public class DefaultSettlementService implements SettlementService {
           // occurs here.
           try {
             balanceTracker.updateBalanceForOutgoingSettlementRefund(
-              accountSettings.getAccountId(), settlementQuantityInClearingUnits.amount().longValue()
+              accountSettings.accountId(), settlementQuantityInClearingUnits.amount().longValue()
             );
           } catch (Exception e2) {
             // Swallowed (but logged) so that the other error message below is actually emitted too...
@@ -291,11 +291,11 @@ public class DefaultSettlementService implements SettlementService {
             settlementQuantityInClearingUnits
           );
           throw new SettlementServiceException(
-            errorMessage, e, accountSettings.getAccountId(),
+            errorMessage, e, accountSettings.accountId(),
             settlementEngineDetails.settlementEngineAccountId().orElseGet(() -> SettlementEngineAccountId.of("n/a"))
           );
         }
       })
-      .orElseThrow(() -> new SettlementEngineNotConfiguredProblem(accountSettings.getAccountId()));
+      .orElseThrow(() -> new SettlementEngineNotConfiguredProblem(accountSettings.accountId()));
   }
 }

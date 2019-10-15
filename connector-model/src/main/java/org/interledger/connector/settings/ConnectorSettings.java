@@ -22,32 +22,32 @@ public interface ConnectorSettings {
    *
    * @return The ILP address of this connector.
    */
-  Optional<InterledgerAddress> getOperatorAddress();
+  Optional<InterledgerAddress> operatorAddress();
 
   /**
    * Obtain the ILP address or throw an exception.
    *
    * @return The ILP address of this connector, which will never be null.
    */
-  default InterledgerAddress getOperatorAddressSafe() {
-    return this.getOperatorAddress().get();
+  default InterledgerAddress operatorAddressSafe() {
+    return this.operatorAddress().get();
   }
 
   /**
    * The global address prefix for this operating environment.
    */
   @Value.Default
-  default InterledgerAddressPrefix getGlobalPrefix() {
+  default InterledgerAddressPrefix globalPrefix() {
     return InterledgerAddressPrefix.of("test");
   }
 
   @Value.Default
-  default EnabledProtocolSettings getEnabledProtocols() {
+  default EnabledProtocolSettings enabledProtocols() {
     return EnabledProtocolSettings.builder().build();
   }
 
   @Value.Default
-  default EnabledFeatureSettings getEnabledFeatures() {
+  default EnabledFeatureSettings enabledFeatures() {
     return EnabledFeatureSettings.builder().build();
   }
 
@@ -61,7 +61,7 @@ public interface ConnectorSettings {
    * disabled.
    */
   @Value.Default
-  default GlobalRoutingSettings getGlobalRoutingSettings() {
+  default GlobalRoutingSettings globalRoutingSettings() {
     return ImmutableGlobalRoutingSettings.builder().build();
   }
 
@@ -74,6 +74,6 @@ public interface ConnectorSettings {
    * @return An {@link InterledgerAddress } representing the new address of the supplied child account.
    */
   default InterledgerAddress toChildAddress(AccountId childAccountId) {
-    return this.getOperatorAddressSafe().with(childAccountId.value());
+    return this.operatorAddressSafe().with(childAccountId.value());
   }
 }

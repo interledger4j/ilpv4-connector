@@ -24,7 +24,7 @@ public interface SourceRestrictedRoute extends Route {
    *
    * @return A {@link Pattern}
    */
-  default Pattern getSourcePrefixRestrictionRegex() {
+  default Pattern sourcePrefixRestrictionRegex() {
     // Default to allow all sources.
     return Pattern.compile(ALLOW_ALL_SOURCES);
   }
@@ -39,7 +39,7 @@ public interface SourceRestrictedRoute extends Route {
 
     @Default
     @Override
-    public Pattern getSourcePrefixRestrictionRegex() {
+    public Pattern sourcePrefixRestrictionRegex() {
       // Default to allow all sources.
       return Pattern.compile(ALLOW_ALL_SOURCES);
     }
@@ -63,12 +63,12 @@ public interface SourceRestrictedRoute extends Route {
 
     // TODO: Use rely on parent for seeding the equalTo and hashCode.
     private boolean equalTo(AbstractSourceRestrictedRoute another) {
-      return getSourcePrefixRestrictionRegex().pattern().equals(another.getSourcePrefixRestrictionRegex().pattern())
-        && Arrays.equals(getAuth(), another.getAuth())
-        && getRoutePrefix().equals(another.getRoutePrefix())
-        && getNextHopAccountId().equals(another.getNextHopAccountId())
-        && getPath().equals(another.getPath())
-        && Objects.equals(getExpiresAt(), another.getExpiresAt());
+      return sourcePrefixRestrictionRegex().pattern().equals(another.sourcePrefixRestrictionRegex().pattern())
+        && Arrays.equals(auth(), another.auth())
+        && routePrefix().equals(another.routePrefix())
+        && nextHopAccountId().equals(another.nextHopAccountId())
+        && path().equals(another.path())
+        && Objects.equals(expiresAt(), another.expiresAt());
     }
 
     /**
@@ -80,12 +80,12 @@ public interface SourceRestrictedRoute extends Route {
     @Override
     public int hashCode() {
       int h = 5381;
-      h += (h << 5) + getSourcePrefixRestrictionRegex().pattern().hashCode();
-      h += (h << 5) + Arrays.hashCode(getAuth());
-      h += (h << 5) + getRoutePrefix().hashCode();
-      h += (h << 5) + getNextHopAccountId().hashCode();
-      h += (h << 5) + getPath().hashCode();
-      h += (h << 5) + Objects.hashCode(getExpiresAt());
+      h += (h << 5) + sourcePrefixRestrictionRegex().pattern().hashCode();
+      h += (h << 5) + Arrays.hashCode(auth());
+      h += (h << 5) + routePrefix().hashCode();
+      h += (h << 5) + nextHopAccountId().hashCode();
+      h += (h << 5) + path().hashCode();
+      h += (h << 5) + Objects.hashCode(expiresAt());
       return h;
     }
 

@@ -1,18 +1,18 @@
 package org.interledger.connector.routing;
 
-import com.google.common.hash.Hashing;
-import org.interledger.connector.routing.ImmutableRoute;
-import org.immutables.value.Value;
-import org.immutables.value.Value.Default;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 
+import com.google.common.hash.Hashing;
+import org.immutables.value.Value;
+import org.immutables.value.Value.Default;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * <p>An entry in a {@link RoutingTable}, used by Interledger nodes to determine the "next hop" account that a payment
@@ -45,21 +45,21 @@ public interface Route extends BaseRoute {
    *
    * @return An {@link InterledgerAddress}.
    */
-  AccountId getNextHopAccountId();
+  AccountId nextHopAccountId();
 
   /**
    * A list of nodes that a payment will traverse in order for a payment to make it to its destination.
    *
    * @return
    */
-  List<InterledgerAddress> getPath();
+  List<InterledgerAddress> path();
 
   /**
    * <p>An optionally-present expiration date/time for this route.</p>
    *
    * @return An {@link Instant} representing the
    */
-  Optional<Instant> getExpiresAt();
+  Optional<Instant> expiresAt();
 
   /**
    * Bytes that can be used for authentication of a given route. Reserved for the future, currently not used.
@@ -67,7 +67,7 @@ public interface Route extends BaseRoute {
    * @return
    */
   @Default
-  default byte[] getAuth() {
+  default byte[] auth() {
     return EMPTY_AUTH;
   }
 

@@ -25,7 +25,6 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.core.InterledgerAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.convert.ConversionService;
 
 import java.util.Map;
 import java.util.Objects;
@@ -108,7 +107,7 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
   @Override
   public Link<? extends LinkSettings> getOrCreateLink(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
-    final AccountId accountId = accountSettings.getAccountId();
+    final AccountId accountId = accountSettings.accountId();
     return Optional.ofNullable(this.connectedLinks.get(accountId))
       .orElseGet(() -> {
         // Convert to LinkSettings...
@@ -133,7 +132,7 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
 
     //Use the first linkFactory that supports the linkType...
     final Link<?> link = this.linkFactoryProvider
-      .getLinkFactory(linkSettings.getLinkType())
+      .getLinkFactory(linkSettings.linkType())
       .constructLink(operatorAddressSupplier, linkSettings);
 
     // Set the LinkId to match the AccountId...this way the Link can always use this value to represent the
@@ -183,8 +182,8 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
   @Subscribe
   public void onConnect(final LinkConnectedEvent event) {
     Objects.requireNonNull(event);
-    final AccountId accountId = accountIdResolver.resolveAccountId(event.getLink());
-    this.connectedLinks.put(accountId, event.getLink());
+    final AccountId accountId = accountIdResolver.resolveAccountId(event.link());
+    this.connectedLinks.put(accountId, event.link());
   }
 
   /**
@@ -198,7 +197,7 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
   public void onDisconnect(final LinkDisconnectedEvent event) {
     Objects.requireNonNull(event);
 
-    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getLink());
+    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.link());
     // Remove the Link from the Set of connected links for the specified account.
     this.connectedLinks.remove(accountId);
   }
@@ -207,6 +206,6 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
   @Subscribe
   public void onError(final LinkErrorEvent event) {
     Objects.requireNonNull(event);
-    logger.error("Link: {}; LinkError: {}", event.getLink(), event.getError());
+    logger.error("Link: {}; LinkError: {}", event.link(), event.error());
   }
 }

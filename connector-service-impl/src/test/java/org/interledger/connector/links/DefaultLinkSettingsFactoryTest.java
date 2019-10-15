@@ -78,8 +78,8 @@ public class DefaultLinkSettingsFactoryTest {
       .customSettings(customSettings)
       .build();
     final LinkSettings actual = factory.construct(accountSettings);
-    assertThat(actual.getLinkType(), is(BlastLink.LINK_TYPE));
-    assertThat(actual.getCustomSettings(), is(customSettings));
+    assertThat(actual.linkType(), is(BlastLink.LINK_TYPE));
+    assertThat(actual.customSettings(), is(customSettings));
   }
 
   @Test
@@ -92,8 +92,8 @@ public class DefaultLinkSettingsFactoryTest {
       .assetCode("XRP")
       .build();
     final LinkSettings actual = factory.construct(accountSettings);
-    assertThat(actual.getLinkType(), is(LoopbackLink.LINK_TYPE));
-    assertThat(actual.getCustomSettings().isEmpty(), is(true));
+    assertThat(actual.linkType(), is(LoopbackLink.LINK_TYPE));
+    assertThat(actual.customSettings().isEmpty(), is(true));
   }
 
   @Test
@@ -106,7 +106,7 @@ public class DefaultLinkSettingsFactoryTest {
       .assetCode("XRP")
       .build();
     final LinkSettings actual = factory.construct(accountSettings);
-    assertThat(actual.getLinkType(), is(PingLoopbackLink.LINK_TYPE));
-    assertThat(actual.getCustomSettings().isEmpty(), is(true));
+    assertThat(actual.linkType(), is(PingLoopbackLink.LINK_TYPE));
+    assertThat(actual.customSettings().isEmpty(), is(true));
   }
 }

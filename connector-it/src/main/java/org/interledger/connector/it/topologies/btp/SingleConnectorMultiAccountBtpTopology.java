@@ -259,7 +259,7 @@ public class SingleConnectorMultiAccountBtpTopology {
   //  //        @Override
   //  //        public boolean isValidAuthToken(final String incomingAuthToken) {
   //  //          Objects.requireNonNull(incomingAuthToken);
-  //  //          return Optional.ofNullable(getAccount().getCustomSettings().get("btpAuthToken"))
+  //  //          return Optional.ofNullable(getAccount().customSettings().get("btpAuthToken"))
   //  //            .map(presentedAuthToken -> presentedAuthToken.equals(incomingAuthToken))
   //  //            .orElseThrow(() -> new RuntimeException("BTP `auth_token` must be specifed in Account Settings!"));
   //  //        }
@@ -269,7 +269,7 @@ public class SingleConnectorMultiAccountBtpTopology {
   //  //          return BtpSingleAccountConnectorProfile.this.getAccountAddress();
   //  //        }
   //  //      },
-  //  //      new BtpMultiAuthenticator.AlwaysAllowedBtpMultiAuthenticator(connectorSettings.getOperatorAddress())
+  //  //      new BtpMultiAuthenticator.AlwaysAllowedBtpMultiAuthenticator(connectorSettings.operatorAddress())
   //  //    );
   //  //
   //  //    final AuthBtpSubprotocolHandler authBtpSubprotocolHandler = new ServerAuthBtpSubprotocolHandler();

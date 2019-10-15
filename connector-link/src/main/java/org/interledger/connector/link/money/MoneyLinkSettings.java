@@ -26,7 +26,7 @@ public interface MoneyLinkSettings extends LinkSettings {
      * Additional, custom settings that any link can define. Redacted to prevent credential leakage in log files.
      */
     @Redacted
-    public abstract Map<String, Object> getCustomSettings();
+    public abstract Map<String, Object> customSettings();
 
   }
 

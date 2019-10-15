@@ -1,9 +1,6 @@
 package org.interledger.connector.routing;
 
-import org.interledger.connector.routing.ImmutableRoute;
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.routing.InterledgerAddressPrefixMap;
-import org.interledger.connector.routing.Route;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.junit.Before;
@@ -67,7 +64,7 @@ public class InterledgerAddressPrefixMapTest {
         .routePrefix(InterledgerAddressPrefix.of("g." + i))
         .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
         .build();
-      prefixMap.putEntry(route.getRoutePrefix(), route);
+      prefixMap.putEntry(route.routePrefix(), route);
       assertThat(prefixMap.getNumKeys(), is(i));
     }
   }
@@ -94,7 +91,7 @@ public class InterledgerAddressPrefixMapTest {
       .build();
 
     for (int i = 0; i < 10; i++) {
-      prefixMap.putEntry(globalRoute.getRoutePrefix(), globalRoute);
+      prefixMap.putEntry(globalRoute.routePrefix(), globalRoute);
       assertThat("Duplicate Route Keys should not be added more than once!", prefixMap.getNumKeys(), is(1));
     }
   }
@@ -192,7 +189,7 @@ public class InterledgerAddressPrefixMapTest {
   //      final boolean actual = prefixMap.removeEntry(routingTableEntry0);
   //
   //      assertThat(actual, is(true));
-  //      assertThat(prefixMap.getEntries(routingTableEntry0.getRoutePrefix()).isEmpty(), is(true));
+  //      assertThat(prefixMap.getEntries(routingTableEntry0.routePrefix()).isEmpty(), is(true));
   //      assertThat(prefixMap.getNumKeys(), is(4));
   //    }
   //    {
@@ -202,7 +199,7 @@ public class InterledgerAddressPrefixMapTest {
   //      final boolean actual = prefixMap.removeEntry(routingTableEntry1);
   //
   //      assertThat(actual, is(true));
-  //      assertThat(prefixMap.getEntries(routingTableEntry1.getRoutePrefix()).isEmpty(), is(true));
+  //      assertThat(prefixMap.getEntries(routingTableEntry1.routePrefix()).isEmpty(), is(true));
   //      assertThat(prefixMap.getNumKeys(), is(3));
   //    }
   //    {
@@ -211,7 +208,7 @@ public class InterledgerAddressPrefixMapTest {
   //      final boolean actual = prefixMap.removeEntry(routingTableEntry2);
   //
   //      assertThat(actual, is(true));
-  //      assertThat(prefixMap.getEntries(routingTableEntry2.getRoutePrefix()).isEmpty(), is(true));
+  //      assertThat(prefixMap.getEntries(routingTableEntry2.routePrefix()).isEmpty(), is(true));
   //      assertThat(prefixMap.getNumKeys(), is(2));
   //    }
   //    {
@@ -221,7 +218,7 @@ public class InterledgerAddressPrefixMapTest {
   //      final boolean actual = prefixMap.removeEntry(routingTableEntry3);
   //
   //      assertThat(actual, is(true));
-  //      assertThat(prefixMap.getEntries(routingTableEntry3.getRoutePrefix()).isEmpty(), is(true));
+  //      assertThat(prefixMap.getEntries(routingTableEntry3.routePrefix()).isEmpty(), is(true));
   //      assertThat(prefixMap.getNumKeys(), is(1));
   //    }
   //    {
@@ -231,7 +228,7 @@ public class InterledgerAddressPrefixMapTest {
   //      final boolean actual = prefixMap.removeEntry(routingTableEntry4);
   //
   //      assertThat(actual, is(true));
-  //      assertThat(prefixMap.getEntries(routingTableEntry4.getRoutePrefix()).size(), is(1));
+  //      assertThat(prefixMap.getEntries(routingTableEntry4.routePrefix()).size(), is(1));
   //      assertThat(prefixMap.getNumKeys(), is(1));
   //      this.prefixMap.forEach((key, value) -> logger.info("K: {}, V: {}", key, value));
   //    }
@@ -242,7 +239,7 @@ public class InterledgerAddressPrefixMapTest {
   //      final boolean actual = prefixMap.removeEntry(routingTableEntry5);
   //
   //      assertThat(actual, is(true));
-  //      assertThat(prefixMap.getEntries(routingTableEntry5.getRoutePrefix()).isEmpty(), is(true));
+  //      assertThat(prefixMap.getEntries(routingTableEntry5.routePrefix()).isEmpty(), is(true));
   //      assertThat(prefixMap.getNumKeys(), is(0));
   //    }
   //  }
@@ -336,7 +333,7 @@ public class InterledgerAddressPrefixMapTest {
       .build();
 
     for (int i = 0; i < 10; i++) {
-      prefixMap.putEntry(globalRoute.getRoutePrefix(), globalRoute);
+      prefixMap.putEntry(globalRoute.routePrefix(), globalRoute);
       assertThat("Duplicate RoutingTableEntry should not be added more than once!",
         prefixMap.getEntry(DEFAULT_TARGET_ADDRESS_PREFIX).get(), is(globalRoute));
     }
@@ -348,13 +345,13 @@ public class InterledgerAddressPrefixMapTest {
       .routePrefix(DEFAULT_TARGET_ADDRESS_PREFIX)
       .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
       .build();
-    prefixMap.putEntry(globalRoutingTableEntry.getRoutePrefix(), globalRoutingTableEntry);
+    prefixMap.putEntry(globalRoutingTableEntry.routePrefix(), globalRoutingTableEntry);
 
     final Route globalRoutingTableEntry2 = ImmutableRoute.builder()
       .routePrefix(DEFAULT_TARGET_ADDRESS_PREFIX.with("foo"))
       .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
       .build();
-    prefixMap.putEntry(globalRoutingTableEntry2.getRoutePrefix(), globalRoutingTableEntry2);
+    prefixMap.putEntry(globalRoutingTableEntry2.routePrefix(), globalRoutingTableEntry2);
 
     final AtomicInteger atomicInteger = new AtomicInteger();
     prefixMap.forEach((targetAddress, routingTableEntry) -> atomicInteger.getAndIncrement());
@@ -379,7 +376,7 @@ public class InterledgerAddressPrefixMapTest {
         .routePrefix(InterledgerAddressPrefix.of("g." + i))
         .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
         .build();
-      prefixMap.putEntry(route.getRoutePrefix(), route);
+      prefixMap.putEntry(route.routePrefix(), route);
 
       assertThat(prefixMap.getNumKeys(), is(i));
       final InterledgerAddress destinationAddress = InterledgerAddress.of("g." + i + ".bob");
@@ -399,7 +396,7 @@ public class InterledgerAddressPrefixMapTest {
         .routePrefix(GLOBAL_ROUTING_TABLE_ENTRY)
         .nextHopAccountId(AccountId.of(DEFAULT_CONNECTOR_ACCOUNT.value() + +i))
         .build();
-      prefixMap.putEntry(route.getRoutePrefix(), route);
+      prefixMap.putEntry(route.routePrefix(), route);
 
       final InterledgerAddress destinationAddress = DEFAULT_CONNECTOR_ADDRESS.with("bob");
       assertThat("Each destination address should map to N number of RoutingTableEntries!",
@@ -424,7 +421,7 @@ public class InterledgerAddressPrefixMapTest {
       .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
       .build();
 
-    prefixMap.putEntry(route.getRoutePrefix(), route);
+    prefixMap.putEntry(route.routePrefix(), route);
 
     assertThat(prefixMap.findNextHop(InterledgerAddress.of("self.me")).isPresent(), is(false));
     assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1.me")).isPresent(), is(true));
@@ -444,7 +441,7 @@ public class InterledgerAddressPrefixMapTest {
       .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
       .build();
 
-    prefixMap.putEntry(route.getRoutePrefix(), route);
+    prefixMap.putEntry(route.routePrefix(), route);
 
     assertThat(prefixMap.findNextHop(InterledgerAddress.of("self.me")).isPresent(), is(false));
     assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1.me")).isPresent(), is(false));
@@ -478,7 +475,7 @@ public class InterledgerAddressPrefixMapTest {
       .routePrefix(GLOBAL_ROUTING_TABLE_ENTRY.with("unittest"))
       .nextHopAccountId(AccountId.of("g.this.account1"))
       .build();
-    prefixMap.putEntry(newRoute1.getRoutePrefix(), newRoute1);
+    prefixMap.putEntry(newRoute1.routePrefix(), newRoute1);
     Optional<Route> route = prefixMap.findNextHop(InterledgerAddress.of("g.unittest.receiver"));
     assertThat(route.get(), is(newRoute1));
 
@@ -486,7 +483,7 @@ public class InterledgerAddressPrefixMapTest {
       .routePrefix(GLOBAL_ROUTING_TABLE_ENTRY.with("unittest"))
       .nextHopAccountId(AccountId.of("g.this.account2"))
       .build();
-    prefixMap.putEntry(newRoute2.getRoutePrefix(), newRoute2);
+    prefixMap.putEntry(newRoute2.routePrefix(), newRoute2);
 
     route = prefixMap.findNextHop(InterledgerAddress.of("g.unittest.receiver"));
     assertThat("Should return the newRoute2", route.get(), is(newRoute2));
@@ -644,7 +641,7 @@ public class InterledgerAddressPrefixMapTest {
     final InterledgerAddressPrefixMap testMap = new InterledgerAddressPrefixMap();
 
     for (int i = 0; i < route.length; i++) {
-      testMap.putEntry(route[i].getRoutePrefix(), route[i]);
+      testMap.putEntry(route[i].routePrefix(), route[i]);
     }
 
     return testMap;

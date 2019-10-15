@@ -78,7 +78,7 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
   public void testAliceNodeSettings() {
     final ILPv4Connector connector = getILPv4NodeFromGraph(getAliceConnectorAddress());
     assertThat(
-      connector.getConnectorSettings().getOperatorAddress().get(),
+      connector.getConnectorSettings().operatorAddress().get(),
       is(getAliceConnectorAddress())
     );
 
@@ -96,9 +96,9 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
     Thread.sleep(2000);
 
     final ILPv4Connector connector = getILPv4NodeFromGraph(getBobConnectorAddress());
-    assertThat(connector.getConnectorSettings().getOperatorAddress().isPresent(), is(true));
+    assertThat(connector.getConnectorSettings().operatorAddress().isPresent(), is(true));
     assertThat(
-      connector.getConnectorSettings().getOperatorAddress().get(),
+      connector.getConnectorSettings().operatorAddress().get(),
       is(getBobConnectorAddress())
     );
 

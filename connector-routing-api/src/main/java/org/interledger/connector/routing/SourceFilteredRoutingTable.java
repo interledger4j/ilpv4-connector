@@ -13,7 +13,7 @@ public interface SourceFilteredRoutingTable<R extends SourceRestrictedRoute> ext
 
 
   /**
-   * Given a final destination ILP address, determine the "best" getRoute that an ILP payment message or should
+   * Given a final destination ILP address, determine the "best" route that an ILP payment message or should
    * traverse.
    *
    * @param finalDestinationAddress An {@link InterledgerAddress} representing the final payment destination for a
@@ -21,7 +21,7 @@ public interface SourceFilteredRoutingTable<R extends SourceRestrictedRoute> ext
    *                                table).
    * @param sourcePrefix            An {@link InterledgerAddress} representing the incoming ILP prefix of the node that
    *                                sent the payment or message. Used to filter next-hop routes by a source address
-   *                                based upon the attributes of each getRoute.
+   *                                based upon the attributes of each route.
    *
    * @return An optionally-present {@link R} for the supplied addresses.
    */
@@ -43,7 +43,7 @@ public interface SourceFilteredRoutingTable<R extends SourceRestrictedRoute> ext
   //      // implementation.
   //      return this.findNextHopRoute(finalDestinationAddress).stream()
   //        // Only return routes that are allowed per the source prefix filter...
-  //        .filter(route -> route.getSourcePrefixRestrictionRegex().matcher(sourcePrefix.getValue()).matches())
+  //        .filter(route -> route.sourcePrefixRestrictionRegex().matcher(sourcePrefix.getValue()).matches())
   //        .collect(Collectors.toList());
   //    }
 

@@ -65,8 +65,8 @@ public class RateLimitIlpPacketFilter extends AbstractPacketFilter implements Pa
   ) {
 
     return rateLimiters
-      .get(sourceAccountSettings.getAccountId(),
-        (key) -> sourceAccountSettings.getRateLimitSettings().getMaxPacketsPerSecond()
+      .get(sourceAccountSettings.accountId(),
+        (key) -> sourceAccountSettings.rateLimitSettings().maxPacketsPerSecond()
           .map(packetsPerSecond -> RateLimiter.create(packetsPerSecond))
       )
       .map(rateLimiter -> {
@@ -74,7 +74,7 @@ public class RateLimitIlpPacketFilter extends AbstractPacketFilter implements Pa
           return filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
         } else {
           return packetRejector.reject(
-            sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.T03_CONNECTOR_BUSY,
+            sourceAccountSettings.accountId(), sourcePreparePacket, InterledgerErrorCode.T03_CONNECTOR_BUSY,
             "Rate Limit exceeded"
           );
         }

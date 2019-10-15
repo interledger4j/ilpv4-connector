@@ -15,7 +15,7 @@ public interface LinkErrorEvent extends LinkEvent {
   /**
    * @return An error that the link emitted.
    */
-  Throwable getError();
+  Throwable error();
 
   @Value.Immutable
   abstract class AbstractLinkErrorEvent implements LinkErrorEvent {
