@@ -10,6 +10,8 @@ import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerPreparePacket;
+
+import com.google.common.primitives.UnsignedLong;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -64,7 +66,7 @@ public class IlpCcpNewRouteUpdateRequestCodecTest extends AbstractAsnCodecTest<I
       {
         InterledgerPreparePacket.builder()
           .destination(CcpConstants.CCP_UPDATE_DESTINATION_ADDRESS)
-          .amount(BigInteger.ZERO)
+          .amount(UnsignedLong.ZERO)
           .executionCondition(
             InterledgerCondition.of(BaseEncoding.base16().decode(EXECUTION_CONDITION_HEX))
           )
@@ -100,7 +102,7 @@ public class IlpCcpNewRouteUpdateRequestCodecTest extends AbstractAsnCodecTest<I
       {
         InterledgerPreparePacket.builder()
           .destination(CcpConstants.CCP_UPDATE_DESTINATION_ADDRESS)
-          .amount(BigInteger.ZERO)
+          .amount(UnsignedLong.ZERO)
           .executionCondition(
             InterledgerCondition.of(BaseEncoding.base16().decode(EXECUTION_CONDITION_HEX))
           )

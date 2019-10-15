@@ -1,14 +1,5 @@
 package org.interledger.connector.server.spring.auth.blast;
 
-import com.auth0.jwt.exceptions.InvalidClaimException;
-import com.auth0.jwt.exceptions.SignatureVerificationException;
-import com.auth0.spring.security.api.authentication.JwtAuthentication;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalListener;
-import com.google.common.hash.Hashing;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
@@ -20,6 +11,15 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
+
+import com.auth0.jwt.exceptions.InvalidClaimException;
+import com.auth0.jwt.exceptions.SignatureVerificationException;
+import com.auth0.spring.security.api.authentication.JwtAuthentication;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.RemovalListener;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.hash.Hashing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -80,81 +80,78 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     this.ephemeralHmacBytes = this.generate32RandomBytes();
     this.decryptor = Objects.requireNonNull(decryptor);
 
-    ilpOverHttpAuthenticationDecisions = CacheBuilder.newBuilder()
+    ilpOverHttpAuthenticationDecisions = Caffeine.newBuilder()
       .maximumSize(5000)
       // Expire after this duration, which will correspond to the last incoming request from the peer.
       // TODO: This value should be configurable and match the server-global token expiry.
       .expireAfterAccess(30, TimeUnit.MINUTES)
-      .removalListener((RemovalListener<AuthenticationRequest, AuthenticationDecision>) notification ->
-        logger.debug(
-          "Removing IlpOverHttp AuthenticationDecision from Cache for Principal: {}",
-          notification.getValue().principal())
-      )
+      .removalListener((RemovalListener<AuthenticationRequest, AuthenticationDecision>)
+          (authenticationRequest, authenticationDecision, cause) ->
+          logger.debug("Removing IlpOverHttp AuthenticationDecision from Cache for Principal: {}",
+            authenticationDecision.principal()))
       .build(
-        new CacheLoader<AuthenticationRequest, AuthenticationDecision>() {
-          public AuthenticationDecision load(final AuthenticationRequest authenticationRequest) {
-            Objects.requireNonNull(authenticationRequest);
+        authenticationRequest -> {
+          Objects.requireNonNull(authenticationRequest);
 
-            try {
-              final AccountId authPrincipal =
-                AccountId.of(authenticationRequest.incomingAuthentication().getPrincipal().toString());
-              final AccountSettings accountSettings =
-                accountSettingsRepository.findByAccountIdWithConversion(authPrincipal)
-                  .orElseThrow(() -> new AccountNotFoundProblem(authPrincipal));
+          try {
+            final AccountId authPrincipal =
+              AccountId.of(authenticationRequest.incomingAuthentication().getPrincipal().toString());
+            final AccountSettings accountSettings =
+              accountSettingsRepository.findByAccountIdWithConversion(authPrincipal)
+                .orElseThrow(() -> new AccountNotFoundProblem(authPrincipal));
 
-              // Discover the BlastSettings
-              final BlastLinkSettings blastLinkSettings =
-                Objects.requireNonNull(linkSettingsFactory).constructTyped(accountSettings);
-              final BlastLinkSettings.AuthType authType = blastLinkSettings.incomingBlastLinkSettings().authType();
+            // Discover the BlastSettings
+            final BlastLinkSettings blastLinkSettings =
+              Objects.requireNonNull(linkSettingsFactory).constructTyped(accountSettings);
+            final BlastLinkSettings.AuthType authType = blastLinkSettings.incomingBlastLinkSettings().authType();
 
-              // This implementation performs the same logic for either token type. In order to utilize SIMPLE in this
-              // scheme, the peer should be given a very-long duration JWT token which it can use as a SIMPLE Bearer
-              // token.
-              if (
-                BlastLinkSettings.AuthType.JWT_HS_256.equals(authType) ||
-                  BlastLinkSettings.AuthType.SIMPLE.equals(authType)
-              ) {
-                final IncomingLinkSettings incomingLinkSettings = blastLinkSettings.incomingBlastLinkSettings();
+            // This implementation performs the same logic for either token type. In order to utilize SIMPLE in this
+            // scheme, the peer should be given a very-long duration JWT token which it can use as a SIMPLE Bearer
+            // token.
+            if (
+              BlastLinkSettings.AuthType.JWT_HS_256.equals(authType) ||
+                BlastLinkSettings.AuthType.SIMPLE.equals(authType)
+            ) {
+              final IncomingLinkSettings incomingLinkSettings = blastLinkSettings.incomingBlastLinkSettings();
 
-                // These bytes will be zeroed-out immediately after making the auth decision.
-                final byte[] sharedSecretBytes = decryptSharedSecret(authPrincipal, incomingLinkSettings);
-                final byte[] sharedSecretBytesHmac =
-                  Hashing.hmacSha256(ephemeralHmacBytes).hashBytes(sharedSecretBytes).asBytes();
+              // These bytes will be zeroed-out immediately after making the auth decision.
+              final byte[] sharedSecretBytes = decryptSharedSecret(authPrincipal, incomingLinkSettings);
+              final byte[] sharedSecretBytesHmac =
+                Hashing.hmacSha256(ephemeralHmacBytes).hashBytes(sharedSecretBytes).asBytes();
 
-                try {
-                  // Even though the bytes are passed-into this provider, the bytes are zeroed out below which render
-                  // this provider unusable after this method. Because the provider is only ever used once, it can
-                  // be garbage collected after this method is finished.
-                  final Authentication jwtAuthResult = new JwtHs256AuthenticationProvider(sharedSecretBytes)
-                    .authenticate(authenticationRequest.incomingAuthentication());
+              try {
+                // Even though the bytes are passed-into this provider, the bytes are zeroed out below which render
+                // this provider unusable after this method. Because the provider is only ever used once, it can
+                // be garbage collected after this method is finished.
+                final Authentication jwtAuthResult = new JwtHs256AuthenticationProvider(sharedSecretBytes)
+                  .authenticate(authenticationRequest.incomingAuthentication());
 
-                  if (logger.isDebugEnabled()) {
-                    logger.debug(
-                      "JwtHs256AuthenticationProvider returned with an AuthResult: {}", jwtAuthResult.isAuthenticated()
-                    );
-                  }
-
-                  return AuthenticationDecision.builder()
-                    .authentication(jwtAuthResult)
-                    .credentialHmac(sharedSecretBytesHmac)
-                    .build();
-                } finally {
-                  // Zero-out all bytes in the `sharedSecretBytes` array.
-                  Arrays.fill(sharedSecretBytes, (byte) 0);
+                if (logger.isDebugEnabled()) {
+                  logger.debug(
+                    "JwtHs256AuthenticationProvider returned with an AuthResult: {}", jwtAuthResult.isAuthenticated()
+                  );
                 }
 
-              } else {
-                throw new RuntimeException("Unsupported AuthType: " + authType);
+                return AuthenticationDecision.builder()
+                  .authentication(jwtAuthResult)
+                  .credentialHmac(sharedSecretBytesHmac)
+                  .build();
+              } finally {
+                // Zero-out all bytes in the `sharedSecretBytes` array.
+                Arrays.fill(sharedSecretBytes, (byte) 0);
               }
-            } catch (AccountNotFoundProblem e) { // All other exceptions should be thrown!
-              logger.debug(e.getMessage(), e);
-              // Cache this result and return it if an exception was encountered. Note that the authenticationRequest
-              // always returns false for isAuthenticated, which is what we want here.
-              return AuthenticationDecision.builder()
-                .authentication(authenticationRequest.incomingAuthentication())
-                .credentialHmac(new byte[32])
-                .build();
+
+            } else {
+              throw new RuntimeException("Unsupported AuthType: " + authType);
             }
+          } catch (AccountNotFoundProblem e) { // All other exceptions should be thrown!
+            logger.debug(e.getMessage(), e);
+            // Cache this result and return it if an exception was encountered. Note that the authenticationRequest
+            // always returns false for isAuthenticated, which is what we want here.
+            return AuthenticationDecision.builder()
+              .authentication(authenticationRequest.incomingAuthentication())
+              .credentialHmac(new byte[32])
+              .build();
           }
         });
   }
@@ -162,7 +159,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
   @Override
   public Authentication authenticate(final Authentication authentication) throws AuthenticationException {
     try {
-      final AuthenticationDecision result = ilpOverHttpAuthenticationDecisions.getUnchecked(
+      final AuthenticationDecision result = ilpOverHttpAuthenticationDecisions.get(
         AuthenticationRequest.builder().incomingAuthentication(authentication).build()
       );
 

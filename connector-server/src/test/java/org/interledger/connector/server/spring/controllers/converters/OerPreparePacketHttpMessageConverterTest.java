@@ -1,6 +1,7 @@
 package org.interledger.connector.server.spring.controllers.converters;
 
 import com.google.common.collect.ImmutableList;
+import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.connector.server.spring.controllers.settlement.SettlementController;
 import org.interledger.core.InterledgerAddress;
@@ -9,7 +10,8 @@ import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
-import org.interledger.core.asn.framework.InterledgerCodecContextFactory;
+
+import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,7 +23,6 @@ import org.springframework.http.HttpOutputMessage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Collection;
 
@@ -44,7 +45,7 @@ public class OerPreparePacketHttpMessageConverterTest {
     .executionCondition(ALL_ZEROS_FULFILLMENT.getCondition())
     .expiresAt(Instant.now())
     .destination(InterledgerAddress.of("example.receiver"))
-    .amount(BigInteger.TEN)
+    .amount(UnsignedLong.valueOf(10))
     .data(new byte[32])
     .build();
   private static InterledgerFulfillPacket FULFILL_PACKET = InterledgerFulfillPacket.builder()

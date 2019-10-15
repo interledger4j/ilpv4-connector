@@ -1,9 +1,11 @@
 package org.interledger.connector.javax.money.providers;
 
+import static org.javamoney.moneta.spi.AbstractCurrencyConversion.KEY_SCALE;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import org.javamoney.moneta.convert.ExchangeRateBuilder;
 import org.javamoney.moneta.spi.AbstractRateProvider;
 import org.javamoney.moneta.spi.DefaultNumberValue;
@@ -15,6 +17,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import javax.money.MonetaryException;
 import javax.money.convert.ConversionContext;
 import javax.money.convert.ConversionQuery;
@@ -23,15 +31,6 @@ import javax.money.convert.ExchangeRateProvider;
 import javax.money.convert.ProviderContext;
 import javax.money.convert.ProviderContextBuilder;
 import javax.money.convert.RateType;
-import java.math.BigDecimal;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
-
-import static org.javamoney.moneta.spi.AbstractCurrencyConversion.KEY_SCALE;
-import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 /**
  * A {@link ExchangeRateProvider} that loads FX data from CryptoCompare. This provider loads all available rates,
@@ -82,50 +81,45 @@ public class CryptoCompareRateProvider extends AbstractRateProvider {
   }
 
   private LoadingCache<ConversionQuery, ExchangeRate> fxLoader() {
-    return CacheBuilder.newBuilder()
+    return Caffeine.newBuilder()
       //.maximumSize(100) // Not enabled for now in order to support many accounts.
       .expireAfterAccess(30, TimeUnit.SECONDS)
-      .build(
-        new CacheLoader<ConversionQuery, ExchangeRate>() {
-          // Computes or retrieves the value corresponding to {@code conversionQuery}.
-          @Override
-          public ExchangeRate load(final ConversionQuery conversionQuery) {
-            Objects.requireNonNull(conversionQuery);
+      .build(conversionQuery -> {
+        // Computes or retrieves the value corresponding to {@code conversionQuery}.
+        Objects.requireNonNull(conversionQuery);
 
-            final ExchangeRateBuilder builder = exchangeRateBuilder(conversionQuery);
-            // WARNING: CryptoCompare will fail if the currency codes aren't upper-cased!
-            final String baseCurrencyCode = conversionQuery.getBaseCurrency().getCurrencyCode().toUpperCase();
-            final String terminatingCurrencyCode = conversionQuery.getCurrency().getCurrencyCode().toUpperCase();
+        final ExchangeRateBuilder builder = exchangeRateBuilder(conversionQuery);
+        // WARNING: CryptoCompare will fail if the currency codes aren't upper-cased!
+        final String baseCurrencyCode = conversionQuery.getBaseCurrency().getCurrencyCode().toUpperCase();
+        final String terminatingCurrencyCode = conversionQuery.getCurrency().getCurrencyCode().toUpperCase();
 
-            if (baseCurrencyCode.equals(terminatingCurrencyCode)) {
-              builder.setFactor(DefaultNumberValue.ONE);
-            } else {
+        if (baseCurrencyCode.equals(terminatingCurrencyCode)) {
+          builder.setFactor(DefaultNumberValue.ONE);
+        } else {
 
-              // In JavaMoney, the Base currency is the currency being dealt with, and the terminating currency is
-              // the currency that the base is converted into. E.g., `XRP, in USD, is $0.3133`, then XRP would be the
-              // base currency, and USD would be the terminating currency. In CryptoCompare, the `fsym` and `tsym`
-              // map this relationship. We ask the API, convert `XRP` (fsym) into `USD` (tsym). We get a response
-              // containing a map of values keyed by each `tsym`. So, we can map the `tsym` to the terminating currency.
+          // In JavaMoney, the Base currency is the currency being dealt with, and the terminating currency is
+          // the currency that the base is converted into. E.g., `XRP, in USD, is $0.3133`, then XRP would be the
+          // base currency, and USD would be the terminating currency. In CryptoCompare, the `fsym` and `tsym`
+          // map this relationship. We ask the API, convert `XRP` (fsym) into `USD` (tsym). We get a response
+          // containing a map of values keyed by each `tsym`. So, we can map the `tsym` to the terminating currency.
 
-              // Call Remote API to load the rate.
-              final Map<String, String> ratesResponse = restTemplate.exchange(
-                apiUrlTemplate, HttpMethod.GET, httpEntityWithCustomHeaders(),
-                new ParameterizedTypeReference<Map<String, String>>() {
-                },
-                baseCurrencyCode, terminatingCurrencyCode
-              ).getBody();
+          // Call Remote API to load the rate.
+          final Map<String, String> ratesResponse = restTemplate.exchange(
+            apiUrlTemplate, HttpMethod.GET, httpEntityWithCustomHeaders(),
+            new ParameterizedTypeReference<Map<String, String>>() {
+            },
+            baseCurrencyCode, terminatingCurrencyCode
+          ).getBody();
 
-              Optional.ofNullable(ratesResponse.get(terminatingCurrencyCode))
-                .map(value -> builder.setFactor(new DefaultNumberValue(new BigDecimal(value))))
-                .orElseThrow(
-                  () -> new RuntimeException(String.format("No Rate found for ConversionQuery: %s", conversionQuery))
-                );
-            }
-
-            return builder.build();
-          }
+          Optional.ofNullable(ratesResponse.get(terminatingCurrencyCode))
+            .map(value -> builder.setFactor(new DefaultNumberValue(new BigDecimal(value))))
+            .orElseThrow(
+              () -> new RuntimeException(String.format("No Rate found for ConversionQuery: %s", conversionQuery))
+            );
         }
-      );
+
+        return builder.build();
+      });
   }
 
   // Access a {@link ExchangeRate} using the given currencies.

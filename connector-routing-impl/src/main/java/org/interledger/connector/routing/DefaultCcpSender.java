@@ -20,6 +20,8 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
+
+import com.google.common.primitives.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
@@ -27,7 +29,6 @@ import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import javax.annotation.PreDestroy;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -290,7 +291,7 @@ public class DefaultCcpSender implements CcpSender {
       this.lastKnownEpoch.compareAndSet(previousNextRequestedEpoch, toEpoch);
 
       final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
-        .amount(BigInteger.ZERO)
+        .amount(UnsignedLong.ZERO)
         .destination(CcpConstants.CCP_UPDATE_DESTINATION_ADDRESS)
         .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
         .expiresAt(Instant.now().plus(

@@ -114,6 +114,10 @@
       <artifactId>auth0-spring-security-api</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
     </dependency>
@@ -173,7 +177,7 @@
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
-      <artifactId>codec-framework</artifactId>
+      <artifactId>codecs-framework</artifactId>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
@@ -181,11 +185,11 @@
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
-      <artifactId>ilp-core-codecs</artifactId>
+      <artifactId>codecs-ilp</artifactId>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
-      <artifactId>ildcp-core-codecs</artifactId>
+      <artifactId>codecs-ildcp</artifactId>
     </dependency>
     <dependency>
       <groupId>org.javamoney.moneta</groupId>

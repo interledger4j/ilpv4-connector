@@ -1,14 +1,13 @@
 package org.interledger.connector.link.blast;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalListener;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
+
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
@@ -18,7 +17,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 /**
@@ -45,47 +43,41 @@ public class JwtBlastHttpSender extends AbstractBlastHttpSender implements Blast
     final EncryptedSecret encryptedSecret =
       EncryptedSecret.fromEncodedValue(getOutgoingLinkSettings().encryptedTokenSharedSecret());
 
-    ilpOverHttpAuthTokens = CacheBuilder.newBuilder()
+    ilpOverHttpAuthTokens = Caffeine.newBuilder()
       // There should only ever be 1 or 2 tokens in-memory for a given client instance.
       .maximumSize(3)
       // Expire after this duration, which will correspond to the last incoming request from the peer.
       .expireAfterAccess(outgoingLinkSettings.tokenExpiry().orElse(Duration.of(30, ChronoUnit.MINUTES)))
-      .removalListener((RemovalListener<String, String>) notification ->
-        logger.debug("Removing IlpOverHttp AuthToken from Cache for Principal: {}", notification.getKey())
+      .removalListener((key, value, cause) ->
+        logger.debug("Removing IlpOverHttp AuthToken from Cache for Principal: {}", key)
       )
-      .build(new CacheLoader<String, String>() {
-        public String load(final String accountId) {
-          Objects.requireNonNull(accountId);
+      .build(accountId -> {
+        Objects.requireNonNull(accountId);
 
-          final byte[] sharedSecretBytes = Objects.requireNonNull(decryptor).decrypt(encryptedSecret);
-          try {
-            return JWT.create()
-              //.withIssuedAt(new Date())
-              //      .withIssuer(getOutgoingLinkSettings()
-              //        .tokenIssuer()
-              //        .map(HttpUrl::toString)
-              //        .orElseThrow(() -> new RuntimeException("JWT Blast Senders require an Outgoing Issuer!"))
-              //      )
-              .withSubject(getOutgoingLinkSettings().tokenSubject()) // account identifier at the remote server.
-              // Expire at the appointed time, or else after 15 minutes.
-              .withExpiresAt(outgoingLinkSettings.tokenExpiry()
-                .map(expiry -> Date.from(Instant.now().plus(expiry)))
-                .orElseGet(() -> Date.from(Instant.now().plus(15, ChronoUnit.MINUTES))))
-              .sign(Algorithm.HMAC256(sharedSecretBytes));
-          } finally {
-            // Zero-out all bytes in the `sharedSecretBytes` array.
-            Arrays.fill(sharedSecretBytes, (byte) 0);
-          }
+        final byte[] sharedSecretBytes = Objects.requireNonNull(decryptor).decrypt(encryptedSecret);
+        try {
+          return JWT.create()
+            //.withIssuedAt(new Date())
+            //      .withIssuer(getOutgoingLinkSettings()
+            //        .tokenIssuer()
+            //        .map(HttpUrl::toString)
+            //        .orElseThrow(() -> new RuntimeException("JWT Blast Senders require an Outgoing Issuer!"))
+            //      )
+            .withSubject(getOutgoingLinkSettings().tokenSubject()) // account identifier at the remote server.
+            // Expire at the appointed time, or else after 15 minutes.
+            .withExpiresAt(outgoingLinkSettings.tokenExpiry()
+              .map(expiry -> Date.from(Instant.now().plus(expiry)))
+              .orElseGet(() -> Date.from(Instant.now().plus(15, ChronoUnit.MINUTES))))
+            .sign(Algorithm.HMAC256(sharedSecretBytes));
+        } finally {
+          // Zero-out all bytes in the `sharedSecretBytes` array.
+          Arrays.fill(sharedSecretBytes, (byte) 0);
         }
       });
   }
 
   @Override
   protected String constructAuthToken() {
-    try {
-      return this.ilpOverHttpAuthTokens.get(getOutgoingLinkSettings().tokenSubject());
-    } catch (ExecutionException e) {
-      throw new RuntimeException(e);
-    }
+    return this.ilpOverHttpAuthTokens.get(getOutgoingLinkSettings().tokenSubject());
   }
 }

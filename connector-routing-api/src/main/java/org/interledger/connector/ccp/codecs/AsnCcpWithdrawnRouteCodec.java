@@ -1,9 +1,9 @@
 package org.interledger.connector.ccp.codecs;
 
+import org.interledger.codecs.ilp.AsnInterledgerAddressPrefixCodec;
 import org.interledger.connector.ccp.CcpRouteUpdateRequest;
 import org.interledger.connector.ccp.CcpWithdrawnRoute;
 import org.interledger.connector.ccp.ImmutableCcpWithdrawnRoute;
-import org.interledger.core.asn.codecs.AsnInterledgerAddressPrefixCodec;
 import org.interledger.encoding.asn.codecs.AsnSequenceCodec;
 
 import java.util.Objects;
