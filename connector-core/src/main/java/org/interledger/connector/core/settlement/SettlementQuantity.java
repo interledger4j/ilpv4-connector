@@ -1,5 +1,6 @@
 package org.interledger.connector.core.settlement;
 
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.Preconditions;
@@ -45,6 +46,7 @@ public interface SettlementQuantity {
    *
    * @return The scale, as defined by the Settlement Engine RFC.
    */
+  @JsonRawValue
   int scale();
 
   @Value.Check
