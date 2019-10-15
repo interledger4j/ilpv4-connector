@@ -169,7 +169,7 @@ public abstract class AbstractBilateralConnection {//<IT extends MultiplexedBila
   //  //  @Override
   //  //  public void onError(final PluginErrorEvent event) {
   //  //    // Log the error.
-  //  //    logger.error(event.getError().getMessage(), event.getError());
+  //  //    logger.error(event.error().getMessage(), event.error());
   //  //  }
   //
   //  @Override

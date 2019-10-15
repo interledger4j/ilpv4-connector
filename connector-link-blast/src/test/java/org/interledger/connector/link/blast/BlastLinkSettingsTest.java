@@ -104,7 +104,7 @@ public class BlastLinkSettingsTest extends AbstractBlastLinkTest {
       .outgoingBlastLinkSettings(outgoingLinksettings)
       .build();
 
-    assertThat(blastLinkSettings.getLinkType(), is(BlastLink.LINK_TYPE));
+    assertThat(blastLinkSettings.linkType(), is(BlastLink.LINK_TYPE));
 
     assertThat(blastLinkSettings.incomingBlastLinkSettings().authType(), is(BlastLinkSettings.AuthType.SIMPLE));
     assertThat(blastLinkSettings.incomingBlastLinkSettings().tokenIssuer().get(),

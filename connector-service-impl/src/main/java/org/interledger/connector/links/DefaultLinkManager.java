@@ -132,7 +132,7 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
 
     //Use the first linkFactory that supports the linkType...
     final Link<?> link = this.linkFactoryProvider
-      .getLinkFactory(linkSettings.getLinkType())
+      .getLinkFactory(linkSettings.linkType())
       .constructLink(operatorAddressSupplier, linkSettings);
 
     // Set the LinkId to match the AccountId...this way the Link can always use this value to represent the
@@ -182,8 +182,8 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
   @Subscribe
   public void onConnect(final LinkConnectedEvent event) {
     Objects.requireNonNull(event);
-    final AccountId accountId = accountIdResolver.resolveAccountId(event.getLink());
-    this.connectedLinks.put(accountId, event.getLink());
+    final AccountId accountId = accountIdResolver.resolveAccountId(event.link());
+    this.connectedLinks.put(accountId, event.link());
   }
 
   /**
@@ -197,7 +197,7 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
   public void onDisconnect(final LinkDisconnectedEvent event) {
     Objects.requireNonNull(event);
 
-    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getLink());
+    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.link());
     // Remove the Link from the Set of connected links for the specified account.
     this.connectedLinks.remove(accountId);
   }
@@ -206,6 +206,6 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
   @Subscribe
   public void onError(final LinkErrorEvent event) {
     Objects.requireNonNull(event);
-    logger.error("Link: {}; LinkError: {}", event.getLink(), event.getError());
+    logger.error("Link: {}; LinkError: {}", event.link(), event.error());
   }
 }
