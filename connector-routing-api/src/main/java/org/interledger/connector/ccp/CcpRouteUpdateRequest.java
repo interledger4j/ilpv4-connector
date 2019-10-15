@@ -74,7 +74,7 @@ public interface CcpRouteUpdateRequest {
   /**
    * Withdrawn Routes that the speaker is advertising as being no longer valid or useful.
    *
-   * @return A {@link Collection} of getRoute-identifiers of type {@link InterledgerAddress}.
+   * @return A {@link Collection} of route-identifiers of type {@link InterledgerAddress}.
    */
   @Value.Default
   default Collection<CcpWithdrawnRoute> withdrawnRoutePrefixes() {

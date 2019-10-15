@@ -56,11 +56,11 @@ public class InMemoryRoutingTableTest {
 //
 //  @Test
 //  public void testAddRoute() throws Exception {
-//    final Route getRoute = this.constructTestRoute(GLOBAL_PREFIX);
+//    final Route route = this.constructTestRoute(GLOBAL_PREFIX);
 //
-//    this.routingTable.addRoute(getRoute);
+//    this.routingTable.addRoute(route);
 //
-//    verify(interledgerPrefixMapMock).add(ArgumentMatchers.eq(getRoute));
+//    verify(interledgerPrefixMapMock).add(ArgumentMatchers.eq(route));
 //    verifyNoMoreInteractions(interledgerPrefixMapMock);
 //  }
 //
@@ -79,11 +79,11 @@ public class InMemoryRoutingTableTest {
 //
 //  @Test
 //  public void testRemoveRoute() throws Exception {
-//    final Route getRoute = this.constructTestRoute(GLOBAL_PREFIX);
+//    final Route route = this.constructTestRoute(GLOBAL_PREFIX);
 //
-//    this.routingTable.removeEntry(getRoute);
+//    this.routingTable.removeEntry(route);
 //
-//    verify(interledgerPrefixMapMock).removeEntry(ArgumentMatchers.eq(getRoute));
+//    verify(interledgerPrefixMapMock).removeEntry(ArgumentMatchers.eq(route));
 //    verifyNoMoreInteractions(interledgerPrefixMapMock);
 //  }
 //
@@ -102,11 +102,11 @@ public class InMemoryRoutingTableTest {
 //
 //  @Test
 //  public void testRemoveRoutesWithEmptyTable() throws Exception {
-//    final Route getRoute = this.constructTestRoute(GLOBAL_PREFIX);
+//    final Route route = this.constructTestRoute(GLOBAL_PREFIX);
 //
-//    this.routingTable.removeAllRoutesForPrefix(getRoute.getRoutePrefix());
+//    this.routingTable.removeAllRoutesForPrefix(route.routePrefix());
 //
-//    verify(interledgerPrefixMapMock).removeAll(getRoute.getRoutePrefix());
+//    verify(interledgerPrefixMapMock).removeAll(route.routePrefix());
 //    verifyNoMoreInteractions(interledgerPrefixMapMock);
 //  }
 //
@@ -116,26 +116,26 @@ public class InMemoryRoutingTableTest {
 //    final Route route2 = this.constructTestRoute(GLOBAL_PREFIX.with("foo."));
 //    this.routingTable.addRoute(route1);
 //    this.routingTable.addRoute(route2);
-//    when(interledgerPrefixMapMock.removeAll(route1.getRoutePrefix())).thenReturn(ImmutableList.of(route1));
+//    when(interledgerPrefixMapMock.removeAll(route1.routePrefix())).thenReturn(ImmutableList.of(route1));
 //    verify(interledgerPrefixMapMock).add(route1);
 //    verify(interledgerPrefixMapMock).add(route2);
 //
-//    this.routingTable.removeAllRoutesForPrefix(route1.getRoutePrefix());
+//    this.routingTable.removeAllRoutesForPrefix(route1.routePrefix());
 //
-//    verify(interledgerPrefixMapMock).removeAll(route1.getRoutePrefix());
+//    verify(interledgerPrefixMapMock).removeAll(route1.routePrefix());
 //    verifyNoMoreInteractions(interledgerPrefixMapMock);
 //  }
 //
 //  @Test
 //  public void testRemoveRoutes() throws Exception {
-//    final Route getRoute = this.constructTestRoute(GLOBAL_PREFIX);
-//    when(interledgerPrefixMapMock.removeAll(getRoute.getRoutePrefix())).thenReturn(ImmutableList.of(getRoute));
-//    this.routingTable.addRoute(getRoute);
-//    verify(interledgerPrefixMapMock).add(getRoute);
+//    final Route route = this.constructTestRoute(GLOBAL_PREFIX);
+//    when(interledgerPrefixMapMock.removeAll(route.routePrefix())).thenReturn(ImmutableList.of(route));
+//    this.routingTable.addRoute(route);
+//    verify(interledgerPrefixMapMock).add(route);
 //
-//    this.routingTable.removeAllRoutesForPrefix(getRoute.getRoutePrefix());
+//    this.routingTable.removeAllRoutesForPrefix(route.routePrefix());
 //
-//    verify(interledgerPrefixMapMock).removeAll(getRoute.getRoutePrefix());
+//    verify(interledgerPrefixMapMock).removeAll(route.routePrefix());
 //    verifyNoMoreInteractions(interledgerPrefixMapMock);
 //  }
 //
@@ -154,11 +154,11 @@ public class InMemoryRoutingTableTest {
 //
 //  @Test
 //  public void testGetRoutes() throws Exception {
-//    final Route getRoute = this.constructTestRoute(GLOBAL_PREFIX);
+//    final Route route = this.constructTestRoute(GLOBAL_PREFIX);
 //
-//    this.routingTable.getRouteByPrefix(getRoute.getRoutePrefix());
+//    this.routingTable.getRouteByPrefix(route.routePrefix());
 //
-//    verify(interledgerPrefixMapMock).getEntries(getRoute.getRoutePrefix());
+//    verify(interledgerPrefixMapMock).getEntries(route.routePrefix());
 //    verifyNoMoreInteractions(interledgerPrefixMapMock);
 //  }
 //
@@ -201,7 +201,7 @@ public class InMemoryRoutingTableTest {
 //
 //  @Test
 //  public void testFindNextHopRoute() throws Exception {
-//    final Route getRoute = this.constructTestRoute(GLOBAL_PREFIX);
+//    final Route route = this.constructTestRoute(GLOBAL_PREFIX);
 //
 //    this.routingTable.findNextHops(BOB_GLOBAL_ADDRESS);
 //
@@ -239,22 +239,22 @@ public class InMemoryRoutingTableTest {
 //    final InterledgerAddress usdBarSenderPrefix = GLOBAL_PREFIX.with("usd.bar.");
 //    // All routes allow this sender...
 //    final InterledgerAddress usdSenderPrefix = GLOBAL_PREFIX.with("usd.");
-//    // Depending on the getRoute, this sender is sometimes excluded...
+//    // Depending on the route, this sender is sometimes excluded...
 //    final InterledgerAddress cnySenderPrefix = GLOBAL_PREFIX.with("cny.");
 //
 //    final InterledgerAddress finalDestinationAddress = GLOBAL_PREFIX.with("bank.bob");
 //
-//    // This getRoute is unrestricted...
+//    // This route is unrestricted...
 //    final Route allSourcesRoute = this.testRouteBuilder(GLOBAL_PREFIX).build();
-//    // This getRoute is restricted to all senders whose prefix begins with "g.usd."
+//    // This route is restricted to all senders whose prefix begins with "g.usd."
 //    final Route anyUSDSourcesRoute = this.testRouteBuilder(GLOBAL_PREFIX).sourcePrefixRestrictionRegex(Pattern
 //      .compile("g\\.usd\\.(.*)"))
 //      .build();
-//    // This getRoute is restricted to all senders whose prefix begins with "g.usd.bar."
+//    // This route is restricted to all senders whose prefix begins with "g.usd.bar."
 //    final Route usdBarOnlySourcesRoute = this.testRouteBuilder(GLOBAL_PREFIX).sourcePrefixRestrictionRegex(Pattern
 //      .compile("g\\.usd\\.bar\\.(.*)"))
 //      .build();
-//    // // This getRoute is restricted to all senders...
+//    // // This route is restricted to all senders...
 //    final Route noSourcesRoute = this.testRouteBuilder(GLOBAL_PREFIX).sourcePrefixRestrictionRegex(Pattern
 //      .compile("a^"))
 //      .build();
@@ -264,7 +264,7 @@ public class InMemoryRoutingTableTest {
 //        Lists.newArrayList(allSourcesRoute, anyUSDSourcesRoute, usdBarOnlySourcesRoute, noSourcesRoute)
 //      );
 //
-//    // The USD Bar Sender is eligible for all routes (except the no-senders getRoute), so we expect 3 to be returned...
+//    // The USD Bar Sender is eligible for all routes (except the no-senders route), so we expect 3 to be returned...
 //    Collection<Route> actual = this.routingTable.findNextHops(finalDestinationAddress, usdBarSenderPrefix);
 //    assertThat(actual.size(), is(3));
 //    assertThat(actual.contains(allSourcesRoute), is(true));
@@ -272,7 +272,7 @@ public class InMemoryRoutingTableTest {
 //    assertThat(actual.contains(usdBarOnlySourcesRoute), is(true));
 //    assertThat(actual.contains(noSourcesRoute), is(false));
 //
-//    // The USD Sender is not eligible for the getRoute that requires "g.usd.bar." sources, so we
+//    // The USD Sender is not eligible for the route that requires "g.usd.bar." sources, so we
 //    // expect only 2 routes to be returned...
 //    actual = this.routingTable.findNextHops(finalDestinationAddress, usdSenderPrefix);
 //    assertThat(actual.size(), is(2));
@@ -281,7 +281,7 @@ public class InMemoryRoutingTableTest {
 //    assertThat(actual.contains(usdBarOnlySourcesRoute), is(false));
 //    assertThat(actual.contains(noSourcesRoute), is(false));
 //
-//    // The CNY Sender is eligible for only 1 getRoute, so we expect 1 to be returned...
+//    // The CNY Sender is eligible for only 1 route, so we expect 1 to be returned...
 //    actual = this.routingTable.findNextHops(finalDestinationAddress, cnySenderPrefix);
 //    assertThat(actual.size(), is(1));
 //    assertThat(actual.contains(allSourcesRoute), is(true));

@@ -1,8 +1,8 @@
 package org.interledger.connector.ccp;
 
-import com.google.common.collect.ImmutableList;
-import org.interledger.connector.ccp.ImmutableCcpRouteControlRequest;
 import org.interledger.connector.routing.RoutingTableId;
+
+import com.google.common.collect.ImmutableList;
 import org.immutables.value.Value;
 
 import java.util.Collection;
@@ -10,8 +10,8 @@ import java.util.Optional;
 
 /**
  * A request sent from one ILP Node (the requestor) to another node (the counterpart) to control whether or not the
- * counterpart sends getRoute updates to the requestor. When the counterpart is in the {@link CcpSyncMode#MODE_IDLE},
- * then the counterpart does not send getRoute updates to the requestor node. Conversely,
+ * counterpart sends route updates to the requestor. When the counterpart is in the {@link CcpSyncMode#MODE_IDLE},
+ * then the counterpart does not send route updates to the requestor node. Conversely,
  */
 @Value.Immutable
 public interface CcpRouteControlRequest {
@@ -26,7 +26,7 @@ public interface CcpRouteControlRequest {
    * @return A {@link CcpSyncMode}.
    */
   @Value.Default
-  default CcpSyncMode getMode() {
+  default CcpSyncMode mode() {
     return CcpSyncMode.MODE_IDLE;
   }
 

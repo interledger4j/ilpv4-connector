@@ -140,10 +140,10 @@ public class ChildAccountPaymentRouterTest {
     Optional<Route> actual = childAccountPaymentRouter.findBestNexHop(OPERATOR_ADDRESS);
     assertThat(actual.isPresent(), is(true));
 
-    assertThat(actual.get().getNextHopAccountId(), is(PING_ACCOUNT_ID));
-    assertThat(actual.get().getExpiresAt().isPresent(), is(false));
-    assertThat(actual.get().getAuth().length, is(32));
-    assertThat(actual.get().getPath().isEmpty(), is(true));
+    assertThat(actual.get().nextHopAccountId(), is(PING_ACCOUNT_ID));
+    assertThat(actual.get().expiresAt().isPresent(), is(false));
+    assertThat(actual.get().auth().length, is(32));
+    assertThat(actual.get().path().isEmpty(), is(true));
   }
 
   /////////////////
@@ -165,10 +165,10 @@ public class ChildAccountPaymentRouterTest {
     Optional<Route> actual = childAccountPaymentRouter.findBestNexHop(OPERATOR_ADDRESS.with("foo"));
     assertThat(actual.isPresent(), is(true));
 
-    assertThat(actual.get().getNextHopAccountId(), is(AccountId.of("foo")));
-    assertThat(actual.get().getExpiresAt().isPresent(), is(false));
-    assertThat(actual.get().getAuth().length, is(32));
-    assertThat(actual.get().getPath().isEmpty(), is(true));
+    assertThat(actual.get().nextHopAccountId(), is(AccountId.of("foo")));
+    assertThat(actual.get().expiresAt().isPresent(), is(false));
+    assertThat(actual.get().auth().length, is(32));
+    assertThat(actual.get().path().isEmpty(), is(true));
   }
 
 }

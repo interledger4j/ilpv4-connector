@@ -91,7 +91,7 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
           // Every time we reconnect, we'll send a new route control message to make sure they are still sending us
           // routes, but only as long as receiving is enabled.
           if (receiveRoutes) {
-            existingPeer.getCcpReceiver().sendRouteControl();
+            existingPeer.ccpReceiver().sendRouteControl();
           }
           logger.warn("CCP Peer already registered with RouteBroadcaster using AccountId=`{}`", accountId);
           return existingPeer;
@@ -113,7 +113,7 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
           this.setCcpEnabledAccount(newPeerAccount);
 
           // Always send a new RoutControl request to the remote peer, but only if it's connected.
-          newPeerAccount.getCcpReceiver().sendRouteControl();
+          newPeerAccount.ccpReceiver().sendRouteControl();
 
           return newPeerAccount;
         });
@@ -186,9 +186,9 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
   private void setCcpEnabledAccount(final RoutableAccount routableAccount) {
     Objects.requireNonNull(routableAccount);
 
-    if (this.ccpEnabledAccounts.putIfAbsent(routableAccount.getAccountId(), routableAccount) != null) {
+    if (this.ccpEnabledAccounts.putIfAbsent(routableAccount.accountId(), routableAccount) != null) {
       throw new RuntimeException(
-        String.format("AccountId `%s` existed in the RouteBroadcaster already.", routableAccount.getAccountId())
+        String.format("AccountId `%s` existed in the RouteBroadcaster already.", routableAccount.accountId())
       );
     }
   }
@@ -200,7 +200,7 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
         logger.trace("Remove peer. peerId={}", accountId);
 
         // Stop the CcpSender from broadcasting routes...
-        peer.getCcpSender().stopBroadcasting();
+        peer.ccpSender().stopBroadcasting();
 
         // We have to removeEntry the peer before calling updatePrefix on each of its advertised prefixes in order to
         // find the next best route.

@@ -171,7 +171,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
         this.localRoutingTable.addRoute(defaultRoute);
 
         // Enable this Account for CCP (if appropriate)
-        routeBroadcaster.registerCcpEnabledAccount(defaultRoute.getNextHopAccountId());
+        routeBroadcaster.registerCcpEnabledAccount(defaultRoute.nextHopAccountId());
       }
     );
 
@@ -215,7 +215,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     this.localRoutingTable.forEach((accountId, route) -> {
       // This method determines what the forwarding-tables should look like based upon "best path" algorithms.
-      this.updatePrefix(route.getRoutePrefix());
+      this.updatePrefix(route.routePrefix());
     });
 
   }
@@ -237,7 +237,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
       logger.info(
         "New BestRoute for Prefix `{}` is AccountId(`{}`)",
         addressPrefix.getValue(),
-        newBestRoute.map(Route::getNextHopAccountId).map(AccountId::value).orElse("n/a")
+        newBestRoute.map(Route::nextHopAccountId).map(AccountId::value).orElse("n/a")
       );
 
       this.updateForwardingRoute(addressPrefix, newBestRoute);
@@ -261,8 +261,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     final Optional<Route> currentBestRoute = this.localRoutingTable.getRouteByPrefix(addressPrefix);
 
-    final Optional<AccountId> currentNextHop = currentBestRoute.map(nh -> nh.getNextHopAccountId());
-    final Optional<AccountId> newBestHop = newBestRoute.map(Route::getNextHopAccountId);
+    final Optional<AccountId> currentNextHop = currentBestRoute.map(nh -> nh.nextHopAccountId());
+    final Optional<AccountId> newBestHop = newBestRoute.map(Route::nextHopAccountId);
 
     // If the current and next best hops are different, then update the routing tables...
     if (!currentNextHop.equals(newBestHop)) {
@@ -270,7 +270,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
         .map(nbr -> {
           logger.debug(
             "New best route for prefix. prefix={} oldBest={} newBest={}",
-            addressPrefix, currentNextHop, nbr.getNextHopAccountId()
+            addressPrefix, currentNextHop, nbr.nextHopAccountId()
           );
           this.localRoutingTable.addRoute(nbr);
           return ROUTES_HAVE_CHANGED;
@@ -299,7 +299,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
         // Inject ourselves into the path that we'll send to remote peers...
         final List<InterledgerAddress> newPath = ImmutableList.<InterledgerAddress>builder()
           .add(connectorSettingsSupplier.get().operatorAddressSafe())
-          .addAll(nblr.getPath()).build();
+          .addAll(nblr.path()).build();
 
         return ImmutableRoute.builder()
           .from(nblr)
@@ -308,22 +308,22 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
           // route-owner controls (e.g., this Connector for routes that come from us). When this route is advertised
           // via a forwarding table, the auth value is hashed again so that it is always unique from the perspective of
           // outside connectors (TODO: Verify this with https://github.com/interledger/rfcs/pull/455)
-          .auth(Hashing.sha256().hashBytes(nblr.getAuth()).asBytes())
+          .auth(Hashing.sha256().hashBytes(nblr.auth()).asBytes())
           .build();
       })
       .map(nblr -> {
         final InterledgerAddressPrefix globalPrefix = connectorSettingsSupplier.get().globalPrefix();
         final boolean hasGlobalPrefix = addressPrefix.getRootPrefix().equals(globalPrefix);
         final boolean isDefaultRoute = determineDefaultRoute()
-          .map(Route::getRoutePrefix)
-          .map(routePrefix -> routePrefix.equals(nblr.getRoutePrefix()))
+          .map(Route::routePrefix)
+          .map(routePrefix -> routePrefix.equals(nblr.routePrefix()))
           .orElse(false);
 
         // Don't advertise local customer routes that we originated. Packets for these destinations should still
         // reach us because we are advertising our own address as a prefix.
         final boolean isLocalCustomerRoute = addressPrefix.getValue()
           .startsWith(this.connectorSettingsSupplier.get().operatorAddressSafe().getValue()) &&
-          nblr.getPath().size() == 1;
+          nblr.path().size() == 1;
 
         final boolean canDragonFilter = false; // TODO: Dragon!
 
@@ -339,7 +339,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
           return nblr;
         }
       })
-      .map(Route::getNextHopAccountId);
+      .map(Route::nextHopAccountId);
 
     // Only if there's a newBestNextHop, update the forwarding tables...
     newBestNextHop.ifPresent(nbnh -> {
@@ -347,10 +347,10 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
       // Don't look in the log, but look in the actual Routing table for the prefix...
       final Optional<RouteUpdate> currentBest = this.outgoingRoutingTable.getRouteByPrefix(addressPrefix);
       final Optional<AccountId> currentBestNextHop = currentBest
-        .map(RouteUpdate::getRoute)
+        .map(RouteUpdate::route)
         .filter(Optional::isPresent)
         .map(Optional::get)
-        .map(Route::getNextHopAccountId);
+        .map(Route::nextHopAccountId);
 
       // There's a new NextBestHop, so update the forwarding table, but only if it's different from the optionally
       // present currentBestNextHop.
@@ -369,7 +369,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
         logger.debug("Logging route update. update={}", newBestRouteUpdate);
 
         // If there's a current-best, null-out the epoch.
-        currentBest.ifPresent(ru -> outgoingRoutingTable.resetEpochValue(ru.getEpoch()));
+        currentBest.ifPresent(ru -> outgoingRoutingTable.resetEpochValue(ru.epoch()));
 
         // Set the new best into the new epoch.
         outgoingRoutingTable.setEpochValue(newEpoch, newBestRouteUpdate);
@@ -390,7 +390,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
             // Only update the forward routing table if there is a route present (we don't want to removeEntry routes when
             // dragon filtering...)
             this.outgoingRoutingTable.getRouteByPrefix(subPrefix)
-              .ifPresent(routeUpdate -> this.updateForwardingRoute(subPrefix, routeUpdate.getRoute()));
+              .ifPresent(routeUpdate -> this.updateForwardingRoute(subPrefix, routeUpdate.route()));
           });
       }
     });
@@ -438,7 +438,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
                 // `addressPrefix`. This is the best route.
 
                 return this.routeBroadcaster.getAllCcpEnabledAccounts()
-                  .map(RoutableAccount::getCcpReceiver)
+                  .map(RoutableAccount::ccpReceiver)
                   .map(ccpReceiver -> ccpReceiver.getIncomingRouteForPrefix(addressPrefix))
                   .filter(Optional::isPresent)
                   .map(Optional::get)
@@ -446,10 +446,10 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
                   .collect(Collectors.<IncomingRoute>toList()).stream()
                   .findFirst()
                   .map(bestRoute -> (Route) ImmutableRoute.builder()
-                    .routePrefix(bestRoute.getRoutePrefix())
-                    .nextHopAccountId(bestRoute.getPeerAccountId())
-                    .path(bestRoute.getPath())
-                    .auth(bestRoute.getAuth())
+                    .routePrefix(bestRoute.routePrefix())
+                    .nextHopAccountId(bestRoute.peerAccountId())
+                    .path(bestRoute.path())
+                    .auth(bestRoute.auth())
                     .build()
                   )
                   .orElse(null);
@@ -460,7 +460,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   }
 
   /**
-   * Constructs the value of {@link Route#getAuth()} by HMAC'ing {@code addressPrefix} using a routing-secret configured
+   * Constructs the value of {@link Route#auth()} by HMAC'ing {@code addressPrefix} using a routing-secret configured
    * for this Connector.
    *
    * @param addressPrefix

@@ -18,7 +18,7 @@ public interface PaymentRouter<R extends BaseRoute> {
   AccountId PING_ACCOUNT_ID = AccountId.of("__ping_account__");
 
   /**
-   * Given an incoming transfer on a particular source ledger, this method finds the best "next-hop" getRoute that
+   * Given an incoming transfer on a particular source ledger, this method finds the best "next-hop" route that
    * should be utilized to complete an Interledger payment.
    *
    * At a general level, this method works as follows:

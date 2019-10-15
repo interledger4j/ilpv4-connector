@@ -210,7 +210,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
               String.format("No tracked RoutableAccount found. accountId=%s", sourceAccountSettings.accountId()))
             );
 
-        routableAccount.getCcpSender().handleRouteControlRequest(routeControlRequest);
+        routableAccount.ccpSender().handleRouteControlRequest(routeControlRequest);
 
         // Return the Ccp response...
         return InterledgerFulfillPacket.builder()
@@ -240,7 +240,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
               String.format("No tracked RoutableAccount found accountId=%s", sourceAccountSettings.accountId()))
             );
 
-        routableAccount.getCcpReceiver().handleRouteUpdateRequest(routeUpdateRequest);
+        routableAccount.ccpReceiver().handleRouteUpdateRequest(routeUpdateRequest);
 
         // Return the CCP response...
         return InterledgerFulfillPacket.builder()

@@ -17,12 +17,12 @@ public abstract class CcpNewRoute {
   private static final byte[] EMPTY_AUTH = new byte[32];
 
   /**
-   * The address prefix of this new, added getRoute.
+   * The address prefix of this new, added route.
    */
   public abstract InterledgerAddressPrefix prefix();
 
   /**
-   * A collection of 32-bytes used to authenticate the getRoute. Reserved for the future, currently not used.
+   * A collection of 32-bytes used to authenticate the route. Reserved for the future, currently not used.
    */
   @Value.Default
   public byte[] auth() {
@@ -52,6 +52,6 @@ public abstract class CcpNewRoute {
 
   @Value.Check
   protected void check() {
-    Preconditions.checkState(auth().length == 32, "getRoute 'auth' must be exactly 32 bytes!");
+    Preconditions.checkState(auth().length == 32, "route 'auth' must be exactly 32 bytes!");
   }
 }

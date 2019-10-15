@@ -100,7 +100,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       logger.debug("Determined next hop: {}", nextHopRoute);
     }
 
-    if (sourceAccountSettings.accountId().equals(nextHopRoute.getNextHopAccountId())) {
+    if (sourceAccountSettings.accountId().equals(nextHopRoute.nextHopAccountId())) {
       throw new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
           .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
@@ -109,20 +109,20 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
           .build(),
         String.format(
           "Refusing to route payments back to sender. sourceAccountSettings=%s destinationAccount=%s",
-          sourceAccountSettings, nextHopRoute.getNextHopAccountId()
+          sourceAccountSettings, nextHopRoute.nextHopAccountId()
         )
       );
     }
 
     final AccountSettings destinationAccountSettings =
-      this.accountSettingsLoadingCache.safeGetAccountId(nextHopRoute.getNextHopAccountId());
+      this.accountSettingsLoadingCache.safeGetAccountId(nextHopRoute.nextHopAccountId());
 
     final UnsignedLong nextAmount = this.determineNextAmount(
       sourceAccountSettings, destinationAccountSettings, sourcePacket
     );
 
     return NextHopInfo.builder()
-      .nextHopAccountId(nextHopRoute.getNextHopAccountId())
+      .nextHopAccountId(nextHopRoute.nextHopAccountId())
       .nextHopPacket(
         InterledgerPreparePacket.builder()
           .from(sourcePacket)

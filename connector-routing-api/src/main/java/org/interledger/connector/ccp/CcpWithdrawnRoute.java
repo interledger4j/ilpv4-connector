@@ -4,7 +4,7 @@ import org.immutables.value.Value;
 import org.interledger.core.InterledgerAddressPrefix;
 
 /**
- * <p>Represents a withdrawn getRoute as advertised from a peer.</p>
+ * <p>Represents a withdrawn route as advertised from a peer.</p>
  */
 @Value.Immutable(intern = true)
 public interface CcpWithdrawnRoute {

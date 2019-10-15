@@ -61,7 +61,7 @@ public class AsnCcpRouteControlRequestCodec extends AsnSequenceCodec<CcpRouteCon
   public void encode(final CcpRouteControlRequest value) {
     Objects.requireNonNull(value);
 
-    setValueAt(0, value.getMode().getValue());
+    setValueAt(0, value.mode().getValue());
     // We can't easily send an empty UUID, so we instead send the all-zero UUID.
     setValueAt(1, value.lastKnownRoutingTableId().map(RoutingTableId::value).orElse(ZERO_UUID));
     setValueAt(2, new Long(value.lastKnownEpoch()));

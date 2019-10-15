@@ -99,14 +99,14 @@ public class DefaultCcpSender implements CcpSender {
     Preconditions.checkNotNull(link, "Link must be assigned before using a CcpSender!");
 
     logger.debug("Peer {} sent CcpRouteControlRequest: {}", peerAccountId, routeControlRequest);
-    if (syncMode.get() != routeControlRequest.getMode()) {
+    if (syncMode.get() != routeControlRequest.mode()) {
       logger.debug(
         "Peer {} requested changing routing mode. oldMode={} newMode={}",
-        peerAccountId, this.syncMode.get(), routeControlRequest.getMode()
+        peerAccountId, this.syncMode.get(), routeControlRequest.mode()
       );
     }
 
-    this.syncMode.set(routeControlRequest.getMode());
+    this.syncMode.set(routeControlRequest.mode());
 
     if (lastKnownRoutingTableId.get().equals(this.forwardingRoutingTable.getRoutingTableId()) == false) {
       logger.debug(
@@ -205,21 +205,21 @@ public class DefaultCcpSender implements CcpSender {
         .map(routeUpdate -> {
 
           // If there are no routes in the update, then skip it...
-          if (!routeUpdate.getRoute().isPresent()) {
+          if (!routeUpdate.route().isPresent()) {
             return routeUpdate;
           } else {
-            final Route actualRoute = routeUpdate.getRoute().get();
+            final Route actualRoute = routeUpdate.route().get();
             // Don't send peer their own routes (i.e., withdraw this route)
-            if (actualRoute.getNextHopAccountId().equals(peerAccountId)) {
+            if (actualRoute.nextHopAccountId().equals(peerAccountId)) {
               return null;
             }
 
             // Don't advertise Peer or Supplier (Parent) routes to Suppliers (Parents).
             final boolean nextHopRelationIsPeerOrParent = this
-              .accountSettingsRepository.findByAccountIdWithConversion(actualRoute.getNextHopAccountId())
+              .accountSettingsRepository.findByAccountIdWithConversion(actualRoute.nextHopAccountId())
               .map(AccountSettings::isPeerOrParentAccount)
               .orElseGet(() -> {
-                logger.error("NextHop Route {} was not found in the PeerManager!", actualRoute.getNextHopAccountId());
+                logger.error("NextHop Route {} was not found in the PeerManager!", actualRoute.nextHopAccountId());
                 return false;
               });
 
@@ -244,16 +244,16 @@ public class DefaultCcpSender implements CcpSender {
 
       // Populate newRoutesBuilder....
       filteredUpdatesToSend.stream()
-        .filter(routeUpdate -> routeUpdate.getRoute().isPresent())
-        .map(RouteUpdate::getRoute)
+        .filter(routeUpdate -> routeUpdate.route().isPresent())
+        .map(RouteUpdate::route)
         .filter(Optional::isPresent)
         .map(Optional::get)
         .map(routingTableEntry ->
           ImmutableCcpNewRoute.builder()
-            .prefix(routingTableEntry.getRoutePrefix())
-            .auth(routingTableEntry.getAuth())
+            .prefix(routingTableEntry.routePrefix())
+            .auth(routingTableEntry.auth())
             .path(
-              routingTableEntry.getPath().stream()
+              routingTableEntry.path().stream()
                 .map(address -> ImmutableCcpRoutePathPart.builder()
                   .routePathPart(address)
                   .build()
@@ -265,10 +265,10 @@ public class DefaultCcpSender implements CcpSender {
 
       // Populate withdrawnRoutesBuilder....
       filteredUpdatesToSend.stream()
-        .filter(routeUpdate -> !routeUpdate.getRoute().isPresent())
+        .filter(routeUpdate -> !routeUpdate.route().isPresent())
         .map(routingTableEntry ->
           ImmutableCcpWithdrawnRoute.builder()
-            .prefix(routingTableEntry.getRoutePrefix())
+            .prefix(routingTableEntry.routePrefix())
             .build()
         ).forEach(withdrawnRoutesBuilder::add);
 

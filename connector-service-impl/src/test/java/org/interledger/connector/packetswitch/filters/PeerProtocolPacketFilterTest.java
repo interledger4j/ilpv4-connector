@@ -138,8 +138,8 @@ public class PeerProtocolPacketFilterTest {
     when(connectorSettingsMock.toChildAddress(ACCOUNT_ID)).thenReturn(OPERATOR_ADDRESS);
 
     final RoutableAccount routableAccountMock = mock(RoutableAccount.class);
-    when(routableAccountMock.getCcpSender()).thenReturn(mock(CcpSender.class));
-    when(routableAccountMock.getCcpReceiver()).thenReturn(mock(CcpReceiver.class));
+    when(routableAccountMock.ccpSender()).thenReturn(mock(CcpSender.class));
+    when(routableAccountMock.ccpReceiver()).thenReturn(mock(CcpReceiver.class));
     when(routeBroadcasterMock.getCcpEnabledAccount(ACCOUNT_ID)).thenReturn(Optional.of(routableAccountMock));
   }
 

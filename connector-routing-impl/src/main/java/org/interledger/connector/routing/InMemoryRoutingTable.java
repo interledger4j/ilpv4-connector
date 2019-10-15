@@ -49,7 +49,7 @@ public class InMemoryRoutingTable<R extends BaseRoute> implements RoutingTable<R
   @Override
   public R addRoute(final R route) {
     Objects.requireNonNull(route);
-    return this.interledgerAddressPrefixMap.putEntry(route.getRoutePrefix(), route);
+    return this.interledgerAddressPrefixMap.putEntry(route.routePrefix(), route);
   }
 
   @Override

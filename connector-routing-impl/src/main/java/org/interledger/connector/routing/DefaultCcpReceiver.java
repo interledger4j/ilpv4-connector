@@ -168,7 +168,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
       )
       .forEach(newIncomingRoute -> {
         if (this.incomingRoutes.addRoute(newIncomingRoute) != null) {
-          changedPrefixesBuilder.add(newIncomingRoute.getRoutePrefix());
+          changedPrefixesBuilder.add(newIncomingRoute.routePrefix());
         }
       });
 
