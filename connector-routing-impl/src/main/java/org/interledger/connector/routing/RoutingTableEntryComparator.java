@@ -36,15 +36,15 @@ class RoutingTableEntryComparator implements Comparator<IncomingRoute> {
     }
 
     // Then sort by path length
-    int sizePathA = entryA.getPath().size();
-    int sizePathB = entryB.getPath().size();
+    int sizePathA = entryA.path().size();
+    int sizePathB = entryB.path().size();
 
     if (sizePathA != sizePathB) {
       return sizePathA - sizePathB;
     }
 
     // Finally, tie-break by AccountId
-    return entryA.getPeerAccountId().compareTo(entryB.getPeerAccountId());
+    return entryA.peerAccountId().compareTo(entryB.peerAccountId());
   }
 
   /**
@@ -59,9 +59,9 @@ class RoutingTableEntryComparator implements Comparator<IncomingRoute> {
   @Deprecated
   @VisibleForTesting
   protected int getWeight(final IncomingRoute route) {
-    return this.accountSettingsRepository.findByAccountId(route.getPeerAccountId())
+    return this.accountSettingsRepository.findByAccountId(route.peerAccountId())
       .orElseThrow(() -> new RuntimeException(
-        String.format("Account should have existed: %s", route.getPeerAccountId())
+        String.format("Account should have existed: %s", route.peerAccountId())
       ))
       .getAccountRelationship().getWeight();
   }

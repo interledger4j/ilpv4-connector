@@ -43,8 +43,8 @@ public class ConnectorServer extends Server {
 
     this.emitFxInfo();
 
-    if (getConnectorSettings().get().getOperatorAddress().isPresent()) {
-      logger.info("STARTED INTERLEDGER CONNECTOR: `{}`", getConnectorSettings().get().getOperatorAddress().get());
+    if (getConnectorSettings().get().operatorAddress().isPresent()) {
+      logger.info("STARTED INTERLEDGER CONNECTOR: `{}`", getConnectorSettings().get().operatorAddress().get());
     } else {
       logger.info("STARTED INTERLEDGER CHILD CONNECTOR: [Operator Address pending IL-DCP]");
     }

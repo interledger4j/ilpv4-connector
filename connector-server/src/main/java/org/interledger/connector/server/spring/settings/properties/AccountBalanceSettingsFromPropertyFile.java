@@ -14,7 +14,7 @@ public class AccountBalanceSettingsFromPropertyFile implements AccountBalanceSet
   private long settleTo = 0L;
 
   @Override
-  public Optional<Long> getMinBalance() {
+  public Optional<Long> minBalance() {
     return minBalance;
   }
 
@@ -23,7 +23,7 @@ public class AccountBalanceSettingsFromPropertyFile implements AccountBalanceSet
   }
 
   @Override
-  public Optional<Long> getSettleThreshold() {
+  public Optional<Long> settleThreshold() {
     return settleThreshold;
   }
 
@@ -32,7 +32,7 @@ public class AccountBalanceSettingsFromPropertyFile implements AccountBalanceSet
   }
 
   @Override
-  public long getSettleTo() {
+  public long settleTo() {
     return settleTo;
   }
 

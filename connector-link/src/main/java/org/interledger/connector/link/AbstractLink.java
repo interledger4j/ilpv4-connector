@@ -86,7 +86,7 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
     try {
       if (this.connected.compareAndSet(NOT_CONNECTED, CONNECTED)) {
         logger.debug("[{}] (ILP Address: `{}`) connecting to `{}`...",
-          this.linkSettings.getLinkType(),
+          this.linkSettings.linkType(),
           this.operatorAddressAsString(),
           this.getLinkId()
         );
@@ -98,13 +98,13 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
               this.linkEventEmitter.emitEvent(LinkConnectedEvent.of(this));
 
               logger.info("[{}] (Operator: `{}`) connected to remote `{}`",
-                this.getLinkSettings().getLinkType(),
+                this.getLinkSettings().linkType(),
                 this.operatorAddressAsString(),
                 this.getLinkId());
             } else {
               this.connected.set(NOT_CONNECTED);
               final String errorMessage = String.format("[%s] (ILP Address: `%s`) was unable to connect to Link: `%s`",
-                this.linkSettings.getLinkType(),
+                this.linkSettings.linkType(),
                 this.operatorAddressAsString(),
                 this.getLinkId().value()
               );
@@ -114,7 +114,7 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
           });
       } else {
         logger.debug("[{}] (ILP Address: `{}`) already connected to `{}`...",
-          this.linkSettings.getLinkType(),
+          this.linkSettings.linkType(),
           this.operatorAddressAsString(),
           this.getLinkId());
         // No-op: We're already expectedCurrentState...
@@ -146,7 +146,7 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
     try {
       if (this.connected.compareAndSet(CONNECTED, NOT_CONNECTED)) {
         logger.debug("[{}] (ILP Address: `{}`) disconnecting from `{}`...",
-          this.linkSettings.getLinkType(),
+          this.linkSettings.linkType(),
           this.operatorAddressAsString(),
           this.getLinkId());
 
@@ -157,13 +157,13 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
               this.linkEventEmitter.emitEvent(LinkDisconnectedEvent.of(this));
 
               logger.debug("[{}] (ILP Address: `{}`) disconnected from `{}`.",
-                this.linkSettings.getLinkType(),
+                this.linkSettings.linkType(),
                 this.operatorAddressAsString(),
                 this.getLinkId());
             } else {
               final String errorMessage =
                 String.format("[%s] `%s` error while trying to disconnect from ILP Address: `%s`",
-                  this.linkSettings.getLinkType(),
+                  this.linkSettings.linkType(),
                   this.operatorAddressAsString(),
                   this.getLinkId()
                 );
@@ -172,13 +172,13 @@ public abstract class AbstractLink<LS extends LinkSettings> implements Link<LS> 
           })
           .thenAccept(($) -> {
             logger.debug("[{}] (ILP Address: `{}`) disconnected from `{}`...",
-              this.linkSettings.getLinkType(),
+              this.linkSettings.linkType(),
               this.operatorAddressAsString(),
               this.getLinkId());
           });
       } else {
         logger.debug("[{}] (ILP Address: `{}`) already disconnected from `{}`...",
-          this.linkSettings.getLinkType(),
+          this.linkSettings.linkType(),
           this.operatorAddressAsString(),
           this.getLinkId());
         // No-op: We're already expectedCurrentState...

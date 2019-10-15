@@ -1,7 +1,8 @@
 package org.interledger.connector.routing;
 
-import org.immutables.value.Value;
 import org.interledger.connector.accounts.AccountId;
+
+import org.immutables.value.Value;
 
 /**
  * A container for holding information about the routing relationship that applies to a particular account (which is
@@ -11,9 +12,9 @@ import org.interledger.connector.accounts.AccountId;
 @Value.Immutable
 public interface RoutableAccount {
 
-  AccountId getAccountId();
+  AccountId accountId();
 
-  CcpSender getCcpSender();
+  CcpSender ccpSender();
 
-  CcpReceiver getCcpReceiver();
+  CcpReceiver ccpReceiver();
 }

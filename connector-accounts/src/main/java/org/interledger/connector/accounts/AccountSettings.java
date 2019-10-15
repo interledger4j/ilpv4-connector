@@ -29,9 +29,9 @@ public interface AccountSettings {
    * that this is not an {@link InterledgerAddress} because an account's address is assigned when a connection is made,
    * generally using information from the client and this identifier.
    *
-   * @see {@link #getIlpAddressSegment()}.
+   * @see {@link #ilpAddressSegment()}.
    */
-  AccountId getAccountId();
+  AccountId accountId();
 
   /**
    * The date/time this Account was created.
@@ -83,31 +83,31 @@ public interface AccountSettings {
    * applicable to accounts with relation of {@link AccountRelationship#CHILD}. By default, this will be the identifier
    * of the account.
    */
-  default String getIlpAddressSegment() {
-    return this.getAccountId().value();
+  default String ilpAddressSegment() {
+    return this.accountId().value();
   }
 
   /**
    * A human-readable description of this account.
    */
-  default String getDescription() {
+  default String description() {
     return "";
   }
 
   /**
    * The relationship between this connector and a remote system, for this asset type.
    */
-  AccountRelationship getAccountRelationship();
+  AccountRelationship accountRelationship();
 
   /**
    * The {@link LinkType} that should be used for this account in order to send "data".
    */
-  LinkType getLinkType();
+  LinkType linkType();
 
   /**
    * Currency code or other asset identifier that will be used to select the correct rate for this account.
    */
-  String getAssetCode();
+  String assetCode();
 
   /**
    * Interledger amounts are integers, but most currencies are typically represented as # fractional units, e.g. cents.
@@ -116,7 +116,7 @@ public interface AccountSettings {
    *
    * @return an int representing this account's asset scale.
    */
-  int getAssetScale();
+  int assetScale();
 
   /**
    * The maximum amount per-packet for incoming prepare packets. The connector will reject any incoming prepare packets
@@ -124,14 +124,14 @@ public interface AccountSettings {
    *
    * @return The maximum packet amount allowed by this account.
    */
-  Optional<Long> getMaximumPacketAmount();
+  Optional<Long> maximumPacketAmount();
 
   /**
    * Defines whether the connector should maintain and enforce a balance for this account.
    *
    * @return The parameters for tracking balances for this account.
    */
-  AccountBalanceSettings getBalanceSettings();
+  AccountBalanceSettings balanceSettings();
 
   /**
    * <p>Optionally present information about how this account can be settled.</p>
@@ -146,7 +146,7 @@ public interface AccountSettings {
    *
    * @return The parameters for rate-limiting this account.
    */
-  AccountRateLimitSettings getRateLimitSettings();
+  AccountRateLimitSettings rateLimitSettings();
 
   /**
    * Whether this account should receive and process route broadcasts from this peer. Defaults to `false` for {@link
@@ -166,7 +166,7 @@ public interface AccountSettings {
   /**
    * Additional, custom settings that any plugin can define.
    */
-  Map<String, Object> getCustomSettings();
+  Map<String, Object> customSettings();
 
   /**
    * Determines if this account is a `parent` account. If <tt>true</tt>, then the remote counterparty for this account
@@ -175,7 +175,7 @@ public interface AccountSettings {
    * @return {@code true} if this is a `parent` account; {@code false} otherwise.
    */
   default boolean isParentAccount() {
-    return this.getAccountRelationship() == AccountRelationship.PARENT;
+    return this.accountRelationship() == AccountRelationship.PARENT;
   }
 
   /**
@@ -185,7 +185,7 @@ public interface AccountSettings {
    * @return {@code true} if this is a `parent` account; {@code false} otherwise.
    */
   default boolean isChildAccount() {
-    return this.getAccountRelationship() == AccountRelationship.CHILD;
+    return this.accountRelationship() == AccountRelationship.CHILD;
   }
 
   /**
@@ -195,7 +195,7 @@ public interface AccountSettings {
    * @return {@code true} if this is a `parent` account; {@code false} otherwise.
    */
   default boolean isPeerAccount() {
-    return this.getAccountRelationship() == AccountRelationship.PEER;
+    return this.accountRelationship() == AccountRelationship.PEER;
   }
 
   /**
@@ -221,7 +221,7 @@ public interface AccountSettings {
   abstract class AbstractAccountSettings implements AccountSettings {
 
     @Override
-    public abstract AccountId getAccountId();
+    public abstract AccountId accountId();
 
     @Override
     @Value.Default
@@ -237,12 +237,12 @@ public interface AccountSettings {
 
     @Value.Default
     @Override
-    public String getDescription() {
+    public String description() {
       return "";
     }
 
     @Override
-    public abstract LinkType getLinkType();
+    public abstract LinkType linkType();
 
     @Override
     @Value.Default
@@ -260,8 +260,8 @@ public interface AccountSettings {
 
     @Value.Default
     @Override
-    public String getIlpAddressSegment() {
-      return this.getAccountId().value();
+    public String ilpAddressSegment() {
+      return this.accountId().value();
     }
 
     @Value.Default
@@ -282,7 +282,7 @@ public interface AccountSettings {
     @Override
     @JsonSerialize(as = ImmutableAccountBalanceSettings.class)
     @JsonDeserialize(as = ImmutableAccountBalanceSettings.class)
-    public AccountBalanceSettings getBalanceSettings() {
+    public AccountBalanceSettings balanceSettings() {
       return AccountBalanceSettings.builder().build();
     }
 
@@ -290,7 +290,7 @@ public interface AccountSettings {
     @Override
     @JsonSerialize(as = ImmutableAccountRateLimitSettings.class)
     @JsonDeserialize(as = ImmutableAccountRateLimitSettings.class)
-    public AccountRateLimitSettings getRateLimitSettings() {
+    public AccountRateLimitSettings rateLimitSettings() {
       return AccountRateLimitSettings.builder().build();
     }
 
@@ -301,21 +301,21 @@ public interface AccountSettings {
     @JsonIgnore
     @Value.Derived
     public boolean isParentAccount() {
-      return this.getAccountRelationship() == AccountRelationship.PARENT;
+      return this.accountRelationship() == AccountRelationship.PARENT;
     }
 
     @Override
     @JsonIgnore
     @Value.Derived
     public boolean isChildAccount() {
-      return this.getAccountRelationship() == AccountRelationship.CHILD;
+      return this.accountRelationship() == AccountRelationship.CHILD;
     }
 
     @Override
     @JsonIgnore
     @Value.Derived
     public boolean isPeerAccount() {
-      return this.getAccountRelationship() == AccountRelationship.PEER;
+      return this.accountRelationship() == AccountRelationship.PEER;
     }
 
     @Override
@@ -336,12 +336,12 @@ public interface AccountSettings {
 
       AccountSettings accountSettings = (AccountSettings) o;
 
-      return getAccountId().equals(accountSettings.getAccountId());
+      return accountId().equals(accountSettings.accountId());
     }
 
     @Override
     public int hashCode() {
-      return getAccountId().hashCode();
+      return accountId().hashCode();
     }
   }
 }

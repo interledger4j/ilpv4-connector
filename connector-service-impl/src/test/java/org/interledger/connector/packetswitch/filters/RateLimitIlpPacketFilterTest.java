@@ -82,11 +82,11 @@ public class RateLimitIlpPacketFilterTest {
     when(filterChainMock.doFilter(accountSettingsMock, PREPARE_PACKET)).thenReturn(responsePacketMock);
 
     // enable rate limiting by default
-    when(rateLimitSettingsMock.getMaxPacketsPerSecond()).thenReturn(Optional.of(1000));
+    when(rateLimitSettingsMock.maxPacketsPerSecond()).thenReturn(Optional.of(1000));
 
-    when(accountSettingsMock.getAccountId()).thenReturn(SOURCE_ACCOUNT_ID);
-    when(accountSettingsMock.getMaximumPacketAmount()).thenReturn(Optional.empty());
-    when(accountSettingsMock.getRateLimitSettings()).thenReturn(rateLimitSettingsMock);
+    when(accountSettingsMock.accountId()).thenReturn(SOURCE_ACCOUNT_ID);
+    when(accountSettingsMock.maximumPacketAmount()).thenReturn(Optional.empty());
+    when(accountSettingsMock.rateLimitSettings()).thenReturn(rateLimitSettingsMock);
 
     when(packetRejectorMock.reject(any(), any(), any(), any())).thenReturn(REJECT_PACKET);
     filter = new RateLimitIlpPacketFilter(packetRejectorMock);
@@ -106,7 +106,7 @@ public class RateLimitIlpPacketFilterTest {
 
   @Test
   public void doFilterWithNoMaxPacketAmount() {
-    when(rateLimitSettingsMock.getMaxPacketsPerSecond()).thenReturn(Optional.empty());
+    when(rateLimitSettingsMock.maxPacketsPerSecond()).thenReturn(Optional.empty());
 
     InterledgerResponsePacket response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerFulfillPacket, is(true));
@@ -126,7 +126,7 @@ public class RateLimitIlpPacketFilterTest {
 
   @Test
   public void doFilterWithInsufficientTickets() {
-    when(rateLimitSettingsMock.getMaxPacketsPerSecond()).thenReturn(Optional.of(1));
+    when(rateLimitSettingsMock.maxPacketsPerSecond()).thenReturn(Optional.of(1));
 
     InterledgerResponsePacket response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerFulfillPacket, is(true));

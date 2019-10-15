@@ -23,7 +23,6 @@ import javax.money.Monetary;
 import javax.money.MonetaryAmount;
 import javax.money.convert.CurrencyConversion;
 import javax.money.convert.MonetaryConversions;
-import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -86,7 +85,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     final Route nextHopRoute = this.externalRoutingService.findBestNexHop(destinationAddress)
       .orElseThrow(() -> new InterledgerProtocolException(
           InterledgerRejectPacket.builder()
-            .triggeredBy(connectorSettingsSupplier.get().getOperatorAddressSafe())
+            .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
             .code(InterledgerErrorCode.F02_UNREACHABLE)
             .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
             .build(),
@@ -101,29 +100,29 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       logger.debug("Determined next hop: {}", nextHopRoute);
     }
 
-    if (sourceAccountSettings.getAccountId().equals(nextHopRoute.getNextHopAccountId())) {
+    if (sourceAccountSettings.accountId().equals(nextHopRoute.nextHopAccountId())) {
       throw new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
-          .triggeredBy(connectorSettingsSupplier.get().getOperatorAddressSafe())
+          .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
           .code(InterledgerErrorCode.F02_UNREACHABLE)
           .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
           .build(),
         String.format(
           "Refusing to route payments back to sender. sourceAccountSettings=%s destinationAccount=%s",
-          sourceAccountSettings, nextHopRoute.getNextHopAccountId()
+          sourceAccountSettings, nextHopRoute.nextHopAccountId()
         )
       );
     }
 
     final AccountSettings destinationAccountSettings =
-      this.accountSettingsLoadingCache.safeGetAccountId(nextHopRoute.getNextHopAccountId());
+      this.accountSettingsLoadingCache.safeGetAccountId(nextHopRoute.nextHopAccountId());
 
     final UnsignedLong nextAmount = this.determineNextAmount(
       sourceAccountSettings, destinationAccountSettings, sourcePacket
     );
 
     return NextHopInfo.builder()
-      .nextHopAccountId(nextHopRoute.getNextHopAccountId())
+      .nextHopAccountId(nextHopRoute.nextHopAccountId())
       .nextHopPacket(
         InterledgerPreparePacket.builder()
           .from(sourcePacket)
@@ -157,13 +156,13 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     } else {
       // TODO: Consider a cache here for the source/dest conversion or perhaps an injected instance of
       //  ExchangeRateProvider here (See https://github.com/sappenin/java-ilpv4-connector/issues/223)
-      final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.getAssetCode());
-      final int sourceScale = sourceAccountSettings.getAssetScale();
+      final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.assetCode());
+      final int sourceScale = sourceAccountSettings.assetScale();
       final MonetaryAmount sourceAmount =
         javaMoneyUtils.toMonetaryAmount(sourceCurrencyUnit, sourcePacket.getAmount().bigIntegerValue(), sourceScale);
 
-      final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAccountSettings.getAssetCode());
-      final int destinationScale = destinationAccountSettings.getAssetScale();
+      final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAccountSettings.assetCode());
+      final int destinationScale = destinationAccountSettings.assetScale();
       final CurrencyConversion destCurrencyConversion = MonetaryConversions.getConversion(destinationCurrencyUnit);
 
       return UnsignedLong.valueOf(
@@ -187,7 +186,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       if (sourceExpiry.isBefore(nowTime)) {
         throw new InterledgerProtocolException(
           InterledgerRejectPacket.builder()
-            .triggeredBy(connectorSettingsSupplier.get().getOperatorAddressSafe())
+            .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
             .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
             .message(String.format(
               "Source transfer has already expired. sourceExpiry: {%s}, currentTime: {%s}", sourceExpiry, nowTime))
@@ -199,7 +198,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       // We will set the next transfer's expiry based on the source expiry and our minMessageWindow, but cap it at our
       // maxHoldTime.
       ////////////////////
-      final int minMessageWindow = 5000; //TODO: Enable this --> accountSettings.get().getMinMessageWindow();
+      final int minMessageWindow = 5000; //TODO: Enable this --> accountSettings.get().minMessageWindow();
       final int maxHoldTime = 5000; //TODO: Enable this --> accountSettings.get().getMaxHoldTime();
 
       // The expiry of the packet, reduced by the minMessageWindow, which is "the minimum time the connector wants to
@@ -213,7 +212,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       if (destinationExpiryTime.minusMillis(minMessageWindow).isBefore(nowTime)) {
         throw new InterledgerProtocolException(
           InterledgerRejectPacket.builder()
-            .triggeredBy(connectorSettingsSupplier.get().getOperatorAddressSafe())
+            .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
             .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
             .message(String.format(
               "Source transfer expires too soon to complete payment. SourceExpiry: {%s}, " +

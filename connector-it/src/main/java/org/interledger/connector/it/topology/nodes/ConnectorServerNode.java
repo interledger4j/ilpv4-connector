@@ -22,7 +22,7 @@ public class ConnectorServerNode extends AbstractServerNode<ConnectorServer> {
 
   @Override
   public String toString() {
-    return getILPv4Connector().getConnectorSettings().getOperatorAddress()
+    return getILPv4Connector().getConnectorSettings().operatorAddress()
       .map(InterledgerAddress::getValue)
       .orElse("n/a");
   }

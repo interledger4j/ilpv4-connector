@@ -92,7 +92,7 @@ public class AccountSettingsRepositoryTest {
 
     final AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity(accountSettings);
     assertThat(accountSettingsEntity.getId(), is(nullValue()));
-    assertThat(accountSettingsEntity.getNaturalId(), is(accountSettings.getAccountId().value()));
+    assertThat(accountSettingsEntity.getNaturalId(), is(accountSettings.accountId().value()));
     assertAllFieldsEqual(accountSettingsEntity, new AccountSettingsEntity(accountSettings));
 
     // Equals methods are not the same, so verify this.
@@ -101,17 +101,17 @@ public class AccountSettingsRepositoryTest {
     final AccountSettingsEntity savedAccountSettingsEntity = accountSettingsRepository.save(accountSettingsEntity);
     assertThat(savedAccountSettingsEntity, is(accountSettingsEntity));
     assertThat(savedAccountSettingsEntity.getId() > 0, is(true));
-    assertThat(savedAccountSettingsEntity.getNaturalId(), is(accountSettings.getAccountId().value()));
+    assertThat(savedAccountSettingsEntity.getNaturalId(), is(accountSettings.accountId().value()));
     assertAllFieldsEqual(savedAccountSettingsEntity, new AccountSettingsEntity(accountSettings));
 
     final AccountSettingsEntity loadedAccountSettingsEntity =
       accountSettingsRepository.findById(savedAccountSettingsEntity.getId()).get();
     assertThat(loadedAccountSettingsEntity.getId() > 0, is(true));
-    assertThat(loadedAccountSettingsEntity.getNaturalId(), is(accountSettings.getAccountId().value()));
+    assertThat(loadedAccountSettingsEntity.getNaturalId(), is(accountSettings.accountId().value()));
     assertAllFieldsEqual(loadedAccountSettingsEntity, new AccountSettingsEntity(accountSettings));
 
     final AccountSettingsEntity loadedAccountSettingsEntity2 =
-      accountSettingsRepository.findByNaturalId(accountSettings.getAccountId().value()).get();
+      accountSettingsRepository.findByNaturalId(accountSettings.accountId().value()).get();
     assertThat(loadedAccountSettingsEntity2.getId(), is(loadedAccountSettingsEntity.getId()));
     assertThat(loadedAccountSettingsEntity2.getNaturalId(), is(loadedAccountSettingsEntity.getNaturalId()));
     assertAllFieldsEqual(loadedAccountSettingsEntity2, new AccountSettingsEntity(accountSettings));
@@ -130,7 +130,7 @@ public class AccountSettingsRepositoryTest {
 
     final AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity(accountSettings);
     assertThat(accountSettingsEntity.getId(), is(nullValue()));
-    assertThat(accountSettingsEntity.getNaturalId(), is(accountSettings.getAccountId().value()));
+    assertThat(accountSettingsEntity.getNaturalId(), is(accountSettings.accountId().value()));
     assertAllFieldsEqual(accountSettingsEntity, new AccountSettingsEntity(accountSettings));
 
     // Equals methods are not the same, so verify this.
@@ -139,13 +139,13 @@ public class AccountSettingsRepositoryTest {
     final AccountSettingsEntity savedAccountSettingsEntity = accountSettingsRepository.save(accountSettingsEntity);
     assertThat(savedAccountSettingsEntity, is(accountSettingsEntity));
     assertThat(savedAccountSettingsEntity.getId() > 0, is(true));
-    assertThat(savedAccountSettingsEntity.getNaturalId(), is(accountSettings.getAccountId().value()));
+    assertThat(savedAccountSettingsEntity.getNaturalId(), is(accountSettings.accountId().value()));
     assertAllFieldsEqual(savedAccountSettingsEntity, new AccountSettingsEntity(accountSettings));
 
     final AccountSettingsEntity loadedAccountSettingsEntity =
       accountSettingsRepository.findById(savedAccountSettingsEntity.getId()).get();
     assertThat(loadedAccountSettingsEntity.getId() > 0, is(true));
-    assertThat(loadedAccountSettingsEntity.getNaturalId(), is(accountSettings.getAccountId().value()));
+    assertThat(loadedAccountSettingsEntity.getNaturalId(), is(accountSettings.accountId().value()));
     assertAllFieldsEqual(loadedAccountSettingsEntity, new AccountSettingsEntity(accountSettings));
 
     // Assert actual loaded values...
@@ -163,7 +163,7 @@ public class AccountSettingsRepositoryTest {
     assertThat(loadedAccountSettingsEntity.getIlpAddressSegment(), is(accountId.value()));
 
     final AccountSettingsEntity loadedAccountSettingsEntity2 =
-      accountSettingsRepository.findByNaturalId(accountSettings.getAccountId().value()).get();
+      accountSettingsRepository.findByNaturalId(accountSettings.accountId().value()).get();
     assertThat(loadedAccountSettingsEntity2.getId(), is(loadedAccountSettingsEntity.getId()));
     assertThat(loadedAccountSettingsEntity2.getNaturalId(), is(loadedAccountSettingsEntity.getNaturalId()));
     assertAllFieldsEqual(loadedAccountSettingsEntity2, new AccountSettingsEntity(accountSettings));
@@ -393,10 +393,10 @@ public class AccountSettingsRepositoryTest {
     accountSettingsRepository.save(accountSettingsEntity1);
 
     AccountSettingsEntity loadedEntity = accountSettingsRepository.findByAccountId(accountId).get();
-    assertThat(loadedEntity.getAccountId(), is(accountSettings1.getAccountId()));
+    assertThat(loadedEntity.getAccountId(), is(accountSettings1.accountId()));
 
     final AccountSettingsEntity duplicateEntity = new AccountSettingsEntity(accountSettings1);
-    assertThat(duplicateEntity.getAccountId(), is(accountSettings1.getAccountId()));
+    assertThat(duplicateEntity.getAccountId(), is(accountSettings1.accountId()));
 
     try {
       accountSettingsRepository.save(duplicateEntity);

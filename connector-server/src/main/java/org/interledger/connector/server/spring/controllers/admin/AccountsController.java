@@ -66,11 +66,11 @@ public class AccountsController {
 
     final AccountSettings returnableAccountSettings = this.accountManager.createAccount(accountSettings);
     final Link selfLink =
-      linkTo(methodOn(AccountsController.class).getAccount(returnableAccountSettings.getAccountId())).withSelfRel();
+      linkTo(methodOn(AccountsController.class).getAccount(returnableAccountSettings.accountId())).withSelfRel();
     final Resource resource = new Resource(returnableAccountSettings, selfLink);
 
     final HttpHeaders headers = new HttpHeaders();
-    final Link selfRel = linkTo(AccountsController.class).slash(accountSettings.getAccountId().value()).withSelfRel();
+    final Link selfRel = linkTo(AccountsController.class).slash(accountSettings.accountId().value()).withSelfRel();
     headers.setLocation(URI.create(selfRel.getHref()));
 
     return new ResponseEntity(resource, headers, HttpStatus.CREATED);
@@ -138,21 +138,21 @@ public class AccountsController {
 
         // Ignore update accountId
 
-        entity.setAssetCode(accountSettings.getAssetCode());
-        entity.setAssetScale(accountSettings.getAssetScale());
-        entity.setAccountRelationship(accountSettings.getAccountRelationship());
+        entity.setAssetCode(accountSettings.assetCode());
+        entity.setAssetScale(accountSettings.assetScale());
+        entity.setAccountRelationship(accountSettings.accountRelationship());
         entity.setBalanceSettings(
-          new AccountBalanceSettingsEntity(accountSettings.getBalanceSettings())
+          new AccountBalanceSettingsEntity(accountSettings.balanceSettings())
         );
         entity.setConnectionInitiator(accountSettings.isConnectionInitiator());
-        entity.setDescription(accountSettings.getDescription());
-        entity.setCustomSettings(accountSettings.getCustomSettings());
-        entity.setIlpAddressSegment(accountSettings.getIlpAddressSegment());
+        entity.setDescription(accountSettings.description());
+        entity.setCustomSettings(accountSettings.customSettings());
+        entity.setIlpAddressSegment(accountSettings.ilpAddressSegment());
         entity.setInternal(accountSettings.isInternal());
-        entity.setLinkType(accountSettings.getLinkType());
-        entity.setMaximumPacketAmount(accountSettings.getMaximumPacketAmount());
+        entity.setLinkType(accountSettings.linkType());
+        entity.setMaximumPacketAmount(accountSettings.maximumPacketAmount());
         entity.setRateLimitSettings(
-          new AccountRateLimitSettingsEntity(accountSettings.getRateLimitSettings())
+          new AccountRateLimitSettingsEntity(accountSettings.rateLimitSettings())
         );
         entity.setReceiveRoutes(accountSettings.isReceiveRoutes());
         entity.setSendRoutes(accountSettings.isSendRoutes());
@@ -168,7 +168,7 @@ public class AccountsController {
     Objects.requireNonNull(accountSettings);
 
     final Link selfLink =
-      linkTo(methodOn(AccountsController.class).getAccount(accountSettings.getAccountId())).withSelfRel();
+      linkTo(methodOn(AccountsController.class).getAccount(accountSettings.accountId())).withSelfRel();
     return new Resource(accountSettings, selfLink);
 
   }

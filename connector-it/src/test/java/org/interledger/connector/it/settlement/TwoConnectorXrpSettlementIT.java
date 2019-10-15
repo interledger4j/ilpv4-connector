@@ -89,12 +89,12 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
   @Test
   public void testNodeSettings() throws InterruptedException {
     assertThat(
-      aliceConnector.getConnectorSettings().getOperatorAddress().get(),
+      aliceConnector.getConnectorSettings().operatorAddress().get(),
       is(getAliceConnectorAddress())
     );
 
     assertThat(
-      bobConnector.getConnectorSettings().getOperatorAddress().get(),
+      bobConnector.getConnectorSettings().operatorAddress().get(),
       is(getBobConnectorAddress())
     );
 

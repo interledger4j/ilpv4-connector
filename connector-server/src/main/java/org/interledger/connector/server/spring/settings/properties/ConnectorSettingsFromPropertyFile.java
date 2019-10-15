@@ -45,12 +45,12 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   private GlobalRoutingSettingsFromPropertyFile globalRoutingSettings = new GlobalRoutingSettingsFromPropertyFile();
 
   @Override
-  public Optional<InterledgerAddress> getOperatorAddress() {
+  public Optional<InterledgerAddress> operatorAddress() {
     return nodeIlpAddress;
   }
 
   @Override
-  public InterledgerAddress getOperatorAddressSafe() {
+  public InterledgerAddress operatorAddressSafe() {
     return nodeIlpAddress.get();
   }
 
@@ -63,7 +63,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   }
 
   @Override
-  public InterledgerAddressPrefix getGlobalPrefix() {
+  public InterledgerAddressPrefix globalPrefix() {
     return globalPrefix;
   }
 
@@ -72,7 +72,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   }
 
   @Override
-  public EnabledProtocolSettingsFromPropertyFile getEnabledProtocols() {
+  public EnabledProtocolSettingsFromPropertyFile enabledProtocols() {
     return enabledProtocols;
   }
 
@@ -81,7 +81,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   }
 
   @Override
-  public EnabledFeatureSettingsFromPropertyFile getEnabledFeatures() {
+  public EnabledFeatureSettingsFromPropertyFile enabledFeatures() {
     return enabledFeatures;
   }
 
@@ -111,7 +111,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   }
 
   @Override
-  public GlobalRoutingSettings getGlobalRoutingSettings() {
+  public GlobalRoutingSettings globalRoutingSettings() {
     return globalRoutingSettings;
   }
 
@@ -144,7 +144,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     }
 
     @Override
-    public Optional<AccountId> getDefaultRoute() {
+    public Optional<AccountId> defaultRoute() {
       return defaultRoute;
     }
 
@@ -153,7 +153,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     }
 
     @Override
-    public Duration getRouteCleanupInterval() {
+    public Duration routeCleanupInterval() {
       return routeCleanupInterval;
     }
 
@@ -162,7 +162,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     }
 
     @Override
-    public Duration getRouteExpiry() {
+    public Duration routeExpiry() {
       return routeExpiry;
     }
 
@@ -171,7 +171,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     }
 
     @Override
-    public int getMaxEpochsPerRoutingTable() {
+    public int maxEpochsPerRoutingTable() {
       return maxEpochsPerRoutingTable;
     }
 
@@ -180,7 +180,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     }
 
     @Override
-    public String getRoutingSecret() {
+    public String routingSecret() {
       return routingSecret;
     }
 
@@ -198,7 +198,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     }
 
     @Override
-    public Duration getRouteBroadcastInterval() {
+    public Duration routeBroadcastInterval() {
       return routeBroadcastInterval;
     }
 
@@ -207,7 +207,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     }
 
     @Override
-    public List<StaticRouteFromPropertyFile> getStaticRoutes() {
+    public List<StaticRouteFromPropertyFile> staticRoutes() {
       return staticRoutes;
     }
 

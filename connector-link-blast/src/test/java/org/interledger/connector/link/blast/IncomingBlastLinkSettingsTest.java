@@ -31,7 +31,7 @@ public class IncomingBlastLinkSettingsTest extends AbstractBlastLinkTest {
     assertThat(incomingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://incoming-issuer.example.com/")));
     assertThat(incomingLinksettings.tokenAudience().get(), is(HttpUrl.parse("https://incoming-audience.example.com/")));
     assertThat(incomingLinksettings.encryptedTokenSharedSecret(), is("incoming-credential"));
-    assertThat(incomingLinksettings.getMinMessageWindow(), is(Duration.ofSeconds(1)));
+    assertThat(incomingLinksettings.minMessageWindow(), is(Duration.ofSeconds(1)));
   }
 
   /**
@@ -46,7 +46,7 @@ public class IncomingBlastLinkSettingsTest extends AbstractBlastLinkTest {
     assertThat(incomingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://incoming-issuer.example.com/")));
     assertThat(incomingLinksettings.tokenAudience().get(), is(HttpUrl.parse("https://incoming-audience.example.com/")));
     assertThat(incomingLinksettings.encryptedTokenSharedSecret(), is("incoming-credential"));
-    assertThat(incomingLinksettings.getMinMessageWindow(), is(Duration.ofSeconds(1)));
+    assertThat(incomingLinksettings.minMessageWindow(), is(Duration.ofSeconds(1)));
   }
 
   @Test
@@ -65,6 +65,6 @@ public class IncomingBlastLinkSettingsTest extends AbstractBlastLinkTest {
     assertThat(incomingLinksettings.tokenIssuer().get(), is(HttpUrl.parse("https://incoming-issuer.example.com/")));
     assertThat(incomingLinksettings.tokenAudience().get(), is(HttpUrl.parse("https://incoming-audience.example.com/")));
     assertThat(incomingLinksettings.encryptedTokenSharedSecret(), is(SHH));
-    assertThat(incomingLinksettings.getMinMessageWindow(), is(Duration.ofMillis(30)));
+    assertThat(incomingLinksettings.minMessageWindow(), is(Duration.ofMillis(30)));
   }
 }

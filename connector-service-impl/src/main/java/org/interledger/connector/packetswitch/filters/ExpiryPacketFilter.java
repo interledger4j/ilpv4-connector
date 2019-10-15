@@ -35,7 +35,7 @@ public class ExpiryPacketFilter extends AbstractPacketFilter implements PacketSw
     final Duration timeoutDuration = Duration.between(Instant.now(), sourcePreparePacket.getExpiresAt());
     if (timeoutDuration.isNegative() || timeoutDuration.isZero()) {
       return packetRejector.reject(
-        sourceAccountSettings.getAccountId(), sourcePreparePacket, R02_INSUFFICIENT_TIMEOUT,
+        sourceAccountSettings.accountId(), sourcePreparePacket, R02_INSUFFICIENT_TIMEOUT,
         "The connector could not forward the payment, because the timeout was too low to subtract its safety margin"
       );
     }
@@ -48,7 +48,7 @@ public class ExpiryPacketFilter extends AbstractPacketFilter implements PacketSw
     } catch (TimeoutException e) {
       logger.error(e.getMessage(), e);
       return packetRejector.reject(
-        sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.R00_TRANSFER_TIMED_OUT,
+        sourceAccountSettings.accountId(), sourcePreparePacket, InterledgerErrorCode.R00_TRANSFER_TIMED_OUT,
         "Transfer Timed-out"
       );
     }

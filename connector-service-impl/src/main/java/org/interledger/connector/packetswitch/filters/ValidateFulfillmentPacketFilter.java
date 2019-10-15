@@ -38,7 +38,7 @@ public class ValidateFulfillmentPacketFilter extends AbstractPacketFilter implem
           sourcePreparePacket.getExecutionCondition()
         );
         return packetRejector.reject(
-          sourceAccountSettings.getAccountId(), sourcePreparePacket,
+          sourceAccountSettings.accountId(), sourcePreparePacket,
           InterledgerErrorCode.F05_WRONG_CONDITION, "Received incorrect fulfillment"
         );
       }

@@ -37,16 +37,16 @@ public class AllowedDestinationPacketFilter extends AbstractPacketFilter impleme
     // to be packet-switched, considering the destination address as well as characteristics of the source account.
     if (
       !addressUtils.isDestinationAllowedFromAccount(
-        sourceAccountSettings.getAccountId(), sourcePreparePacket.getDestination()
+        sourceAccountSettings.accountId(), sourcePreparePacket.getDestination()
       )
     ) {
       logger.error(
         "AccountId `{}` is not allowed to send to destination address `{}`",
-        sourceAccountSettings.getAccountId().value(), sourcePreparePacket.getDestination().getValue()
+        sourceAccountSettings.accountId().value(), sourcePreparePacket.getDestination().getValue()
       );
       // REJECT!
       return packetRejector.reject(
-        sourceAccountSettings.getAccountId(), sourcePreparePacket, InterledgerErrorCode.F02_UNREACHABLE,
+        sourceAccountSettings.accountId(), sourcePreparePacket, InterledgerErrorCode.F02_UNREACHABLE,
         DESTINATION_ADDRESS_IS_UNREACHABLE
       );
     } else {

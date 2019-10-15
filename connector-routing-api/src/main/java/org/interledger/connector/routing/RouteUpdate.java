@@ -5,22 +5,22 @@ import org.immutables.value.Value;
 import java.util.Optional;
 
 /**
- * Models a getRoute update, as received from a remote peer. This update is keyed by {@link #getRoutePrefix()}, and is
+ * Models a route update, as received from a remote peer. This update is keyed by {@link #routePrefix()}, and is
  * typically transmitted via Connector-to-Connector Protocol (CCP).
  */
 @Value.Immutable
 public interface RouteUpdate extends BaseRoute {
 
   /**
-   * The epoch index for this getRoute update.¬
+   * The epoch index for this route update.¬
    *
    * @return
    */
-  int getEpoch();
+  int epoch();
 
   /**
    * An entry in a Routing Table that specifies both a next-hop destination, as well as an overall path, for sending a
    * packet to a final destination address.
    */
-  Optional<Route> getRoute();
+  Optional<Route> route();
 }

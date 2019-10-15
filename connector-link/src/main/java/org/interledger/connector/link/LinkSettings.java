@@ -16,12 +16,12 @@ public interface LinkSettings {
   /**
    * The type of this ledger link.
    */
-  LinkType getLinkType();
+  LinkType linkType();
 
   /**
    * Additional, custom settings that any link can define.
    */
-  Map<String, Object> getCustomSettings();
+  Map<String, Object> customSettings();
 
   @Value.Immutable
   abstract class AbstractLinkSettings implements LinkSettings {
@@ -30,14 +30,14 @@ public interface LinkSettings {
      * Additional, custom settings that any link can define. Redacted to prevent credential leakage in log files.
      */
     @Value.Redacted
-    public abstract Map<String, Object> getCustomSettings();
+    public abstract Map<String, Object> customSettings();
 
     /**
      * Always normalize Link-type String values to full uppercase to avoid casing ambiguity in properties files.
      */
     @Value.Check
     public AbstractLinkSettings normalize() {
-      final String linkTypeString = this.getLinkType().value();
+      final String linkTypeString = this.linkType().value();
       if (!linkTypeString.toUpperCase().equals(linkTypeString)) {
         return ImmutableLinkSettings.builder()
           .from(this)

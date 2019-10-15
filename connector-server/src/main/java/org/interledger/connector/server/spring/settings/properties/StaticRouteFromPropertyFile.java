@@ -13,7 +13,7 @@ public class StaticRouteFromPropertyFile implements StaticRoute {
   private AccountId peerAccountId;
 
   @Override
-  public InterledgerAddressPrefix getTargetPrefix() {
+  public InterledgerAddressPrefix targetPrefix() {
     return targetPrefix;
   }
 
@@ -22,7 +22,7 @@ public class StaticRouteFromPropertyFile implements StaticRoute {
   }
 
   @Override
-  public AccountId getPeerAccountId() {
+  public AccountId peerAccountId() {
     return peerAccountId;
   }
 
