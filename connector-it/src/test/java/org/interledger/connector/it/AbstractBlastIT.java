@@ -1,37 +1,5 @@
 package org.interledger.connector.it;
 
-import org.interledger.connector.ILPv4Connector;
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.balances.BalanceTracker;
-import org.interledger.connector.balances.InMemoryBalanceTracker;
-import org.interledger.connector.balances.RedisBalanceTracker;
-import org.interledger.connector.core.ConfigConstants;
-import org.interledger.connector.it.topology.Topology;
-import org.interledger.connector.link.CircuitBreakingLink;
-import org.interledger.connector.link.Link;
-import org.interledger.connector.link.blast.BlastLink;
-import org.interledger.connector.link.exceptions.LinkException;
-import org.interledger.connector.links.ping.PingLoopbackLink;
-import org.interledger.connector.server.ConnectorServer;
-import org.interledger.connector.server.spring.settings.javamoney.SpringServiceProvider;
-import org.interledger.core.InterledgerAddress;
-
-import com.google.common.primitives.UnsignedLong;
-import org.junit.BeforeClass;
-import org.slf4j.Logger;
-import org.springframework.data.redis.RedisConnectionFailureException;
-import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.RedisKeyCommands;
-import org.springframework.data.redis.core.RedisTemplate;
-
-import javax.money.spi.Bootstrap;
-import java.math.BigInteger;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
 import static org.interledger.connector.config.BalanceTrackerConfig.BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME;
@@ -50,6 +18,42 @@ import static org.interledger.connector.it.topologies.AbstractTopology.PAUL;
 import static org.interledger.connector.it.topologies.AbstractTopology.PETER;
 import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static org.junit.Assert.assertThat;
+
+import org.interledger.connector.ILPv4Connector;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.balances.BalanceTracker;
+import org.interledger.connector.balances.InMemoryBalanceTracker;
+import org.interledger.connector.balances.RedisBalanceTracker;
+import org.interledger.connector.core.ConfigConstants;
+import org.interledger.connector.it.topology.Topology;
+import org.interledger.connector.link.CircuitBreakingLink;
+import org.interledger.connector.link.Link;
+import org.interledger.connector.link.blast.BlastLink;
+import org.interledger.connector.link.exceptions.LinkException;
+import org.interledger.connector.links.ping.PingLoopbackLink;
+import org.interledger.connector.ping.DefaultPingInitiator;
+import org.interledger.connector.ping.PingInitiator;
+import org.interledger.connector.server.ConnectorServer;
+import org.interledger.connector.server.spring.settings.javamoney.SpringServiceProvider;
+import org.interledger.core.InterledgerAddress;
+
+import com.google.common.primitives.UnsignedLong;
+import org.junit.BeforeClass;
+import org.slf4j.Logger;
+import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisKeyCommands;
+import org.springframework.data.redis.core.RedisTemplate;
+
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import javax.money.spi.Bootstrap;
 
 /**
  * Abstract parent class for BLAST Integration tests.
@@ -80,7 +84,7 @@ public abstract class AbstractBlastIT {
     //A simulated routing secret, which is a seed used for generating routing table auth values. Represents the
     // plaintext value of `shh`, encrypted.
     System.setProperty(INTERLEDGER__CONNECTOR__GLOBAL_ROUTING_SETTINGS__ROUTING_SECRET,
-      "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=");
+        "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=");
 
     // Required to get the conditional-config to work for this topology...
     System.setProperty(ConfigConstants.ENABLED_PROTOCOLS + DOT + ConfigConstants.BLAST_ENABLED, "true");
@@ -103,12 +107,12 @@ public abstract class AbstractBlastIT {
    * @param numUnits           A {@link BigInteger} representing the number of units to ping with.
    */
   protected void testPing(
-    final AccountId senderAccountId,
-    final InterledgerAddress senderNodeAddress,
-    final InterledgerAddress destinationAddress,
-    final UnsignedLong numUnits
+      final AccountId senderAccountId,
+      final InterledgerAddress senderNodeAddress,
+      final InterledgerAddress destinationAddress,
+      final UnsignedLong numUnits
   )
-    throws InterruptedException {
+      throws InterruptedException {
 
     Objects.requireNonNull(senderNodeAddress);
     Objects.requireNonNull(senderAccountId);
@@ -118,18 +122,19 @@ public abstract class AbstractBlastIT {
     final long start = System.currentTimeMillis();
 
     final BlastLink blastLink = getBlastLinkFromGraph(senderNodeAddress, senderAccountId);
-    blastLink.ping(destinationAddress, numUnits).handle(
-      fulfillPacket -> {
-        assertThat(fulfillPacket.getFulfillment(), is(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT));
-        assertThat(
-          fulfillPacket.getFulfillment().validateCondition(PingLoopbackLink.PING_PROTOCOL_CONDITION),
-          is(true)
-        );
-        latch.countDown();
-      }, interledgerRejectPacket -> {
-        fail(String.format("Ping request rejected, but should have fulfilled: %s", interledgerRejectPacket));
-        latch.countDown();
-      }
+    final PingInitiator pingInitiator = new DefaultPingInitiator(blastLink, () -> Instant.now().plusSeconds(30));
+    pingInitiator.ping(destinationAddress, numUnits).handle(
+        fulfillPacket -> {
+          assertThat(fulfillPacket.getFulfillment(), is(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT));
+          assertThat(
+              fulfillPacket.getFulfillment().validateCondition(PingLoopbackLink.PING_PROTOCOL_CONDITION),
+              is(true)
+          );
+          latch.countDown();
+        }, interledgerRejectPacket -> {
+          fail(String.format("Ping request rejected, but should have fulfilled: %s", interledgerRejectPacket));
+          latch.countDown();
+        }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -148,7 +153,7 @@ public abstract class AbstractBlastIT {
   protected ILPv4Connector getILPv4NodeFromGraph(final InterledgerAddress interledgerAddress) {
     Objects.requireNonNull(interledgerAddress);
     return ((ConnectorServer) getTopology().getNode(interledgerAddress.getValue()).getContentObject()).getContext()
-      .getBean(ILPv4Connector.class);
+        .getBean(ILPv4Connector.class);
   }
 
   /**
@@ -163,9 +168,9 @@ public abstract class AbstractBlastIT {
     Objects.requireNonNull(interledgerAddress);
 
     Object redisTemplateObject =
-      ((ConnectorServer) getTopology().getNode(interledgerAddress.getValue()).getContentObject())
-        .getContext()
-        .getBean(BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME);
+        ((ConnectorServer) getTopology().getNode(interledgerAddress.getValue()).getContentObject())
+            .getContext()
+            .getBean(BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME);
 
     if (redisTemplateObject != null) {
       return Optional.ofNullable((RedisTemplate) redisTemplateObject);
@@ -187,9 +192,9 @@ public abstract class AbstractBlastIT {
     Objects.requireNonNull(accountId);
 
     final Link link = getILPv4NodeFromGraph(nodeAddress).getLinkManager()
-      .getOrCreateLink(accountId);
+        .getOrCreateLink(accountId);
 
-    if (BlastLink.LINK_TYPE.equals(link.getLinkSettings().linkType())) {
+    if (BlastLink.LINK_TYPE.equals(link.getLinkSettings().getLinkType())) {
       // Most of the time, this link is a CircuitBreaking link, in which case the BlastLink is the Delegate.
       if (CircuitBreakingLink.class.isAssignableFrom(link.getClass())) {
         return ((CircuitBreakingLink) link).getLinkDelegateTyped();
@@ -198,19 +203,19 @@ public abstract class AbstractBlastIT {
       }
     } else {
       throw new LinkException(
-        "Link was not of Type(BLAST), but was instead: " + link.getLinkSettings().linkType().value(),
-        link.getLinkId());
+          "Link was not of Type(BLAST), but was instead: " + link.getLinkSettings().getLinkType().value(),
+          link.getLinkId());
     }
   }
 
   protected void assertAccountBalance(
-    final ILPv4Connector connector,
-    final AccountId accountId,
-    final BigInteger expectedAmount
+      final ILPv4Connector connector,
+      final AccountId accountId,
+      final BigInteger expectedAmount
   ) {
     assertThat(
-      String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.toString()),
-      connector.getBalanceTracker().balance(accountId).netBalance(), is(expectedAmount)
+        String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.toString()),
+        connector.getBalanceTracker().getBalance(accountId).netBalance(), is(expectedAmount)
     );
   }
 
@@ -232,17 +237,17 @@ public abstract class AbstractBlastIT {
     } else {
       // Reset the balances for any peering accounts in the Topology.
       RedisKeyCommands redisCommands = this.getRedisTemplate(getAliceConnectorAddress())
-        .map(RedisTemplate::getConnectionFactory)
-        .map(RedisConnectionFactory::getConnection)
-        .map(RedisConnection::keyCommands)
-        .orElseThrow(() -> new RedisConnectionFailureException("Unable to get redisHashCommands "));
+          .map(RedisTemplate::getConnectionFactory)
+          .map(RedisConnectionFactory::getConnection)
+          .map(RedisConnection::keyCommands)
+          .orElseThrow(() -> new RedisConnectionFailureException("Unable to get redisHashCommands "));
 
       redisCommands.del(
-        ("accounts:" + PING_ACCOUNT_ID).getBytes(),
-        ("accounts:" + ALICE).getBytes(),
-        ("accounts:" + BOB).getBytes(),
-        ("accounts:" + PAUL).getBytes(),
-        ("accounts:" + PETER).getBytes()
+          ("accounts:" + PING_ACCOUNT_ID).getBytes(),
+          ("accounts:" + ALICE).getBytes(),
+          ("accounts:" + BOB).getBytes(),
+          ("accounts:" + PAUL).getBytes(),
+          ("accounts:" + PETER).getBytes()
       );
     }
   }
