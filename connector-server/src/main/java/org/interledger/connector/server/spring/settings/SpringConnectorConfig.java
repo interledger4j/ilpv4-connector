@@ -192,7 +192,7 @@ public class SpringConnectorConfig {
     CircuitBreakerConfig circuitBreakerConfig
   ) {
     return new DefaultLinkManager(
-      () -> connectorSettingsSupplier().get().getOperatorAddress(),
+      () -> connectorSettingsSupplier().get().operatorAddress(),
       accountSettingsRepository,
       linkSettingsFactory,
       linkFactoryProvider,
@@ -246,7 +246,7 @@ public class SpringConnectorConfig {
 
     // If the Ping Protocol is enabled, we need to ensure that there is a Ping account suitable to accept value for
     // Ping requests.
-    if (connectorSettingsSupplier.get().getEnabledProtocols().isPingProtocolEnabled() &&
+    if (connectorSettingsSupplier.get().enabledProtocols().isPingProtocolEnabled() &&
       !accountSettingsRepository.findByAccountId(PING_ACCOUNT_ID).isPresent()) {
       // Create this account.
 
@@ -314,7 +314,7 @@ public class SpringConnectorConfig {
 
   @Bean
   PacketRejector packetRejector(final Supplier<ConnectorSettings> connectorSettingsSupplier) {
-    return new PacketRejector(() -> connectorSettingsSupplier.get().getOperatorAddress());
+    return new PacketRejector(() -> connectorSettingsSupplier.get().operatorAddress());
   }
 
   /**
@@ -366,7 +366,7 @@ public class SpringConnectorConfig {
     final ConnectorSettings connectorSettings = connectorSettingsSupplier().get();
     final ImmutableList.Builder<PacketSwitchFilter> filterList = ImmutableList.builder();
 
-    if (connectorSettings.getEnabledFeatures().isRateLimitingEnabled()) {
+    if (connectorSettings.enabledFeatures().isRateLimitingEnabled()) {
       filterList.add(new RateLimitIlpPacketFilter(packetRejector));// Limits Data packets...
     }
 
@@ -409,7 +409,7 @@ public class SpringConnectorConfig {
     BalanceTracker balanceTracker, SettlementService settlementService
   ) {
     final Supplier<InterledgerAddress> operatorAddressSupplier =
-      () -> connectorSettingsSupplier().get().getOperatorAddress().get();
+      () -> connectorSettingsSupplier().get().operatorAddress().get();
 
     return Lists.newArrayList(
       //      // TODO: Throughput for Money...

@@ -1,26 +1,5 @@
 package org.interledger.connector.link;
 
-import com.google.common.primitives.UnsignedLong;
-import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
-import io.vavr.CheckedFunction1;
-import io.vavr.control.Try;
-import org.interledger.core.InterledgerAddress;
-import org.interledger.core.InterledgerCondition;
-import org.interledger.core.InterledgerErrorCode;
-import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerProtocolException;
-import org.interledger.core.InterledgerRejectPacket;
-import org.interledger.core.InterledgerResponsePacket;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
-import java.math.BigInteger;
-import java.time.Instant;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,26 +8,48 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerCondition;
+import org.interledger.core.InterledgerErrorCode;
+import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerProtocolException;
+import org.interledger.core.InterledgerRejectPacket;
+import org.interledger.core.InterledgerResponsePacket;
+
+import com.google.common.primitives.UnsignedLong;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.vavr.CheckedFunction1;
+import io.vavr.control.Try;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.time.Instant;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Unit tests {@link CircuitBreakingLink}.
  */
 public class CircuitBreakingLinkTest {
 
   private static final InterledgerPreparePacket PREPARE_PACKET = InterledgerPreparePacket.builder()
-    .destination(InterledgerAddress.of("test.foo"))
-    .amount(UnsignedLong.valueOf(10))
-    .executionCondition(InterledgerCondition.of(new byte[32]))
-    .expiresAt(Instant.now().plusSeconds(50))
-    .build();
+      .destination(InterledgerAddress.of("test.foo"))
+      .amount(UnsignedLong.valueOf(10))
+      .executionCondition(InterledgerCondition.of(new byte[32]))
+      .expiresAt(Instant.now().plusSeconds(50))
+      .build();
 
   private static final String LINK_ID = "123";
   private static final CircuitBreakerConfig CONFIG = CircuitBreakerConfig.custom()
-    .failureRateThreshold(2)
-    .ringBufferSizeInClosedState(2)
-    .ringBufferSizeInHalfOpenState(2)
-    .ignoreExceptions(InterledgerProtocolException.class)
-    .enableAutomaticTransitionFromOpenToHalfOpen()
-    .build();
+      .failureRateThreshold(2)
+      .ringBufferSizeInClosedState(2)
+      .ringBufferSizeInHalfOpenState(2)
+      .ignoreExceptions(InterledgerProtocolException.class)
+      .enableAutomaticTransitionFromOpenToHalfOpen()
+      .build();
 
   @Mock
   private Link<LinkSettings> linkMock;
@@ -70,17 +71,19 @@ public class CircuitBreakingLinkTest {
     final CircuitBreaker circuitBreaker = CircuitBreakerRegistry.of(CONFIG).circuitBreaker(LINK_ID);
 
     // Simulate a failure attempt
-    circuitBreaker.onError(0,
-      new InterledgerProtocolException(reject(InterledgerErrorCode.T02_PEER_BUSY)));
+    circuitBreaker.onError(0, TimeUnit.SECONDS,
+        new InterledgerProtocolException(reject(InterledgerErrorCode.T02_PEER_BUSY)));
     // CircuitBreaker is still CLOSED, because 1 failure is allowed
     assertThat(circuitBreaker.getState(), is(CircuitBreaker.State.CLOSED));
 
     // Simulate a 2nd failure attempt
-    circuitBreaker.onError(0, new InterledgerProtocolException(reject(InterledgerErrorCode.T03_CONNECTOR_BUSY)));
+    circuitBreaker.onError(0, TimeUnit.SECONDS,
+        new InterledgerProtocolException(reject(InterledgerErrorCode.T03_CONNECTOR_BUSY)));
     assertThat(circuitBreaker.getState(), is(CircuitBreaker.State.CLOSED));
 
     // Simulate a 3rd failure attempt
-    circuitBreaker.onError(0, new InterledgerProtocolException(reject(InterledgerErrorCode.T02_PEER_BUSY)));
+    circuitBreaker
+        .onError(0, TimeUnit.SECONDS, new InterledgerProtocolException(reject(InterledgerErrorCode.T02_PEER_BUSY)));
     assertThat(circuitBreaker.getState(), is(CircuitBreaker.State.CLOSED));
   }
 
@@ -89,16 +92,16 @@ public class CircuitBreakingLinkTest {
     final CircuitBreaker circuitBreaker = CircuitBreakerRegistry.of(CONFIG).circuitBreaker(LINK_ID);
 
     // Simulate a failure attempt
-    circuitBreaker.onError(0, new RuntimeException("foo"));
+    circuitBreaker.onError(0, TimeUnit.SECONDS, new RuntimeException("foo"));
     // CircuitBreaker is still CLOSED, because 1 failure is allowed
     assertThat(circuitBreaker.getState(), is(CircuitBreaker.State.CLOSED));
 
     // Simulate a 2nd failure attempt
-    circuitBreaker.onError(0, new RuntimeException("foo"));
+    circuitBreaker.onError(0, TimeUnit.SECONDS, new RuntimeException("foo"));
     assertThat(circuitBreaker.getState(), is(CircuitBreaker.State.OPEN));
 
     // Simulate a 3rd failure attempt
-    circuitBreaker.onError(0, new RuntimeException("foo"));
+    circuitBreaker.onError(0, TimeUnit.SECONDS, new RuntimeException("foo"));
     assertThat(circuitBreaker.getState(), is(CircuitBreaker.State.OPEN));
   }
 
@@ -109,7 +112,7 @@ public class CircuitBreakingLinkTest {
 
     // Simulate a failure attempt
     CheckedFunction1<InterledgerPreparePacket, InterledgerResponsePacket> function =
-      CircuitBreaker.decorateCheckedFunction(circuitBreaker, (preparePacket) -> link.sendPacket(PREPARE_PACKET));
+        CircuitBreaker.decorateCheckedFunction(circuitBreaker, (preparePacket) -> link.sendPacket(PREPARE_PACKET));
     Try<InterledgerResponsePacket> result = Try.of(() -> function.apply(PREPARE_PACKET));
 
     //Then
@@ -127,7 +130,7 @@ public class CircuitBreakingLinkTest {
     for (int i = 0; i < 2; i++) {
       //When
       CheckedFunction1<InterledgerPreparePacket, InterledgerResponsePacket> function =
-        CircuitBreaker.decorateCheckedFunction(circuitBreaker, (preparePacket) -> link.sendPacket(PREPARE_PACKET));
+          CircuitBreaker.decorateCheckedFunction(circuitBreaker, (preparePacket) -> link.sendPacket(PREPARE_PACKET));
       result = Try.of(() -> function.apply(PREPARE_PACKET));
     }
 
@@ -146,7 +149,7 @@ public class CircuitBreakingLinkTest {
 
     // Simulate a failure attempts
     CheckedFunction1<InterledgerPreparePacket, InterledgerResponsePacket> function =
-      CircuitBreaker.decorateCheckedFunction(circuitBreaker, (preparePacket) -> link.sendPacket(PREPARE_PACKET));
+        CircuitBreaker.decorateCheckedFunction(circuitBreaker, (preparePacket) -> link.sendPacket(PREPARE_PACKET));
     Try<InterledgerResponsePacket> result = Try.of(() -> function.apply(PREPARE_PACKET));
 
     //Then
@@ -165,7 +168,7 @@ public class CircuitBreakingLinkTest {
     for (int i = 0; i < 2; i++) {
       //When
       CheckedFunction1<InterledgerPreparePacket, InterledgerResponsePacket> function =
-        CircuitBreaker.decorateCheckedFunction(circuitBreaker, (preparePacket) -> link.sendPacket(PREPARE_PACKET));
+          CircuitBreaker.decorateCheckedFunction(circuitBreaker, (preparePacket) -> link.sendPacket(PREPARE_PACKET));
       result = Try.of(() -> function.apply(PREPARE_PACKET));
     }
 
@@ -174,9 +177,9 @@ public class CircuitBreakingLinkTest {
     // CircuitBreaker is still CLOSED, because 1 Reject has been recorded as a failure
     assertThat(circuitBreaker.getState(), is(CircuitBreaker.State.OPEN));
     assertThat(
-      "Expected RuntimeException but was: " + result.failed().get().getClass(),
-      result.failed().get().getClass().getName(),
-      is(RuntimeException.class.getName())
+        "Expected RuntimeException but was: " + result.failed().get().getClass(),
+        result.failed().get().getClass().getName(),
+        is(RuntimeException.class.getName())
     );
   }
 
@@ -263,8 +266,8 @@ public class CircuitBreakingLinkTest {
 
   private InterledgerRejectPacket reject(InterledgerErrorCode errorCode) {
     return InterledgerRejectPacket.builder()
-      .triggeredBy(InterledgerAddress.of("test.operator"))
-      .code(errorCode)
-      .build();
+        .triggeredBy(InterledgerAddress.of("test.operator"))
+        .code(errorCode)
+        .build();
   }
 }

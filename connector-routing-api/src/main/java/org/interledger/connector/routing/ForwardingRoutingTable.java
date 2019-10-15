@@ -51,7 +51,7 @@ public interface ForwardingRoutingTable<R extends RouteUpdate> extends RoutingTa
    * @param numberToSkip The number of elements to skip.
    * @param limit        The maximum number of elements to return.
    *
-   * @return An {@link Iterable} view of the underlying getRoute update log.
+   * @return An {@link Iterable} view of the underlying route update log.
    */
   Iterable<R> getPartialRouteLog(final int numberToSkip, final int limit);
 

@@ -34,12 +34,12 @@ public interface GlobalRoutingSettings {
    *
    * @see {@link StaticRoute#STANDARD_DEFAULT_ROUTE}.
    */
-  Optional<AccountId> getDefaultRoute();
+  Optional<AccountId> defaultRoute();
 
   /**
    * Seed used for generating routing table auth values.
    */
-  String getRoutingSecret();
+  String routingSecret();
 
   /**
    * Determines if the first parent-account should be used as the default route. This value overrides any specified
@@ -55,7 +55,7 @@ public interface GlobalRoutingSettings {
    * route-update operation.
    */
   @Value.Default
-  default Duration getRouteBroadcastInterval() {
+  default Duration routeBroadcastInterval() {
     return Duration.ofMillis(30000L);
   }
 
@@ -63,7 +63,7 @@ public interface GlobalRoutingSettings {
    * The frequency at which the connector checks for expired routes.
    */
   @Value.Default
-  default Duration getRouteCleanupInterval() {
+  default Duration routeCleanupInterval() {
     return Duration.ofMillis(1000L);
   }
 
@@ -71,7 +71,7 @@ public interface GlobalRoutingSettings {
    * The maximum age of a route provided by this connector.
    */
   @Value.Default
-  default Duration getRouteExpiry() {
+  default Duration routeExpiry() {
     return Duration.ofMillis(45000L);
   }
 
@@ -79,7 +79,7 @@ public interface GlobalRoutingSettings {
    * The maximum number of epochs to transmit with any particular routing update message sent via CCP.
    */
   @Value.Default
-  default int getMaxEpochsPerRoutingTable() {
+  default int maxEpochsPerRoutingTable() {
     return 50;
   }
 
@@ -89,7 +89,7 @@ public interface GlobalRoutingSettings {
    * @return An Collection of type {@link StaticRoute}.
    */
   @Value.Default
-  default List<? extends StaticRoute> getStaticRoutes() {
+  default List<? extends StaticRoute> staticRoutes() {
     return Lists.newArrayList();
   }
 
@@ -104,7 +104,7 @@ public interface GlobalRoutingSettings {
     // If we're not using the parent as a default route, then a default route must be specified!
     //    if (!this.isUseParentForDefaultRoute()) {
     //      Preconditions.checkArgument(
-    //        this.getDefaultRoute().isPresent(),
+    //        this.defaultRoute().isPresent(),
     //        "A default ILP Route MUST be set if this ILSP is not relying upon a Parent Account for this information!"
     //      );
     //    }

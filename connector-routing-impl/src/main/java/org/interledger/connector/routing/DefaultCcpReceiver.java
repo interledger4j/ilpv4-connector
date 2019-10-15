@@ -168,7 +168,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
       )
       .forEach(newIncomingRoute -> {
         if (this.incomingRoutes.addRoute(newIncomingRoute) != null) {
-          changedPrefixesBuilder.add(newIncomingRoute.getRoutePrefix());
+          changedPrefixesBuilder.add(newIncomingRoute.routePrefix());
         }
       });
 
@@ -196,7 +196,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
       .amount(UnsignedLong.ZERO)
       .destination(CcpConstants.CCP_CONTROL_DESTINATION_ADDRESS)
       .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
-      .expiresAt(Instant.now().plus(connectorSettingsSupplier.get().getGlobalRoutingSettings().getRouteExpiry()))
+      .expiresAt(Instant.now().plus(connectorSettingsSupplier.get().globalRoutingSettings().routeExpiry()))
       .data(serializeCcpPacket(request))
       .build();
 

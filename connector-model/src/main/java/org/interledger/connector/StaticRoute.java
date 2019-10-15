@@ -24,14 +24,14 @@ public interface StaticRoute {
    *
    * @return
    */
-  InterledgerAddressPrefix getTargetPrefix();
+  InterledgerAddressPrefix targetPrefix();
 
   /**
    * The ILP address of the peer this route should route through.
    *
    * @return
    */
-  AccountId getPeerAccountId();
+  AccountId peerAccountId();
 
   @Value.Immutable(intern = true)
   abstract class AbstractStaticRoute implements StaticRoute {

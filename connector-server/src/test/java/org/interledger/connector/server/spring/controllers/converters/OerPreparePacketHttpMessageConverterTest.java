@@ -1,6 +1,14 @@
 package org.interledger.connector.server.spring.controllers.converters;
 
-import com.google.common.collect.ImmutableList;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.interledger.connector.core.Ilpv4Constants.ALL_ZEROS_FULFILLMENT;
+import static org.interledger.connector.link.blast.BlastHeaders.APPLICATON_ILP_OCTET_STREAM;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
+
 import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.connector.server.spring.controllers.settlement.SettlementController;
@@ -11,6 +19,7 @@ import org.interledger.core.InterledgerPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,16 +33,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.interledger.connector.link.blast.BlastHeaders.APPLICATON_ILP_OCTET_STREAM;
-import static org.interledger.connector.core.Ilpv4Constants.ALL_ZEROS_FULFILLMENT;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 
 /**
  * Unit tests for {@link OerPreparePacketHttpMessageConverter}.
@@ -43,7 +44,7 @@ public class OerPreparePacketHttpMessageConverterTest {
 
   private static InterledgerPreparePacket PREPARE_PACKET = InterledgerPreparePacket.builder()
     .executionCondition(ALL_ZEROS_FULFILLMENT.getCondition())
-    .expiresAt(Instant.now())
+    .expiresAt(Instant.now().truncatedTo(ChronoUnit.MILLIS))
     .destination(InterledgerAddress.of("example.receiver"))
     .amount(UnsignedLong.valueOf(10))
     .data(new byte[32])

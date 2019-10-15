@@ -116,7 +116,7 @@ public class PeerProtocolPacketFilterTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    when(connectorSettingsMock.getEnabledProtocols()).thenReturn(enabledProtocolSettingsMock);
+    when(connectorSettingsMock.enabledProtocols()).thenReturn(enabledProtocolSettingsMock);
 
     when(packetRejectorMock.reject(any(), any(), any(), any())).thenReturn(REJECT_PACKET);
 
@@ -129,17 +129,17 @@ public class PeerProtocolPacketFilterTest {
       settlementService
     );
 
-    when(accountSettingsMock.getAccountId()).thenReturn(ACCOUNT_ID);
-    when(accountSettingsMock.getAssetScale()).thenReturn(9);
-    when(accountSettingsMock.getAssetCode()).thenReturn("XRP");
+    when(accountSettingsMock.accountId()).thenReturn(ACCOUNT_ID);
+    when(accountSettingsMock.assetScale()).thenReturn(9);
+    when(accountSettingsMock.assetCode()).thenReturn("XRP");
     when(accountSettingsMock.isSendRoutes()).thenReturn(sendRoutesEnabled);
     when(accountSettingsMock.isReceiveRoutes()).thenReturn(receiveRoutesEnabled);
 
     when(connectorSettingsMock.toChildAddress(ACCOUNT_ID)).thenReturn(OPERATOR_ADDRESS);
 
     final RoutableAccount routableAccountMock = mock(RoutableAccount.class);
-    when(routableAccountMock.getCcpSender()).thenReturn(mock(CcpSender.class));
-    when(routableAccountMock.getCcpReceiver()).thenReturn(mock(CcpReceiver.class));
+    when(routableAccountMock.ccpSender()).thenReturn(mock(CcpSender.class));
+    when(routableAccountMock.ccpReceiver()).thenReturn(mock(CcpReceiver.class));
     when(routeBroadcasterMock.getCcpEnabledAccount(ACCOUNT_ID)).thenReturn(Optional.of(routableAccountMock));
   }
 

@@ -36,9 +36,9 @@ public class PingLoopbackLinkFactory implements LinkFactory {
   ) {
     Objects.requireNonNull(linkSettings);
 
-    if (!this.supports(linkSettings.getLinkType())) {
+    if (!this.supports(linkSettings.linkType())) {
       throw new RuntimeException(
-        String.format("LinkType `%s` not supported by this factory!", linkSettings.getLinkType())
+        String.format("LinkType `%s` not supported by this factory!", linkSettings.linkType())
       );
     }
 

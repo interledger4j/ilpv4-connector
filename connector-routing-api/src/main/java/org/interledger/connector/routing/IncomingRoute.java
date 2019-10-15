@@ -1,15 +1,16 @@
 package org.interledger.connector.routing;
 
-import org.immutables.value.Value;
+import static org.interledger.connector.routing.Route.EMPTY_AUTH;
+
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 
+import org.immutables.value.Value;
+
 import java.util.List;
 
-import static org.interledger.connector.routing.Route.EMPTY_AUTH;
-
 /**
- * Models an incoming getRoute received from a particular peer.
+ * Models an incoming route received from a particular peer.
  */
 @Value.Immutable
 public interface IncomingRoute extends BaseRoute {
@@ -19,7 +20,7 @@ public interface IncomingRoute extends BaseRoute {
    *
    * @return A {@link AccountId}.
    */
-  AccountId getPeerAccountId();
+  AccountId peerAccountId();
 
   /**
    * A list of nodes (represented by {@link InterledgerAddress} that a payment will traverse in order for a payment to
@@ -27,15 +28,15 @@ public interface IncomingRoute extends BaseRoute {
    *
    * @return A {@link List} of type {@link InterledgerAddress}.
    */
-  List<InterledgerAddress> getPath();
+  List<InterledgerAddress> path();
 
   /**
-   * Bytes that can be used for authentication of a given getRoute. Reserved for the future, currently not used.
+   * Bytes that can be used for authentication of a given route. Reserved for the future, currently not used.
    *
    * @return
    */
   @Value.Default
-  default byte[] getAuth() {
+  default byte[] auth() {
     return EMPTY_AUTH;
   }
 

@@ -72,7 +72,7 @@ public class LoopbackLink extends AbstractLink<LinkSettings> implements Link<Lin
   public InterledgerResponsePacket sendPacket(final InterledgerPreparePacket preparePacket) {
     Objects.requireNonNull(preparePacket);
 
-    return Optional.ofNullable(this.getLinkSettings().getCustomSettings().get(SIMULATE_TIMEOUT))
+    return Optional.ofNullable(this.getLinkSettings().customSettings().get(SIMULATE_TIMEOUT))
       .map((value) -> {
         if (value.equals("T02")) {
           return packetRejector.reject(AccountId.of(getLinkId().value()), preparePacket,

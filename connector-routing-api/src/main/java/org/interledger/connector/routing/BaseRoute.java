@@ -15,5 +15,5 @@ public interface BaseRoute {
    *
    * @return A {@link InterledgerAddressPrefix}.
    */
-  InterledgerAddressPrefix getRoutePrefix();
+  InterledgerAddressPrefix routePrefix();
 }

@@ -95,7 +95,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
       // ...and then send the new packet to its destination on the correct outbound link.
       logger.debug(
         "Sending outbound ILP Prepare: sourceAccountId: `{}` packet={}",
-        sourceAccountSettings.getAccountId(), preparePacket
+        sourceAccountSettings.accountId(), preparePacket
       );
 
       // Here, use the link-mapper to get the `next-hop`, create a LinkFilterChain, and then send.
@@ -112,7 +112,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
 
       logger.debug(
         "Sending outbound ILP Prepare: sourceAccountId: `{}` link={} packet={}",
-        sourceAccountSettings.getAccountId(), link, preparePacket
+        sourceAccountSettings.accountId(), link, preparePacket
       );
 
       final AccountSettings nextHopAccountSettings = accountSettingsLoadingCache

@@ -12,7 +12,7 @@ public class AccountRateLimitSettingsFromPropertyFile implements AccountRateLimi
   private Optional<Integer> maxPacketsPerSecond = Optional.empty();
 
   @Override
-  public Optional<Integer> getMaxPacketsPerSecond() {
+  public Optional<Integer> maxPacketsPerSecond() {
     return maxPacketsPerSecond;
   }
 

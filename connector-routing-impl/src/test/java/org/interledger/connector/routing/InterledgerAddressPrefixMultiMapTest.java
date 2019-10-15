@@ -134,7 +134,7 @@ public class InterledgerAddressPrefixMultiMapTest {
 //    // DEFAULT_CONNECTOR_ACCOUNT
 //    final InterledgerAddress nextHopEqualityCheck = nextHopAccount.orElse(DEFAULT_CONNECTOR_ACCOUNT);
 //    return this.prefixMap.getEntries(routePrefix).stream()
-//      .filter(r -> r.getNextHopAccountId().equals(nextHopEqualityCheck))
+//      .filter(r -> r.nextHopAccountId().equals(nextHopEqualityCheck))
 //      .findFirst().get();
 //  }
 //
@@ -180,7 +180,7 @@ public class InterledgerAddressPrefixMultiMapTest {
 //  //      final boolean actual = prefixMap.removeEntry(routingTableEntry0);
 //  //
 //  //      assertThat(actual, is(true));
-//  //      assertThat(prefixMap.getEntries(routingTableEntry0.getRoutePrefix()).isEmpty(), is(true));
+//  //      assertThat(prefixMap.getEntries(routingTableEntry0.routePrefix()).isEmpty(), is(true));
 //  //      assertThat(prefixMap.getNumKeys(), is(4));
 //  //    }
 //  //    {
@@ -190,7 +190,7 @@ public class InterledgerAddressPrefixMultiMapTest {
 //  //      final boolean actual = prefixMap.removeEntry(routingTableEntry1);
 //  //
 //  //      assertThat(actual, is(true));
-//  //      assertThat(prefixMap.getEntries(routingTableEntry1.getRoutePrefix()).isEmpty(), is(true));
+//  //      assertThat(prefixMap.getEntries(routingTableEntry1.routePrefix()).isEmpty(), is(true));
 //  //      assertThat(prefixMap.getNumKeys(), is(3));
 //  //    }
 //  //    {
@@ -199,7 +199,7 @@ public class InterledgerAddressPrefixMultiMapTest {
 //  //      final boolean actual = prefixMap.removeEntry(routingTableEntry2);
 //  //
 //  //      assertThat(actual, is(true));
-//  //      assertThat(prefixMap.getEntries(routingTableEntry2.getRoutePrefix()).isEmpty(), is(true));
+//  //      assertThat(prefixMap.getEntries(routingTableEntry2.routePrefix()).isEmpty(), is(true));
 //  //      assertThat(prefixMap.getNumKeys(), is(2));
 //  //    }
 //  //    {
@@ -209,7 +209,7 @@ public class InterledgerAddressPrefixMultiMapTest {
 //  //      final boolean actual = prefixMap.removeEntry(routingTableEntry3);
 //  //
 //  //      assertThat(actual, is(true));
-//  //      assertThat(prefixMap.getEntries(routingTableEntry3.getRoutePrefix()).isEmpty(), is(true));
+//  //      assertThat(prefixMap.getEntries(routingTableEntry3.routePrefix()).isEmpty(), is(true));
 //  //      assertThat(prefixMap.getNumKeys(), is(1));
 //  //    }
 //  //    {
@@ -219,7 +219,7 @@ public class InterledgerAddressPrefixMultiMapTest {
 //  //      final boolean actual = prefixMap.removeEntry(routingTableEntry4);
 //  //
 //  //      assertThat(actual, is(true));
-//  //      assertThat(prefixMap.getEntries(routingTableEntry4.getRoutePrefix()).size(), is(1));
+//  //      assertThat(prefixMap.getEntries(routingTableEntry4.routePrefix()).size(), is(1));
 //  //      assertThat(prefixMap.getNumKeys(), is(1));
 //  //      this.prefixMap.forEach((key, value) -> logger.info("K: {}, V: {}", key, value));
 //  //    }
@@ -230,7 +230,7 @@ public class InterledgerAddressPrefixMultiMapTest {
 //  //      final boolean actual = prefixMap.removeEntry(routingTableEntry5);
 //  //
 //  //      assertThat(actual, is(true));
-//  //      assertThat(prefixMap.getEntries(routingTableEntry5.getRoutePrefix()).isEmpty(), is(true));
+//  //      assertThat(prefixMap.getEntries(routingTableEntry5.routePrefix()).isEmpty(), is(true));
 //  //      assertThat(prefixMap.getNumKeys(), is(0));
 //  //    }
 //  //  }
@@ -399,7 +399,7 @@ public class InterledgerAddressPrefixMultiMapTest {
 //        .routePrefix(InterledgerAddressPrefix.of("g." + i))
 //        .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
 //        .build();
-//      prefixMap.putEntry(route.getRoutePrefix(), route);
+//      prefixMap.putEntry(route.routePrefix(), route);
 //
 //      assertThat(prefixMap.getNumKeys(), is(i));
 //      final InterledgerAddress destinationAddress = InterledgerAddress.of("g." + i + ".bob");
@@ -416,7 +416,7 @@ public class InterledgerAddressPrefixMultiMapTest {
 //        .routePrefix(GLOBAL_ROUTING_TABLE_ENTRY)
 //        .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT.with("" + i))
 //        .build();
-//      prefixMap.putEntry(route.getRoutePrefix(), route);;
+//      prefixMap.putEntry(route.routePrefix(), route);;
 //
 //      final InterledgerAddress destinationAddress = DEFAULT_CONNECTOR_ACCOUNT.with("bob");
 //      assertThat("Each destination address should map to N number of RoutingTableEntries!",
@@ -448,7 +448,7 @@ public class InterledgerAddressPrefixMultiMapTest {
 //      .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
 //      .build();
 //
-//    prefixMap.putEntry(route.getRoutePrefix(), route);;
+//    prefixMap.putEntry(route.routePrefix(), route);;
 //
 //    assertThat(prefixMap.findNextHops(InterledgerAddress.of("self.me")).size(), is(0));
 //    assertThat(prefixMap.findNextHops(InterledgerAddress.of("g.1.me")).size(), is(1));
@@ -468,7 +468,7 @@ public class InterledgerAddressPrefixMultiMapTest {
 //      .nextHopAccount(DEFAULT_CONNECTOR_ACCOUNT)
 //      .build();
 //
-//    prefixMap.putEntry(route.getRoutePrefix(), route);;
+//    prefixMap.putEntry(route.routePrefix(), route);;
 //
 //    assertThat(prefixMap.findNextHops(InterledgerAddress.of("self.me")).size(), is(0));
 //    assertThat(prefixMap.findNextHops(InterledgerAddress.of("g.1.me")).size(), is(0));
