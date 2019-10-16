@@ -7,13 +7,12 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings;
-import org.interledger.connector.links.ping.PingLoopbackLink;
+import org.interledger.connector.links.loopback.LoopbackLink;
 import org.interledger.connector.server.ConnectorServerConfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import org.assertj.core.util.Maps;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +65,7 @@ public class AccountSettingsSpringBootTest {
         .accountRelationship(AccountRelationship.CHILD)
         .assetCode("FUD")
         .assetScale(6)
-        .linkType(PingLoopbackLink.LINK_TYPE)
+        .linkType(LoopbackLink.LINK_TYPE)
         .createdAt(Instant.now())
         .customSettings(Maps.newHashMap("custom", "value"))
         .build();
@@ -95,7 +94,7 @@ public class AccountSettingsSpringBootTest {
         .put("accountRelationship", AccountRelationship.CHILD)
         .put("assetCode", "FUD")
         .put("assetScale", 6)
-        .put("linkType", PingLoopbackLink.LINK_TYPE)
+        .put("linkType", LoopbackLink.LINK_TYPE)
         .put("whatHasTwoThumbsAndLikesInterledger", "this guy") // random unknown property, should be ignored by server
         .build();
 
