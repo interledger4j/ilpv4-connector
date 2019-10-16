@@ -63,7 +63,7 @@ public class AccountSettingsSpringBootTest {
     headers.setContentType(MediaType.APPLICATION_JSON);
 
     AccountSettings settings = AccountSettings.builder()
-        .accountId(AccountId.of("foo"))
+        .accountId(AccountId.of("testCreate"))
         .accountRelationship(AccountRelationship.PEER)
         .assetCode("XRP")
         .assetScale(6)
@@ -92,7 +92,7 @@ public class AccountSettingsSpringBootTest {
     headers.setContentType(MediaType.APPLICATION_JSON);
 
     Map<String, Object> rawValues = ImmutableMap.<String, Object>builder()
-        .put("accountId", AccountId.of("bar"))
+        .put("accountId", AccountId.of("testJsonMarshalling"))
         .put("accountRelationship", AccountRelationship.PEER)
         .put("assetCode", "XRP")
         .put("assetScale", 6)
