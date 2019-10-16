@@ -1,13 +1,13 @@
 package org.interledger.connector.core.settlement;
 
 
-import org.interledger.connector.core.settlement.SettlementQuantity;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
 import java.math.BigInteger;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
 
 /**
  * Unit tests for {@link SettlementQuantity}.
@@ -21,8 +21,8 @@ public class SettlementQuantityTest {
         .scale(3)
         .build();
     } catch (IllegalStateException e) {
-      assertThat(e.getMessage(),
-        is("Cannot build SettlementQuantity, some of required attributes are not set [amount]"));
+      assertThat(e.getMessage())
+          .isEqualTo("Cannot build SettlementQuantity, some of required attributes are not set [amount]");
       throw e;
     }
   }
@@ -34,9 +34,8 @@ public class SettlementQuantityTest {
         .amount(BigInteger.ONE)
         .build();
     } catch (IllegalStateException e) {
-      assertThat(e.getMessage(), is(
-        "Cannot build SettlementQuantity, some of required attributes are not set [scale]")
-      );
+      assertThat(e.getMessage())
+          .isEqualTo("Cannot build SettlementQuantity, some of required attributes are not set [scale]");
       throw e;
     }
   }
@@ -48,8 +47,8 @@ public class SettlementQuantityTest {
       .scale(3)
       .build();
 
-    assertThat(settlementQuantity.amount(), is(BigInteger.TEN));
-    assertThat(settlementQuantity.scale(), is(3));
+    assertThat(settlementQuantity.amount()).isEqualTo(BigInteger.TEN);
+    assertThat(settlementQuantity.scale()).isEqualTo(3);
   }
 
   @Test
@@ -59,8 +58,8 @@ public class SettlementQuantityTest {
       .scale(0)
       .build();
 
-    assertThat(settlementQuantity.amount(), is(BigInteger.ZERO));
-    assertThat(settlementQuantity.scale(), is(0));
+    assertThat(settlementQuantity.amount()).isEqualTo(BigInteger.ZERO);
+    assertThat(settlementQuantity.scale()).isEqualTo(0);
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -71,7 +70,7 @@ public class SettlementQuantityTest {
         .scale(-3)
         .build();
     } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(), is("scale must not be negative"));
+      assertThat(e.getMessage()).isEqualTo("scale must not be negative");
       throw e;
     }
   }
@@ -84,8 +83,21 @@ public class SettlementQuantityTest {
         .scale(2)
         .build();
     } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(), is("amount must not be negative"));
+      assertThat(e.getMessage()).isEqualTo("amount must not be negative");
       throw e;
     }
+  }
+
+  @Test
+  public void serialize() throws Exception {
+    ObjectMapper objectMapper = new ObjectMapper();
+    // FIXME this test will break when we switch to WRITE_NUMBERS_AS_STRINGS to false
+    objectMapper.configure(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS, true);
+    String serialized = objectMapper.writeValueAsString(SettlementQuantity.builder()
+        .amount(BigInteger.TEN)
+        .scale(3)
+        .build());
+
+    assertThat(serialized).isEqualTo("{\"amount\":\"10\",\"scale\":3}");
   }
 }
