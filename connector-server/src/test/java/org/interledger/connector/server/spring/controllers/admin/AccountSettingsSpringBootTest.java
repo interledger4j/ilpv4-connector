@@ -56,7 +56,6 @@ public class AccountSettingsSpringBootTest {
    * Verify settings can be created via API
    */
   @Test
-  @Ignore
   public void testCreate() throws IOException {
     final HttpHeaders headers = new HttpHeaders();
     headers.setBasicAuth(ADMIN, PASSWORD);
@@ -65,7 +64,7 @@ public class AccountSettingsSpringBootTest {
     AccountSettings settings = AccountSettings.builder()
         .accountId(AccountId.of("testCreate"))
         .accountRelationship(AccountRelationship.CHILD)
-        .assetCode("XRP")
+        .assetCode("FUD")
         .assetScale(6)
         .linkType(PingLoopbackLink.LINK_TYPE)
         .createdAt(Instant.now())
@@ -94,7 +93,7 @@ public class AccountSettingsSpringBootTest {
     Map<String, Object> rawValues = ImmutableMap.<String, Object>builder()
         .put("accountId", AccountId.of("testJsonMarshalling"))
         .put("accountRelationship", AccountRelationship.CHILD)
-        .put("assetCode", "XRP")
+        .put("assetCode", "FUD")
         .put("assetScale", 6)
         .put("linkType", PingLoopbackLink.LINK_TYPE)
         .put("whatHasTwoThumbsAndLikesInterledger", "this guy") // random unknown property, should be ignored by server
