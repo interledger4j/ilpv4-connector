@@ -41,13 +41,10 @@ import java.util.Map;
     classes = {ConnectorServerConfig.class}
 )
 @ActiveProfiles( {"test"})
-@Ignore
 public class AccountSettingsSpringBootTest {
 
-  private static final String FOO = "/foo";
   private static final String PASSWORD = "password";
   private static final String ADMIN = "admin";
-  private static final String USER = "user";
 
   @Autowired
   TestRestTemplate restTemplate;
@@ -59,6 +56,7 @@ public class AccountSettingsSpringBootTest {
    * Verify settings can be created via API
    */
   @Test
+  @Ignore
   public void testCreate() throws IOException {
     final HttpHeaders headers = new HttpHeaders();
     headers.setBasicAuth(ADMIN, PASSWORD);
@@ -66,7 +64,7 @@ public class AccountSettingsSpringBootTest {
 
     AccountSettings settings = AccountSettings.builder()
         .accountId(AccountId.of("testCreate"))
-        .accountRelationship(AccountRelationship.PEER)
+        .accountRelationship(AccountRelationship.CHILD)
         .assetCode("XRP")
         .assetScale(6)
         .linkType(PingLoopbackLink.LINK_TYPE)
@@ -95,7 +93,7 @@ public class AccountSettingsSpringBootTest {
 
     Map<String, Object> rawValues = ImmutableMap.<String, Object>builder()
         .put("accountId", AccountId.of("testJsonMarshalling"))
-        .put("accountRelationship", AccountRelationship.PEER)
+        .put("accountRelationship", AccountRelationship.CHILD)
         .put("assetCode", "XRP")
         .put("assetScale", 6)
         .put("linkType", PingLoopbackLink.LINK_TYPE)
