@@ -1,6 +1,7 @@
 package org.interledger.connector.settlement.client;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
@@ -26,6 +27,7 @@ public interface InitiateSettlementRequest {
    * @return An integer representing the scale used by the settlement engine.
    */
   @JsonProperty("scale")
+  @JsonRawValue
   int connectorAccountScale();
 
   /**
