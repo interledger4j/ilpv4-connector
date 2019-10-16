@@ -13,6 +13,7 @@ import org.interledger.connector.server.ConnectorServerConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import org.assertj.core.util.Maps;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,7 @@ import java.util.Map;
     classes = {ConnectorServerConfig.class}
 )
 @ActiveProfiles( {"test"})
+@Ignore
 public class AccountSettingsSpringBootTest {
 
   private static final String FOO = "/foo";
