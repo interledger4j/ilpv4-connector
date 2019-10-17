@@ -3,6 +3,7 @@ package org.interledger.connector.server.spring.controllers.admin;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS;
 
+import org.interledger.connector.accounts.AccountAlreadyExistsProblem;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
@@ -56,10 +57,6 @@ public class AccountSettingsSpringBootTest {
    */
   @Test
   public void testCreate() throws IOException {
-    final HttpHeaders headers = new HttpHeaders();
-    headers.setBasicAuth(ADMIN, PASSWORD);
-    headers.setContentType(MediaType.APPLICATION_JSON);
-
     AccountSettings settings = AccountSettings.builder()
         .accountId(AccountId.of("testCreate"))
         .accountRelationship(AccountRelationship.CHILD)
@@ -70,14 +67,45 @@ public class AccountSettingsSpringBootTest {
         .customSettings(Maps.newHashMap("custom", "value"))
         .build();
 
+    ResponseEntity<String> response = postAccount(settings, HttpStatus.CREATED);
+
+    AccountSettings created = objectMapper.readerFor(ImmutableAccountSettings.class).readValue(response.getBody());
+    assertThat(created).isEqualTo(settings);
+  }
+
+  /**
+   * Verify settings can be created via API
+   */
+  @Test
+  public void testCreateExistingIdReturns409() throws IOException {
+
+    AccountId accountId = AccountId.of("testCreateExistingIdReturns409");
+    AccountSettings settings = AccountSettings.builder()
+        .accountId(accountId)
+        .accountRelationship(AccountRelationship.CHILD)
+        .assetCode("FUD")
+        .assetScale(6)
+        .linkType(LoopbackLink.LINK_TYPE)
+        .createdAt(Instant.now())
+        .customSettings(Maps.newHashMap("custom", "value"))
+        .build();
+
+    postAccount(settings, HttpStatus.CREATED);
+
+    // already exists
+    postAccount(settings, HttpStatus.CONFLICT);
+  }
+
+  private ResponseEntity<String> postAccount(AccountSettings settings, HttpStatus expectedStatus) {
+    final HttpHeaders headers = new HttpHeaders();
+    headers.setBasicAuth(ADMIN, PASSWORD);
+    headers.setContentType(MediaType.APPLICATION_JSON);
     final HttpEntity httpEntity = new HttpEntity(settings, headers);
 
     ResponseEntity<String> response =
         restTemplate.postForEntity(SLASH_ACCOUNTS, httpEntity, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-
-    AccountSettings created = objectMapper.readerFor(ImmutableAccountSettings.class).readValue(response.getBody());
-    assertThat(created).isEqualTo(settings);
+    assertThat(response.getStatusCode()).isEqualTo(expectedStatus);
+    return response;
   }
 
   /**
