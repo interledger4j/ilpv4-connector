@@ -2,6 +2,7 @@ package org.interledger.connector.it.blast;
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.it.AbstractBlastIT;
+import org.interledger.connector.it.Containers;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkSettings;
 import org.interledger.core.InterledgerAddress;
@@ -17,6 +18,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 
 import java.math.BigInteger;
 
@@ -43,9 +46,18 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
 
+  private static final Network network = Network.newNetwork();
+
+  public static GenericContainer redis = Containers.redis(network);
+
+//  public static GenericContainer postgres = Containers.postgres(network, "connector",
+//      "initialization.sql");
+
   @BeforeClass
   public static void startTopology() {
     LOGGER.info("Starting test topology `{}`...", topology.toString());
+    redis.start();
+//    postgres.start();
     topology.start();
     LOGGER.info("Test topology `{}` started!", topology.toString());
   }
@@ -54,6 +66,8 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
   public static void stopTopology() {
     LOGGER.info("Stopping test topology `{}`...", topology.toString());
     topology.stop();
+    redis.stop();
+//    postgres.stop();
     LOGGER.info("Test topology `{}` stopped!", topology.toString());
   }
 

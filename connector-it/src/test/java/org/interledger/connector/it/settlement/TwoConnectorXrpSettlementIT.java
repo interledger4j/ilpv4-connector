@@ -4,6 +4,7 @@ import com.google.common.eventbus.Subscribe;
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.events.LocalSettlementProcessedEvent;
 import org.interledger.connector.it.AbstractBlastIT;
+import org.interledger.connector.it.Containers;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.connector.it.markers.Settlement;
 import org.interledger.connector.it.topologies.settlement.SimulatedXrplSettlementTopology;
@@ -25,6 +26,7 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.math.BigInteger;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -61,53 +63,14 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
   private static final Network network = Network.newNetwork();
 
+  private static GenericContainer redis = Containers.redis(network);
 
+  private static GenericContainer postgres = Containers.postgres(network, "connector",
+      "initialization.sql");
 
-//  @Rule
-//  public GenericContainer postgres1 = new GenericContainer("postgres:12")
-//      .withNetwork(network)
-//      .withExposedPorts(5432)
-//      .withEnv("POSTGRES_USER", "settlement")
-//      .withEnv("POSTGRES_DB", "settlement");
+  private static GenericContainer settlementAlice = Containers.settlement(network, 9000, 8080);
 
-//  @ClassRule
-  public static GenericContainer redis = new GenericContainer("redis:5.0.6")
-      .withNetwork(network)
-      .withNetworkAliases("redis")
-      .withEnv("REDIS_URL", "redis://redis:6379");
-
-//  @ClassRule
-  public static GenericContainer postgres = new PostgreSQLContainer("postgres:12")
-      .withDatabaseName("settlement")
-      .withUsername("settlement")
-      .withClasspathResourceMapping(
-          "initialization.sql",
-          "/docker-entrypoint-initdb.d/1-init.sql",
-          BindMode.READ_ONLY
-      )
-      .withExposedPorts(5432)
-      .withNetwork(network);
-
-//  @ClassRule
-  public static GenericContainer settlementAlice = new GenericContainer<>("interledgerjs/settlement-xrp")
-      .withExposedPorts(9000)
-      .withCreateContainerCmdModifier(e -> e.withPortSpecs())
-      .withNetwork(network)
-      //.withLogConsumer(new org.testcontainers.containers.output.Slf4jLogConsumer (logger)) // uncomment to see logs
-      .withEnv("REDIS_URI", "redis://redis:6379")
-      .withEnv("ENGINE_PORT", "9000")
-      .withEnv("DEBUG", "settlement*")
-      .withEnv("CONNECTOR_URL", "http://host.docker.internal:8080");
-
-//  @ClassRule
-  public static GenericContainer settlementBob = new GenericContainer<>("interledgerjs/settlement-xrp")
-      .withExposedPorts(9001)
-      .withNetwork(network)
-      //.withLogConsumer(new org.testcontainers.containers.output.Slf4jLogConsumer (logger)) // uncomment to see logs
-      .withEnv("REDIS_URI", "redis://redis:6379")
-      .withEnv("ENGINE_PORT", "9001")
-      .withEnv("DEBUG", "settlement*")
-      .withEnv("CONNECTOR_URL", "http://host.docker.internal:8081");
+  private static GenericContainer settlementBob = Containers.settlement(network, 9001, 8081);
 
   @BeforeClass
   public static void startTopology() {
