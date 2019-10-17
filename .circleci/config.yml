@@ -3,6 +3,7 @@
 # Check https://circleci.com/docs/2.0/language-java/ for more details
 #
 version: 2
+executorType: machine
 jobs:
 
   # This job builds the entire project and runs all unit tests (specifically the persistence tests) against H2 by
@@ -10,17 +11,10 @@ jobs:
   build:
     working_directory: ~/repo
 
-    docker:
-      # Primary container image where all commands run
-      - image: circleci/openjdk:8-jdk
-        environment:
-          # Customize the JVM maximum heap limit
-          MAVEN_OPTS: -Xmx4096m
-          spring.datasource.url: jdbc:h2:mem:connector-db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-
-      # Service container image available at `host: localhost`
-      #- image: circleci/redis:4.0.14-alpine
-      #  #environment:
+    environment:
+      # Customize the JVM maximum heap limit
+      MAVEN_OPTS: -Xmx3200m
+      JAVA_HOME: /usr/lib/jvm/jdk1.8.0/
 
     steps:
 
@@ -76,15 +70,14 @@ jobs:
   test_postgresql:
     working_directory: ~/repo
 
-    docker:
-      # Primary container image where all commands run
-      - image: circleci/openjdk:8-jdk
-        environment:
-          # Customize the JVM maximum heap limit
-          MAVEN_OPTS: -Xmx4096m
-          spring.datasrouce.user: circleci
-          spring.datasource.url: jdbc:postgresql://localhost:5432/circle_test
+    environment:
+      # Customize the JVM maximum heap limit
+      MAVEN_OPTS: -Xmx3200m
+      JAVA_HOME: /usr/lib/jvm/jdk1.8.0/
+      spring.datasrouce.user: circleci
+      spring.datasource.url: jdbc:postgresql://localhost:5432/circle_test
 
+    docker:
       # Service container image available at `host: localhost`
       - image: circleci/postgres:alpine
         environment:
