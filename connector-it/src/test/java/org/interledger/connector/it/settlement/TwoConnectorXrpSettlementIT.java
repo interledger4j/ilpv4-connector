@@ -19,6 +19,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.BindMode;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.math.BigInteger;
 import java.util.concurrent.CountDownLatch;
@@ -50,13 +54,72 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
   private static final BigInteger THOUSAND = BigInteger.valueOf(1000L);
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorXrpSettlementIT.class);
-  private static Topology topology = SimulatedXrplSettlementTopology.init();
+  private static Topology topology;
 
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
 
+  private static final Network network = Network.newNetwork();
+
+
+
+//  @Rule
+//  public GenericContainer postgres1 = new GenericContainer("postgres:12")
+//      .withNetwork(network)
+//      .withExposedPorts(5432)
+//      .withEnv("POSTGRES_USER", "settlement")
+//      .withEnv("POSTGRES_DB", "settlement");
+
+//  @ClassRule
+  public static GenericContainer redis = new GenericContainer("redis:5.0.6")
+      .withNetwork(network)
+      .withNetworkAliases("redis")
+      .withEnv("REDIS_URL", "redis://redis:6379");
+
+//  @ClassRule
+  public static GenericContainer postgres = new PostgreSQLContainer("postgres:12")
+      .withDatabaseName("settlement")
+      .withUsername("settlement")
+      .withClasspathResourceMapping(
+          "initialization.sql",
+          "/docker-entrypoint-initdb.d/1-init.sql",
+          BindMode.READ_ONLY
+      )
+      .withExposedPorts(5432)
+      .withNetwork(network);
+
+//  @ClassRule
+  public static GenericContainer settlementAlice = new GenericContainer<>("interledgerjs/settlement-xrp")
+      .withExposedPorts(9000)
+      .withCreateContainerCmdModifier(e -> e.withPortSpecs())
+      .withNetwork(network)
+      //.withLogConsumer(new org.testcontainers.containers.output.Slf4jLogConsumer (logger)) // uncomment to see logs
+      .withEnv("REDIS_URI", "redis://redis:6379")
+      .withEnv("ENGINE_PORT", "9000")
+      .withEnv("DEBUG", "settlement*")
+      .withEnv("CONNECTOR_URL", "http://host.docker.internal:8080");
+
+//  @ClassRule
+  public static GenericContainer settlementBob = new GenericContainer<>("interledgerjs/settlement-xrp")
+      .withExposedPorts(9001)
+      .withNetwork(network)
+      //.withLogConsumer(new org.testcontainers.containers.output.Slf4jLogConsumer (logger)) // uncomment to see logs
+      .withEnv("REDIS_URI", "redis://redis:6379")
+      .withEnv("ENGINE_PORT", "9001")
+      .withEnv("DEBUG", "settlement*")
+      .withEnv("CONNECTOR_URL", "http://host.docker.internal:8081");
+
   @BeforeClass
   public static void startTopology() {
+
+    redis.start();
+    postgres.start();
+    settlementAlice.start();
+    settlementBob.start();
+    topology = SimulatedXrplSettlementTopology.init(
+        settlementAlice.getMappedPort(9000),
+        settlementBob.getMappedPort(9001)
+    );
     LOGGER.info("Starting test topology `{}`...", topology.toString());
     topology.start();
     LOGGER.info("Test topology `{}` started!", topology.toString());
@@ -66,6 +129,10 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
   public static void stopTopology() {
     LOGGER.info("Stopping test topology `{}`...", topology.toString());
     topology.stop();
+    settlementAlice.stop();
+    settlementBob.stop();
+    postgres.stop();
+    redis.stop();
     LOGGER.info("Test topology `{}` stopped!", topology.toString());
   }
 
