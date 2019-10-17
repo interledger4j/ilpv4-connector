@@ -101,10 +101,6 @@ jobs:
 
       - checkout # check out source code to working directory
 
-      - run:
-          name: Wait for Redis to receive connections
-          command: dockerize -wait tcp://localhost:6379 -timeout 1m
-
       # Restore the saved cache after the first run or if `pom.xml` has changed. Read about caching dependencies:
       # https://circleci.com/docs/2.0/caching/
       - restore_cache:
