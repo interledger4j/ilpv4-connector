@@ -1,15 +1,26 @@
 package org.interledger.connector.it.settlement;
 
-import com.google.common.eventbus.Subscribe;
+import static java.math.BigInteger.ZERO;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
+import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
+import static org.interledger.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
+import static org.interledger.connector.it.topologies.AbstractTopology.BOB_CONNECTOR_ADDRESS;
+import static org.interledger.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;
+import static org.interledger.connector.it.topologies.AbstractTopology.PETER_ACCOUNT;
+import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
+
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.events.LocalSettlementProcessedEvent;
 import org.interledger.connector.it.AbstractBlastIT;
 import org.interledger.connector.it.Containers;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.connector.it.markers.Settlement;
 import org.interledger.connector.it.topologies.settlement.SimulatedXrplSettlementTopology;
 import org.interledger.connector.it.topology.Topology;
+import org.interledger.core.InterledgerAddress;
 
+import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -20,27 +31,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.math.BigInteger;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
-import static java.math.BigInteger.ZERO;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
-import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
-import static org.interledger.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
-import static org.interledger.connector.it.topologies.AbstractTopology.BOB_CONNECTOR_ADDRESS;
-import static org.interledger.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;
-import static org.interledger.connector.it.topologies.AbstractTopology.PETER_ACCOUNT;
 
 /**
  * Tests to verify that two connectors can make settlement packets to each other using an XRP Ledger Settlement Engine.
@@ -65,8 +62,7 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
   private static GenericContainer redis = Containers.redis(network);
 
-  private static GenericContainer postgres = Containers.postgres(network, "connector",
-      "initialization.sql");
+  private static GenericContainer postgres = Containers.postgres(network);
 
   private static GenericContainer settlementAlice = Containers.settlement(network, 9000, 8080);
 

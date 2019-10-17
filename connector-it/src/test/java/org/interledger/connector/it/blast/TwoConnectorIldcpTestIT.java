@@ -48,16 +48,15 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
 
   private static final Network network = Network.newNetwork();
 
-  public static GenericContainer redis = Containers.redis(network);
+  private static GenericContainer redis = Containers.redis(network);
 
-//  public static GenericContainer postgres = Containers.postgres(network, "connector",
-//      "initialization.sql");
+  private static GenericContainer postgres = Containers.postgres(network);
 
   @BeforeClass
-  public static void startTopology() {
+  public static void startTopology() throws Exception {
     LOGGER.info("Starting test topology `{}`...", topology.toString());
     redis.start();
-//    postgres.start();
+    postgres.start();
     topology.start();
     LOGGER.info("Test topology `{}` started!", topology.toString());
   }
@@ -67,7 +66,7 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
     LOGGER.info("Stopping test topology `{}`...", topology.toString());
     topology.stop();
     redis.stop();
-//    postgres.stop();
+    postgres.stop();
     LOGGER.info("Test topology `{}` stopped!", topology.toString());
   }
 

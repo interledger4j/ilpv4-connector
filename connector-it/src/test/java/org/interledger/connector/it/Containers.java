@@ -5,6 +5,7 @@ import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.wait.strategy.Wait;
 
 public final class Containers {
 
@@ -15,17 +16,19 @@ public final class Containers {
         .withEnv("REDIS_URL", "redis://redis:6379");
   }
 
-  public static GenericContainer postgres(Network network, String databaseName, String schemaResource) {
+  public static GenericContainer postgres(Network network) {
     return new FixedHostPortGenericContainer("postgres:12")
         .withFixedExposedPort(35432, 5432)
-        .withEnv("POSTGRES_USER", databaseName)
-        .withEnv("POSTGRES_PASSWORD", databaseName)
-        .withEnv("POSTGRES_DB", databaseName)
+        .withEnv("POSTGRES_USER", "connector")
+        .withEnv("POSTGRES_PASSWORD", "connector")
+        .withEnv("POSTGRES_DB", "connector")
         .withClasspathResourceMapping(
-            schemaResource,
+            "initialization.sql",
             "/docker-entrypoint-initdb.d/1-init.sql",
             BindMode.READ_ONLY
         )
+        // this gets emitted twice before the db is ready: once before the init scripts run and once after
+        .waitingFor(Wait.forLogMessage(".*database system is ready to accept connections.*\\n", 2))
         .withNetwork(network);
   }
 
