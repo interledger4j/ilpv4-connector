@@ -3,7 +3,6 @@ package org.interledger.connector.server.spring.controllers.admin;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS;
 
-import org.interledger.connector.accounts.AccountAlreadyExistsProblem;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
@@ -67,7 +66,7 @@ public class AccountSettingsSpringBootTest {
         .customSettings(Maps.newHashMap("custom", "value"))
         .build();
 
-    ResponseEntity<String> response = postAccount(settings, HttpStatus.CREATED);
+    ResponseEntity<String> response = assertPostAccount(settings, HttpStatus.CREATED);
 
     AccountSettings created = objectMapper.readerFor(ImmutableAccountSettings.class).readValue(response.getBody());
     assertThat(created).isEqualTo(settings);
@@ -90,13 +89,13 @@ public class AccountSettingsSpringBootTest {
         .customSettings(Maps.newHashMap("custom", "value"))
         .build();
 
-    postAccount(settings, HttpStatus.CREATED);
+    assertPostAccount(settings, HttpStatus.CREATED);
 
     // already exists
-    postAccount(settings, HttpStatus.CONFLICT);
+    assertPostAccount(settings, HttpStatus.CONFLICT);
   }
 
-  private ResponseEntity<String> postAccount(AccountSettings settings, HttpStatus expectedStatus) {
+  private ResponseEntity<String> assertPostAccount(AccountSettings settings, HttpStatus expectedStatus) {
     final HttpHeaders headers = new HttpHeaders();
     headers.setBasicAuth(ADMIN, PASSWORD);
     headers.setContentType(MediaType.APPLICATION_JSON);
