@@ -34,7 +34,7 @@ public class ObjectMapperFactory {
       .registerModule(new LinkIdModule())
       .registerModule(new LinkTypeModule())
       .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-      .configure(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS, true)
+      .configure(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS, false)
       .configure(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN, true)
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }

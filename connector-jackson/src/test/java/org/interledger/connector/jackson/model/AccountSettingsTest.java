@@ -48,7 +48,7 @@ public class AccountSettingsTest {
       "\"description\":\"\"," +
       "\"accountRelationship\":\"PEER\"," +
       "\"assetCode\":\"USD\"," +
-      "\"assetScale\":\"2\"," +
+      "\"assetScale\":2," +
       "\"maximumPacketAmount\":null," +
       "\"linkType\":\"LOOPBACK\"," +
       "\"ilpAddressSegment\":\"bob\"," +
@@ -59,7 +59,7 @@ public class AccountSettingsTest {
       "\"balanceSettings\":{" +
       "\"minBalance\":null," +
       "\"settleThreshold\":null," +
-      "\"settleTo\":\"0\"" +
+      "\"settleTo\":0" +
       "}," +
       "\"rateLimitSettings\":{" +
       "\"maxPacketsPerSecond\":null" +
@@ -114,8 +114,8 @@ public class AccountSettingsTest {
       "\"description\":\"description\"," +
       "\"accountRelationship\":\"CHILD\"," +
       "\"assetCode\":\"USD\"," +
-      "\"assetScale\":\"2\"," +
-      "\"maximumPacketAmount\":\"1\"," +
+      "\"assetScale\":2," +
+      "\"maximumPacketAmount\":1," +
       "\"linkType\":\"LOOPBACK\"," +
       "\"ilpAddressSegment\":\"foo\"," +
       "\"connectionInitiator\":true," +
@@ -123,12 +123,12 @@ public class AccountSettingsTest {
       "\"sendRoutes\":true," +
       "\"receiveRoutes\":true," +
       "\"balanceSettings\":{" +
-      "\"minBalance\":\"3\"," +
-      "\"settleThreshold\":\"9\"," +
-      "\"settleTo\":\"1\"" +
+      "\"minBalance\":3," +
+      "\"settleThreshold\":9," +
+      "\"settleTo\":1" +
       "}," +
       "\"rateLimitSettings\":{" +
-      "\"maxPacketsPerSecond\":\"9\"" +
+      "\"maxPacketsPerSecond\":9" +
       "}," +
       "\"settlementEngineDetails\":{" +
       "\"settlementEngineAccountId\":\"settle-id\"," +

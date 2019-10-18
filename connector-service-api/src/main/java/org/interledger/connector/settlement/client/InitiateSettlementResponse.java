@@ -1,5 +1,6 @@
 package org.interledger.connector.settlement.client;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -36,6 +37,7 @@ public interface InitiateSettlementResponse {
    * @return A {@link BigInteger} representing the amount of units that the Settlement Engine commits to eventually
    * settle.
    */
+  @JsonFormat(shape = JsonFormat.Shape.STRING)
   @JsonProperty("amount")
   BigInteger committedSettlementAmount();
 

@@ -1,5 +1,6 @@
 package org.interledger.connector.core.settlement;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -33,6 +34,7 @@ public interface SettlementQuantity {
    *
    * @return A {@link String} representing the amount.
    */
+  @JsonFormat(shape = JsonFormat.Shape.STRING)
   BigInteger amount();
 
   /**
