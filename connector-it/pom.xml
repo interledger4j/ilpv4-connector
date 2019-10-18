@@ -134,8 +134,10 @@
               <groups>
                 org.interledger.connector.it.markers.IlpOverHttp,
                 org.interledger.connector.it.markers.Settlement,
-                org.interledger.connector.it.markers.Performance
               </groups>
+              <excludedGroups>
+                org.interledger.connector.it.markers.Performance
+              </excludedGroups>
             </configuration>
           </plugin>
         </plugins>
