@@ -8,7 +8,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
 
-public final class Containers {
+public final class ContainerHelper {
 
   public static GenericContainer redis(Network network) {
     return new FixedHostPortGenericContainer("redis:5.0.6")

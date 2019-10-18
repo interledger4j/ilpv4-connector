@@ -19,7 +19,7 @@ import static org.junit.Assert.assertThat;
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.it.AbstractBlastIT;
-import org.interledger.connector.it.Containers;
+import org.interledger.connector.it.ContainerHelper;
 import org.interledger.connector.it.markers.IlpOverHttp;
 import org.interledger.connector.it.markers.Performance;
 import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerBlastTopology;
@@ -75,9 +75,9 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
   private static final Network network = Network.newNetwork();
 
-  private static GenericContainer redis = Containers.redis(network);
+  private static GenericContainer redis = ContainerHelper.redis(network);
 
-  private static GenericContainer postgres = Containers.postgres(network);
+  private static GenericContainer postgres = ContainerHelper.postgres(network);
 
   @BeforeClass
   public static void startTopology() {

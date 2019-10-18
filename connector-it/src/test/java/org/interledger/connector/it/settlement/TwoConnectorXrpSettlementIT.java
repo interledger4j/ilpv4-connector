@@ -14,7 +14,7 @@ import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.events.LocalSettlementProcessedEvent;
 import org.interledger.connector.it.AbstractBlastIT;
-import org.interledger.connector.it.Containers;
+import org.interledger.connector.it.ContainerHelper;
 import org.interledger.connector.it.markers.Settlement;
 import org.interledger.connector.it.topologies.settlement.SimulatedXrplSettlementTopology;
 import org.interledger.connector.it.topology.Topology;
@@ -60,13 +60,13 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
   private static final Network network = Network.newNetwork();
 
-  private static GenericContainer redis = Containers.redis(network);
+  private static GenericContainer redis = ContainerHelper.redis(network);
 
-  private static GenericContainer postgres = Containers.postgres(network);
+  private static GenericContainer postgres = ContainerHelper.postgres(network);
 
-  private static GenericContainer settlementAlice = Containers.settlement(network, 9000, 8080, LOGGER);
+  private static GenericContainer settlementAlice = ContainerHelper.settlement(network, 9000, 8080, LOGGER);
 
-  private static GenericContainer settlementBob = Containers.settlement(network, 9001, 8081, LOGGER);
+  private static GenericContainer settlementBob = ContainerHelper.settlement(network, 9001, 8081, LOGGER);
 
   @BeforeClass
   public static void startTopology() {

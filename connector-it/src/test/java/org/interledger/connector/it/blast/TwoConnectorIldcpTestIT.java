@@ -2,7 +2,7 @@ package org.interledger.connector.it.blast;
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.it.AbstractBlastIT;
-import org.interledger.connector.it.Containers;
+import org.interledger.connector.it.ContainerHelper;
 import org.interledger.connector.link.blast.BlastLink;
 import org.interledger.connector.link.blast.BlastLinkSettings;
 import org.interledger.core.InterledgerAddress;
@@ -48,9 +48,9 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
 
   private static final Network network = Network.newNetwork();
 
-  private static GenericContainer redis = Containers.redis(network);
+  private static GenericContainer redis = ContainerHelper.redis(network);
 
-  private static GenericContainer postgres = Containers.postgres(network);
+  private static GenericContainer postgres = ContainerHelper.postgres(network);
 
   @BeforeClass
   public static void startTopology() throws Exception {
