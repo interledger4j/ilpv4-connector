@@ -17,6 +17,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.json.BasicJsonTester;
+import org.springframework.boot.test.json.JsonContentAssert;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -51,6 +53,8 @@ public class AccountSettingsSpringBootTest {
   @Autowired
   private ObjectMapper objectMapper;
 
+  private BasicJsonTester jsonTester = new BasicJsonTester(getClass());
+
   /**
    * Verify settings can be created via API
    */
@@ -66,10 +70,8 @@ public class AccountSettingsSpringBootTest {
         .customSettings(Maps.newHashMap("custom", "value"))
         .build();
 
-    ResponseEntity<String> response = assertPostAccount(settings, HttpStatus.CREATED);
-
-    AccountSettings created = objectMapper.readerFor(ImmutableAccountSettings.class).readValue(response.getBody());
-    assertThat(created).isEqualTo(settings);
+    String response = assertPostAccount(settings, HttpStatus.CREATED);
+    assertThat(as(response, ImmutableAccountSettings.class)).isEqualTo(settings);
   }
 
   /**
@@ -89,13 +91,20 @@ public class AccountSettingsSpringBootTest {
         .customSettings(Maps.newHashMap("custom", "value"))
         .build();
 
-    assertPostAccount(settings, HttpStatus.CREATED);
+    String createResponse = assertPostAccount(settings, HttpStatus.CREATED);
+    assertThat(as(createResponse, ImmutableAccountSettings.class)).isEqualTo(settings);
 
     // already exists
-    assertPostAccount(settings, HttpStatus.CONFLICT);
+    String recreateResponse = assertPostAccount(settings, HttpStatus.CONFLICT);
+    JsonContentAssert assertJson = assertThat(jsonTester.from(recreateResponse));
+    assertJson.extractingJsonPathValue("status").isEqualTo("409");
+    assertJson.extractingJsonPathValue("title").isEqualTo("Account Already Exists (`testCreateExistingIdReturns409`)");
+    assertJson.extractingJsonPathValue("accountId").isEqualTo(accountId.value());
+    assertJson.extractingJsonPathValue("type")
+        .isEqualTo("https://errors.interledger.org/accounts/account-already-exists");
   }
 
-  private ResponseEntity<String> assertPostAccount(AccountSettings settings, HttpStatus expectedStatus) {
+  private String assertPostAccount(AccountSettings settings, HttpStatus expectedStatus) {
     final HttpHeaders headers = new HttpHeaders();
     headers.setBasicAuth(ADMIN, PASSWORD);
     headers.setContentType(MediaType.APPLICATION_JSON);
@@ -104,7 +113,7 @@ public class AccountSettingsSpringBootTest {
     ResponseEntity<String> response =
         restTemplate.postForEntity(SLASH_ACCOUNTS, httpEntity, String.class);
     assertThat(response.getStatusCode()).isEqualTo(expectedStatus);
-    return response;
+    return response.getBody();
   }
 
   /**
@@ -130,6 +139,10 @@ public class AccountSettingsSpringBootTest {
     ResponseEntity response =
         restTemplate.exchange(SLASH_ACCOUNTS, HttpMethod.POST, httpEntity, Void.class);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+  }
+
+  private <T> T as(String value, Class<T> toClass) throws IOException {
+    return objectMapper.readValue(value, toClass);
   }
 
 }
