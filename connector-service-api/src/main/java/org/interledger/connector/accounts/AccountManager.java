@@ -33,8 +33,9 @@ public interface AccountManager {
    * @param accountSettings The {@link AccountSettings} for this account.
    *
    * @return The newly-created settings.
+   * @throws AccountAlreadyExistsProblem if account already exists for account id
    */
-  AccountSettings createAccount(AccountSettings accountSettings);
+  AccountSettings createAccount(AccountSettings accountSettings) throws AccountAlreadyExistsProblem;
 
   /**
    * Helper method to initialize the parent account using IL-DCP. If this Connector is starting in `child` mode, it will
