@@ -11,10 +11,11 @@ import org.testcontainers.containers.wait.strategy.Wait;
 public final class Containers {
 
   public static GenericContainer redis(Network network) {
-    return new GenericContainer("redis:5.0.6")
+    return new FixedHostPortGenericContainer("redis:5.0.6")
+        .withFixedExposedPort(36379, 6379)
         .withNetwork(network)
         .withNetworkAliases("redis")
-        .withEnv("REDIS_URL", "redis://redis:6379");
+        .withEnv("REDIS_URL", "redis://redis:36379");
   }
 
   public static GenericContainer postgres(Network network) {
