@@ -181,6 +181,44 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>settlement</id>
+      <build>
+        <plugins>
+          <!-- Actually runs Integration Tests (use -DskipITs to skip) -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>run-integration-tests</id>
+                <phase>integration-test</phase>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <skipTests>${skipTests}</skipTests>
+              <skipITs>${skipITs}</skipITs>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <encoding>UTF-8</encoding>
+              <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
+              <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <groups>
+                org.interledger.connector.it.markers.Settlement
+              </groups>
+              <excludedGroups>
+                org.interledger.connector.it.markers.IlpOverHttp,
+                org.interledger.connector.it.markers.Performance
+              </excludedGroups>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 
 </project>
