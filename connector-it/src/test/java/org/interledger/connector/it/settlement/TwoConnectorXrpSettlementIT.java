@@ -64,9 +64,9 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
   private static GenericContainer postgres = Containers.postgres(network);
 
-  private static GenericContainer settlementAlice = Containers.settlement(network, 9000, 8080);
+  private static GenericContainer settlementAlice = Containers.settlement(network, 9000, 8080, LOGGER);
 
-  private static GenericContainer settlementBob = Containers.settlement(network, 9001, 8081);
+  private static GenericContainer settlementBob = Containers.settlement(network, 9001, 8081, LOGGER);
 
   @BeforeClass
   public static void startTopology() {
