@@ -1,6 +1,7 @@
 package org.interledger.connector.it;
 
 import org.slf4j.Logger;
+import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
@@ -37,6 +38,7 @@ public final class Containers {
   }
 
   public static GenericContainer settlement(Network network, int port, int connectorPort, Logger logger) {
+    Testcontainers.exposeHostPorts(connectorPort);
     GenericContainer container = new GenericContainer<>("interledgerjs/settlement-xrp")
         .withExposedPorts(port)
         .withCreateContainerCmdModifier(e -> e.withPortSpecs())
@@ -44,7 +46,7 @@ public final class Containers {
         .withEnv("REDIS_URI", "redis://redis:6379")
         .withEnv("ENGINE_PORT", String.valueOf(port))
         .withEnv("DEBUG", "settlement*")
-        .withEnv("CONNECTOR_URL", "http://host.docker.internal:" + connectorPort);
+        .withEnv("CONNECTOR_URL", "http://host.testcontainers.internal:" + connectorPort);
     if (logger != null) {
       container = container.withLogConsumer(new org.testcontainers.containers.output.Slf4jLogConsumer (logger));
     }
