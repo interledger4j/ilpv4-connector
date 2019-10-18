@@ -107,8 +107,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
           .code(InterledgerErrorCode.F02_UNREACHABLE)
           .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
           .build(),
-        String.format(
-          "Refusing to route payments back to sender. sourceAccountSettings=%s destinationAccount=%s",
+        String.format("Refusing to route payments back to sender. sourceAccountSettings=%s destinationAccount=%s",
           sourceAccountSettings, nextHopRoute.nextHopAccountId()
         )
       );
@@ -170,7 +169,6 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     }
   }
 
-  // TODO: Unit test this!
   @VisibleForTesting
   protected Instant determineDestinationExpiresAt(
     final Instant sourceExpiry, final InterledgerAddress destinationAddress
