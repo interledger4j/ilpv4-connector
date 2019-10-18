@@ -24,16 +24,39 @@
             <dependency>
               <groupId>org.postgresql</groupId>
               <artifactId>postgresql</artifactId>
-              <version>42.2.8</version>
+              <version>${org.postgresql.postgresql.version}</version>
             </dependency>
           </dependencies>
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>analyze</id>
+            <goals>
+              <goal>analyze-only</goal>
+            </goals>
+            <configuration>
+              <!-- we're actually using these to validate hitting the database but the dependency plugin gets fussy-->
+              <ignoredDependencies>
+                <ignoredDependency>org.liquibase:liquibase-core:jar:3.8.0</ignoredDependency>
+                <ignoredDependency>com.h2database:h2:jar:1.4.199</ignoredDependency>
+                <ignoredDependency>org.postgresql:postgresql:jar:42.2.8</ignoredDependency>
+                <ignoredDependency>org.hibernate:hibernate-entitymanager:jar:5.3.12.Final</ignoredDependency>
+                <ignoredDependency>org.springframework.boot:spring-boot-starter-data-jpa:jar:2.1.9.RELEASE</ignoredDependency>
+              </ignoredDependencies>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
 
   <properties>
-    <org.postgresql.postgresql.version>42.2.5</org.postgresql.postgresql.version>
+    <org.postgresql.postgresql.version>42.2.8</org.postgresql.postgresql.version>
   </properties>
 
   <dependencies>
@@ -136,6 +159,23 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-tx</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.zonky.test</groupId>
+      <artifactId>embedded-database-spring-test</artifactId>
+      <version>1.4.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
+      <version>3.8.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
