@@ -106,14 +106,8 @@ jobs:
           key: v1-dependencies-{{ checksum "pom.xml" }}
 
       - run:
-          name: Create Database (Postgres)
-          command: |
-            cd ./connector-persistence
-            mvn -P liquibase-pg-sql -DskipTests liquibase:update
-
-      - run:
           name: Full Build (Postgres minus ITs)
-          command: mvn install -DskipITs -Dspring.datasource.url=jdbc:postgresql://localhost:5432/circle_test
+          command: mvn install -DskipITs
 
 workflows:
   version: 2
