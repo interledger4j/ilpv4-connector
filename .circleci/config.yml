@@ -54,30 +54,6 @@ jobs:
       # publish the coverage report to codecov.io
       - run: bash <(curl -s https://codecov.io/bash)
 
-  # This job builds the entire project and runs all unit tests (specifically the persistence tests) against Postgres by
-  # setting the `spring.datasource.url` value. All Integration Tests are skipped.
-  test_postgresql:
-    working_directory: ~/repo
-
-    environment:
-      # Customize the JVM maximum heap limit
-      MAVEN_OPTS: -Xmx3200m
-      JAVA_HOME: /usr/lib/jvm/jdk1.8.0/
-
-    steps:
-
-      # apply the JCE unlimited strength policy to allow the PSK 256 bit key length
-      # solution from http://qiita.com/yoskhdia/items/f4702a3abc4467de69b0
-      - run:
-          name: Getting JCE unlimited strength policy to allow the 256 bit keys
-          command: |
-            curl -L --cookie 'oraclelicense=accept-securebackup-cookie;'  http://download.oracle.com/otn-pub/java/jce/8/jce_policy-8.zip -o /tmp/jce_policy.zip
-            unzip -o /tmp/jce_policy.zip -d /tmp
-            sudo mv -f /tmp/UnlimitedJCEPolicyJDK8/US_export_policy.jar $JAVA_HOME/jre/lib/security/US_export_policy.jar
-            sudo mv -f /tmp/UnlimitedJCEPolicyJDK8/local_policy.jar $JAVA_HOME/jre/lib/security/local_policy.jar
-
-      - checkout # check out source code to working directory
-
       - run:
           name: Full Build (Postgres minus ITs)
           command: mvn install -DskipITs
@@ -91,7 +67,6 @@ workflows:
   commit:
     jobs:
       - build
-      - test_postgresql
 
   nightly:
     triggers:
@@ -103,4 +78,3 @@ workflows:
                 - master
     jobs:
       - build
-      - test_postgresql
