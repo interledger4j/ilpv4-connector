@@ -9,6 +9,8 @@ jobs:
   # This job builds the entire project and runs all unit tests (specifically the persistence tests) against H2 by
   # setting the `spring.datasource.url` value. All Integration Tests are skipped.
   build:
+    machine:
+      docker_layer_caching: true
     working_directory: ~/repo
 
     environment:
@@ -68,24 +70,14 @@ jobs:
   # This job builds the entire project and runs all unit tests (specifically the persistence tests) against Postgres by
   # setting the `spring.datasource.url` value. All Integration Tests are skipped.
   test_postgresql:
+    machine:
+      docker_layer_caching: true
     working_directory: ~/repo
 
     environment:
       # Customize the JVM maximum heap limit
       MAVEN_OPTS: -Xmx3200m
       JAVA_HOME: /usr/lib/jvm/jdk1.8.0/
-      spring.datasrouce.user: circleci
-      spring.datasource.url: jdbc:postgresql://localhost:5432/circle_test
-
-    docker:
-      # Service container image available at `host: localhost`
-      - image: circleci/postgres:alpine
-        environment:
-          POSTGRES_USER: circleci
-          POSTGRES_DB: circle_test
-      # Service container image available at `tcp://localhost:6379`
-      - image: circleci/redis:4.0.14-alpine
-        environment:
 
     steps:
 
