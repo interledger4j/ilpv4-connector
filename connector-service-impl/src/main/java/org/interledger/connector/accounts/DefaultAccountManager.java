@@ -1,6 +1,5 @@
 package org.interledger.connector.accounts;
 
-import okhttp3.HttpUrl;
 import org.interledger.codecs.ildcp.IldcpUtils;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.links.LinkManager;
@@ -17,6 +16,8 @@ import org.interledger.ildcp.IldcpFetcher;
 import org.interledger.ildcp.IldcpRequest;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
+
+import okhttp3.HttpUrl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;
@@ -67,6 +68,10 @@ public class DefaultAccountManager implements AccountManager {
   @Override
   public AccountSettings createAccount(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
+
+    if (accountSettingsRepository.findByAccountId(accountSettings.accountId()).isPresent()) {
+      throw new AccountAlreadyExistsProblem(accountSettings.accountId());
+    }
 
     final AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity(accountSettings);
     final SettlementEngineDetailsEntity settlementEngineDetailsEntity =

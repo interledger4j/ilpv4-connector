@@ -1,12 +1,17 @@
 package org.interledger.connector.server.spring.controllers.admin;
 
-import org.interledger.connector.accounts.AccountManager;
-import org.interledger.connector.server.spring.controllers.model.problems.AccountNotFoundProblem;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountManager;
+import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.persistence.entities.AccountBalanceSettingsEntity;
 import org.interledger.connector.persistence.entities.AccountRateLimitSettingsEntity;
 import org.interledger.connector.server.spring.controllers.PathConstants;
+
 import org.springframework.core.convert.ConversionService;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.PagedResources;
@@ -28,10 +33,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 /**
  * Allows an admin to operate on Accounts in this Connector.
@@ -66,7 +67,7 @@ public class AccountsController {
 
     final AccountSettings returnableAccountSettings = this.accountManager.createAccount(accountSettings);
     final Link selfLink =
-      linkTo(methodOn(AccountsController.class).getAccount(returnableAccountSettings.accountId())).withSelfRel();
+        linkTo(methodOn(AccountsController.class).getAccount(returnableAccountSettings.accountId())).withSelfRel();
     final Resource resource = new Resource(returnableAccountSettings, selfLink);
 
     final HttpHeaders headers = new HttpHeaders();
