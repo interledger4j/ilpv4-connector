@@ -17,15 +17,7 @@ jobs:
           # Customize the JVM maximum heap limit
           MAVEN_OPTS: -Xmx4096m
 
-#    docker:
-#      # Primary container image where all commands run
-#      - image: circleci/openjdk:8-jdk
-#        environment:
-#          # Customize the JVM maximum heap limit
-#          MAVEN_OPTS: -Xmx4096m
-
     steps:
-#      - setup_remote_docker
 
       # apply the JCE unlimited strength policy to allow the PSK 256 bit key length
       # solution from http://qiita.com/yoskhdia/items/f4702a3abc4467de69b0
