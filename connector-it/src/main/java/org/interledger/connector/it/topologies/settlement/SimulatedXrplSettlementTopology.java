@@ -63,7 +63,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
    * In this topology, each Connector starts-up with an Account for the other connector. Each account is configured to
    * enable settlement using a simulated settlement engine.
    */
-  public static Topology init() {
+  public static Topology init(final int aliceContainerPort, final int bobContainerPort) {
 
     // Some configuration must be done _after_ the topology starts...e.g., to grab the port that will be used.
     final Topology topology = new Topology(SimulatedXrplSettlementTopology.class.getSimpleName(),
@@ -86,11 +86,11 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(paulAccountSettingsAtAlice);
 
           // Add Bob's account on Alice...
-          final AccountSettings bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort);
+          final AccountSettings bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort, aliceContainerPort);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
 
           // Add Alice's account on Bob...
-          final AccountSettings aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort);
+          final AccountSettings aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort, bobContainerPort);
           bobServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
 
           // Add Peter's account on Bob (Peter is used for sending pings)
@@ -161,14 +161,14 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
    *
    * @param bobPort The port that alice's server connects to in order to talk to Bob's server.
    */
-  private static AccountSettings constructBobAccountSettingsOnAlice(final int bobPort) {
+  private static AccountSettings constructBobAccountSettingsOnAlice(final int bobPort, final int containerPort) {
     return AccountSettings.builder()
       .accountId(BOB_ACCOUNT)
       .description("IlpOverHttp account for Bob")
       .accountRelationship(AccountRelationship.PEER)
       .settlementEngineDetails(
         SettlementEngineDetails.builder()
-          .baseUrl(HttpUrl.parse("http://localhost:9000"))
+          .baseUrl(HttpUrl.parse("http://localhost:" + containerPort))
           .build()
       )
       .balanceSettings(
@@ -236,13 +236,13 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
    *
    * @param alicePort The port that bob's server connects to in order to talk to Alice's server.
    */
-  private static AccountSettings constructAliceAccountSettingsOnBob(final int alicePort) {
+  private static AccountSettings constructAliceAccountSettingsOnBob(final int alicePort, final int containerPort) {
     return AccountSettings.builder()
       .accountId(ALICE_ACCOUNT)
       .description("Blast account for Alice")
       .settlementEngineDetails(
         SettlementEngineDetails.builder()
-          .baseUrl(HttpUrl.parse("http://localhost:9001"))
+          .baseUrl(HttpUrl.parse("http://localhost:" + containerPort))
           .build()
       )
       .balanceSettings(
