@@ -8,6 +8,7 @@ import org.zalando.problem.ThrowableProblem;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nullable;
 
 /**
@@ -63,13 +64,14 @@ public class AbstractConnectorProblem extends AbstractThrowableProblem {
 
   /**
    * For jackson serialization. Overrides how the "status" property is written. Should be a raw number, and not
-   * a quoted number.
-   * @return
+   * a quoted number. Visibility is protected because it's only for jackson and other clients should not need to
+   * see this method.
+   * @return http status or null if not set
    */
   @JsonProperty("status")
   @JsonRawValue
-  public int getStatusCode() {
-    return super.getStatus().getStatusCode();
+  protected Integer getStatusCode() {
+    return Optional.ofNullable(super.getStatus()).map(StatusType::getStatusCode).orElse(null);
   }
 
 }
