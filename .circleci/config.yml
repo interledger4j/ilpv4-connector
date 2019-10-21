@@ -78,6 +78,7 @@ jobs:
   # by executing a special maven command that limits ITs to the test-group `IlpOverHttp`.
   integration_tests_ilp_over_http:
     working_directory: ~/repo
+    resource_class: large
 
     machine:
       image: ubuntu-1604:201903-01
@@ -125,6 +126,7 @@ jobs:
   # by executing a special maven command that limits ITs to the test-group `Settlement`.
   integration_tests_settlement:
     working_directory: ~/repo
+    resource_class: large
 
     machine:
       image: ubuntu-1604:201903-01
