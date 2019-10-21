@@ -91,6 +91,7 @@ public class SettlementQuantityTest {
   @Test
   public void serialize() throws Exception {
     ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.configure(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS, true);
     String serialized = objectMapper.writeValueAsString(SettlementQuantity.builder()
         .amount(BigInteger.TEN)
         .scale(3)

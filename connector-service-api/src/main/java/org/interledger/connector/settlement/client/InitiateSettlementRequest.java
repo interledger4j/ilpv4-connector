@@ -1,12 +1,10 @@
 package org.interledger.connector.settlement.client;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
-import org.interledger.connector.settlement.client.ImmutableInitiateSettlementRequest;
 
 import java.math.BigInteger;
 
@@ -36,7 +34,6 @@ public interface InitiateSettlementRequest {
    *
    * @return A {@link BigInteger}.
    */
-  @JsonFormat(shape = JsonFormat.Shape.STRING)
   @JsonProperty("amount")
   BigInteger requestedSettlementAmount();
 }
