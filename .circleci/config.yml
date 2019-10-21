@@ -26,6 +26,10 @@ jobs:
     steps:
       - setup_remote_docker
 
+      - run:
+          name: Open connection for Remote Docker
+          command: dockerd -H /var/run/docker.sock -H tcp://0.0.0.0:2375
+
       # apply the JCE unlimited strength policy to allow the PSK 256 bit key length
       # solution from http://qiita.com/yoskhdia/items/f4702a3abc4467de69b0
       - run:
