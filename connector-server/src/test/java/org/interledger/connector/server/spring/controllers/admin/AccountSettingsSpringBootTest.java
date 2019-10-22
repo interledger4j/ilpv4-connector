@@ -97,7 +97,7 @@ public class AccountSettingsSpringBootTest {
     // already exists
     String recreateResponse = assertPostAccount(settings, HttpStatus.CONFLICT);
     JsonContentAssert assertJson = assertThat(jsonTester.from(recreateResponse));
-    assertJson.extractingJsonPathValue("status").isEqualTo("409");
+    assertJson.extractingJsonPathValue("status").isEqualTo(409);
     assertJson.extractingJsonPathValue("title").isEqualTo("Account Already Exists (`testCreateExistingIdReturns409`)");
     assertJson.extractingJsonPathValue("accountId").isEqualTo(accountId.value());
     assertJson.extractingJsonPathValue("type")

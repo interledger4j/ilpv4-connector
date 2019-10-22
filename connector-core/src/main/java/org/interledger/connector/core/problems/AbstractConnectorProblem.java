@@ -1,12 +1,15 @@
 package org.interledger.connector.core.problems;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import org.zalando.problem.AbstractThrowableProblem;
 import org.zalando.problem.StatusType;
 import org.zalando.problem.ThrowableProblem;
 
-import javax.annotation.Nullable;
 import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * The root class for all Problems that this Connector might emit.
@@ -58,4 +61,17 @@ public class AbstractConnectorProblem extends AbstractThrowableProblem {
     @Nullable URI instance, @Nullable ThrowableProblem cause, @Nullable Map<String, Object> parameters) {
     super(type, title, status, detail, instance, cause, parameters);
   }
+
+  /**
+   * For jackson serialization. Overrides how the "status" property is written. Should be a raw number, and not
+   * a quoted number. Visibility is protected because it's only for jackson and other clients should not need to
+   * see this method.
+   * @return http status or null if not set
+   */
+  @JsonProperty("status")
+  @JsonRawValue
+  protected Integer getStatusCode() {
+    return Optional.ofNullable(super.getStatus()).map(StatusType::getStatusCode).orElse(null);
+  }
+
 }
