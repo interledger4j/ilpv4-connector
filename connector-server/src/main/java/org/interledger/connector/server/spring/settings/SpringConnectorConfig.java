@@ -35,6 +35,7 @@ import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.links.NextHopPacketMapper;
 import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.links.filters.OutgoingBalanceLinkFilter;
+import org.interledger.connector.links.filters.OutgoingMaxPacketAmountLinkFilter;
 import org.interledger.connector.links.loopback.LoopbackLink;
 import org.interledger.connector.links.loopback.LoopbackLinkFactory;
 import org.interledger.connector.links.ping.PingLoopbackLink;
@@ -413,6 +414,7 @@ public class SpringConnectorConfig {
 
     return Lists.newArrayList(
       //      // TODO: Throughput for Money...
+      new OutgoingMaxPacketAmountLinkFilter(operatorAddressSupplier),
       new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker, settlementService)
     );
   }
