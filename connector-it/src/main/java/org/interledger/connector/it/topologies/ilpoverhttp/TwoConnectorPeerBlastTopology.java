@@ -47,15 +47,21 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorPeerBlastTopology.class);
 
+  /**
+   * In this topology, each Connector starts-up with an Account for the other connector.
+   *
+   * @return the topology of accounts and connectors
+   */
   public static Topology init() {
     Denomination denomination = Denomination.builder().assetCode(XRP).assetScale((short) 9).build();
     return init(denomination, denomination, denomination, 1000000L); // 1M NanoDollars is $0.001
   }
 
   /**
-   * In this topology, each Connector starts-up with an Account for the other connector. During initialization,
+   * In this topology, each Connector starts-up with an Account for the other connector, specifying denominations and
+   * a max packet amount.
    *
-   * @return
+   * @return the topology of accounts and connectors
    */
   public static Topology init(final Denomination aliceDenomination, final Denomination bobDenomination,
                               final Denomination paulDenomination, final long maxPacketAmount) {
