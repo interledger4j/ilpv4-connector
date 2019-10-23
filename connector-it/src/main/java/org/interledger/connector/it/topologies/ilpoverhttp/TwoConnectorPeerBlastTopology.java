@@ -1,6 +1,5 @@
 package org.interledger.connector.it.topologies.ilpoverhttp;
 
-import com.google.common.collect.Lists;
 import org.interledger.connector.StaticRoute;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
@@ -20,8 +19,8 @@ import org.interledger.connector.settings.GlobalRoutingSettings;
 import org.interledger.connector.settings.ImmutableConnectorSettings;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.stream.Denomination;
-import org.interledger.stream.ImmutableDenomination;
 
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

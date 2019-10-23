@@ -107,7 +107,7 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractBlastIT {
     assertThat(aliceConnector.getBalanceTracker().balance(BOB_ACCOUNT).netBalance())
         .isBetween(BigInteger.valueOf(115000000), BigInteger.valueOf(125000000));
 
-    // test.bob.alice: Should be negative some range of the source  because it pays from Alice Connector, but pays one
+    // test.bob.alice: Should be negative some range of the source because it pays from Alice Connector, but pays one
     // to the ping account on Bob.
     assertThat(bobConnector.getBalanceTracker().balance(ALICE_ACCOUNT).netBalance())
         .isBetween(BigInteger.valueOf(125000000).negate(), BigInteger.valueOf(115000000).negate());
