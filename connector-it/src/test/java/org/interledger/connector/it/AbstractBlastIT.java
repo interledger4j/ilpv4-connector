@@ -36,6 +36,7 @@ import org.interledger.connector.ping.PingInitiator;
 import org.interledger.connector.server.ConnectorServer;
 import org.interledger.connector.server.spring.settings.javamoney.SpringServiceProvider;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerResponsePacket;
 
 import com.google.common.primitives.UnsignedLong;
 import org.junit.BeforeClass;
@@ -52,6 +53,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.money.spi.Bootstrap;
 
@@ -106,11 +108,33 @@ public abstract class AbstractBlastIT {
    * @param destinationAddress The {@link InterledgerAddress} to ping.
    * @param numUnits           A {@link BigInteger} representing the number of units to ping with.
    */
-  protected void testPing(
+  protected InterledgerResponsePacket testPing(
       final AccountId senderAccountId,
       final InterledgerAddress senderNodeAddress,
       final InterledgerAddress destinationAddress,
       final UnsignedLong numUnits
+  ) throws InterruptedException {
+    return testPing(senderAccountId, senderNodeAddress, destinationAddress, numUnits, false);
+  }
+
+  /**
+   * Helper method to testing ping functionality. In a real system this would not function this way because this
+   * methodology simply uses a Connection at a particular Connector (identified by {@code senderNodeAddress}) but this
+   * connection doesn't actually flow through the packet-switch, so no balances are affected. To do this properly, an
+   * actual sender should be used to ping a connector via the peer'd Connector.
+   *
+   * @param senderAccountId    The {@link AccountId} of the account to source the ping from.
+   * @param senderNodeAddress  The {@link InterledgerAddress} for the node to use for initiating the ping (using {@code
+   *                           senderAccountId}).
+   * @param destinationAddress The {@link InterledgerAddress} to ping.
+   * @param numUnits           A {@link BigInteger} representing the number of units to ping with.
+   */
+  protected InterledgerResponsePacket testPing(
+      final AccountId senderAccountId,
+      final InterledgerAddress senderNodeAddress,
+      final InterledgerAddress destinationAddress,
+      final UnsignedLong numUnits,
+      final boolean allowReject
   )
       throws InterruptedException {
 
@@ -123,6 +147,7 @@ public abstract class AbstractBlastIT {
 
     final BlastLink blastLink = getBlastLinkFromGraph(senderNodeAddress, senderAccountId);
     final PingInitiator pingInitiator = new DefaultPingInitiator(blastLink, () -> Instant.now().plusSeconds(30));
+    AtomicReference<InterledgerResponsePacket> response = new AtomicReference<>();
     pingInitiator.ping(destinationAddress, numUnits).handle(
         fulfillPacket -> {
           assertThat(fulfillPacket.getFulfillment(), is(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT));
@@ -131,15 +156,20 @@ public abstract class AbstractBlastIT {
               is(true)
           );
           latch.countDown();
+          response.set(fulfillPacket);
         }, interledgerRejectPacket -> {
-          fail(String.format("Ping request rejected, but should have fulfilled: %s", interledgerRejectPacket));
+          if (!allowReject) {
+            fail(String.format("Ping request rejected, but should have fulfilled: %s", interledgerRejectPacket));
+          }
           latch.countDown();
+          response.set(interledgerRejectPacket);
         }
     );
 
     latch.await(5, TimeUnit.SECONDS);
     final long end = System.currentTimeMillis();
     getLogger().info("Ping took {}ms", end - start);
+    return response.get();
   }
 
   /**
