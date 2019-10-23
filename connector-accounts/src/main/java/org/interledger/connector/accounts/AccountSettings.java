@@ -1,5 +1,9 @@
 package org.interledger.connector.accounts;
 
+import org.interledger.core.InterledgerAddress;
+import org.interledger.link.Link;
+import org.interledger.link.LinkType;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -7,9 +11,6 @@ import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
-import org.interledger.connector.link.Link;
-import org.interledger.connector.link.LinkType;
-import org.interledger.core.InterledgerAddress;
 
 import java.time.Instant;
 import java.util.Map;
@@ -30,7 +31,7 @@ public interface AccountSettings {
    * that this is not an {@link InterledgerAddress} because an account's address is assigned when a connection is made,
    * generally using information from the client and this identifier.
    *
-   * @see {@link #ilpAddressSegment()}.
+   * @see {@link #ilpAddressSegment}.
    */
   AccountId accountId();
 
@@ -139,7 +140,7 @@ public interface AccountSettings {
    * <p>Optionally present information about how this account can be settled.</p>
    *
    * @return An optionally present {@link SettlementEngineDetails}. If this value is absent, then this account does not
-   * support settlement.
+   *     support settlement.
    */
   Optional<SettlementEngineDetails> settlementEngineDetails();
 
@@ -216,10 +217,10 @@ public interface AccountSettings {
   @Value.Modifiable
   @JsonSerialize(as = ImmutableAccountSettings.class)
   @JsonDeserialize(as = ImmutableAccountSettings.class)
-  @JsonPropertyOrder({"accountId", "createdAt", "modifiedAt", "description", "accountRelationship", "assetCode",
-                       "assetScale", "maximumPacketAmount", "linkType", "ilpAddressSegment", "connectionInitiator",
-                       "internal", "sendRoutes", "receiveRoutes", "balanceSettings", "rateLimitSettings",
-                       "settlementEngineDetails", "customSettings"})
+  @JsonPropertyOrder( {"accountId", "createdAt", "modifiedAt", "description", "accountRelationship", "assetCode",
+      "assetScale", "maximumPacketAmount", "linkType", "ilpAddressSegment", "connectionInitiator",
+      "internal", "sendRoutes", "receiveRoutes", "balanceSettings", "rateLimitSettings",
+      "settlementEngineDetails", "customSettings"})
   abstract class AbstractAccountSettings implements AccountSettings {
 
     @Override

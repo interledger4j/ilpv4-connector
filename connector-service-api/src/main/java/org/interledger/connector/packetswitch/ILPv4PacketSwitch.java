@@ -1,13 +1,13 @@
 package org.interledger.connector.packetswitch;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.link.Link;
 import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.link.Link;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -113,9 +113,9 @@ public interface ILPv4PacketSwitch {
    *                              appropriate peer connected to this Connector.
    *
    * @return A {@link CompletableFuture} that resolves to an optionally-present {@link InterledgerResponsePacket}, which
-   * will be of concrete type {@link InterledgerFulfillPacket} or {@link InterledgerRejectPacket}, if present.
+   *     will be of concrete type {@link InterledgerFulfillPacket} or {@link InterledgerRejectPacket}, if present.
    */
   InterledgerResponsePacket switchPacket(
-    AccountId accountId, InterledgerPreparePacket incomingPreparePacket
+      AccountId accountId, InterledgerPreparePacket incomingPreparePacket
   );
 }

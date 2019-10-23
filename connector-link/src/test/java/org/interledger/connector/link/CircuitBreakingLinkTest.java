@@ -15,10 +15,14 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.link.Link;
+import org.interledger.link.LinkId;
+import org.interledger.link.LinkSettings;
 
 import com.google.common.primitives.UnsignedLong;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.SlidingWindowType;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.vavr.CheckedFunction1;
 import io.vavr.control.Try;
@@ -45,8 +49,7 @@ public class CircuitBreakingLinkTest {
   private static final String LINK_ID = "123";
   private static final CircuitBreakerConfig CONFIG = CircuitBreakerConfig.custom()
       .failureRateThreshold(2)
-      .ringBufferSizeInClosedState(2)
-      .ringBufferSizeInHalfOpenState(2)
+      .slidingWindow(2, 2, SlidingWindowType.COUNT_BASED)
       .ignoreExceptions(InterledgerProtocolException.class)
       .enableAutomaticTransitionFromOpenToHalfOpen()
       .build();
@@ -222,41 +225,6 @@ public class CircuitBreakingLinkTest {
   public void unregisterLinkHandler() {
     this.link.unregisterLinkHandler();
     verify(linkMock).unregisterLinkHandler();
-    verifyNoMoreInteractions(linkMock);
-  }
-
-  @Test
-  public void addLinkEventListener() {
-    this.link.addLinkEventListener(null);
-    verify(linkMock).addLinkEventListener(any());
-    verifyNoMoreInteractions(linkMock);
-  }
-
-  @Test
-  public void removeLinkEventListener() {
-    this.link.removeLinkEventListener(any());
-    verify(linkMock).removeLinkEventListener(any());
-    verifyNoMoreInteractions(linkMock);
-  }
-
-  @Test
-  public void connect() {
-    this.link.connect();
-    verify(linkMock).connect();
-    verifyNoMoreInteractions(linkMock);
-  }
-
-  @Test
-  public void disconnect() {
-    this.link.disconnect();
-    verify(linkMock).disconnect();
-    verifyNoMoreInteractions(linkMock);
-  }
-
-  @Test
-  public void isConnected() {
-    this.link.isConnected();
-    verify(linkMock).isConnected();
     verifyNoMoreInteractions(linkMock);
   }
 

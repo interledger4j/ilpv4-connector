@@ -1,15 +1,16 @@
 package org.interledger.connector.ping;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.interledger.link.PingLoopbackLink.PING_PROTOCOL_CONDITION;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.interledger.connector.link.Link;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.link.Link;
 
 import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
@@ -27,9 +28,9 @@ public class PingInitiatorTest {
   private static final InterledgerAddress DESTINATION_ADDRESS = InterledgerAddress.of("example.foo");
 
   @Mock
-  Link linkMock;
+  private Link linkMock;
 
-  PingInitiator pingInitiator;
+  private PingInitiator pingInitiator;
 
   @Before
   public void setUp() {
@@ -57,6 +58,6 @@ public class PingInitiatorTest {
     assertThat(actual.getDestination()).isEqualTo(DESTINATION_ADDRESS);
     assertThat(actual.getAmount()).isEqualTo(UnsignedLong.ZERO);
     assertThat(actual.getExpiresAt()).isEqualTo(expectedExpiresAt);
-    assertThat(actual.getExecutionCondition()).isEqualTo(PingInitiator.PING_PROTOCOL_CONDITION);
+    assertThat(actual.getExecutionCondition()).isEqualTo(PING_PROTOCOL_CONDITION);
   }
 }

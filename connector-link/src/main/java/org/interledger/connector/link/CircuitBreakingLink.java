@@ -1,29 +1,26 @@
 package org.interledger.connector.link;
 
+import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerProtocolException;
+import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.link.AbstractLink;
+import org.interledger.link.Link;
+import org.interledger.link.LinkHandler;
+import org.interledger.link.LinkSettings;
+import org.interledger.link.exceptions.LinkHandlerAlreadyRegisteredException;
+
 import com.google.common.annotations.VisibleForTesting;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
-import org.interledger.connector.link.events.LinkEventListener;
-import org.interledger.connector.link.exceptions.LinkHandlerAlreadyRegisteredException;
-import org.interledger.core.InterledgerAddress;
-import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerProtocolException;
-import org.interledger.core.InterledgerResponsePacket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
 /**
  * A {@link Link} that wraps an internal Link-delegate and provides Circuit breaking functionality.
  */
-public class CircuitBreakingLink implements Link<LinkSettings> {
-
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
+public class CircuitBreakingLink extends AbstractLink<LinkSettings> implements Link<LinkSettings> {
 
   private final Link<?> linkDelegate;
 
@@ -37,21 +34,21 @@ public class CircuitBreakingLink implements Link<LinkSettings> {
   @VisibleForTesting
   CircuitBreakingLink(final Link<?> linkDelegate) {
     this(linkDelegate, CircuitBreakerConfig.custom()
-      // the failure rate threshold in percentage above which the CircuitBreaker should trip open and start short-circuiting calls
-      //.failureRateThreshold(DEFAULT_MAX_FAILURE_THRESHOLD)
-      //the wait duration which specifies how long the CircuitBreaker should stay open, before it switches to half open
-      //.waitDurationInOpenState(Duration.ofSeconds(DEFAULT_WAIT_DURATION_IN_OPEN_STATE))
-      // the size of the ring buffer when the CircuitBreaker is half open
-      //.ringBufferSizeInHalfOpenState(DEFAULT_RING_BUFFER_SIZE_IN_HALF_OPEN_STATE)
-      // the size of the ring buffer when the CircuitBreaker is closed
-      //.ringBufferSizeInClosedState(DEFAULT_RING_BUFFER_SIZE_IN_CLOSED_STATE)
-      // a custom Predicate which evaluates if an exception should be recorded as a failure and thus increase the failure rate
-      // All InterledgerProtocolExceptions are considered to _not_ be a failure for purpose of circuit breaking.
-      // Instead, We want all Reject packets to be propagated back to the initiator so we don't accidentally get a
-      // DOS attack from an upstream actor sending something like T03 rejections to itself through us.
-      .ignoreExceptions(InterledgerProtocolException.class)
-      .enableAutomaticTransitionFromOpenToHalfOpen()
-      .build()
+        // the failure rate threshold in percentage above which the CircuitBreaker should trip open and start short-circuiting calls
+        //.failureRateThreshold(DEFAULT_MAX_FAILURE_THRESHOLD)
+        //the wait duration which specifies how long the CircuitBreaker should stay open, before it switches to half open
+        //.waitDurationInOpenState(Duration.ofSeconds(DEFAULT_WAIT_DURATION_IN_OPEN_STATE))
+        // the size of the ring buffer when the CircuitBreaker is half open
+        //.ringBufferSizeInHalfOpenState(DEFAULT_RING_BUFFER_SIZE_IN_HALF_OPEN_STATE)
+        // the size of the ring buffer when the CircuitBreaker is closed
+        //.ringBufferSizeInClosedState(DEFAULT_RING_BUFFER_SIZE_IN_CLOSED_STATE)
+        // a custom Predicate which evaluates if an exception should be recorded as a failure and thus increase the failure rate
+        // All InterledgerProtocolExceptions are considered to _not_ be a failure for purpose of circuit breaking.
+        // Instead, We want all Reject packets to be propagated back to the initiator so we don't accidentally get a
+        // DOS attack from an upstream actor sending something like T03 rejections to itself through us.
+        .ignoreExceptions(InterledgerProtocolException.class)
+        .enableAutomaticTransitionFromOpenToHalfOpen()
+        .build()
     );
   }
 
@@ -62,9 +59,11 @@ public class CircuitBreakingLink implements Link<LinkSettings> {
    * @param linkDelegate         The {@link Link} to wrap in a circuit breaker.
    */
   public CircuitBreakingLink(
-    final Link<?> linkDelegate,
-    final CircuitBreakerConfig circuitBreakerConfig
+      final Link<?> linkDelegate,
+      final CircuitBreakerConfig circuitBreakerConfig
   ) {
+    super(linkDelegate.getOperatorAddressSupplier(), linkDelegate.getLinkSettings());
+
     this.linkDelegate = Objects.requireNonNull(linkDelegate);
     this.circuitBreakerRegistry = CircuitBreakerRegistry.of(circuitBreakerConfig);
   }
@@ -81,21 +80,7 @@ public class CircuitBreakingLink implements Link<LinkSettings> {
     return CircuitBreaker.decorateFunction(circuitBreaker, linkDelegate::sendPacket).apply(preparePacket);
   }
 
-  @Override
-  public LinkId getLinkId() {
-    return this.linkDelegate.getLinkId();
-  }
-
-  @Override
-  public Supplier<Optional<InterledgerAddress>> getOperatorAddressSupplier() {
-    return this.linkDelegate.getOperatorAddressSupplier();
-  }
-
-  @Override
-  public LinkSettings getLinkSettings() {
-    return this.linkDelegate.getLinkSettings();
-  }
-
+  // Overridden just to be sure that some outside thing doesn't register a handler directly.
   @Override
   public void registerLinkHandler(LinkHandler dataHandler) throws LinkHandlerAlreadyRegisteredException {
     this.linkDelegate.registerLinkHandler(dataHandler);
@@ -111,41 +96,12 @@ public class CircuitBreakingLink implements Link<LinkSettings> {
     this.linkDelegate.unregisterLinkHandler();
   }
 
-  @Override
-  public void addLinkEventListener(LinkEventListener eventListener) {
-    this.linkDelegate.addLinkEventListener(eventListener);
-  }
-
-  @Override
-  public void removeLinkEventListener(LinkEventListener eventListener) {
-    this.linkDelegate.removeLinkEventListener(eventListener);
-  }
-
-  @Override
-  public CompletableFuture<Void> connect() {
-    return this.linkDelegate.connect();
-  }
-
-  @Override
-  public CompletableFuture<Void> disconnect() {
-    return this.linkDelegate.disconnect();
-  }
-
-  @Override
-  public boolean isConnected() {
-    return this.linkDelegate.isConnected();
-  }
-
-  public Link<?> getLinkDelegate() {
-    return this.linkDelegate;
-  }
-
   public <T> T getLinkDelegateTyped() {
     return (T) this.linkDelegate;
   }
 
   @VisibleForTesting
-  CircuitBreaker getCircuitBreaker(){
+  CircuitBreaker getCircuitBreaker() {
     return circuitBreakerRegistry.circuitBreaker(this.getLinkId().value());
   }
 }

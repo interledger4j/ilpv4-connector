@@ -1,14 +1,21 @@
-package org.interledger.connector.link.blast;
+package org.interledger.connector.link.http;
 
-import com.google.common.collect.Lists;
+import static org.interledger.connector.link.http.BlastHeaders.APPLICATION_ILP_HEADER_OCTET_STREAM;
+import static org.interledger.connector.link.http.BlastHeaders.APPLICATON_ILP_OCTET_STREAM;
+import static org.interledger.connector.link.http.BlastHeaders.ILP_OPERATOR_ADDRESS_VALUE;
+
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.link.http.OutgoingLinkSettings;
+
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
@@ -21,14 +28,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static org.interledger.connector.link.blast.BlastHeaders.APPLICATION_ILP_HEADER_OCTET_STREAM;
-import static org.interledger.connector.link.blast.BlastHeaders.APPLICATON_ILP_OCTET_STREAM;
-import static org.interledger.connector.link.blast.BlastHeaders.ILP_OPERATOR_ADDRESS_VALUE;
-import static org.springframework.http.HttpMethod.POST;
-
 /**
  * An abstract implementation of {@link BlastHttpSender} for communicating with a remote ILP node using ILP-over-HTTP.
  */
+@Deprecated
+// TODO: Delete this. IlpLink is the replacement.
 public abstract class AbstractBlastHttpSender implements BlastHttpSender {
 
   protected final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -49,9 +53,9 @@ public abstract class AbstractBlastHttpSender implements BlastHttpSender {
    * @param outgoingLinkSettings    A {@link OutgoingLinkSettings} for communicating with the remote endpoint.
    */
   public AbstractBlastHttpSender(
-    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
-    final RestTemplate restTemplate,
-    final OutgoingLinkSettings outgoingLinkSettings
+      final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
+      final RestTemplate restTemplate,
+      final OutgoingLinkSettings outgoingLinkSettings
   ) {
     this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
     this.restTemplate = Objects.requireNonNull(restTemplate);
@@ -64,30 +68,30 @@ public abstract class AbstractBlastHttpSender implements BlastHttpSender {
    * @param preparePacket
    *
    * @return An optionally-present {@link InterledgerResponsePacket}. If the request to the remote peer times-out, then
-   * the ILP reject packet will contain a {@link InterledgerRejectPacket#getTriggeredBy()} address that   that matches
-   * this node's operator address.
+   *     the ILP reject packet will contain a {@link InterledgerRejectPacket#getTriggeredBy()} address that   that
+   *     matches this node's operator address.
    */
   public InterledgerResponsePacket sendData(final InterledgerPreparePacket preparePacket) {
     final HttpHeaders headers = constructBlastRequestHeaders();
     final RequestEntity<InterledgerPreparePacket> requestEntity =
-      new RequestEntity<>(preparePacket, headers, POST, outgoingLinkSettings.url().uri());
+        new RequestEntity<>(preparePacket, headers, HttpMethod.POST, outgoingLinkSettings.url().uri());
     final ResponseEntity<InterledgerResponsePacket> response = restTemplate
-      .exchange(requestEntity, InterledgerResponsePacket.class);
+        .exchange(requestEntity, InterledgerResponsePacket.class);
 
     if (response.getStatusCode().is2xxSuccessful()) {
       return response.getBody();
     } else if (response.getStatusCode().is4xxClientError()) {
       // Reject!
       return InterledgerRejectPacket.builder()
-        .triggeredBy(operatorAddressSupplier())
-        .code(InterledgerErrorCode.F00_BAD_REQUEST)
-        .build();
+          .triggeredBy(operatorAddressSupplier())
+          .code(InterledgerErrorCode.F00_BAD_REQUEST)
+          .build();
     } else { //if (response.getStatusCode().is5xxServerError()) {
       // Reject per RFC "should" language...
       return InterledgerRejectPacket.builder()
-        .triggeredBy(operatorAddressSupplier())
-        .code(InterledgerErrorCode.T00_INTERNAL_ERROR)
-        .build();
+          .triggeredBy(operatorAddressSupplier())
+          .code(InterledgerErrorCode.T00_INTERNAL_ERROR)
+          .build();
     }
   }
 
@@ -103,81 +107,81 @@ public abstract class AbstractBlastHttpSender implements BlastHttpSender {
     try {
       final HttpHeaders headers = constructBlastRequestHeaders();
       final RequestEntity<InterledgerPreparePacket> requestEntity = new RequestEntity<>(
-        UNFULFILLABLE_PACKET, headers, POST, outgoingLinkSettings.url().uri()
+          UNFULFILLABLE_PACKET, headers, HttpMethod.POST, outgoingLinkSettings.url().uri()
       );
       final ResponseEntity<InterledgerResponsePacket> response = restTemplate.exchange(
-        requestEntity, InterledgerResponsePacket.class
+          requestEntity, InterledgerResponsePacket.class
       );
 
       if (response.getStatusCode().is2xxSuccessful()) {
         // If there's one Accept header we can work with, then treat this as a successful test connection...
         boolean hasSupportedHeader = Optional.ofNullable(response.getHeaders().getContentType())
-          .filter(contentType -> contentType.equals(APPLICATION_ILP_HEADER_OCTET_STREAM) || contentType.equals(
-            APPLICATON_ILP_OCTET_STREAM) ||
-            contentType.equals(MediaType.APPLICATION_OCTET_STREAM)
-          ).map(ct -> true).orElse(false);
+            .filter(contentType -> contentType.equals(APPLICATION_ILP_HEADER_OCTET_STREAM) || contentType.equals(
+                APPLICATON_ILP_OCTET_STREAM) ||
+                contentType.equals(MediaType.APPLICATION_OCTET_STREAM)
+            ).map(ct -> true).orElse(false);
 
         if (hasSupportedHeader) {
           final MediaType contentType = response.getHeaders().getContentType();
           if (logger.isDebugEnabled()) {
             logger.debug("Remote peer-link `{}` ({}) supports ILP-over-HTTP (BLAST): {}",
-              outgoingLinkSettings.tokenSubject(), outgoingLinkSettings.url(), response.getHeaders()
+                outgoingLinkSettings.tokenSubject(), outgoingLinkSettings.url(), response.getHeaders()
             );
           } else {
             logger.info("Remote peer `{}` ({}) supports ILP-over-HTTP (BLAST) using `{}`",
-              accountId, outgoingLinkSettings.url(), contentType
+                accountId, outgoingLinkSettings.url(), contentType
             );
           }
           this.blastHeader = Optional.ofNullable(response.getHeaders().getContentType()).orElse(
-            APPLICATON_ILP_OCTET_STREAM);
+              APPLICATON_ILP_OCTET_STREAM);
         } else {
           throw new HttpClientErrorException(
-            HttpStatus.BAD_REQUEST,
-            String.format("Remote peer-link `%s` (%s) DOES NOT support ILP-over-HTTP (BLAST)",
-              accountId, outgoingLinkSettings.url()
-            ));
+              HttpStatus.BAD_REQUEST,
+              String.format("Remote peer-link `%s` (%s) DOES NOT support ILP-over-HTTP (BLAST)",
+                  accountId, outgoingLinkSettings.url()
+              ));
         }
       } else if (response.getStatusCode().is4xxClientError()) {
         if (response.getStatusCode().equals(HttpStatus.NOT_ACCEPTABLE)) {
           throw new HttpClientErrorException(
-            response.getStatusCode(),
-            String.format("Remote peer-link `%s` (%s) DOES NOT support ILP-over-HTTP (BLAST)",
-              accountId, outgoingLinkSettings.url()
-            )
+              response.getStatusCode(),
+              String.format("Remote peer-link `%s` (%s) DOES NOT support ILP-over-HTTP (BLAST)",
+                  accountId, outgoingLinkSettings.url()
+              )
           );
         } else if (response.getStatusCode().equals(HttpStatus.UNSUPPORTED_MEDIA_TYPE)) {
           throw new HttpClientErrorException(
-            response.getStatusCode(),
-            String.format("Remote peer-link `%s` (%s) DOES NOT support ILP-over-HTTP (BLAST)",
-              accountId, outgoingLinkSettings.url()
-            )
+              response.getStatusCode(),
+              String.format("Remote peer-link `%s` (%s) DOES NOT support ILP-over-HTTP (BLAST)",
+                  accountId, outgoingLinkSettings.url()
+              )
           );
         } else {
           throw new HttpClientErrorException(
-            response.getStatusCode(),
-            String.format("Unable to connect to ILP-over-HTTP (BLAST) peer-link: `%s` (%s)",
-              accountId, outgoingLinkSettings.url()
-            )
+              response.getStatusCode(),
+              String.format("Unable to connect to ILP-over-HTTP (BLAST) peer-link: `%s` (%s)",
+                  accountId, outgoingLinkSettings.url()
+              )
           );
         }
       }
     } catch (HttpClientErrorException e) {
       if (e.getStatusCode().equals(HttpStatus.NOT_FOUND)) {
         logger.warn(String.format("Unable to connect to ILP-over-HTTP (BLAST) peer-link: `%s` (%s): %s",
-          accountId, outgoingLinkSettings.url(), e.getMessage())
+            accountId, outgoingLinkSettings.url(), e.getMessage())
         );
       } else {
         throw new HttpClientErrorException(
-          e.getStatusCode(),
-          String.format("Unable to connect to ILP-over-HTTP (BLAST) peer-link: `%s` (%s): %s",
-            accountId, outgoingLinkSettings.url(), e.getStatusText()
-          )
+            e.getStatusCode(),
+            String.format("Unable to connect to ILP-over-HTTP (BLAST) peer-link: `%s` (%s): %s",
+                accountId, outgoingLinkSettings.url(), e.getStatusText()
+            )
         );
       }
     } catch (ResourceAccessException e) { // Remote endpoint is not serving...
       logger.warn(
-        String.format("Unable to connect to ILP-over-HTTP (BLAST) peer-link: `%s` (%s): %s",
-          accountId, outgoingLinkSettings.url(), e.getMessage())
+          String.format("Unable to connect to ILP-over-HTTP (BLAST) peer-link: `%s` (%s): %s",
+              accountId, outgoingLinkSettings.url(), e.getMessage())
       );
     }
   }

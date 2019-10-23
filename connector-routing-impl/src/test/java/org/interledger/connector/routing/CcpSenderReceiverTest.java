@@ -1,23 +1,19 @@
 package org.interledger.connector.routing;
 
-import com.google.common.collect.Lists;
-import com.google.common.eventbus.EventBus;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+
 import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.ccp.CcpConstants;
 import org.interledger.connector.ccp.CcpRouteControlRequest;
 import org.interledger.connector.ccp.CcpRouteUpdateRequest;
 import org.interledger.connector.ccp.CcpSyncMode;
 import org.interledger.connector.ccp.codecs.CcpCodecContextFactory;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
 import org.interledger.connector.settings.ImmutableConnectorSettings;
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.link.AbstractLink;
-import org.interledger.connector.link.ImmutableLinkSettings;
-import org.interledger.connector.link.Link;
-import org.interledger.connector.link.LinkSettings;
-import org.interledger.connector.link.LinkType;
-import org.interledger.connector.link.events.LinkEventEmitter;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerFulfillPacket;
@@ -25,7 +21,16 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.link.AbstractStatefulLink;
+import org.interledger.link.AbstractStatefulLink.EventBusConnectionEventEmitter;
+import org.interledger.link.Link;
+import org.interledger.link.LinkId;
+import org.interledger.link.LinkSettings;
+import org.interledger.link.LinkType;
+import org.interledger.link.events.LinkConnectionEventEmitter;
+
+import com.google.common.collect.Lists;
+import com.google.common.eventbus.EventBus;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -44,9 +49,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-
 /**
  * Exercises Ccp Sender/Receiver functionality from a Java-only perspective. This test simulates two connectors, A and
  * B, operating both sides of a CcpRouting relationship in which Node B advertises routes to two other nodes, C and D,
@@ -60,10 +62,11 @@ import static org.hamcrest.core.Is.is;
  *
  * This harness exercises simulated routing updates from Node B to Node A under various conditions.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class CcpSenderReceiverTest {
 
   protected static final String ENCRYPTED_SHH
-    = "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=";
+      = "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=";
 
   private static final AccountId CONNECTOR_A_ACCOUNT = AccountId.of("a");
   private static final AccountId CONNECTOR_B_ACCOUNT = AccountId.of("b");
@@ -71,24 +74,23 @@ public class CcpSenderReceiverTest {
   private static final AccountId CONNECTOR_D_ACCOUNT = AccountId.of("d");
 
   private static final InterledgerAddress CONNECTOR_A_ADDRESS =
-    InterledgerAddress.of(InterledgerAddressPrefix.TEST1.getValue() + "." + CONNECTOR_A_ACCOUNT.value());
+      InterledgerAddress.of(InterledgerAddressPrefix.TEST1.getValue() + "." + CONNECTOR_A_ACCOUNT.value());
 
   private static final InterledgerAddress CONNECTOR_B_ADDRESS =
-    InterledgerAddress.of(InterledgerAddressPrefix.TEST1.getValue() + "." + CONNECTOR_B_ACCOUNT.value());
+      InterledgerAddress.of(InterledgerAddressPrefix.TEST1.getValue() + "." + CONNECTOR_B_ACCOUNT.value());
 
   private static final InterledgerAddress CONNECTOR_C_ADDRESS =
-    InterledgerAddress.of(InterledgerAddressPrefix.TEST1.getValue() + "." + CONNECTOR_C_ACCOUNT.value());
+      InterledgerAddress.of(InterledgerAddressPrefix.TEST1.getValue() + "." + CONNECTOR_C_ACCOUNT.value());
 
   private static final InterledgerAddress CONNECTOR_D_ADDRESS =
-    InterledgerAddress.of(InterledgerAddressPrefix.TEST1.getValue() + "." + CONNECTOR_D_ACCOUNT.value());
+      InterledgerAddress.of(InterledgerAddressPrefix.TEST1.getValue() + "." + CONNECTOR_D_ACCOUNT.value());
 
   private static final InterledgerAddressPrefix CONNECTOR_C_PREFIX =
-    InterledgerAddressPrefix.of(CONNECTOR_C_ADDRESS.getValue());
+      InterledgerAddressPrefix.of(CONNECTOR_C_ADDRESS.getValue());
 
   private static final InterledgerAddressPrefix CONNECTOR_D_PREFIX =
-    InterledgerAddressPrefix.of(CONNECTOR_D_ADDRESS.getValue());
+      InterledgerAddressPrefix.of(CONNECTOR_D_ADDRESS.getValue());
 
-  private EventBus eventBus;
   private CodecContext codecContext;
 
   /////////////
@@ -111,55 +113,55 @@ public class CcpSenderReceiverTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
 
-    this.eventBus = new EventBus();
+    EventBus eventBus = new EventBus();
 
     this.codecContext = CcpCodecContextFactory.register(InterledgerCodecContextFactory.oer());
     this.connectorA_ConnectorSettings = ImmutableConnectorSettings.builder()
-      .globalRoutingSettings(GlobalRoutingSettings.builder().routingSecret(ENCRYPTED_SHH).build())
-      .operatorAddress(CONNECTOR_A_ADDRESS)
-      .build();
+        .globalRoutingSettings(GlobalRoutingSettings.builder().routingSecret(ENCRYPTED_SHH).build())
+        .operatorAddress(CONNECTOR_A_ADDRESS)
+        .build();
     this.connectorB_ConnectorSettings = ImmutableConnectorSettings.builder()
-      .globalRoutingSettings(GlobalRoutingSettings.builder().routingSecret(ENCRYPTED_SHH).build())
-      .operatorAddress(CONNECTOR_B_ADDRESS)
-      .build();
+        .globalRoutingSettings(GlobalRoutingSettings.builder().routingSecret(ENCRYPTED_SHH).build())
+        .operatorAddress(CONNECTOR_B_ADDRESS)
+        .build();
 
-    final LinkSettings linkSettingsA = ImmutableLinkSettings.builder()
-      .linkType(LinkType.of(IpcRouteHandlingLink.class.getSimpleName()))
-      .build();
+    final LinkSettings linkSettingsA = LinkSettings.builder()
+        .linkType(LinkType.of(IpcRouteHandlingLink.class.getSimpleName()))
+        .build();
     final IpcRouteHandlingLink linkRunningOnA = new IpcRouteHandlingLink(
-      () -> Optional.of(CONNECTOR_A_ADDRESS), linkSettingsA, codecContext,
-      new AbstractLink.EventBusEventEmitter(eventBus)
+        () -> Optional.of(CONNECTOR_A_ADDRESS), linkSettingsA, codecContext,
+        new EventBusConnectionEventEmitter(eventBus)
     );
 
     {
       // Because this is a simulated ConnectorA, this table is the sole instance for this connector.
       final ForwardingRoutingTable<RouteUpdate> routeUpdateForwardingRoutingTable =
-        new InMemoryForwardingRoutingTable();
+          new InMemoryForwardingRoutingTable();
       final CcpSender ccpSender = new DefaultCcpSender(
-        () -> connectorA_ConnectorSettings, CONNECTOR_B_ACCOUNT, linkRunningOnA,
-        routeUpdateForwardingRoutingTable, connectorA_AccountSettingsRepository,
-        codecContext
+          () -> connectorA_ConnectorSettings, CONNECTOR_B_ACCOUNT, linkRunningOnA,
+          routeUpdateForwardingRoutingTable, connectorA_AccountSettingsRepository,
+          codecContext
       );
       final CcpReceiver ccpReceiver =
-        new DefaultCcpReceiver(() -> connectorA_ConnectorSettings, CONNECTOR_B_ACCOUNT, linkRunningOnA, codecContext);
+          new DefaultCcpReceiver(() -> connectorA_ConnectorSettings, CONNECTOR_B_ACCOUNT, linkRunningOnA, codecContext);
       this.connectorA = new SimulatedConnector(CONNECTOR_A_ADDRESS, linkRunningOnA, ccpSender, ccpReceiver);
     }
 
     final IpcRouteHandlingLink linkRunningOnB = new IpcRouteHandlingLink(
-      () -> Optional.of(CONNECTOR_B_ADDRESS), linkSettingsA, codecContext,
-      new AbstractLink.EventBusEventEmitter(eventBus)
+        () -> Optional.of(CONNECTOR_B_ADDRESS), linkSettingsA, codecContext,
+        new EventBusConnectionEventEmitter(eventBus)
     );
 
     {
       // Because this is a simulated ConnectorB, this table is the sole instance for this connector.
       final ForwardingRoutingTable<RouteUpdate> routeUpdateForwardingRoutingTable =
-        new InMemoryForwardingRoutingTable();
+          new InMemoryForwardingRoutingTable();
       final CcpSender ccpSender = new DefaultCcpSender(
-        () -> connectorB_ConnectorSettings, CONNECTOR_A_ACCOUNT, linkRunningOnB, routeUpdateForwardingRoutingTable,
-        connectorB_AccountSettingsRepository, codecContext
+          () -> connectorB_ConnectorSettings, CONNECTOR_A_ACCOUNT, linkRunningOnB, routeUpdateForwardingRoutingTable,
+          connectorB_AccountSettingsRepository, codecContext
       );
       final CcpReceiver ccpReceiver =
-        new DefaultCcpReceiver(() -> connectorB_ConnectorSettings, CONNECTOR_A_ACCOUNT, linkRunningOnB, codecContext);
+          new DefaultCcpReceiver(() -> connectorB_ConnectorSettings, CONNECTOR_A_ACCOUNT, linkRunningOnB, codecContext);
       this.connectorB = new SimulatedConnector(CONNECTOR_B_ADDRESS, linkRunningOnB, ccpSender, ccpReceiver);
     }
 
@@ -168,7 +170,9 @@ public class CcpSenderReceiverTest {
     linkRunningOnA.setConnectors(connectorA, connectorB);
     linkRunningOnB.setConnectors(connectorB, connectorA);
 
+    linkRunningOnA.setLinkId(LinkId.of("linkRunningOnA"));
     linkRunningOnA.connect();
+    linkRunningOnB.setLinkId(LinkId.of("linkRunningOnB"));
     linkRunningOnB.connect();
   }
 
@@ -233,34 +237,34 @@ public class CcpSenderReceiverTest {
 
     // The Route to C
     ((DefaultCcpSender) this.connectorB.ccpSender).getForwardingRoutingTable().addRoute(
-      ImmutableRouteUpdate.builder()
-        .epoch(0)
-        .route(
-          ImmutableRoute.builder()
+        ImmutableRouteUpdate.builder()
+            .epoch(0)
+            .route(
+                ImmutableRoute.builder()
+                    .routePrefix(CONNECTOR_C_PREFIX)
+                    .addPath(CONNECTOR_C_ADDRESS)
+                    .nextHopAccountId(CONNECTOR_C_ACCOUNT)
+                    .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS))
+                    .build()
+            )
             .routePrefix(CONNECTOR_C_PREFIX)
-            .addPath(CONNECTOR_C_ADDRESS)
-            .nextHopAccountId(CONNECTOR_C_ACCOUNT)
-            .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS))
             .build()
-        )
-        .routePrefix(CONNECTOR_C_PREFIX)
-        .build()
     );
 
     // The Route to D through C.
     ((DefaultCcpSender) this.connectorB.ccpSender).getForwardingRoutingTable().addRoute(
-      ImmutableRouteUpdate.builder()
-        .epoch(0)
-        .route(
-          ImmutableRoute.builder()
+        ImmutableRouteUpdate.builder()
+            .epoch(0)
+            .route(
+                ImmutableRoute.builder()
+                    .routePrefix(CONNECTOR_D_PREFIX)
+                    .addPath(CONNECTOR_C_ADDRESS, CONNECTOR_D_ADDRESS)
+                    .nextHopAccountId(CONNECTOR_C_ACCOUNT)
+                    .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS))
+                    .build()
+            )
             .routePrefix(CONNECTOR_D_PREFIX)
-            .addPath(CONNECTOR_C_ADDRESS, CONNECTOR_D_ADDRESS)
-            .nextHopAccountId(CONNECTOR_C_ACCOUNT)
-            .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS))
             .build()
-        )
-        .routePrefix(CONNECTOR_D_PREFIX)
-        .build()
     );
 
     // Connector B should have these routes....
@@ -284,41 +288,41 @@ public class CcpSenderReceiverTest {
 
   private void assertRoutingTableEpoch(final int expectedEpoch, final SimulatedConnector... connectors) {
     Stream.of(connectors).forEach(connector ->
-      assertThat(((DefaultCcpSender) connector.ccpSender).getForwardingRoutingTable().getCurrentEpoch(),
-        is(expectedEpoch))
+        assertThat(((DefaultCcpSender) connector.ccpSender).getForwardingRoutingTable().getCurrentEpoch(),
+            is(expectedEpoch))
     );
   }
 
   private void assertSyncMode(final CcpSyncMode syncMode, final SimulatedConnector... connectors) {
     Stream.of(connectors).forEach(connector ->
-      assertThat(((DefaultCcpSender) connector.ccpSender).getSyncMode(), is(syncMode))
+        assertThat(((DefaultCcpSender) connector.ccpSender).getSyncMode(), is(syncMode))
     );
   }
 
   private void assertRoutingTableIsNotExpired(final SimulatedConnector... connectors) {
     Stream.of(connectors).forEach(connector ->
-      assertThat(
-        ((DefaultCcpReceiver) connector.ccpReceiver).getRoutingTableExpiry().isAfter(Instant.now()),
-        is(true))
+        assertThat(
+            ((DefaultCcpReceiver) connector.ccpReceiver).getRoutingTableExpiry().isAfter(Instant.now()),
+            is(true))
     );
   }
 
   private void assertRoutingTableIsExpired(final SimulatedConnector... connectors) {
     Stream.of(connectors).forEach(connector ->
-      assertThat(
-        ((DefaultCcpReceiver) connector.ccpReceiver).getRoutingTableExpiry()
-          .isBefore(Instant.now().plusMillis(1)),
-        is(true))
+        assertThat(
+            ((DefaultCcpReceiver) connector.ccpReceiver).getRoutingTableExpiry()
+                .isBefore(Instant.now().plusMillis(1)),
+            is(true))
     );
   }
 
   private void assertHasRouteForPrefix(final InterledgerAddressPrefix prefix, final SimulatedConnector... connectors) {
     Stream.of(connectors).forEach(connector ->
-      assertThat(
-        ((DefaultCcpSender) connector.ccpSender)
-          .getForwardingRoutingTable().getRouteByPrefix(prefix).isPresent(),
-        is(true)
-      )
+        assertThat(
+            ((DefaultCcpSender) connector.ccpSender)
+                .getForwardingRoutingTable().getRouteByPrefix(prefix).isPresent(),
+            is(true)
+        )
     );
   }
 
@@ -338,9 +342,11 @@ public class CcpSenderReceiverTest {
     private final CcpReceiver ccpReceiver;
 
     private SimulatedConnector(
-      final InterledgerAddress address, final IpcRouteHandlingLink link,
-      final CcpSender ccpSender, final CcpReceiver ccpReceiver,
-      final IpcRouteHandlingLink... mockLinks
+        final InterledgerAddress address,
+        final IpcRouteHandlingLink link,
+        final CcpSender ccpSender,
+        final CcpReceiver ccpReceiver,
+        final IpcRouteHandlingLink... mockLinks
     ) {
       this.address = Objects.requireNonNull(address);
       this.link = Objects.requireNonNull(link);
@@ -353,38 +359,30 @@ public class CcpSenderReceiverTest {
     public IpcRouteHandlingLink getLink() {
       return link;
     }
-
-    // The address of this connector...
-    public InterledgerAddress getAddress() {
-      return address;
-    }
   }
 
   /**
-   * A lpi2 that directly connects ¬two Connectors via Inter-process Communication (IPC), for testing of route
-   * control messages. Each Connector in a bilateral relationship will have an instance of this Link.
+   * A lpi2 that directly connects ¬two Connectors via Inter-process Communication (IPC), for testing of route control
+   * messages. Each Connector in a bilateral relationship will have an instance of this Link.
    */
-  private static class IpcRouteHandlingLink extends AbstractLink<LinkSettings> implements Link<LinkSettings> {
+  private static class IpcRouteHandlingLink extends AbstractStatefulLink<LinkSettings> implements Link<LinkSettings> {
 
     private static final String PEER_ROUTE = "peer.route";
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private final LinkEventEmitter linkEventEmitter;
-
     private SimulatedConnector localConnector;
     private SimulatedConnector remoteConnector;
 
     private IpcRouteHandlingLink(
-      final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
-      final LinkSettings linkSettings,
-      final CodecContext codecContext,
-      final LinkEventEmitter linkEventEmitter
+        final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
+        final LinkSettings linkSettings,
+        final CodecContext codecContext,
+        final LinkConnectionEventEmitter linkConnectionEventEmitter
     ) {
-      super(operatorAddressSupplier, linkSettings, linkEventEmitter);
+      // TODO: this will become safe when https://github.com/sappenin/java-ilpv4-connector/issues/302 is merged.
+      super(() -> operatorAddressSupplier.get().get(), linkSettings, linkConnectionEventEmitter);
       Objects.requireNonNull(codecContext);
-
-      this.linkEventEmitter = Objects.requireNonNull(linkEventEmitter);
 
       /////////////////////////////
       // The stuff to do on an incoming prepare packet...
@@ -403,10 +401,10 @@ public class CcpSenderReceiverTest {
               }
 
               logger.debug(
-                "Received route control message. sender={}, tableId={} epoch={} features={}",
-                operatorAddressSupplier,
-                routeControlRequest.lastKnownRoutingTableId(), routeControlRequest.lastKnownEpoch(),
-                routeControlRequest.features()
+                  "Received route control message. sender={}, tableId={} epoch={} features={}",
+                  operatorAddressSupplier,
+                  routeControlRequest.lastKnownRoutingTableId(), routeControlRequest.lastKnownEpoch(),
+                  routeControlRequest.features()
               );
 
               // Normally, we would consult the AccountManager to getEntry the lpi2 for the sourceAccount. However, for
@@ -415,8 +413,8 @@ public class CcpSenderReceiverTest {
 
               // If no exception, then return a fulfill response...
               return InterledgerFulfillPacket.builder()
-                .fulfillment(CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT)
-                .build();
+                  .fulfillment(CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT)
+                  .build();
             }
 
             case CcpConstants.CCP_UPDATE_DESTINATION: {
@@ -429,20 +427,19 @@ public class CcpSenderReceiverTest {
               }
 
               logger.debug(
-                "Received routes. sender={} speaker={} currentEpoch={} fromEpoch={} toEpoch={} newRoutes={} " +
-                  "withdrawnRoutes={}",
-                operatorAddressSupplier,
-                routeUpdateRequest.speaker(), routeUpdateRequest.currentEpochIndex(),
-                routeUpdateRequest.fromEpochIndex(), routeUpdateRequest.toEpochIndex(),
-                routeUpdateRequest.newRoutes().size(),
-                routeUpdateRequest.withdrawnRoutePrefixes().size()
+                  "Received routes. sender={} speaker={} currentEpoch={} fromEpoch={} toEpoch={} newRoutes={} " +
+                      "withdrawnRoutes={}",
+                  operatorAddressSupplier,
+                  routeUpdateRequest.speaker(), routeUpdateRequest.currentEpochIndex(),
+                  routeUpdateRequest.fromEpochIndex(), routeUpdateRequest.toEpochIndex(),
+                  routeUpdateRequest.newRoutes().size(),
+                  routeUpdateRequest.withdrawnRoutePrefixes().size()
               );
-
 
               // Normally, we would consult the AccountManager to getEntry the lpi2 for the sourceAccount. However, for
               // this test, it's hard-coded, so just use the sender directly...
               final List<InterledgerAddressPrefix> changedPrefixes =
-                this.localConnector.ccpReceiver.handleRouteUpdateRequest(routeUpdateRequest);
+                  this.localConnector.ccpReceiver.handleRouteUpdateRequest(routeUpdateRequest);
 
               // TODO: In the real connector, we would update the local routing table via the following two calls in
               // route-broadcaster.js->updatePrefix(prefix:String) {
@@ -453,8 +450,8 @@ public class CcpSenderReceiverTest {
 
               // If no exception, then return a fulfill response...
               return InterledgerFulfillPacket.builder()
-                .fulfillment(CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT)
-                .build();
+                  .fulfillment(CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT)
+                  .build();
             }
 
             default:
@@ -488,7 +485,7 @@ public class CcpSenderReceiverTest {
      */
     @Override
     public InterledgerResponsePacket sendPacket(InterledgerPreparePacket preparePacket)
-      throws InterledgerProtocolException {
+        throws InterledgerProtocolException {
       // For simulation purposes, we simply reach through into the other connector directly and place the
       // preparePacket into it.
       return this.remoteConnector.getLink().getLinkHandler().get().handleIncomingPacket(preparePacket);

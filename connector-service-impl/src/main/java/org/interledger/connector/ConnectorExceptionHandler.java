@@ -1,13 +1,15 @@
 package org.interledger.connector;
 
-import org.interledger.connector.packetswitch.PacketRejector;
-import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
+import org.interledger.link.LinkId;
+import org.interledger.link.PacketRejector;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,14 +27,14 @@ public class ConnectorExceptionHandler {
   private final PacketRejector packetRejector;
 
   public ConnectorExceptionHandler(
-    final Supplier<ConnectorSettings> connectorSettingsSupplier, final PacketRejector packetRejector
+      final Supplier<ConnectorSettings> connectorSettingsSupplier, final PacketRejector packetRejector
   ) {
     this.connectorSettingsSupplier = connectorSettingsSupplier;
     this.packetRejector = packetRejector;
   }
 
   public InterledgerRejectPacket handleException(
-    final AccountId sourceAccountId, final InterledgerPreparePacket preparePacket, final Exception e
+      final AccountId sourceAccountId, final InterledgerPreparePacket preparePacket, final Exception e
   ) {
     Objects.requireNonNull(sourceAccountId);
     Objects.requireNonNull(preparePacket);
@@ -41,22 +43,28 @@ public class ConnectorExceptionHandler {
     if (InterledgerProtocolException.class.isAssignableFrom(e.getClass())) {
       final InterledgerRejectPacket rejectPacket = ((InterledgerProtocolException) e).getInterledgerRejectPacket();
       logger.warn(
-        "[OPERATOR: `{}`]: Rejecting PREPARE Packet from `{}`: PREPARE_PACKET: {} REJECT_PACKET: {} ERROR: {}",
-        connectorSettingsSupplier.get().operatorAddress().map(InterledgerAddress::getValue).orElse("unknown"),
-        sourceAccountId,
-        preparePacket,
-        rejectPacket,
-        e.getMessage()
+          "[OPERATOR: `{}`]: Rejecting PREPARE Packet from `{}`: PREPARE_PACKET: {} REJECT_PACKET: {} ERROR: {}",
+          connectorSettingsSupplier.get().operatorAddress().map(InterledgerAddress::getValue).orElse("unknown"),
+          sourceAccountId,
+          preparePacket,
+          rejectPacket,
+          e.getMessage()
       );
       return rejectPacket;
     } else if (ArithmeticException.class.isAssignableFrom(e.getClass())) {
       return this.packetRejector.reject(
-        sourceAccountId, preparePacket, InterledgerErrorCode.F03_INVALID_AMOUNT, e.getMessage()
+          LinkId.of(sourceAccountId.value()),
+          preparePacket,
+          InterledgerErrorCode.F03_INVALID_AMOUNT,
+          e.getMessage()
       );
     } else {
       logger.error(e.getMessage(), e);
       return this.packetRejector.reject(
-        sourceAccountId, preparePacket, InterledgerErrorCode.T00_INTERNAL_ERROR, "Internal Error"
+          LinkId.of(sourceAccountId.value()),
+          preparePacket,
+          InterledgerErrorCode.T00_INTERNAL_ERROR,
+          "Internal Error"
       );
     }
   }

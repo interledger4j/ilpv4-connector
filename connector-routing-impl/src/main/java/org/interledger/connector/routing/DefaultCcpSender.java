@@ -1,8 +1,5 @@
 package org.interledger.connector.routing;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.ccp.CcpConstants;
@@ -15,18 +12,20 @@ import org.interledger.connector.ccp.ImmutableCcpNewRoute;
 import org.interledger.connector.ccp.ImmutableCcpRoutePathPart;
 import org.interledger.connector.ccp.ImmutableCcpRouteUpdateRequest;
 import org.interledger.connector.ccp.ImmutableCcpWithdrawnRoute;
-import org.interledger.connector.link.Link;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
+import org.interledger.link.Link;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 
-import javax.annotation.PreDestroy;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Instant;
@@ -41,6 +40,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
+import javax.annotation.PreDestroy;
 
 /**
  * A default implementation of {@link CcpSender}.
@@ -71,12 +72,12 @@ public class DefaultCcpSender implements CcpSender {
    * Required-args Constructor.
    */
   public DefaultCcpSender(
-    final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final AccountId peerAccountId,
-    final Link link,
-    final ForwardingRoutingTable<RouteUpdate> forwardingRoutingTable,
-    final AccountSettingsRepository accountSettingsRepository,
-    final CodecContext ccpCodecContext
+      final Supplier<ConnectorSettings> connectorSettingsSupplier,
+      final AccountId peerAccountId,
+      final Link link,
+      final ForwardingRoutingTable<RouteUpdate> forwardingRoutingTable,
+      final AccountSettingsRepository accountSettingsRepository,
+      final CodecContext ccpCodecContext
   ) {
     this.peerAccountId = Objects.requireNonNull(peerAccountId);
     this.forwardingRoutingTable = Objects.requireNonNull(forwardingRoutingTable);
@@ -101,8 +102,8 @@ public class DefaultCcpSender implements CcpSender {
     logger.debug("Peer {} sent CcpRouteControlRequest: {}", peerAccountId, routeControlRequest);
     if (syncMode.get() != routeControlRequest.mode()) {
       logger.debug(
-        "Peer {} requested changing routing mode. oldMode={} newMode={}",
-        peerAccountId, this.syncMode.get(), routeControlRequest.mode()
+          "Peer {} requested changing routing mode. oldMode={} newMode={}",
+          peerAccountId, this.syncMode.get(), routeControlRequest.mode()
       );
     }
 
@@ -110,16 +111,16 @@ public class DefaultCcpSender implements CcpSender {
 
     if (lastKnownRoutingTableId.get().equals(this.forwardingRoutingTable.getRoutingTableId()) == false) {
       logger.debug(
-        "Peer {} has old routing table id, resetting lastKnownEpoch to 0. theirTableId={} correctTableId={}",
-        peerAccountId,
-        lastKnownRoutingTableId,
-        this.forwardingRoutingTable.getRoutingTableId());
+          "Peer {} has old routing table id, resetting lastKnownEpoch to 0. theirTableId={} correctTableId={}",
+          peerAccountId,
+          lastKnownRoutingTableId,
+          this.forwardingRoutingTable.getRoutingTableId());
       this.lastKnownEpoch.set(0);
     } else {
       logger.debug("Peer epoch set. peerAccountId={} lastKnownEpoch={} currentEpoch={}",
-        peerAccountId,
-        lastKnownEpoch,
-        this.forwardingRoutingTable.getCurrentEpoch()
+          peerAccountId,
+          lastKnownEpoch,
+          this.forwardingRoutingTable.getCurrentEpoch()
       );
       this.lastKnownEpoch.set(routeControlRequest.lastKnownEpoch());
     }
@@ -145,8 +146,8 @@ public class DefaultCcpSender implements CcpSender {
     synchronized (this) {
       if (scheduledTask == null) {
         scheduledTask = this.scheduler.scheduleWithFixedDelay(
-          this::sendRouteUpdateRequest,
-          this.connectorSettingsSupplier.get().globalRoutingSettings().routeBroadcastInterval()
+            this::sendRouteUpdateRequest,
+            this.connectorSettingsSupplier.get().globalRoutingSettings().routeBroadcastInterval()
         );
         logger.info("CcpSender now broadcasting to Peer: {}", this.peerAccountId);
       } else {
@@ -198,91 +199,91 @@ public class DefaultCcpSender implements CcpSender {
 
       // Despite asking for N updates, there may not be that many to send, so compute the `toEpoch` properly.
       final int toEpoch =
-        nextRequestedEpoch + (int) StreamSupport.stream(allUpdatesToSend.spliterator(), false).count();
+          nextRequestedEpoch + (int) StreamSupport.stream(allUpdatesToSend.spliterator(), false).count();
 
       // Filter the List....
       final List<RouteUpdate> filteredUpdatesToSend = StreamSupport.stream(allUpdatesToSend.spliterator(), false)
-        .map(routeUpdate -> {
+          .map(routeUpdate -> {
 
-          // If there are no routes in the update, then skip it...
-          if (!routeUpdate.route().isPresent()) {
-            return routeUpdate;
-          } else {
-            final Route actualRoute = routeUpdate.route().get();
-            // Don't send peer their own routes (i.e., withdraw this route)
-            if (actualRoute.nextHopAccountId().equals(peerAccountId)) {
-              return null;
-            }
-
-            // Don't advertise Peer or Supplier (Parent) routes to Suppliers (Parents).
-            final boolean nextHopRelationIsPeerOrParent = this
-              .accountSettingsRepository.findByAccountIdWithConversion(actualRoute.nextHopAccountId())
-              .map(AccountSettings::isPeerOrParentAccount)
-              .orElseGet(() -> {
-                logger.error("NextHop Route {} was not found in the PeerManager!", actualRoute.nextHopAccountId());
-                return false;
-              });
-
-            final boolean thisLinkIsParent = this
-              .accountSettingsRepository.findByAccountIdWithConversion(peerAccountId)
-              .map(AccountSettings::isParentAccount)
-              .orElse(false);
-
-            if (thisLinkIsParent || nextHopRelationIsPeerOrParent) {
-              // If the current link is our parent; OR, if the next-hop is a peer or Parent, then withdraw the
-              // route. We only advertise routes to peers/children where the next-hop is a child.
-              return null;
-            } else {
+            // If there are no routes in the update, then skip it...
+            if (!routeUpdate.route().isPresent()) {
               return routeUpdate;
+            } else {
+              final Route actualRoute = routeUpdate.route().get();
+              // Don't send peer their own routes (i.e., withdraw this route)
+              if (actualRoute.nextHopAccountId().equals(peerAccountId)) {
+                return null;
+              }
+
+              // Don't advertise Peer or Supplier (Parent) routes to Suppliers (Parents).
+              final boolean nextHopRelationIsPeerOrParent = this
+                  .accountSettingsRepository.findByAccountIdWithConversion(actualRoute.nextHopAccountId())
+                  .map(AccountSettings::isPeerOrParentAccount)
+                  .orElseGet(() -> {
+                    logger.error("NextHop Route {} was not found in the PeerManager!", actualRoute.nextHopAccountId());
+                    return false;
+                  });
+
+              final boolean thisLinkIsParent = this
+                  .accountSettingsRepository.findByAccountIdWithConversion(peerAccountId)
+                  .map(AccountSettings::isParentAccount)
+                  .orElse(false);
+
+              if (thisLinkIsParent || nextHopRelationIsPeerOrParent) {
+                // If the current link is our parent; OR, if the next-hop is a peer or Parent, then withdraw the
+                // route. We only advertise routes to peers/children where the next-hop is a child.
+                return null;
+              } else {
+                return routeUpdate;
+              }
             }
-          }
-        })
-        .collect(Collectors.toList());
+          })
+          .collect(Collectors.toList());
 
       final ImmutableList.Builder<CcpNewRoute> newRoutesBuilder = ImmutableList.builder();
       final ImmutableList.Builder<CcpWithdrawnRoute> withdrawnRoutesBuilder = ImmutableList.builder();
 
       // Populate newRoutesBuilder....
       filteredUpdatesToSend.stream()
-        .filter(routeUpdate -> routeUpdate.route().isPresent())
-        .map(RouteUpdate::route)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .map(routingTableEntry ->
-          ImmutableCcpNewRoute.builder()
-            .prefix(routingTableEntry.routePrefix())
-            .auth(routingTableEntry.auth())
-            .path(
-              routingTableEntry.path().stream()
-                .map(address -> ImmutableCcpRoutePathPart.builder()
-                  .routePathPart(address)
+          .filter(routeUpdate -> routeUpdate.route().isPresent())
+          .map(RouteUpdate::route)
+          .filter(Optional::isPresent)
+          .map(Optional::get)
+          .map(routingTableEntry ->
+              ImmutableCcpNewRoute.builder()
+                  .prefix(routingTableEntry.routePrefix())
+                  .auth(routingTableEntry.auth())
+                  .path(
+                      routingTableEntry.path().stream()
+                          .map(address -> ImmutableCcpRoutePathPart.builder()
+                              .routePathPart(address)
+                              .build()
+                          )
+                          .collect(Collectors.toList())
+                  )
                   .build()
-                )
-                .collect(Collectors.toList())
-            )
-            .build()
-        ).forEach(newRoutesBuilder::add);
+          ).forEach(newRoutesBuilder::add);
 
       // Populate withdrawnRoutesBuilder....
       filteredUpdatesToSend.stream()
-        .filter(routeUpdate -> !routeUpdate.route().isPresent())
-        .map(routingTableEntry ->
-          ImmutableCcpWithdrawnRoute.builder()
-            .prefix(routingTableEntry.routePrefix())
-            .build()
-        ).forEach(withdrawnRoutesBuilder::add);
+          .filter(routeUpdate -> !routeUpdate.route().isPresent())
+          .map(routingTableEntry ->
+              ImmutableCcpWithdrawnRoute.builder()
+                  .prefix(routingTableEntry.routePrefix())
+                  .build()
+          ).forEach(withdrawnRoutesBuilder::add);
 
       // Construct RouteUpdateRequest
       final CcpRouteUpdateRequest ccpRouteUpdateRequest = ImmutableCcpRouteUpdateRequest.builder()
-        .speaker(this.connectorSettingsSupplier.get().operatorAddressSafe())
-        .routingTableId(this.forwardingRoutingTable.getRoutingTableId())
-        .holdDownTime(this.connectorSettingsSupplier.get().globalRoutingSettings().routeExpiry().toMillis())
-        .currentEpochIndex(this.forwardingRoutingTable.getCurrentEpoch())
-        .fromEpochIndex(this.lastKnownEpoch.get())
-        .toEpochIndex(toEpoch)
-        .newRoutes(newRoutesBuilder.build())
-        .withdrawnRoutePrefixes(withdrawnRoutesBuilder.build())
-        .build();
+          .speaker(this.connectorSettingsSupplier.get().operatorAddressSafe())
+          .routingTableId(this.forwardingRoutingTable.getRoutingTableId())
+          .holdDownTime(this.connectorSettingsSupplier.get().globalRoutingSettings().routeExpiry().toMillis())
+          .currentEpochIndex(this.forwardingRoutingTable.getCurrentEpoch())
+          .fromEpochIndex(this.lastKnownEpoch.get())
+          .toEpochIndex(toEpoch)
+          .newRoutes(newRoutesBuilder.build())
+          .withdrawnRoutePrefixes(withdrawnRoutesBuilder.build())
+          .build();
 
       // Try to send the ccpRouteUpdateRequest....
 
@@ -291,20 +292,20 @@ public class DefaultCcpSender implements CcpSender {
       this.lastKnownEpoch.compareAndSet(previousNextRequestedEpoch, toEpoch);
 
       final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
-        .amount(UnsignedLong.ZERO)
-        .destination(CcpConstants.CCP_UPDATE_DESTINATION_ADDRESS)
-        .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
-        .expiresAt(Instant.now().plus(
-          // TODO: Verify this is correct. Should the packet just have a normal expiration?
-          this.connectorSettingsSupplier.get().globalRoutingSettings().routeExpiry()
-        ))
-        .data(serializeCcpPacket(ccpRouteUpdateRequest))
-        .build();
+          .amount(UnsignedLong.ZERO)
+          .destination(CcpConstants.CCP_UPDATE_DESTINATION_ADDRESS)
+          .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
+          .expiresAt(Instant.now().plus(
+              // TODO: Verify this is correct. Should the packet just have a normal expiration?
+              this.connectorSettingsSupplier.get().globalRoutingSettings().routeExpiry()
+          ))
+          .data(serializeCcpPacket(ccpRouteUpdateRequest))
+          .build();
       logger.info(
-        "CcpSender sending RouteUpdate Request: targetPeerAccountId={}. ccpRouteUpdateRequest={} preparePacket={}",
-        this.peerAccountId, ccpRouteUpdateRequest, preparePacket
+          "CcpSender sending RouteUpdate Request: targetPeerAccountId={}. ccpRouteUpdateRequest={} preparePacket={}",
+          this.peerAccountId, ccpRouteUpdateRequest, preparePacket
       );
-      
+
       this.link.sendPacket(preparePacket).handle(fulfillPacket -> {
         logger.debug("Route update succeeded. targetPeerAccountId={} fulfillPacket={}", peerAccountId, fulfillPacket);
       }, rejectPacket -> {

@@ -1,7 +1,6 @@
 package org.interledger.connector.accounts;
 
 import org.interledger.codecs.ildcp.IldcpUtils;
-import org.interledger.connector.link.Link;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.entities.SettlementEngineDetailsEntity;
@@ -16,6 +15,7 @@ import org.interledger.ildcp.IldcpFetcher;
 import org.interledger.ildcp.IldcpRequest;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
+import org.interledger.link.Link;
 
 import okhttp3.HttpUrl;
 import org.slf4j.Logger;
@@ -42,11 +42,11 @@ public class DefaultAccountManager implements AccountManager {
    * Required-args Constructor.
    */
   public DefaultAccountManager(
-    final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final ConversionService conversionService,
-    final AccountSettingsRepository accountSettingsRepository,
-    final LinkManager linkManager,
-    final SettlementEngineClient settlementEngineClient
+      final Supplier<ConnectorSettings> connectorSettingsSupplier,
+      final ConversionService conversionService,
+      final AccountSettingsRepository accountSettingsRepository,
+      final LinkManager linkManager,
+      final SettlementEngineClient settlementEngineClient
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
@@ -75,7 +75,7 @@ public class DefaultAccountManager implements AccountManager {
 
     final AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity(accountSettings);
     final SettlementEngineDetailsEntity settlementEngineDetailsEntity =
-      accountSettingsEntity.getSettlementEngineDetailsEntity();
+        accountSettingsEntity.getSettlementEngineDetailsEntity();
 
     if (settlementEngineDetailsEntity != null
     ) {
@@ -88,14 +88,14 @@ public class DefaultAccountManager implements AccountManager {
         baseUrl = HttpUrl.parse(settlementEngineDetailsEntity.getBaseUrl());
       } catch (Exception e) {
         throw new InvalidAccountSettingsProblem(
-          "Settlement Engine BaseURL was invalid: " + settlementEngineDetailsEntity.getBaseUrl(),
-          accountSettings.accountId());
+            "Settlement Engine BaseURL was invalid: " + settlementEngineDetailsEntity.getBaseUrl(),
+            accountSettings.accountId());
       }
 
       final CreateSettlementAccountResponse response = settlementEngineClient.createSettlementAccount(
-        accountSettings.accountId(),
-        baseUrl,
-        CreateSettlementAccountRequest.builder().build()
+          accountSettings.accountId(),
+          baseUrl,
+          CreateSettlementAccountRequest.builder().build()
       );
       settlementEngineDetailsEntity.setSettlementEngineAccountId(response.settlementEngineAccountId().value());
     }
@@ -104,7 +104,7 @@ public class DefaultAccountManager implements AccountManager {
     // Persist the AccountSettingsEntity
     ////////////////
     final AccountSettings returnableAccountSettings = this.conversionService.convert(
-      this.accountSettingsRepository.save(accountSettingsEntity), AccountSettings.class
+        this.accountSettingsRepository.save(accountSettingsEntity), AccountSettings.class
     );
 
     // It is _not_ a requirement that a Connector startup with any accounts configured. Thus, the first account added
@@ -139,10 +139,10 @@ public class DefaultAccountManager implements AccountManager {
     // It's fine to preemptively load from the data-store here because these settings will naturally be updated later
     // in this method.
     final AccountSettingsEntity parentAccountSettingsEntity =
-      getAccountSettingsRepository().safeFindByAccountId(accountId);
+        getAccountSettingsRepository().safeFindByAccountId(accountId);
 
     final Link<?> link = this.getLinkManager().getOrCreateLink(
-      conversionService.convert(parentAccountSettingsEntity, AccountSettings.class)
+        conversionService.convert(parentAccountSettingsEntity, AccountSettings.class)
     );
 
     // Construct a lambda that implements the Fetch logic for IL-DCP.
@@ -151,20 +151,20 @@ public class DefaultAccountManager implements AccountManager {
 
       final IldcpRequestPacket ildcpRequestPacket = IldcpRequestPacket.builder().build();
       final InterledgerPreparePacket preparePacket =
-        InterledgerPreparePacket.builder().from(ildcpRequestPacket).build();
+          InterledgerPreparePacket.builder().from(ildcpRequestPacket).build();
 
       // Fetch the IL-DCP response using the Link.
       return link.sendPacket(preparePacket)
-        .map(
-          // If FulfillPacket...
-          IldcpUtils::toIldcpResponse,
-          // If Reject Packet...
-          (interledgerRejectPacket) -> {
-            throw new RuntimeException(
-              String.format("IL-DCP negotiation failed! Reject: %s", interledgerRejectPacket)
-            );
-          }
-        );
+          .map(
+              // If FulfillPacket...
+              IldcpUtils::toIldcpResponse,
+              // If Reject Packet...
+              (interledgerRejectPacket) -> {
+                throw new RuntimeException(
+                    String.format("IL-DCP negotiation failed! Reject: %s", interledgerRejectPacket)
+                );
+              }
+          );
     };
 
     final IldcpResponse ildcpResponse = ildcpFetcher.fetch(IldcpRequest.builder().build());
@@ -175,7 +175,7 @@ public class DefaultAccountManager implements AccountManager {
 
     // TODO: Consider a better way to update the operator address for a connector. Maybe an event?
     ((ModifiableConnectorSettings) this.connectorSettingsSupplier.get())
-      .setOperatorAddress(ildcpResponse.getClientAddress());
+        .setOperatorAddress(ildcpResponse.getClientAddress());
 
     //////////////////////////////////
     // Update the Account Settings with data returned by IL-DCP!
@@ -185,10 +185,10 @@ public class DefaultAccountManager implements AccountManager {
 
     // Modify Account Settings by removing and re-creating the parent account.
     final AccountSettingsEntity updatedAccountSettings =
-      getAccountSettingsRepository().save(parentAccountSettingsEntity);
+        getAccountSettingsRepository().save(parentAccountSettingsEntity);
 
     logger.info(
-      "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().operatorAddress().get()
+        "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().operatorAddress().get()
     );
 
     return conversionService.convert(updatedAccountSettings, AccountSettings.class);

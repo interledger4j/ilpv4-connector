@@ -2,9 +2,9 @@ package org.interledger.connector.links;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.link.Link;
-import org.interledger.connector.link.LinkSettings;
-import org.interledger.connector.link.exceptions.LinkNotConnectedException;
+import org.interledger.link.Link;
+import org.interledger.link.LinkSettings;
+import org.interledger.link.exceptions.LinkNotConnectedException;
 
 import java.util.Set;
 

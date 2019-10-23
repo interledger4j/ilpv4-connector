@@ -1,26 +1,28 @@
 package org.interledger.connector;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.eventbus.EventBus;
 import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.balances.BalanceTracker;
-import org.interledger.connector.link.Link;
-import org.interledger.connector.link.LinkFactoryProvider;
-import org.interledger.connector.link.events.LinkConnectedEvent;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.link.LinkFactoryProvider;
+import org.interledger.link.StatefulLink;
+import org.interledger.link.events.LinkConnectedEvent;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 /**
  * <p>A default implementation of an {@link ILPv4Connector}.</p>
@@ -51,6 +53,7 @@ import java.util.function.Supplier;
  * more. If the link disconnects, any listening services will react properly to stop tracking the Account/Link
  * combination.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class DefaultILPv4Connector implements ILPv4Connector {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -69,23 +72,23 @@ public class DefaultILPv4Connector implements ILPv4Connector {
 
   @VisibleForTesting
   DefaultILPv4Connector(
-    final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final AccountManager accountManager,
-    final AccountSettingsRepository accountSettingsRepository,
-    final LinkManager linkManager,
-    final ExternalRoutingService externalRoutingService,
-    final ILPv4PacketSwitch ilpPacketSwitch,
-    final BalanceTracker balanceTracker
+      final Supplier<ConnectorSettings> connectorSettingsSupplier,
+      final AccountManager accountManager,
+      final AccountSettingsRepository accountSettingsRepository,
+      final LinkManager linkManager,
+      final ExternalRoutingService externalRoutingService,
+      final ILPv4PacketSwitch ilpPacketSwitch,
+      final BalanceTracker balanceTracker
   ) {
     this(
-      connectorSettingsSupplier,
-      accountManager,
-      accountSettingsRepository,
-      linkManager,
-      externalRoutingService,
-      ilpPacketSwitch,
-      balanceTracker,
-      new EventBus()
+        connectorSettingsSupplier,
+        accountManager,
+        accountSettingsRepository,
+        linkManager,
+        externalRoutingService,
+        ilpPacketSwitch,
+        balanceTracker,
+        new EventBus()
     );
   }
 
@@ -93,14 +96,14 @@ public class DefaultILPv4Connector implements ILPv4Connector {
    * Required-args Constructor (minus an EventBus).
    */
   public DefaultILPv4Connector(
-    final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final AccountManager accountManager,
-    final AccountSettingsRepository accountSettingsRepository,
-    final LinkManager linkManager,
-    final ExternalRoutingService externalRoutingService,
-    final ILPv4PacketSwitch ilpPacketSwitch,
-    final BalanceTracker balanceTracker,
-    final EventBus eventBus
+      final Supplier<ConnectorSettings> connectorSettingsSupplier,
+      final AccountManager accountManager,
+      final AccountSettingsRepository accountSettingsRepository,
+      final LinkManager linkManager,
+      final ExternalRoutingService externalRoutingService,
+      final ILPv4PacketSwitch ilpPacketSwitch,
+      final BalanceTracker balanceTracker,
+      final EventBus eventBus
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountManager = Objects.requireNonNull(accountManager);
@@ -118,7 +121,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
    * <p>Initialize the connector after constructing it.</p>
    */
   @PostConstruct
-  private final void init() {
+  private void init() {
     // If an operator address is specified, then we use that. Otherwise, attempt to use IL-DCP.
     if (connectorSettingsSupplier.get().operatorAddress().isPresent()) {
       this.configureAccounts();
@@ -132,8 +135,11 @@ public class DefaultILPv4Connector implements ILPv4Connector {
 
   @PreDestroy
   public void shutdown() {
-    // Shutdown all links...This will emit LinkDisconnected events that will be handled below...
-    this.linkManager.getAllConnectedLinks().forEach(Link::disconnect);
+    // Shutdown any stateful links...This will emit LinkDisconnected events that will be handled below...
+    this.linkManager.getAllConnectedLinks().stream()
+        .filter(link -> link instanceof StatefulLink)
+        .map(link -> (StatefulLink) link)
+        .forEach(StatefulLink::disconnect);
   }
 
   @Override
@@ -186,17 +192,17 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     // If this Connector is starting in `child` mode, it will not have an operator address. We need to find the first
     // account of type `parent` and use IL-DCP to get the operating account for this Connector.
     final Optional<AccountSettingsEntity> primaryParentAccountSettings =
-      this.accountSettingsRepository.findPrimaryParentAccountSettings();
+        this.accountSettingsRepository.findPrimaryParentAccountSettings();
     if (primaryParentAccountSettings.isPresent()) {
       // If there's no Operator Address, use IL-DCP to try to get one. Only try this once. If this fails, then the
       // Connector should not startup.
       this.accountManager.initializeParentAccountSettingsViaIlDcp(primaryParentAccountSettings.get().getAccountId());
       logger.info(
-        "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().operatorAddress().get()
+          "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().operatorAddress().get()
       );
     } else {
       logger.warn("At least one `parent` account must be defined if no operator address is specified at startup. " +
-        "Please set the operator address or else add a new account of type `PARENT`");
+          "Please set the operator address or else add a new account of type `PARENT`");
     }
   }
 
@@ -207,8 +213,10 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     // Connect any Links for accounts that are the connection initiator. Links that require an incoming and outgoing
     // connection will emit a LinkConnectedEvent when the incoming connection is connected.
     this.accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrueWithConversion().stream()
-      .map(linkManager::getOrCreateLink)
-      .forEach(Link::connect);
+        .map(linkManager::getOrCreateLink)
+        .filter(link -> link instanceof StatefulLink)
+        .map(link -> (StatefulLink) link)
+        .forEach(StatefulLink::connect);
   }
 
 }

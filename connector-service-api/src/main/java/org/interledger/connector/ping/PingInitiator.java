@@ -1,15 +1,15 @@
 package org.interledger.connector.ping;
 
-import org.interledger.connector.link.Link;
+import static org.interledger.link.PingLoopbackLink.PING_PROTOCOL_CONDITION;
+
 import org.interledger.core.InterledgerAddress;
-import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.link.Link;
 
 import com.google.common.primitives.UnsignedLong;
 
 import java.time.Instant;
-import java.util.Base64;
 
 /**
  * <p>Defines a "ping" mechanism on a particular {@link Link}.</p>
@@ -24,9 +24,6 @@ import java.util.Base64;
  * @see "https://github.com/interledger/rfcs/pull/516"
  */
 public interface PingInitiator {
-
-  InterledgerCondition PING_PROTOCOL_CONDITION =
-      InterledgerCondition.of(Base64.getDecoder().decode("jAC8DGFPZPfh4AtZpXuvXFe2oRmpDVSvSJg2oT+bx34="));
 
   /**
    * Send a very-small (or a zero) value payment to the {@code destinationAddress} and expect an ILP fulfillment, which
