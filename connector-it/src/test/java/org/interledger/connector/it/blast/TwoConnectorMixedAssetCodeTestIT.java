@@ -36,7 +36,7 @@ import org.testcontainers.containers.Network;
 import java.math.BigInteger;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@Category( {IlpOverHttp.class})
+@Category(IlpOverHttp.class)
 public class TwoConnectorMixedAssetCodeTestIT extends AbstractBlastIT {
 
   private static final Denomination MICROCENTS_USD = Denomination.builder()
