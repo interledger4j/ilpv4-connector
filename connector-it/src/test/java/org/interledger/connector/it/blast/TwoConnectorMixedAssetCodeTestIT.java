@@ -97,7 +97,7 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractBlastIT {
    * Paul (a child account of Alice) pings Bob via Alice, which should succeed using 10100000 units.
    */
   @Test
-  public void testPaulPingsBobWith10Units() throws InterruptedException {
+  public void sendAmountToBeConverted() throws InterruptedException {
     this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), UnsignedLong.valueOf(100000));
 
     // test.alice.paul: Should be -10000000 because that account initiated and paid for the ping.
