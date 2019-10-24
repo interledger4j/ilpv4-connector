@@ -46,6 +46,7 @@ import java.util.function.Consumer;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Category(Settlement.class)
+@SuppressWarnings("UnstableApiUsage")
 public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
   private static final BigInteger ONE_HUNDRED = BigInteger.valueOf(100L);

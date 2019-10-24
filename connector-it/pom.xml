@@ -31,7 +31,7 @@
       <artifactId>connector-model</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.interledger.connector</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>connector-routing-api</artifactId>
     </dependency>
     <dependency>
@@ -40,14 +40,10 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>connector-link-blast</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>connector-service-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.interledger.connector</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>connector-service-impl</artifactId>
     </dependency>
     <dependency>
@@ -78,6 +74,14 @@
     <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>ilp-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>link-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>link-ilp-over-http</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

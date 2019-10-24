@@ -7,8 +7,8 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings;
-import org.interledger.connector.links.loopback.LoopbackLink;
 import org.interledger.connector.server.ConnectorServerConfig;
+import org.interledger.link.LoopbackLink;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
