@@ -39,11 +39,6 @@ import java.math.BigInteger;
 @Category(IlpOverHttp.class)
 public class TwoConnectorMixedAssetCodeTestIT extends AbstractBlastIT {
 
-  private static final Denomination MICROCENTS_USD = Denomination.builder()
-      .assetCode("USD")
-      .assetScale((short) 8)
-      .build();
-
   private static final Denomination MICROCENTS_EUR = Denomination.builder()
       .assetCode("EUR")
       .assetScale((short) 8)
