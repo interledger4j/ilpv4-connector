@@ -1,6 +1,5 @@
 package org.interledger.connector.it.topologies.ilpoverhttp;
 
-import com.google.common.collect.Lists;
 import org.interledger.connector.StaticRoute;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
@@ -19,6 +18,9 @@ import org.interledger.connector.settings.EnabledProtocolSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
 import org.interledger.connector.settings.ImmutableConnectorSettings;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.stream.Denomination;
+
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,11 +47,23 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorPeerBlastTopology.class);
 
   /**
-   * In this topology, each Connector starts-up with an Account for the other connector. During initialization,
+   * In this topology, each Connector starts-up with an Account for the other connector.
    *
-   * @return
+   * @return the topology of accounts and connectors
    */
   public static Topology init() {
+    Denomination denomination = Denomination.builder().assetCode(XRP).assetScale((short) 9).build();
+    return init(denomination, denomination, 1000000L); // 1M NanoDollars is $0.001
+  }
+
+  /**
+   * In this topology, each Connector starts-up with an Account for the other connector, specifying denominations and
+   * a max packet amount.
+   *
+   * @return the topology of accounts and connectors
+   */
+  public static Topology init(final Denomination aliceBobDenomination, final Denomination paulAtAliceDenomination,
+                              final long maxPacketAmount) {
 
     // Some configuration must be done _after_ the topology starts...e.g., to grab the port that will be used.
     final Topology topology = new Topology(TwoConnectorPeerBlastTopology.class.getSimpleName(),
@@ -68,15 +82,17 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
           aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
 
           // Add Bob's account on Alice...
-          final AccountSettings bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort);
+          final AccountSettings bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort,
+              aliceBobDenomination, maxPacketAmount);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
 
           // Add Paul's account on Alice (Paul is used for sending pings)
-          final AccountSettings paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice();
+          final AccountSettings paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice(paulAtAliceDenomination);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(paulAccountSettingsAtAlice);
 
           // Add Alice's account on Bob...
-          final AccountSettings aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort);
+          final AccountSettings aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort,
+              aliceBobDenomination, maxPacketAmount);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
 
           // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
@@ -130,16 +146,17 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
    *
    * @param bobPort The port that alice's server connects to in order to talk to Bob's server.
    */
-  private static AccountSettings constructBobAccountSettingsOnAlice(final int bobPort) {
+  private static AccountSettings constructBobAccountSettingsOnAlice(final int bobPort, final Denomination denomination,
+                                                                    final long maxPacketAmount) {
     return AccountSettings.builder()
       .accountId(BOB_ACCOUNT)
       .description("Blast account for Bob")
       .accountRelationship(AccountRelationship.PEER)
       .rateLimitSettings(AccountRateLimitSettings.builder().maxPacketsPerSecond(5000).build())
-      .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
+      .maximumPacketAmount(maxPacketAmount)
       .linkType(BlastLink.LINK_TYPE)
-      .assetScale(9)
-      .assetCode(XRP)
+      .assetScale(denomination.assetScale())
+      .assetCode(denomination.assetCode())
 
       // Incoming
       .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
@@ -165,14 +182,14 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
    * An AccountSettings object that represents Paul's account at Alice. Since this account is only used to send, it does
    * not require any incoming connection settings.
    */
-  private static AccountSettings constructPaulAccountSettingsOnAlice() {
+  private static AccountSettings constructPaulAccountSettingsOnAlice(final Denomination denomination) {
     return AccountSettings.builder()
       .accountId(PAUL_ACCOUNT)
       .description("Blast sender account for Paul")
       .accountRelationship(AccountRelationship.CHILD)
       .linkType(BlastLink.LINK_TYPE)
-      .assetScale(9)
-      .assetCode(XRP)
+      .assetScale(denomination.assetScale())
+      .assetCode(denomination.assetCode())
 
       // Incoming
       .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
@@ -222,16 +239,18 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
    *
    * @param alicePort The port that bob's server connects to in order to talk to Alice's server.
    */
-  private static AccountSettings constructAliceAccountSettingsOnBob(final int alicePort) {
+  private static AccountSettings constructAliceAccountSettingsOnBob(final int alicePort,
+                                                                    final Denomination denomination,
+                                                                    final long maxPacketAmount) {
     return AccountSettings.builder()
       .accountId(ALICE_ACCOUNT)
       .description("Blast account for Alice")
       .rateLimitSettings(AccountRateLimitSettings.builder().maxPacketsPerSecond(5000).build())
-      .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
+      .maximumPacketAmount(maxPacketAmount)
       .accountRelationship(AccountRelationship.PEER)
       .linkType(BlastLink.LINK_TYPE)
-      .assetScale(9)
-      .assetCode(XRP)
+      .assetScale(denomination.assetScale())
+      .assetCode(denomination.assetCode())
 
       // Incoming
       .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)

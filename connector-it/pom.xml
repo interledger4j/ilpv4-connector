@@ -71,6 +71,11 @@
       <artifactId>money-api</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-core</artifactId>
       <scope>test</scope>
@@ -78,6 +83,10 @@
     <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>ilp-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>stream-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -126,7 +135,7 @@
               </includes>
               <encoding>UTF-8</encoding>
               <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
-              <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <argLine>${failsafe.argLine} -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
               <useSystemClassLoader>false</useSystemClassLoader>
               <!-- By default, don't run the Settlement ITs because it requires a Settlement Engine to
                be running, which may not be the case on a developer laptop. Note that this value is overridden in the
@@ -170,7 +179,7 @@
               </includes>
               <encoding>UTF-8</encoding>
               <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
-              <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <argLine>${failsafe.argLine} -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
               <useSystemClassLoader>false</useSystemClassLoader>
               <groups>
                 org.interledger.connector.it.markers.Performance
@@ -205,13 +214,51 @@
               <useSystemClassLoader>false</useSystemClassLoader>
               <encoding>UTF-8</encoding>
               <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
-              <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <argLine>${failsafe.argLine} -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
               <useSystemClassLoader>false</useSystemClassLoader>
               <groups>
                 org.interledger.connector.it.markers.Settlement
               </groups>
               <excludedGroups>
                 org.interledger.connector.it.markers.IlpOverHttp,
+                org.interledger.connector.it.markers.Performance
+              </excludedGroups>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>ilpoverhttp</id>
+      <build>
+        <plugins>
+          <!-- Actually runs Integration Tests (use -DskipITs to skip) -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>run-integration-tests</id>
+                <phase>integration-test</phase>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <skipTests>${skipTests}</skipTests>
+              <skipITs>${skipITs}</skipITs>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <encoding>UTF-8</encoding>
+              <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
+              <argLine>${failsafe.argLine} -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <groups>
+                org.interledger.connector.it.markers.IlpOverHttp
+              </groups>
+              <excludedGroups>
+                org.interledger.connector.it.markers.Settlement,
                 org.interledger.connector.it.markers.Performance
               </excludedGroups>
             </configuration>

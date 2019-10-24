@@ -23,7 +23,7 @@ public class XrpCurrencyProvider implements CurrencyProviderSpi {
     this.currencyUnits = ImmutableSet.<CurrencyUnit>builder()
       .add(
         CurrencyUnitBuilder.of(XRP, "XrpCurrencyProvider")
-          .setDefaultFractionDigits(3) // XRP is generally modelled in the thousanths (but rounding is to the millionth)
+          .setDefaultFractionDigits(3) // XRP is generally modelled in the thousandths (but rounding is to the millionth)
           .build()
       )
       .build();

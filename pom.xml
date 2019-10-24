@@ -280,6 +280,11 @@
         <version>${ilp.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.interledger</groupId>
+        <artifactId>stream-core</artifactId>
+        <version>${ilp.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.javamoney.moneta</groupId>
         <artifactId>moneta-core</artifactId>
         <version>${moneta.version}</version>
