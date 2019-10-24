@@ -1,7 +1,7 @@
 package org.interledger.connector.server.ilphttp;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static org.interledger.connector.server.spring.settings.blast.BlastConfig.BLAST;
+import static org.interledger.connector.server.spring.settings.blast.IlpOverHttpConfig.BLAST;
 import static org.interledger.link.LoopbackLink.LOOPBACK_FULFILLMENT;
 import static org.junit.Assert.fail;
 

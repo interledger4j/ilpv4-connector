@@ -46,7 +46,7 @@ import javax.annotation.PostConstruct;
  */
 @Configuration
 @ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = BLAST_ENABLED, havingValue = TRUE)
-public class BlastConfig {
+public class IlpOverHttpConfig {
 
   /**
    * @see "https://github.com/sappenin/java-ilpv4-connector/issues/360"
@@ -70,11 +70,6 @@ public class BlastConfig {
 
   @Autowired
   Decryptor decryptor;
-
-  @Bean
-  public LinkFactoryProvider linkFactoryProvider(){
-    return new LinkFactoryProvider();
-  }
 
   @Bean
   @Qualifier(BLAST)
@@ -140,20 +135,6 @@ public class BlastConfig {
   ) {
     return new OkHttp3ClientHttpRequestFactory(okHttpClient);
   }
-
-  // TODO: Remove this!
-//  @Bean
-//  @Qualifier(BLAST)
-//  RestTemplate blastRestTemplate(
-//      ObjectMapper objectMapper,
-//      OerPreparePacketHttpMessageConverter oerPreparePacketHttpMessageConverter,
-//      @Qualifier(BLAST) OkHttp3ClientHttpRequestFactory okHttp3ClientHttpRequestFactory
-//  ) {
-//    MappingJackson2HttpMessageConverter httpMessageConverter = new MappingJackson2HttpMessageConverter(objectMapper);
-//    RestTemplate restTemplate = new RestTemplate(okHttp3ClientHttpRequestFactory);
-//    restTemplate.setMessageConverters(Lists.newArrayList(oerPreparePacketHttpMessageConverter, httpMessageConverter));
-//    return restTemplate;
-//  }
 
   @Bean
   HttpUrl defaultJwtTokenIssuer() {
