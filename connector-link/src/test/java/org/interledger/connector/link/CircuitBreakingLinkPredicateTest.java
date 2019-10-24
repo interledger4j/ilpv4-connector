@@ -61,7 +61,7 @@ public class CircuitBreakingLinkPredicateTest {
   private static final LinkId LINK_ID = LinkId.of(LINK_ID_VALUE);
 
   @Mock
-  private Link<?> linkDelegateMock;
+  private Link<LinkSettings> linkDelegateMock;
 
   @Mock
   private LinkSettings delegateLinkSettingsMock;
