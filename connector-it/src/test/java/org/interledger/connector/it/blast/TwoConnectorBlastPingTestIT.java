@@ -19,6 +19,7 @@ import static org.junit.Assert.assertThat;
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.it.AbstractBlastIT;
+import org.interledger.connector.it.ContainerHelper;
 import org.interledger.connector.it.markers.IlpOverHttp;
 import org.interledger.connector.it.markers.Performance;
 import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerBlastTopology;
@@ -43,6 +44,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 
 import java.math.BigInteger;
 import java.time.Instant;
@@ -70,9 +73,17 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
 
+  private static final Network network = Network.newNetwork();
+
+  private static GenericContainer redis = ContainerHelper.redis(network);
+
+  private static GenericContainer postgres = ContainerHelper.postgres(network);
+
   @BeforeClass
   public static void startTopology() {
     LOGGER.info("Starting test topology `{}`...", topology.toString());
+    redis.start();
+    postgres.start();
     topology.start();
     LOGGER.info("Test topology `{}` started!", topology.toString());
   }
@@ -81,6 +92,8 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   public static void stopTopology() {
     LOGGER.info("Stopping test topology `{}`...", topology.toString());
     topology.stop();
+    postgres.stop();
+    redis.stop();
     LOGGER.info("Test topology `{}` stopped!", topology.toString());
   }
 

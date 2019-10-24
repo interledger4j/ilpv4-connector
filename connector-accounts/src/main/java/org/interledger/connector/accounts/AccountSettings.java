@@ -3,6 +3,7 @@ package org.interledger.connector.accounts;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
@@ -116,6 +117,7 @@ public interface AccountSettings {
    *
    * @return an int representing this account's asset scale.
    */
+  @JsonRawValue
   int assetScale();
 
   /**
