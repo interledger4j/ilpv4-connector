@@ -18,6 +18,7 @@ import org.interledger.core.InterledgerResponsePacket;
 import com.google.common.primitives.UnsignedLong;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -32,10 +33,34 @@ public class OutgoingMaxPacketAmountLinkFilterTest {
   @Rule
   public MockitoRule mockitoRule = MockitoJUnit.rule();
 
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
+
   @Mock
   private LinkFilterChain filterChain;
 
   private Supplier<InterledgerAddress> addressSupplier = () -> InterledgerAddress.of("example.source");
+
+  @Test
+  public void filterHatesNullSettings() {
+    OutgoingMaxPacketAmountLinkFilter filter = createFilter();
+    expectedException.expect(NullPointerException.class);
+    filter.doFilter(null, createPrepareWithAmount(10), filterChain);
+  }
+
+  @Test
+  public void filterHatesNullPrepare() {
+    OutgoingMaxPacketAmountLinkFilter filter = createFilter();
+    expectedException.expect(NullPointerException.class);
+    filter.doFilter(createAccountSettingsWithMaxAmount(100), null, filterChain);
+  }
+
+  @Test
+  public void filterHatesNullChain() {
+    OutgoingMaxPacketAmountLinkFilter filter = createFilter();
+    expectedException.expect(NullPointerException.class);
+    filter.doFilter(createAccountSettingsWithMaxAmount(100), createPrepareWithAmount(10), null);
+  }
 
   @Test
   public void passAlongWhenBelowMax() {

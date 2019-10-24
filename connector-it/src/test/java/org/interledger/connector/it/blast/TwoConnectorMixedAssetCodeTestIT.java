@@ -55,8 +55,7 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractBlastIT {
       .build();
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorMixedAssetCodeTestIT.class);
-  private static Topology topology = TwoConnectorPeerBlastTopology.init(MICROCENTS_USD, NANO_YEN, MICROCENTS_EUR,
-      1000000000L);
+  private static Topology topology = TwoConnectorPeerBlastTopology.init(NANO_YEN, MICROCENTS_EUR, 1000000000L);
 
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
@@ -104,15 +103,13 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractBlastIT {
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, BigInteger.valueOf(100000).negate());
     // test.alice.bob: Should be in range because this account will receive yen from Paul on this Connector.
     // hard to validate exchange rate but this should be close
-    assertThat(aliceConnector.getBalanceTracker().balance(BOB_ACCOUNT).netBalance())
-        .isBetween(BigInteger.valueOf(115000000), BigInteger.valueOf(125000000));
+    BigInteger bobBalance = aliceConnector.getBalanceTracker().balance(BOB_ACCOUNT).netBalance();
+    assertThat(bobBalance).isBetween(BigInteger.valueOf(115000000), BigInteger.valueOf(125000000));
 
     // test.bob.alice: Should be negative some range of the source because it pays from Alice Connector, but pays one
     // to the ping account on Bob.
-    assertThat(bobConnector.getBalanceTracker().balance(ALICE_ACCOUNT).netBalance())
-        .isBetween(BigInteger.valueOf(125000000).negate(), BigInteger.valueOf(115000000).negate());
-    assertThat(bobConnector.getBalanceTracker().balance(PING_ACCOUNT_ID).netBalance())
-        .isBetween(BigInteger.valueOf(115000000), BigInteger.valueOf(125000000));
+    assertThat(bobConnector.getBalanceTracker().balance(ALICE_ACCOUNT).netBalance()).isEqualTo(bobBalance.negate());
+    assertThat(bobConnector.getBalanceTracker().balance(PING_ACCOUNT_ID).netBalance()).isEqualTo(bobBalance);
   }
 
   /**

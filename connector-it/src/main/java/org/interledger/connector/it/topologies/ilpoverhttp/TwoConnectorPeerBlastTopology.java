@@ -53,7 +53,7 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
    */
   public static Topology init() {
     Denomination denomination = Denomination.builder().assetCode(XRP).assetScale((short) 9).build();
-    return init(denomination, denomination, denomination, 1000000L); // 1M NanoDollars is $0.001
+    return init(denomination, denomination, 1000000L); // 1M NanoDollars is $0.001
   }
 
   /**
@@ -62,8 +62,8 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
    *
    * @return the topology of accounts and connectors
    */
-  public static Topology init(final Denomination aliceDenomination, final Denomination bobDenomination,
-                              final Denomination paulDenomination, final long maxPacketAmount) {
+  public static Topology init(final Denomination aliceBobDenomination, final Denomination paulAtAliceDenomination,
+                              final long maxPacketAmount) {
 
     // Some configuration must be done _after_ the topology starts...e.g., to grab the port that will be used.
     final Topology topology = new Topology(TwoConnectorPeerBlastTopology.class.getSimpleName(),
@@ -82,17 +82,17 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
           aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
 
           // Add Bob's account on Alice...
-          final AccountSettings bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort, bobDenomination,
-              maxPacketAmount);
+          final AccountSettings bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort,
+              aliceBobDenomination, maxPacketAmount);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
 
           // Add Paul's account on Alice (Paul is used for sending pings)
-          final AccountSettings paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice(paulDenomination);
+          final AccountSettings paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice(paulAtAliceDenomination);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(paulAccountSettingsAtAlice);
 
           // Add Alice's account on Bob...
           final AccountSettings aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort,
-              aliceDenomination, maxPacketAmount);
+              aliceBobDenomination, maxPacketAmount);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
 
           // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
