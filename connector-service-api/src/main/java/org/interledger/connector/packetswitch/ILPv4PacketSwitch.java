@@ -11,6 +11,7 @@ import org.interledger.core.InterledgerResponsePacket;
 
 import java.util.concurrent.CompletableFuture;
 
+
 /**
  * <p>A switching fabric for mapping incoming ILP packets to outgoing links.</p>
  *
@@ -53,7 +54,7 @@ import java.util.concurrent.CompletableFuture;
  *     │                          └───────────────────────────────────────────────────────────────────────────────────────────┘
  *                           ┌───────────┐                ┌──────────────────┐                    ┌─────────────────────┐
  *     │                 Prepare         │                │                  │                    │                     │
- *                           │           ▼                │                  ▽                    │                     ▼
+ *                           │           ▽                │                  ▽                    │                     ▽
  *     │  ┌──────────────┐   │    ┌────────────┐          │           ┌────────────┐              │              ┌────────────┐
  *        │     From     │   │    │Get Next Hop│          │           │            │              │              │  Compute   │
  *     └ ─│ FilterChain  │───┘ ─ ─│Account from│──────────┘┌ ─ ─ ─ ─ ─│ Compute FX │──────────────┼ ─ ─ ─ ─ ─ ─ ─│   Expiry   │─To Outgoing──▷
@@ -73,17 +74,17 @@ import java.util.concurrent.CompletableFuture;
  *       │                        │                                 OUTGOING LINK FILTER CHAIN                                 │
  *                                │                               Account: `123` (`example.bob`)                               │
  *       │                        └────────────────────────────────────────────────────────────────────────────────────────────┘
- *                             ┌──────────┐                  ┌────────────────────┐                  ┌────────────────────┐
- *       │                 Prepare        │              Prepare                  │                  │                    │
- *                             │          ▼                  │                    ▼                  │                    ▼
- *       │  ┌──────────────┐   │   ┌────────────┐            │             ┌────────────┐        Prepare           ┌────────────┐
- *          │     From     │   │   │            │            │             │Adjust `123`│            │             │ Forward on │
- *       └ ─│ PacketSwitch │───┘─ ─│ Throughput │────────────┘┌ ─ ─ ─ ─ ─ ─│  Balance   │────────────┘┌ ─ ─ ─ ─ ─ ─│    Link    │────────────▶
- *          │              │   │   │            │                          │            │                          │            │
- *          └──────────────┘       └────────────┘             │            └────────────┘             │            └────────────┘
- *                  △          │          △         Fulfill /                     △       Fulfill /
- *                  │ Fulfill /           │           Reject  │                   │        Reject     │
- *                   ─ ─Reject ┘           ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                     ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+ *                              ┌────────────┐        Prepare────────────┐          Prepare──────┐           ┌─────────────┐
+ *       │                  Prepare          │            │              │          │            │       Prepare           │
+ *                              │            ▽            │              ▽          │            ▽           │             ▽
+ *       │  ┌──────────────┐    │     ┌────────────┐      │       ┌────────────┐    │     ┌────────────┐     │      ┌────────────┐
+ *          │     From     │    │     │            │      │       │ Check Max  │    │     │Adjust `123`│     │      │ Forward on │
+ *       └ ─│ PacketSwitch │────┘┌ ─ ─│ Throughput │──────┘┌ ─ ─ ─│ Packet Amt │────┘┌ ─ ─│  Balance   │─────┘ ─ ─ ─│    Link    │──────────▷
+ *          │              │          │            │              │            │          │            │      │     │            │
+ *          └──────────────┘     │    └────────────┘       │      └────────────┘     │    └────────────┘            └────────────┘
+ *                  △                        △                           ▲                       △            │
+ *                     Fulfill / │           │     Fulfill /             │   Fulfill /           │  Fulfill /
+ *                  └ ─ ─Reject ─             ─ ─ ─ ─Reject               ─ ─ ─Reject             ─ ─R─j─c─ ─ ┘
  *
  * </pre>
  */
