@@ -21,7 +21,7 @@ public class DefaultAccountIdResolver implements BtpAccountIdResolver, IlpOverHt
   public AccountId resolveAccountId(final Link<?> link) {
     Objects.requireNonNull(link);
 
-    if (link instanceof StatefulLink && ((StatefulLink<?>) link).isConnected() == false) {
+    if (link instanceof StatefulLink && !(((StatefulLink<?>) link).isConnected())) {
       throw new LinkNotConnectedException("Disconnected Plugins do not have an associated account!", link.getLinkId());
     }
     //      if (link instanceof AbstractBtpPlugin) {
@@ -46,8 +46,8 @@ public class DefaultAccountIdResolver implements BtpAccountIdResolver, IlpOverHt
     Objects.requireNonNull(btpSession);
 
     return btpSession.getBtpSessionCredentials()
-        .map(this::resolveAccountId)
-        .orElseThrow(() -> new RuntimeException("No BtpSessionCredentials found!"));
+      .map(this::resolveAccountId)
+      .orElseThrow(() -> new RuntimeException("No BtpSessionCredentials found!"));
   }
 
   /**
@@ -62,12 +62,12 @@ public class DefaultAccountIdResolver implements BtpAccountIdResolver, IlpOverHt
     Objects.requireNonNull(btpSessionCredentials);
 
     return btpSessionCredentials.getAuthUsername()
-        .map(AccountId::of)
-        .orElseGet(() -> {
-          // No AuthUserName, so get the AuthToken and hash it.
-          //Route.HMAC(abstractBtpPlugin.getBtpSessionCredentials().getAuthToken());
-          throw new RuntimeException("Not yet implemented!");
-        });
+      .map(AccountId::of)
+      .orElseGet(() -> {
+        // No AuthUserName, so get the AuthToken and hash it.
+        //Route.HMAC(abstractBtpPlugin.getBtpSessionCredentials().getAuthToken());
+        throw new RuntimeException("Not yet implemented!");
+      });
   }
 
   @Override

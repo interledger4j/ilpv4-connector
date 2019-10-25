@@ -15,6 +15,7 @@ import org.interledger.link.events.LinkConnectedEvent;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
+import org.checkerframework.framework.qual.Unused;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,6 +123,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
    * <p>Initialize the connector after constructing it.</p>
    */
   @PostConstruct
+  @SuppressWarnings("PMD.UnusedPrivateMethod")
   private void init() {
     // If the default operator address is specified, then we attempt to use IL-DCP.
     if (connectorSettingsSupplier.get().operatorAddress().equals(Link.SELF)) {

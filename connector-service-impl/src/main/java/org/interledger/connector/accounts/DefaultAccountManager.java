@@ -115,10 +115,10 @@ public class DefaultAccountManager implements AccountManager {
     // not enter into this code-block because if the connector has a PARENT account configured and no ILP address
     // specified, then the Connector startup will trigger IL-DCP. In other words, this check is only required for the
     // first-account-creation (under certain conditions).
-    if (AccountRelationship.PARENT.equals(accountSettings.accountRelationship())) {
-      if (!connectorSettingsSupplier.get().operatorAddress().equals(Link.SELF)) {
-        this.initializeParentAccountSettingsViaIlDcp(accountSettings.accountId());
-      }
+    if (AccountRelationship.PARENT.equals(accountSettings.accountRelationship())
+      && Link.SELF.equals(connectorSettingsSupplier.get().operatorAddress())
+    ) {
+      this.initializeParentAccountSettingsViaIlDcp(accountSettings.accountId());
     }
 
     // No need to prematurely connect to this account. When packets need to flow over it, it will become connected.

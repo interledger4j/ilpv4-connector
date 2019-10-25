@@ -256,7 +256,7 @@ public class AccountSettingsRepositoryTest {
   }
 
   @Test
-  public void whenFindByAccountRelationship() {
+  public void whenFindFirstByAccountRelationship() {
     final AccountSettings accountSettings1 = AccountSettings.builder()
         .accountId(AccountId.of(generateUuid()))
         .assetCode("XRP")
@@ -376,6 +376,56 @@ public class AccountSettingsRepositoryTest {
     assertThat(accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.PEER).size()).isOne();
   }
 
+  // Execute these three tests individually to isolate out any alternatives that might provide false-positives.
+
+  @Test
+  public void whenFindAllByAccountRelationshipIsPeer() {
+    final AccountSettings accountSettings1 = AccountSettings.builder()
+      .accountId(AccountId.of(generateUuid()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PEER)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity1 = new AccountSettingsEntity(accountSettings1);
+    accountSettingsRepository.save(accountSettingsEntity1);
+    assertThat(accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.PARENT).size()).isZero();
+    assertThat(accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.CHILD).size()).isZero();
+    assertThat(accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.PEER).size()).isOne();
+  }
+
+  @Test
+  public void whenFindAllByAccountRelationshipParent() {
+
+    final AccountSettings accountSettings2 = AccountSettings.builder()
+      .accountId(AccountId.of(generateUuid()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.PARENT)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity2 = new AccountSettingsEntity(accountSettings2);
+    accountSettingsRepository.save(accountSettingsEntity2);
+    assertThat(accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.PARENT).size()).isOne();
+    assertThat(accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.CHILD).size()).isZero();
+    assertThat(accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.PEER).size()).isZero();
+  }
+
+  @Test
+  public void whenFindAllByAccountRelationshipChild() {
+    final AccountSettings accountSettings3 = AccountSettings.builder()
+      .accountId(AccountId.of(generateUuid()))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("Loopback"))
+      .accountRelationship(AccountRelationship.CHILD)
+      .build();
+    final AccountSettingsEntity accountSettingsEntity3 = new AccountSettingsEntity(accountSettings3);
+    accountSettingsRepository.save(accountSettingsEntity3);
+    assertThat(accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.PARENT).size()).isZero();
+    assertThat(accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.CHILD).size()).isOne();
+    assertThat(accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.PEER).size()).isZero();
+  }
   @Test
   public void whenAccountSettingsAlreadyExists() {
     final AccountId accountId = AccountId.of(generateUuid());

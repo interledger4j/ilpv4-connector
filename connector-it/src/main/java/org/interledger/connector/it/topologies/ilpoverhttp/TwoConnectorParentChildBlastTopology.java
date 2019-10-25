@@ -60,13 +60,16 @@ public class TwoConnectorParentChildBlastTopology extends AbstractTopology {
             ALICE_CONNECTOR_ADDRESS.getValue(), ConnectorServerNode.class
           );
           final int alicePort = aliceServerNode.getPort();
-          final ConnectorServerNode bobServerNode =
-            g.getNode(BOB_AT_ALICE_ADDRESS.getValue(), ConnectorServerNode.class);
+
+          final ConnectorServerNode bobServerNode = g.getNode(
+            BOB_AT_ALICE_ADDRESS.getValue(), ConnectorServerNode.class
+          );
           final int bobPort = bobServerNode.getPort();
 
           // Delete all accounts before initializing the Topology otherwise we see sporadic CI build failures when
           // building on Postgres. Only need to do this on one server since both servers share the same DB.
           aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
+          bobServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
 
           // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
           // NOTE: The Connector configures a Ping Account properly but this Topology deletes all accounts above
