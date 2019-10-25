@@ -28,6 +28,7 @@ import org.interledger.connector.balances.RedisBalanceTracker;
 import org.interledger.connector.core.ConfigConstants;
 import org.interledger.connector.it.topology.Node;
 import org.interledger.connector.it.topology.Topology;
+import org.interledger.connector.it.topology.nodes.ConnectorServerNode;
 import org.interledger.connector.link.CircuitBreakingLink;
 import org.interledger.connector.link.Link;
 import org.interledger.connector.link.blast.BlastLink;
@@ -194,7 +195,7 @@ public abstract class AbstractBlastIT {
   }
 
   protected AccountSettings getAccountSettings(InterledgerAddress interledgerAddress, AccountId accountId) {
-    return getTopology().getAccountSettings(getNode(interledgerAddress), accountId);
+    return ((ConnectorServerNode) getNode(interledgerAddress)).getAccountSettings(accountId);
   }
 
   /**

@@ -85,25 +85,21 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
           final AccountSettings paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice();
           final AccountSettings completePaulAtAlice = aliceServerNode.getILPv4Connector().getAccountManager()
               .createAccount(paulAccountSettingsAtAlice);
-          g.addAccountSettings(aliceServerNode, completePaulAtAlice);
 
           // Add Bob's account on Alice...
           final AccountSettings bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort, aliceContainerPort);
           final AccountSettings completeBobAtAlice = aliceServerNode.getILPv4Connector().getAccountManager()
               .createAccount(bobAccountSettingsAtAlice);
-          g.addAccountSettings(aliceServerNode, completeBobAtAlice);
 
           // Add Alice's account on Bob...
           final AccountSettings aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort, bobContainerPort);
           final AccountSettings completeAliceAtBob = bobServerNode.getILPv4Connector().getAccountManager()
               .createAccount(aliceAccountSettingsAtBob);
-          g.addAccountSettings(bobServerNode, completeAliceAtBob);
 
           // Add Peter's account on Bob (Peter is used for sending pings)
           final AccountSettings peterAccountSettingsAtAlice = constructPeterAccountSettingsOnBob();
           final AccountSettings completePeterAtBob = bobServerNode.getILPv4Connector().getAccountManager()
               .createAccount(peterAccountSettingsAtAlice);
-          g.addAccountSettings(bobServerNode, completePeterAtBob);
 
           // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
           // NOTE: The Connector configures a Ping Account properly but this Topology deletes all accounts above
@@ -111,7 +107,6 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
           final AccountSettings pingAccountSettingsAtBob = constructPingAccountSettings();
           final AccountSettings completePingAtBob = aliceServerNode.getILPv4Connector().getAccountManager()
               .createAccount(pingAccountSettingsAtBob);
-          g.addAccountSettings(aliceServerNode, completePingAtBob);
 
           // Try to connect the bob account...
           aliceServerNode.getILPv4Connector().getLinkManager().getOrCreateLink(bobAccountSettingsAtAlice);
