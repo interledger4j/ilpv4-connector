@@ -103,9 +103,9 @@ public class InterledgerAddressUtils {
   /**
    * Helper to determine if an address is a "payment network" address (i.e., GLOBAL, or TEST(1,2,3)).
    *
-   * @param destinationAddress
+   * @param destinationAddress An {@link InterledgerAddress} representing the destination of a packet.
    *
-   * @return
+   * @return {@code true} if the {@code destinationAddress} is a payment-network address; {@code false} otherwise.
    */
   private boolean isPaymentNetworkAddress(final InterledgerAddress destinationAddress) {
     Objects.requireNonNull(destinationAddress);
