@@ -7,6 +7,8 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.link.LinkId;
 import org.interledger.link.PacketRejector;
 
+import java.util.Objects;
+
 
 /**
  * An implementation of {@link PacketSwitchFilter} for enforcing a maximum packet account for any given ILP packet.
@@ -23,6 +25,9 @@ public class MaxPacketAmountFilter extends AbstractPacketFilter implements Packe
       final InterledgerPreparePacket sourcePreparePacket,
       final PacketSwitchFilterChain filterChain
   ) {
+    Objects.requireNonNull(sourceAccountSettings);
+    Objects.requireNonNull(sourcePreparePacket);
+    Objects.requireNonNull(filterChain);
     // If the max packet amount is present...
     return sourceAccountSettings.maximumPacketAmount()
         //  if Packet amount is greater-than `maxPacketAmount`, then Reject.
