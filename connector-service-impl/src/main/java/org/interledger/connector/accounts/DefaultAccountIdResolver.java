@@ -6,7 +6,6 @@ import org.interledger.link.Link;
 import org.interledger.link.StatefulLink;
 import org.interledger.link.exceptions.LinkNotConnectedException;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.springframework.security.core.Authentication;
 
 import java.util.Objects;
@@ -57,8 +56,7 @@ public class DefaultAccountIdResolver implements BtpAccountIdResolver, IlpOverHt
    *
    * @return The {@link AccountId} for the supplied plugin.
    */
-  @VisibleForTesting
-  protected AccountId resolveAccountId(final BtpSessionCredentials btpSessionCredentials) {
+  private AccountId resolveAccountId(final BtpSessionCredentials btpSessionCredentials) {
     Objects.requireNonNull(btpSessionCredentials);
 
     return btpSessionCredentials.getAuthUsername()
