@@ -323,8 +323,12 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
     assertAccountBalance(bobConnector, PING_ACCOUNT_ID, BigInteger.valueOf(totalPings).multiply(ONE_HUNDRED));
   }
 
+  /**
+   * Named as such to enforce ordering it to execute last. plus it sounds cool.
+   * @throws InterruptedException
+   */
   @Test
-  public void preemptiveSettlement() throws InterruptedException {
+  public void zealousPreemptiveSettlement() throws InterruptedException {
     assertAccountBalance(bobConnector, PETER_ACCOUNT, ZERO);
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, ZERO);
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO);
