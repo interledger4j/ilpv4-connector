@@ -1,35 +1,5 @@
 package org.interledger.connector.server.ilphttp;
 
-import static org.interledger.connector.server.spring.settings.blast.BlastConfig.BLAST;
-
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountRelationship;
-import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.link.http.BlastHttpSender;
-import org.interledger.connector.link.http.SimpleBearerBlastHttpSender;
-import org.interledger.connector.persistence.entities.AccountSettingsEntity;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.core.InterledgerAddress;
-import org.interledger.crypto.Decryptor;
-import org.interledger.link.http.IlpOverHttpLink;
-import org.interledger.link.http.IlpOverHttpLinkSettings;
-import org.interledger.link.http.IncomingLinkSettings;
-import org.interledger.link.http.OutgoingLinkSettings;
-
-import com.google.common.collect.Maps;
-import okhttp3.HttpUrl;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.web.client.RestTemplate;
-
-import java.util.Map;
-import java.util.Optional;
-
 /**
  * Ensures that the API endpoints for HTTP (i.e., `/ilp`) returns the correct values when a
  */
@@ -40,6 +10,8 @@ import java.util.Optional;
 //)
 //@ActiveProfiles({"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 public class SimpleBearerBlastEndpointTest extends AbstractEndpointTest {
+
+  // TODO: Restore this once https://github.com/sappenin/java-ilpv4-connector/issues/275 is unblocked.
 
 //  @LocalServerPort
 //  int randomServerPort;
