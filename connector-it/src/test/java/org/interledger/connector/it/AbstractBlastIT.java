@@ -21,10 +21,12 @@ import static org.junit.Assert.assertThat;
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.balances.InMemoryBalanceTracker;
 import org.interledger.connector.balances.RedisBalanceTracker;
 import org.interledger.connector.core.ConfigConstants;
+import org.interledger.connector.it.topology.Node;
 import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.link.CircuitBreakingLink;
 import org.interledger.connector.link.Link;
@@ -181,9 +183,18 @@ public abstract class AbstractBlastIT {
    * @return
    */
   protected ILPv4Connector getILPv4NodeFromGraph(final InterledgerAddress interledgerAddress) {
-    Objects.requireNonNull(interledgerAddress);
-    return ((ConnectorServer) getTopology().getNode(interledgerAddress.getValue()).getContentObject()).getContext()
+    Node node = getNode(interledgerAddress);
+    return ((ConnectorServer) node.getContentObject()).getContext()
         .getBean(ILPv4Connector.class);
+  }
+
+  protected Node getNode(InterledgerAddress interledgerAddress) {
+    Objects.requireNonNull(interledgerAddress);
+    return getTopology().getNode(interledgerAddress.getValue());
+  }
+
+  protected AccountSettings getAccountSettings(InterledgerAddress interledgerAddress, AccountId accountId) {
+    return getTopology().getAccountSettings(getNode(interledgerAddress), accountId);
   }
 
   /**

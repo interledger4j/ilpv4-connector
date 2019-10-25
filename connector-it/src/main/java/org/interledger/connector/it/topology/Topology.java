@@ -1,7 +1,10 @@
 package org.interledger.connector.it.topology;
 
-import com.google.common.collect.Lists;
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerAddress;
+
+import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * A collection of nodes and edges that connect those nodes.
@@ -21,6 +25,7 @@ public class Topology {
   private final Map<String, Node> nodes = new HashMap<>();
   private final List<Edge> edges = new ArrayList<>();
   private final PostConstructListener postConstructListener;
+  private final Map<Node, Map<AccountId, AccountSettings>> accountSettings = new HashMap<>();
 
   public Topology(final String topologyName) {
     this(topologyName, new PostConstructListener() {
@@ -69,6 +74,17 @@ public class Topology {
 
   public Collection<Node> getNodeValues() {
     return nodes.values();
+  }
+
+  public Topology addAccountSettings(Node node, AccountSettings settings) {
+    accountSettings.putIfAbsent(node, new HashMap<>());
+    Map<AccountId, AccountSettings> settingsById = accountSettings.get(node);
+    settingsById.putIfAbsent(settings.accountId(), settings);
+    return this;
+  }
+
+  public AccountSettings getAccountSettings(Node node, AccountId accountId) {
+    return Optional.ofNullable(accountSettings.get(node)).map(settingsById -> settingsById.get(accountId)).orElse(null);
   }
 
   public Topology start() {
@@ -125,4 +141,5 @@ public class Topology {
     protected abstract void doAfterTopologyStartup(final Topology topology);
 
   }
+
 }
