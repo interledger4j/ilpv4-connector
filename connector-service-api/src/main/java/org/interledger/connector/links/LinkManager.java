@@ -45,14 +45,15 @@ public interface LinkManager {
    *
    * @throws LinkNotConnectedException if the link cannot be created (e.g., a Websocket client link).
    */
-  Link<? extends LinkSettings> getOrCreateLink(AccountId accountId, LinkSettings linkSettings) throws LinkNotConnectedException;
+  Link<? extends LinkSettings> getOrCreateLink(AccountId accountId, LinkSettings linkSettings)
+    throws LinkNotConnectedException;
 
   /**
    * Accessor for any links that are currently connected to this Connector.
    *
    * @return A {@link Link} that is currently connected for a particular accountId.
    */
-  Set<Link<?>> getAllConnectedLinks();
+  Set<Link<? extends LinkSettings>> getAllConnectedLinks();
 
   /**
    * Accessor for the {@link Link} that processes Ping protocol requests.

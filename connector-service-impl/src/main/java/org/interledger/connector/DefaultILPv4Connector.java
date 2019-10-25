@@ -8,6 +8,7 @@ import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.link.Link;
 import org.interledger.link.LinkFactoryProvider;
 import org.interledger.link.StatefulLink;
 import org.interledger.link.events.LinkConnectedEvent;
@@ -72,23 +73,23 @@ public class DefaultILPv4Connector implements ILPv4Connector {
 
   @VisibleForTesting
   DefaultILPv4Connector(
-      final Supplier<ConnectorSettings> connectorSettingsSupplier,
-      final AccountManager accountManager,
-      final AccountSettingsRepository accountSettingsRepository,
-      final LinkManager linkManager,
-      final ExternalRoutingService externalRoutingService,
-      final ILPv4PacketSwitch ilpPacketSwitch,
-      final BalanceTracker balanceTracker
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final AccountManager accountManager,
+    final AccountSettingsRepository accountSettingsRepository,
+    final LinkManager linkManager,
+    final ExternalRoutingService externalRoutingService,
+    final ILPv4PacketSwitch ilpPacketSwitch,
+    final BalanceTracker balanceTracker
   ) {
     this(
-        connectorSettingsSupplier,
-        accountManager,
-        accountSettingsRepository,
-        linkManager,
-        externalRoutingService,
-        ilpPacketSwitch,
-        balanceTracker,
-        new EventBus()
+      connectorSettingsSupplier,
+      accountManager,
+      accountSettingsRepository,
+      linkManager,
+      externalRoutingService,
+      ilpPacketSwitch,
+      balanceTracker,
+      new EventBus()
     );
   }
 
@@ -96,14 +97,14 @@ public class DefaultILPv4Connector implements ILPv4Connector {
    * Required-args Constructor (minus an EventBus).
    */
   public DefaultILPv4Connector(
-      final Supplier<ConnectorSettings> connectorSettingsSupplier,
-      final AccountManager accountManager,
-      final AccountSettingsRepository accountSettingsRepository,
-      final LinkManager linkManager,
-      final ExternalRoutingService externalRoutingService,
-      final ILPv4PacketSwitch ilpPacketSwitch,
-      final BalanceTracker balanceTracker,
-      final EventBus eventBus
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final AccountManager accountManager,
+    final AccountSettingsRepository accountSettingsRepository,
+    final LinkManager linkManager,
+    final ExternalRoutingService externalRoutingService,
+    final ILPv4PacketSwitch ilpPacketSwitch,
+    final BalanceTracker balanceTracker,
+    final EventBus eventBus
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountManager = Objects.requireNonNull(accountManager);
@@ -122,12 +123,12 @@ public class DefaultILPv4Connector implements ILPv4Connector {
    */
   @PostConstruct
   private void init() {
-    // If an operator address is specified, then we use that. Otherwise, attempt to use IL-DCP.
-    if (connectorSettingsSupplier.get().operatorAddress().isPresent()) {
-      this.configureAccounts();
-    } else {
+    // If the default operator address is specified, then we attempt to use IL-DCP.
+    if (connectorSettingsSupplier.get().operatorAddress().equals(Link.SELF)) {
       // ^^ IL-DCP ^^
       this.configureAccountsUsingIldcp();
+    } else { // Otherwise, we use the configured address.
+      this.configureAccounts();
     }
 
     this.getExternalRoutingService().start();
@@ -137,9 +138,9 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   public void shutdown() {
     // Shutdown any stateful links...This will emit LinkDisconnected events that will be handled below...
     this.linkManager.getAllConnectedLinks().stream()
-        .filter(link -> link instanceof StatefulLink)
-        .map(link -> (StatefulLink) link)
-        .forEach(StatefulLink::disconnect);
+      .filter(link -> link instanceof StatefulLink)
+      .map(link -> (StatefulLink) link)
+      .forEach(StatefulLink::disconnect);
   }
 
   @Override
@@ -192,17 +193,17 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     // If this Connector is starting in `child` mode, it will not have an operator address. We need to find the first
     // account of type `parent` and use IL-DCP to get the operating account for this Connector.
     final Optional<AccountSettingsEntity> primaryParentAccountSettings =
-        this.accountSettingsRepository.findPrimaryParentAccountSettings();
+      this.accountSettingsRepository.findPrimaryParentAccountSettings();
     if (primaryParentAccountSettings.isPresent()) {
       // If there's no Operator Address, use IL-DCP to try to get one. Only try this once. If this fails, then the
       // Connector should not startup.
       this.accountManager.initializeParentAccountSettingsViaIlDcp(primaryParentAccountSettings.get().getAccountId());
       logger.info(
-          "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().operatorAddress().get()
+        "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().operatorAddress()
       );
     } else {
       logger.warn("At least one `parent` account must be defined if no operator address is specified at startup. " +
-          "Please set the operator address or else add a new account of type `PARENT`");
+        "Please set the operator address or else add a new account of type `PARENT`");
     }
   }
 
@@ -213,10 +214,10 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     // Connect any Links for accounts that are the connection initiator. Links that require an incoming and outgoing
     // connection will emit a LinkConnectedEvent when the incoming connection is connected.
     this.accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrueWithConversion().stream()
-        .map(linkManager::getOrCreateLink)
-        .filter(link -> link instanceof StatefulLink)
-        .map(link -> (StatefulLink) link)
-        .forEach(StatefulLink::connect);
+      .map(linkManager::getOrCreateLink)
+      .filter(link -> link instanceof StatefulLink)
+      .map(link -> (StatefulLink) link)
+      .forEach(StatefulLink::connect);
   }
 
 }

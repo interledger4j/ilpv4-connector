@@ -597,16 +597,16 @@
   </reporting>
 
   <repositories>
-    <repository>
-      <id>ossrh-snapshots-interledger</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-    </repository>
+<!--    <repository>-->
+<!--      <id>ossrh-snapshots-interledger</id>-->
+<!--      <url>https://oss.sonatype.org/content/repositories/snapshots</url>-->
+<!--      <snapshots>-->
+<!--        <enabled>true</enabled>-->
+<!--      </snapshots>-->
+<!--      <releases>-->
+<!--        <enabled>false</enabled>-->
+<!--      </releases>-->
+<!--    </repository>-->
     <repository>
       <id>spring-releases</id>
       <url>https://repo.spring.io/libs-release</url>

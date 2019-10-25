@@ -3,7 +3,6 @@ package org.interledger.connector.it.topology.nodes;
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.it.topology.AbstractServerNode;
 import org.interledger.connector.server.ConnectorServer;
-import org.interledger.core.InterledgerAddress;
 
 /**
  * A Node that simulates an ILPv4 Connector.
@@ -22,9 +21,7 @@ public class ConnectorServerNode extends AbstractServerNode<ConnectorServer> {
 
   @Override
   public String toString() {
-    return getILPv4Connector().getConnectorSettings().operatorAddress()
-      .map(InterledgerAddress::getValue)
-      .orElse("n/a");
+    return getILPv4Connector().getConnectorSettings().operatorAddress().getValue();
   }
 
   /**

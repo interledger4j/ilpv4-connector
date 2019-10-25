@@ -33,8 +33,7 @@ public class ConnectorSettingsFromPropertyFileTest {
 
   @Test
   public void testConfig() {
-    assertThat(connectorSettings.operatorAddress().get(), is(InterledgerAddress.of("test.example")));
-    assertThat(connectorSettings.operatorAddressSafe(), is(InterledgerAddress.of("test.example")));
+    assertThat(connectorSettings.operatorAddress(), is(InterledgerAddress.of("test.example")));
     assertThat(connectorSettings.globalPrefix(), is(InterledgerAddressPrefix.of("test")));
 
     // Enabled Protocol Settings

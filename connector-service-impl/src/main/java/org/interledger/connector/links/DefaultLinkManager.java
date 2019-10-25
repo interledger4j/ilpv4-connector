@@ -23,12 +23,12 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * A default implementation of {@link LinkManager} that stores all connectedLinks in-memory.
@@ -45,7 +45,7 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
   // able to initiate that type of connection).
   private final Map<AccountId, Link<? extends LinkSettings>> connectedLinks = Maps.newConcurrentMap();
 
-  private final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier;
+  private final Supplier<InterledgerAddress> operatorAddressSupplier;
 
   // NOTE: Note using the AccountSettings cache because Links are typically created infrequently, and it's better to
   // have the most up-to-date data here.
@@ -59,13 +59,13 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
    * Required-args constructor.
    */
   public DefaultLinkManager(
-      final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
-      final AccountSettingsRepository accountSettingsRepository,
-      final LinkSettingsFactory linkSettingsFactory,
-      final LinkFactoryProvider linkFactoryProvider,
-      final AccountIdResolver accountIdResolver,
-      final CircuitBreakerConfig defaultCircuitBreakerConfig,
-      final EventBus eventBus
+    final Supplier<InterledgerAddress> operatorAddressSupplier,
+    final AccountSettingsRepository accountSettingsRepository,
+    final LinkSettingsFactory linkSettingsFactory,
+    final LinkFactoryProvider linkFactoryProvider,
+    final AccountIdResolver accountIdResolver,
+    final CircuitBreakerConfig defaultCircuitBreakerConfig,
+    final EventBus eventBus
   ) {
     this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
@@ -77,14 +77,12 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
     Objects.requireNonNull(eventBus).register(this);
 
     this.pingLink = linkFactoryProvider.getLinkFactory(PingLoopbackLink.LINK_TYPE)
-        .constructLink(
-            // TODO: Once https://github.com/sappenin/java-ilpv4-connector/issues/302 is fixed, this unsafe call will
-            //  become safe.
-            () -> operatorAddressSupplier.get().get(),
-            LinkSettings.builder()
-                .linkType(PingLoopbackLink.LINK_TYPE)
-                .build()
-        );
+      .constructLink(
+        operatorAddressSupplier,
+        LinkSettings.builder()
+          .linkType(PingLoopbackLink.LINK_TYPE)
+          .build()
+      );
   }
 
   // Required for efficient Link-lookup-by-AccountId in the PacketSwitch.
@@ -92,13 +90,13 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
   public Link<? extends LinkSettings> getOrCreateLink(final AccountId accountId) {
     Objects.requireNonNull(accountId);
     return Optional.ofNullable(this.connectedLinks.get(accountId))
-        .orElseGet(() -> {
-          // Convert to LinkSettings...
-          final AccountSettings accountSettings = accountSettingsRepository.findByAccountIdWithConversion(accountId)
-              .orElseThrow(() -> new AccountNotFoundProblem(accountId));
+      .orElseGet(() -> {
+        // Convert to LinkSettings...
+        final AccountSettings accountSettings = accountSettingsRepository.findByAccountIdWithConversion(accountId)
+          .orElseThrow(() -> new AccountNotFoundProblem(accountId));
 
-          return (Link) getOrCreateLink(accountSettings);
-        });
+        return (Link) getOrCreateLink(accountSettings);
+      });
   }
 
   @Override
@@ -106,11 +104,11 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
     Objects.requireNonNull(accountSettings);
     final AccountId accountId = accountSettings.accountId();
     return Optional.ofNullable(this.connectedLinks.get(accountId))
-        .orElseGet(() -> {
-          // Convert to LinkSettings...
-          final LinkSettings linkSettings = linkSettingsFactory.construct(accountSettings);
-          return createLink(accountId, linkSettings);
-        });
+      .orElseGet(() -> {
+        // Convert to LinkSettings...
+        final LinkSettings linkSettings = linkSettingsFactory.construct(accountSettings);
+        return createLink(accountId, linkSettings);
+      });
   }
 
   @Override
@@ -119,7 +117,7 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
     Objects.requireNonNull(linkSettings);
 
     return Optional.ofNullable(this.connectedLinks.get(accountId))
-        .orElseGet(() -> createLink(accountId, linkSettings));
+      .orElseGet(() -> createLink(accountId, linkSettings));
   }
 
   @VisibleForTesting
@@ -129,10 +127,8 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
 
     //Use the first linkFactory that supports the linkType...
     final Link<?> link = this.linkFactoryProvider
-        .getLinkFactory(linkSettings.getLinkType())
-        // TODO: Once https://github.com/sappenin/java-ilpv4-connector/issues/302 is fixed, this unsafe call will
-        //  become safe.
-        .constructLink(() -> operatorAddressSupplier.get().get(), linkSettings);
+      .getLinkFactory(linkSettings.getLinkType())
+      .constructLink(operatorAddressSupplier, linkSettings);
 
     // Set the LinkId to match the AccountId...this way the Link can always use this value to represent the
     // accountId that a given link should use.
@@ -153,8 +149,8 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
   }
 
   @Override
-  public Set<Link<?>> getAllConnectedLinks() {
-    return this.connectedLinks.values().stream().collect(Collectors.toSet());
+  public Set<Link<? extends LinkSettings>> getAllConnectedLinks() {
+    return new HashSet<>(this.connectedLinks.values());
   }
 
   /**

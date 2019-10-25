@@ -106,7 +106,7 @@ public class ChildAccountPaymentRouter implements PaymentRouter<Route> {
 
   boolean isChildAccount(final InterledgerAddress interledgerAddress) {
     Objects.requireNonNull(interledgerAddress, "interledgerAddress must not be null!");
-    return interledgerAddress.startsWith(connectorSettingsSupplier.get().operatorAddressSafe());
+    return interledgerAddress.startsWith(connectorSettingsSupplier.get().operatorAddress());
   }
 
   @Override
@@ -120,7 +120,7 @@ public class ChildAccountPaymentRouter implements PaymentRouter<Route> {
     if (enabledProtocolSettings.isPingProtocolEnabled()) {
       // The ChildAccount router will only ever be engaged for addresses that start with the Connector address. We
       // need one final check to see if there's an exact match, and only then utilize the ping protocol link.
-      if (connectorSettingsSupplier.get().operatorAddressSafe().equals(finalDestinationAddress)) {
+      if (connectorSettingsSupplier.get().operatorAddress().equals(finalDestinationAddress)) {
         return Optional.of(
           PING_ROUTE_BUILDER
             .routePrefix(InterledgerAddressPrefix.of(finalDestinationAddress.getValue()))

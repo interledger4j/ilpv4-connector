@@ -1,6 +1,5 @@
 package org.interledger.connector.links;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
 import org.interledger.connector.fx.JavaMoneyUtils;
@@ -14,18 +13,20 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.Instant;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 import javax.money.CurrencyUnit;
 import javax.money.Monetary;
 import javax.money.MonetaryAmount;
 import javax.money.convert.CurrencyConversion;
 import javax.money.convert.MonetaryConversions;
-import java.time.Instant;
-import java.util.Objects;
-import java.util.function.Supplier;
 
 /**
  * A default implementation of {@link NextHopPacketMapper}.
@@ -57,7 +58,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
 
   /**
    * Construct the <tt>next-hop</tt> ILP prepare packet, meaning a new packet with potentially new pricing, destination,
-   * and expiry characterstics. This method also includes the proper "next hop" account that the new packet should be
+   * and expiry characteristics. This method also includes the proper "next hop" account that the new packet should be
    * forwarded to in order to continue the Interledger protocol.
    *
    * Given a previous ILP prepare packet (i.e., a {@code sourcePacket}), return the next ILP prepare packet in the
@@ -85,7 +86,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     final Route nextHopRoute = this.externalRoutingService.findBestNexHop(destinationAddress)
       .orElseThrow(() -> new InterledgerProtocolException(
           InterledgerRejectPacket.builder()
-            .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
+            .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
             .code(InterledgerErrorCode.F02_UNREACHABLE)
             .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
             .build(),
@@ -103,7 +104,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     if (sourceAccountSettings.accountId().equals(nextHopRoute.nextHopAccountId())) {
       throw new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
-          .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
+          .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
           .code(InterledgerErrorCode.F02_UNREACHABLE)
           .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
           .build(),
@@ -166,7 +167,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       final CurrencyConversion destCurrencyConversion = MonetaryConversions.getConversion(destinationCurrencyUnit);
 
       return UnsignedLong.valueOf(
-          javaMoneyUtils.toInterledgerAmount(sourceAmount.with(destCurrencyConversion), destinationScale));
+        javaMoneyUtils.toInterledgerAmount(sourceAmount.with(destCurrencyConversion), destinationScale));
     }
   }
 
@@ -186,7 +187,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       if (sourceExpiry.isBefore(nowTime)) {
         throw new InterledgerProtocolException(
           InterledgerRejectPacket.builder()
-            .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
+            .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
             .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
             .message(String.format(
               "Source transfer has already expired. sourceExpiry: {%s}, currentTime: {%s}", sourceExpiry, nowTime))
@@ -212,7 +213,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       if (destinationExpiryTime.minusMillis(minMessageWindow).isBefore(nowTime)) {
         throw new InterledgerProtocolException(
           InterledgerRejectPacket.builder()
-            .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
+            .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
             .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
             .message(String.format(
               "Source transfer expires too soon to complete payment. SourceExpiry: {%s}, " +

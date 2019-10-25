@@ -1,10 +1,11 @@
 package org.interledger.connector.packetswitch;
 
-import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.core.InterledgerPreparePacket;
 
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -24,7 +25,8 @@ public class InterledgerAddressUtils {
   private final AccountSettingsRepository accountSettingsRepository;
 
   public InterledgerAddressUtils(
-    final Supplier<ConnectorSettings> connectorSettingsSupplier, final AccountSettingsRepository accountSettingsRepository
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final AccountSettingsRepository accountSettingsRepository
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
@@ -42,8 +44,7 @@ public class InterledgerAddressUtils {
     Objects.requireNonNull(destinationAddress);
 
     // Must check the operating address first since it likely will be a PaymentNetwork address.
-    if (connectorSettingsSupplier.get().operatorAddress().isPresent() &&
-      destinationAddress.startsWith(connectorSettingsSupplier.get().operatorAddressSafe())) {
+    if (destinationAddress.startsWith(connectorSettingsSupplier.get().operatorAddress())) {
       return EXTERNAL_FORWARDING_NOT_ALLOWED;
     } else if (
       // Short-circuit on the happy path using startsWith for performance reasons. Even if someone uses "goo.foo", and
@@ -62,24 +63,24 @@ public class InterledgerAddressUtils {
   }
 
   /**
-   * Determines if an incoming packet is allowed into the Packet Switch from the specified accountId, when the packet is
-   * destined to be sent to the indicated {@code destinationAddress}.
+   * Determines if an incoming {@link InterledgerPreparePacket} is allowed into the Packet Switch from the specified
+   * {@code sourceAccountId}, when the packet is destined to be sent to the indicated {@code destinationAddress}.
    *
-   * @param sourceAccountId
-   * @param destinationAddress
+   * @param sourceAccountId    An {@link AccountId} for the account that is the source of a particular packet.
+   * @param destinationAddress An {@linkn InterledgerAddress} representing the final destination of a Prepare packet.
    *
    * @return {@code true} if the specified account is allowed to send packets to this switch using the specified
-   * destination; {@code false} otherwise.
+   *   destination; {@code false} otherwise.
    */
   public boolean isDestinationAllowedFromAccount(
     final AccountId sourceAccountId, final InterledgerAddress destinationAddress
   ) {
+    Objects.requireNonNull(sourceAccountId);
+    Objects.requireNonNull(destinationAddress);
+
     if (isPaymentNetworkAddress(destinationAddress)) {
       return ALLOWED;
-    } else if (
-      connectorSettingsSupplier.get().operatorAddress().isPresent() &&
-        destinationAddress.startsWith(connectorSettingsSupplier.get().operatorAddressSafe())
-    ) {
+    } else if (destinationAddress.startsWith(connectorSettingsSupplier.get().operatorAddress())) {
       return ALLOWED; // Ping allowed.
     } else if (destinationAddress.startsWith(InterledgerAddressPrefix.PRIVATE.getValue())) {
       // Only internal accounts can send to a `private` address prefix.

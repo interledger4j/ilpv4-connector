@@ -317,8 +317,7 @@ public class SpringConnectorConfig {
 
   @Bean
   PacketRejector packetRejector(final Supplier<ConnectorSettings> connectorSettingsSupplier) {
-    // TODO: Will be fixed via https://github.com/sappenin/java-ilpv4-connector/issues/302
-    return new PacketRejector(() -> connectorSettingsSupplier.get().operatorAddress().get());
+    return new PacketRejector(() -> connectorSettingsSupplier.get().operatorAddress());
   }
 
   /**
@@ -412,9 +411,8 @@ public class SpringConnectorConfig {
   List<LinkFilter> linkFilters(
     BalanceTracker balanceTracker, SettlementService settlementService
   ) {
-    // TODO: Will be fixed with https://github.com/sappenin/java-ilpv4-connector/issues/302
     final Supplier<InterledgerAddress> operatorAddressSupplier =
-      () -> connectorSettingsSupplier().get().operatorAddress().get();
+      () -> connectorSettingsSupplier().get().operatorAddress();
 
     return Lists.newArrayList(
       // TODO: Throughput for Money...

@@ -300,7 +300,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
         .map(nblr -> {
           // Inject ourselves into the path that we'll send to remote peers...
           final List<InterledgerAddress> newPath = ImmutableList.<InterledgerAddress>builder()
-              .add(connectorSettingsSupplier.get().operatorAddressSafe())
+              .add(connectorSettingsSupplier.get().operatorAddress())
               .addAll(nblr.path()).build();
 
           return ImmutableRoute.builder()
@@ -324,7 +324,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
           // Don't advertise local customer routes that we originated. Packets for these destinations should still
           // reach us because we are advertising our own address as a prefix.
           final boolean isLocalCustomerRoute = addressPrefix.getValue()
-              .startsWith(this.connectorSettingsSupplier.get().operatorAddressSafe().getValue()) &&
+              .startsWith(this.connectorSettingsSupplier.get().operatorAddress().getValue()) &&
               nblr.path().size() == 1;
 
           final boolean canDragonFilter = false; // TODO: Dragon!
