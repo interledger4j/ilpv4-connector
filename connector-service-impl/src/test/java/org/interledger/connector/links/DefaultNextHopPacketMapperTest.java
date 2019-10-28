@@ -28,7 +28,9 @@ import org.interledger.core.InterledgerProtocolException;
 import com.google.common.primitives.UnsignedLong;
 import org.javamoney.moneta.spi.DefaultNumberValue;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
@@ -63,6 +65,9 @@ public class DefaultNextHopPacketMapperTest {
       .build();
 
   public static final int MIN_MESSAGE_WINDOW_MILLIS = 1000;
+
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
 
   private Logger logger = LoggerFactory.getLogger(this.getClass());
   private DefaultNextHopPacketMapper mapper;
@@ -176,7 +181,7 @@ public class DefaultNextHopPacketMapperTest {
         .isEqualTo(expiry.minusMillis(minMessageWindowMillis));
   }
 
-  @Test(expected = InterledgerProtocolException.class)
+  @Test
   public void determineDestinationExpiresAfterMinMessageWindow() {
     Instant now = Instant.now(clock);
     Instant expiry = now.plusMillis(1000);
@@ -185,11 +190,11 @@ public class DefaultNextHopPacketMapperTest {
     connectorSettings.setMaxHoldTimeMillis(maxHoldTimeMillis);
     connectorSettings.setMinMessageWindowMillis(minMessageWindowMillis);
     mockExternalForwardingAllowed(true);
-    assertThat(mapper.determineDestinationExpiresAt(clock, expiry, RECEIVER))
-        .isEqualTo(expiry.minusMillis(minMessageWindowMillis));
+    expectedException.expect(InterledgerProtocolException.class);
+    mapper.determineDestinationExpiresAt(clock, expiry, RECEIVER);
   }
 
-  @Test(expected = InterledgerProtocolException.class)
+  @Test
   public void determineDestinationExpiresExactlyAtMinMessageWindow() {
     Instant now = Instant.now(clock);
     Instant expiry = now.plusMillis(1000);
@@ -198,8 +203,8 @@ public class DefaultNextHopPacketMapperTest {
     connectorSettings.setMaxHoldTimeMillis(maxHoldTimeMillis);
     connectorSettings.setMinMessageWindowMillis(minMessageWindowMillis);
     mockExternalForwardingAllowed(true);
-    assertThat(mapper.determineDestinationExpiresAt(clock, expiry, RECEIVER))
-        .isEqualTo(expiry.minusMillis(minMessageWindowMillis));
+    expectedException.expect(InterledgerProtocolException.class);
+    mapper.determineDestinationExpiresAt(clock, expiry, RECEIVER);
   }
 
   @Test
