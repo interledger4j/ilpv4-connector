@@ -1,9 +1,7 @@
 package org.interledger.connector.server.spring.settings;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.eventbus.EventBus;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
+
 import org.interledger.connector.ConnectorExceptionHandler;
 import org.interledger.connector.DefaultILPv4Connector;
 import org.interledger.connector.ILPv4Connector;
@@ -73,6 +71,11 @@ import org.interledger.connector.settlement.SettlementService;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.crypto.Decryptor;
 import org.interledger.encoding.asn.framework.CodecContext;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.eventbus.EventBus;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,8 +91,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
-
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 
 /**
  * <p>Primary configuration for the Connector.</p>
@@ -465,7 +466,7 @@ public class SpringConnectorConfig {
     ILPv4PacketSwitch ilpPacketSwitch,
     BalanceTracker balanceTracker,
     EventBus eventBus,
-    SettlementEngineClient settlementEngineClient
+    SettlementService settlementService
   ) {
     return new DefaultILPv4Connector(
       connectorSettingsSupplier,
@@ -475,7 +476,7 @@ public class SpringConnectorConfig {
       externalRoutingService,
       ilpPacketSwitch,
       balanceTracker,
-      settlementEngineClient,
+      settlementService,
       eventBus
     );
   }
