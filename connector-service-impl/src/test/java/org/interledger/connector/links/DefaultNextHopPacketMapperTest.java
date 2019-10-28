@@ -86,7 +86,7 @@ public class DefaultNextHopPacketMapperTest {
   private Clock clock;
 
   @Before
-  public void setup() {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
     clock = Clock.fixed(Instant.now(), ZoneId.of("UTC"));
     connectorSettings = ModifiableConnectorSettings.create();

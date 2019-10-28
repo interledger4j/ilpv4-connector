@@ -5,7 +5,6 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 
-import java.time.Duration;
 import java.util.Optional;
 
 /**
