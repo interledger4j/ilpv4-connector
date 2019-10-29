@@ -18,6 +18,8 @@ interledger:
     nodeIlpAddress: test.example
     # The global prefix. For production environments, this should be `g`. For test environments, consider `test`.
     globalPrefix: test
+    minMessageWindowMillis: 1000
+    maxHoldTimeMillis: 30000
     btp.enabled: true
     # Which features are enabled.
     enabledFeatures:

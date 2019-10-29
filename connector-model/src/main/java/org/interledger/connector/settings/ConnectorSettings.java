@@ -74,4 +74,25 @@ public interface ConnectorSettings {
     Objects.requireNonNull(childAccountId);
     return this.operatorAddress().with(childAccountId.value());
   }
+
+  /**
+   * the minimum time the connector wants to budget for getting a message to the accounts its trading on.
+   * Budget is mainly to cover the latency to send the fulfillment packet to the downstream node.
+   * @return minimum message window time in milliseconds
+   */
+  @Value.Default
+  default int minMessageWindowMillis() {
+    return 1000;
+  }
+
+  /**
+   * Amount of time that Connector will wait around for a fulfillment/rejection. This is equivalent to outgoing link
+   * timeout duration.
+   * @return max hold time in milliseconds
+   */
+  @Value.Default
+  default int maxHoldTimeMillis() {
+    return 30000;
+  }
+
 }

@@ -47,6 +47,10 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   private GlobalRoutingSettingsFromPropertyFile globalRoutingSettings = new GlobalRoutingSettingsFromPropertyFile();
 
+  private int maxHoldTimeMillis;
+
+  private int minMessageWindowMillis;
+
   @Override
   public InterledgerAddress operatorAddress() {
     return nodeIlpAddress;
@@ -115,6 +119,24 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   public void setGlobalRoutingSettings(GlobalRoutingSettingsFromPropertyFile globalRoutingSettings) {
     this.globalRoutingSettings = globalRoutingSettings;
+  }
+
+  @Override
+  public int maxHoldTimeMillis() {
+    return maxHoldTimeMillis;
+  }
+
+  public void setMaxHoldTimeMillis(int maxHoldTimeMillis) {
+    this.maxHoldTimeMillis = maxHoldTimeMillis;
+  }
+
+  @Override
+  public int minMessageWindowMillis() {
+    return minMessageWindowMillis;
+  }
+
+  public void setMinMessageWindowMillis(int minMessageWindowMillis) {
+    this.minMessageWindowMillis = minMessageWindowMillis;
   }
 
   /**
