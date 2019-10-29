@@ -91,7 +91,7 @@ public class RedisBalanceTracker implements BalanceTracker {
     // theoretically try to make this work, we dont expect _very large_ packet amounts in ILP, and if we encounter
     // them, it probably means the scaling is mis-configured. Additionally, balance tracking has particularly
     // sensitive performance requirements, so any computational savings we can get in ILPv4 the happy-path is preferred.
-    Preconditions.checkArgument(amount >= 0, String.format("amount `%s` must be a positive signed long!", amount));
+    Preconditions.checkArgument(amount >= 0, String.format("amount `%s` cannot be negative!", amount));
     minBalance.ifPresent($ -> Preconditions.checkArgument(
       amount >= 0, String.format("minBalance `%s` must be a positive signed long!", $)
     ));
@@ -137,11 +137,8 @@ public class RedisBalanceTracker implements BalanceTracker {
     // See note in updateBalanceForPrepare for why this is not using unsigned longs
     Preconditions.checkArgument(
       amount >= 0,
-      String.format("amount `%s` must be a positive signed long!", amount)
+      String.format("amount `%s` cannot be negative!", amount)
     );
-
-    // This is here so that we don't hit the balance tracker for any 0-value packets.
-    Preconditions.checkArgument(amount > 0, "destinationAmount must be positive, but was " + amount);
 
     try {
       // Response Format: `{ clearing_balance, prepaid_amount, settle_amount }`
