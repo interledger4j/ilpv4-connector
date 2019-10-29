@@ -167,7 +167,8 @@ public class JavaMoneyConfig {
 
   @Bean
   @Qualifier(FX)
-  OkHttp3ClientHttpRequestFactory fxOkHttp3ClientHttpRequestFactory(@Qualifier(FX) final OkHttpClient fxHttpClient) {
+  protected OkHttp3ClientHttpRequestFactory fxOkHttp3ClientHttpRequestFactory(
+      @Qualifier(FX) final OkHttpClient fxHttpClient) {
     return new OkHttp3ClientHttpRequestFactory(fxHttpClient);
   }
 
