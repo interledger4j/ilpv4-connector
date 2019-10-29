@@ -22,7 +22,7 @@
     <!-- By default, we run in prod mode, unless a different profile is specified. -->
     <activeProfile>prod</activeProfile>
     <java.version>1.8</java.version>
-    <ilp.version>1.0.0</ilp.version>
+    <ilp.version>1.0.1</ilp.version>
     <problem.version>0.23.0</problem.version>
     <problem-spring-web.version>0.25.0</problem-spring-web.version>
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
@@ -53,7 +53,6 @@
     <module>connector-crypto/connector-crypto-cli</module>
     <module>connector-accounts</module>
     <module>connector-link</module>
-    <module>connector-link-blast</module>
     <module>connector-model</module>
     <module>connector-jackson</module>
     <module>connector-routing-api</module>
@@ -142,11 +141,6 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>connector-link</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>connector-link-blast</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -246,38 +240,10 @@
       </dependency>
       <dependency>
         <groupId>org.interledger</groupId>
-        <artifactId>ilp-core</artifactId>
+        <artifactId>quilt-bom</artifactId>
         <version>${ilp.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>ildcp-core</artifactId>
-        <version>${ilp.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>codecs-framework</artifactId>
-        <version>${ilp.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>codecs-ilp</artifactId>
-        <version>${ilp.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>codecs-ildcp</artifactId>
-        <version>${ilp.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>btp-core</artifactId>
-        <version>${ilp.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>btp-core-codecs</artifactId>
-        <version>${ilp.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.interledger</groupId>
@@ -631,16 +597,16 @@
   </reporting>
 
   <repositories>
-    <repository>
-      <id>ossrh-snapshots-interledger</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-    </repository>
+<!--    <repository>-->
+<!--      <id>ossrh-snapshots-interledger</id>-->
+<!--      <url>https://oss.sonatype.org/content/repositories/snapshots</url>-->
+<!--      <snapshots>-->
+<!--        <enabled>true</enabled>-->
+<!--      </snapshots>-->
+<!--      <releases>-->
+<!--        <enabled>false</enabled>-->
+<!--      </releases>-->
+<!--    </repository>-->
     <repository>
       <id>spring-releases</id>
       <url>https://repo.spring.io/libs-release</url>

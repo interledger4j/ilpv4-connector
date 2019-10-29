@@ -4,10 +4,10 @@ import org.hibernate.annotations.NaturalId;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.link.LinkType;
 import org.interledger.connector.persistence.AccountRelationshipConverter;
 import org.interledger.connector.persistence.HashMapConverter;
 import org.interledger.connector.persistence.LinkTypeConverter;
+import org.interledger.link.LinkType;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;

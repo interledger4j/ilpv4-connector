@@ -1,7 +1,8 @@
 package org.interledger.connector.it.topology;
 
-import org.interledger.connector.link.Link;
-import org.interledger.connector.link.LinkSettings;
+import org.interledger.link.Link;
+import org.interledger.link.LinkSettings;
+import org.interledger.link.StatefulLink;
 
 /**
  * A node in a topology which exposes an instance of {@link Link} that can be used to interact with the Node.
@@ -22,7 +23,9 @@ public class LinkNode<PS extends LinkSettings, P extends Link<PS>> extends Abstr
    */
   @Override
   public void start() {
-    getContentObject().connect().join();
+    if (getContentObject() instanceof StatefulLink) {
+      ((StatefulLink) getContentObject()).connect().join();
+    }
   }
 
   /**
@@ -30,7 +33,9 @@ public class LinkNode<PS extends LinkSettings, P extends Link<PS>> extends Abstr
    */
   @Override
   public void stop() {
-    getContentObject().disconnect().join();
+    if (getContentObject() instanceof StatefulLink) {
+      ((StatefulLink) getContentObject()).disconnect().join();
+    }
   }
 
 

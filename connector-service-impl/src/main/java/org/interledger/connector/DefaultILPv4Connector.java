@@ -1,26 +1,29 @@
 package org.interledger.connector;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.eventbus.EventBus;
 import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.balances.BalanceTracker;
-import org.interledger.connector.link.Link;
-import org.interledger.connector.link.LinkFactoryProvider;
-import org.interledger.connector.link.events.LinkConnectedEvent;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.link.Link;
+import org.interledger.link.LinkFactoryProvider;
+import org.interledger.link.StatefulLink;
+import org.interledger.link.events.LinkConnectedEvent;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 /**
  * <p>A default implementation of an {@link ILPv4Connector}.</p>
@@ -51,6 +54,7 @@ import java.util.function.Supplier;
  * more. If the link disconnects, any listening services will react properly to stop tracking the Account/Link
  * combination.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class DefaultILPv4Connector implements ILPv4Connector {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -118,13 +122,14 @@ public class DefaultILPv4Connector implements ILPv4Connector {
    * <p>Initialize the connector after constructing it.</p>
    */
   @PostConstruct
-  private final void init() {
-    // If an operator address is specified, then we use that. Otherwise, attempt to use IL-DCP.
-    if (connectorSettingsSupplier.get().operatorAddress().isPresent()) {
-      this.configureAccounts();
-    } else {
+  @SuppressWarnings("PMD.UnusedPrivateMethod")
+  private void init() {
+    // If the default operator address is specified, then we attempt to use IL-DCP.
+    if (connectorSettingsSupplier.get().operatorAddress().equals(Link.SELF)) {
       // ^^ IL-DCP ^^
       this.configureAccountsUsingIldcp();
+    } else { // Otherwise, we use the configured address.
+      this.configureAccounts();
     }
 
     this.getExternalRoutingService().start();
@@ -132,8 +137,11 @@ public class DefaultILPv4Connector implements ILPv4Connector {
 
   @PreDestroy
   public void shutdown() {
-    // Shutdown all links...This will emit LinkDisconnected events that will be handled below...
-    this.linkManager.getAllConnectedLinks().forEach(Link::disconnect);
+    // Shutdown any stateful links...This will emit LinkDisconnected events that will be handled below...
+    this.linkManager.getAllConnectedLinks().stream()
+      .filter(link -> link instanceof StatefulLink)
+      .map(link -> (StatefulLink) link)
+      .forEach(StatefulLink::disconnect);
   }
 
   @Override
@@ -192,7 +200,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       // Connector should not startup.
       this.accountManager.initializeParentAccountSettingsViaIlDcp(primaryParentAccountSettings.get().getAccountId());
       logger.info(
-        "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().operatorAddress().get()
+        "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().operatorAddress()
       );
     } else {
       logger.warn("At least one `parent` account must be defined if no operator address is specified at startup. " +
@@ -208,7 +216,9 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     // connection will emit a LinkConnectedEvent when the incoming connection is connected.
     this.accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrueWithConversion().stream()
       .map(linkManager::getOrCreateLink)
-      .forEach(Link::connect);
+      .filter(link -> link instanceof StatefulLink)
+      .map(link -> (StatefulLink) link)
+      .forEach(StatefulLink::connect);
   }
 
 }

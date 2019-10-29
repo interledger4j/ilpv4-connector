@@ -1,11 +1,10 @@
 package org.interledger.connector.persistence;
 
-import org.interledger.connector.link.LinkType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.interledger.link.LinkType;
+
+import java.util.Map;
 
 import javax.persistence.AttributeConverter;
-import java.util.Map;
 
 /**
  * An {@link AttributeConverter} for storing a {@link Map} as a JSON string.

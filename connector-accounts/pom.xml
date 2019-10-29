@@ -21,8 +21,8 @@
       <artifactId>connector-core</artifactId>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>connector-link</artifactId>
+      <groupId>org.interledger</groupId>
+      <artifactId>link-core</artifactId>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>

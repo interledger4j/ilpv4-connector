@@ -3,9 +3,9 @@ package org.interledger.connector.accounts;
 import org.springframework.security.core.Authentication;
 
 /**
- * Defines how to resolve AccountId for a given BLAST connection.
+ * Defines how to resolve AccountId for a given Ilp-over-Http connection.
  */
-public interface BlastAccountIdResolver extends AccountIdResolver {
+public interface IlpOverHttpAccountIdResolver extends AccountIdResolver {
 
   /**
    * Determine the {@link AccountId} for the supplied principal.

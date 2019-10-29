@@ -27,16 +27,16 @@ import org.interledger.connector.balances.RedisBalanceTracker;
 import org.interledger.connector.core.ConfigConstants;
 import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.link.CircuitBreakingLink;
-import org.interledger.connector.link.Link;
-import org.interledger.connector.link.blast.BlastLink;
-import org.interledger.connector.link.exceptions.LinkException;
-import org.interledger.connector.links.ping.PingLoopbackLink;
 import org.interledger.connector.ping.DefaultPingInitiator;
 import org.interledger.connector.ping.PingInitiator;
 import org.interledger.connector.server.ConnectorServer;
 import org.interledger.connector.server.spring.settings.javamoney.SpringServiceProvider;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.link.Link;
+import org.interledger.link.PingLoopbackLink;
+import org.interledger.link.exceptions.LinkException;
+import org.interledger.link.http.IlpOverHttpLink;
 
 import com.google.common.primitives.UnsignedLong;
 import org.junit.BeforeClass;
@@ -86,7 +86,7 @@ public abstract class AbstractBlastIT {
     //A simulated routing secret, which is a seed used for generating routing table auth values. Represents the
     // plaintext value of `shh`, encrypted.
     System.setProperty(INTERLEDGER__CONNECTOR__GLOBAL_ROUTING_SETTINGS__ROUTING_SECRET,
-        "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=");
+      "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=");
 
     // Required to get the conditional-config to work for this topology...
     System.setProperty(ConfigConstants.ENABLED_PROTOCOLS + DOT + ConfigConstants.BLAST_ENABLED, "true");
@@ -109,10 +109,10 @@ public abstract class AbstractBlastIT {
    * @param numUnits           A {@link BigInteger} representing the number of units to ping with.
    */
   protected InterledgerResponsePacket testPing(
-      final AccountId senderAccountId,
-      final InterledgerAddress senderNodeAddress,
-      final InterledgerAddress destinationAddress,
-      final UnsignedLong numUnits
+    final AccountId senderAccountId,
+    final InterledgerAddress senderNodeAddress,
+    final InterledgerAddress destinationAddress,
+    final UnsignedLong numUnits
   ) throws InterruptedException {
     return testPing(senderAccountId, senderNodeAddress, destinationAddress, numUnits, false);
   }
@@ -130,13 +130,13 @@ public abstract class AbstractBlastIT {
    * @param numUnits           A {@link BigInteger} representing the number of units to ping with.
    */
   protected InterledgerResponsePacket testPing(
-      final AccountId senderAccountId,
-      final InterledgerAddress senderNodeAddress,
-      final InterledgerAddress destinationAddress,
-      final UnsignedLong numUnits,
-      final boolean allowReject
+    final AccountId senderAccountId,
+    final InterledgerAddress senderNodeAddress,
+    final InterledgerAddress destinationAddress,
+    final UnsignedLong numUnits,
+    final boolean allowReject
   )
-      throws InterruptedException {
+    throws InterruptedException {
 
     Objects.requireNonNull(senderNodeAddress);
     Objects.requireNonNull(senderAccountId);
@@ -145,25 +145,25 @@ public abstract class AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BlastLink blastLink = getBlastLinkFromGraph(senderNodeAddress, senderAccountId);
+    final IlpOverHttpLink blastLink = getIlpOverHttpLinkFromGraph(senderNodeAddress, senderAccountId);
     final PingInitiator pingInitiator = new DefaultPingInitiator(blastLink, () -> Instant.now().plusSeconds(30));
     AtomicReference<InterledgerResponsePacket> response = new AtomicReference<>();
     pingInitiator.ping(destinationAddress, numUnits).handle(
-        fulfillPacket -> {
-          assertThat(fulfillPacket.getFulfillment(), is(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT));
-          assertThat(
-              fulfillPacket.getFulfillment().validateCondition(PingLoopbackLink.PING_PROTOCOL_CONDITION),
-              is(true)
-          );
-          latch.countDown();
-          response.set(fulfillPacket);
-        }, interledgerRejectPacket -> {
-          if (!allowReject) {
-            fail(String.format("Ping request rejected, but should have fulfilled: %s", interledgerRejectPacket));
-          }
-          latch.countDown();
-          response.set(interledgerRejectPacket);
+      fulfillPacket -> {
+        assertThat(fulfillPacket.getFulfillment(), is(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT));
+        assertThat(
+          fulfillPacket.getFulfillment().validateCondition(PingLoopbackLink.PING_PROTOCOL_CONDITION),
+          is(true)
+        );
+        latch.countDown();
+        response.set(fulfillPacket);
+      }, interledgerRejectPacket -> {
+        if (!allowReject) {
+          fail(String.format("Ping request rejected, but should have fulfilled: %s", interledgerRejectPacket));
         }
+        latch.countDown();
+        response.set(interledgerRejectPacket);
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -183,7 +183,7 @@ public abstract class AbstractBlastIT {
   protected ILPv4Connector getILPv4NodeFromGraph(final InterledgerAddress interledgerAddress) {
     Objects.requireNonNull(interledgerAddress);
     return ((ConnectorServer) getTopology().getNode(interledgerAddress.getValue()).getContentObject()).getContext()
-        .getBean(ILPv4Connector.class);
+      .getBean(ILPv4Connector.class);
   }
 
   /**
@@ -198,9 +198,9 @@ public abstract class AbstractBlastIT {
     Objects.requireNonNull(interledgerAddress);
 
     Object redisTemplateObject =
-        ((ConnectorServer) getTopology().getNode(interledgerAddress.getValue()).getContentObject())
-            .getContext()
-            .getBean(BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME);
+      ((ConnectorServer) getTopology().getNode(interledgerAddress.getValue()).getContentObject())
+        .getContext()
+        .getBean(BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME);
 
     if (redisTemplateObject != null) {
       return Optional.ofNullable((RedisTemplate) redisTemplateObject);
@@ -215,37 +215,38 @@ public abstract class AbstractBlastIT {
    * @param nodeAddress The {@link InterledgerAddress} of the node in the graph to obtain a Link from.
    * @param accountId   The unique account identifier for the Link to return.*
    *
-   * @return A {@link BlastLink} in the Topology that corresponds to the supplied inputs.
+   * @return A {@link IlpOverHttpLink} in the Topology that corresponds to the supplied inputs.
    */
-  protected BlastLink getBlastLinkFromGraph(final InterledgerAddress nodeAddress, final AccountId accountId) {
+  protected IlpOverHttpLink getIlpOverHttpLinkFromGraph(final InterledgerAddress nodeAddress,
+    final AccountId accountId) {
     Objects.requireNonNull(nodeAddress);
     Objects.requireNonNull(accountId);
 
     final Link link = getILPv4NodeFromGraph(nodeAddress).getLinkManager()
-        .getOrCreateLink(accountId);
+      .getOrCreateLink(accountId);
 
-    if (BlastLink.LINK_TYPE.equals(link.getLinkSettings().linkType())) {
-      // Most of the time, this link is a CircuitBreaking link, in which case the BlastLink is the Delegate.
+    if (IlpOverHttpLink.LINK_TYPE.equals(link.getLinkSettings().getLinkType())) {
+      // Most of the time, this link is a CircuitBreaking link, in which case the IlpOverHttpLink is the Delegate.
       if (CircuitBreakingLink.class.isAssignableFrom(link.getClass())) {
         return ((CircuitBreakingLink) link).getLinkDelegateTyped();
       } else {
-        return (BlastLink) link;
+        return (IlpOverHttpLink) link;
       }
     } else {
       throw new LinkException(
-          "Link was not of Type(BLAST), but was instead: " + link.getLinkSettings().linkType().value(),
-          link.getLinkId());
+        "Link was not of Type(BLAST), but was instead: " + link.getLinkSettings().getLinkType().value(),
+        link.getLinkId());
     }
   }
 
   protected void assertAccountBalance(
-      final ILPv4Connector connector,
-      final AccountId accountId,
-      final BigInteger expectedAmount
+    final ILPv4Connector connector,
+    final AccountId accountId,
+    final BigInteger expectedAmount
   ) {
     assertThat(
-        String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.toString()),
-        connector.getBalanceTracker().balance(accountId).netBalance(), is(expectedAmount)
+      String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.toString()),
+      connector.getBalanceTracker().balance(accountId).netBalance(), is(expectedAmount)
     );
   }
 
@@ -267,17 +268,17 @@ public abstract class AbstractBlastIT {
     } else {
       // Reset the balances for any peering accounts in the Topology.
       RedisKeyCommands redisCommands = this.getRedisTemplate(getAliceConnectorAddress())
-          .map(RedisTemplate::getConnectionFactory)
-          .map(RedisConnectionFactory::getConnection)
-          .map(RedisConnection::keyCommands)
-          .orElseThrow(() -> new RedisConnectionFailureException("Unable to get redisHashCommands "));
+        .map(RedisTemplate::getConnectionFactory)
+        .map(RedisConnectionFactory::getConnection)
+        .map(RedisConnection::keyCommands)
+        .orElseThrow(() -> new RedisConnectionFailureException("Unable to get redisHashCommands "));
 
       redisCommands.del(
-          ("accounts:" + PING_ACCOUNT_ID).getBytes(),
-          ("accounts:" + ALICE).getBytes(),
-          ("accounts:" + BOB).getBytes(),
-          ("accounts:" + PAUL).getBytes(),
-          ("accounts:" + PETER).getBytes()
+        ("accounts:" + PING_ACCOUNT_ID).getBytes(),
+        ("accounts:" + ALICE).getBytes(),
+        ("accounts:" + BOB).getBytes(),
+        ("accounts:" + PAUL).getBytes(),
+        ("accounts:" + PETER).getBytes()
       );
     }
   }

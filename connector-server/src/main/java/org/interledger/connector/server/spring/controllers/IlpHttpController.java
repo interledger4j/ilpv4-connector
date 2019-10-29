@@ -1,7 +1,7 @@
 package org.interledger.connector.server.spring.controllers;
 
 import org.interledger.connector.accounts.AccountIdResolver;
-import org.interledger.connector.accounts.BlastAccountIdResolver;
+import org.interledger.connector.accounts.IlpOverHttpAccountIdResolver;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerPreparePacket;
@@ -19,7 +19,7 @@ import java.util.Objects;
 
 import static org.interledger.connector.core.ConfigConstants.BLAST_ENABLED;
 import static org.interledger.connector.core.ConfigConstants.ENABLED_PROTOCOLS;
-import static org.interledger.connector.link.blast.BlastHeaders.APPLICATION_ILP_OCTET_STREAM_VALUE;
+import static org.interledger.connector.link.http.BlastHeaders.APPLICATION_ILP_OCTET_STREAM_VALUE;
 
 /**
  * A RESTful controller for handling ILP over HTTP request/response payloads.
@@ -32,10 +32,10 @@ public class IlpHttpController {
 
   public static final String ILP_PATH = "/ilp";
 
-  private final BlastAccountIdResolver accountIdResolver;
+  private final IlpOverHttpAccountIdResolver accountIdResolver;
   private final ILPv4PacketSwitch ilPv4PacketSwitch;
 
-  public IlpHttpController(final BlastAccountIdResolver accountIdResolver, final ILPv4PacketSwitch ilPv4PacketSwitch) {
+  public IlpHttpController(final IlpOverHttpAccountIdResolver accountIdResolver, final ILPv4PacketSwitch ilPv4PacketSwitch) {
     this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
     this.ilPv4PacketSwitch = Objects.requireNonNull(ilPv4PacketSwitch);
   }

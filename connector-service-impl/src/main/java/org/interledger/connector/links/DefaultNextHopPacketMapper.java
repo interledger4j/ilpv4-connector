@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
 import javax.money.CurrencyUnit;
 import javax.money.Monetary;
 import javax.money.MonetaryAmount;
@@ -46,24 +47,24 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
   private final Function<CurrencyUnit, CurrencyConversion> currencyConverter;
 
   public DefaultNextHopPacketMapper(
-      final Supplier<ConnectorSettings> connectorSettingsSupplier,
-      final PaymentRouter<Route> externalRoutingService,
-      final InterledgerAddressUtils addressUtils,
-      final JavaMoneyUtils javaMoneyUtils,
-      final AccountSettingsLoadingCache accountSettingsLoadingCache
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final PaymentRouter<Route> externalRoutingService,
+    final InterledgerAddressUtils addressUtils,
+    final JavaMoneyUtils javaMoneyUtils,
+    final AccountSettingsLoadingCache accountSettingsLoadingCache
   ) {
     this(connectorSettingsSupplier, externalRoutingService, addressUtils, javaMoneyUtils, accountSettingsLoadingCache,
-        (CurrencyUnit unit) -> MonetaryConversions.getConversion(unit));
+      (CurrencyUnit unit) -> MonetaryConversions.getConversion(unit));
   }
 
   @VisibleForTesting
   DefaultNextHopPacketMapper(
-      final Supplier<ConnectorSettings> connectorSettingsSupplier,
-      final PaymentRouter<Route> externalRoutingService,
-      final InterledgerAddressUtils addressUtils,
-      final JavaMoneyUtils javaMoneyUtils,
-      final AccountSettingsLoadingCache accountSettingsLoadingCache,
-      final Function<CurrencyUnit, CurrencyConversion> currencyConverter
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final PaymentRouter<Route> externalRoutingService,
+    final InterledgerAddressUtils addressUtils,
+    final JavaMoneyUtils javaMoneyUtils,
+    final AccountSettingsLoadingCache accountSettingsLoadingCache,
+    final Function<CurrencyUnit, CurrencyConversion> currencyConverter
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
@@ -76,7 +77,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
 
   /**
    * Construct the <tt>next-hop</tt> ILP prepare packet, meaning a new packet with potentially new pricing, destination,
-   * and expiry characterstics. This method also includes the proper "next hop" account that the new packet should be
+   * and expiry characteristics. This method also includes the proper "next hop" account that the new packet should be
    * forwarded to in order to continue the Interledger protocol.
    * <p>
    * Given a previous ILP prepare packet (i.e., a {@code sourcePacket}), return the next ILP prepare packet in the
@@ -85,34 +86,35 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
    * @param sourceAccountSettings The {@link AccountSettings} of the peer who sent this packet into the Connector. This
    *                              is typically the remote peer-address configured in a link.
    * @param sourcePacket          The {@link InterledgerPreparePacket} that we received from the source address.
+   *
    * @return A {@link InterledgerPreparePacket} that can be sent to the next-hop.
    */
   public NextHopInfo getNextHopPacket(
-      final AccountSettings sourceAccountSettings, final InterledgerPreparePacket sourcePacket
+    final AccountSettings sourceAccountSettings, final InterledgerPreparePacket sourcePacket
   ) throws RuntimeException {
 
     if (logger.isDebugEnabled()) {
       logger.debug(
-          "Constructing NextHop InterledgerPreparePacket. sourceAccountSettings={} packet={}",
-          sourceAccountSettings, sourcePacket
+        "Constructing NextHop InterledgerPreparePacket. sourceAccountSettings={} packet={}",
+        sourceAccountSettings, sourcePacket
       );
     }
 
     final InterledgerAddress destinationAddress = sourcePacket.getDestination();
 
     final Route nextHopRoute = this.externalRoutingService.findBestNexHop(destinationAddress)
-        .orElseThrow(() -> new InterledgerProtocolException(
-                InterledgerRejectPacket.builder()
-                    .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
-                    .code(InterledgerErrorCode.F02_UNREACHABLE)
-                    .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
-                    .build(),
-                String.format(
-                    "No route found from accountId to destination. sourceAccountSettings=%s destinationAddress=%s",
-                    sourceAccountSettings, destinationAddress.getValue()
-                )
-            )
-        );
+      .orElseThrow(() -> new InterledgerProtocolException(
+          InterledgerRejectPacket.builder()
+            .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
+            .code(InterledgerErrorCode.F02_UNREACHABLE)
+            .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
+            .build(),
+          String.format(
+            "No route found from accountId to destination. sourceAccountSettings=%s destinationAddress=%s",
+            sourceAccountSettings, destinationAddress.getValue()
+          )
+        )
+      );
 
     if (logger.isDebugEnabled()) {
       logger.debug("Determined next hop: {}", nextHopRoute);
@@ -120,35 +122,35 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
 
     if (sourceAccountSettings.accountId().equals(nextHopRoute.nextHopAccountId())) {
       throw new InterledgerProtocolException(
-          InterledgerRejectPacket.builder()
-              .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
-              .code(InterledgerErrorCode.F02_UNREACHABLE)
-              .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
-              .build(),
-          String.format(
-              "Refusing to route payments back to sender. sourceAccountSettings=%s destinationAccount=%s",
-              sourceAccountSettings, nextHopRoute.nextHopAccountId()
-          )
+        InterledgerRejectPacket.builder()
+          .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
+          .code(InterledgerErrorCode.F02_UNREACHABLE)
+          .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
+          .build(),
+        String.format(
+          "Refusing to route payments back to sender. sourceAccountSettings=%s destinationAccount=%s",
+          sourceAccountSettings, nextHopRoute.nextHopAccountId()
+        )
       );
     }
 
     final AccountSettings destinationAccountSettings =
-        this.accountSettingsLoadingCache.safeGetAccountId(nextHopRoute.nextHopAccountId());
+      this.accountSettingsLoadingCache.safeGetAccountId(nextHopRoute.nextHopAccountId());
 
     final UnsignedLong nextAmount = this.determineNextAmount(
-        sourceAccountSettings, destinationAccountSettings, sourcePacket
+      sourceAccountSettings, destinationAccountSettings, sourcePacket
     );
 
     return NextHopInfo.builder()
-        .nextHopAccountId(nextHopRoute.nextHopAccountId())
-        .nextHopPacket(
-            InterledgerPreparePacket.builder()
-                .from(sourcePacket)
-                .amount(nextAmount)
-                .expiresAt(determineDestinationExpiresAt(Clock.systemUTC(),
-                    sourcePacket.getExpiresAt(), sourcePacket.getDestination()))
-                .build())
-        .build();
+      .nextHopAccountId(nextHopRoute.nextHopAccountId())
+      .nextHopPacket(
+        InterledgerPreparePacket.builder()
+          .from(sourcePacket)
+          .amount(nextAmount)
+          .expiresAt(determineDestinationExpiresAt(Clock.systemUTC(),
+            sourcePacket.getExpiresAt(), sourcePacket.getDestination()))
+          .build())
+      .build();
   }
 
   /**
@@ -158,12 +160,13 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
    * @param sourceAccountSettings
    * @param destinationAccountSettings
    * @param sourcePacket
+   *
    * @return A BigInteger is the correct units for the source account.
    */
   @VisibleForTesting
   protected UnsignedLong determineNextAmount(
-      final AccountSettings sourceAccountSettings, final AccountSettings destinationAccountSettings,
-      final InterledgerPreparePacket sourcePacket
+    final AccountSettings sourceAccountSettings, final AccountSettings destinationAccountSettings,
+    final InterledgerPreparePacket sourcePacket
   ) {
     Objects.requireNonNull(sourceAccountSettings);
     Objects.requireNonNull(destinationAccountSettings);
@@ -177,20 +180,20 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.assetCode());
       final int sourceScale = sourceAccountSettings.assetScale();
       final MonetaryAmount sourceAmount =
-          javaMoneyUtils.toMonetaryAmount(sourceCurrencyUnit, sourcePacket.getAmount().bigIntegerValue(), sourceScale);
+        javaMoneyUtils.toMonetaryAmount(sourceCurrencyUnit, sourcePacket.getAmount().bigIntegerValue(), sourceScale);
 
       final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAccountSettings.assetCode());
       final int destinationScale = destinationAccountSettings.assetScale();
       final CurrencyConversion destCurrencyConversion = currencyConverter.apply(destinationCurrencyUnit);
 
       return UnsignedLong.valueOf(
-          javaMoneyUtils.toInterledgerAmount(sourceAmount.with(destCurrencyConversion), destinationScale));
+        javaMoneyUtils.toInterledgerAmount(sourceAmount.with(destCurrencyConversion), destinationScale));
     }
   }
 
   @VisibleForTesting
   protected Instant determineDestinationExpiresAt(
-      final Clock clock, final Instant sourceExpiry, final InterledgerAddress destinationAddress
+    final Clock clock, final Instant sourceExpiry, final InterledgerAddress destinationAddress
   ) {
     Objects.requireNonNull(sourceExpiry);
 
@@ -202,13 +205,13 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       final Instant nowTime = Instant.now(clock);
       if (sourceExpiry.isBefore(nowTime)) {
         throw new InterledgerProtocolException(
-            InterledgerRejectPacket.builder()
-                .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
-                .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
-                .message(String.format(
-                    "Source transfer has already expired. sourceExpiry: {%s}, currentTime: {%s}",
-                    sourceExpiry, nowTime))
-                .build()
+          InterledgerRejectPacket.builder()
+            .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
+            .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
+            .message(String
+              .format("Source transfer has already expired. sourceExpiry: {%s}, currentTime: {%s}", sourceExpiry,
+                nowTime))
+            .build()
         );
       }
 
@@ -229,16 +232,16 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       // One final check for a "too soon" expiry...
       if (destinationExpiryTime.minusMillis(minMessageWindow).isBefore(nowTime)) {
         throw new InterledgerProtocolException(
-            InterledgerRejectPacket.builder()
-                .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
-                .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
-                .message(String.format(
-                    "Source transfer expires too soon to complete payment. SourceExpiry: {%s}, " +
-                        "RequiredSourceExpiry: {%s}, CurrentTime: {%s}",
-                    sourceExpiry,
-                    nowTime.plusMillis(minMessageWindow),
-                    nowTime))
-                .build()
+          InterledgerRejectPacket.builder()
+            .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
+            .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
+            .message(String.format(
+              "Source transfer expires too soon to complete payment. SourceExpiry: {%s}, " +
+                "RequiredSourceExpiry: {%s}, CurrentTime: {%s}",
+              sourceExpiry,
+              nowTime.plusMillis(minMessageWindow),
+              nowTime))
+            .build()
         );
       } else {
         return destinationExpiryTime;

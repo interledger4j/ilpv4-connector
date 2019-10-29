@@ -1,4 +1,6 @@
-package org.interledger.connector.link.blast;
+package org.interledger.connector.link.http;
+
+import static org.interledger.link.PingLoopbackLink.PING_PROTOCOL_CONDITION;
 
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerPreparePacket;
@@ -7,28 +9,28 @@ import org.interledger.core.InterledgerResponsePacket;
 
 import java.time.Instant;
 
-import static org.interledger.connector.link.PingableLink.PING_PROTOCOL_CONDITION;
-
 /**
  * Encapsulates how to communicate with a BLAST peer.
  */
+@Deprecated
+// TODO: Delete this. IlpLink is the replacement.
 public interface BlastHttpSender {
 
   // Used by BLAST to test the connection by verifying a rejection with a T01.
   InterledgerPreparePacket UNFULFILLABLE_PACKET = InterledgerPreparePacket.builder()
-    .executionCondition(PING_PROTOCOL_CONDITION)
-    .expiresAt(Instant.now().plusSeconds(30))
-    .destination(InterledgerAddress.of("peer.ilp_over_http_connection_test_that_should_always_reject"))
-    .build();
+      .executionCondition(PING_PROTOCOL_CONDITION)
+      .expiresAt(Instant.now().plusSeconds(30))
+      .destination(InterledgerAddress.of("peer.ilp_over_http_connection_test_that_should_always_reject"))
+      .build();
 
   /**
    * Send an ILP prepare packet to the remote BLAST peer.
    *
-   * @param preparePacket
+   * @param preparePacket The packet to prepare.
    *
    * @return An {@link InterledgerResponsePacket}. Note that if the request to the remote peer times-out, then the ILP
-   * reject packet will contain a {@link InterledgerRejectPacket#getTriggeredBy()} that matches this node's operator
-   * address.
+   *     reject packet will contain a {@link InterledgerRejectPacket#getTriggeredBy()} that matches this node's operator
+   *     address.
    */
   InterledgerResponsePacket sendData(final InterledgerPreparePacket preparePacket);
 

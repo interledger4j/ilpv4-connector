@@ -28,10 +28,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>connector-link</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>connector-accounts</artifactId>
     </dependency>
     <dependency>
@@ -76,6 +72,10 @@
     <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>ilp-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>link-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.immutables</groupId>

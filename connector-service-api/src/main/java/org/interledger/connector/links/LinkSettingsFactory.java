@@ -1,7 +1,7 @@
 package org.interledger.connector.links;
 
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.link.LinkSettings;
+import org.interledger.link.LinkSettings;
 
 import java.util.Objects;
 

@@ -1,6 +1,8 @@
 package org.interledger.connector.persistence.converters;
 
-import okhttp3.HttpUrl;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
@@ -8,16 +10,15 @@ import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.accounts.SettlementEngineDetails;
-import org.interledger.connector.link.LinkType;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.link.LinkType;
+
+import okhttp3.HttpUrl;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Instant;
 import java.util.UUID;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Unit tests for {@link AccountSettingsEntityConverter}.
@@ -29,8 +30,8 @@ public class AccountSettingsEntityConverterTest {
   @Before
   public void setUp() {
     this.converter = new AccountSettingsEntityConverter(
-      new RateLimitSettingsEntityConverter(), new AccountBalanceSettingsEntityConverter(),
-      new SettlementEngineDetailsEntityConverter()
+        new RateLimitSettingsEntityConverter(), new AccountBalanceSettingsEntityConverter(),
+        new SettlementEngineDetailsEntityConverter()
     );
   }
 
@@ -38,14 +39,14 @@ public class AccountSettingsEntityConverterTest {
   public void convertWithEmptyEmbeds() {
 
     final AccountSettings accountSettings = AccountSettings.builder()
-      .accountId(AccountId.of("123"))
-      .description("test description")
-      .assetCode("USD")
-      .assetScale(2)
-      .accountRelationship(AccountRelationship.PEER)
-      .ilpAddressSegment("g.foo")
-      .linkType(LinkType.of("foo"))
-      .build();
+        .accountId(AccountId.of("123"))
+        .description("test description")
+        .assetCode("USD")
+        .assetScale(2)
+        .accountRelationship(AccountRelationship.PEER)
+        .ilpAddressSegment("g.foo")
+        .linkType(LinkType.of("foo"))
+        .build();
     final AccountSettingsEntity entity = new AccountSettingsEntity(accountSettings);
 
     AccountSettings actual = converter.convert(entity);
@@ -65,34 +66,34 @@ public class AccountSettingsEntityConverterTest {
   @Test
   public void convertFullObject() {
     final AccountBalanceSettings balanceSettings = AccountBalanceSettings.builder()
-      .settleThreshold(100L)
-      .settleTo(1L)
-      .minBalance(50L)
-      .build();
+        .settleThreshold(100L)
+        .settleTo(1L)
+        .minBalance(50L)
+        .build();
 
     final AccountRateLimitSettings rateLimitSettings = AccountRateLimitSettings.builder()
-      .maxPacketsPerSecond(2)
-      .build();
+        .maxPacketsPerSecond(2)
+        .build();
 
     final SettlementEngineDetails settlementEngineDetails = SettlementEngineDetails.builder()
-      .baseUrl(HttpUrl.parse("https://example.com"))
-      .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
-      .build();
+        .baseUrl(HttpUrl.parse("https://example.com"))
+        .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
+        .build();
 
     final AccountSettings accountSettings = AccountSettings.builder()
-      .accountId(AccountId.of("123"))
-      .createdAt(Instant.MAX)
-      .modifiedAt(Instant.MAX)
-      .description("test description")
-      .assetCode("USD")
-      .assetScale(2)
-      .accountRelationship(AccountRelationship.PEER)
-      .ilpAddressSegment("g.foo")
-      .linkType(LinkType.of("foo"))
-      .balanceSettings(balanceSettings)
-      .rateLimitSettings(rateLimitSettings)
-      .settlementEngineDetails(settlementEngineDetails)
-      .build();
+        .accountId(AccountId.of("123"))
+        .createdAt(Instant.MAX)
+        .modifiedAt(Instant.MAX)
+        .description("test description")
+        .assetCode("USD")
+        .assetScale(2)
+        .accountRelationship(AccountRelationship.PEER)
+        .ilpAddressSegment("g.foo")
+        .linkType(LinkType.of("foo"))
+        .balanceSettings(balanceSettings)
+        .rateLimitSettings(rateLimitSettings)
+        .settlementEngineDetails(settlementEngineDetails)
+        .build();
     final AccountSettingsEntity entity = new AccountSettingsEntity(accountSettings);
 
     AccountSettings actual = converter.convert(entity);

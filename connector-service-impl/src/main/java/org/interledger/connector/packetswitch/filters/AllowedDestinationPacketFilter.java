@@ -1,11 +1,12 @@
 package org.interledger.connector.packetswitch.filters;
 
-import org.interledger.connector.packetswitch.InterledgerAddressUtils;
-import org.interledger.connector.packetswitch.PacketRejector;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.packetswitch.InterledgerAddressUtils;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.link.LinkId;
+import org.interledger.link.PacketRejector;
 
 import java.util.Objects;
 
@@ -21,7 +22,7 @@ public class AllowedDestinationPacketFilter extends AbstractPacketFilter impleme
   private final InterledgerAddressUtils addressUtils;
 
   public AllowedDestinationPacketFilter(
-    final PacketRejector packetRejector, final InterledgerAddressUtils addressUtils
+      final PacketRejector packetRejector, final InterledgerAddressUtils addressUtils
   ) {
     super(packetRejector);
     this.addressUtils = Objects.requireNonNull(addressUtils);
@@ -29,25 +30,27 @@ public class AllowedDestinationPacketFilter extends AbstractPacketFilter impleme
 
   @Override
   public InterledgerResponsePacket doFilter(
-    final AccountSettings sourceAccountSettings,
-    final InterledgerPreparePacket sourcePreparePacket,
-    final PacketSwitchFilterChain filterChain
+      final AccountSettings sourceAccountSettings,
+      final InterledgerPreparePacket sourcePreparePacket,
+      final PacketSwitchFilterChain filterChain
   ) {
     // Before packet-forwarding is engaged, this code ensures the incoming account/packet information is eligible
     // to be packet-switched, considering the destination address as well as characteristics of the source account.
     if (
-      !addressUtils.isDestinationAllowedFromAccount(
-        sourceAccountSettings.accountId(), sourcePreparePacket.getDestination()
-      )
+        !addressUtils.isDestinationAllowedFromAccount(
+            sourceAccountSettings.accountId(), sourcePreparePacket.getDestination()
+        )
     ) {
       logger.error(
-        "AccountId `{}` is not allowed to send to destination address `{}`",
-        sourceAccountSettings.accountId().value(), sourcePreparePacket.getDestination().getValue()
+          "AccountId `{}` is not allowed to send to destination address `{}`",
+          sourceAccountSettings.accountId().value(), sourcePreparePacket.getDestination().getValue()
       );
       // REJECT!
       return packetRejector.reject(
-        sourceAccountSettings.accountId(), sourcePreparePacket, InterledgerErrorCode.F02_UNREACHABLE,
-        DESTINATION_ADDRESS_IS_UNREACHABLE
+          LinkId.of(sourceAccountSettings.accountId().value()),
+          sourcePreparePacket,
+          InterledgerErrorCode.F02_UNREACHABLE,
+          DESTINATION_ADDRESS_IS_UNREACHABLE
       );
     } else {
       return filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);

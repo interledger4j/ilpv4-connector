@@ -1,25 +1,5 @@
 package org.interledger.connector.link;
 
-import com.google.common.collect.ImmutableList;
-import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
-import org.interledger.core.InterledgerAddress;
-import org.interledger.core.InterledgerErrorCode;
-import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerProtocolException;
-import org.interledger.core.InterledgerRejectPacket;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
-import java.util.Collection;
-import java.util.Objects;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.interledger.core.InterledgerErrorCode.F00_BAD_REQUEST;
@@ -47,16 +27,45 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerErrorCode;
+import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerProtocolException;
+import org.interledger.core.InterledgerRejectPacket;
+import org.interledger.link.Link;
+import org.interledger.link.LinkId;
+import org.interledger.link.LinkSettings;
+
+import com.google.common.collect.ImmutableList;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.Collection;
+import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Unit tests {@link CircuitBreakingLink}.
  */
 @RunWith(Parameterized.class)
 public class CircuitBreakingLinkPredicateTest {
 
-  @Mock
-  private Link<?> linkDelegate;
+  private static final String LINK_ID_VALUE = "123";
+  private static final LinkId LINK_ID = LinkId.of(LINK_ID_VALUE);
 
-  private CircuitBreakerConfig circuitBreakerConfig;
+  @Mock
+  private Link<LinkSettings> linkDelegateMock;
+
+  @Mock
+  private LinkSettings delegateLinkSettingsMock;
+
   private InterledgerErrorCode errorCode;
 
   private CircuitBreakingLink circuitBreakingLink;
@@ -73,30 +82,30 @@ public class CircuitBreakingLinkPredicateTest {
   public static Collection<Object[]> errorCodes() {
     return ImmutableList.of(
       // T Family
-      new Object[]{T00_INTERNAL_ERROR, CircuitBreaker.State.CLOSED},
-      new Object[]{T01_PEER_UNREACHABLE, CircuitBreaker.State.CLOSED},
-      new Object[]{T02_PEER_BUSY, CircuitBreaker.State.CLOSED},
-      new Object[]{T03_CONNECTOR_BUSY, CircuitBreaker.State.CLOSED},
-      new Object[]{T04_INSUFFICIENT_LIQUIDITY, CircuitBreaker.State.CLOSED},
-      new Object[]{T05_RATE_LIMITED, CircuitBreaker.State.CLOSED},
-      new Object[]{T99_APPLICATION_ERROR, CircuitBreaker.State.CLOSED},
+      new Object[] {T00_INTERNAL_ERROR, CircuitBreaker.State.CLOSED},
+      new Object[] {T01_PEER_UNREACHABLE, CircuitBreaker.State.CLOSED},
+      new Object[] {T02_PEER_BUSY, CircuitBreaker.State.CLOSED},
+      new Object[] {T03_CONNECTOR_BUSY, CircuitBreaker.State.CLOSED},
+      new Object[] {T04_INSUFFICIENT_LIQUIDITY, CircuitBreaker.State.CLOSED},
+      new Object[] {T05_RATE_LIMITED, CircuitBreaker.State.CLOSED},
+      new Object[] {T99_APPLICATION_ERROR, CircuitBreaker.State.CLOSED},
 
       // R Family
-      new Object[]{R01_INSUFFICIENT_SOURCE_AMOUNT, CircuitBreaker.State.CLOSED},
-      new Object[]{R02_INSUFFICIENT_TIMEOUT, CircuitBreaker.State.CLOSED},
-      new Object[]{R99_APPLICATION_ERROR, CircuitBreaker.State.CLOSED},
+      new Object[] {R01_INSUFFICIENT_SOURCE_AMOUNT, CircuitBreaker.State.CLOSED},
+      new Object[] {R02_INSUFFICIENT_TIMEOUT, CircuitBreaker.State.CLOSED},
+      new Object[] {R99_APPLICATION_ERROR, CircuitBreaker.State.CLOSED},
 
       // F Family
-      new Object[]{F00_BAD_REQUEST, CircuitBreaker.State.CLOSED},
-      new Object[]{F01_INVALID_PACKET, CircuitBreaker.State.CLOSED},
-      new Object[]{F02_UNREACHABLE, CircuitBreaker.State.CLOSED},
-      new Object[]{F03_INVALID_AMOUNT, CircuitBreaker.State.CLOSED},
-      new Object[]{F04_INSUFFICIENT_DST_AMOUNT, CircuitBreaker.State.CLOSED},
-      new Object[]{F05_WRONG_CONDITION, CircuitBreaker.State.CLOSED},
-      new Object[]{F06_UNEXPECTED_PAYMENT, CircuitBreaker.State.CLOSED},
-      new Object[]{F07_CANNOT_RECEIVE, CircuitBreaker.State.CLOSED},
-      new Object[]{F08_AMOUNT_TOO_LARGE, CircuitBreaker.State.CLOSED},
-      new Object[]{F99_APPLICATION_ERROR, CircuitBreaker.State.CLOSED}
+      new Object[] {F00_BAD_REQUEST, CircuitBreaker.State.CLOSED},
+      new Object[] {F01_INVALID_PACKET, CircuitBreaker.State.CLOSED},
+      new Object[] {F02_UNREACHABLE, CircuitBreaker.State.CLOSED},
+      new Object[] {F03_INVALID_AMOUNT, CircuitBreaker.State.CLOSED},
+      new Object[] {F04_INSUFFICIENT_DST_AMOUNT, CircuitBreaker.State.CLOSED},
+      new Object[] {F05_WRONG_CONDITION, CircuitBreaker.State.CLOSED},
+      new Object[] {F06_UNEXPECTED_PAYMENT, CircuitBreaker.State.CLOSED},
+      new Object[] {F07_CANNOT_RECEIVE, CircuitBreaker.State.CLOSED},
+      new Object[] {F08_AMOUNT_TOO_LARGE, CircuitBreaker.State.CLOSED},
+      new Object[] {F99_APPLICATION_ERROR, CircuitBreaker.State.CLOSED}
     );
   }
 
@@ -104,14 +113,18 @@ public class CircuitBreakingLinkPredicateTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
 
-    this.circuitBreakerConfig = CircuitBreakerConfig.custom()
+    CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
       .ignoreExceptions(InterledgerProtocolException.class)
       .enableAutomaticTransitionFromOpenToHalfOpen()
       .build();
 
-    when(linkDelegate.getLinkId()).thenReturn(LinkId.of("foo"));
+    when(linkDelegateMock.getLinkId()).thenReturn(LINK_ID);
+    when(linkDelegateMock.getOperatorAddressSupplier()).thenReturn(() -> InterledgerAddress.of("example.operator"));
+    when(linkDelegateMock.getLinkSettings()).thenReturn(delegateLinkSettingsMock);
 
-    this.circuitBreakingLink = new CircuitBreakingLink(linkDelegate, circuitBreakerConfig);
+    when(linkDelegateMock.getLinkId()).thenReturn(LinkId.of("foo"));
+
+    this.circuitBreakingLink = new CircuitBreakingLink(linkDelegateMock, circuitBreakerConfig);
   }
 
   /**
@@ -125,7 +138,7 @@ public class CircuitBreakingLinkPredicateTest {
         .code(errorCode)
         .build());
 
-    when(linkDelegate.sendPacket(any())).thenThrow(exception);
+    when(linkDelegateMock.sendPacket(any())).thenThrow(exception);
 
     final CountDownLatch doneSignal = new CountDownLatch(1);
     circuitBreakingLink.getCircuitBreaker().getEventPublisher().onIgnoredError(error -> {
@@ -136,7 +149,6 @@ public class CircuitBreakingLinkPredicateTest {
     circuitBreakingLink.getCircuitBreaker().getEventPublisher().onError(error -> {
       fail("Should not throw normal exception!");
     });
-
 
     try {
       circuitBreakingLink.sendPacket(mock(InterledgerPreparePacket.class));
@@ -155,7 +167,7 @@ public class CircuitBreakingLinkPredicateTest {
 
   @Test
   public void validateUnIgnoredExceptions() throws InterruptedException {
-    when(linkDelegate.sendPacket(any())).thenThrow(new RuntimeException("hello"));
+    when(linkDelegateMock.sendPacket(any())).thenThrow(new RuntimeException("hello"));
 
     final CountDownLatch doneSignal = new CountDownLatch(1);
     circuitBreakingLink.getCircuitBreaker().getEventPublisher().onIgnoredError(error -> {
