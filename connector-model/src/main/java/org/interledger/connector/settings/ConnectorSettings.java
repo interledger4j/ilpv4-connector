@@ -76,8 +76,9 @@ public interface ConnectorSettings {
   }
 
   /**
-   * the minimum time the connector wants to budget for getting a message to the accounts its trading on.
-   * Budget is mainly to cover the latency to send the fulfillment packet to the downstream node.
+   * The minimum time the connector wants to budget for getting a message to the accounts its trading on. Budget is
+   * mainly to cover the latency to send the fulfillment packet to the downstream node.
+   *
    * @return minimum message window time in milliseconds
    */
   @Value.Default
@@ -86,8 +87,9 @@ public interface ConnectorSettings {
   }
 
   /**
-   * Amount of time that Connector will wait around for a fulfillment/rejection. This is equivalent to outgoing link
+   * The amount of time that Connector will wait around for a fulfillment/rejection. This is equivalent to outgoing link
    * timeout duration.
+   *
    * @return max hold time in milliseconds
    */
   @Value.Default
