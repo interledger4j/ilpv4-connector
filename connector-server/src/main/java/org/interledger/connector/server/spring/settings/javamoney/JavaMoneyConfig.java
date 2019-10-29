@@ -6,6 +6,10 @@ import org.interledger.connector.fx.JavaMoneyUtils;
 import org.interledger.connector.javax.money.providers.CryptoCompareRateProvider;
 import org.interledger.connector.javax.money.providers.DropRoundingProvider;
 import org.interledger.connector.javax.money.providers.XrpCurrencyProvider;
+
+import okhttp3.ConnectionPool;
+import okhttp3.ConnectionSpec;
+import okhttp3.OkHttpClient;
 import org.javamoney.moneta.convert.internal.DefaultMonetaryConversionsSingletonSpi;
 import org.javamoney.moneta.convert.internal.IdentityRateProvider;
 import org.javamoney.moneta.internal.DefaultRoundingProvider;
@@ -13,16 +17,21 @@ import org.javamoney.moneta.internal.JDKCurrencyProvider;
 import org.javamoney.moneta.spi.CompoundRateProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
 import javax.money.convert.ExchangeRateProvider;
 import javax.money.spi.RoundingProviderSpi;
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import static okhttp3.CookieJar.NO_COOKIES;
 import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.XRP;
 
 /**
@@ -59,10 +68,13 @@ public class JavaMoneyConfig {
    */
   @Bean
   @Qualifier(FX)
-  protected RestTemplate fxRestTemplate(ObjectMapper objectMapper) {
+  protected RestTemplate fxRestTemplate(ObjectMapper objectMapper,
+                                        @Qualifier(FX) OkHttp3ClientHttpRequestFactory requestFactory) {
     final MappingJackson2HttpMessageConverter httpMessageConverter =
       new MappingJackson2HttpMessageConverter(objectMapper);
-    return new RestTemplate(Lists.newArrayList(httpMessageConverter));
+    RestTemplate restTemplate = new RestTemplate(requestFactory);
+    restTemplate.setMessageConverters(Lists.newArrayList(httpMessageConverter));
+    return restTemplate;
   }
 
   @Bean
@@ -128,4 +140,49 @@ public class JavaMoneyConfig {
   protected DefaultMonetaryConversionsSingletonSpi defaultMonetaryConversionsSingletonSpi() {
     return new DefaultMonetaryConversionsSingletonSpi();
   }
+
+  @Bean
+  @Qualifier(FX)
+  OkHttpClient fxHttpClient(
+      @Qualifier(FX) final ConnectionPool fxConnectionPool,
+      @Value("${interledger.connector.fx.connectionDefaults.connectTimeoutMillis:1000}")
+      final long defaultConnectTimeoutMillis,
+      @Value("${interledger.connector.fx.connectionDefaults.readTimeoutMillis:60000}")
+      final long defaultReadTimeoutMillis,
+      @Value("${interledger.connector.fx.connectionDefaults.writeTimeoutMillis:60000}")
+      final long defaultWriteTimeoutMillis
+  ) {
+    OkHttpClient.Builder builder = new OkHttpClient.Builder();
+    ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).build();
+
+    builder.connectionSpecs(Arrays.asList(spec, ConnectionSpec.CLEARTEXT));
+    builder.cookieJar(NO_COOKIES);
+
+    builder.connectTimeout(defaultConnectTimeoutMillis, TimeUnit.MILLISECONDS);
+    builder.readTimeout(defaultReadTimeoutMillis, TimeUnit.MILLISECONDS);
+    builder.writeTimeout(defaultWriteTimeoutMillis, TimeUnit.MILLISECONDS);
+
+    return builder.connectionPool(fxConnectionPool).build();
+  }
+
+  @Bean
+  @Qualifier(FX)
+  OkHttp3ClientHttpRequestFactory fxOkHttp3ClientHttpRequestFactory(@Qualifier(FX) final OkHttpClient fxHttpClient) {
+    return new OkHttp3ClientHttpRequestFactory(fxHttpClient);
+  }
+
+  @Bean
+  @Qualifier(FX)
+  public ConnectionPool fxConnectionPool(
+      @Value("${interledger.connector.fx.connectionDefaults.maxIdleConnections:5}")
+      final int defaultMaxIdleConnections,
+      @Value("${interledger.connector.fx.connectionDefaults.keepAliveMinutes:1}")
+      final long defaultConnectionKeepAliveMinutes
+  ) {
+    return new ConnectionPool(
+        defaultMaxIdleConnections,
+        defaultConnectionKeepAliveMinutes, TimeUnit.MINUTES
+    );
+  }
+
 }
