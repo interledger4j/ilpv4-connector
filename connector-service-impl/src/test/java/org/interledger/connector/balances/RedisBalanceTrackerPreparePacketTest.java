@@ -1,10 +1,17 @@
 package org.interledger.connector.balances;
 
-import com.google.common.collect.ImmutableList;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import org.interledger.connector.accounts.AccountId;
+
+import com.google.common.collect.ImmutableList;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,11 +24,6 @@ import org.springframework.test.context.junit4.rules.SpringMethodRule;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Unit tests for {@link RedisBalanceTracker} that validates the script and balance-change functionality for handling
@@ -37,6 +39,9 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
 
   @Rule
   public final SpringMethodRule springMethodRule = new SpringMethodRule();
+
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
 
   @Autowired
   RedisBalanceTracker balanceTracker;
@@ -171,7 +176,10 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
       // Prepaid amt > from_amt
       new Object[]{NEGATIVE_ONE, TEN, PREPARE_ONE, ZERO_MIN, NEGATIVE_ONE, 9L, PRODUCES_NO_ERROR},
       // Prepaid_amt < from_amt, but > 0
-      new Object[]{TEN, ONE, TEN, ZERO_MIN, ONE, ZERO, PRODUCES_NO_ERROR}
+      new Object[]{TEN, ONE, TEN, ZERO_MIN, ONE, ZERO, PRODUCES_NO_ERROR},
+
+      // Prepare packet zero (no-op) doesn't product error or affect balance
+      new Object[]{TEN, ONE, PREPARE_ZERO, ZERO_MIN, TEN, ONE, PRODUCES_NO_ERROR}
     );
   }
 
@@ -305,4 +313,12 @@ public class RedisBalanceTrackerPreparePacketTest extends AbstractRedisBalanceTr
         expectedClearingBalanceInRedis + expectedPrepaidAmountInRedis));
     }
   }
+
+  @Test
+  public void prepareAmountCantBeNegative() {
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("amount `-1` cannot be negative!");
+    balanceTracker.updateBalanceForPrepare(ACCOUNT_ID, -1, Optional.of(0L));
+  }
+
 }

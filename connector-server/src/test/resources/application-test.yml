@@ -95,3 +95,11 @@ interledger:
           # ID of the account that destinations matching `targetPrefix` should be forwarded to. Must be one of the
           # accounts in `accounts`.
           peerAccountId: bob
+    fx:
+      # these are just random overrides for test assertions
+      connectionDefaults:
+        connectTimeoutMillis: 5000
+        readTimeoutMillis: 30000
+        writeTimeoutMillis: 40000
+        maxIdleConnections: 10
+        keepAliveMinutes: 2

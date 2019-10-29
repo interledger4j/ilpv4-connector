@@ -8,6 +8,7 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.Mock;
@@ -41,6 +42,9 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
 
   @Rule
   public final SpringMethodRule springMethodRule = new SpringMethodRule();
+
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
 
   @Autowired
   private RedisBalanceTracker balanceTracker;
@@ -101,7 +105,10 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
       // Prepaid amt > from_amt
       new Object[]{NEGATIVE_ONE, TEN, PREPARE_ONE, ZERO, TEN},
       // Prepaid_amt < from_amt, but > 0
-      new Object[]{TEN, ONE, PREPARE_TEN, 20L, ONE}
+      new Object[]{TEN, ONE, PREPARE_TEN, 20L, ONE},
+
+      // prepare packet 0 amount (no-op)
+      new Object[]{TEN, ONE, PREPARE_ZERO, TEN, ONE}
     );
   }
 
@@ -167,6 +174,13 @@ public class RedisBalanceTrackerFulfillPacketTest extends AbstractRedisBalanceTr
     assertThat(loadedBalance.prepaidAmount(), is(expectedPrepaidAmountInRedis));
     assertThat(loadedBalance.netBalance().longValue(),
       is(expectedClearingBalanceInRedis + expectedPrepaidAmountInRedis));
+  }
+
+  @Test
+  public void fulfillmountCantBeNegative() {
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("amount `-1` cannot be negative!");
+    balanceTracker.updateBalanceForFulfill(accountSettingsMock, -1);
   }
 
 }
