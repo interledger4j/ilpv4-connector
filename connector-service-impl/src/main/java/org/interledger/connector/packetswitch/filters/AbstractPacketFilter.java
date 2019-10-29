@@ -1,6 +1,7 @@
 package org.interledger.connector.packetswitch.filters;
 
-import org.interledger.connector.packetswitch.PacketRejector;
+import org.interledger.link.PacketRejector;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -3,7 +3,7 @@ package org.interledger.connector.server.spring.controllers.converters;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.interledger.connector.core.Ilpv4Constants.ALL_ZEROS_FULFILLMENT;
-import static org.interledger.connector.link.blast.BlastHeaders.APPLICATON_ILP_OCTET_STREAM;
+import static org.interledger.connector.link.http.BlastHeaders.APPLICATON_ILP_OCTET_STREAM;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;

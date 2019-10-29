@@ -1,7 +1,8 @@
 package org.interledger.connector.accounts;
 
-import org.interledger.connector.link.Link;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.link.Link;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,13 +13,14 @@ import java.util.Objects;
  * AccountSettings} object. If none is found, it returns a default account settings.
  */
 public class DefaultAccountSettingsResolver implements AccountSettingsResolver {
+
   private final AccountSettingsRepository accountSettingsRepository;
   private final AccountIdResolver accountIdResolver;
   private Logger logger = LoggerFactory.getLogger(this.getClass());
 
   public DefaultAccountSettingsResolver(
-    final AccountSettingsRepository accountSettingsRepository,
-    final AccountIdResolver accountIdResolver
+      final AccountSettingsRepository accountSettingsRepository,
+      final AccountIdResolver accountIdResolver
   ) {
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
@@ -39,9 +41,9 @@ public class DefaultAccountSettingsResolver implements AccountSettingsResolver {
 
     final AccountId accountId = accountIdResolver.resolveAccountId(link);
     return this.accountSettingsRepository.findByAccountIdWithConversion(accountId)
-      .orElseThrow(() -> new AccountNotFoundProblem(
-        String.format("Unable to locate an AccountSettings for LinkId: `%s`", link.getLinkId()),
-        accountId
-      ));
+        .orElseThrow(() -> new AccountNotFoundProblem(
+            String.format("Unable to locate an AccountSettings for LinkId: `%s`", link.getLinkId()),
+            accountId
+        ));
   }
 }

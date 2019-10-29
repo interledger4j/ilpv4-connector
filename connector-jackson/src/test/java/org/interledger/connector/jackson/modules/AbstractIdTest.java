@@ -1,15 +1,14 @@
 package org.interledger.connector.jackson.modules;
 
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.SettlementEngineAccountId;
+import org.interledger.connector.jackson.ObjectMapperFactory;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.SettlementEngineAccountId;
-import org.interledger.connector.jackson.ObjectMapperFactory;
-import org.interledger.connector.link.LinkId;
-import org.interledger.connector.link.LinkType;
 import org.junit.Before;
 
 /**
@@ -40,24 +39,6 @@ public abstract class AbstractIdTest {
 
     @JsonProperty("settlement_account_id")
     SettlementEngineAccountId getSettlementAccountId();
-  }
-
-  @Value.Immutable
-  @JsonSerialize(as = ImmutableLinkIdContainer.class)
-  @JsonDeserialize(as = ImmutableLinkIdContainer.class)
-  public interface LinkIdContainer {
-
-    @JsonProperty("link_id")
-    LinkId getLinkId();
-  }
-
-  @Value.Immutable
-  @JsonSerialize(as = ImmutableLinkTypeContainer.class)
-  @JsonDeserialize(as = ImmutableLinkTypeContainer.class)
-  public interface LinkTypeContainer {
-
-    @JsonProperty("link_type")
-    LinkType getLinkType();
   }
 
 }

@@ -1,8 +1,8 @@
 package org.interledger.connector.ping;
 
-import org.interledger.connector.link.Link;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.link.Link;
 
 import com.google.common.primitives.UnsignedLong;
 

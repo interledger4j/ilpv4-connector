@@ -1,7 +1,12 @@
 package org.interledger.connector.settlement;
 
-import com.google.common.eventbus.EventBus;
-import okhttp3.HttpUrl;
+import static java.math.BigInteger.ONE;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
 import org.interledger.connector.accounts.AccountBySettlementEngineAccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
@@ -12,8 +17,11 @@ import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.core.settlement.SettlementQuantity;
 import org.interledger.connector.links.LinkManager;
-import org.interledger.connector.links.loopback.LoopbackLink;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.link.LoopbackLink;
+
+import com.google.common.eventbus.EventBus;
+import okhttp3.HttpUrl;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -23,25 +31,19 @@ import java.math.BigInteger;
 import java.util.Optional;
 import java.util.UUID;
 
-import static java.math.BigInteger.ONE;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-
 /**
- * Unit tests for {@linkn DefaultSettlementService}.
+ * Unit tests for {@link DefaultSettlementService}.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class DefaultSettlementServiceTest {
 
   private static final AccountId ACCOUNT_ID = AccountId.of("alice");
 
   private static final SettlementEngineAccountId SETTLEMENT_ACCOUNT_ID =
-    SettlementEngineAccountId.of(UUID.randomUUID().toString());
+      SettlementEngineAccountId.of(UUID.randomUUID().toString());
 
   private static final SettlementQuantity INCOMING_SETTLEMENT =
-    SettlementQuantity.builder().amount(ONE).scale(6).build();
+      SettlementQuantity.builder().amount(ONE).scale(6).build();
 
   @Mock
   private AccountSettingsRepository accountSettingsRepositoryMock;
@@ -61,7 +63,7 @@ public class DefaultSettlementServiceTest {
     MockitoAnnotations.initMocks(this);
 
     this.settlementService = new DefaultSettlementService(
-      balanceTrackerMock, linkManagerMock, accountSettingsRepositoryMock, settlementEngineClientMock, eventBus
+        balanceTrackerMock, linkManagerMock, accountSettingsRepositoryMock, settlementEngineClientMock, eventBus
     );
   }
 
@@ -98,11 +100,11 @@ public class DefaultSettlementServiceTest {
   @Test(expected = AccountBySettlementEngineAccountNotFoundProblem.class)
   public void onLocalSettlementPaymentWhenAccountNotFound() {
     when(accountSettingsRepositoryMock.findBySettlementEngineAccountId(SETTLEMENT_ACCOUNT_ID))
-      .thenReturn(Optional.empty());
+        .thenReturn(Optional.empty());
 
     try {
       settlementService
-        .onLocalSettlementPayment(UUID.randomUUID().toString(), SETTLEMENT_ACCOUNT_ID, INCOMING_SETTLEMENT);
+          .onLocalSettlementPayment(UUID.randomUUID().toString(), SETTLEMENT_ACCOUNT_ID, INCOMING_SETTLEMENT);
     } catch (AccountNotFoundProblem e) {
       assertThat(e.getAccountId(), is(SETTLEMENT_ACCOUNT_ID));
       assertThat(e.getMessage(), is("Account Not Found (`alice`)"));
@@ -115,34 +117,34 @@ public class DefaultSettlementServiceTest {
     String idempotencyKey = UUID.randomUUID().toString();
 
     final AccountSettings accountSettings = AccountSettings.builder()
-      .accountId(ACCOUNT_ID)
-      .accountRelationship(AccountRelationship.PEER)
-      .assetCode("USD")
-      .assetScale(9)
-      .linkType(LoopbackLink.LINK_TYPE)
-      .settlementEngineDetails(
-        SettlementEngineDetails.builder()
-          .settlementEngineAccountId(SettlementEngineAccountId.of(ACCOUNT_ID.value()))
-          .baseUrl(HttpUrl.parse("https://example.com"))
-          .build()
-      )
-      .build();
+        .accountId(ACCOUNT_ID)
+        .accountRelationship(AccountRelationship.PEER)
+        .assetCode("USD")
+        .assetScale(9)
+        .linkType(LoopbackLink.LINK_TYPE)
+        .settlementEngineDetails(
+            SettlementEngineDetails.builder()
+                .settlementEngineAccountId(SettlementEngineAccountId.of(ACCOUNT_ID.value()))
+                .baseUrl(HttpUrl.parse("https://example.com"))
+                .build()
+        )
+        .build();
 
     when(accountSettingsRepositoryMock.findBySettlementEngineAccountIdWithConversion(SETTLEMENT_ACCOUNT_ID))
-      .thenReturn(Optional.of(accountSettings));
+        .thenReturn(Optional.of(accountSettings));
 
     SettlementQuantity expectedClearedSettlementQuantity = SettlementQuantity.builder()
-      .amount(BigInteger.valueOf(1000L))
-      .scale(9)
-      .build();
+        .amount(BigInteger.valueOf(1000L))
+        .scale(9)
+        .build();
 
     SettlementQuantity actualClearedSettlementQuantity =
-      settlementService.onLocalSettlementPayment(idempotencyKey, SETTLEMENT_ACCOUNT_ID, INCOMING_SETTLEMENT);
+        settlementService.onLocalSettlementPayment(idempotencyKey, SETTLEMENT_ACCOUNT_ID, INCOMING_SETTLEMENT);
 
     assertThat(actualClearedSettlementQuantity, is(expectedClearedSettlementQuantity));
     verify(accountSettingsRepositoryMock).findBySettlementEngineAccountIdWithConversion(SETTLEMENT_ACCOUNT_ID);
     verify(balanceTrackerMock).updateBalanceForIncomingSettlement(
-      idempotencyKey, ACCOUNT_ID, expectedClearedSettlementQuantity.amount().longValue()
+        idempotencyKey, ACCOUNT_ID, expectedClearedSettlementQuantity.amount().longValue()
     );
     verifyNoMoreInteractions(balanceTrackerMock);
     verifyNoMoreInteractions(accountSettingsRepositoryMock);

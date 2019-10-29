@@ -1,29 +1,29 @@
 package org.interledger.connector.link;
 
-import com.google.common.annotations.VisibleForTesting;
-import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
-import org.interledger.connector.link.events.LinkEventListener;
-import org.interledger.connector.link.exceptions.LinkHandlerAlreadyRegisteredException;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerResponsePacket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.interledger.link.AbstractLink;
+import org.interledger.link.Link;
+import org.interledger.link.LinkHandler;
+import org.interledger.link.LinkId;
+import org.interledger.link.LinkSettings;
+import org.interledger.link.exceptions.LinkHandlerAlreadyRegisteredException;
+
+import com.google.common.annotations.VisibleForTesting;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 /**
  * A {@link Link} that wraps an internal Link-delegate and provides Circuit breaking functionality.
  */
-public class CircuitBreakingLink implements Link<LinkSettings> {
-
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
+public class CircuitBreakingLink extends AbstractLink<LinkSettings> implements Link<LinkSettings> {
 
   private final Link<?> linkDelegate;
 
@@ -65,6 +65,8 @@ public class CircuitBreakingLink implements Link<LinkSettings> {
     final Link<?> linkDelegate,
     final CircuitBreakerConfig circuitBreakerConfig
   ) {
+    super(linkDelegate.getOperatorAddressSupplier(), linkDelegate.getLinkSettings());
+
     this.linkDelegate = Objects.requireNonNull(linkDelegate);
     this.circuitBreakerRegistry = CircuitBreakerRegistry.of(circuitBreakerConfig);
   }
@@ -87,7 +89,12 @@ public class CircuitBreakingLink implements Link<LinkSettings> {
   }
 
   @Override
-  public Supplier<Optional<InterledgerAddress>> getOperatorAddressSupplier() {
+  public void setLinkId(final LinkId linkId) {
+    this.linkDelegate.setLinkId(linkId);
+  }
+
+  @Override
+  public Supplier<InterledgerAddress> getOperatorAddressSupplier() {
     return this.linkDelegate.getOperatorAddressSupplier();
   }
 
@@ -111,41 +118,12 @@ public class CircuitBreakingLink implements Link<LinkSettings> {
     this.linkDelegate.unregisterLinkHandler();
   }
 
-  @Override
-  public void addLinkEventListener(LinkEventListener eventListener) {
-    this.linkDelegate.addLinkEventListener(eventListener);
-  }
-
-  @Override
-  public void removeLinkEventListener(LinkEventListener eventListener) {
-    this.linkDelegate.removeLinkEventListener(eventListener);
-  }
-
-  @Override
-  public CompletableFuture<Void> connect() {
-    return this.linkDelegate.connect();
-  }
-
-  @Override
-  public CompletableFuture<Void> disconnect() {
-    return this.linkDelegate.disconnect();
-  }
-
-  @Override
-  public boolean isConnected() {
-    return this.linkDelegate.isConnected();
-  }
-
-  public Link<?> getLinkDelegate() {
-    return this.linkDelegate;
-  }
-
   public <T> T getLinkDelegateTyped() {
     return (T) this.linkDelegate;
   }
 
   @VisibleForTesting
-  CircuitBreaker getCircuitBreaker(){
+  CircuitBreaker getCircuitBreaker() {
     return circuitBreakerRegistry.circuitBreaker(this.getLinkId().value());
   }
 }

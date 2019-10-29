@@ -49,6 +49,7 @@ import java.util.function.Consumer;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Category(Settlement.class)
+@SuppressWarnings("UnstableApiUsage")
 public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
   private static final BigInteger ONE_HUNDRED = BigInteger.valueOf(100L);
@@ -56,20 +57,14 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
   private static final BigInteger THOUSAND = BigInteger.valueOf(1000L);
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorXrpSettlementIT.class);
+  private static final Network network = Network.newNetwork();
   private static Topology topology;
-
+  private static GenericContainer redis = ContainerHelper.redis(network);
+  private static GenericContainer postgres = ContainerHelper.postgres(network);
+  private static GenericContainer settlementAlice = ContainerHelper.settlement(network, 9000, 8080, LOGGER);
+  private static GenericContainer settlementBob = ContainerHelper.settlement(network, 9001, 8081, LOGGER);
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
-
-  private static final Network network = Network.newNetwork();
-
-  private static GenericContainer redis = ContainerHelper.redis(network);
-
-  private static GenericContainer postgres = ContainerHelper.postgres(network);
-
-  private static GenericContainer settlementAlice = ContainerHelper.settlement(network, 9000, 8080, LOGGER);
-
-  private static GenericContainer settlementBob = ContainerHelper.settlement(network, 9001, 8081, LOGGER);
 
   @BeforeClass
   public static void startTopology() {
@@ -79,8 +74,8 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
     settlementAlice.start();
     settlementBob.start();
     topology = SimulatedXrplSettlementTopology.init(
-        settlementAlice.getMappedPort(9000),
-        settlementBob.getMappedPort(9001)
+      settlementAlice.getMappedPort(9000),
+      settlementBob.getMappedPort(9001)
     );
     LOGGER.info("Starting test topology `{}`...", topology.toString());
     topology.start();
@@ -117,9 +112,8 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
 
   @Test
   public void testNodeSettings() throws InterruptedException {
-    assertThat(aliceConnector.getConnectorSettings().operatorAddress().get()).isEqualTo(getAliceConnectorAddress());
-
-    assertThat(bobConnector.getConnectorSettings().operatorAddress().get()).isEqualTo(getBobConnectorAddress());
+    assertThat(aliceConnector.getConnectorSettings().operatorAddress()).isEqualTo(getAliceConnectorAddress());
+    assertThat(bobConnector.getConnectorSettings().operatorAddress()).isEqualTo(getBobConnectorAddress());
 
     // This is somewhat wonky because doing ping this way won't update the source balance properly. Thus, no balances
     // are asserted here.
@@ -175,7 +169,6 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
     // Use the `paul` account on ALICE to ping BOB 1 more time, which should trigger settlement.
     getLogger().info("Ping 10 of 10 (should trigger settlement)");
     this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(), getBobConnectorAddress(), UnsignedLong.valueOf(100));
-
 
     getLogger().info("Pre-settlement balances checks...");
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, THOUSAND.negate());
@@ -347,9 +340,9 @@ public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO);
     assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, ZERO);
 
-    AccountSettings aliceAccountSettings = getAccountSettings(bobConnector.getConnectorSettings().operatorAddressSafe(),
+    AccountSettings aliceAccountSettings = getAccountSettings(bobConnector.getConnectorSettings().operatorAddress(),
         ALICE_ACCOUNT);
-    AccountSettings bobAccountSettings = getAccountSettings(aliceConnector.getConnectorSettings().operatorAddressSafe(),
+    AccountSettings bobAccountSettings = getAccountSettings(aliceConnector.getConnectorSettings().operatorAddress(),
         BOB_ACCOUNT);
 
     getLogger().info("Alice settlement account id: {}, Bob settlement account id {}",

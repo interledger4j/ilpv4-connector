@@ -18,12 +18,24 @@
 
   <dependencies>
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>connector-crypto</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.interledger.connector</groupId>
-      <artifactId>connector-core</artifactId>
+      <groupId>com.auth0</groupId>
+      <artifactId>java-jwt</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
     </dependency>
     <dependency>
       <groupId>io.github.resilience4j</groupId>
@@ -39,6 +51,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-core</artifactId>
       <scope>test</scope>
@@ -48,8 +65,12 @@
       <artifactId>ilp-core</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.immutables</groupId>
-      <artifactId>value</artifactId>
+      <groupId>org.interledger</groupId>
+      <artifactId>link-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>link-ilp-over-http</artifactId>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
@@ -59,6 +80,10 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
     </dependency>
   </dependencies>
 </project>

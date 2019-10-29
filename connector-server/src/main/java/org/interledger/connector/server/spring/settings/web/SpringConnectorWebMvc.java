@@ -8,7 +8,7 @@ import org.interledger.connector.persistence.converters.RateLimitSettingsEntityC
 import org.interledger.connector.persistence.converters.SettlementEngineDetailsEntityConverter;
 import org.interledger.connector.server.spring.controllers.converters.OerPreparePacketHttpMessageConverter;
 import org.interledger.connector.server.spring.settings.CodecContextConfig;
-import org.interledger.connector.server.spring.settings.blast.BlastConfig;
+import org.interledger.connector.server.spring.settings.blast.IlpOverHttpConfig;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -39,7 +39,7 @@ import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 @EnableWebMvc
 @EnableHypermediaSupport(type = {EnableHypermediaSupport.HypermediaType.HAL})
 @ComponentScan(basePackages = "org.interledger.connector.server.spring.controllers")
-@Import({BlastConfig.class, JacksonConfig.class, SecurityConfiguration.class})
+@Import({IlpOverHttpConfig.class, JacksonConfig.class, SecurityConfiguration.class})
 public class SpringConnectorWebMvc implements WebMvcConfigurer {
 
   // TODO: Configure TLS

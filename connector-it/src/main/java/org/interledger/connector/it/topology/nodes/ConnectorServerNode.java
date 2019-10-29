@@ -6,7 +6,6 @@ import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.it.topology.AbstractServerNode;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.server.ConnectorServer;
-import org.interledger.core.InterledgerAddress;
 
 import java.util.Objects;
 
@@ -29,9 +28,7 @@ public class ConnectorServerNode extends AbstractServerNode<ConnectorServer> {
 
   @Override
   public String toString() {
-    return getILPv4Connector().getConnectorSettings().operatorAddress()
-      .map(InterledgerAddress::getValue)
-      .orElse("n/a");
+    return getILPv4Connector().getConnectorSettings().operatorAddress().getValue();
   }
 
   /**

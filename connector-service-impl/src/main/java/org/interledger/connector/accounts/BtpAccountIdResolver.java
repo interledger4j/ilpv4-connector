@@ -1,7 +1,7 @@
 package org.interledger.connector.accounts;
 
 import org.interledger.btp.BtpSession;
-import org.interledger.connector.link.Link;
+import org.interledger.link.Link;
 
 /**
  * Defines how to resolve AccountId for a given {@link Link}.

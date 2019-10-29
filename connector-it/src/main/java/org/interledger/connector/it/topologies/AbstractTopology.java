@@ -1,16 +1,17 @@
 package org.interledger.connector.it.topologies;
 
-import okhttp3.HttpUrl;
+import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
+
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.core.ConfigConstants;
-import org.interledger.connector.links.ping.PingLoopbackLink;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.link.PingLoopbackLink;
+
+import okhttp3.HttpUrl;
 
 import java.util.Optional;
-
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 
 /**
  * An abstract class for all Topologies.

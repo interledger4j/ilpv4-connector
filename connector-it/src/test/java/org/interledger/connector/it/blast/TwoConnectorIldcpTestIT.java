@@ -1,14 +1,24 @@
 package org.interledger.connector.it.blast;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
+import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
+import static org.interledger.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
+import static org.interledger.connector.it.topologies.AbstractTopology.BOB_AT_ALICE_ADDRESS;
+import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorParentChildBlastTopology.ALICE;
+import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorParentChildBlastTopology.BOB;
+import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
+import static org.junit.Assert.assertThat;
+
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.it.AbstractBlastIT;
 import org.interledger.connector.it.ContainerHelper;
-import org.interledger.connector.link.blast.BlastLink;
-import org.interledger.connector.link.blast.BlastLinkSettings;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.connector.it.markers.IlpOverHttp;
 import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorParentChildBlastTopology;
 import org.interledger.connector.it.topology.Topology;
+import org.interledger.core.InterledgerAddress;
+import org.interledger.link.http.IlpOverHttpLink;
+import org.interledger.link.http.IlpOverHttpLinkSettings;
 
 import com.google.common.primitives.UnsignedLong;
 import org.junit.AfterClass;
@@ -23,16 +33,6 @@ import org.testcontainers.containers.Network;
 
 import java.math.BigInteger;
 
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
-import static org.hamcrest.CoreMatchers.is;
-import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
-import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
-import static org.interledger.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
-import static org.interledger.connector.it.topologies.AbstractTopology.BOB_AT_ALICE_ADDRESS;
-import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorParentChildBlastTopology.ALICE;
-import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorParentChildBlastTopology.BOB;
-import static org.junit.Assert.assertThat;
-
 /**
  * Tests to verify that a single connector can become a child connector of a parent connector running IL-DCP. In this
  * IT, the Bob connector is a child of Alice.
@@ -41,19 +41,15 @@ import static org.junit.Assert.assertThat;
 public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorIldcpTestIT.class);
+  private static final Network network = Network.newNetwork();
   private static Topology topology = TwoConnectorParentChildBlastTopology.init();
-
+  private static GenericContainer redis = ContainerHelper.redis(network);
+  private static GenericContainer postgres = ContainerHelper.postgres(network);
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
 
-  private static final Network network = Network.newNetwork();
-
-  private static GenericContainer redis = ContainerHelper.redis(network);
-
-  private static GenericContainer postgres = ContainerHelper.postgres(network);
-
   @BeforeClass
-  public static void startTopology() throws Exception {
+  public static void startTopology() {
     LOGGER.info("Starting test topology `{}`...", topology.toString());
     redis.start();
     postgres.start();
@@ -90,17 +86,14 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
   @Test
   public void testAliceNodeSettings() {
     final ILPv4Connector connector = getILPv4NodeFromGraph(getAliceConnectorAddress());
-    assertThat(
-      connector.getConnectorSettings().operatorAddress().get(),
-      is(getAliceConnectorAddress())
-    );
+    assertThat(connector.getConnectorSettings().operatorAddress(), is(getAliceConnectorAddress()));
 
-    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), BOB_ACCOUNT);
-    assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(ALICE));
-    assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().authType(),
-      is(BlastLinkSettings.AuthType.JWT_HS_256));
-    assertThat(blastLink.getLinkSettings().incomingBlastLinkSettings().authType(),
-      is(BlastLinkSettings.AuthType.JWT_HS_256));
+    final IlpOverHttpLink blastLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), BOB_ACCOUNT);
+    assertThat(blastLink.getLinkSettings().outgoingHttpLinkSettings().tokenSubject(), is(ALICE));
+    assertThat(blastLink.getLinkSettings().outgoingHttpLinkSettings().authType(),
+      is(IlpOverHttpLinkSettings.AuthType.JWT_HS_256));
+    assertThat(blastLink.getLinkSettings().incomingHttpLinkSettings().authType(),
+      is(IlpOverHttpLinkSettings.AuthType.JWT_HS_256));
   }
 
   @Test
@@ -109,18 +102,14 @@ public class TwoConnectorIldcpTestIT extends AbstractBlastIT {
     Thread.sleep(2000);
 
     final ILPv4Connector connector = getILPv4NodeFromGraph(getBobConnectorAddress());
-    assertThat(connector.getConnectorSettings().operatorAddress().isPresent(), is(true));
-    assertThat(
-      connector.getConnectorSettings().operatorAddress().get(),
-      is(getBobConnectorAddress())
-    );
+    assertThat(connector.getConnectorSettings().operatorAddress(), is(getBobConnectorAddress()));
 
-    final BlastLink blastLink = getBlastLinkFromGraph(getBobConnectorAddress(), ALICE_ACCOUNT);
-    assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(BOB));
-    assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().authType(),
-      is(BlastLinkSettings.AuthType.JWT_HS_256));
-    assertThat(blastLink.getLinkSettings().incomingBlastLinkSettings().authType(),
-      is(BlastLinkSettings.AuthType.JWT_HS_256));
+    final IlpOverHttpLink blastLink = getIlpOverHttpLinkFromGraph(getBobConnectorAddress(), ALICE_ACCOUNT);
+    assertThat(blastLink.getLinkSettings().outgoingHttpLinkSettings().tokenSubject(), is(BOB));
+    assertThat(blastLink.getLinkSettings().outgoingHttpLinkSettings().authType(),
+      is(IlpOverHttpLinkSettings.AuthType.JWT_HS_256));
+    assertThat(blastLink.getLinkSettings().incomingHttpLinkSettings().authType(),
+      is(IlpOverHttpLinkSettings.AuthType.JWT_HS_256));
   }
 
   /**

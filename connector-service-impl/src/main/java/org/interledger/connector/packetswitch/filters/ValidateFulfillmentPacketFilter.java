@@ -1,11 +1,12 @@
 package org.interledger.connector.packetswitch.filters;
 
-import org.interledger.connector.packetswitch.PacketRejector;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.link.LinkId;
+import org.interledger.link.PacketRejector;
 
 /**
  * An implementation of {@link PacketSwitchFilter} for validating the fulfillment of an ILP packet.
@@ -18,28 +19,30 @@ public class ValidateFulfillmentPacketFilter extends AbstractPacketFilter implem
 
   @Override
   public InterledgerResponsePacket doFilter(
-    final AccountSettings sourceAccountSettings,
-    final InterledgerPreparePacket sourcePreparePacket,
-    final PacketSwitchFilterChain filterChain
+      final AccountSettings sourceAccountSettings,
+      final InterledgerPreparePacket sourcePreparePacket,
+      final PacketSwitchFilterChain filterChain
   ) {
     final InterledgerResponsePacket responsePacket =
-      filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
+        filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
 
     // Only for a fulfill...
     if (InterledgerFulfillPacket.class.isAssignableFrom(responsePacket.getClass())) {
       final InterledgerFulfillPacket fulfillPacket = (InterledgerFulfillPacket) responsePacket;
       if (!fulfillPacket.getFulfillment().validateCondition(sourcePreparePacket.getExecutionCondition())) {
         logger.error(
-          "Received incorrect fulfillment from account. " +
-            "accountId=`{}` fulfillment=`{}` calculatedCondition=`{}` executionCondition=`{}`",
-          sourceAccountSettings,
-          fulfillPacket.getFulfillment(),
-          fulfillPacket.getFulfillment().getCondition(),
-          sourcePreparePacket.getExecutionCondition()
+            "Received incorrect fulfillment from account. " +
+                "accountId=`{}` fulfillment=`{}` calculatedCondition=`{}` executionCondition=`{}`",
+            sourceAccountSettings,
+            fulfillPacket.getFulfillment(),
+            fulfillPacket.getFulfillment().getCondition(),
+            sourcePreparePacket.getExecutionCondition()
         );
         return packetRejector.reject(
-          sourceAccountSettings.accountId(), sourcePreparePacket,
-          InterledgerErrorCode.F05_WRONG_CONDITION, "Received incorrect fulfillment"
+            LinkId.of(sourceAccountSettings.accountId().value()),
+            sourcePreparePacket,
+            InterledgerErrorCode.F05_WRONG_CONDITION,
+            "Received incorrect fulfillment"
         );
       }
     }

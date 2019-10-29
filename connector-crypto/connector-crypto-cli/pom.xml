@@ -10,7 +10,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.interledger.ilpv4</groupId>
+  <groupId>org.interledger.connector</groupId>
   <artifactId>connector-crypto-cli</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 
@@ -138,7 +138,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.interledger.connector</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>connector-crypto</artifactId>
     </dependency>
     <dependency>
@@ -181,7 +181,7 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>org.interledger.connector</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>connector-crypto</artifactId>
         <version>0.1.0-SNAPSHOT</version>
       </dependency>
