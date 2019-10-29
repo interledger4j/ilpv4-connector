@@ -8,6 +8,7 @@ import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.connector.settlement.SettlementService;
 import org.interledger.link.Link;
 import org.interledger.link.LinkFactoryProvider;
 import org.interledger.link.StatefulLink;
@@ -21,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
-
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
@@ -71,6 +71,8 @@ public class DefaultILPv4Connector implements ILPv4Connector {
 
   private final ILPv4PacketSwitch ilpPacketSwitch;
 
+  private final SettlementService settlementService;
+
   @VisibleForTesting
   DefaultILPv4Connector(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
@@ -79,7 +81,8 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     final LinkManager linkManager,
     final ExternalRoutingService externalRoutingService,
     final ILPv4PacketSwitch ilpPacketSwitch,
-    final BalanceTracker balanceTracker
+    final BalanceTracker balanceTracker,
+    final SettlementService settlementService
   ) {
     this(
       connectorSettingsSupplier,
@@ -89,6 +92,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       externalRoutingService,
       ilpPacketSwitch,
       balanceTracker,
+      settlementService,
       new EventBus()
     );
   }
@@ -104,6 +108,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     final ExternalRoutingService externalRoutingService,
     final ILPv4PacketSwitch ilpPacketSwitch,
     final BalanceTracker balanceTracker,
+    final SettlementService settlementService,
     final EventBus eventBus
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
@@ -113,6 +118,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
     this.ilpPacketSwitch = Objects.requireNonNull(ilpPacketSwitch);
     this.balanceTracker = Objects.requireNonNull(balanceTracker);
+    this.settlementService = Objects.requireNonNull(settlementService);
 
     this.eventBus = Objects.requireNonNull(eventBus);
     this.eventBus.register(this);
@@ -182,6 +188,11 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   @Override
   public ILPv4PacketSwitch getIlpPacketSwitch() {
     return this.ilpPacketSwitch;
+  }
+
+  @Override
+  public SettlementService getSettlementService() {
+    return this.settlementService;
   }
 
   /**

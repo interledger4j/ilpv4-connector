@@ -466,7 +466,8 @@ public class SpringConnectorConfig {
     ExternalRoutingService externalRoutingService,
     ILPv4PacketSwitch ilpPacketSwitch,
     BalanceTracker balanceTracker,
-    EventBus eventBus
+    EventBus eventBus,
+    SettlementService settlementService
   ) {
     return new DefaultILPv4Connector(
       connectorSettingsSupplier,
@@ -476,6 +477,7 @@ public class SpringConnectorConfig {
       externalRoutingService,
       ilpPacketSwitch,
       balanceTracker,
+      settlementService,
       eventBus
     );
   }
