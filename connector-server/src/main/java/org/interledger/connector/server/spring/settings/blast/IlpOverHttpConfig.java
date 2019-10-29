@@ -54,24 +54,24 @@ public class IlpOverHttpConfig {
   public static final String BLAST = "blast";
 
   @Autowired
-  ObjectMapper objectMapper;
+  private ObjectMapper objectMapper;
 
   @Autowired
-  Environment environment;
+  private Environment environment;
 
   @Autowired
   @Qualifier(BLAST)
-  OkHttpClient ilpOverHttpClient;
+  private OkHttpClient ilpOverHttpClient;
 
   @Autowired
-  LinkFactoryProvider linkFactoryProvider;
+  private LinkFactoryProvider linkFactoryProvider;
 
   @Autowired
-  Decryptor decryptor;
+  private Decryptor decryptor;
 
   @Bean
   @Qualifier(BLAST)
-  public ConnectionPool blastConnectionPool(
+  protected ConnectionPool blastConnectionPool(
     @Value("${interledger.connector.ilpOverHttp.connectionDefaults.maxIdleConnections:5}") final int defaultMaxIdleConnections,
     @Value("${interledger.connector.ilpOverHttp.connectionDefaults.keepAliveMinutes:1}") final long defaultConnectionKeepAliveMinutes
   ) {
@@ -100,7 +100,7 @@ public class IlpOverHttpConfig {
    */
   @Bean
   @Qualifier(BLAST)
-  OkHttpClient ilpOverHttpClient(
+  protected OkHttpClient ilpOverHttpClient(
     @Qualifier(BLAST) final ConnectionPool ilpOverHttpConnectionPool,
     @Value("${interledger.connector.ilpOverHttp.connectionDefaults.connectTimeoutMillis:1000}") final long defaultConnectTimeoutMillis,
     @Value("${interledger.connector.ilpOverHttp.connectionDefaults.readTimeoutMillis:60000}") final long defaultReadTimeoutMillis,
@@ -128,21 +128,21 @@ public class IlpOverHttpConfig {
    */
   @Bean
   @Qualifier(BLAST)
-  OkHttp3ClientHttpRequestFactory ilpOverHttpClientHttpRequestFactory(
+  protected OkHttp3ClientHttpRequestFactory ilpOverHttpClientHttpRequestFactory(
     @Qualifier(BLAST) final OkHttpClient okHttpClient
   ) {
     return new OkHttp3ClientHttpRequestFactory(okHttpClient);
   }
 
   @Bean
-  HttpUrl defaultJwtTokenIssuer() {
+  protected HttpUrl defaultJwtTokenIssuer() {
     return Optional.ofNullable(environment.getProperty(DEFAULT_JWT_TOKEN_ISSUER))
       .map(HttpUrl::parse)
       .orElseThrow(() -> new IllegalStateException("Property `" + DEFAULT_JWT_TOKEN_ISSUER + "` must be defined!"));
   }
 
   @Bean
-  IlpOverHttpAccountIdResolver blastAccountIdResolver() {
+  protected IlpOverHttpAccountIdResolver blastAccountIdResolver() {
     return new DefaultAccountIdResolver();
   }
 

@@ -32,10 +32,10 @@ public class DefaultAccountIdResolverTest {
   public ExpectedException expectedException = ExpectedException.none();
 
   @Mock
-  Link linkMock;
+  private Link linkMock;
 
   @Mock
-  StatefulLink statefulLinkMock;
+  private StatefulLink statefulLinkMock;
 
   private DefaultAccountIdResolver accountIdResolver;
 

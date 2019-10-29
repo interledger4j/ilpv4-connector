@@ -1,7 +1,6 @@
 package org.interledger.connector.packetswitch;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import org.interledger.connector.accounts.AccountId;
