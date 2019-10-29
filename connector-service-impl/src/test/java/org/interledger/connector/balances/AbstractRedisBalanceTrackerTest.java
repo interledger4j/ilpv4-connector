@@ -46,6 +46,7 @@ public abstract class AbstractRedisBalanceTrackerTest {
   protected static final long NINE = 9L;
   protected static final long TEN = 10L;
   protected static final long NEGATIVE_TEN = -10L;
+  protected static final long PREPARE_ZERO = ZERO;
   protected static final long PREPARE_ONE = ONE;
   protected static final long PREPARE_TEN = TEN;
   protected static final long TWENTY = 20L;

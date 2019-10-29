@@ -28,9 +28,11 @@ import org.interledger.link.LoopbackLink;
 import com.google.common.primitives.UnsignedLong;
 import org.javamoney.moneta.spi.DefaultNumberValue;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runners.MethodSorters;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
@@ -49,6 +51,7 @@ import javax.money.convert.ExchangeRate;
 /**
  * Unit tests for {@link DefaultNextHopPacketMapper}.
  */
+@FixMethodOrder(MethodSorters.DEFAULT)
 public class DefaultNextHopPacketMapperTest {
 
   private static final ImmutableRoute NEXT_HOP = Route.builder().nextHopAccountId(AccountId.of("g.ovaltine-jenkins"))
