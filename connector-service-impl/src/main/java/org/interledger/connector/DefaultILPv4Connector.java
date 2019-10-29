@@ -15,7 +15,6 @@ import org.interledger.link.events.LinkConnectedEvent;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
-import org.checkerframework.framework.qual.Unused;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
