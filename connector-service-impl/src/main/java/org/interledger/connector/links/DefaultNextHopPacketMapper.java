@@ -23,7 +23,6 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
 import javax.money.CurrencyUnit;
 import javax.money.Monetary;
 import javax.money.MonetaryAmount;
@@ -171,6 +170,28 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     Objects.requireNonNull(sourceAccountSettings);
     Objects.requireNonNull(destinationAccountSettings);
     Objects.requireNonNull(sourcePacket);
+
+    /**
+     * Some notes about the performance of the calls & calculations happening below with regard to the Java money api
+     *
+     * First, lookup of the `CurrencyUnit`s and internal lookup of the `ExchangeRateProvider` reuse the same instances,
+     * suggesting that we _should_ already be using cached data. The cost of the lookup involved in
+     * `Monetary.getCurrency` looks to be around 2000ns (tested in a 1m iteration loop with randomized currencies).
+     *
+     * Second, while the Java Money API has a type called `FastMoney` which keeps calculations in `long` format and
+     * would presumably be faster than doing boxed type conversion, it has two problems:
+     * 1) it forces a scale of 5 which can cause overflow issues, particularly when converting to a currency with a
+     * high exchange rate (like EUR to JPY)
+     * 2) it uses BigDecimal under the covers for initialization, which means we're still bearing some of the cost
+     * of boxed type conversion anyhow
+     *
+     * Third, JavaMoneyUtils is plenty fast at what it's doing. Calls to toMonetaryAmount seem to run in about 55ns
+     * and calls to toInterledgerAmount run in about 380ns.
+     *
+     * Combining all of these still results in less than 1ms of total performance time on a MacBook Pro with a
+     * 2.6 GHz Intel Core i7. It's more than likely that this performance will be lower on virtual machines, but
+     * we would have to do additional load testing on those VMs to get a better idea of how big of a deviation we see.
+     */
 
     if (!this.addressUtils.isExternalForwardingAllowed(sourcePacket.getDestination())) {
       return sourcePacket.getAmount();
