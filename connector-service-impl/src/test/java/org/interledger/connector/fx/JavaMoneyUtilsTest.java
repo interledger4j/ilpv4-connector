@@ -1,16 +1,16 @@
 package org.interledger.connector.fx;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+
 import org.javamoney.moneta.Money;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.money.CurrencyUnit;
-import javax.money.Monetary;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
+import javax.money.CurrencyUnit;
+import javax.money.Monetary;
 
 /**
  * Unit tests for {@link JavaMoneyUtils}.
