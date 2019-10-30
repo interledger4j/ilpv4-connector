@@ -15,6 +15,13 @@
   <name>Connector :: Server</name>
   <description>A Spring Boot server runtime for an ILPv4 Connector.</description>
 
+  <properties>
+    <maven.build.timestamp.format>yyyyMMdd_HHmm</maven.build.timestamp.format>
+    <timestamp>${maven.build.timestamp}</timestamp>
+    <container.image>interledger4j/java-ilpv4-connector</container.image>
+    <container.version>${version}-${timestamp}</container.version>
+  </properties>
+
   <build>
     <resources>
       <resource>
@@ -48,7 +55,6 @@
           </nonFilteredFileExtensions>
         </configuration>
       </plugin>
-
     </plugins>
   </build>
 
@@ -350,4 +356,62 @@
       <artifactId>assertj-core</artifactId>
     </dependency>
   </dependencies>
+
+  <profiles>
+    <profile>
+      <id>docker</id>
+      <!-- ship liquibase and postgres deps with docker image build -->
+      <dependencies>
+        <dependency>
+          <groupId>org.liquibase</groupId>
+          <artifactId>liquibase-core</artifactId>
+          <scope>runtime</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.postgresql</groupId>
+          <artifactId>postgresql</artifactId>
+          <version>42.2.5</version>
+          <scope>runtime</scope>
+        </dependency>
+      </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.google.cloud.tools</groupId>
+            <artifactId>jib-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>build</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <from>
+                <image>adoptopenjdk/openjdk11:jre-11.0.5_10-alpine</image>
+              </from>
+              <to>
+                <image>${container.image}:${container.version}</image>
+                <tags>
+                  <tag>latest</tag>
+                </tags>
+              </to>
+              <container>
+                <ports>
+                  <port>8080</port>
+                </ports>
+                <jvmFlags>
+                  <jvmFlag>-server</jvmFlag>
+                  <jvmFlag>-Xverify:none</jvmFlag>
+                  <jvmFlag>-XX:TieredStopAtLevel=1</jvmFlag>
+                </jvmFlags>
+                <useCurrentTimestamp>true</useCurrentTimestamp>
+              </container>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

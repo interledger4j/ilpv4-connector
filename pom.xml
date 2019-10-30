@@ -394,6 +394,7 @@
 
                   <ignoredDependency>com.h2database:h2:jar</ignoredDependency>
                   <ignoredDependency>org.hibernate:hibernate-entitymanager</ignoredDependency>
+                  <ignoredDependency>org.liquibase:liquibase-core:jar</ignoredDependency>
                   <ignoredDependency>org.postgresql:postgresql:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-cache</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-data-redis</ignoredDependency>

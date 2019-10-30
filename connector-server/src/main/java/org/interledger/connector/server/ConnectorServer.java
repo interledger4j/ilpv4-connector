@@ -1,5 +1,6 @@
 package org.interledger.connector.server;
 
+import org.interledger.connector.server.spring.SpringProfileUtils;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.link.Link;
 
@@ -44,6 +45,11 @@ public class ConnectorServer extends Server {
   public void start() {
     super.start();
     // ...only now is everything wired-up.
+    if (SpringProfileUtils.isProfileActive(getContext().getEnvironment(), "MIGRATE-ONLY")) {
+      logger.info("ONLY RUNNING MIGRATIONS. STOPPING.");
+      this.stop();
+      return;
+    }
 
     this.emitFxInfo();
 
