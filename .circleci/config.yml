@@ -186,8 +186,11 @@ jobs:
           keys:
             - v1-dependencies-{{ checksum "pom.xml" }}
       - run:
-          name: Deploy docker image
-          command: mvn package -DskipTests -DskipITs -Pdocker -Djib.to.auth.username=${DOCKERHUB_USERNAME} -Djib.to.auth.password=${DOCKERHUB_API_KEY}
+          name: Deploy h2 docker image
+          command: mvn package -DskipTests -DskipITs -Pdocker-h2 -Dcontainer.version=nightly -Djib.to.auth.username=${DOCKERHUB_USERNAME} -Djib.to.auth.password=${DOCKERHUB_API_KEY}
+      - run:
+          name: Deploy postgres docker image
+          command: mvn package -DskipTests -DskipITs -Pdocker-postgres -Dcontainer.version=nightly -Djib.to.auth.username=${DOCKERHUB_USERNAME} -Djib.to.auth.password=${DOCKERHUB_API_KEY}
 
 workflows:
   version: 2

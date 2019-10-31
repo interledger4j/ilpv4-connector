@@ -16,10 +16,9 @@
   <description>A Spring Boot server runtime for an ILPv4 Connector.</description>
 
   <properties>
-    <maven.build.timestamp.format>yyyyMMdd_HHmm</maven.build.timestamp.format>
-    <timestamp>${maven.build.timestamp}</timestamp>
     <container.image>interledger4j/java-ilpv4-connector</container.image>
-    <container.version>${version}-${timestamp}</container.version>
+    <container.database></container.database>
+    <container.version>${version}</container.version>
   </properties>
 
   <build>
@@ -42,6 +41,34 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>com.google.cloud.tools</groupId>
+        <artifactId>jib-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <!-- disabled by default. enabled by docker profiles -->
+            <phase>none</phase>
+            <goals>
+              <goal>build</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <from>
+            <image>adoptopenjdk/openjdk11:alpine-jre</image>
+          </from>
+          <to>
+            <image>${container.image}:${container.database}${container.version}</image>
+          </to>
+          <container>
+            <ports>
+              <port>8080</port>
+            </ports>
+            <useCurrentTimestamp>true</useCurrentTimestamp>
+          </container>
+        </configuration>
       </plugin>
 
       <plugin>
@@ -359,7 +386,7 @@
 
   <profiles>
     <profile>
-      <id>docker</id>
+      <id>docker-postgres</id>
       <!-- ship liquibase and postgres deps with docker image build -->
       <dependencies>
         <dependency>
@@ -374,6 +401,9 @@
           <scope>runtime</scope>
         </dependency>
       </dependencies>
+      <properties>
+        <container.database>postgres-</container.database>
+      </properties>
       <build>
         <plugins>
           <plugin>
@@ -382,31 +412,45 @@
             <executions>
               <execution>
                 <phase>package</phase>
-                <goals>
-                  <goal>build</goal>
-                </goals>
               </execution>
             </executions>
             <configuration>
-              <from>
-                <image>adoptopenjdk/openjdk11:jre-11.0.5_10-alpine</image>
-              </from>
-              <to>
-                <image>${container.image}:${container.version}</image>
-                <tags>
-                  <tag>latest</tag>
-                </tags>
-              </to>
               <container>
-                <ports>
-                  <port>8080</port>
-                </ports>
                 <jvmFlags>
                   <jvmFlag>-server</jvmFlag>
                   <jvmFlag>-Xverify:none</jvmFlag>
                   <jvmFlag>-XX:TieredStopAtLevel=1</jvmFlag>
                 </jvmFlags>
-                <useCurrentTimestamp>true</useCurrentTimestamp>
+              </container>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>docker-h2</id>
+      <properties>
+        <container.database>h2-</container.database>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.google.cloud.tools</groupId>
+            <artifactId>jib-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>package</phase>
+              </execution>
+            </executions>
+            <configuration>
+              <container>
+                <jvmFlags>
+                  <jvmFlag>-server</jvmFlag>
+                  <jvmFlag>-Xverify:none</jvmFlag>
+                  <jvmFlag>-XX:TieredStopAtLevel=1</jvmFlag>
+                  <!-- default h2 profile that works without any overrides. Override using spring.profiles.active -->
+                  <jvmFlag>-Dspring.profiles.default=dev</jvmFlag>
+                </jvmFlags>
               </container>
             </configuration>
           </plugin>
