@@ -1,54 +1,6 @@
 # Used for pure development purposes. All accounts are simulated using the Loopback Link.
 # See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
-logging:
-  level:
-    ROOT: INFO
-
-server:
-  port: 8080
-  http2:
-    enabled: true
-  jetty:
-    max-http-post-size: 32767
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-#  endpoint:
-#    refresh:
-#      enabled: true
-
 spring:
-  #  application:
-  #    name: connector
-  #  cloud:
-  #    config:
-  #      #uri: ${server.address}:${server.url}
-  #      uri: http://localhost:8080
-  #      server:
-  #        prefix: /config
-  #        composite:
-  #          - type: native
-  #            search-locations: classpath:/
-  #            #order: 1
-  ##          - type: git
-  ##            uri: https://fixme.example.com
-  ##            order: 2
-  #        bootstrap: true
-  output:
-    ansi:
-      enabled: ALWAYS
-  http:
-    # MULTIPART (MultipartProperties)
-    multipart:
-      enabled: false
-      max-file-size: 32KB
-      max-request-size: 32KB
-  resources:
-    add-mappings: false
-  mvc:
-    throw-exception-if-no-handler-found: true
   # Database Settings
   datasource:
     url: jdbc:h2:mem:example-app;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
@@ -60,13 +12,6 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
-    open-in-view: false
-    properties:
-      hibernate:
-        show_sql: false
-        use_sql_comments: false
-        format_sql: false
-
 ###
 #   H2 Settings
 ###
@@ -80,29 +25,7 @@ h2:
 
 interledger:
   connector:
-    # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
-    adminPassword: password
-    keystore:
-      jks:
-        enabled: true
-        filename: crypto/crypto.p12
-        # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
-        password: password
-        secret0_alias: secret0
-        # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
-        secret0_password: password
-        # This property validates that JKS encryption is working properly via the configured startup. This value
-        # represents the plaintext value of `shh`, encrypted with the above details.
-        secret0_test: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
-    enabledProtocols:
-      blastEnabled: false
-      pingProtocolEnabled: true
-      peerConfigEnabled: true
-      peerRoutingEnabled: true
     ## ILP address of the connector.
     nodeIlpAddress: test1.connie
-    # Global Routing Settings for this connector.
-    globalRoutingSettings:
-      # A simulated routing secret, which is a seed used for generating routing table auth values.
-      # Represents the plaintext value of `shh`, encrypted.
-      routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
+    enabledProtocols:
+      blastEnabled: false
