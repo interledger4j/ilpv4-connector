@@ -1,19 +1,25 @@
 package org.interledger.connector.server.spring.settings.blast;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
-import org.interledger.connector.accounts.BlastAccountIdResolver;
+import static okhttp3.CookieJar.NO_COOKIES;
+import static org.interledger.connector.core.ConfigConstants.BLAST_ENABLED;
+import static org.interledger.connector.core.ConfigConstants.DEFAULT_JWT_TOKEN_ISSUER;
+import static org.interledger.connector.core.ConfigConstants.ENABLED_PROTOCOLS;
+import static org.interledger.connector.core.ConfigConstants.TRUE;
+
+import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.connector.accounts.DefaultAccountIdResolver;
-import org.interledger.connector.server.spring.controllers.converters.OerPreparePacketHttpMessageConverter;
+import org.interledger.connector.accounts.IlpOverHttpAccountIdResolver;
+import org.interledger.crypto.Decryptor;
+import org.interledger.crypto.EncryptedSecret;
+import org.interledger.link.LinkFactoryProvider;
+import org.interledger.link.http.IlpOverHttpLink;
+import org.interledger.link.http.IlpOverHttpLinkFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.ConnectionPool;
 import okhttp3.ConnectionSpec;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import org.interledger.connector.link.LinkFactoryProvider;
-import org.interledger.connector.link.blast.BlastLink;
-import org.interledger.connector.link.blast.BlastLinkFactory;
-import org.interledger.connector.link.events.LinkEventEmitter;
-import org.interledger.crypto.Decryptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,19 +28,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static org.interledger.connector.core.ConfigConstants.BLAST_ENABLED;
-import static org.interledger.connector.core.ConfigConstants.DEFAULT_JWT_TOKEN_ISSUER;
-import static org.interledger.connector.core.ConfigConstants.ENABLED_PROTOCOLS;
-import static okhttp3.CookieJar.NO_COOKIES;
-import static org.interledger.connector.core.ConfigConstants.TRUE;
+import javax.annotation.PostConstruct;
 
 /**
  * <p>Configures ILP-over-HTTP (i.e., BLAST), which provides a single Link-layer mechanism for this Connector's
@@ -45,34 +44,36 @@ import static org.interledger.connector.core.ConfigConstants.TRUE;
  */
 @Configuration
 @ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = BLAST_ENABLED, havingValue = TRUE)
-public class BlastConfig {
+public class IlpOverHttpConfig {
 
   /**
-   * @see "https://github.com/sappenin/java-ilpv4-connector/issues/221"
-   * @deprecated See #221
+   * @see "https://github.com/sappenin/java-ilpv4-connector/issues/360"
+   * @deprecated See #360
    */
   @Deprecated
   public static final String BLAST = "blast";
 
   @Autowired
-  Environment environment;
+  private ObjectMapper objectMapper;
+
   @Autowired
-  LinkEventEmitter linkEventEmitter;
-  @Autowired
-  LinkFactoryProvider linkFactoryProvider;
+  private Environment environment;
+
   @Autowired
   @Qualifier(BLAST)
-  RestTemplate blastRestTemplate;
+  private OkHttpClient ilpOverHttpClient;
+
   @Autowired
-  Decryptor decryptor;
+  private LinkFactoryProvider linkFactoryProvider;
+
+  @Autowired
+  private Decryptor decryptor;
 
   @Bean
   @Qualifier(BLAST)
-  public ConnectionPool blastConnectionPool(
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.maxIdleConnections:5}")
-    final int defaultMaxIdleConnections,
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.keepAliveMinutes:1}")
-    final long defaultConnectionKeepAliveMinutes
+  protected ConnectionPool blastConnectionPool(
+    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.maxIdleConnections:5}") final int defaultMaxIdleConnections,
+    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.keepAliveMinutes:1}") final long defaultConnectionKeepAliveMinutes
   ) {
     return new ConnectionPool(
       defaultMaxIdleConnections,
@@ -81,6 +82,8 @@ public class BlastConfig {
   }
 
   /**
+   * A Bean for {@link OkHttp3ClientHttpRequestFactory}.
+   *
    * @param ilpOverHttpConnectionPool   A {@link ConnectionPool} as configured above.
    * @param defaultConnectTimeoutMillis Applied when connecting a TCP socket to the target host. A value of 0 means no
    *                                    timeout, otherwise values must be between 1 and {@link Integer#MAX_VALUE} when
@@ -97,16 +100,11 @@ public class BlastConfig {
    */
   @Bean
   @Qualifier(BLAST)
-  OkHttp3ClientHttpRequestFactory blastOkHttp3ClientHttpRequestFactory(
-
+  protected OkHttpClient ilpOverHttpClient(
     @Qualifier(BLAST) final ConnectionPool ilpOverHttpConnectionPool,
-
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.connectTimeoutMillis:1000}")
-    final long defaultConnectTimeoutMillis,
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.readTimeoutMillis:60000}")
-    final long defaultReadTimeoutMillis,
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.writeTimeoutMillis:60000}")
-    final long defaultWriteTimeoutMillis
+    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.connectTimeoutMillis:1000}") final long defaultConnectTimeoutMillis,
+    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.readTimeoutMillis:60000}") final long defaultReadTimeoutMillis,
+    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.writeTimeoutMillis:60000}") final long defaultWriteTimeoutMillis
   ) {
     OkHttpClient.Builder builder = new OkHttpClient.Builder();
     ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).build();
@@ -118,39 +116,49 @@ public class BlastConfig {
     builder.readTimeout(defaultReadTimeoutMillis, TimeUnit.MILLISECONDS);
     builder.writeTimeout(defaultWriteTimeoutMillis, TimeUnit.MILLISECONDS);
 
-    OkHttpClient client = builder.connectionPool(ilpOverHttpConnectionPool).build();
-    return new OkHttp3ClientHttpRequestFactory(client);
+    return builder.connectionPool(ilpOverHttpConnectionPool).build();
   }
 
+  /**
+   * A Bean for {@link OkHttp3ClientHttpRequestFactory}.
+   *
+   * @param okHttpClient A {@link OkHttpClient} to use in the Request factory.
+   *
+   * @return A {@link OkHttp3ClientHttpRequestFactory}.
+   */
   @Bean
   @Qualifier(BLAST)
-  RestTemplate blastRestTemplate(
-    ObjectMapper objectMapper,
-    OerPreparePacketHttpMessageConverter oerPreparePacketHttpMessageConverter,
-    @Qualifier(BLAST) OkHttp3ClientHttpRequestFactory okHttp3ClientHttpRequestFactory
+  protected OkHttp3ClientHttpRequestFactory ilpOverHttpClientHttpRequestFactory(
+    @Qualifier(BLAST) final OkHttpClient okHttpClient
   ) {
-    MappingJackson2HttpMessageConverter httpMessageConverter = new MappingJackson2HttpMessageConverter(objectMapper);
-    RestTemplate restTemplate = new RestTemplate(okHttp3ClientHttpRequestFactory);
-    restTemplate.setMessageConverters(Lists.newArrayList(oerPreparePacketHttpMessageConverter, httpMessageConverter));
-    return restTemplate;
+    return new OkHttp3ClientHttpRequestFactory(okHttpClient);
   }
 
   @Bean
-  HttpUrl defaultJwtTokenIssuer() {
+  protected HttpUrl defaultJwtTokenIssuer() {
     return Optional.ofNullable(environment.getProperty(DEFAULT_JWT_TOKEN_ISSUER))
       .map(HttpUrl::parse)
       .orElseThrow(() -> new IllegalStateException("Property `" + DEFAULT_JWT_TOKEN_ISSUER + "` must be defined!"));
   }
 
   @Bean
-  BlastAccountIdResolver blastAccountIdResolver() {
+  protected IlpOverHttpAccountIdResolver blastAccountIdResolver() {
     return new DefaultAccountIdResolver();
   }
 
   @PostConstruct
   public void startup() {
+    // The value passed-in here as `encryptedConnectorPropertyStringBytes` will actually be an encrypted property as
+    // encrypted via connector-crypto-cli. For testing purposes, reference the Connector properties for a given account.
+    org.interledger.link.http.auth.Decryptor linkDecryptor = encryptedConnectorPropertyStringBytes -> decryptor.decrypt(
+      EncryptedSecret.fromEncodedValue(new String(encryptedConnectorPropertyStringBytes))
+    );
+
     linkFactoryProvider.registerLinkFactory(
-      BlastLink.LINK_TYPE, new BlastLinkFactory(linkEventEmitter, blastRestTemplate, decryptor)
+      IlpOverHttpLink.LINK_TYPE,
+      new IlpOverHttpLinkFactory(
+        ilpOverHttpClient, linkDecryptor, objectMapper, InterledgerCodecContextFactory.oer()
+      )
     );
   }
 }

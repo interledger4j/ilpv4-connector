@@ -1,7 +1,8 @@
 package org.interledger.connector.it.topology;
 
-import com.google.common.collect.Lists;
 import org.interledger.core.InterledgerAddress;
+
+import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -125,4 +126,5 @@ public class Topology {
     protected abstract void doAfterTopologyStartup(final Topology topology);
 
   }
+
 }

@@ -1,6 +1,5 @@
 package org.interledger.connector;
 
-import com.google.common.eventbus.EventBus;
 import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.core.events.ConnectorEvent;
@@ -9,6 +8,9 @@ import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.connector.settlement.SettlementService;
+
+import com.google.common.eventbus.EventBus;
 
 /**
  * <p>When two parties want to exchange value online, the one who sends money is the sender and the one who
@@ -38,6 +40,8 @@ public interface ILPv4Connector {
   ExternalRoutingService getExternalRoutingService();
 
   BalanceTracker getBalanceTracker();
+
+  SettlementService getSettlementService();
 
   /**
    * Accessor for the {@link EventBus} that this Connector uses to propagate internal events of type {@link

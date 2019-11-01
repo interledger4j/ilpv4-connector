@@ -1,9 +1,10 @@
 package org.interledger.connector.links.filters;
 
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.link.Link;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.link.Link;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +23,7 @@ public class DefaultLinkFilterChain implements LinkFilterChain {
   /**
    * A chain of filters that are applied to a packet request before sending the packet onto an outbound {@link Link}.
    *
-   * @param linkFilters
+   * @param linkFilters  A {@link List} of Link filters that should be applied to this filter chain.
    * @param outboundLink The {@link Link} that a Packet Switch will forward a packet onto (this link is the `next-hop`
    *                     as determined by the routing table inside of the Packet Switch).
    */
@@ -33,7 +34,7 @@ public class DefaultLinkFilterChain implements LinkFilterChain {
 
   @Override
   public InterledgerResponsePacket doFilter(
-    final AccountSettings destinationAccountSettings, final InterledgerPreparePacket preparePacket
+      final AccountSettings destinationAccountSettings, final InterledgerPreparePacket preparePacket
   ) {
 
     Objects.requireNonNull(destinationAccountSettings);
@@ -43,8 +44,8 @@ public class DefaultLinkFilterChain implements LinkFilterChain {
       return linkFilters.get(_filterIndex++).doFilter(destinationAccountSettings, preparePacket, this);
     } else {
       LOGGER.debug(
-        "Sending outbound ILP Prepare. destinationAccountSettings: {}; link={}; packet={};",
-        destinationAccountSettings, link, preparePacket
+          "Sending outbound ILP Prepare. destinationAccountSettings: {}; link={}; packet={};",
+          destinationAccountSettings, link, preparePacket
       );
       return link.sendPacket(preparePacket);
     }

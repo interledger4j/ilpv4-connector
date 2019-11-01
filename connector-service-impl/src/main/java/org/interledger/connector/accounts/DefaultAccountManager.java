@@ -1,7 +1,6 @@
 package org.interledger.connector.accounts;
 
 import org.interledger.codecs.ildcp.IldcpUtils;
-import org.interledger.connector.link.Link;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.entities.SettlementEngineDetailsEntity;
@@ -16,6 +15,7 @@ import org.interledger.ildcp.IldcpFetcher;
 import org.interledger.ildcp.IldcpRequest;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
+import org.interledger.link.Link;
 
 import okhttp3.HttpUrl;
 import org.slf4j.Logger;
@@ -110,14 +110,15 @@ public class DefaultAccountManager implements AccountManager {
     // It is _not_ a requirement that a Connector startup with any accounts configured. Thus, the first account added
     // to the connector with a relationship type `PARENT` should trigger IL-DCP, but only if the operator address has
     // not already been populated. This scenario will only ever happen once (the connector starts-up with no ILP
-    // address configured, and a new account is added of type `PARENT`). Once this is done, subsequent restarts of
-    // the Connector will not enter into this code-block because if the connector has a PARENT account configured and
-    // no ILP address specified, then the Connector startup will trigger IL-DCP. In other words, this check is only
-    // required for the first-account-creation (under certain conditions).
-    if (AccountRelationship.PARENT.equals(accountSettings.accountRelationship())) {
-      if (!connectorSettingsSupplier.get().operatorAddress().isPresent()) {
-        this.initializeParentAccountSettingsViaIlDcp(accountSettings.accountId());
-      }
+    // address configured, and a new account is added of type `PARENT`. This account will have the default address of
+    // `self.node`, which indicates the address is unset). Once this is done, subsequent restarts of the Connector will
+    // not enter into this code-block because if the connector has a PARENT account configured and no ILP address
+    // specified, then the Connector startup will trigger IL-DCP. In other words, this check is only required for the
+    // first-account-creation (under certain conditions).
+    if (AccountRelationship.PARENT.equals(accountSettings.accountRelationship())
+      && Link.SELF.equals(connectorSettingsSupplier.get().operatorAddress())
+    ) {
+      this.initializeParentAccountSettingsViaIlDcp(accountSettings.accountId());
     }
 
     // No need to prematurely connect to this account. When packets need to flow over it, it will become connected.
@@ -188,7 +189,7 @@ public class DefaultAccountManager implements AccountManager {
       getAccountSettingsRepository().save(parentAccountSettingsEntity);
 
     logger.info(
-      "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().operatorAddress().get()
+      "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().operatorAddress()
     );
 
     return conversionService.convert(updatedAccountSettings, AccountSettings.class);

@@ -2,9 +2,9 @@ package org.interledger.connector.jackson;
 
 import org.interledger.connector.jackson.modules.AccountIdModule;
 import org.interledger.connector.jackson.modules.HttpUrlModule;
-import org.interledger.connector.jackson.modules.LinkIdModule;
-import org.interledger.connector.jackson.modules.LinkTypeModule;
 import org.interledger.connector.jackson.modules.SettlementAccountIdModule;
+import org.interledger.quilt.jackson.link.LinkIdModule;
+import org.interledger.quilt.jackson.link.LinkTypeModule;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -23,19 +23,19 @@ public class ObjectMapperFactory {
 
   public static ObjectMapper create() {
     return new ObjectMapper()
-      .registerModule(new Jdk8Module())
-      .registerModule(new HttpUrlModule())
-      .registerModule(new JavaTimeModule())
-      .registerModule(new GuavaModule())
-      .registerModule(new ProblemModule())
-      .registerModule(new ConstraintViolationProblemModule())
-      .registerModule(new AccountIdModule())
-      .registerModule(new SettlementAccountIdModule())
-      .registerModule(new LinkIdModule())
-      .registerModule(new LinkTypeModule())
-      .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-      .configure(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS, true)
-      .configure(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN, true)
-      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        .registerModule(new Jdk8Module())
+        .registerModule(new HttpUrlModule())
+        .registerModule(new JavaTimeModule())
+        .registerModule(new GuavaModule())
+        .registerModule(new ProblemModule())
+        .registerModule(new ConstraintViolationProblemModule())
+        .registerModule(new AccountIdModule())
+        .registerModule(new SettlementAccountIdModule())
+        .registerModule(new LinkIdModule())
+        .registerModule(new LinkTypeModule())
+        .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+        .configure(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS, true)
+        .configure(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN, true)
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 }

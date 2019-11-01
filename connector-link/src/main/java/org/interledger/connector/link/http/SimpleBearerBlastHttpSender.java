@@ -1,8 +1,10 @@
-package org.interledger.connector.link.blast;
+package org.interledger.connector.link.http;
 
 import org.interledger.core.InterledgerAddress;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
+import org.interledger.link.http.OutgoingLinkSettings;
+
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Objects;
@@ -14,6 +16,8 @@ import java.util.function.Supplier;
  *
  * Note: this implementation should not be used in a production environment.
  */
+@Deprecated
+// TODO: Delete this.
 public class SimpleBearerBlastHttpSender extends AbstractBlastHttpSender implements BlastHttpSender {
 
   private final Decryptor decryptor;

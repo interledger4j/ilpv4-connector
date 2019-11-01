@@ -1,270 +1,359 @@
 package org.interledger.connector.links;
 
-import com.google.common.primitives.UnsignedLong;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
+
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
 import org.interledger.connector.fx.JavaMoneyUtils;
-import org.interledger.connector.link.LinkType;
 import org.interledger.connector.packetswitch.InterledgerAddressUtils;
+import org.interledger.connector.routing.ImmutableRoute;
 import org.interledger.connector.routing.PaymentRouter;
 import org.interledger.connector.routing.Route;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.connector.settings.ModifiableConnectorSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerPreparePacketBuilder;
 import org.interledger.core.InterledgerProtocolException;
+import org.interledger.link.LoopbackLink;
+
+import com.google.common.primitives.UnsignedLong;
+import org.javamoney.moneta.spi.DefaultNumberValue;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
 
-import javax.money.CurrencyUnit;
-import javax.money.MonetaryAmount;
-import java.math.BigInteger;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static java.time.temporal.ChronoUnit.MILLIS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import javax.money.MonetaryAmount;
+import javax.money.convert.CurrencyConversion;
+import javax.money.convert.ExchangeRate;
 
 /**
  * Unit tests for {@link DefaultNextHopPacketMapper}.
  */
-@RunWith(MockitoJUnitRunner.class)
+@FixMethodOrder(MethodSorters.DEFAULT)
 public class DefaultNextHopPacketMapperTest {
 
-	private static final InterledgerAddressPrefix GLOBAL_ROUTING_TABLE_ENTRY = InterledgerAddressPrefix.of("g");
-	private static final InterledgerAddressPrefix DEFAULT_TARGET_ADDRESS_PREFIX = GLOBAL_ROUTING_TABLE_ENTRY;
-	private static final String TEST_ADDRESS = "test.bar";
-	private static final String TEST_ADDRESS_2 = "test.foo";
+  private static final ImmutableRoute NEXT_HOP = Route.builder().nextHopAccountId(AccountId.of("g.ovaltine-jenkins"))
+    .routePrefix(InterledgerAddressPrefix.GLOBAL)
+    .build();
+  private static final ImmutableRoute NEXT_HOP_2 = Route.builder().nextHopAccountId(AccountId.of("galileo-humpkins"))
+          .routePrefix(InterledgerAddressPrefix.GLOBAL)
+          .build();
+  private static final int MIN_MESSAGE_WINDOW_MILLIS = 1000;
+  private static final AccountId RECEIVER_ACCOUNT_ID = AccountId.of("trapezius-milkington");
+  private static final InterledgerAddress RECEIVER = InterledgerAddress.of("g.test").with(RECEIVER_ACCOUNT_ID.value());
+  private static final AccountId SENDER_ACCOUNT_ID = AccountId.of("galileo-humpkins");
+  private static final InterledgerCondition CONDITION = InterledgerCondition.of(
+    Base64.getDecoder().decode("jAC8DGFPZPfh4AtZpXuvXFe2oRmpDVSvSJg2oT+bx34="));
 
-	private DefaultNextHopPacketMapper defaultNextHopPacketMapper;
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
 
-	@Mock
-	private Supplier<ConnectorSettings> connectorSettingsSupplier;
+  private DefaultNextHopPacketMapper mapper;
+  private ModifiableConnectorSettings connectorSettings;
+  @Mock
+  private PaymentRouter<Route> mockRoutingService;
+  @Mock
+  private AccountSettingsLoadingCache mockAccountCache;
+  @Mock
+  private InterledgerAddressUtils mockAddressUtils;
+  @Mock
+  private CurrencyConversion mockCurrencyConversion;
+  @Mock
+  private ExchangeRate mockExchangeRate;
 
-	@Mock
-	private PaymentRouter<Route> externalRoutingService;
+  private Clock clock;
 
-	@Mock
-	private InterledgerAddressUtils addressUtils;
+  @Before
+  public void setUp() {
+    MockitoAnnotations.initMocks(this);
+    clock = Clock.fixed(Instant.now(), ZoneId.of("UTC"));
+    connectorSettings = ModifiableConnectorSettings.create();
+    connectorSettings.setMinMessageWindowMillis(MIN_MESSAGE_WINDOW_MILLIS);
+    connectorSettings.setMaxHoldTimeMillis(30000);
+    connectorSettings.setOperatorAddress(InterledgerAddress.of("g.safe"));
+    mockConversionRate(1);
 
-	@Mock
-	private JavaMoneyUtils javaMoneyUtils;
+    mockExternalForwardingAllowed(true);
+    Supplier<ConnectorSettings> connectorSettingsSupplier = () -> connectorSettings;
+    mapper = new DefaultNextHopPacketMapper(connectorSettingsSupplier,
+      mockRoutingService,
+      mockAddressUtils,
+      new JavaMoneyUtils(),
+      mockAccountCache,
+      (currencyUnit -> mockCurrencyConversion));
+  }
 
-	@Mock
-	private AccountSettingsLoadingCache accountSettingsLoadingCache;
+  private void mockExternalForwardingAllowed(boolean value) {
+    when(mockAddressUtils.isExternalForwardingAllowed(any())).thenReturn(value);
+  }
 
-	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
+  @Test
+  public void getNextHopPacket() {
+    Instant now = Instant.now(clock);
+    AccountSettings settings = defaultSenderAccountSettings().build();
+    InterledgerPreparePacket preparePacket = defaultPreparePacket(now).build();
 
-	@Before
-	public void setup() {
-		defaultNextHopPacketMapper = new DefaultNextHopPacketMapper(connectorSettingsSupplier,
-				externalRoutingService, addressUtils, javaMoneyUtils, accountSettingsLoadingCache);
-	}
+    when(mockAccountCache.safeGetAccountId(NEXT_HOP.nextHopAccountId()))
+      .thenReturn(defaultNextHopSettings().build());
 
-	@Test
-	public void getNextHopPacket() {
-		final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-		final AccountId accountIdNextHopRoute = AccountId.of(UUID.randomUUID().toString());
-		final AccountSettings sourceAccountSettings = buildAccountSettings(accountId)
-				.build();
-		final AccountSettings destinationAccountSettings = buildAccountSettings(accountId)
-				.build();
-		final InterledgerPreparePacket sourcePacket = buildInterLedgerPreparePacket(10);
-		final Optional<Route> optionalRoute = Optional.of(Route.builder()
-				.nextHopAccountId(accountIdNextHopRoute)
-				.routePrefix(DEFAULT_TARGET_ADDRESS_PREFIX)
-				.build());
-		doReturn(optionalRoute).when(externalRoutingService).findBestNexHop(sourcePacket.getDestination());
-		when(accountSettingsLoadingCache.safeGetAccountId(eq(optionalRoute.get().nextHopAccountId()))).thenReturn(destinationAccountSettings);
-		when(addressUtils.isExternalForwardingAllowed(sourcePacket.getDestination())).thenReturn(false);
+    when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.of(NEXT_HOP));
 
-		final NextHopInfo nextHopInfo = defaultNextHopPacketMapper.getNextHopPacket(sourceAccountSettings, sourcePacket);
+    NextHopInfo result = mapper.getNextHopPacket(settings, preparePacket);
+    InterledgerPreparePacket expectedPreparePacket = defaultExpectedPreparePacket(preparePacket).build();
+    assertPreparePacket(result, expectedPreparePacket);
+  }
 
-		assertThat(nextHopInfo.nextHopAccountId()).isEqualTo(optionalRoute.get().nextHopAccountId());
-		assertThat(nextHopInfo.nextHopPacket().getAmount().intValue()).isEqualTo(10);
-		assertThat(nextHopInfo.nextHopPacket().getDestination().getValue()).isEqualTo(TEST_ADDRESS_2);
-		assertThat(nextHopInfo.nextHopPacket().getExpiresAt()).isNotNull();
-	}
+  @Test
+  public void getNextHopPacketNoDestinationAddressFoundFromRoutingService() {
+    Instant now = Instant.now(clock);
+    AccountSettings settings = defaultSenderAccountSettings().build();
+    InterledgerPreparePacket preparePacket = defaultPreparePacket(now).build();
 
-	@Test
-	public void getNextHopPacketNoDestinationAddressFoundFromRoutingService() {
-		final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-		final AccountSettings sourceAccountSettings = buildAccountSettings(accountId)
-				.build();
-		final InterledgerPreparePacket sourcePacket = buildInterLedgerPreparePacket(10);
-		final Optional<Route> optionalRoute = Optional.empty();
-		doReturn(optionalRoute).when(externalRoutingService).findBestNexHop(sourcePacket.getDestination());
-		ConnectorSettings connectorSettings = mock(ConnectorSettings.class);
-		when(connectorSettings.operatorAddressSafe()).thenReturn(InterledgerAddress.of(TEST_ADDRESS));
-		when(connectorSettingsSupplier.get()).thenReturn(connectorSettings);
-		expectedException.expect(InterledgerProtocolException.class);
-		expectedException.expectMessage(containsString("No route found from accountId to destination"));
-		defaultNextHopPacketMapper.getNextHopPacket(sourceAccountSettings, sourcePacket);
-	}
+    when(mockAccountCache.safeGetAccountId(NEXT_HOP.nextHopAccountId()))
+            .thenReturn(defaultNextHopSettings().build());
+    when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.empty());
+    expectedException.expect(InterledgerProtocolException.class);
+    expectedException.expectMessage(containsString("No route found from accountId to destination"));
+    mapper.getNextHopPacket(settings, preparePacket);
+  }
 
-	@Test
-	public void getNextHopPacketSourceAccountIdMatchesNextHopAccountId() {
-		final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-		final AccountSettings sourceAccountSettings = buildAccountSettings(accountId)
-				.build();
-		final InterledgerPreparePacket sourcePacket = buildInterLedgerPreparePacket(10);
-		final Optional<Route> optionalRoute = Optional.of(Route.builder()
-				.nextHopAccountId(accountId)
-				.routePrefix(DEFAULT_TARGET_ADDRESS_PREFIX)
-				.build());
-		ConnectorSettings connectorSettings = mock(ConnectorSettings.class);
-		when(connectorSettings.operatorAddressSafe()).thenReturn(InterledgerAddress.of(TEST_ADDRESS));
-		when(connectorSettingsSupplier.get()).thenReturn(connectorSettings);
-		doReturn(optionalRoute).when(externalRoutingService).findBestNexHop(sourcePacket.getDestination());
-		expectedException.expect(InterledgerProtocolException.class);
-		expectedException.expectMessage(containsString("Refusing to route payments back to sender"));
-		defaultNextHopPacketMapper.getNextHopPacket(sourceAccountSettings, sourcePacket);
-	}
+  @Test
+  public void getNextHopPacketSourceAccountIdMatchesNextHopAccountId() {
+    Instant now = Instant.now(clock);
+    AccountSettings settings = defaultSenderAccountSettings().build();
+    InterledgerPreparePacket preparePacket = defaultPreparePacket(now).build();
 
-	@Test
-	public void determineNextAmountRequireNonNull() {
-		expectedException.expect(NullPointerException.class);
-		defaultNextHopPacketMapper.determineNextAmount(null, null, null);
-	}
+    when(mockAccountCache.safeGetAccountId(NEXT_HOP_2.nextHopAccountId()))
+            .thenReturn(defaultNextHopSettings().build());
 
-	@Test
-	public void determineNextAmountExternalForwardingNotAllowedForDestination() {
-		final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-		final AccountSettings sourceAccountSettings = buildAccountSettings(accountId)
-				.build();
-		final AccountSettings destinationAccountSettings = buildAccountSettings(accountId)
-				.build();
-		final InterledgerPreparePacket sourcePacket = buildInterLedgerPreparePacket(10);
-		when(addressUtils.isExternalForwardingAllowed(sourcePacket.getDestination())).thenReturn(false);
+    when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.of(NEXT_HOP_2));
 
-		final UnsignedLong nextAmount = defaultNextHopPacketMapper.determineNextAmount(sourceAccountSettings,
-				destinationAccountSettings, sourcePacket);
+    expectedException.expect(InterledgerProtocolException.class);
+    expectedException.expectMessage(containsString("Refusing to route payments back to sender"));
+    mapper.getNextHopPacket(settings, preparePacket);
+  }
 
-		assertThat(nextAmount.bigIntegerValue().intValue()).isEqualTo(10);
-	}
+  @Test
+  public void determineNextAmountWithConversion() {
+    Instant now = Instant.now(clock);
+    AccountSettings sourceSettings = defaultSenderAccountSettings()
+      .assetCode("EUR")
+      .build();
+    InterledgerPreparePacket preparePacket = defaultPreparePacket(now)
+      .amount(UnsignedLong.valueOf(100))
+      .build();
 
-	@Test
-	public void determineNextAmountExternalForwardingAllowedForDestination() {
-		final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-		final AccountSettings sourceAccountSettings = buildAccountSettings(accountId)
-				.build();
-		final AccountSettings destinationAccountSettings = buildAccountSettings(accountId)
-				.build();
-		final InterledgerPreparePacket sourcePacket = buildInterLedgerPreparePacket(100);
-		when(addressUtils.isExternalForwardingAllowed(sourcePacket.getDestination())).thenReturn(true);
-		when(javaMoneyUtils.toInterledgerAmount(any(MonetaryAmount.class), eq(9))).thenCallRealMethod();
-		when(javaMoneyUtils.toMonetaryAmount(any(CurrencyUnit.class),
-				any(BigInteger.class), eq(9))).thenCallRealMethod();
+    when(mockAccountCache.safeGetAccountId(NEXT_HOP.nextHopAccountId()))
+      .thenReturn(defaultNextHopSettings().build());
 
-		final UnsignedLong nextAmount = defaultNextHopPacketMapper.determineNextAmount(sourceAccountSettings,
-				destinationAccountSettings, sourcePacket);
+    when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.of(NEXT_HOP));
 
-		assertThat(nextAmount.bigIntegerValue().intValue()).isEqualTo(100);
-	}
+    int conversionRate = 2;
+    mockConversionRate(conversionRate);
 
-	@Test
-	public void determineDestinationExpiresAtSourceExpiryRequired() {
-		final InterledgerAddress destinationAddress = InterledgerAddress.of(TEST_ADDRESS_2);
-		expectedException.expect(NullPointerException.class);
-		defaultNextHopPacketMapper.determineDestinationExpiresAt(null, destinationAddress);
-	}
+    UnsignedLong result = mapper.determineNextAmount(sourceSettings, defaultNextHopSettings().build(), preparePacket);
+    assertThat(result).isEqualTo(UnsignedLong.valueOf(200));
+  }
 
-	@Test
-	public void determineDestinationExpiresAtExternalForwardingNotAllowed() {
-		final Instant sourceExpiry = Instant.now();
-		final InterledgerAddress destinationAddress = InterledgerAddress.of(TEST_ADDRESS_2);
-		when(addressUtils.isExternalForwardingAllowed(destinationAddress)).thenReturn(false);
+  @Test
+  public void determineNextAmountExternalForwardingNotAllowedForDestination() {
+    Instant now = Instant.now(clock);
+    AccountSettings sourceSettings = defaultSenderAccountSettings()
+            .assetCode("EUR")
+            .build();
+    InterledgerPreparePacket preparePacket = defaultPreparePacket(now)
+            .amount(UnsignedLong.valueOf(100))
+            .build();
 
-		final Instant expiresAt = defaultNextHopPacketMapper.determineDestinationExpiresAt(sourceExpiry,
-				destinationAddress);
+    when(mockAccountCache.safeGetAccountId(NEXT_HOP.nextHopAccountId()))
+            .thenReturn(defaultNextHopSettings().build());
 
-		assertThat(expiresAt).isEqualTo(sourceExpiry);
-	}
+    when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.of(NEXT_HOP));
+    mockExternalForwardingAllowed(false);
 
-	@Test
-	public void determineDestinationExpiresAtExternalForwardingAllowedTransferExpired() {
-		final Instant sourceExpiry = Instant.now();
-		ConnectorSettings connectorSettings = mock(ConnectorSettings.class);
-		final InterledgerAddress destinationAddress = InterledgerAddress.of(TEST_ADDRESS_2);
-		when(addressUtils.isExternalForwardingAllowed(destinationAddress)).thenReturn(true);
-		when(connectorSettings.operatorAddressSafe()).thenReturn(InterledgerAddress.of(TEST_ADDRESS));
-		when(connectorSettingsSupplier.get()).thenReturn(connectorSettings);
-		expectedException.expect(InterledgerProtocolException.class);
-		expectedException.expectMessage(containsString("Interledger Rejection: Source transfer has already expired"));
-		defaultNextHopPacketMapper.determineDestinationExpiresAt(sourceExpiry, destinationAddress);
-	}
+    int conversionRate = 2;
+    mockConversionRate(conversionRate);
 
-	@Test
-	public void determineDestinationExpiresAtExternalForwardingAllowedExpiryTooSoon() {
-		final Instant sourceExpiry = Instant.now().plus(2000, MILLIS);
-		ConnectorSettings connectorSettings = mock(ConnectorSettings.class);
-		final InterledgerAddress destinationAddress = InterledgerAddress.of(TEST_ADDRESS_2);
-		when(addressUtils.isExternalForwardingAllowed(destinationAddress)).thenReturn(true);
-		when(connectorSettings.operatorAddressSafe()).thenReturn(InterledgerAddress.of(TEST_ADDRESS));
-		when(connectorSettingsSupplier.get()).thenReturn(connectorSettings);
-		expectedException.expect(InterledgerProtocolException.class);
-		expectedException.expectMessage(containsString("Interledger Rejection: Source transfer expires too soon to complete payment"));
-		defaultNextHopPacketMapper.determineDestinationExpiresAt(sourceExpiry, destinationAddress);
-	}
+    UnsignedLong result = mapper.determineNextAmount(sourceSettings, defaultNextHopSettings().build(), preparePacket);
+    assertThat(result).isEqualTo(UnsignedLong.valueOf(100));
+  }
 
-	@Test
-	public void determineDestinationExpiresAtExternalForwardingAllowed() {
-		final Instant sourceExpiry = Instant.now().plus(20000, MILLIS);
-		final Instant destinationExpiry = Instant.now().plus(1000, MILLIS);
-		final InterledgerAddress destinationAddress = InterledgerAddress.of(TEST_ADDRESS_2);
-		when(addressUtils.isExternalForwardingAllowed(destinationAddress)).thenReturn(true);
-		final Instant expiresAt = defaultNextHopPacketMapper.determineDestinationExpiresAt(sourceExpiry,
-				destinationAddress);
+  @Test
+  public void determineDestinationExpiresAtNoExternalForwarding() {
+    Instant expiry = Instant.now(clock).plusSeconds(10);
+    mockExternalForwardingAllowed(false);
+    assertThat(mapper.determineDestinationExpiresAt(clock, expiry, RECEIVER)).isEqualTo(expiry);
+  }
 
-		assertThat(expiresAt.isAfter(destinationExpiry)).isTrue();
-		assertThat(expiresAt.isBefore(sourceExpiry)).isTrue();
-	}
+  @Test
+  public void determineNextAmountRequireNonNull() {
+    expectedException.expect(NullPointerException.class);
+    mapper.determineNextAmount(null, null, null);
+  }
 
-	@Test
-	public void lesser() {
-		final Instant first = Instant.now();
-		final Instant second = first.plus(1000, MILLIS);
+  @Test
+  public void determineDestinationExpiresAtLimitedByMaxHold() {
+    Instant now = Instant.now(clock);
+    Instant expiry = now.plusMillis(10000);
+    int maxHoldTimeMillis = 5000;
+    int minMessageWindowMillis = 1000;
+    connectorSettings.setMaxHoldTimeMillis(maxHoldTimeMillis);
+    connectorSettings.setMinMessageWindowMillis(minMessageWindowMillis);
+    mockExternalForwardingAllowed(true);
+    assertThat(mapper.determineDestinationExpiresAt(clock, expiry, RECEIVER))
+      .isEqualTo(now.plusMillis(maxHoldTimeMillis));
+  }
 
-		Instant lesser = defaultNextHopPacketMapper.lesser(first, second);
-		assertThat(lesser).isEqualTo(first);
+  @Test
+  public void determineDestinationExpiresReducedByMinMessageWindow() {
+    Instant now = Instant.now(clock);
+    Instant expiry = now.plusMillis(10000);
+    int maxHoldTimeMillis = 10000;
+    int minMessageWindowMillis = 1000;
+    connectorSettings.setMaxHoldTimeMillis(maxHoldTimeMillis);
+    connectorSettings.setMinMessageWindowMillis(minMessageWindowMillis);
+    mockExternalForwardingAllowed(true);
+    assertThat(mapper.determineDestinationExpiresAt(clock, expiry, RECEIVER))
+      .isEqualTo(expiry.minusMillis(minMessageWindowMillis));
+  }
 
-		lesser = defaultNextHopPacketMapper.lesser(second, first);
-		assertThat(lesser).isEqualTo(first);
-	}
+  @Test
+  public void determineDestinationExpiresAlreadyExpired() {
+    Instant now = Instant.now(clock);
+    Instant expiry = now.minusMillis(500);
+    int maxHoldTimeMillis = 10000;
+    int minMessageWindowMillis = 2000;
+    connectorSettings.setMaxHoldTimeMillis(maxHoldTimeMillis);
+    connectorSettings.setMinMessageWindowMillis(minMessageWindowMillis);
+    mockExternalForwardingAllowed(true);
+    expectedException.expect(InterledgerProtocolException.class);
+    expectedException.expectMessage(containsString("Interledger Rejection: Source transfer has already expired"));
+    mapper.determineDestinationExpiresAt(clock, expiry, RECEIVER);
+  }
 
-	private InterledgerPreparePacket.AbstractInterledgerPreparePacket buildInterLedgerPreparePacket(int i) {
-		return InterledgerPreparePacket.builder()
-				.destination(InterledgerAddress.of(TEST_ADDRESS_2))
-				.amount(UnsignedLong.valueOf(i))
-				.executionCondition(InterledgerCondition.of(new byte[32]))
-				.expiresAt(Instant.now().plusSeconds(50))
-				.build();
-	}
+  @Test
+  public void determineDestinationExpiresAfterMinMessageWindow() {
+    Instant now = Instant.now(clock);
+    Instant expiry = now.plusMillis(1000);
+    int maxHoldTimeMillis = 10000;
+    int minMessageWindowMillis = 2000;
+    connectorSettings.setMaxHoldTimeMillis(maxHoldTimeMillis);
+    connectorSettings.setMinMessageWindowMillis(minMessageWindowMillis);
+    mockExternalForwardingAllowed(true);
+    expectedException.expect(InterledgerProtocolException.class);
+    expectedException.expectMessage("Interledger Rejection: Source transfer expires too soon to complete payment");
+    mapper.determineDestinationExpiresAt(clock, expiry, RECEIVER);
+  }
 
-	private ImmutableAccountSettings.Builder buildAccountSettings(AccountId accountId) {
-		return AccountSettings.builder()
-				.accountId(accountId)
-				.assetCode("XRP")
-				.assetScale(9)
-				.linkType(LinkType.of("Loopback"))
-				.accountRelationship(AccountRelationship.PEER);
-	}
+  @Test
+  public void determineDestinationExpiresExactlyAtMinMessageWindow() {
+    Instant now = Instant.now(clock);
+    Instant expiry = now.plusMillis(1000);
+    int maxHoldTimeMillis = 10000;
+    int minMessageWindowMillis = 1000;
+    connectorSettings.setMaxHoldTimeMillis(maxHoldTimeMillis);
+    connectorSettings.setMinMessageWindowMillis(minMessageWindowMillis);
+    mockExternalForwardingAllowed(true);
+    expectedException.expect(InterledgerProtocolException.class);
+    expectedException.expectMessage("Interledger Rejection: Source transfer expires too soon to complete payment");
+    mapper.determineDestinationExpiresAt(clock, expiry, RECEIVER);
+  }
+
+  @Test
+  public void determineDestinationExpiresAtSourceExpiryRequired() {
+    int maxHoldTimeMillis = 10000;
+    int minMessageWindowMillis = 1000;
+    connectorSettings.setMaxHoldTimeMillis(maxHoldTimeMillis);
+    connectorSettings.setMinMessageWindowMillis(minMessageWindowMillis);
+    mockExternalForwardingAllowed(true);
+    expectedException.expect(NullPointerException.class);
+    mapper.determineDestinationExpiresAt(clock, null, RECEIVER);
+  }
+
+  @Test
+  public void lesser() {
+    Instant now = Instant.now(clock);
+    Instant nowPlusOne = Instant.now(clock).plusSeconds(1);
+    assertThat(mapper.lesser(now, nowPlusOne)).isEqualTo(now);
+    assertThat(mapper.lesser(nowPlusOne, now)).isEqualTo(now);
+    assertThat(mapper.lesser(now, now)).isEqualTo(now);
+  }
+
+
+  private ImmutableAccountSettings.Builder defaultNextHopSettings() {
+    return AccountSettings.builder()
+      .accountId(NEXT_HOP.nextHopAccountId())
+      .linkType(LoopbackLink.LINK_TYPE)
+      .accountRelationship(AccountRelationship.PEER)
+      .assetCode("USD")
+      .assetScale(3);
+  }
+
+  private InterledgerPreparePacketBuilder defaultPreparePacket(Instant now) {
+    return InterledgerPreparePacket.builder()
+      .destination(RECEIVER)
+      .expiresAt(now.plusSeconds(5))
+      .amount(UnsignedLong.valueOf(10000))
+      .executionCondition(CONDITION);
+  }
+
+  private ImmutableAccountSettings.Builder defaultSenderAccountSettings() {
+    return AccountSettings.builder()
+      .accountRelationship(AccountRelationship.PEER)
+      .assetCode("USD")
+      .assetScale(3)
+      .linkType(LoopbackLink.LINK_TYPE)
+      .accountId(SENDER_ACCOUNT_ID);
+  }
+
+  private void assertPreparePacket(NextHopInfo result, InterledgerPreparePacket expectedPreparePacket) {
+    assertThat(result).isEqualTo(NextHopInfo.builder().nextHopAccountId(NEXT_HOP.nextHopAccountId())
+      .nextHopPacket(expectedPreparePacket).build());
+  }
+
+  private InterledgerPreparePacketBuilder defaultExpectedPreparePacket(InterledgerPreparePacket preparePacket) {
+    return InterledgerPreparePacket.builder()
+      .from(preparePacket)
+      .expiresAt(preparePacket.getExpiresAt().minusMillis(MIN_MESSAGE_WINDOW_MILLIS));
+  }
+
+  /**
+   * Sets the conversion rate to a fixed rate
+   *
+   * @param rate A {@link long} representing the rate.
+   */
+  private void mockConversionRate(long rate) {
+    reset(mockExchangeRate, mockCurrencyConversion);
+    when(mockExchangeRate.getFactor()).thenReturn(new DefaultNumberValue(rate));
+    when(mockCurrencyConversion.apply(any())).thenAnswer(
+      (Answer<MonetaryAmount>) invocationOnMock ->
+        invocationOnMock.getArgument(0, MonetaryAmount.class).multiply(rate));
+  }
+
 }

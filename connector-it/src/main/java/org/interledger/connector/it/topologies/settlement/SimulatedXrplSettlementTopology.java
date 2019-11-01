@@ -1,7 +1,5 @@
 package org.interledger.connector.it.topologies.settlement;
 
-import com.google.common.collect.Lists;
-import okhttp3.HttpUrl;
 import org.interledger.connector.StaticRoute;
 import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountRelationship;
@@ -10,10 +8,6 @@ import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.connector.it.topologies.AbstractTopology;
 import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.it.topology.nodes.ConnectorServerNode;
-import org.interledger.connector.link.blast.BlastLink;
-import org.interledger.connector.link.blast.BlastLinkSettings;
-import org.interledger.connector.link.blast.IncomingLinkSettings;
-import org.interledger.connector.link.blast.OutgoingLinkSettings;
 import org.interledger.connector.server.ConnectorServer;
 import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -21,6 +15,13 @@ import org.interledger.connector.settings.EnabledProtocolSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
 import org.interledger.connector.settings.ImmutableConnectorSettings;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.link.http.IlpOverHttpLink;
+import org.interledger.link.http.IlpOverHttpLinkSettings;
+import org.interledger.link.http.IncomingLinkSettings;
+import org.interledger.link.http.OutgoingLinkSettings;
+
+import com.google.common.collect.Lists;
+import okhttp3.HttpUrl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,11 +87,13 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(paulAccountSettingsAtAlice);
 
           // Add Bob's account on Alice...
-          final AccountSettings bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort, aliceContainerPort);
+          final AccountSettings bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort,
+            aliceContainerPort);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
 
           // Add Alice's account on Bob...
-          final AccountSettings aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort, bobContainerPort);
+          final AccountSettings aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort,
+            bobContainerPort);
           bobServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
 
           // Add Peter's account on Bob (Peter is used for sending pings)
@@ -179,25 +182,25 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
           .build()
       )
       .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
-      .linkType(BlastLink.LINK_TYPE)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
       .assetScale(9)
       .assetCode(XRP)
 
       // Incoming
-      .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-      //.putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, BOB_TOKEN_ISSUER)
-      //.putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, ALICE)
-      .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      //.putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, BOB_TOKEN_ISSUER)
+      //.putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, ALICE)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
 
       // Outgoing
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-      //.putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, ALICE_TOKEN_ISSUER)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, ALICE)
-      //.putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, BOB)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, EXPIRY_2MIN)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      //.putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_ISSUER, ALICE_TOKEN_ISSUER)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, ALICE)
+      //.putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_AUDIENCE, BOB)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_EXPIRY, EXPIRY_2MIN)
       .putCustomSettings(
-        OutgoingLinkSettings.BLAST_OUTGOING_URL, "http://localhost:" + bobPort + IlpHttpController.ILP_PATH
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, "http://localhost:" + bobPort + IlpHttpController.ILP_PATH
       )
 
       .build();
@@ -206,7 +209,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
   /**
    * Construct a {@link ConnectorSettings} with a Connector properly configured to represent <tt>Alice</tt>.
    */
-  public static ConnectorSettings constructConnectorSettingsForAlice() {
+  private static ConnectorSettings constructConnectorSettingsForAlice() {
     return ImmutableConnectorSettings.builder()
       .operatorAddress(ALICE_CONNECTOR_ADDRESS)
       .enabledProtocols(EnabledProtocolSettings.builder()
@@ -254,25 +257,25 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
       )
       .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
       .accountRelationship(AccountRelationship.PEER)
-      .linkType(BlastLink.LINK_TYPE)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
       .assetScale(9)
       .assetCode(XRP)
 
       // Incoming
-      .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-      //.putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, ALICE_TOKEN_ISSUER)
-      //.putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, BOB)
-      .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      //.putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, ALICE_TOKEN_ISSUER)
+      //.putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, BOB)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
 
       // Outgoing
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-      //.putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, BOB_TOKEN_ISSUER)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, BOB)
-      //.putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, ALICE)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, EXPIRY_2MIN)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      //.putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_ISSUER, BOB_TOKEN_ISSUER)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, BOB)
+      //.putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_AUDIENCE, ALICE)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_EXPIRY, EXPIRY_2MIN)
       .putCustomSettings(
-        OutgoingLinkSettings.BLAST_OUTGOING_URL, "http://localhost:" + alicePort + IlpHttpController.ILP_PATH
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, "http://localhost:" + alicePort + IlpHttpController.ILP_PATH
       )
 
       .build();
@@ -281,7 +284,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
   /**
    * Construct a {@link ConnectorSettings} with a Connector properly configured to represent <tt>Bob</tt>.
    */
-  public static ConnectorSettings constructConnectorSettingsForBob() {
+  private static ConnectorSettings constructConnectorSettingsForBob() {
     return ImmutableConnectorSettings.builder()
       .operatorAddress(BOB_CONNECTOR_ADDRESS)
       .enabledProtocols(EnabledProtocolSettings.builder()
@@ -315,20 +318,20 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
       .accountId(PAUL_ACCOUNT)
       .description("Blast sender account for Paul")
       .accountRelationship(AccountRelationship.CHILD)
-      .linkType(BlastLink.LINK_TYPE)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
       .assetScale(9)
       .assetCode(XRP)
 
       // Incoming
-      .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-      .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
 
       // Outgoing (dummy values since these are unused because the account never receives in this topology)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, PAUL)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, PAUL)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
       .putCustomSettings(
-        OutgoingLinkSettings.BLAST_OUTGOING_URL, ALICE_HTTP_BASE_URL + IlpHttpController.ILP_PATH
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, ALICE_HTTP_BASE_URL + IlpHttpController.ILP_PATH
       )
 
       .build();
@@ -343,20 +346,20 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
       .accountId(PETER_ACCOUNT)
       .description("Blast sender account for Peter")
       .accountRelationship(AccountRelationship.CHILD)
-      .linkType(BlastLink.LINK_TYPE)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
       .assetScale(9)
       .assetCode(XRP)
 
       // Incoming
-      .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-      .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
 
       // Outgoing (dummy values since these are unused because the account never receives in this topology)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, PETER)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, PETER)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
       .putCustomSettings(
-        OutgoingLinkSettings.BLAST_OUTGOING_URL, BOB_HTTP_BASE_URL + IlpHttpController.ILP_PATH
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, BOB_HTTP_BASE_URL + IlpHttpController.ILP_PATH
       )
 
       .build();

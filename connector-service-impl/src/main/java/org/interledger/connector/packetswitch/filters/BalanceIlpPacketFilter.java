@@ -3,10 +3,11 @@ package org.interledger.connector.packetswitch.filters;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.balances.BalanceTrackerException;
-import org.interledger.connector.packetswitch.PacketRejector;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.link.LinkId;
+import org.interledger.link.PacketRejector;
 
 import java.util.Objects;
 
@@ -17,25 +18,23 @@ public class BalanceIlpPacketFilter extends AbstractPacketFilter implements Pack
 
   private final BalanceTracker balanceTracker;
 
-  public BalanceIlpPacketFilter(
-    final PacketRejector packetRejector, final BalanceTracker balanceTracker
-  ) {
+  public BalanceIlpPacketFilter(final PacketRejector packetRejector, final BalanceTracker balanceTracker) {
     super(packetRejector);
     this.balanceTracker = Objects.requireNonNull(balanceTracker);
   }
 
   @Override
   public InterledgerResponsePacket doFilter(
-    final AccountSettings sourceAccountSettings,
-    final InterledgerPreparePacket sourcePreparePacket,
-    final PacketSwitchFilterChain filterChain
+      final AccountSettings sourceAccountSettings,
+      final InterledgerPreparePacket sourcePreparePacket,
+      final PacketSwitchFilterChain filterChain
   ) {
 
     try {
       // Preemptively decrease the account balance....
       this.balanceTracker.updateBalanceForPrepare(
-        sourceAccountSettings.accountId(), sourcePreparePacket.getAmount().longValue(),
-        sourceAccountSettings.balanceSettings().minBalance()
+          sourceAccountSettings.accountId(), sourcePreparePacket.getAmount().longValue(),
+          sourceAccountSettings.balanceSettings().minBalance()
       );
 
       // TODO: Stats (Should half of this instead be in the balance tracker?)
@@ -47,43 +46,45 @@ public class BalanceIlpPacketFilter extends AbstractPacketFilter implements Pack
       // reject.
       logger.error(e.getMessage(), e);
       return packetRejector.reject(
-        sourceAccountSettings.accountId(), sourcePreparePacket, InterledgerErrorCode.T04_INSUFFICIENT_LIQUIDITY, ""
+          LinkId.of(sourceAccountSettings.accountId().value()),
+          sourcePreparePacket,
+          InterledgerErrorCode.T04_INSUFFICIENT_LIQUIDITY, ""
       );
     }
 
     return filterChain.doFilter(sourceAccountSettings, sourcePreparePacket).map(
-      //////////////////////
-      // If FulfillPacket...
-      //////////////////////
-      (interledgerFulfillPacket) -> {
-        // If a packet is fulfilled, then the Receiver's balance is always adjusted in the outgoing LinkFilter, so
-        // there's nothing to do here.
-        return interledgerFulfillPacket;
-      },
-      //////////////////////
-      // If Reject Packet...
-      //////////////////////
-      (interledgerRejectPacket) -> {
-        // Only reverse the sender on a reject (The outgoing balance will be untouched).
-        try {
-          balanceTracker.updateBalanceForReject(
-            sourceAccountSettings.accountId(), sourcePreparePacket.getAmount().longValue()
-          );
+        //////////////////////
+        // If FulfillPacket...
+        //////////////////////
+        (interledgerFulfillPacket) -> {
+          // If a packet is fulfilled, then the Receiver's balance is always adjusted in the outgoing LinkFilter, so
+          // there's nothing to do here.
+          return interledgerFulfillPacket;
+        },
+        //////////////////////
+        // If Reject Packet...
+        //////////////////////
+        (interledgerRejectPacket) -> {
+          // Only reverse the sender on a reject (The outgoing balance will be untouched).
+          try {
+            balanceTracker.updateBalanceForReject(
+                sourceAccountSettings.accountId(), sourcePreparePacket.getAmount().longValue()
+            );
 
-          // TODO: Stats
-          // this.stats.balance.setValue(account, {}, balance.getValue().toNumber())
-          // this.stats.incomingDataPacketValue.increment(account, {result :'rejected' },+amount)
+            // TODO: Stats
+            // this.stats.balance.setValue(account, {}, balance.getValue().toNumber())
+            // this.stats.incomingDataPacketValue.increment(account, {result :'rejected' },+amount)
 
-        } catch (BalanceTrackerException e) {
-          logger.error("RECONCILIATION REQUIRED: Unable to reverse balance update in Redis. " +
-            "PreparePacket: {} RejectPacket: {}", sourcePreparePacket, interledgerRejectPacket
-          );
+          } catch (BalanceTrackerException e) {
+            logger.error("RECONCILIATION REQUIRED: Unable to reverse balance update in Redis. " +
+                "PreparePacket: {} RejectPacket: {}", sourcePreparePacket, interledgerRejectPacket
+            );
 
-          throw e;
+            throw e;
+          }
+
+          return interledgerRejectPacket;
         }
-
-        return interledgerRejectPacket;
-      }
     );
   }
 }

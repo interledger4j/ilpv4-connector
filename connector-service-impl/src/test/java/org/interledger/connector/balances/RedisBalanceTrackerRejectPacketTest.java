@@ -88,7 +88,10 @@ public class RedisBalanceTrackerRejectPacketTest extends AbstractRedisBalanceTra
       // Prepaid amt > from_amt
       new Object[]{NEGATIVE_ONE, TEN, PREPARE_ONE, ZERO, TEN},
       // Prepaid_amt < from_amt, but > 0
-      new Object[]{TEN, ONE, PREPARE_TEN, TWENTY, ONE}
+      new Object[]{TEN, ONE, PREPARE_TEN, TWENTY, ONE},
+
+      // zero reject amount packet (no-op)
+      new Object[]{TEN, ONE, PREPARE_ZERO, TEN, ONE}
     );
   }
 

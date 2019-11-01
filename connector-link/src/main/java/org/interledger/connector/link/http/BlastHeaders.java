@@ -1,10 +1,11 @@
-package org.interledger.connector.link.blast;
+package org.interledger.connector.link.http;
 
 import org.springframework.http.MediaType;
 
 /**
  * Common headers used in the BLAST protocol.
  */
+@Deprecated
 public interface BlastHeaders {
 
   String APPLICATION_ILP_OCTET_STREAM_VALUE = "application/ilp+octet-stream";

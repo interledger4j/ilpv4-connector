@@ -18,8 +18,8 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Objects;
 
-import static org.interledger.connector.link.blast.BlastHeaders.APPLICATION_ILP_HEADER_OCTET_STREAM;
-import static org.interledger.connector.link.blast.BlastHeaders.APPLICATON_ILP_OCTET_STREAM;
+import static org.interledger.connector.link.http.BlastHeaders.APPLICATION_ILP_HEADER_OCTET_STREAM;
+import static org.interledger.connector.link.http.BlastHeaders.APPLICATON_ILP_OCTET_STREAM;
 
 /**
  * An {@link HttpMessageConverter} that handles instances of {@link InterledgerPreparePacket}.

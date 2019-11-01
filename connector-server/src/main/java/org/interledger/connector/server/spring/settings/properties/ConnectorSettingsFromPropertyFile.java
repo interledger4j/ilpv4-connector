@@ -1,12 +1,14 @@
 package org.interledger.connector.server.spring.settings.properties;
 
-import com.google.common.collect.Lists;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.link.Link;
+
+import com.google.common.collect.Lists;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
@@ -29,7 +31,8 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   public static final String BEAN_NAME = "interledger.connector-org.interledger.connector.server.spring" +
     ".settings.properties.ConnectorSettingsFromPropertyFile";
 
-  private Optional<InterledgerAddress> nodeIlpAddress;
+  // By default, the uninitialized ILP Address is Link.SELF.
+  private InterledgerAddress nodeIlpAddress = Link.SELF;
 
   private EnabledProtocolSettingsFromPropertyFile enabledProtocols =
     new EnabledProtocolSettingsFromPropertyFile();
@@ -44,21 +47,20 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   private GlobalRoutingSettingsFromPropertyFile globalRoutingSettings = new GlobalRoutingSettingsFromPropertyFile();
 
+  private int maxHoldTimeMillis;
+
+  private int minMessageWindowMillis;
+
   @Override
-  public Optional<InterledgerAddress> operatorAddress() {
+  public InterledgerAddress operatorAddress() {
     return nodeIlpAddress;
   }
 
-  @Override
-  public InterledgerAddress operatorAddressSafe() {
-    return nodeIlpAddress.get();
+  public InterledgerAddress getNodeIlpAddress() {
+    return operatorAddress();
   }
 
-  public Optional<InterledgerAddress> getNodeIlpAddress() {
-    return nodeIlpAddress;
-  }
-
-  public void setNodeIlpAddress(Optional<InterledgerAddress> nodeIlpAddress) {
+  public void setNodeIlpAddress(InterledgerAddress nodeIlpAddress) {
     this.nodeIlpAddress = nodeIlpAddress;
   }
 
@@ -117,6 +119,24 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   public void setGlobalRoutingSettings(GlobalRoutingSettingsFromPropertyFile globalRoutingSettings) {
     this.globalRoutingSettings = globalRoutingSettings;
+  }
+
+  @Override
+  public int maxHoldTimeMillis() {
+    return maxHoldTimeMillis;
+  }
+
+  public void setMaxHoldTimeMillis(int maxHoldTimeMillis) {
+    this.maxHoldTimeMillis = maxHoldTimeMillis;
+  }
+
+  @Override
+  public int minMessageWindowMillis() {
+    return minMessageWindowMillis;
+  }
+
+  public void setMinMessageWindowMillis(int minMessageWindowMillis) {
+    this.minMessageWindowMillis = minMessageWindowMillis;
   }
 
   /**

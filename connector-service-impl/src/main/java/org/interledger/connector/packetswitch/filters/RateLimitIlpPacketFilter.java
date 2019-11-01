@@ -2,10 +2,11 @@ package org.interledger.connector.packetswitch.filters;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.packetswitch.PacketRejector;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.link.LinkId;
+import org.interledger.link.PacketRejector;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -20,10 +21,11 @@ import java.util.concurrent.TimeUnit;
  * <p>An implementation of {@link PacketSwitchFilter} for limiting per-account traffic on this connector.</p>
  *
  * <p>This implementation uses a combination of a {@link RateLimiter} per-account, combined with a
- * {@link Cache} that expires after 15 seconds. In this way, accounts that do not send data to this Connector
- * instance will not have an active rate-limiter in memory.
+ * {@link Cache} that expires after 15 seconds. In this way, accounts that do not send data to this Connector instance
+ * will not have an active rate-limiter in memory.
  * </p>
  */
+@SuppressWarnings("UnstableApiUsage")
 public class RateLimitIlpPacketFilter extends AbstractPacketFilter implements PacketSwitchFilter {
 
   // Account-based rate-limiters.
@@ -32,17 +34,8 @@ public class RateLimitIlpPacketFilter extends AbstractPacketFilter implements Pa
   /**
    * Required-args Constructor.
    */
-  public RateLimitIlpPacketFilter(
-    final PacketRejector packetRejector
-  ) {
+  public RateLimitIlpPacketFilter(final PacketRejector packetRejector) {
     this(packetRejector, buildDefaultCache());
-  }
-
-  private static Cache<AccountId, Optional<RateLimiter>> buildDefaultCache() {
-    return Caffeine.newBuilder()
-      //.maximumSize(100) // Not enabled for now in order to support many accounts.
-      .expireAfterAccess(30, TimeUnit.SECONDS)
-      .build((key) -> null);
   }
 
   /**
@@ -50,38 +43,48 @@ public class RateLimitIlpPacketFilter extends AbstractPacketFilter implements Pa
    */
   @VisibleForTesting
   RateLimitIlpPacketFilter(
-    final PacketRejector packetRejector,
-    final Cache<AccountId, Optional<RateLimiter>> rateLimiterCache
+      final PacketRejector packetRejector,
+      final Cache<AccountId, Optional<RateLimiter>> rateLimiterCache
   ) {
     super(packetRejector);
     this.rateLimiters = Objects.requireNonNull(rateLimiterCache);
   }
 
+  private static Cache<AccountId, Optional<RateLimiter>> buildDefaultCache() {
+    return Caffeine.newBuilder()
+        //.maximumSize(100) // Not enabled for now in order to support many accounts.
+        .expireAfterAccess(30, TimeUnit.SECONDS)
+        // TODO: Should this be Optional.empty?
+        .build((key) -> null);
+  }
+
   @Override
   public InterledgerResponsePacket doFilter(
-    final AccountSettings sourceAccountSettings,
-    final InterledgerPreparePacket sourcePreparePacket,
-    final PacketSwitchFilterChain filterChain
+      final AccountSettings sourceAccountSettings,
+      final InterledgerPreparePacket sourcePreparePacket,
+      final PacketSwitchFilterChain filterChain
   ) {
 
     return rateLimiters
-      .get(sourceAccountSettings.accountId(),
-        (key) -> sourceAccountSettings.rateLimitSettings().maxPacketsPerSecond()
-          .map(packetsPerSecond -> RateLimiter.create(packetsPerSecond))
-      )
-      .map(rateLimiter -> {
-        if (rateLimiter.tryAcquire(1)) {
-          return filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
-        } else {
-          return packetRejector.reject(
-            sourceAccountSettings.accountId(), sourcePreparePacket, InterledgerErrorCode.T03_CONNECTOR_BUSY,
-            "Rate Limit exceeded"
-          );
-        }
-      })
-      // There is no RateLimiter for this account (because RateLimiting is disabled) so simply continue the
-      // FilterChain.
-      .orElseGet(() -> filterChain.doFilter(sourceAccountSettings, sourcePreparePacket));
+        .get(
+            sourceAccountSettings.accountId(),
+            (key) -> sourceAccountSettings.rateLimitSettings().maxPacketsPerSecond().map(RateLimiter::create)
+        )
+        .map(rateLimiter -> {
+          if (rateLimiter.tryAcquire(1)) {
+            return filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
+          } else {
+            return packetRejector.reject(
+                LinkId.of(sourceAccountSettings.accountId().value()),
+                sourcePreparePacket,
+                InterledgerErrorCode.T03_CONNECTOR_BUSY,
+                "Rate Limit exceeded"
+            );
+          }
+        })
+        // There is no RateLimiter for this account (because RateLimiting is disabled) so simply continue the
+        // FilterChain.
+        .orElseGet(() -> filterChain.doFilter(sourceAccountSettings, sourcePreparePacket));
 
   }
 }

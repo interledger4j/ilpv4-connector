@@ -1,38 +1,34 @@
 package org.interledger.connector.links;
 
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountIdResolver;
+import org.interledger.connector.accounts.AccountNotFoundProblem;
+import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.link.CircuitBreakingLink;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.core.InterledgerAddress;
+import org.interledger.link.Link;
+import org.interledger.link.LinkFactoryProvider;
+import org.interledger.link.LinkId;
+import org.interledger.link.LinkSettings;
+import org.interledger.link.PingLoopbackLink;
+import org.interledger.link.StatefulLink;
+import org.interledger.link.events.LinkConnectedEvent;
+import org.interledger.link.events.LinkConnectionEventListener;
+import org.interledger.link.events.LinkDisconnectedEvent;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountIdResolver;
-import org.interledger.connector.accounts.AccountNotFoundProblem;
-import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.link.AbstractLink;
-import org.interledger.connector.link.CircuitBreakingLink;
-import org.interledger.connector.link.Link;
-import org.interledger.connector.link.LinkFactoryProvider;
-import org.interledger.connector.link.LinkId;
-import org.interledger.connector.link.LinkSettings;
-import org.interledger.connector.link.events.LinkConnectedEvent;
-import org.interledger.connector.link.events.LinkDisconnectedEvent;
-import org.interledger.connector.link.events.LinkErrorEvent;
-import org.interledger.connector.link.events.LinkEventListener;
-import org.interledger.connector.link.exceptions.LinkNotConnectedException;
-import org.interledger.connector.links.ping.PingLoopbackLink;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.core.InterledgerAddress;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * A default implementation of {@link LinkManager} that stores all connectedLinks in-memory.
@@ -40,9 +36,8 @@ import java.util.stream.Collectors;
  * TODO: Consider making this Manager stateless. See https://github.com/sappenin/java-ilpv4-connector/issues/290 for
  * more details.
  */
-public class DefaultLinkManager implements LinkManager, LinkEventListener {
-
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
+@SuppressWarnings("UnstableApiUsage")
+public class DefaultLinkManager implements LinkManager, LinkConnectionEventListener {
 
   private final AccountIdResolver accountIdResolver;
   // Note that HTTP links don't "connect" per-se (meaning they don't strictly need to be tracked) but Websocket
@@ -50,7 +45,7 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
   // able to initiate that type of connection).
   private final Map<AccountId, Link<? extends LinkSettings>> connectedLinks = Maps.newConcurrentMap();
 
-  private final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier;
+  private final Supplier<InterledgerAddress> operatorAddressSupplier;
 
   // NOTE: Note using the AccountSettings cache because Links are typically created infrequently, and it's better to
   // have the most up-to-date data here.
@@ -64,7 +59,7 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
    * Required-args constructor.
    */
   public DefaultLinkManager(
-    final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
+    final Supplier<InterledgerAddress> operatorAddressSupplier,
     final AccountSettingsRepository accountSettingsRepository,
     final LinkSettingsFactory linkSettingsFactory,
     final LinkFactoryProvider linkFactoryProvider,
@@ -132,32 +127,30 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
 
     //Use the first linkFactory that supports the linkType...
     final Link<?> link = this.linkFactoryProvider
-      .getLinkFactory(linkSettings.linkType())
+      .getLinkFactory(linkSettings.getLinkType())
       .constructLink(operatorAddressSupplier, linkSettings);
 
     // Set the LinkId to match the AccountId...this way the Link can always use this value to represent the
     // accountId that a given link should use.
-    ((AbstractLink) link).setLinkId(LinkId.of(accountId.value()));
+    link.setLinkId(LinkId.of(accountId.value()));
 
-    // Register this Manager as a LinkEvent Listener...
-    link.addLinkEventListener(this);
-
-    // TODO: Once Issue https://github.com/sappenin/java-ilpv4-connector/issues/64 is fixed, this should be
-    //  configurable from the account settings, which in this case should propagate to the link settings.
     // Wrap the Link in a CircuitBreaker.
     final CircuitBreakingLink circuitBreakingLink = new CircuitBreakingLink(link, defaultCircuitBreakerConfig);
-    try {
-      // Wait for this link to connect...
-      circuitBreakingLink.connect().get();
-      return circuitBreakingLink;
-    } catch (InterruptedException | ExecutionException e) {
-      throw new LinkNotConnectedException(e.getMessage(), e, circuitBreakingLink.getLinkId());
+
+    if (link instanceof StatefulLink) {
+      StatefulLink statefulLink = ((StatefulLink) link);
+      // Register this Manager as a LinkEvent Listener...
+      statefulLink.addLinkEventListener(this);
+      // Connect the link...
+      statefulLink.connect().join();
     }
+
+    return circuitBreakingLink;
   }
 
   @Override
-  public Set<Link<?>> getAllConnectedLinks() {
-    return this.connectedLinks.values().stream().collect(Collectors.toSet());
+  public Set<Link<? extends LinkSettings>> getAllConnectedLinks() {
+    return new HashSet<>(this.connectedLinks.values());
   }
 
   /**
@@ -182,8 +175,8 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
   @Subscribe
   public void onConnect(final LinkConnectedEvent event) {
     Objects.requireNonNull(event);
-    final AccountId accountId = accountIdResolver.resolveAccountId(event.link());
-    this.connectedLinks.put(accountId, event.link());
+    final AccountId accountId = accountIdResolver.resolveAccountId(event.getLink());
+    this.connectedLinks.put(accountId, event.getLink());
   }
 
   /**
@@ -197,15 +190,9 @@ public class DefaultLinkManager implements LinkManager, LinkEventListener {
   public void onDisconnect(final LinkDisconnectedEvent event) {
     Objects.requireNonNull(event);
 
-    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.link());
+    final AccountId accountId = this.accountIdResolver.resolveAccountId(event.getLink());
     // Remove the Link from the Set of connected links for the specified account.
     this.connectedLinks.remove(accountId);
   }
 
-  @Override
-  @Subscribe
-  public void onError(final LinkErrorEvent event) {
-    Objects.requireNonNull(event);
-    logger.error("Link: {}; LinkError: {}", event.link(), event.error());
-  }
 }

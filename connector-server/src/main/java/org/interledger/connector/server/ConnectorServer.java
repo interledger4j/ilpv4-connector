@@ -1,20 +1,24 @@
 package org.interledger.connector.server;
 
-import com.google.common.base.Preconditions;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.link.Link;
+
+import com.google.common.base.Preconditions;
 import org.javamoney.moneta.Money;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationPreparedEvent;
 import org.springframework.context.ApplicationEvent;
 
+import java.math.BigDecimal;
+import java.util.Objects;
+import java.util.Optional;
+
 import javax.money.CurrencyUnit;
 import javax.money.Monetary;
 import javax.money.MonetaryAmount;
 import javax.money.convert.CurrencyConversion;
 import javax.money.convert.MonetaryConversions;
-import java.math.BigDecimal;
-import java.util.Optional;
 
 /**
  * An extension of {@link Server} that implements ILPv4 Connector functionality.
@@ -43,10 +47,10 @@ public class ConnectorServer extends Server {
 
     this.emitFxInfo();
 
-    if (getConnectorSettings().get().operatorAddress().isPresent()) {
-      logger.info("STARTED INTERLEDGER CONNECTOR: `{}`", getConnectorSettings().get().operatorAddress().get());
-    } else {
+    if (getConnectorSettings().get().operatorAddress().equals(Link.SELF)) {
       logger.info("STARTED INTERLEDGER CHILD CONNECTOR: [Operator Address pending IL-DCP]");
+    } else {
+      logger.info("STARTED INTERLEDGER CONNECTOR: `{}`", getConnectorSettings().get().operatorAddress());
     }
   }
 
@@ -57,6 +61,7 @@ public class ConnectorServer extends Server {
    */
   @Override
   public void onApplicationEvent(final ApplicationEvent event) {
+    Objects.requireNonNull(event);
     if (event instanceof ApplicationPreparedEvent) {
       // If there is a ConnectorSettingsOverride, then add it to the ApplicationContext. The ConnectorConfig is smart
       // enough to detect it and use it instead.

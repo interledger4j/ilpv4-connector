@@ -8,13 +8,13 @@ import static org.mockito.Mockito.when;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.packetswitch.PacketRejector;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.link.PacketRejector;
 
 import com.google.common.primitives.UnsignedLong;
 import org.junit.Rule;
@@ -40,7 +40,7 @@ public class MaxPacketAmountFilterTest {
   @Mock
   private PacketSwitchFilterChain filterChain;
 
-  private Supplier<Optional<InterledgerAddress>> addressSupplier = () -> Optional.of(InterledgerAddress.of("example.source"));
+  private Supplier<InterledgerAddress> addressSupplier = () -> InterledgerAddress.of("example.source");
 
   @Test
   public void filterHatesNullSettings() {
@@ -79,9 +79,9 @@ public class MaxPacketAmountFilterTest {
     InterledgerPreparePacket prepare = createPrepareWithAmount(1001);
     InterledgerResponsePacket response = filter.doFilter(settings, prepare, filterChain);
     assertThat(response).isInstanceOf(InterledgerRejectPacket.class)
-        .extracting("code", "message")
-        .containsExactly(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE,
-            "Packet size too large: maxAmount=1000 actualAmount=1001");
+      .extracting("code", "message")
+      .containsExactly(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE,
+        "Packet size too large: maxAmount=1000 actualAmount=1001");
     verify(filterChain, times(0)).doFilter(settings, prepare);
   }
 
@@ -98,11 +98,11 @@ public class MaxPacketAmountFilterTest {
 
   private InterledgerPreparePacket createPrepareWithAmount(long amount) {
     return InterledgerPreparePacket.builder()
-        .executionCondition(InterledgerCondition.of(new byte[32]))
-        .amount(UnsignedLong.valueOf(amount))
-        .expiresAt(Instant.now())
-        .destination(InterledgerAddress.of("example.destination"))
-        .build();
+      .executionCondition(InterledgerCondition.of(new byte[32]))
+      .amount(UnsignedLong.valueOf(amount))
+      .expiresAt(Instant.now())
+      .destination(InterledgerAddress.of("example.destination"))
+      .build();
 
 
   }

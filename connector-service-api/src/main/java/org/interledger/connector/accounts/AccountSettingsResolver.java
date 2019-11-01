@@ -1,6 +1,6 @@
 package org.interledger.connector.accounts;
 
-import org.interledger.connector.link.Link;
+import org.interledger.link.Link;
 
 /**
  * Defines how to resolve Account settings for a given {@link AccountId}.

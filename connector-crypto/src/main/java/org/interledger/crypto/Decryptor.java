@@ -14,9 +14,9 @@ public interface Decryptor {
    */
   default byte[] decrypt(final EncryptedSecret encryptedSecret) {
     return decrypt(
-      encryptedSecret.keyMetadata(),
-      encryptedSecret.encryptionAlgorithm(),
-      encryptedSecret.cipherMessage()
+        encryptedSecret.keyMetadata(),
+        encryptedSecret.encryptionAlgorithm(),
+        encryptedSecret.cipherMessage()
     );
   }
 
@@ -25,11 +25,11 @@ public interface Decryptor {
    *
    * @param keyMetadata         The {@link KeyMetadata} for this operation.
    * @param encryptionAlgorithm The {@link EncryptionAlgorithm} for this operation.
-   * @param cipherMessage          A byte array containing the encrypted value to decrypt.
+   * @param cipherMessage       A byte array containing the encrypted value to decrypt.
    *
    * @return A byte-array containing the original plainText that was encrypted.
    */
   byte[] decrypt(
-    KeyMetadata keyMetadata, EncryptionAlgorithm encryptionAlgorithm, byte[] cipherMessage
+      KeyMetadata keyMetadata, EncryptionAlgorithm encryptionAlgorithm, byte[] cipherMessage
   );
 }
