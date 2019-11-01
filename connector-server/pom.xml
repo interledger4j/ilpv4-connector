@@ -17,7 +17,6 @@
 
   <properties>
     <container.image>interledger4j/java-ilpv4-connector</container.image>
-    <container.database></container.database>
     <container.version>${version}</container.version>
   </properties>
 
@@ -46,6 +45,7 @@
       <plugin>
         <groupId>com.google.cloud.tools</groupId>
         <artifactId>jib-maven-plugin</artifactId>
+        <version>1.7.0</version>
         <executions>
           <execution>
             <!-- disabled by default. enabled by docker profiles -->
@@ -60,7 +60,7 @@
             <image>adoptopenjdk/openjdk11:alpine-jre</image>
           </from>
           <to>
-            <image>${container.image}:${container.database}${container.version}</image>
+            <image>${container.image}:${container.version}</image>
           </to>
           <container>
             <ports>
@@ -386,7 +386,7 @@
 
   <profiles>
     <profile>
-      <id>docker-postgres</id>
+      <id>docker</id>
       <!-- ship liquibase and postgres deps with docker image build -->
       <dependencies>
         <dependency>
@@ -394,16 +394,7 @@
           <artifactId>liquibase-core</artifactId>
           <scope>runtime</scope>
         </dependency>
-        <dependency>
-          <groupId>org.postgresql</groupId>
-          <artifactId>postgresql</artifactId>
-          <version>42.2.5</version>
-          <scope>runtime</scope>
-        </dependency>
       </dependencies>
-      <properties>
-        <container.database>postgres-</container.database>
-      </properties>
       <build>
         <plugins>
           <plugin>
@@ -420,35 +411,6 @@
                   <jvmFlag>-server</jvmFlag>
                   <jvmFlag>-Xverify:none</jvmFlag>
                   <jvmFlag>-XX:TieredStopAtLevel=1</jvmFlag>
-                </jvmFlags>
-              </container>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>docker-h2</id>
-      <properties>
-        <container.database>h2-</container.database>
-      </properties>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>com.google.cloud.tools</groupId>
-            <artifactId>jib-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <phase>package</phase>
-              </execution>
-            </executions>
-            <configuration>
-              <container>
-                <jvmFlags>
-                  <jvmFlag>-server</jvmFlag>
-                  <jvmFlag>-Xverify:none</jvmFlag>
-                  <jvmFlag>-XX:TieredStopAtLevel=1</jvmFlag>
-                  <!-- default h2 profile that works without any overrides. Override using spring.profiles.active -->
                   <jvmFlag>-Dspring.profiles.default=dev</jvmFlag>
                 </jvmFlags>
               </container>
