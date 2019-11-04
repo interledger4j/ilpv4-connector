@@ -1,13 +1,8 @@
 package org.interledger.connector.caching;
 
 import org.interledger.connector.fxrates.FxRateOverride;
-import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
-
-import java.util.concurrent.TimeUnit;
 
 public class FxRateOverridesLoadingCache {
 
@@ -41,12 +36,11 @@ public class FxRateOverridesLoadingCache {
    * outnumber hits. Option 1 uses zero memory for misses which in almost every situation is the preferable approach.
    *
    *
-   * @param repository
    */
 
 
   @VisibleForTesting
-  public FxRateOverridesLoadingCache(final FxRateOverridesRepository repository) {
+  public FxRateOverridesLoadingCache(/*final FxRateOverridesRepository repository*/) {
     // Commented to get Codacy to pipe down for the time being
 //    this.repository = repository;
 //    this.cache = Caffeine.newBuilder()
