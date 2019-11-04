@@ -204,15 +204,6 @@ workflows:
       - integration_tests_settlement:
           requires:
             - build
-      - docker_image:
-          requires:
-            - build
-          context: org-java-ilp-connector
-          filters:
-            # FIXME - change branches to master
-            branches:
-              only:
-                - nh/yall-are-dockerizing-me #
 
   nightly:
     triggers:
@@ -230,3 +221,8 @@ workflows:
       - integration_tests_settlement:
           requires:
             - build
+      - docker_image:
+          context: org-java-ilp-connector
+          requires:
+            - integration_tests_ilp_over_http
+            - integration_tests_settlement
