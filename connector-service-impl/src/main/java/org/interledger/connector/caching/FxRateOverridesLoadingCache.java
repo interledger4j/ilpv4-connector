@@ -2,8 +2,6 @@ package org.interledger.connector.caching;
 
 import org.interledger.connector.fxrates.FxRateOverride;
 
-import com.google.common.annotations.VisibleForTesting;
-
 public class FxRateOverridesLoadingCache {
 
 //  private final FxRateOverridesRepository repository;
@@ -38,10 +36,10 @@ public class FxRateOverridesLoadingCache {
    *
    */
 
-
-  @VisibleForTesting
-  public FxRateOverridesLoadingCache(/*final FxRateOverridesRepository repository*/) {
-    // Commented to get Codacy to pipe down for the time being
+// Commented to get Codacy to pipe down for the time being
+//  @VisibleForTesting
+//  public FxRateOverridesLoadingCache(/*final FxRateOverridesRepository repository*/) {
+//
 //    this.repository = repository;
 //    this.cache = Caffeine.newBuilder()
 //        .expireAfterAccess(15, TimeUnit.MINUTES) // Set very high just for testing...
@@ -49,9 +47,7 @@ public class FxRateOverridesLoadingCache {
 //        // The value stored in the Cache is the AccountSettings converted from the entity so we don't have to convert
 //        // on every ILPv4 packet switch.
 //        .build();
-
-
-  }
+//  }
 
   public FxRateOverride getOverride(String key) {
     return null;
