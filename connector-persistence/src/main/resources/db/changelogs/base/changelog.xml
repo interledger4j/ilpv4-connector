@@ -44,7 +44,7 @@
       <column name="LINK_TYPE" type="VARCHAR(255)">
         <constraints nullable="false"/>
       </column>
-      <column name="ASSET_CODE" type="VARCHAR(12)">
+      <column name="ASSET_CODE" type="VARCHAR(20)">
         <constraints nullable="false"/>
       </column>
       <column name="ASSET_SCALE" type="SMALLINT">
@@ -116,10 +116,10 @@
         <constraints nullable="false"/>
       </column>
 
-      <column name="ASSET_CODE_FROM" type="VARCHAR(3)">
+      <column name="ASSET_CODE_FROM" type="VARCHAR(20)">
         <constraints nullable="false"/>
       </column>
-      <column name="ASSET_CODE_TO" type="VARCHAR(3)">
+      <column name="ASSET_CODE_TO" type="VARCHAR(20)">
         <constraints nullable="false"/>
       </column>
       <column name="RATE" type="DECIMAL">
