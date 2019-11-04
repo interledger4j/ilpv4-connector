@@ -11,9 +11,9 @@ import java.util.concurrent.TimeUnit;
 
 public class FxRateOverridesLoadingCache {
 
-  private final FxRateOverridesRepository repository;
-
-  private final Cache<String, FxRateOverride> cache;
+//  private final FxRateOverridesRepository repository;
+//
+//  private final Cache<String, FxRateOverride> cache;
 
   /**
    * What is the correct approach to caching here?
@@ -47,13 +47,14 @@ public class FxRateOverridesLoadingCache {
 
   @VisibleForTesting
   public FxRateOverridesLoadingCache(final FxRateOverridesRepository repository) {
-    this.repository = repository;
-    this.cache = Caffeine.newBuilder()
-        .expireAfterAccess(15, TimeUnit.MINUTES) // Set very high just for testing...
-        .maximumSize(5000)
-        // The value stored in the Cache is the AccountSettings converted from the entity so we don't have to convert
-        // on every ILPv4 packet switch.
-        .build();
+    // Commented to get Codacy to pipe down for the time being
+//    this.repository = repository;
+//    this.cache = Caffeine.newBuilder()
+//        .expireAfterAccess(15, TimeUnit.MINUTES) // Set very high just for testing...
+//        .maximumSize(5000)
+//        // The value stored in the Cache is the AccountSettings converted from the entity so we don't have to convert
+//        // on every ILPv4 packet switch.
+//        .build();
 
 
   }

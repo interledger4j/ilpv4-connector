@@ -114,12 +114,12 @@ public class FxRateOverridesRepositoryTest {
     private FxRateOverridesEntityConverter fxRateOverrideEntityConverter;
 
     @Bean
-    ObjectMapper objectMapper() {
+    public ObjectMapper objectMapper() {
       return new ObjectMapper();
     }
 
     @Bean
-    ConfigurableConversionService conversionService() {
+    public ConfigurableConversionService conversionService() {
       ConfigurableConversionService conversionService = new DefaultConversionService();
       conversionService.addConverter(fxRateOverrideEntityConverter);
       return conversionService;
