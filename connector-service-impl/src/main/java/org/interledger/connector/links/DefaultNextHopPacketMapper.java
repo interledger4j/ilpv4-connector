@@ -1,6 +1,5 @@
 package org.interledger.connector.links;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
 import org.interledger.connector.fx.JavaMoneyUtils;
@@ -14,18 +13,21 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.money.CurrencyUnit;
 import javax.money.Monetary;
 import javax.money.MonetaryAmount;
 import javax.money.convert.CurrencyConversion;
 import javax.money.convert.MonetaryConversions;
-import java.time.Instant;
-import java.util.Objects;
-import java.util.function.Supplier;
 
 /**
  * A default implementation of {@link NextHopPacketMapper}.
@@ -40,6 +42,8 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
   private final InterledgerAddressUtils addressUtils;
   private final JavaMoneyUtils javaMoneyUtils;
   private final AccountSettingsLoadingCache accountSettingsLoadingCache;
+  // extracted as a function for testability
+  private final Function<CurrencyUnit, CurrencyConversion> currencyConverter;
 
   public DefaultNextHopPacketMapper(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
@@ -48,18 +52,33 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     final JavaMoneyUtils javaMoneyUtils,
     final AccountSettingsLoadingCache accountSettingsLoadingCache
   ) {
+    this(connectorSettingsSupplier, externalRoutingService, addressUtils, javaMoneyUtils, accountSettingsLoadingCache,
+      (CurrencyUnit unit) -> MonetaryConversions.getConversion(unit));
+  }
+
+  @VisibleForTesting
+  DefaultNextHopPacketMapper(
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final PaymentRouter<Route> externalRoutingService,
+    final InterledgerAddressUtils addressUtils,
+    final JavaMoneyUtils javaMoneyUtils,
+    final AccountSettingsLoadingCache accountSettingsLoadingCache,
+    final Function<CurrencyUnit, CurrencyConversion> currencyConverter
+  ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
     this.addressUtils = Objects.requireNonNull(addressUtils);
     this.javaMoneyUtils = Objects.requireNonNull(javaMoneyUtils);
     this.accountSettingsLoadingCache = Objects.requireNonNull(accountSettingsLoadingCache);
+    this.currencyConverter = currencyConverter;
   }
+
 
   /**
    * Construct the <tt>next-hop</tt> ILP prepare packet, meaning a new packet with potentially new pricing, destination,
-   * and expiry characterstics. This method also includes the proper "next hop" account that the new packet should be
+   * and expiry characteristics. This method also includes the proper "next hop" account that the new packet should be
    * forwarded to in order to continue the Interledger protocol.
-   *
+   * <p>
    * Given a previous ILP prepare packet (i.e., a {@code sourcePacket}), return the next ILP prepare packet in the
    * chain.
    *
@@ -85,7 +104,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     final Route nextHopRoute = this.externalRoutingService.findBestNexHop(destinationAddress)
       .orElseThrow(() -> new InterledgerProtocolException(
           InterledgerRejectPacket.builder()
-            .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
+            .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
             .code(InterledgerErrorCode.F02_UNREACHABLE)
             .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
             .build(),
@@ -103,7 +122,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     if (sourceAccountSettings.accountId().equals(nextHopRoute.nextHopAccountId())) {
       throw new InterledgerProtocolException(
         InterledgerRejectPacket.builder()
-          .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
+          .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
           .code(InterledgerErrorCode.F02_UNREACHABLE)
           .message(DESTINATION_ADDRESS_IS_UNREACHABLE)
           .build(),
@@ -127,7 +146,8 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
         InterledgerPreparePacket.builder()
           .from(sourcePacket)
           .amount(nextAmount)
-          .expiresAt(determineDestinationExpiresAt(sourcePacket.getExpiresAt(), sourcePacket.getDestination()))
+          .expiresAt(determineDestinationExpiresAt(Clock.systemUTC(),
+            sourcePacket.getExpiresAt(), sourcePacket.getDestination()))
           .build())
       .build();
   }
@@ -151,6 +171,28 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     Objects.requireNonNull(destinationAccountSettings);
     Objects.requireNonNull(sourcePacket);
 
+    /**
+     * Some notes about the performance of the calls & calculations happening below with regard to the Java money api
+     *
+     * First, lookup of the `CurrencyUnit`s and internal lookup of the `ExchangeRateProvider` reuse the same instances,
+     * suggesting that we _should_ already be using cached data. The cost of the lookup involved in
+     * `Monetary.getCurrency` looks to be around 2000ns (tested in a 1m iteration loop with randomized currencies).
+     *
+     * Second, while the Java Money API has a type called `FastMoney` which keeps calculations in `long` format and
+     * would presumably be faster than doing boxed type conversion, it has two problems:
+     * 1) it forces a scale of 5 which can cause overflow issues, particularly when converting to a currency with a
+     * high exchange rate (like EUR to JPY)
+     * 2) it uses BigDecimal under the covers for initialization, which means we're still bearing some of the cost
+     * of boxed type conversion anyhow
+     *
+     * Third, JavaMoneyUtils is plenty fast at what it's doing. Calls to toMonetaryAmount seem to run in about 55ns
+     * and calls to toInterledgerAmount run in about 380ns.
+     *
+     * Combining all of these still results in less than 1ms of total performance time on a MacBook Pro with a
+     * 2.6 GHz Intel Core i7. It's more than likely that this performance will be lower on virtual machines, but
+     * we would have to do additional load testing on those VMs to get a better idea of how big of a deviation we see.
+     */
+
     if (!this.addressUtils.isExternalForwardingAllowed(sourcePacket.getDestination())) {
       return sourcePacket.getAmount();
     } else {
@@ -163,17 +205,16 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
 
       final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAccountSettings.assetCode());
       final int destinationScale = destinationAccountSettings.assetScale();
-      final CurrencyConversion destCurrencyConversion = MonetaryConversions.getConversion(destinationCurrencyUnit);
+      final CurrencyConversion destCurrencyConversion = currencyConverter.apply(destinationCurrencyUnit);
 
       return UnsignedLong.valueOf(
-          javaMoneyUtils.toInterledgerAmount(sourceAmount.with(destCurrencyConversion), destinationScale));
+        javaMoneyUtils.toInterledgerAmount(sourceAmount.with(destCurrencyConversion), destinationScale));
     }
   }
 
-  // TODO: Unit test this!
   @VisibleForTesting
   protected Instant determineDestinationExpiresAt(
-    final Instant sourceExpiry, final InterledgerAddress destinationAddress
+    final Clock clock, final Instant sourceExpiry, final InterledgerAddress destinationAddress
   ) {
     Objects.requireNonNull(sourceExpiry);
 
@@ -182,27 +223,28 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       // Connector to process it, so we can leave the expiry unchanged.
       return sourceExpiry;
     } else {
-      final Instant nowTime = Instant.now();
+      final Instant nowTime = Instant.now(clock);
       if (sourceExpiry.isBefore(nowTime)) {
         throw new InterledgerProtocolException(
           InterledgerRejectPacket.builder()
-            .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
+            .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
             .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
-            .message(String.format(
-              "Source transfer has already expired. sourceExpiry: {%s}, currentTime: {%s}", sourceExpiry, nowTime))
+            .message(String
+              .format("Source transfer has already expired. sourceExpiry: {%s}, currentTime: {%s}", sourceExpiry,
+                nowTime))
             .build()
         );
       }
 
       ////////////////////
-      // We will set the next transfer's expiry based on the source expiry and our minMessageWindow, but cap it at our
+      // We will set the next transfer's expiry based on the source expiry and our minMessageWindowMillis, but cap it at our
       // maxHoldTime.
       ////////////////////
-      final int minMessageWindow = 5000; //TODO: Enable this --> accountSettings.get().minMessageWindow();
-      final int maxHoldTime = 5000; //TODO: Enable this --> accountSettings.get().getMaxHoldTime();
+      final int minMessageWindow = connectorSettingsSupplier.get().minMessageWindowMillis();
+      final int maxHoldTime = connectorSettingsSupplier.get().maxHoldTimeMillis();
 
-      // The expiry of the packet, reduced by the minMessageWindow, which is "the minimum time the connector wants to
-      // budget for getting a message to the accounts its trading on. In milliseconds."
+      // The expiry of the packet, reduced by the minMessageWindowMillis, which is "the minimum time the connector wants to
+      // budget for getting a message to the accounts its trading on. In milliseconds.  "
       final Instant adjustedSourceExpiryInstant = sourceExpiry.minusMillis(minMessageWindow);
       // The point in time after which this Connector will not wait around for a fulfillment.
       final Instant maxHoldInstant = nowTime.plusMillis(maxHoldTime);
@@ -212,13 +254,13 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       if (destinationExpiryTime.minusMillis(minMessageWindow).isBefore(nowTime)) {
         throw new InterledgerProtocolException(
           InterledgerRejectPacket.builder()
-            .triggeredBy(connectorSettingsSupplier.get().operatorAddressSafe())
+            .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
             .code(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT)
             .message(String.format(
               "Source transfer expires too soon to complete payment. SourceExpiry: {%s}, " +
                 "RequiredSourceExpiry: {%s}, CurrentTime: {%s}",
               sourceExpiry,
-              nowTime.plusMillis(minMessageWindow * 2),
+              nowTime.plusMillis(minMessageWindow),
               nowTime))
             .build()
         );

@@ -22,9 +22,9 @@
     <!-- By default, we run in prod mode, unless a different profile is specified. -->
     <activeProfile>prod</activeProfile>
     <java.version>1.8</java.version>
-    <ilp.version>1.0.0</ilp.version>
+    <ilp.version>1.0.1</ilp.version>
     <problem.version>0.23.0</problem.version>
-    <problem-spring-web.version>0.25.0</problem-spring-web.version>
+    <problem-spring-web.version>0.25.2</problem-spring-web.version>
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
     <!-- <spring-cloud.version>Greenwich.SR1</spring-cloud.version> -->
     <resilience4j.version>1.1.0</resilience4j.version>
@@ -53,7 +53,6 @@
     <module>connector-crypto/connector-crypto-cli</module>
     <module>connector-accounts</module>
     <module>connector-link</module>
-    <module>connector-link-blast</module>
     <module>connector-model</module>
     <module>connector-jackson</module>
     <module>connector-routing-api</module>
@@ -145,11 +144,6 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>connector-link-blast</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
         <groupId>com.auth0</groupId>
         <artifactId>java-jwt</artifactId>
         <version>3.7.0</version>
@@ -178,7 +172,7 @@
       <dependency>
         <groupId>com.google.cloud</groupId>
         <artifactId>google-cloud-kms</artifactId>
-        <version>1.33.0</version>
+        <version>1.34.0</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -223,7 +217,7 @@
       <dependency>
         <groupId>org.assertj</groupId>
         <artifactId>assertj-core</artifactId>
-        <version>3.13.2</version>
+        <version>3.14.0</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -246,37 +240,14 @@
       </dependency>
       <dependency>
         <groupId>org.interledger</groupId>
-        <artifactId>ilp-core</artifactId>
+        <artifactId>quilt-bom</artifactId>
         <version>${ilp.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>org.interledger</groupId>
-        <artifactId>ildcp-core</artifactId>
-        <version>${ilp.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>codecs-framework</artifactId>
-        <version>${ilp.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>codecs-ilp</artifactId>
-        <version>${ilp.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>codecs-ildcp</artifactId>
-        <version>${ilp.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>btp-core</artifactId>
-        <version>${ilp.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>btp-core-codecs</artifactId>
+        <artifactId>stream-core</artifactId>
         <version>${ilp.version}</version>
       </dependency>
       <dependency>
@@ -380,6 +351,19 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-failsafe-plugin</artifactId>
           <version>3.0.0-M3</version>
+          <configuration>
+            <skipITs>${skipITs}</skipITs>
+            <argLine>${failsafe.argLine}</argLine>
+          </configuration>
+          <executions>
+            <execution>
+              <id>integration-tests</id>
+              <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+              </goals>
+            </execution>
+          </executions>
         </plugin>
 
         <plugin>
@@ -465,7 +449,7 @@
             <dependency>
               <groupId>com.puppycrawl.tools</groupId>
               <artifactId>checkstyle</artifactId>
-              <version>8.25</version>
+              <version>8.26</version>
             </dependency>
           </dependencies>
           <executions>
@@ -474,6 +458,49 @@
               <goals>
                 <goal>check</goal>
               </goals>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!-- org.jacoco:jacoc-maven-plugin -->
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <version>0.8.5</version>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <executions>
+            <execution>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>report</id>
+              <phase>test</phase>
+              <goals>
+                <goal>report</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>pre-integration-test</id>
+              <phase>pre-integration-test</phase>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+              <configuration>
+                <destFile>${project.build.directory}/jacoco-it.exec</destFile>
+                <propertyName>failsafe.argLine</propertyName>
+              </configuration>
+            </execution>
+            <execution>
+              <id>integration test report</id>
+              <phase>post-integration-test</phase>
+              <goals>
+                <goal>report</goal>
+              </goals>
+              <configuration>
+                <dataFile>${project.build.directory}/jacoco-it.exec</dataFile>
+                <outputDirectory>${project.reporting.outputDirectory}/jacoco-it</outputDirectory>
+              </configuration>
             </execution>
           </executions>
         </plugin>
@@ -489,7 +516,7 @@
           <useSystemClassLoader>false</useSystemClassLoader>
           <encoding>UTF-8</encoding>
           <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
-          <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+          <argLine>@{argLine} -Xms1024m -Xmx2048m -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
         </configuration>
       </plugin>
 
@@ -516,72 +543,70 @@
       <!-- org.jacoco:jacoc-maven-plugin -->
       <plugin>
         <groupId>org.jacoco</groupId>
-        <version>0.8.5</version>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>prepare-agent</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>report</id>
-            <phase>test</phase>
-            <goals>
-              <goal>report</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>
 
-  <profiles>
-    <!-- -->
-    <profile>
-      <id>dev</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
+  <reporting>
+    <plugins>
 
-      <reporting>
-        <plugins>
+      <!-- org.jacoco:jacoc-maven-plugin -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <inherited>false</inherited>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>report</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
 
-          <!-- org.jacoco:jacoc-maven-plugin -->
-          <plugin>
-            <groupId>org.jacoco</groupId>
-            <artifactId>jacoco-maven-plugin</artifactId>
-            <inherited>false</inherited>
-            <reportSets>
-              <reportSet>
-                <reports>
-                  <report>report</report>
-                </reports>
-              </reportSet>
-            </reportSets>
-          </plugin>
+      <!-- org.apache.maven.plugins:maven-checkstyle-plugin -->
+      <plugin>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <configuration>
+          <encoding>UTF-8</encoding>
+          <consoleOutput>true</consoleOutput>
+          <linkXRef>false</linkXRef>
+          <excludes>**/generated-sources/**/*,**/generated-test-sources/**/*</excludes>
+        </configuration>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>checkstyle</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
 
-          <!-- org.apache.maven.plugins:maven-javadoc-plugin -->
-          <plugin>
-            <artifactId>maven-javadoc-plugin</artifactId>
-          </plugin>
+      <!-- org.apache.maven.plugins:maven-javadoc-plugin -->
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/generated-sources/**/*,**/generated-test-sources/**/*</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
 
-        </plugins>
-      </reporting>
-    </profile>
-  </profiles>
+    </plugins>
+  </reporting>
 
   <repositories>
-    <repository>
-      <id>ossrh-snapshots-interledger</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-    </repository>
+<!--    <repository>-->
+<!--      <id>ossrh-snapshots-interledger</id>-->
+<!--      <url>https://oss.sonatype.org/content/repositories/snapshots</url>-->
+<!--      <snapshots>-->
+<!--        <enabled>true</enabled>-->
+<!--      </snapshots>-->
+<!--      <releases>-->
+<!--        <enabled>false</enabled>-->
+<!--      </releases>-->
+<!--    </repository>-->
     <repository>
       <id>spring-releases</id>
       <url>https://repo.spring.io/libs-release</url>

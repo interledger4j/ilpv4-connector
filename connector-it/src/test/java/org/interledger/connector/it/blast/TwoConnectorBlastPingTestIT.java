@@ -13,18 +13,17 @@ import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPe
 import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerBlastTopology.ALICE_CONNECTOR_ADDRESS;
 import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerBlastTopology.BOB;
 import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerBlastTopology.BOB_CONNECTOR_ADDRESS;
-import static org.interledger.connector.link.PingableLink.PING_PROTOCOL_CONDITION;
 import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
+import static org.interledger.link.PingLoopbackLink.PING_PROTOCOL_CONDITION;
 import static org.junit.Assert.assertThat;
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.it.AbstractBlastIT;
+import org.interledger.connector.it.ContainerHelper;
 import org.interledger.connector.it.markers.IlpOverHttp;
 import org.interledger.connector.it.markers.Performance;
 import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerBlastTopology;
 import org.interledger.connector.it.topology.Topology;
-import org.interledger.connector.link.blast.BlastLink;
-import org.interledger.connector.link.blast.BlastLinkSettings;
 import org.interledger.connector.ping.DefaultPingInitiator;
 import org.interledger.connector.ping.PingInitiator;
 import org.interledger.core.InterledgerAddress;
@@ -32,6 +31,8 @@ import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.link.http.IlpOverHttpLink;
+import org.interledger.link.http.IlpOverHttpLinkSettings;
 
 import com.google.common.primitives.UnsignedLong;
 import org.junit.AfterClass;
@@ -43,6 +44,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 
 import java.math.BigInteger;
 import java.time.Instant;
@@ -65,14 +68,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorBlastPingTestIT.class);
+  private static final Network network = Network.newNetwork();
   private static Topology topology = TwoConnectorPeerBlastTopology.init();
-
+  private static GenericContainer redis = ContainerHelper.redis(network);
+  private static GenericContainer postgres = ContainerHelper.postgres(network);
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
 
   @BeforeClass
   public static void startTopology() {
     LOGGER.info("Starting test topology `{}`...", topology.toString());
+    redis.start();
+    postgres.start();
     topology.start();
     LOGGER.info("Test topology `{}` started!", topology.toString());
   }
@@ -81,6 +88,8 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   public static void stopTopology() {
     LOGGER.info("Stopping test topology `{}`...", topology.toString());
     topology.stop();
+    postgres.stop();
+    redis.stop();
     LOGGER.info("Test topology `{}` stopped!", topology.toString());
   }
 
@@ -105,27 +114,27 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   @Test
   public void testAliceNodeSettings() {
     final ILPv4Connector connector = getILPv4NodeFromGraph(getAliceConnectorAddress());
-    assertThat(connector.getConnectorSettings().operatorAddress().get(), is(getAliceConnectorAddress()));
+    assertThat(connector.getConnectorSettings().operatorAddress(), is(getAliceConnectorAddress()));
 
-    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), BOB_ACCOUNT);
-    assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(ALICE));
-    assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().authType(),
-        is(BlastLinkSettings.AuthType.JWT_HS_256));
-    assertThat(blastLink.getLinkSettings().incomingBlastLinkSettings().authType(),
-        is(BlastLinkSettings.AuthType.JWT_HS_256));
+    final IlpOverHttpLink blastLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), BOB_ACCOUNT);
+    assertThat(blastLink.getLinkSettings().outgoingHttpLinkSettings().tokenSubject(), is(ALICE));
+    assertThat(blastLink.getLinkSettings().outgoingHttpLinkSettings().authType(),
+      is(IlpOverHttpLinkSettings.AuthType.JWT_HS_256));
+    assertThat(blastLink.getLinkSettings().incomingHttpLinkSettings().authType(),
+      is(IlpOverHttpLinkSettings.AuthType.JWT_HS_256));
   }
 
   @Test
   public void testBobNodeSettings() {
     final ILPv4Connector connector = getILPv4NodeFromGraph(getBobConnectorAddress());
-    assertThat(connector.getConnectorSettings().operatorAddress().get(), is(getBobConnectorAddress()));
+    assertThat(connector.getConnectorSettings().operatorAddress(), is(getBobConnectorAddress()));
 
-    final BlastLink blastLink = getBlastLinkFromGraph(getBobConnectorAddress(), ALICE_ACCOUNT);
-    assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().tokenSubject(), is(BOB));
-    assertThat(blastLink.getLinkSettings().outgoingBlastLinkSettings().authType(),
-        is(BlastLinkSettings.AuthType.JWT_HS_256));
-    assertThat(blastLink.getLinkSettings().incomingBlastLinkSettings().authType(),
-        is(BlastLinkSettings.AuthType.JWT_HS_256));
+    final IlpOverHttpLink blastLink = getIlpOverHttpLinkFromGraph(getBobConnectorAddress(), ALICE_ACCOUNT);
+    assertThat(blastLink.getLinkSettings().outgoingHttpLinkSettings().tokenSubject(), is(BOB));
+    assertThat(blastLink.getLinkSettings().outgoingHttpLinkSettings().authType(),
+      is(IlpOverHttpLinkSettings.AuthType.JWT_HS_256));
+    assertThat(blastLink.getLinkSettings().incomingHttpLinkSettings().authType(),
+      is(IlpOverHttpLinkSettings.AuthType.JWT_HS_256));
   }
 
   /**
@@ -135,23 +144,23 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   @Test
   public void testPaulPingsPaulChildAccount() throws InterruptedException {
     final CountDownLatch latch = new CountDownLatch(1);
-    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
+    final IlpOverHttpLink blastLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
     final PingInitiator pingInitiator = new DefaultPingInitiator(blastLink, () -> Instant.now().plusSeconds(30));
 
     // Note Bob's Connector's address is purposefully a child of Alice due to IL-DCP
 
     final long start = System.currentTimeMillis();
     pingInitiator.ping(PAUL_AT_ALICE_ADDRESS, UnsignedLong.ONE).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
-          assertThat(rejectPacket.getMessage(), is("Destination address is unreachable"));
-          assertThat(rejectPacket.getTriggeredBy().isPresent(), is(true));
-          assertThat(rejectPacket.getTriggeredBy().get(), is(getAliceConnectorAddress()));
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
+        assertThat(rejectPacket.getMessage(), is("Destination address is unreachable"));
+        assertThat(rejectPacket.getTriggeredBy().isPresent(), is(true));
+        assertThat(rejectPacket.getTriggeredBy().get(), is(getAliceConnectorAddress()));
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -188,22 +197,22 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   @Test
   public void testAlicePingsAliceUsingBobAccount() throws InterruptedException {
     final CountDownLatch latch = new CountDownLatch(1);
-    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), BOB_ACCOUNT);
+    final IlpOverHttpLink blastLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), BOB_ACCOUNT);
     final PingInitiator pingInitiator = new DefaultPingInitiator(blastLink, () -> Instant.now().plusSeconds(30));
 
     final long start = System.currentTimeMillis();
 
     pingInitiator.ping(getAliceConnectorAddress(), UnsignedLong.ONE).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
-          assertThat(rejectPacket.getMessage(), is("Destination address is unreachable"));
-          assertThat(rejectPacket.getTriggeredBy().isPresent(), is(true));
-          assertThat(rejectPacket.getTriggeredBy().get(), is(getBobConnectorAddress()));
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
+        assertThat(rejectPacket.getMessage(), is("Destination address is unreachable"));
+        assertThat(rejectPacket.getTriggeredBy().isPresent(), is(true));
+        assertThat(rejectPacket.getTriggeredBy().get(), is(getBobConnectorAddress()));
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -284,25 +293,25 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   @Test
   public void testPaulPingsRandom() throws InterruptedException {
     final InterledgerAddress randomDestination =
-        InterledgerAddress.of(InterledgerAddressPrefix.TEST3.with(UUID.randomUUID().toString()).getValue());
+      InterledgerAddress.of(InterledgerAddressPrefix.TEST3.with(UUID.randomUUID().toString()).getValue());
 
-    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
+    final IlpOverHttpLink blastLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
     final PingInitiator pingInitiator = new DefaultPingInitiator(blastLink, () -> Instant.now().plusSeconds(30));
 
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
     pingInitiator.ping(randomDestination, UnsignedLong.ONE).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
-          assertThat(rejectPacket.getMessage(), is("Destination address is unreachable"));
-          assertThat(rejectPacket.getTriggeredBy().isPresent(), is(true));
-          assertThat(rejectPacket.getTriggeredBy().get(), is(getAliceConnectorAddress()));
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
+        assertThat(rejectPacket.getMessage(), is("Destination address is unreachable"));
+        assertThat(rejectPacket.getTriggeredBy().isPresent(), is(true));
+        assertThat(rejectPacket.getTriggeredBy().get(), is(getAliceConnectorAddress()));
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -318,23 +327,23 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   public void testPaulPingsRandomAtBob() throws InterruptedException {
     final InterledgerAddress randomDestination = getBobConnectorAddress().with(UUID.randomUUID().toString());
 
-    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
+    final IlpOverHttpLink blastLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
     final PingInitiator pingInitiator = new DefaultPingInitiator(blastLink, () -> Instant.now().plusSeconds(30));
 
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
     pingInitiator.ping(randomDestination, UnsignedLong.ONE).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
-          assertThat(rejectPacket.getMessage(), is("Destination address is unreachable"));
-          assertThat(rejectPacket.getTriggeredBy().isPresent(), is(true));
-          assertThat(rejectPacket.getTriggeredBy().get(), is(getBobConnectorAddress()));
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
+        assertThat(rejectPacket.getMessage(), is("Destination address is unreachable"));
+        assertThat(rejectPacket.getTriggeredBy().isPresent(), is(true));
+        assertThat(rejectPacket.getTriggeredBy().get(), is(getBobConnectorAddress()));
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -351,22 +360,22 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
+    final IlpOverHttpLink blastLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
-        .executionCondition(PING_PROTOCOL_CONDITION)
-        .expiresAt(Instant.now().minusSeconds(500))
-        .amount(UnsignedLong.ONE) // Ping with the smallest unit...
-        .destination(getBobConnectorAddress())
-        .build();
+      .executionCondition(PING_PROTOCOL_CONDITION)
+      .expiresAt(Instant.now().minusSeconds(500))
+      .amount(UnsignedLong.ONE) // Ping with the smallest unit...
+      .destination(getBobConnectorAddress())
+      .build();
 
     blastLink.sendPacket(pingPacket).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT));
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT));
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -384,23 +393,23 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
+    final IlpOverHttpLink blastLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
-        .executionCondition(PING_PROTOCOL_CONDITION)
-        .expiresAt(Instant.now().plusSeconds(30))
-        .amount(UnsignedLong.valueOf(100000000000L)) // Ping with a unit that's too large...
-        .destination(getBobConnectorAddress())
-        .build();
+      .executionCondition(PING_PROTOCOL_CONDITION)
+      .expiresAt(Instant.now().plusSeconds(30))
+      .amount(UnsignedLong.valueOf(100000000000L)) // Ping with a unit that's too large...
+      .destination(getBobConnectorAddress())
+      .build();
 
     blastLink.sendPacket(pingPacket).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE));
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE));
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -418,23 +427,23 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
+    final IlpOverHttpLink blastLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
-        .executionCondition(PING_PROTOCOL_CONDITION)
-        .expiresAt(Instant.now().plusSeconds(30))
-        .amount(UnsignedLong.valueOf(1L)) // Ping with a unit that's too large...
-        .destination(InterledgerAddress.of("self.foo"))
-        .build();
+      .executionCondition(PING_PROTOCOL_CONDITION)
+      .expiresAt(Instant.now().plusSeconds(30))
+      .amount(UnsignedLong.valueOf(1L)) // Ping with a unit that's too large...
+      .destination(InterledgerAddress.of("self.foo"))
+      .build();
 
     blastLink.sendPacket(pingPacket).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F02_UNREACHABLE));
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -452,23 +461,23 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
     final CountDownLatch latch = new CountDownLatch(1);
     final long start = System.currentTimeMillis();
 
-    final BlastLink blastLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
+    final IlpOverHttpLink blastLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
-        .executionCondition(InterledgerCondition.of(new byte[32]))
-        .expiresAt(Instant.now().plusSeconds(30))
-        .amount(UnsignedLong.valueOf(1L)) // Ping with the smallest unit...
-        .destination(getBobConnectorAddress())
-        .build();
+      .executionCondition(InterledgerCondition.of(new byte[32]))
+      .expiresAt(Instant.now().plusSeconds(30))
+      .amount(UnsignedLong.valueOf(1L)) // Ping with the smallest unit...
+      .destination(getBobConnectorAddress())
+      .build();
 
     blastLink.sendPacket(pingPacket).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -489,7 +498,7 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
   @Test
   @Category(Performance.class)
   public void zTestPingPerf() throws InterruptedException {
-    final BlastLink paulToAliceLink = getBlastLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
+    final IlpOverHttpLink paulToAliceLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
     final PingInitiator pingInitiator = new DefaultPingInitiator(paulToAliceLink, () -> Instant.now().plusSeconds(30));
 
     final int TIMEOUT = 30;
@@ -505,13 +514,13 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
       final long start = System.currentTimeMillis();
 
       pingInitiator.ping(getBobConnectorAddress(), UnsignedLong.ONE).handle(
-          fulfillPacket -> {
-            assertThat(fulfillPacket.getFulfillment().validateCondition(PING_PROTOCOL_CONDITION), is(true));
-            latch.countDown();
-          }, rejectPacket -> {
-            fail(String.format("Ping request rejected, but should have fulfilled: %s", rejectPacket));
-            latch.countDown();
-          }
+        fulfillPacket -> {
+          assertThat(fulfillPacket.getFulfillment().validateCondition(PING_PROTOCOL_CONDITION), is(true));
+          latch.countDown();
+        }, rejectPacket -> {
+          fail(String.format("Ping request rejected, but should have fulfilled: %s", rejectPacket));
+          latch.countDown();
+        }
       );
 
       final long end = System.currentTimeMillis();
@@ -541,13 +550,13 @@ public class TwoConnectorBlastPingTestIT extends AbstractBlastIT {
 
     assertThat(latch.getCount(), is(0L));
     assertThat(
-        "averageProcessingTime should have been less than 30, but was " + averageProcessingTime,
-        averageProcessingTime < 30,
-        is(true)
+      "averageProcessingTime should have been less than 30, but was " + averageProcessingTime,
+      averageProcessingTime < 30,
+      is(true)
     );
     assertThat(
-        "averageMsPerPing should have been less than 6, but was " + averageMsPerPing, averageMsPerPing < 6,
-        is(true)
+      "averageMsPerPing should have been less than 6, but was " + averageMsPerPing, averageMsPerPing < 6,
+      is(true)
     );
 
     // test.alice.paul: Should be -1 because that account initiated and paid for the ping.

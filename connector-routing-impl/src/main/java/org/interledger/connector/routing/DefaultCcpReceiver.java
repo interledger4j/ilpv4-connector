@@ -1,8 +1,5 @@
 package org.interledger.connector.routing;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.ccp.CcpConstants;
 import org.interledger.connector.ccp.CcpRouteControlRequest;
@@ -11,7 +8,6 @@ import org.interledger.connector.ccp.CcpRouteUpdateRequest;
 import org.interledger.connector.ccp.CcpSyncMode;
 import org.interledger.connector.ccp.CcpWithdrawnRoute;
 import org.interledger.connector.ccp.ImmutableCcpRouteControlRequest;
-import org.interledger.connector.link.Link;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerPreparePacket;
@@ -19,7 +15,11 @@ import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
+import org.interledger.link.Link;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,27 +63,27 @@ public class DefaultCcpReceiver implements CcpReceiver {
    * Required-args Constructor. Note that each instance of a CCP Receiver should have its own incoming routing table.
    */
   public DefaultCcpReceiver(
-    final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final AccountId peerAccountId,
-    final Link link,
-    final CodecContext ccpCodecContext
+      final Supplier<ConnectorSettings> connectorSettingsSupplier,
+      final AccountId peerAccountId,
+      final Link link,
+      final CodecContext ccpCodecContext
   ) {
     this(
-      connectorSettingsSupplier,
-      peerAccountId,
-      link,
-      ccpCodecContext,
-      new InMemoryRoutingTable<>()
+        connectorSettingsSupplier,
+        peerAccountId,
+        link,
+        ccpCodecContext,
+        new InMemoryRoutingTable<>()
     );
   }
 
   @VisibleForTesting
   DefaultCcpReceiver(
-    final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final AccountId peerAccountId,
-    final Link link,
-    final CodecContext ccpCodecContext,
-    final RoutingTable<IncomingRoute> incomingRoutes
+      final Supplier<ConnectorSettings> connectorSettingsSupplier,
+      final AccountId peerAccountId,
+      final Link link,
+      final CodecContext ccpCodecContext,
+      final RoutingTable<IncomingRoute> incomingRoutes
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.ccpCodecContext = Objects.requireNonNull(ccpCodecContext);
@@ -94,7 +94,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
 
   @Override
   public List<InterledgerAddressPrefix> handleRouteUpdateRequest(
-    final CcpRouteUpdateRequest routeUpdateRequest
+      final CcpRouteUpdateRequest routeUpdateRequest
   ) {
     Objects.requireNonNull(routeUpdateRequest);
 
@@ -105,8 +105,8 @@ public class DefaultCcpReceiver implements CcpReceiver {
     // routes from the remote.
     if (!this.routingTableId.isPresent() || !this.routingTableId.get().equals(routeUpdateRequest.routingTableId())) {
       logger.debug("Saw new routing table. oldId={} newId={}",
-        this.routingTableId.map(RoutingTableId::value).map(UUID::toString).orElse("n/a"),
-        routeUpdateRequest.routingTableId()
+          this.routingTableId.map(RoutingTableId::value).map(UUID::toString).orElse("n/a"),
+          routeUpdateRequest.routingTableId()
       );
       this.epoch = 0;
     }
@@ -114,7 +114,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
     if (routeUpdateRequest.fromEpochIndex() > this.epoch) {
       // There is a gap, we need to go back to the last epoch we have
       logger.debug("Gap in routing updates. expectedEpoch={} actualFromEpoch={}",
-        this.epoch, routeUpdateRequest.fromEpochIndex()
+          this.epoch, routeUpdateRequest.fromEpochIndex()
       );
       return Collections.emptyList();
     }
@@ -122,8 +122,8 @@ public class DefaultCcpReceiver implements CcpReceiver {
     if (this.epoch > routeUpdateRequest.toEpochIndex()) {
       // This routing update is older than what we already have
       logger.debug(
-        "Old routing update, ignoring. expectedEpoch={} actualToEpoch={}",
-        this.epoch, routeUpdateRequest.toEpochIndex()
+          "Old routing update, ignoring. expectedEpoch={} actualToEpoch={}",
+          this.epoch, routeUpdateRequest.toEpochIndex()
       );
       return Collections.emptyList();
     }
@@ -131,7 +131,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
     // just a heartbeat
     if (routeUpdateRequest.newRoutes().size() == 0 && routeUpdateRequest.withdrawnRoutePrefixes().size() == 0) {
       logger.debug("Pure heartbeat. fromEpoch={} toEpoch={}",
-        routeUpdateRequest.fromEpochIndex(), routeUpdateRequest.toEpochIndex()
+          routeUpdateRequest.fromEpochIndex(), routeUpdateRequest.toEpochIndex()
       );
       this.epoch = routeUpdateRequest.toEpochIndex();
       return Collections.emptyList();
@@ -142,41 +142,41 @@ public class DefaultCcpReceiver implements CcpReceiver {
     // Withdrawn Routes...
     if (routeUpdateRequest.withdrawnRoutePrefixes().size() > 0) {
       logger.debug("Informed of no-longer-reachable routes. count={} routes={}",
-        routeUpdateRequest.withdrawnRoutePrefixes().size(), routeUpdateRequest.withdrawnRoutePrefixes()
+          routeUpdateRequest.withdrawnRoutePrefixes().size(), routeUpdateRequest.withdrawnRoutePrefixes()
       );
 
       routeUpdateRequest.withdrawnRoutePrefixes().stream()
-        .map(CcpWithdrawnRoute::prefix)
-        .forEach(withdrawnRoutePrefix -> {
-          this.incomingRoutes.removeRoute(withdrawnRoutePrefix);
-          changedPrefixesBuilder.add(withdrawnRoutePrefix);
-        });
+          .map(CcpWithdrawnRoute::prefix)
+          .forEach(withdrawnRoutePrefix -> {
+            this.incomingRoutes.removeRoute(withdrawnRoutePrefix);
+            changedPrefixesBuilder.add(withdrawnRoutePrefix);
+          });
     }
 
     // New Routes
     routeUpdateRequest.newRoutes().stream()
-      .map(ccpNewRoute -> ImmutableIncomingRoute.builder()
-        .peerAccountId(peerAccountId)
-        .routePrefix(ccpNewRoute.prefix())
-        .path(
-          ccpNewRoute.path().stream()
-            .map(CcpRoutePathPart::routePathPart)
-            .collect(Collectors.toList())
+        .map(ccpNewRoute -> ImmutableIncomingRoute.builder()
+            .peerAccountId(peerAccountId)
+            .routePrefix(ccpNewRoute.prefix())
+            .path(
+                ccpNewRoute.path().stream()
+                    .map(CcpRoutePathPart::routePathPart)
+                    .collect(Collectors.toList())
+            )
+            .auth(ccpNewRoute.auth())
+            .build()
         )
-        .auth(ccpNewRoute.auth())
-        .build()
-      )
-      .forEach(newIncomingRoute -> {
-        if (this.incomingRoutes.addRoute(newIncomingRoute) != null) {
-          changedPrefixesBuilder.add(newIncomingRoute.routePrefix());
-        }
-      });
+        .forEach(newIncomingRoute -> {
+          if (this.incomingRoutes.addRoute(newIncomingRoute) != null) {
+            changedPrefixesBuilder.add(newIncomingRoute.routePrefix());
+          }
+        });
 
     this.epoch = routeUpdateRequest.toEpochIndex();
 
     final List<InterledgerAddressPrefix> changedPrefixes = changedPrefixesBuilder.build();
     logger.debug("Applied route update. changedPrefixesCount={} fromEpoch={} toEpoch={}",
-      changedPrefixes.size(), routeUpdateRequest.fromEpochIndex(), routeUpdateRequest.toEpochIndex()
+        changedPrefixes.size(), routeUpdateRequest.fromEpochIndex(), routeUpdateRequest.toEpochIndex()
     );
     return changedPrefixes;
   }
@@ -184,48 +184,47 @@ public class DefaultCcpReceiver implements CcpReceiver {
   public InterledgerResponsePacket sendRouteControl() {
     Preconditions.checkNotNull(link, "Link must be assigned before using a CcpReceiver!");
 
-
     final CcpRouteControlRequest request = ImmutableCcpRouteControlRequest.builder()
-      .mode(CcpSyncMode.MODE_SYNC)
-      .lastKnownRoutingTableId(this.routingTableId)
-      .lastKnownEpoch(this.epoch)
-      // No features....
-      .build();
+        .mode(CcpSyncMode.MODE_SYNC)
+        .lastKnownRoutingTableId(this.routingTableId)
+        .lastKnownEpoch(this.epoch)
+        // No features....
+        .build();
 
     final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
-      .amount(UnsignedLong.ZERO)
-      .destination(CcpConstants.CCP_CONTROL_DESTINATION_ADDRESS)
-      .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
-      .expiresAt(Instant.now().plus(connectorSettingsSupplier.get().globalRoutingSettings().routeExpiry()))
-      .data(serializeCcpPacket(request))
-      .build();
+        .amount(UnsignedLong.ZERO)
+        .destination(CcpConstants.CCP_CONTROL_DESTINATION_ADDRESS)
+        .executionCondition(CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION)
+        .expiresAt(Instant.now().plus(connectorSettingsSupplier.get().globalRoutingSettings().routeExpiry()))
+        .data(serializeCcpPacket(request))
+        .build();
 
     // Link handles retry, if any...
     try {
       logger.info(
-        "Sending Ccp RouteControl Request to Peer AccountId(`{}`)." +
-          " CcpRouteControlRequest={} InterledgerPreparePacket={}",
-        this.peerAccountId,
-        request,
-        preparePacket
+          "Sending Ccp RouteControl Request to Peer AccountId(`{}`)." +
+              " CcpRouteControlRequest={} InterledgerPreparePacket={}",
+          this.peerAccountId,
+          request,
+          preparePacket
       );
 
       return this.link.sendPacket(preparePacket)
-        .handleAndReturn(fulfillPacket -> {
-          logger.debug("Successfully sent route control message. peer={}", peerAccountId);
-        }, rejectPacket -> {
-          logger.debug("Route control message was rejected. rejection={}", rejectPacket.getMessage());
-        });
+          .handleAndReturn(fulfillPacket -> {
+            logger.debug("Successfully sent route control message. peer={}", peerAccountId);
+          }, rejectPacket -> {
+            logger.debug("Route control message was rejected. rejection={}", rejectPacket.getMessage());
+          });
 
     } catch (Exception e) {
       if (e instanceof InterledgerProtocolException) {
         final InterledgerRejectPacket rejectPacket =
-          ((InterledgerProtocolException) e).getInterledgerRejectPacket();
+            ((InterledgerProtocolException) e).getInterledgerRejectPacket();
         logger.debug("Route control message was rejected. rejection={}", rejectPacket.getMessage());
         return rejectPacket;
       } else {
         throw new RuntimeException(String.format("Unknown response fulfillPacket type. peer=`%s`; error=`%s`;",
-          peerAccountId, e.getMessage()), e);
+            peerAccountId, e.getMessage()), e);
       }
     }
   }

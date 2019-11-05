@@ -7,8 +7,8 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings;
-import org.interledger.connector.links.loopback.LoopbackLink;
 import org.interledger.connector.server.ConnectorServerConfig;
+import org.interledger.link.LoopbackLink;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -97,7 +97,7 @@ public class AccountSettingsSpringBootTest {
     // already exists
     String recreateResponse = assertPostAccount(settings, HttpStatus.CONFLICT);
     JsonContentAssert assertJson = assertThat(jsonTester.from(recreateResponse));
-    assertJson.extractingJsonPathValue("status").isEqualTo("409");
+    assertJson.extractingJsonPathValue("status").isEqualTo(409);
     assertJson.extractingJsonPathValue("title").isEqualTo("Account Already Exists (`testCreateExistingIdReturns409`)");
     assertJson.extractingJsonPathValue("accountId").isEqualTo(accountId.value());
     assertJson.extractingJsonPathValue("type")

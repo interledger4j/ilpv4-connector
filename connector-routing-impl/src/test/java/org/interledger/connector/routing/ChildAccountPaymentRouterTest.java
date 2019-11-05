@@ -39,7 +39,7 @@ public class ChildAccountPaymentRouterTest {
     MockitoAnnotations.initMocks(this);
 
     when(connectorSettingsMock.enabledProtocols().isPingProtocolEnabled()).thenReturn(true);
-    when(connectorSettingsMock.operatorAddressSafe()).thenReturn(OPERATOR_ADDRESS);
+    when(connectorSettingsMock.operatorAddress()).thenReturn(OPERATOR_ADDRESS);
     when(connectorSettingsMock.globalRoutingSettings().routingSecret()).thenReturn(
       "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0="
     );
@@ -100,7 +100,7 @@ public class ChildAccountPaymentRouterTest {
 
   @Test
   public void isChildAccount() {
-    when(connectorSettingsMock.operatorAddressSafe()).thenReturn(OPERATOR_ADDRESS);
+    when(connectorSettingsMock.operatorAddress()).thenReturn(OPERATOR_ADDRESS);
 
     assertThat(childAccountPaymentRouter.isChildAccount(OPERATOR_ADDRESS), is(true));
     assertThat(childAccountPaymentRouter.isChildAccount(InterledgerAddress.of("test.foo.bar")), is(true));

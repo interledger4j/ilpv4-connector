@@ -1,6 +1,5 @@
 package org.interledger.connector.it.topologies.ilpoverhttp;
 
-import com.google.common.collect.Lists;
 import org.interledger.connector.StaticRoute;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
@@ -8,10 +7,6 @@ import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.it.topologies.AbstractTopology;
 import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.it.topology.nodes.ConnectorServerNode;
-import org.interledger.connector.link.blast.BlastLink;
-import org.interledger.connector.link.blast.BlastLinkSettings;
-import org.interledger.connector.link.blast.IncomingLinkSettings;
-import org.interledger.connector.link.blast.OutgoingLinkSettings;
 import org.interledger.connector.server.ConnectorServer;
 import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -19,6 +14,13 @@ import org.interledger.connector.settings.EnabledProtocolSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
 import org.interledger.connector.settings.ImmutableConnectorSettings;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.link.http.IlpOverHttpLink;
+import org.interledger.link.http.IlpOverHttpLinkSettings;
+import org.interledger.link.http.IncomingLinkSettings;
+import org.interledger.link.http.OutgoingLinkSettings;
+import org.interledger.stream.Denomination;
+
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,11 +47,23 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorPeerBlastTopology.class);
 
   /**
-   * In this topology, each Connector starts-up with an Account for the other connector. During initialization,
+   * In this topology, each Connector starts-up with an Account for the other connector.
    *
-   * @return
+   * @return The {@link Topology} of accounts and connectors
    */
   public static Topology init() {
+    Denomination denomination = Denomination.builder().assetCode(XRP).assetScale((short) 9).build();
+    return init(denomination, denomination, 1000000L); // 1M NanoDollars is $0.001
+  }
+
+  /**
+   * In this topology, each Connector starts-up with an Account for the other connector, specifying denominations and a
+   * max packet amount.
+   *
+   * @return the topology of accounts and connectors
+   */
+  public static Topology init(final Denomination aliceBobDenomination, final Denomination paulAtAliceDenomination,
+    final long maxPacketAmount) {
 
     // Some configuration must be done _after_ the topology starts...e.g., to grab the port that will be used.
     final Topology topology = new Topology(TwoConnectorPeerBlastTopology.class.getSimpleName(),
@@ -68,15 +82,18 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
           aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
 
           // Add Bob's account on Alice...
-          final AccountSettings bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort);
+          final AccountSettings bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort,
+            aliceBobDenomination, maxPacketAmount);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
 
           // Add Paul's account on Alice (Paul is used for sending pings)
-          final AccountSettings paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice();
+          final AccountSettings paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice(
+            paulAtAliceDenomination);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(paulAccountSettingsAtAlice);
 
           // Add Alice's account on Bob...
-          final AccountSettings aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort);
+          final AccountSettings aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort,
+            aliceBobDenomination, maxPacketAmount);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
 
           // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
@@ -130,32 +147,33 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
    *
    * @param bobPort The port that alice's server connects to in order to talk to Bob's server.
    */
-  private static AccountSettings constructBobAccountSettingsOnAlice(final int bobPort) {
+  private static AccountSettings constructBobAccountSettingsOnAlice(final int bobPort, final Denomination denomination,
+    final long maxPacketAmount) {
     return AccountSettings.builder()
       .accountId(BOB_ACCOUNT)
       .description("Blast account for Bob")
       .accountRelationship(AccountRelationship.PEER)
       .rateLimitSettings(AccountRateLimitSettings.builder().maxPacketsPerSecond(5000).build())
-      .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
-      .linkType(BlastLink.LINK_TYPE)
-      .assetScale(9)
-      .assetCode(XRP)
+      .maximumPacketAmount(maxPacketAmount)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
+      .assetScale(denomination.assetScale())
+      .assetCode(denomination.assetCode())
 
       // Incoming
-      .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-      //.putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, BOB_TOKEN_ISSUER)
-      //.putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, ALICE)
-      .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      //.putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, BOB_TOKEN_ISSUER)
+      //.putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, ALICE)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
 
       // Outgoing
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-      //.putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, ALICE_TOKEN_ISSUER)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, ALICE)
-      //.putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, BOB)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, EXPIRY_2MIN)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      //.putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_ISSUER, ALICE_TOKEN_ISSUER)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, ALICE)
+      //.putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_AUDIENCE, BOB)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_EXPIRY, EXPIRY_2MIN)
       .putCustomSettings(
-        OutgoingLinkSettings.BLAST_OUTGOING_URL, "http://localhost:" + bobPort + IlpHttpController.ILP_PATH
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, "http://localhost:" + bobPort + IlpHttpController.ILP_PATH
       )
 
       .build();
@@ -165,25 +183,25 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
    * An AccountSettings object that represents Paul's account at Alice. Since this account is only used to send, it does
    * not require any incoming connection settings.
    */
-  private static AccountSettings constructPaulAccountSettingsOnAlice() {
+  private static AccountSettings constructPaulAccountSettingsOnAlice(final Denomination denomination) {
     return AccountSettings.builder()
       .accountId(PAUL_ACCOUNT)
       .description("Blast sender account for Paul")
       .accountRelationship(AccountRelationship.CHILD)
-      .linkType(BlastLink.LINK_TYPE)
-      .assetScale(9)
-      .assetCode(XRP)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
+      .assetScale(denomination.assetScale())
+      .assetCode(denomination.assetCode())
 
       // Incoming
-      .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-      .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
 
       // Outgoing (dummy values since these are unused because the account never receives in this topology)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, PAUL)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, PAUL)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
       .putCustomSettings(
-        OutgoingLinkSettings.BLAST_OUTGOING_URL, "http://localhost:8080" + IlpHttpController.ILP_PATH
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, "http://localhost:8080" + IlpHttpController.ILP_PATH
       )
 
       .build();
@@ -192,7 +210,7 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
   /**
    * Construct a {@link ConnectorSettings} with a Connector properly configured to represent <tt>Alice</tt>.
    */
-  public static ConnectorSettings constructConnectorSettingsForAlice() {
+  private static ConnectorSettings constructConnectorSettingsForAlice() {
     return ImmutableConnectorSettings.builder()
       .operatorAddress(ALICE_CONNECTOR_ADDRESS)
       .enabledProtocols(EnabledProtocolSettings.builder()
@@ -222,32 +240,34 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
    *
    * @param alicePort The port that bob's server connects to in order to talk to Alice's server.
    */
-  private static AccountSettings constructAliceAccountSettingsOnBob(final int alicePort) {
+  private static AccountSettings constructAliceAccountSettingsOnBob(final int alicePort,
+    final Denomination denomination,
+    final long maxPacketAmount) {
     return AccountSettings.builder()
       .accountId(ALICE_ACCOUNT)
       .description("Blast account for Alice")
       .rateLimitSettings(AccountRateLimitSettings.builder().maxPacketsPerSecond(5000).build())
-      .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
+      .maximumPacketAmount(maxPacketAmount)
       .accountRelationship(AccountRelationship.PEER)
-      .linkType(BlastLink.LINK_TYPE)
-      .assetScale(9)
-      .assetCode(XRP)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
+      .assetScale(denomination.assetScale())
+      .assetCode(denomination.assetCode())
 
       // Incoming
-      .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-      //.putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_ISSUER, ALICE_TOKEN_ISSUER)
-      //.putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_TOKEN_AUDIENCE, BOB)
-      .putCustomSettings(IncomingLinkSettings.BLAST_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      //.putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, ALICE_TOKEN_ISSUER)
+      //.putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, BOB)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
 
       // Outgoing
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_AUTH_TYPE, BlastLinkSettings.AuthType.JWT_HS_256)
-      //.putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_ISSUER, BOB_TOKEN_ISSUER)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_SUBJECT, BOB)
-      //.putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_AUDIENCE, ALICE)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
-      .putCustomSettings(OutgoingLinkSettings.BLAST_OUTGOING_TOKEN_EXPIRY, EXPIRY_2MIN)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      //.putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_ISSUER, BOB_TOKEN_ISSUER)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, BOB)
+      //.putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_AUDIENCE, ALICE)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_EXPIRY, EXPIRY_2MIN)
       .putCustomSettings(
-        OutgoingLinkSettings.BLAST_OUTGOING_URL, "http://localhost:" + alicePort + IlpHttpController.ILP_PATH
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, "http://localhost:" + alicePort + IlpHttpController.ILP_PATH
       )
 
       .build();
@@ -256,7 +276,7 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
   /**
    * Construct a {@link ConnectorSettings} with a Connector properly configured to represent <tt>Bob</tt>.
    */
-  public static ConnectorSettings constructConnectorSettingsForBob() {
+  private static ConnectorSettings constructConnectorSettingsForBob() {
     return ImmutableConnectorSettings.builder()
       .operatorAddress(BOB_CONNECTOR_ADDRESS)
       .enabledProtocols(EnabledProtocolSettings.builder()

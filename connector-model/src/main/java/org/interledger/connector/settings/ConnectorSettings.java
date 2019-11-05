@@ -1,11 +1,13 @@
 package org.interledger.connector.settings;
 
-import org.immutables.value.Value;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.link.Link;
 
-import java.util.Optional;
+import org.immutables.value.Value;
+
+import java.util.Objects;
 
 /**
  * A view of the settings currently configured for this Connector.
@@ -17,20 +19,15 @@ public interface ConnectorSettings {
   String OVERRIDE_BEAN_NAME = "interledger.connector.connectorSettingsOverride";
 
   /**
-   * The ILP Address of this connector. Note that this may be `empty` during startup, in which case the Connector will
-   * use IL-DCP to obtain its operating address.
+   * The ILP Address of this connector. Note that the Connector's initial properties may not specify an address, in
+   * which case the default will be {@link Link#SELF}. In this case the Connector will use IL-DCP to obtain its
+   * operating address.
    *
    * @return The ILP address of this connector.
    */
-  Optional<InterledgerAddress> operatorAddress();
-
-  /**
-   * Obtain the ILP address or throw an exception.
-   *
-   * @return The ILP address of this connector, which will never be null.
-   */
-  default InterledgerAddress operatorAddressSafe() {
-    return this.operatorAddress().get();
+  @Value.Default
+  default InterledgerAddress operatorAddress() {
+    return Link.SELF;
   }
 
   /**
@@ -55,7 +52,7 @@ public interface ConnectorSettings {
   default boolean websocketServerEnabled() {
     return false;
   }
-  
+
   /**
    * Which account should be used as the default route for all un-routed traffic. If empty, the default route is
    * disabled.
@@ -73,7 +70,31 @@ public interface ConnectorSettings {
    *
    * @return An {@link InterledgerAddress } representing the new address of the supplied child account.
    */
-  default InterledgerAddress toChildAddress(AccountId childAccountId) {
-    return this.operatorAddressSafe().with(childAccountId.value());
+  default InterledgerAddress toChildAddress(final AccountId childAccountId) {
+    Objects.requireNonNull(childAccountId);
+    return this.operatorAddress().with(childAccountId.value());
   }
+
+  /**
+   * The minimum time the connector wants to budget for getting a message to the accounts its trading on. Budget is
+   * mainly to cover the latency to send the fulfillment packet to the downstream node.
+   *
+   * @return minimum message window time in milliseconds
+   */
+  @Value.Default
+  default int minMessageWindowMillis() {
+    return 1000;
+  }
+
+  /**
+   * The amount of time that Connector will wait around for a fulfillment/rejection. This is equivalent to outgoing link
+   * timeout duration.
+   *
+   * @return max hold time in milliseconds
+   */
+  @Value.Default
+  default int maxHoldTimeMillis() {
+    return 30000;
+  }
+
 }

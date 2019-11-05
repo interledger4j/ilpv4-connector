@@ -1,9 +1,9 @@
 package org.interledger.connector.packetswitch.filters;
 
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.link.Link;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
+import org.interledger.link.Link;
 
 /**
  * <p>Provides a view into the invocation chain of a filtered Interledger Prepare/Fulfill/Reject request/response

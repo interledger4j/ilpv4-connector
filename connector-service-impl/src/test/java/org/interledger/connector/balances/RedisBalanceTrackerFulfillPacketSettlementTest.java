@@ -147,7 +147,10 @@ public class RedisBalanceTrackerFulfillPacketSettlementTest extends AbstractRedi
 
       // clearing_balance > settle_to (script will add 1 to 10 and then evaluate)
       new Object[]{10, ZERO, PREPARE_ONE, Optional.of(5L), 0L, 11L}, //27
-      new Object[]{10, 10, PREPARE_ONE, Optional.of(5L), 0L, 11L} //28
+      new Object[]{10, 10, PREPARE_ONE, Optional.of(5L), 0L, 11L}, //28
+
+      // prepare amount zero (no-op) packets
+      new Object[]{5L, 10L, PREPARE_ZERO, Optional.of(10L), 5L, 0L} //29
     );
   }
 

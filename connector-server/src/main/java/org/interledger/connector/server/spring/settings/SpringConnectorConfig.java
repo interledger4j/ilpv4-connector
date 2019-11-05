@@ -1,9 +1,7 @@
 package org.interledger.connector.server.spring.settings;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.eventbus.EventBus;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
+
 import org.interledger.connector.ConnectorExceptionHandler;
 import org.interledger.connector.DefaultILPv4Connector;
 import org.interledger.connector.ILPv4Connector;
@@ -24,9 +22,6 @@ import org.interledger.connector.config.CaffeineCacheConfig;
 import org.interledger.connector.config.RedisConfig;
 import org.interledger.connector.config.SettlementConfig;
 import org.interledger.connector.fx.JavaMoneyUtils;
-import org.interledger.connector.link.AbstractLink;
-import org.interledger.connector.link.LinkFactoryProvider;
-import org.interledger.connector.link.events.LinkEventEmitter;
 import org.interledger.connector.links.DefaultLinkManager;
 import org.interledger.connector.links.DefaultLinkSettingsFactory;
 import org.interledger.connector.links.DefaultNextHopPacketMapper;
@@ -35,14 +30,10 @@ import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.links.NextHopPacketMapper;
 import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.links.filters.OutgoingBalanceLinkFilter;
-import org.interledger.connector.links.loopback.LoopbackLink;
-import org.interledger.connector.links.loopback.LoopbackLinkFactory;
-import org.interledger.connector.links.ping.PingLoopbackLink;
-import org.interledger.connector.links.ping.PingLoopbackLinkFactory;
+import org.interledger.connector.links.filters.OutgoingMaxPacketAmountLinkFilter;
 import org.interledger.connector.packetswitch.DefaultILPv4PacketSwitch;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.packetswitch.InterledgerAddressUtils;
-import org.interledger.connector.packetswitch.PacketRejector;
 import org.interledger.connector.packetswitch.filters.AllowedDestinationPacketFilter;
 import org.interledger.connector.packetswitch.filters.BalanceIlpPacketFilter;
 import org.interledger.connector.packetswitch.filters.ExpiryPacketFilter;
@@ -72,6 +63,19 @@ import org.interledger.connector.settlement.SettlementService;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.crypto.Decryptor;
 import org.interledger.encoding.asn.framework.CodecContext;
+import org.interledger.link.AbstractStatefulLink.EventBusConnectionEventEmitter;
+import org.interledger.link.LinkFactoryProvider;
+import org.interledger.link.LoopbackLink;
+import org.interledger.link.LoopbackLinkFactory;
+import org.interledger.link.PacketRejector;
+import org.interledger.link.PingLoopbackLink;
+import org.interledger.link.PingLoopbackLinkFactory;
+import org.interledger.link.events.LinkConnectionEventEmitter;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.eventbus.EventBus;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,26 +92,25 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
-
 /**
  * <p>Primary configuration for the Connector.</p>
  *
  * <p>See the package-info in {@link org.interledger.connector.server.spring.settings} for more
  * details.</p>
  */
+@SuppressWarnings("UnstableApiUsage")
 @Configuration
-@EnableConfigurationProperties({ConnectorSettingsFromPropertyFile.class})
-@Import({
-          JavaMoneyConfig.class,
-          CodecContextConfig.class,
-          ConnectorPersistenceConfig.class,
-          CryptoConfig.class,
-          ResiliencyConfig.class,
-          CaffeineCacheConfig.class,
-          RedisConfig.class, SettlementConfig.class, BalanceTrackerConfig.class,
-          SpringConnectorWebMvc.class
-        })
+@EnableConfigurationProperties( {ConnectorSettingsFromPropertyFile.class})
+@Import( {
+  JavaMoneyConfig.class,
+  CodecContextConfig.class,
+  ConnectorPersistenceConfig.class,
+  CryptoConfig.class,
+  ResiliencyConfig.class,
+  CaffeineCacheConfig.class,
+  RedisConfig.class, SettlementConfig.class, BalanceTrackerConfig.class,
+  SpringConnectorWebMvc.class
+})
 public class SpringConnectorConfig {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -147,13 +150,13 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  LoopbackLinkFactory loopbackLinkFactory(LinkEventEmitter linkEventEmitter, PacketRejector packetRejector) {
-    return new LoopbackLinkFactory(linkEventEmitter, packetRejector);
+  LoopbackLinkFactory loopbackLinkFactory(PacketRejector packetRejector) {
+    return new LoopbackLinkFactory(packetRejector);
   }
 
   @Bean
-  PingLoopbackLinkFactory unidirectionalPingLinkFactory(LinkEventEmitter linkEventEmitter) {
-    return new PingLoopbackLinkFactory(linkEventEmitter);
+  PingLoopbackLinkFactory unidirectionalPingLinkFactory() {
+    return new PingLoopbackLinkFactory();
   }
 
   @Bean
@@ -178,8 +181,8 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  LinkEventEmitter linkEventEmitter(EventBus eventBus) {
-    return new AbstractLink.EventBusEventEmitter(eventBus);
+  LinkConnectionEventEmitter linkEventEmitter(EventBus eventBus) {
+    return new EventBusConnectionEventEmitter(eventBus);
   }
 
   @Bean
@@ -409,10 +412,11 @@ public class SpringConnectorConfig {
     BalanceTracker balanceTracker, SettlementService settlementService
   ) {
     final Supplier<InterledgerAddress> operatorAddressSupplier =
-      () -> connectorSettingsSupplier().get().operatorAddress().get();
+      () -> connectorSettingsSupplier().get().operatorAddress();
 
     return Lists.newArrayList(
-      //      // TODO: Throughput for Money...
+      // TODO: Throughput for Money...
+      new OutgoingMaxPacketAmountLinkFilter(operatorAddressSupplier),
       new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker, settlementService)
     );
   }
@@ -462,7 +466,8 @@ public class SpringConnectorConfig {
     ExternalRoutingService externalRoutingService,
     ILPv4PacketSwitch ilpPacketSwitch,
     BalanceTracker balanceTracker,
-    EventBus eventBus
+    EventBus eventBus,
+    SettlementService settlementService
   ) {
     return new DefaultILPv4Connector(
       connectorSettingsSupplier,
@@ -472,6 +477,7 @@ public class SpringConnectorConfig {
       externalRoutingService,
       ilpPacketSwitch,
       balanceTracker,
+      settlementService,
       eventBus
     );
   }

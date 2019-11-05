@@ -45,10 +45,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>connector-link-blast</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>connector-service-api</artifactId>
     </dependency>
     <dependency>
@@ -98,17 +94,16 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-library</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>btp-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>codecs-framework</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>codecs-ildcp</artifactId>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
@@ -120,7 +115,11 @@
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
-      <artifactId>codecs-ildcp</artifactId>
+      <artifactId>link-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>link-ilp-over-http</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
