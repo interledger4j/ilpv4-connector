@@ -9,12 +9,6 @@ logging:
     org.hibernate.SQL: INFO
     org.hibernate.engine: WARN
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-
 server:
   port: 8080
   http2:
@@ -35,7 +29,7 @@ spring:
       max-file-size: 32KB
       max-request-size: 32KB
 
-  # Database Settings
+  # example database Settings. Or alternatively activate the h2 profile for in-memory database
   #datasource:
     #url: jdbc:postgresql://localhost:5432/connector
     #platform: postgresql
@@ -66,18 +60,7 @@ spring:
     store-type: NONE
 
 ###
-#   H2 Settings
-###
-#h2:
-#  console:
-#    enabled: false
-#    path: /console
-#    settings:
-#      trace: false
-#      web-allow-others: false
-
-###
-#   Redit settings
+#   Redis settings
 ###
 #redis:
 #  host: localhost
@@ -129,7 +112,7 @@ interledger:
       pingProtocolEnabled: true
       peerConfigEnabled: true
       peerRoutingEnabled: true
-    defaultJwtTokenIssuer: https://java1.xpring.dev/
+    # defaultJwtTokenIssuer: https://java1.xpring.dev/
     # Global Routing Settings for this connector.
     globalRoutingSettings:
       routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=

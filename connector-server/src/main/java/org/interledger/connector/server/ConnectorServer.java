@@ -46,7 +46,9 @@ public class ConnectorServer extends Server {
     super.start();
     // ...only now is everything wired-up.
     if (SpringProfileUtils.isProfileActive(getContext().getEnvironment(), "MIGRATE-ONLY")) {
-      logger.info("ONLY RUNNING MIGRATIONS. STOPPING.");
+      System.out.println("###################################################################");
+      System.out.println("!!! Container started with migrate-only profile. Shutting down. !!!");
+      System.out.println("###################################################################");
       this.stop();
       return;
     }

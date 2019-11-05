@@ -85,6 +85,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -458,6 +459,7 @@ public class SpringConnectorConfig {
   }
 
   @Bean
+  @Profile("!migrate-only") // to prevent connector from starting if server  is run with migrate-only profile
   ILPv4Connector ilpConnector(
     Supplier<ConnectorSettings> connectorSettingsSupplier,
     AccountManager accountManager,

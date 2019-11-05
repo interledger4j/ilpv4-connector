@@ -1,3 +1,7 @@
+# profile that can be used when server should just run database migrations but not run a ILPv4 connector
+# using this method allows migrations to be run as separate task and provides better security than
+# running the migrations on a publicly accessible connector
+
 spring:
   liquibase:
     change-log: classpath:/db/changelog-master.xml
