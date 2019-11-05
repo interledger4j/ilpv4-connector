@@ -20,6 +20,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.hash.Hashing;
+import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -56,11 +57,15 @@ import java.util.function.Supplier;
 @SuppressWarnings("UnstableApiUsage")
 public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider {
 
+  private static final String AUTH_DECISIONS_CACHE_NAME = "ilpOverHttpAuthenticationDecisionsCache";
+  // This uses the default Prometheus registry, which is static.
+  private final CacheMetricsCollector cacheMetrics = new CacheMetricsCollector().register();
+
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final Decryptor decryptor;
 
   //  Used to construct an HMAC of an authentication token (note that in `JWT_HS_256`, the token itself is derived
-  //  from an underlying shared-scret, but the token is still sensitive since it is a bearer-auth instrument). Using
+  //  from an underlying shared-secret, but the token is still sensitive since it is a bearer-auth instrument. Using
   //  this construction, the implementation can trivially determine if request's token has been authenticated by the
   //  cache without actually caching the token itself. The rationale here is that if an attacker were to perform a
   //  memory dump, then the attacker would only be able to grab only derivatives of actual tokens (which are useless),
@@ -82,6 +87,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     this.decryptor = Objects.requireNonNull(decryptor);
 
     ilpOverHttpAuthenticationDecisions = Caffeine.newBuilder()
+        .recordStats() // Publish stats to prometheus
         .maximumSize(5000)
         // Expire after this duration, which will correspond to the last incoming request from the peer.
         // TODO: This value should be configurable and match the server-global token expiry.
@@ -157,6 +163,8 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
                     .build();
               }
             });
+
+    cacheMetrics.addCache(AUTH_DECISIONS_CACHE_NAME, ilpOverHttpAuthenticationDecisions);
   }
 
   @Override

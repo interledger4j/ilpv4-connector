@@ -1,5 +1,7 @@
 package org.interledger.connector.server.spring.settings.web;
 
+import static org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration.METRICS_ENDPOINT_URL_PATH;
+
 import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
 import org.interledger.connector.core.ConfigConstants;
 import org.interledger.connector.links.LinkSettingsFactory;
@@ -151,7 +153,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .antMatchers(HttpMethod.HEAD, IlpHttpController.ILP_PATH).authenticated()
       .antMatchers(HttpMethod.POST, IlpHttpController.ILP_PATH).authenticated()
       .antMatchers(HttpMethod.GET, HealthController.SLASH_AH_SLASH_HEALTH).permitAll() // permitAll if hidden by LB.
-
+      .antMatchers(HttpMethod.GET, METRICS_ENDPOINT_URL_PATH).permitAll() // permitAll if hidden by LB.
     ;
 
     // WARNING: Don't add `denyAll` here...it's taken care of after the JWT security below. To verify, turn on debugging

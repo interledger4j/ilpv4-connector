@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.BoundHashOperations;
@@ -117,7 +118,7 @@ public class RedisBalanceTracker implements BalanceTracker {
       }
 
       logger.debug(
-        "Processed prepare with incoming amount: {}. Account {} has clearingBalance (including prepaid amount): {} ",
+        "Balance increased due to IlpPrepare. amount={} sourceAccountId={} result={}",
         amount, sourceAccountId, result
       );
     } catch (Exception e) {

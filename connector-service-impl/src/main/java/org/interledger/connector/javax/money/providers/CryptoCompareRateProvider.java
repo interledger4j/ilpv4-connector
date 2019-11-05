@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+
 import javax.money.MonetaryException;
 import javax.money.convert.ConversionContext;
 import javax.money.convert.ConversionQuery;
@@ -38,7 +39,7 @@ import javax.money.convert.RateType;
  *
  * @see "https://min-api.cryptocompare.com/documentation"
  * @see "https://github.com/JavaMoney/javamoney-lib/blob/master/exchange/exchange-rate-frb/src/main/java/org/javamoney/
- * moneta/convert/frb/USFederalReserveRateProvider.java"
+ *   moneta/convert/frb/USFederalReserveRateProvider.java"
  */
 public class CryptoCompareRateProvider extends AbstractRateProvider {
 
@@ -82,6 +83,7 @@ public class CryptoCompareRateProvider extends AbstractRateProvider {
 
   private LoadingCache<ConversionQuery, ExchangeRate> fxLoader() {
     return Caffeine.newBuilder()
+      .recordStats() // Publish stats to prometheus
       //.maximumSize(100) // Not enabled for now in order to support many accounts.
       .expireAfterAccess(30, TimeUnit.SECONDS)
       .build(conversionQuery -> {

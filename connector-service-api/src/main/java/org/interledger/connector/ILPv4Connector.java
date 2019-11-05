@@ -2,7 +2,7 @@ package org.interledger.connector;
 
 import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.balances.BalanceTracker;
-import org.interledger.connector.core.events.ConnectorEvent;
+import org.interledger.connector.events.ConnectorEvent;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;

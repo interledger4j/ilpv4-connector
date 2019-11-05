@@ -9,6 +9,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
@@ -30,8 +31,11 @@ import java.util.function.Supplier;
 // TODO: Delete this?
 public class JwtBlastHttpSender extends AbstractBlastHttpSender implements BlastHttpSender {
 
+  // This uses the default Prometheus registry, which is static.
+  private final CacheMetricsCollector cacheMetrics = new CacheMetricsCollector().register();
+
   // See Javadoc above for how this is used.
-  private final LoadingCache<String, String> ilpOverHttpAuthTokens;
+  private final LoadingCache<String, String> ilpOverHttpAuthTokensCache;
 
   /**
    * Required-args Constructor.
@@ -46,7 +50,8 @@ public class JwtBlastHttpSender extends AbstractBlastHttpSender implements Blast
     final EncryptedSecret encryptedSecret =
         EncryptedSecret.fromEncodedValue(getOutgoingLinkSettings().encryptedTokenSharedSecret());
 
-    ilpOverHttpAuthTokens = Caffeine.newBuilder()
+    ilpOverHttpAuthTokensCache = Caffeine.newBuilder()
+        .recordStats() // Publish stats to prometheus
         // There should only ever be 1 or 2 tokens in-memory for a given client instance.
         .maximumSize(3)
         // Expire after this duration, which will correspond to the last incoming request from the peer.
@@ -77,10 +82,12 @@ public class JwtBlastHttpSender extends AbstractBlastHttpSender implements Blast
             Arrays.fill(sharedSecretBytes, (byte) 0);
           }
         });
+
+    cacheMetrics.addCache("ilpOverHttpAuthTokensCache", ilpOverHttpAuthTokensCache);
   }
 
   @Override
   protected String constructAuthToken() {
-    return this.ilpOverHttpAuthTokens.get(getOutgoingLinkSettings().tokenSubject());
+    return this.ilpOverHttpAuthTokensCache.get(getOutgoingLinkSettings().tokenSubject());
   }
 }

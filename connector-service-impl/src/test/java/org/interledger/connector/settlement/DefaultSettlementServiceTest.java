@@ -70,7 +70,7 @@ public class DefaultSettlementServiceTest {
   @Test(expected = NullPointerException.class)
   public void onLocalSettlementPaymentWithNullIdempotenceId() {
     try {
-      settlementService.onLocalSettlementPayment(null, SETTLEMENT_ACCOUNT_ID, INCOMING_SETTLEMENT);
+      settlementService.onIncomingSettlementPayment(null, SETTLEMENT_ACCOUNT_ID, INCOMING_SETTLEMENT);
     } catch (NullPointerException e) {
       assertThat(e.getMessage(), is("idempotencyKey must not be null"));
       throw e;
@@ -80,7 +80,7 @@ public class DefaultSettlementServiceTest {
   @Test(expected = NullPointerException.class)
   public void onLocalSettlementPaymentWithNullAccountId() {
     try {
-      settlementService.onLocalSettlementPayment(UUID.randomUUID().toString(), null, INCOMING_SETTLEMENT);
+      settlementService.onIncomingSettlementPayment(UUID.randomUUID().toString(), null, INCOMING_SETTLEMENT);
     } catch (NullPointerException e) {
       assertThat(e.getMessage(), is("settlementEngineAccountId must not be null"));
       throw e;
@@ -90,7 +90,7 @@ public class DefaultSettlementServiceTest {
   @Test(expected = NullPointerException.class)
   public void onLocalSettlementPaymentWithNullQuantity() {
     try {
-      settlementService.onLocalSettlementPayment(UUID.randomUUID().toString(), SETTLEMENT_ACCOUNT_ID, null);
+      settlementService.onIncomingSettlementPayment(UUID.randomUUID().toString(), SETTLEMENT_ACCOUNT_ID, null);
     } catch (NullPointerException e) {
       assertThat(e.getMessage(), is("incomingSettlement must not be null"));
       throw e;
@@ -104,7 +104,7 @@ public class DefaultSettlementServiceTest {
 
     try {
       settlementService
-          .onLocalSettlementPayment(UUID.randomUUID().toString(), SETTLEMENT_ACCOUNT_ID, INCOMING_SETTLEMENT);
+          .onIncomingSettlementPayment(UUID.randomUUID().toString(), SETTLEMENT_ACCOUNT_ID, INCOMING_SETTLEMENT);
     } catch (AccountNotFoundProblem e) {
       assertThat(e.getAccountId(), is(SETTLEMENT_ACCOUNT_ID));
       assertThat(e.getMessage(), is("Account Not Found (`alice`)"));
@@ -139,7 +139,7 @@ public class DefaultSettlementServiceTest {
         .build();
 
     SettlementQuantity actualClearedSettlementQuantity =
-        settlementService.onLocalSettlementPayment(idempotencyKey, SETTLEMENT_ACCOUNT_ID, INCOMING_SETTLEMENT);
+        settlementService.onIncomingSettlementPayment(idempotencyKey, SETTLEMENT_ACCOUNT_ID, INCOMING_SETTLEMENT);
 
     assertThat(actualClearedSettlementQuantity, is(expectedClearedSettlementQuantity));
     verify(accountSettingsRepositoryMock).findBySettlementEngineAccountIdWithConversion(SETTLEMENT_ACCOUNT_ID);

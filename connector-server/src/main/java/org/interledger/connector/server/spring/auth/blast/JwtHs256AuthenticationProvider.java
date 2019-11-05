@@ -77,7 +77,7 @@ public class JwtHs256AuthenticationProvider implements AuthenticationProvider {
       final JwtAuthentication jwt = (JwtAuthentication) authentication;
       try {
         final Authentication jwtAuth = jwt.verify(this.jwtVerifier());
-        logger.info("Authenticated jwt with scopes {}", jwtAuth.getAuthorities());
+        logger.debug("Authenticated jwt with scopes {}", jwtAuth.getAuthorities());
         return jwtAuth;
       } catch (JWTVerificationException var4) {
         throw new BadCredentialsException("Not a valid token", var4);

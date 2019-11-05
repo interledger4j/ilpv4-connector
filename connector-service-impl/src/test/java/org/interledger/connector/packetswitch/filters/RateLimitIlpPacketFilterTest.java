@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.metrics.MetricsService;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;
@@ -54,6 +55,9 @@ public class RateLimitIlpPacketFilterTest {
   private PacketRejector packetRejectorMock;
 
   @Mock
+  private MetricsService metricsServiceMock;
+
+  @Mock
   private AccountRateLimitSettings rateLimitSettingsMock;
 
   @Mock
@@ -73,8 +77,6 @@ public class RateLimitIlpPacketFilterTest {
 
   private RateLimitIlpPacketFilter filter;
 
-  private RateLimitIlpPacketFilter filterWithMockCache;
-
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
@@ -89,8 +91,7 @@ public class RateLimitIlpPacketFilterTest {
     when(accountSettingsMock.rateLimitSettings()).thenReturn(rateLimitSettingsMock);
 
     when(packetRejectorMock.reject(any(), any(), any(), any())).thenReturn(REJECT_PACKET);
-    filter = new RateLimitIlpPacketFilter(packetRejectorMock);
-    filterWithMockCache = new RateLimitIlpPacketFilter(packetRejectorMock, cacheMock);
+    filter = new RateLimitIlpPacketFilter(packetRejectorMock, metricsServiceMock, cacheMock);
   }
 
   ///////////////////////
@@ -149,10 +150,9 @@ public class RateLimitIlpPacketFilterTest {
 
     when(rateLimiterMock.tryAcquire(1)).thenReturn(Boolean.FALSE);
 
-    InterledgerResponsePacket response =
-        filterWithMockCache.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
+    InterledgerResponsePacket response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerRejectPacket, is(true));
-    response = filterWithMockCache.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
+    response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerRejectPacket, is(true));
 
     verifyNoInteractions(filterChainMock);
@@ -163,10 +163,9 @@ public class RateLimitIlpPacketFilterTest {
     when(cacheMock.get(any(), any())).thenReturn(Optional.of(rateLimiterMock));
     when(rateLimiterMock.tryAcquire(1)).thenReturn(true);
 
-    InterledgerResponsePacket response =
-        filterWithMockCache.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
+    InterledgerResponsePacket response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerFulfillPacket, is(true));
-    response = filterWithMockCache.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
+    response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerFulfillPacket, is(true));
 
     verify(filterChainMock, times(2)).doFilter(accountSettingsMock, PREPARE_PACKET);
@@ -176,10 +175,9 @@ public class RateLimitIlpPacketFilterTest {
   public void doFilterWithNoRateLimiter() {
     when(cacheMock.get(any(), any())).thenReturn(Optional.empty());
 
-    InterledgerResponsePacket response =
-        filterWithMockCache.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
+    InterledgerResponsePacket response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerFulfillPacket, is(true));
-    response = filterWithMockCache.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
+    response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerFulfillPacket, is(true));
 
     verify(filterChainMock, times(2)).doFilter(accountSettingsMock, PREPARE_PACKET);
