@@ -348,6 +348,11 @@
           </configuration>
         </plugin>
         <plugin>
+          <groupId>com.google.cloud.tools</groupId>
+          <artifactId>jib-maven-plugin</artifactId>
+          <version>1.7.0</version>
+        </plugin>
+        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>3.0.0-M3</version>
@@ -400,6 +405,7 @@
 
                   <ignoredDependency>com.h2database:h2:jar</ignoredDependency>
                   <ignoredDependency>org.hibernate:hibernate-entitymanager</ignoredDependency>
+                  <ignoredDependency>org.liquibase:liquibase-core:jar</ignoredDependency>
                   <ignoredDependency>org.postgresql:postgresql:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-cache</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-data-redis</ignoredDependency>

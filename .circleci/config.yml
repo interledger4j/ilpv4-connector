@@ -172,6 +172,22 @@ jobs:
       # publish the coverage report to codecov.io
       - run: bash <(curl -s https://codecov.io/bash)
 
+  docker_image:
+    working_directory: ~/repo
+    docker:
+      - image: circleci/openjdk:8-jdk
+        environment:
+          # Customize the JVM maximum heap limit
+          MAVEN_OPTS: -Xmx4096m
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "pom.xml" }}
+      - run:
+          name: Deploy docker image
+          command: mvn package -DskipTests -DskipITs -Pdocker -Dcontainer.version=nightly -Djib.to.auth.username=${DOCKERHUB_USERNAME} -Djib.to.auth.password=${DOCKERHUB_API_KEY}
 
 workflows:
   version: 2
@@ -205,3 +221,8 @@ workflows:
       - integration_tests_settlement:
           requires:
             - build
+      - docker_image:
+          context: org-java-ilp-connector
+          requires:
+            - integration_tests_ilp_over_http
+            - integration_tests_settlement

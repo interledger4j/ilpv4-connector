@@ -1,0 +1,11 @@
+# profile that can be used when server should run migrations as part of bootstrapping.
+# using this method eliminates the need to run migrations as a separate task but requires
+# the datasource user to have DDL permissions. This may be a security concern if
+# the server is publicly accessible and has these credentials in memory
+
+spring:
+  liquibase:
+    change-log: classpath:/db/changelog-master.xml
+    enabled: true
+  flyway:
+    enabled: false

@@ -7,9 +7,10 @@ logging:
     org.springframework.web: INFO
     org.hibernate: INFO
     org.hibernate.SQL: INFO
+    org.hibernate.engine: WARN
 
 server:
-  #port: 8080
+  port: 8080
   http2:
     enabled: true
   jetty:
@@ -28,7 +29,7 @@ spring:
       max-file-size: 32KB
       max-request-size: 32KB
 
-  # Database Settings
+  # example database Settings. Or alternatively activate the h2 profile for in-memory database
   #datasource:
     #url: jdbc:postgresql://localhost:5432/connector
     #platform: postgresql
@@ -36,14 +37,16 @@ spring:
     #password:
     #driverClassName: org.postgresql.Driver
   jpa:
-    #hibernate:
-      #ddl-auto: update
+    hibernate:
+      ddl-auto: none
     open-in-view: false
     properties:
       hibernate:
         show_sql: false
         use_sql_comments: false
         format_sql: false
+  liquibase:
+    enabled: false
   mvc:
     throw-exception-if-no-handler-found: true
   resources:
@@ -57,15 +60,12 @@ spring:
     store-type: NONE
 
 ###
-#   H2 Settings
+#   Redis settings
 ###
-h2:
-  console:
-    enabled: false
-    path: /console
-    settings:
-      trace: false
-      web-allow-others: false
+#redis:
+#  host: localhost
+#  port: 6379
+
 
 interledger:
   connector:
@@ -99,14 +99,27 @@ interledger:
         # maxIdleConnections: 5
         # keepAliveMinutes: 5
     btp.enabled: false
+    adminPassword: password
+    keystore:
+      jks:
+        enabled: true
+        filename: crypto/crypto.p12
+        password: password
+        secret0_alias: secret0
+        secret0_password: password
     enabledProtocols:
       blastEnabled: true
       pingProtocolEnabled: true
       peerConfigEnabled: true
       peerRoutingEnabled: true
+    # defaultJwtTokenIssuer: https://java1.xpring.dev/
+    # Global Routing Settings for this connector.
+    globalRoutingSettings:
+      routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
+      staticRoutes:
+    # - targetPrefix: test
+    # peerAccountId: bob # set by the operator
     ## ILP address of the connector.
     ## This property can be omitted if an account with relation=parent is configured under accounts.
-    nodeIlpAddress: test1.connie
-    # Global Routing Settings for this connector.
-    #globalRoutingSettings:
-      #routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
+    # nodeIlpAddress: test1.connie
+
