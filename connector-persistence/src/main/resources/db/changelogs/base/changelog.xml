@@ -44,7 +44,7 @@
       <column name="LINK_TYPE" type="VARCHAR(255)">
         <constraints nullable="false"/>
       </column>
-      <column name="ASSET_CODE" type="VARCHAR(12)">
+      <column name="ASSET_CODE" type="VARCHAR(20)">
         <constraints nullable="false"/>
       </column>
       <column name="ASSET_SCALE" type="SMALLINT">
@@ -118,6 +118,38 @@
       <column name="PREFIX" type="VARCHAR(255)">
         <constraints nullable="false"/>
       </column>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="fx_rate_overrides" author="isimpson">
+    <createTable tableName="fx_rate_overrides">
+
+      <column autoIncrement="true" name="ID" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="NATURAL_ID" type="VARCHAR(7)">
+        <constraints nullable="false" unique="true"/>
+      </column>
+      <column name="CREATED_DTTM" type="DATETIME">
+        <constraints nullable="false"/>
+      </column>
+      <column name="MODIFIED_DTTM" type="DATETIME">
+        <constraints nullable="false"/>
+      </column>
+      <column name="VERSION" type="SMALLINT">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="ASSET_CODE_FROM" type="VARCHAR(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="ASSET_CODE_TO" type="VARCHAR(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="RATE" type="DECIMAL">
+        <constraints nullable="false"/>
+      </column>
+
     </createTable>
   </changeSet>
 </databaseChangeLog>

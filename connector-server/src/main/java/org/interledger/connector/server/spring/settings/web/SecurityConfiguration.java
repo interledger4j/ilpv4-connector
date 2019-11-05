@@ -1,18 +1,19 @@
 package org.interledger.connector.server.spring.settings.web;
 
-import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
 import org.interledger.connector.core.ConfigConstants;
 import org.interledger.connector.links.LinkSettingsFactory;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.server.spring.auth.blast.AuthConstants;
 import org.interledger.connector.server.spring.auth.blast.IlpOverHttpAuthenticationProvider;
 import org.interledger.connector.server.spring.controllers.HealthController;
 import org.interledger.connector.server.spring.controllers.IlpHttpController;
-import org.interledger.connector.server.spring.auth.blast.AuthConstants;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionService;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+
+import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

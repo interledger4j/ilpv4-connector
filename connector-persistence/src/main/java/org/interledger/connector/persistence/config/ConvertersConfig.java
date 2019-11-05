@@ -2,6 +2,7 @@ package org.interledger.connector.persistence.config;
 
 import org.interledger.connector.persistence.converters.AccountBalanceSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.AccountSettingsEntityConverter;
+import org.interledger.connector.persistence.converters.FxRateOverridesEntityConverter;
 import org.interledger.connector.persistence.converters.RateLimitSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.SettlementEngineDetailsEntityConverter;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +32,11 @@ public class ConvertersConfig {
     return new AccountSettingsEntityConverter(
       rateLimitSettingsConverter(), accountBalanceSettingsConverter(), settlementEngineDetailsConverter()
     );
+  }
+
+  @Bean
+  FxRateOverridesEntityConverter fxRateOverrideEntityConverter() {
+    return new FxRateOverridesEntityConverter();
   }
 
 }
