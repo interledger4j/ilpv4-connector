@@ -23,6 +23,8 @@ import org.interledger.connector.config.CaffeineCacheConfig;
 import org.interledger.connector.config.RedisConfig;
 import org.interledger.connector.config.SettlementConfig;
 import org.interledger.connector.fx.JavaMoneyUtils;
+import org.interledger.connector.fxrates.DefaultFxRateOverridesManager;
+import org.interledger.connector.fxrates.FxRateOverridesManager;
 import org.interledger.connector.links.DefaultLinkManager;
 import org.interledger.connector.links.DefaultLinkSettingsFactory;
 import org.interledger.connector.links.DefaultNextHopPacketMapper;
@@ -49,6 +51,7 @@ import org.interledger.connector.packetswitch.filters.ValidateFulfillmentPacketF
 import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
 import org.interledger.connector.routing.ChildAccountPaymentRouter;
 import org.interledger.connector.routing.DefaultRouteBroadcaster;
 import org.interledger.connector.routing.ExternalRoutingService;
@@ -92,6 +95,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -235,6 +239,11 @@ public class SpringConnectorConfig {
     return new DefaultAccountManager(
         connectorSettingsSupplier, conversionService, accountSettingsRepository, linkManager, settlementEngineClient
     );
+  }
+
+  @Bean
+  FxRateOverridesManager fxRateOverridesManager(FxRateOverridesRepository respository) {
+    return new DefaultFxRateOverridesManager(respository);
   }
 
   @Bean
@@ -474,10 +483,13 @@ public class SpringConnectorConfig {
   }
 
   @Bean
+  @Profile("!migrate-only")
+    // to prevent connector from starting if server  is run with migrate-only profile
   ILPv4Connector ilpConnector(
       Supplier<ConnectorSettings> connectorSettingsSupplier,
       AccountManager accountManager,
       AccountSettingsRepository accountSettingsRepository,
+      FxRateOverridesRepository fxRateOverridesRepository,
       LinkManager linkManager,
       ExternalRoutingService externalRoutingService,
       ILPv4PacketSwitch ilpPacketSwitch,
@@ -489,6 +501,7 @@ public class SpringConnectorConfig {
         connectorSettingsSupplier,
         accountManager,
         accountSettingsRepository,
+        fxRateOverridesRepository,
         linkManager,
         externalRoutingService,
         ilpPacketSwitch,

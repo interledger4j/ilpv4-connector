@@ -1,5 +1,6 @@
 package org.interledger.connector.server;
 
+import org.interledger.connector.server.spring.SpringProfileUtils;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.link.Link;
 
@@ -44,6 +45,13 @@ public class ConnectorServer extends Server {
   public void start() {
     super.start();
     // ...only now is everything wired-up.
+    if (SpringProfileUtils.isProfileActive(getContext().getEnvironment(), "MIGRATE-ONLY")) {
+      System.out.println("###################################################################");
+      System.out.println("!!! Container started with migrate-only profile. Shutting down. !!!");
+      System.out.println("###################################################################");
+      this.stop();
+      return;
+    }
 
     this.emitFxInfo();
 

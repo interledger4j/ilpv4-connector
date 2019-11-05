@@ -63,6 +63,7 @@
     <module>connector-service-impl</module>
     <module>connector-server</module>
     <module>connector-it</module>
+    <module>connector-fxrates</module>
   </modules>
 
   <dependencyManagement>
@@ -142,6 +143,11 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>connector-link</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>connector-fxrates</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -300,7 +306,7 @@
       <dependency>
         <groupId>org.springframework.security.oauth.boot</groupId>
         <artifactId>spring-security-oauth2-autoconfigure</artifactId>
-        <version>2.1.9.RELEASE</version>
+        <version>2.2.0.RELEASE</version>
       </dependency>
       <dependency>
         <groupId>org.springframework.hateoas</groupId>
@@ -368,6 +374,11 @@
           </configuration>
         </plugin>
         <plugin>
+          <groupId>com.google.cloud.tools</groupId>
+          <artifactId>jib-maven-plugin</artifactId>
+          <version>1.7.0</version>
+        </plugin>
+        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>3.0.0-M3</version>
@@ -420,6 +431,7 @@
 
                   <ignoredDependency>com.h2database:h2:jar</ignoredDependency>
                   <ignoredDependency>org.hibernate:hibernate-entitymanager</ignoredDependency>
+                  <ignoredDependency>org.liquibase:liquibase-core:jar</ignoredDependency>
                   <ignoredDependency>org.postgresql:postgresql:jar</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-cache</ignoredDependency>
                   <ignoredDependency>org.springframework.boot:spring-boot-starter-data-redis</ignoredDependency>
