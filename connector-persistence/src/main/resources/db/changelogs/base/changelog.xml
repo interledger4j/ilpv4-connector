@@ -96,4 +96,28 @@
   <changeSet author="dfuelling" id="hibernate_sequence">
     <createSequence incrementBy="1" sequenceName="hibernate_sequence" startValue="1"/>
   </changeSet>
+
+  <changeSet author="isimpson" id="routes">
+    <createTable tableName="routes">
+      <column autoIncrement="true" name="ID" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="NATURAL_ID" type="VARCHAR(64)">
+        <constraints nullable="false" unique="true"/>
+      </column>
+      <column name="CREATED_DTTM" type="DATETIME">
+        <constraints nullable="false"/>
+      </column>
+      <column name="MODIFIED_DTTM" type="DATETIME">
+        <constraints nullable="false"/>
+      </column>
+      <column name="VERSION" type="SMALLINT">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="PREFIX" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+  </changeSet>
 </databaseChangeLog>
