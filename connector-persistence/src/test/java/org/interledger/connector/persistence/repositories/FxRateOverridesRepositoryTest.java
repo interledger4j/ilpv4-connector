@@ -49,13 +49,15 @@ public class FxRateOverridesRepositoryTest {
         .rate(BigDecimal.valueOf(1.12))
         .build();
 
+    FxRateOverride usdToJpy = FxRateOverride.builder()
+        .assetCodeFrom("USD")
+        .assetCodeTo("JPY")
+        .rate(BigDecimal.valueOf(105))
+        .build();
+
     Set<FxRateOverride> overrides = Sets.newHashSet(
         originalEurToUsd,
-        FxRateOverride.builder()
-            .assetCodeFrom("USD")
-            .assetCodeTo("JPY")
-            .rate(BigDecimal.valueOf(105))
-            .build(),
+        usdToJpy,
         FxRateOverride.builder()
             .assetCodeFrom("USD")
             .assetCodeTo("CAD")
@@ -76,6 +78,8 @@ public class FxRateOverridesRepositoryTest {
     FxRateOverride eurToUsd = savedOverrides.stream().filter(fx -> fx.assetCodeFrom().equals("EUR")).findAny().get();
 
     overrides.remove(originalEurToUsd);
+    overrides.remove(usdToJpy);
+
     overrides.add(
         FxRateOverride.builder()
             .id(eurToUsd.id())
@@ -88,18 +92,18 @@ public class FxRateOverridesRepositoryTest {
     overrides.add(
         FxRateOverride.builder()
             .assetCodeFrom("EUR")
-            .assetCodeTo("AUD")
+            .assetCodeTo("DAVEANDBUSTERSDOLLAR")
             .rate(BigDecimal.valueOf(1.50))
             .build()
     );
 
+
     savedOverrides = repository.saveAllOverrides(overrides);
-    assertThat(savedOverrides).hasSize(4).extracting("assetCodeFrom", "assetCodeTo", "rate")
+    assertThat(savedOverrides).hasSize(3).extracting("assetCodeFrom", "assetCodeTo", "rate")
         .containsOnly(
             tuple("EUR", "USD", BigDecimal.valueOf(1.09)),
-            tuple("USD", "JPY", BigDecimal.valueOf(105)),
             tuple("USD", "CAD", BigDecimal.valueOf(1.23)),
-            tuple("EUR", "AUD", BigDecimal.valueOf(1.50))
+            tuple("EUR", "DAVEANDBUSTERSDOLLAR", BigDecimal.valueOf(1.50))
         );
   }
 

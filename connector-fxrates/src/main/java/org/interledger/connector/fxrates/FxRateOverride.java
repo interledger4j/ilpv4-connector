@@ -9,19 +9,44 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import javax.annotation.Nullable;
 
+/**
+ * Allows overriding of an exchange rate based on the asset codes being converted between.
+ *
+ * Design considerations to revisit:
+ * - In an implementation involving a base rate, it's likely that a given override may be a combination of two
+ *   overrides: one of the `from` to the `baseRate` and one from the `baseRate` to the `to`.
+ * - It's _also_ a possibility that the ability to ignore the base rate is desirable and that a direct conversion
+ *   going `from` to `to` is something we should support.
+ */
 public interface FxRateOverride {
 
   static ImmutableFxRateOverride.Builder builder() {
     return ImmutableFxRateOverride.builder();
   }
 
+  /**
+   *
+   * @return the numeric id assigned by the database.
+   */
   @Nullable
   Long id();
 
+  /**
+   *
+   * @return the asset code we're converting from
+   */
   String assetCodeFrom();
 
+  /**
+   *
+   * @return the asset code we're converting to
+   */
   String assetCodeTo();
 
+  /**
+   *
+   * @return the rate to be applied to the from amount to compute the to amount
+   */
   BigDecimal rate();
 
   /**
