@@ -6,6 +6,7 @@ import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementService;
@@ -63,6 +64,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
 
   private final AccountManager accountManager;
   private final AccountSettingsRepository accountSettingsRepository;
+  private final FxRateOverridesRepository fxRateOverridesRepository;
   private final LinkManager linkManager;
   private final EventBus eventBus;
 
@@ -78,6 +80,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountManager accountManager,
     final AccountSettingsRepository accountSettingsRepository,
+    final FxRateOverridesRepository fxRateOverridesRepository,
     final LinkManager linkManager,
     final ExternalRoutingService externalRoutingService,
     final ILPv4PacketSwitch ilpPacketSwitch,
@@ -88,6 +91,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       connectorSettingsSupplier,
       accountManager,
       accountSettingsRepository,
+      fxRateOverridesRepository,
       linkManager,
       externalRoutingService,
       ilpPacketSwitch,
@@ -104,6 +108,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountManager accountManager,
     final AccountSettingsRepository accountSettingsRepository,
+    final FxRateOverridesRepository fxRateOverridesRepository,
     final LinkManager linkManager,
     final ExternalRoutingService externalRoutingService,
     final ILPv4PacketSwitch ilpPacketSwitch,
@@ -114,6 +119,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountManager = Objects.requireNonNull(accountManager);
     this.accountSettingsRepository = accountSettingsRepository;
+    this.fxRateOverridesRepository = Objects.requireNonNull(fxRateOverridesRepository);
     this.linkManager = Objects.requireNonNull(linkManager);
     this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
     this.ilpPacketSwitch = Objects.requireNonNull(ilpPacketSwitch);
@@ -159,6 +165,12 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   public AccountSettingsRepository getAccountSettingsRepository() {
     return accountSettingsRepository;
   }
+
+  @Override
+  public FxRateOverridesRepository getFxRateOverridesRepository() {
+    return fxRateOverridesRepository;
+  }
+
 
   @Override
   public LinkManager getLinkManager() {

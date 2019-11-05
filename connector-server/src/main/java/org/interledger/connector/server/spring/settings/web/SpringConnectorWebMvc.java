@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import org.interledger.connector.persistence.converters.AccountBalanceSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.AccountSettingsEntityConverter;
+import org.interledger.connector.persistence.converters.FxRateOverridesEntityConverter;
 import org.interledger.connector.persistence.converters.RateLimitSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.SettlementEngineDetailsEntityConverter;
 import org.interledger.connector.server.spring.controllers.converters.OerPreparePacketHttpMessageConverter;
@@ -67,6 +68,9 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
   @Autowired
   private AccountSettingsEntityConverter accountSettingsConverter;
 
+  @Autowired
+  private FxRateOverridesEntityConverter fxRateOverrideEntityConverter;
+
   ////////////////////////
   // HttpMessageConverters
   ////////////////////////
@@ -105,5 +109,6 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
     registry.addConverter(accountBalanceSettingsEntityConverter);
     registry.addConverter(settlementEngineDetailsEntityConverter);
     registry.addConverter(accountSettingsConverter);
+    registry.addConverter(fxRateOverrideEntityConverter);
   }
 }

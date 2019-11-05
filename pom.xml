@@ -62,6 +62,7 @@
     <module>connector-service-impl</module>
     <module>connector-server</module>
     <module>connector-it</module>
+    <module>connector-fxrates</module>
   </modules>
 
   <dependencyManagement>
@@ -141,6 +142,11 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>connector-link</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>connector-fxrates</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
