@@ -3,6 +3,7 @@ package org.interledger.connector.packetswitch.filters;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.metrics.MetricsService;
 import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.link.PacketRejector;
 
@@ -55,7 +56,11 @@ public class PacketMetricsFilter extends AbstractPacketFilter implements PacketS
                 return interledgerRejectPacket;
               }
           );
-    } catch (Exception e) {
+    }catch (InterledgerProtocolException e) {
+      this.metricsService.trackIncomingPacketRejected(sourceAccountSettings, e.getInterledgerRejectPacket());
+      throw e;
+    }
+    catch (Exception e) {
       this.metricsService.trackIncomingPacketFailed(sourceAccountSettings);
       throw e;
     }

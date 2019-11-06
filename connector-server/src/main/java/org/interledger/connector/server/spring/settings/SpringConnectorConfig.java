@@ -34,7 +34,7 @@ import org.interledger.connector.links.NextHopPacketMapper;
 import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.links.filters.OutgoingBalanceLinkFilter;
 import org.interledger.connector.links.filters.OutgoingMaxPacketAmountLinkFilter;
-import org.interledger.connector.links.filters.OutgoingStatsLinkFilter;
+import org.interledger.connector.links.filters.OutgoingMetricsLinkFilter;
 import org.interledger.connector.metrics.MetricsService;
 import org.interledger.connector.packetswitch.DefaultILPv4PacketSwitch;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
@@ -440,7 +440,7 @@ public class SpringConnectorConfig {
 
     return Lists.newArrayList(
         // TODO: Throughput for Money...
-        new OutgoingStatsLinkFilter(operatorAddressSupplier, metricsService),
+        new OutgoingMetricsLinkFilter(operatorAddressSupplier, metricsService),
         new OutgoingMaxPacketAmountLinkFilter(operatorAddressSupplier),
         new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker, settlementService, eventBus())
     );

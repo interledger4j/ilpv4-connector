@@ -19,6 +19,7 @@ import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerFulfillment;
 import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.link.LoopbackLink;
@@ -37,9 +38,9 @@ import java.time.Instant;
 import java.util.function.Supplier;
 
 /**
- * Unit tests for {@link OutgoingStatsLinkFilter}.
+ * Unit tests for {@link OutgoingMetricsLinkFilter}.
  */
-public class OutgoingStatsLinkFilterTest {
+public class OutgoingMetricsLinkFilterTest {
 
   private static final Supplier<InterledgerAddress> OPERATOR_ADDRESS = () -> InterledgerAddress.of("example.operator");
   private static final InterledgerAddress DESTINATION_ADDRESS = InterledgerAddress.of("example.destination");
@@ -56,11 +57,11 @@ public class OutgoingStatsLinkFilterTest {
   @Mock
   private MetricsService metricsServiceMock;
 
-  private OutgoingStatsLinkFilter filter;
+  private OutgoingMetricsLinkFilter filter;
 
   @Before
   public void setUp() {
-    filter = new OutgoingStatsLinkFilter(OPERATOR_ADDRESS, metricsServiceMock);
+    filter = new OutgoingMetricsLinkFilter(OPERATOR_ADDRESS, metricsServiceMock);
   }
 
   @Test
@@ -89,6 +90,29 @@ public class OutgoingStatsLinkFilterTest {
     verify(metricsServiceMock).trackOutgoingPacketPrepared(accountSettings(), preparePacket());
     verify(metricsServiceMock).trackOutgoingPacketRejected(accountSettings(), rejectPacket());
     verifyNoMoreInteractions(metricsServiceMock);
+  }
+
+  @Test
+  public void doFilterWithInterledgerProtocolException() {
+    final AccountSettings accountSettings = accountSettings();
+    final InterledgerPreparePacket preparePacket = preparePacket();
+    expectedException.expect(InterledgerProtocolException.class);
+    expectedException.expectMessage("Interledger Rejection: ");
+
+    doThrow(new InterledgerProtocolException(rejectPacket()))
+        .when(filterChainMock)
+        .doFilter(eq(accountSettings), eq(preparePacket));
+
+    try {
+      filter.doFilter(accountSettings, preparePacket, filterChainMock);
+      fail();
+    } catch (Exception e) {
+      verifyNoMoreInteractions(packetRejectorMock);
+      verify(metricsServiceMock).trackOutgoingPacketPrepared(accountSettings, preparePacket);
+      verify(metricsServiceMock).trackOutgoingPacketRejected(accountSettings, rejectPacket());
+      verifyNoMoreInteractions(metricsServiceMock);
+      throw e;
+    }
   }
 
   @Test

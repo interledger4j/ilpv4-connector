@@ -19,6 +19,7 @@ import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerFulfillment;
 import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.link.LoopbackLink;
@@ -87,6 +88,29 @@ public class PacketMetricsFilterTest {
     verify(metricsServiceMock).trackIncomingPacketPrepared(accountSettings(), preparePacket());
     verify(metricsServiceMock).trackIncomingPacketRejected(accountSettings(), rejectPacket());
     verifyNoMoreInteractions(metricsServiceMock);
+  }
+
+  @Test
+  public void doFilterWithInterledgerProtocolException() {
+    final AccountSettings accountSettings = accountSettings();
+    final InterledgerPreparePacket preparePacket = preparePacket();
+    expectedException.expect(InterledgerProtocolException.class);
+    expectedException.expectMessage("Interledger Rejection: ");
+
+    doThrow(new InterledgerProtocolException(rejectPacket()))
+        .when(filterChainMock)
+        .doFilter(eq(accountSettings), eq(preparePacket));
+
+    try {
+      filter.doFilter(accountSettings, preparePacket, filterChainMock);
+      fail();
+    } catch (Exception e) {
+      verifyNoMoreInteractions(packetRejectorMock);
+      verify(metricsServiceMock).trackIncomingPacketPrepared(accountSettings, preparePacket);
+      verify(metricsServiceMock).trackIncomingPacketRejected(accountSettings, rejectPacket());
+      verifyNoMoreInteractions(metricsServiceMock);
+      throw e;
+    }
   }
 
   @Test
