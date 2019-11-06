@@ -154,7 +154,7 @@ public class PrometheusMetricsService implements MetricsService {
   public void trackNumRateLimitedPackets(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
 
-    // Labels: RESULT, REJECT_CODE, ACCOUNT_ID, ASSET_CODE, ASSET_SCALE
+    // Labels: ACCOUNT_ID, ASSET_CODE, ASSET_SCALE
     PrometheusCollectors.rateLimitedPackets.labels(
         accountSettings.accountId().value(),
         accountSettings.assetCode(),
@@ -165,6 +165,8 @@ public class PrometheusMetricsService implements MetricsService {
   @Override
   public void trackIncomingSettlementSucceeded(IncomingSettlementSucceededEvent event) {
     Objects.requireNonNull(event);
+
+    // Labels: RESULT, ACCOUNT_ID, ASSET_CODE, ASSET_SCALE
     event.accountSettings().ifPresent(accountSettings ->
         PrometheusCollectors.incomingSettlements.labels(
             SETTLEMENT_SUCCEEDED,
@@ -178,6 +180,8 @@ public class PrometheusMetricsService implements MetricsService {
   @Override
   public void trackIncomingSettlementFailed(IncomingSettlementFailedEvent event) {
     Objects.requireNonNull(event);
+
+    // Labels: RESULT, ACCOUNT_ID, ASSET_CODE, ASSET_SCALE
     PrometheusCollectors.incomingSettlements.labels(
         SETTLEMENT_FAILED,
         event.requestedAccountId().value(), // accountId
@@ -189,6 +193,8 @@ public class PrometheusMetricsService implements MetricsService {
   @Override
   public void trackOutgoingSettlementInitiationSucceeded(final OutgoingSettlementInitiationSucceededEvent event) {
     Objects.requireNonNull(event);
+
+    // Labels: RESULT, ACCOUNT_ID, ASSET_CODE, ASSET_SCALE
     event.accountSettings().ifPresent(accountSettings ->
         PrometheusCollectors.outgoingSettlements.labels(
             SETTLEMENT_SUCCEEDED,
@@ -202,6 +208,8 @@ public class PrometheusMetricsService implements MetricsService {
   @Override
   public void trackOutgoingSettlementInitiationFailed(OutgoingSettlementInitiationFailedEvent event) {
     Objects.requireNonNull(event);
+
+    // Labels: RESULT, ACCOUNT_ID, ASSET_CODE, ASSET_SCALE
     event.accountSettings().ifPresent(accountSettings ->
         PrometheusCollectors.outgoingSettlements.labels(
             SETTLEMENT_FAILED,
