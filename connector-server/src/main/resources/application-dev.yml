@@ -8,3 +8,4 @@ interledger:
   connector:
     ## ILP address of the connector.
     nodeIlpAddress: test1.connie
+    defaultJwtTokenIssuer: https://jwt.example.com
