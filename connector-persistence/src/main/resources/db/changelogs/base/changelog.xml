@@ -97,12 +97,12 @@
     <createSequence incrementBy="1" sequenceName="hibernate_sequence" startValue="1"/>
   </changeSet>
 
-  <changeSet author="isimpson" id="routes">
-    <createTable tableName="routes">
+  <changeSet author="isimpson" id="static_routes">
+    <createTable tableName="static_routes">
       <column autoIncrement="true" name="ID" type="BIGINT">
         <constraints nullable="false" primaryKey="true"/>
       </column>
-      <column name="NATURAL_ID" type="VARCHAR(64)">
+      <column name="NATURAL_ID" type="VARCHAR(255)">
         <constraints nullable="false" unique="true"/>
       </column>
       <column name="CREATED_DTTM" type="DATETIME">
@@ -115,10 +115,16 @@
         <constraints nullable="false"/>
       </column>
 
-      <column name="PREFIX" type="VARCHAR(255)">
+      <column name="ACCOUNT_ID" type="VARCHAR(64)">
         <constraints nullable="false"/>
       </column>
     </createTable>
+
+    <createIndex indexName="STATIC_ROUTES_PREFIX_IDX"
+                 tableName="STATIC_ROUTES"
+                 unique="true">
+      <column name="NATURAL_ID"/>
+    </createIndex>
   </changeSet>
 
   <changeSet id="fx_rate_overrides" author="isimpson">

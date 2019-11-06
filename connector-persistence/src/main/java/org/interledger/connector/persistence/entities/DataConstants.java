@@ -5,6 +5,7 @@ public interface DataConstants {
   interface TableNames {
     String ACCOUNT_SETTINGS = "ACCOUNT_SETTINGS";
     String FX_RATE_OVERRIDES = "FX_RATE_OVERRIDES";
+    String STATIC_ROUTES = "STATIC_ROUTES";
   }
 
   interface ColumnNames {
@@ -14,6 +15,9 @@ public interface DataConstants {
 
     // FX_RATE_OVERRIDES
     String ASSET_CODE_IDX_COLUMNS = "ASSET_CODE_FROM,ASSET_CODE_TO";
+
+    // STATIC_ROUTES
+    String PREFIX = "NATURAL_ID";
   }
 
   interface IndexNames {
@@ -22,6 +26,9 @@ public interface DataConstants {
 
     // FX_RATE_OVERRIDES
     String FX_RATE_OVERRIDES_IDX = "FX_RATE_OVERRIDES_IDX";
+
+    // STATIC_ROUTES
+    String STATIC_ROUTES_IDX = "STATIC_ROUTES_PREFIX_IDX";
   }
 
 }

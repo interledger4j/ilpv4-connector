@@ -17,6 +17,7 @@ import org.interledger.connector.accounts.DefaultAccountManager;
 import org.interledger.connector.accounts.DefaultAccountSettingsResolver;
 import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
+import org.interledger.connector.caching.StaticRoutesLoadingCache;
 import org.interledger.connector.config.BalanceTrackerConfig;
 import org.interledger.connector.config.CaffeineCacheConfig;
 import org.interledger.connector.config.RedisConfig;
@@ -48,6 +49,9 @@ import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
+import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
+import org.interledger.connector.routes.DefaultStaticRoutesManager;
+import org.interledger.connector.routes.StaticRoutesManager;
 import org.interledger.connector.routing.ChildAccountPaymentRouter;
 import org.interledger.connector.routing.DefaultRouteBroadcaster;
 import org.interledger.connector.routing.ExternalRoutingService;
@@ -234,6 +238,12 @@ public class SpringConnectorConfig {
   @Bean
   FxRateOverridesManager fxRateOverridesManager(FxRateOverridesRepository respository) {
     return new DefaultFxRateOverridesManager(respository);
+  }
+
+  @Bean
+  StaticRoutesManager staticRoutesManager(StaticRoutesRepository staticRoutesRepository,
+                                          StaticRoutesLoadingCache staticRoutesLoadingCache) {
+    return new DefaultStaticRoutesManager(staticRoutesRepository, staticRoutesLoadingCache);
   }
 
   @Bean
