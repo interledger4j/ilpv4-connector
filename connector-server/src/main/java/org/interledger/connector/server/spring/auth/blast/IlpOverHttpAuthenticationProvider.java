@@ -58,12 +58,11 @@ import java.util.function.Supplier;
 public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider {
 
   private static final String AUTH_DECISIONS_CACHE_NAME = "ilpOverHttpAuthenticationDecisionsCache";
-  // This uses the default Prometheus registry, which is static.
-  private final CacheMetricsCollector cacheMetrics = new CacheMetricsCollector().register();
+
+  private final CacheMetricsCollector cacheMetrics;
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final Decryptor decryptor;
-
   //  Used to construct an HMAC of an authentication token (note that in `JWT_HS_256`, the token itself is derived
   //  from an underlying shared-secret, but the token is still sensitive since it is a bearer-auth instrument. Using
   //  this construction, the implementation can trivially determine if request's token has been authenticated by the
@@ -71,7 +70,6 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
   //  memory dump, then the attacker would only be able to grab only derivatives of actual tokens (which are useless),
   //  and would not be able to replay actual requests nor generate new tokens.
   private final byte[] ephemeralHmacBytes;
-
   // See Javadoc above for how this is used.
   private final LoadingCache<AuthenticationRequest, AuthenticationDecision> ilpOverHttpAuthenticationDecisions;
 
@@ -79,12 +77,14 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       final Supplier<ConnectorSettings> connectorSettingsSupplier,
       final Decryptor decryptor,
       final AccountSettingsRepository accountSettingsRepository,
-      final LinkSettingsFactory linkSettingsFactory
+      final LinkSettingsFactory linkSettingsFactory,
+      final CacheMetricsCollector cacheMetrics
   ) {
     Objects.requireNonNull(connectorSettingsSupplier);
 
     this.ephemeralHmacBytes = this.generate32RandomBytes();
     this.decryptor = Objects.requireNonNull(decryptor);
+    this.cacheMetrics = Objects.requireNonNull(cacheMetrics);
 
     ilpOverHttpAuthenticationDecisions = Caffeine.newBuilder()
         .recordStats() // Publish stats to prometheus
@@ -164,7 +164,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
               }
             });
 
-    cacheMetrics.addCache(AUTH_DECISIONS_CACHE_NAME, ilpOverHttpAuthenticationDecisions);
+    this.cacheMetrics.addCache(AUTH_DECISIONS_CACHE_NAME, ilpOverHttpAuthenticationDecisions);
   }
 
   @Override
@@ -210,7 +210,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
    * @return The actual underlying shared-secret.
    */
   @VisibleForTesting
-  final byte[] decryptSharedSecret(
+  protected final byte[] decryptSharedSecret(
       final AccountId authPrincipal, final SharedSecretTokenSettings sharedSecretTokenSettings
   ) {
     Objects.requireNonNull(authPrincipal);

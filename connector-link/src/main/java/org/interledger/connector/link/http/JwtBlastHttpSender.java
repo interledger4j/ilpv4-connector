@@ -32,7 +32,7 @@ import java.util.function.Supplier;
 public class JwtBlastHttpSender extends AbstractBlastHttpSender implements BlastHttpSender {
 
   // This uses the default Prometheus registry, which is static.
-  private final CacheMetricsCollector cacheMetrics = new CacheMetricsCollector().register();
+  private final CacheMetricsCollector cacheMetrics;
 
   // See Javadoc above for how this is used.
   private final LoadingCache<String, String> ilpOverHttpAuthTokensCache;
@@ -44,9 +44,12 @@ public class JwtBlastHttpSender extends AbstractBlastHttpSender implements Blast
       final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
       final RestTemplate restTemplate,
       final Decryptor decryptor,
-      final OutgoingLinkSettings outgoingLinkSettings
+      final OutgoingLinkSettings outgoingLinkSettings,
+      final CacheMetricsCollector cacheMetrics
   ) {
     super(operatorAddressSupplier, restTemplate, outgoingLinkSettings);
+    this.cacheMetrics = Objects.requireNonNull(cacheMetrics);
+
     final EncryptedSecret encryptedSecret =
         EncryptedSecret.fromEncodedValue(getOutgoingLinkSettings().encryptedTokenSharedSecret());
 
@@ -83,7 +86,7 @@ public class JwtBlastHttpSender extends AbstractBlastHttpSender implements Blast
           }
         });
 
-    cacheMetrics.addCache("ilpOverHttpAuthTokensCache", ilpOverHttpAuthTokensCache);
+    this.cacheMetrics.addCache("ilpOverHttpAuthTokensCache", ilpOverHttpAuthTokensCache);
   }
 
   @Override

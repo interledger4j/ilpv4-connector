@@ -16,6 +16,7 @@ import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionService;
 
 import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
+import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -60,6 +61,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   LinkSettingsFactory linkSettingsFactory;
 
   @Autowired
+  CacheMetricsCollector cacheMetricsCollector;
+
+  @Autowired
   Decryptor decryptor;
 
   /**
@@ -88,7 +92,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Bean
   IlpOverHttpAuthenticationProvider ilpOverHttpAuthenticationProvider() {
     return new IlpOverHttpAuthenticationProvider(
-        connectorSettingsSupplier, encryptionService, accountSettingsRepository, linkSettingsFactory
+        connectorSettingsSupplier, encryptionService, accountSettingsRepository, linkSettingsFactory,
+        cacheMetricsCollector
     );
   }
 

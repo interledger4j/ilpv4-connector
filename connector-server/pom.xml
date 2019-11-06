@@ -17,7 +17,7 @@
 
   <properties>
     <container.image>interledger4j/java-ilpv4-connector</container.image>
-    <container.version>${version}</container.version>
+    <container.version>${project.version}</container.version>
   </properties>
 
   <build>
