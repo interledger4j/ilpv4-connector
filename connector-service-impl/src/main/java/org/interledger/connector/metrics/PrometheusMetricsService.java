@@ -16,7 +16,6 @@ import java.util.Objects;
  */
 public class PrometheusMetricsService implements MetricsService {
 
-  private static final String EMPTY_RESULT = "";
   private static final String EMPTY_REJECT_CODE = "";
   private static final String SETTLEMENT_SUCCEEDED = "succeeded";
   private static final String SETTLEMENT_FAILED = "failed";

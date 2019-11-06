@@ -59,8 +59,6 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
 
   private static final String AUTH_DECISIONS_CACHE_NAME = "ilpOverHttpAuthenticationDecisionsCache";
 
-  private final CacheMetricsCollector cacheMetrics;
-
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final Decryptor decryptor;
   //  Used to construct an HMAC of an authentication token (note that in `JWT_HS_256`, the token itself is derived
@@ -84,7 +82,6 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
 
     this.ephemeralHmacBytes = this.generate32RandomBytes();
     this.decryptor = Objects.requireNonNull(decryptor);
-    this.cacheMetrics = Objects.requireNonNull(cacheMetrics);
 
     ilpOverHttpAuthenticationDecisions = Caffeine.newBuilder()
         .recordStats() // Publish stats to prometheus
@@ -164,7 +161,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
               }
             });
 
-    this.cacheMetrics.addCache(AUTH_DECISIONS_CACHE_NAME, ilpOverHttpAuthenticationDecisions);
+    Objects.requireNonNull(cacheMetrics).addCache(AUTH_DECISIONS_CACHE_NAME, ilpOverHttpAuthenticationDecisions);
   }
 
   @Override

@@ -13,7 +13,6 @@ import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings.Builder;
 import org.interledger.connector.metrics.MetricsService;
-import org.interledger.connector.packetswitch.filters.PacketSwitchFilterChain;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;
