@@ -69,6 +69,11 @@ spring:
 
 interledger:
   connector:
+    # The amount of time that Connector will wait around for a fulfillment/rejection. (default to 30000)
+    # maxHoldTimeMillis: 30000
+    # The minimum time the connector wants to budget for getting a message to the accounts its trading on. Budget is
+    # mainly to cover the latency to send the fulfillment packet to the immediate downstream node. (default 1000)
+    # minMessageWindowMillis: 10000
     settlementEngines:
       connectionDefaults:
         # Default connect timeout (in milliseconds).
