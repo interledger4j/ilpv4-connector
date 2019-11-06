@@ -29,6 +29,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
+/**
+ * Unit tests for {@link MaxPacketAmountFilterTest}.
+ */
 public class MaxPacketAmountFilterTest {
 
   @Rule
@@ -79,9 +82,9 @@ public class MaxPacketAmountFilterTest {
     InterledgerPreparePacket prepare = createPrepareWithAmount(1001);
     InterledgerResponsePacket response = filter.doFilter(settings, prepare, filterChain);
     assertThat(response).isInstanceOf(InterledgerRejectPacket.class)
-      .extracting("code", "message")
-      .containsExactly(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE,
-        "Packet size too large: maxAmount=1000 actualAmount=1001");
+        .extracting("code", "message")
+        .containsExactly(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE,
+            "Packet size too large: maxAmount=1000 actualAmount=1001");
     verify(filterChain, times(0)).doFilter(settings, prepare);
   }
 
@@ -98,12 +101,10 @@ public class MaxPacketAmountFilterTest {
 
   private InterledgerPreparePacket createPrepareWithAmount(long amount) {
     return InterledgerPreparePacket.builder()
-      .executionCondition(InterledgerCondition.of(new byte[32]))
-      .amount(UnsignedLong.valueOf(amount))
-      .expiresAt(Instant.now())
-      .destination(InterledgerAddress.of("example.destination"))
-      .build();
-
-
+        .executionCondition(InterledgerCondition.of(new byte[32]))
+        .amount(UnsignedLong.valueOf(amount))
+        .expiresAt(Instant.now())
+        .destination(InterledgerAddress.of("example.destination"))
+        .build();
   }
 }

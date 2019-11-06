@@ -102,7 +102,5 @@ public class OutgoingMaxPacketAmountLinkFilterTest {
         .expiresAt(Instant.now())
         .destination(InterledgerAddress.of("example.destination"))
         .build();
-
-
   }
 }

@@ -4,7 +4,6 @@ import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.metrics.MetricsService;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerResponsePacket;
 
 import java.util.Objects;
@@ -21,7 +20,7 @@ public class OutgoingStatsLinkFilter extends AbstractLinkFilter implements LinkF
    * Required-args Constructor.
    *
    * @param operatorAddressSupplier A {@link Supplier} of this Connector's operator {@link InterledgerAddress}.
-   * @param metricsService       A {@link MetricsService}.
+   * @param metricsService          A {@link MetricsService}.
    */
   public OutgoingStatsLinkFilter(
       final Supplier<InterledgerAddress> operatorAddressSupplier, final MetricsService metricsService
@@ -41,6 +40,7 @@ public class OutgoingStatsLinkFilter extends AbstractLinkFilter implements LinkF
     Objects.requireNonNull(filterChain);
 
     try {
+      this.metricsService.trackOutgoingPacketPrepared(destinationAccountSettings, outgoingPreparePacket);
       return filterChain.doFilter(destinationAccountSettings, outgoingPreparePacket)
           .map(
               //////////////////////
@@ -58,7 +58,7 @@ public class OutgoingStatsLinkFilter extends AbstractLinkFilter implements LinkF
                 return interledgerRejectPacket;
               }
           );
-    } catch (InterledgerProtocolException e) {
+    } catch (Exception e) {
       metricsService.trackOutgoingPacketFailed(destinationAccountSettings);
       throw e;
     }

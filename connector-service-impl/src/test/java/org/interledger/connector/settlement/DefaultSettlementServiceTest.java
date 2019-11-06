@@ -92,7 +92,7 @@ public class DefaultSettlementServiceTest {
     try {
       settlementService.onIncomingSettlementPayment(UUID.randomUUID().toString(), SETTLEMENT_ACCOUNT_ID, null);
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("incomingSettlement must not be null"));
+      assertThat(e.getMessage(), is("incomingSettlementInSettlementUnits must not be null"));
       throw e;
     }
   }

@@ -46,7 +46,7 @@ import org.interledger.connector.packetswitch.filters.MaxPacketAmountFilter;
 import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
 import org.interledger.connector.packetswitch.filters.PeerProtocolPacketFilter;
 import org.interledger.connector.packetswitch.filters.RateLimitIlpPacketFilter;
-import org.interledger.connector.packetswitch.filters.StatsPacketFilter;
+import org.interledger.connector.packetswitch.filters.PacketMetricsFilter;
 import org.interledger.connector.packetswitch.filters.ValidateFulfillmentPacketFilter;
 import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
@@ -390,7 +390,7 @@ public class SpringConnectorConfig {
     final ImmutableList.Builder<PacketSwitchFilter> filterList = ImmutableList.builder();
 
     // This goes first so that it counts all fulfill/reject packets.
-    filterList.add(new StatsPacketFilter(packetRejector, metricsService));
+    filterList.add(new PacketMetricsFilter(packetRejector, metricsService));
 
     if (connectorSettings.enabledFeatures().isRateLimitingEnabled()) {
       filterList.add(

@@ -1,4 +1,4 @@
-package org.interledger.connector.links.filters;
+package org.interledger.connector.packetswitch.filters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
@@ -13,7 +13,6 @@ import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings.Builder;
 import org.interledger.connector.metrics.MetricsService;
-import org.interledger.connector.packetswitch.filters.PacketSwitchFilterChain;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;
@@ -35,14 +34,12 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 import java.time.Instant;
-import java.util.function.Supplier;
 
 /**
- * Unit tests for {@link OutgoingStatsLinkFilter}.
+ * Unit tests for {@link PacketMetricsFilter}.
  */
-public class OutgoingStatsLinkFilterTest {
+public class PacketMetricsFilterTest {
 
-  private static final Supplier<InterledgerAddress> OPERATOR_ADDRESS = () -> InterledgerAddress.of("example.operator");
   private static final InterledgerAddress DESTINATION_ADDRESS = InterledgerAddress.of("example.destination");
 
   @Rule
@@ -51,17 +48,17 @@ public class OutgoingStatsLinkFilterTest {
   public ExpectedException expectedException = ExpectedException.none();
 
   @Mock
-  private LinkFilterChain filterChainMock;
+  private PacketSwitchFilterChain filterChainMock;
   @Mock
   private PacketRejector packetRejectorMock;
   @Mock
   private MetricsService metricsServiceMock;
 
-  private OutgoingStatsLinkFilter filter;
+  private PacketMetricsFilter filter;
 
   @Before
   public void setUp() {
-    filter = new OutgoingStatsLinkFilter(OPERATOR_ADDRESS, metricsServiceMock);
+    filter = new PacketMetricsFilter(packetRejectorMock, metricsServiceMock);
   }
 
   @Test
@@ -73,8 +70,8 @@ public class OutgoingStatsLinkFilterTest {
     assertThat(actual).isEqualTo(fulfillPacket());
 
     verifyNoMoreInteractions(packetRejectorMock);
-    verify(metricsServiceMock).trackOutgoingPacketPrepared(accountSettings(), preparePacket());
-    verify(metricsServiceMock).trackOutgoingPacketFulfilled(accountSettings(), fulfillPacket());
+    verify(metricsServiceMock).trackIncomingPacketPrepared(accountSettings(), preparePacket());
+    verify(metricsServiceMock).trackIncomingPacketFulfilled(accountSettings(), fulfillPacket());
     verifyNoMoreInteractions(metricsServiceMock);
   }
 
@@ -87,8 +84,8 @@ public class OutgoingStatsLinkFilterTest {
     assertThat(actual).isEqualTo(rejectPacket());
 
     verifyNoMoreInteractions(packetRejectorMock);
-    verify(metricsServiceMock).trackOutgoingPacketPrepared(accountSettings(), preparePacket());
-    verify(metricsServiceMock).trackOutgoingPacketRejected(accountSettings(), rejectPacket());
+    verify(metricsServiceMock).trackIncomingPacketPrepared(accountSettings(), preparePacket());
+    verify(metricsServiceMock).trackIncomingPacketRejected(accountSettings(), rejectPacket());
     verifyNoMoreInteractions(metricsServiceMock);
   }
 
@@ -106,8 +103,8 @@ public class OutgoingStatsLinkFilterTest {
       fail();
     } catch (Exception e) {
       verifyNoMoreInteractions(packetRejectorMock);
-      verify(metricsServiceMock).trackOutgoingPacketPrepared(accountSettings, preparePacket);
-      verify(metricsServiceMock).trackOutgoingPacketFailed(accountSettings);
+      verify(metricsServiceMock).trackIncomingPacketPrepared(accountSettings, preparePacket);
+      verify(metricsServiceMock).trackIncomingPacketFailed(accountSettings);
       verifyNoMoreInteractions(metricsServiceMock);
       throw e;
     }

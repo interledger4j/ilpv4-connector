@@ -41,7 +41,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import java.math.BigInteger;
 import java.time.Instant;
@@ -58,6 +59,10 @@ public class OutgoingBalanceLinkFilterTest {
   private static final Supplier<InterledgerAddress> operatorAddressSupplier = () ->
       InterledgerAddress.of("example.operator");
   private static final InterledgerAddress DESTINATION_ADDRESS = InterledgerAddress.of("example.destination");
+
+  @Rule
+  public MockitoRule mockitoRule = MockitoJUnit.rule();
+
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
 
@@ -74,7 +79,6 @@ public class OutgoingBalanceLinkFilterTest {
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
     this.linkFilter = new OutgoingBalanceLinkFilter(
         operatorAddressSupplier, balanceTrackerMock, settlementServiceMock, eventBusMock
     );

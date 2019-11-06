@@ -100,6 +100,7 @@ public class RateLimitIlpPacketFilterTest {
 
   @Test
   public void doFilterWithNoAccount() {
+    when(cacheMock.get(any(), any())).thenReturn(Optional.empty());
     filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
     filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
     filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
@@ -107,6 +108,8 @@ public class RateLimitIlpPacketFilterTest {
 
   @Test
   public void doFilterWithNoMaxPacketAmount() {
+    when(cacheMock.get(any(), any())).thenReturn(Optional.of(rateLimiterMock));
+    when(rateLimiterMock.tryAcquire(1)).thenReturn(true);
     when(rateLimitSettingsMock.maxPacketsPerSecond()).thenReturn(Optional.empty());
 
     InterledgerResponsePacket response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
@@ -127,17 +130,21 @@ public class RateLimitIlpPacketFilterTest {
 
   @Test
   public void doFilterWithInsufficientTickets() {
+    when(cacheMock.get(any(), any())).thenReturn(Optional.of(rateLimiterMock));
+    when(rateLimiterMock.acquire()).thenReturn(0.0);
     when(rateLimitSettingsMock.maxPacketsPerSecond()).thenReturn(Optional.of(1));
 
     InterledgerResponsePacket response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
-    assertThat(response instanceof InterledgerFulfillPacket, is(true));
-    response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerRejectPacket, is(true));
+
     response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
     assertThat(response instanceof InterledgerRejectPacket, is(true));
 
-    verify(filterChainMock, times(1)).doFilter(accountSettingsMock, PREPARE_PACKET);
-    verify(packetRejectorMock, times(2)).reject(any(), any(), any(), any());
+    response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
+    assertThat(response instanceof InterledgerRejectPacket, is(true));
+
+    verifyNoInteractions(filterChainMock);
+    verify(packetRejectorMock, times(3)).reject(any(), any(), any(), any());
   }
 
   ///////////////////////
@@ -147,7 +154,6 @@ public class RateLimitIlpPacketFilterTest {
   @Test
   public void doFilterWithNoPermits() {
     when(cacheMock.get(any(), any())).thenReturn(Optional.of(rateLimiterMock));
-
     when(rateLimiterMock.tryAcquire(1)).thenReturn(Boolean.FALSE);
 
     InterledgerResponsePacket response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
