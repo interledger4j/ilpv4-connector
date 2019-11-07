@@ -8,6 +8,8 @@ import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+
+import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
@@ -45,7 +47,10 @@ public abstract class AbstractControllerTest {
   protected EncryptionService encryptionServiceMock;
 
   @MockBean
-  protected LinkSettingsFactory linkSettingsFactory;
+  protected LinkSettingsFactory linkSettingsFactoryMock;
+
+  @MockBean
+  protected CacheMetricsCollector cacheMetricsCollectorMock;
 
   protected String asJsonString(final Object obj) throws JsonProcessingException {
     return this.objectMapper.writeValueAsString(obj);

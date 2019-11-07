@@ -11,9 +11,7 @@ import java.math.BigInteger;
 /**
  * Models the `Quantity` JSON object as defined in the Settlement Engine RFC.
  *
- * TODO: Fix this URL once the RFC is published.
- *
- * @see "TBD"
+ * @see "https://github.com/interledger/rfcs/blob/master/0038-settlement-engines/0038-settlement-engines.md#quantity-object"
  */
 @Value.Immutable
 @JsonSerialize(as = ImmutableSettlementQuantity.class)
