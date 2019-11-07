@@ -153,7 +153,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       this.configureAccounts();
     }
 
-    this.configureStaticRoutes();
+//    this.configureStaticRoutes();
 
     this.getExternalRoutingService().start();
   }

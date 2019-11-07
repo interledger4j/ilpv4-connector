@@ -21,8 +21,11 @@ import org.interledger.link.http.OutgoingLinkSettings;
 import org.interledger.stream.Denomination;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Set;
 
 /**
  * <p>A very simple topology that simulates a single ILP-over-HTTP (BLAST) connection between two Connectors to
@@ -116,7 +119,8 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
     {
       final ConnectorServer aliceServer = new ConnectorServer(constructConnectorSettingsForAlice());
       aliceServer.setPort(ALICE_PORT);
-      topology.addNode(ALICE_CONNECTOR_ADDRESS, new ConnectorServerNode(ALICE, aliceServer));
+      topology.addNode(ALICE_CONNECTOR_ADDRESS, new ConnectorServerNode(ALICE, aliceServer,
+          constructStaticRoutesForAlice()));
     }
 
     ///////////////////
@@ -125,7 +129,8 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
     {
       final ConnectorServer bobServer = new ConnectorServer(constructConnectorSettingsForBob());
       bobServer.setPort(BOB_PORT);
-      topology.addNode(BOB_CONNECTOR_ADDRESS, new ConnectorServerNode(BOB, bobServer));
+      topology.addNode(BOB_CONNECTOR_ADDRESS, new ConnectorServerNode(BOB, bobServer,
+          constructStaticRoutesForBob()));
     }
 
     LOGGER.info("\n" +
@@ -224,15 +229,18 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
         //A simulated routing secret, which is a seed used for generating routing table auth values. Represents the
         // plaintext value of `shh`, encrypted.
         .routingSecret("enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=")
-        // Always route packets to Bob...
-        .staticRoutes(Lists.newArrayList(StaticRoute.builder()
-          .prefix(InterledgerAddressPrefix.from(BOB_CONNECTOR_ADDRESS))
-          .accountId(BOB_ACCOUNT)
-          .build()
-        ))
         .build()
       )
       .build();
+  }
+
+  private static Set<StaticRoute> constructStaticRoutesForAlice() {
+    // Always route packets to Bob...
+    return Sets.newHashSet(StaticRoute.builder()
+        .prefix(InterledgerAddressPrefix.from(BOB_CONNECTOR_ADDRESS))
+        .accountId(BOB_ACCOUNT)
+        .build()
+    );
   }
 
   /**
@@ -290,15 +298,18 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
         //A simulated routing secret, which is a seed used for generating routing table auth values. Represents the
         // plaintext value of `shh`, encrypted.
         .routingSecret("enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=")
-        // Always route packets to Alice...
-        .staticRoutes(Lists.newArrayList(StaticRoute.builder()
-          .prefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
-          .accountId(ALICE_ACCOUNT)
-          .build()
-        ))
         .build()
       )
       .build();
+  }
+
+  private static Set<StaticRoute> constructStaticRoutesForBob() {
+    // Always route packets to Alice...
+    return Sets.newHashSet(StaticRoute.builder()
+        .prefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
+        .accountId(ALICE_ACCOUNT)
+        .build()
+    );
   }
 
 }
