@@ -260,12 +260,4 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       .forEach(StatefulLink::connect);
   }
 
-  private void configureStaticRoutes() {
-    // FIXME we shouldn't be storing these here anymore
-    List<? extends StaticRoute> staticRoutes = connectorSettingsSupplier.get().globalRoutingSettings().staticRoutes();
-    if (!staticRoutes.isEmpty()) {
-      staticRoutesManager.updateAll(Sets.newHashSet(staticRoutes));
-    }
-  }
-
 }

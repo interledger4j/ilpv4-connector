@@ -1,12 +1,10 @@
 package org.interledger.connector.settings;
 
-import com.google.common.collect.Lists;
-import org.immutables.value.Value;
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.routing.StaticRoute;
+
+import org.immutables.value.Value;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -32,7 +30,6 @@ public interface GlobalRoutingSettings {
    * An optionally-defined account that should be used as the default route for all un-routed traffic. If empty, the
    * default route is disabled.
    *
-   * @see {@link StaticRoute#STANDARD_DEFAULT_ROUTE}.
    */
   Optional<AccountId> defaultRoute();
 
@@ -81,16 +78,6 @@ public interface GlobalRoutingSettings {
   @Value.Default
   default int maxEpochsPerRoutingTable() {
     return 50;
-  }
-
-  /**
-   * Contains any preconfigured static routes for this connector.
-   *
-   * @return An Collection of type {@link StaticRoute}.
-   */
-  @Value.Default
-  default List<? extends StaticRoute> staticRoutes() {
-    return Lists.newArrayList();
   }
 
   @Value.Check

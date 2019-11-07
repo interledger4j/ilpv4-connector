@@ -2,18 +2,15 @@ package org.interledger.connector.server.spring.settings.properties;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.connector.routing.StaticRoute;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.link.Link;
 
-import com.google.common.collect.Lists;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -153,7 +150,6 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     private String routingSecret;
     private boolean useParentForDefaultRoute;
     private Duration routeBroadcastInterval = Duration.ofSeconds(30);
-    private List<StaticRoute> staticRoutes = Lists.newArrayList();
 
     @Override
     public boolean isRouteBroadcastEnabled() {
@@ -227,13 +223,5 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
       this.routeBroadcastInterval = routeBroadcastInterval;
     }
 
-    @Override
-    public List<StaticRoute> staticRoutes() {
-      return staticRoutes;
-    }
-
-    public void setStaticRoutes(List<StaticRoute> staticRoutes) {
-      this.staticRoutes = staticRoutes;
-    }
   }
 }
