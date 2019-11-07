@@ -87,12 +87,3 @@ interledger:
       # A simulated routing secret, which is a seed used for generating routing table auth values.
       # Represents the plaintext value of `shh`, encrypted.
       routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
-      # Static Routes
-      staticRoutes:
-        # ILP address prefix that this static route applies to. Configured routes take precedence over the same or
-        # shorter prefixes that are local or published by peers. More specific prefixes will still take precedence.
-        # NOTE: Prefixes should NOT include a trailing period.
-        - targetPrefix: test.spsp.receiver
-          # ID of the account that destinations matching `targetPrefix` should be forwarded to. Must be one of the
-          # accounts in `accounts`.
-          peerAccountId: receiver
