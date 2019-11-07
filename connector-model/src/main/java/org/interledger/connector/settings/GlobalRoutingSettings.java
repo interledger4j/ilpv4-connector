@@ -1,9 +1,9 @@
 package org.interledger.connector.settings;
 
 import com.google.common.collect.Lists;
-import org.interledger.connector.StaticRoute;
 import org.immutables.value.Value;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.routing.StaticRoute;
 
 import java.time.Duration;
 import java.util.List;

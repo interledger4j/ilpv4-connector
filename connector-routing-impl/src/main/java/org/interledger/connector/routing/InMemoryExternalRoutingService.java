@@ -201,10 +201,10 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
         .forEach(staticRoute -> {
 
           // ...attempt to register a CCP-enabled account (duplicate requests are fine).
-          routeBroadcaster.registerCcpEnabledAccount(staticRoute.peerAccountId());
+          routeBroadcaster.registerCcpEnabledAccount(staticRoute.accountId());
 
           // This will add the prefix correctly _and_ update the forwarding table...
-          updatePrefix(staticRoute.targetPrefix());
+          updatePrefix(staticRoute.prefix());
         });
 
     ////////////////////
@@ -417,7 +417,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     // Static-routes have highest priority...
     return Optional.ofNullable(
         connectorSettingsSupplier.get().globalRoutingSettings().staticRoutes().stream()
-            .filter(staticRoute -> staticRoute.targetPrefix().equals(addressPrefix))
+            .filter(staticRoute -> staticRoute.prefix().equals(addressPrefix))
             .findFirst()
             .map(staticRoute -> {
               // If there's a static route, then use it, even if the account doesn't exist. In this
@@ -425,7 +425,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
               // comes into existence, then the Router and/or Link will simply reject if anything is attempted.
               return (Route) ImmutableRoute.builder()
                   .routePrefix(addressPrefix)
-                  .nextHopAccountId(staticRoute.peerAccountId())
+                  .nextHopAccountId(staticRoute.accountId())
                   .auth(this.constructRouteAuth(addressPrefix))
                   .build();
             })

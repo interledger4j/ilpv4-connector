@@ -1,12 +1,12 @@
 package org.interledger.connector.it.topologies.ilpoverhttp;
 
-import org.interledger.connector.StaticRoute;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.it.topologies.AbstractTopology;
 import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.it.topology.nodes.ConnectorServerNode;
+import org.interledger.connector.routing.StaticRoute;
 import org.interledger.connector.server.ConnectorServer;
 import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -226,8 +226,8 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
         .routingSecret("enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=")
         // Always route packets to Bob...
         .staticRoutes(Lists.newArrayList(StaticRoute.builder()
-          .targetPrefix(InterledgerAddressPrefix.from(BOB_CONNECTOR_ADDRESS))
-          .peerAccountId(BOB_ACCOUNT)
+          .prefix(InterledgerAddressPrefix.from(BOB_CONNECTOR_ADDRESS))
+          .accountId(BOB_ACCOUNT)
           .build()
         ))
         .build()
@@ -292,8 +292,8 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
         .routingSecret("enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=")
         // Always route packets to Alice...
         .staticRoutes(Lists.newArrayList(StaticRoute.builder()
-          .targetPrefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
-          .peerAccountId(ALICE_ACCOUNT)
+          .prefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
+          .accountId(ALICE_ACCOUNT)
           .build()
         ))
         .build()
