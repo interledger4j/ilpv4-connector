@@ -2,6 +2,7 @@ package org.interledger.connector.packetswitch.filters;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.metrics.MetricsService;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
@@ -9,13 +10,10 @@ import org.interledger.link.LinkId;
 import org.interledger.link.PacketRejector;
 
 import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.RateLimiter;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 /**
  * <p>An implementation of {@link PacketSwitchFilter} for limiting per-account traffic on this connector.</p>
@@ -28,34 +26,26 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("UnstableApiUsage")
 public class RateLimitIlpPacketFilter extends AbstractPacketFilter implements PacketSwitchFilter {
 
+  private final MetricsService metricsService;
+
   // Account-based rate-limiters.
   private final Cache<AccountId, Optional<RateLimiter>> rateLimiters;
 
   /**
-   * Required-args Constructor.
-   */
-  public RateLimitIlpPacketFilter(final PacketRejector packetRejector) {
-    this(packetRejector, buildDefaultCache());
-  }
-
-  /**
    * Required-args Constructor; exists only for testing.
+   *
+   * @param packetRejector    A {@link PacketRejector}.
+   * @param metricsService A {@link MetricsService}.
+   * @param rateLimiterCache  A {@link Cache} for rate-limiting decisions.
    */
-  @VisibleForTesting
-  RateLimitIlpPacketFilter(
+  public RateLimitIlpPacketFilter(
       final PacketRejector packetRejector,
+      final MetricsService metricsService,
       final Cache<AccountId, Optional<RateLimiter>> rateLimiterCache
   ) {
     super(packetRejector);
+    this.metricsService = Objects.requireNonNull(metricsService);
     this.rateLimiters = Objects.requireNonNull(rateLimiterCache);
-  }
-
-  private static Cache<AccountId, Optional<RateLimiter>> buildDefaultCache() {
-    return Caffeine.newBuilder()
-        //.maximumSize(100) // Not enabled for now in order to support many accounts.
-        .expireAfterAccess(30, TimeUnit.SECONDS)
-        // TODO: Should this be Optional.empty?
-        .build((key) -> null);
   }
 
   @Override
@@ -64,7 +54,6 @@ public class RateLimitIlpPacketFilter extends AbstractPacketFilter implements Pa
       final InterledgerPreparePacket sourcePreparePacket,
       final PacketSwitchFilterChain filterChain
   ) {
-
     return rateLimiters
         .get(
             sourceAccountSettings.accountId(),
@@ -74,6 +63,7 @@ public class RateLimitIlpPacketFilter extends AbstractPacketFilter implements Pa
           if (rateLimiter.tryAcquire(1)) {
             return filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
           } else {
+            this.metricsService.trackNumRateLimitedPackets(sourceAccountSettings);
             return packetRejector.reject(
                 LinkId.of(sourceAccountSettings.accountId().value()),
                 sourcePreparePacket,
@@ -85,6 +75,5 @@ public class RateLimitIlpPacketFilter extends AbstractPacketFilter implements Pa
         // There is no RateLimiter for this account (because RateLimiting is disabled) so simply continue the
         // FilterChain.
         .orElseGet(() -> filterChain.doFilter(sourceAccountSettings, sourcePreparePacket));
-
   }
 }

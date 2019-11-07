@@ -2,7 +2,6 @@ package org.interledger.connector;
 
 import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.balances.BalanceTracker;
-import org.interledger.connector.core.events.ConnectorEvent;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
@@ -47,8 +46,7 @@ public interface ILPv4Connector {
   SettlementService getSettlementService();
 
   /**
-   * Accessor for the {@link EventBus} that this Connector uses to propagate internal events of type {@link
-   * ConnectorEvent}.
+   * Accessor for the {@link EventBus} that this Connector uses to propagate internal events of type ConnectorEvent.
    */
   EventBus getEventBus();
 }

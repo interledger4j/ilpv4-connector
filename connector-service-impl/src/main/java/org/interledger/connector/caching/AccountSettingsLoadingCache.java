@@ -1,12 +1,13 @@
 package org.interledger.connector.caching;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.common.annotations.VisibleForTesting;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.annotations.VisibleForTesting;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -25,8 +26,8 @@ public class AccountSettingsLoadingCache {
    * hit.
    */
   private static final BiFunction<AccountId, AccountSettingsRepository, Optional<AccountSettings>>
-    ACCOUNT_SETTINGS_CACHE_POPULATOR =
-    (accountId, accountSettingsRepository) -> accountSettingsRepository.findByAccountIdWithConversion(accountId);
+      ACCOUNT_SETTINGS_CACHE_POPULATOR =
+      (accountId, accountSettingsRepository) -> accountSettingsRepository.findByAccountIdWithConversion(accountId);
 
   private final AccountSettingsRepository accountSettingsRepository;
 
@@ -41,17 +42,18 @@ public class AccountSettingsLoadingCache {
   @VisibleForTesting
   public AccountSettingsLoadingCache(final AccountSettingsRepository accountSettingsRepository) {
     this(accountSettingsRepository, Caffeine.newBuilder()
-      .expireAfterAccess(15, TimeUnit.MINUTES) // Set very high just for testing...
-      .maximumSize(5000)
-      // The value stored in the Cache is the AccountSettings converted from the entity so we don't have to convert
-      // on every ILPv4 packet switch.
-      .build((accountId) -> accountSettingsRepository.findByAccountIdWithConversion(accountId))
+        // No stats recording in the cache because this is only used for testing...
+        .expireAfterAccess(15, TimeUnit.MINUTES) // Set very high just for testing...
+        .maximumSize(5000)
+        // The value stored in the Cache is the AccountSettings converted from the entity so we don't have to convert
+        // on every ILPv4 packet switch.
+        .build((accountId) -> accountSettingsRepository.findByAccountIdWithConversion(accountId))
     );
   }
 
   public AccountSettingsLoadingCache(
-    final AccountSettingsRepository accountSettingsRepository,
-    final Cache<AccountId, Optional<AccountSettings>> accountSettingsCache
+      final AccountSettingsRepository accountSettingsRepository,
+      final Cache<AccountId, Optional<AccountSettings>> accountSettingsCache
   ) {
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.accountSettingsCache = Objects.requireNonNull(accountSettingsCache);
@@ -64,13 +66,13 @@ public class AccountSettingsLoadingCache {
    * @param accountId The {@link AccountId} of the account to retrieve.
    *
    * @return An optionally present {@link AccountSettings}. If no account exists in the underlying datastore, then this
-   * methods returns {@link Optional#empty()} .
+   *     methods returns {@link Optional#empty()} .
    */
   public Optional<AccountSettings> getAccount(final AccountId accountId) {
     return this.accountSettingsCache.get(
-      accountId,
-      // Populate the cache if necessary...
-      $ -> ACCOUNT_SETTINGS_CACHE_POPULATOR.apply(accountId, accountSettingsRepository)
+        accountId,
+        // Populate the cache if necessary...
+        $ -> ACCOUNT_SETTINGS_CACHE_POPULATOR.apply(accountId, accountSettingsRepository)
     );
   }
 

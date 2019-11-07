@@ -10,8 +10,9 @@ import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.accounts.SettlementEngineNotConfiguredProblem;
 import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.core.settlement.SettlementQuantity;
-import org.interledger.connector.events.LocalSettlementProcessedEvent;
-import org.interledger.connector.events.SettlementInitiatedEvent;
+import org.interledger.connector.events.IncomingSettlementFailedEvent;
+import org.interledger.connector.events.IncomingSettlementSucceededEvent;
+import org.interledger.connector.events.OutgoingSettlementInitiationSucceededEvent;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.settlement.client.InitiateSettlementRequest;
@@ -60,47 +61,68 @@ public class DefaultSettlementService implements SettlementService {
   }
 
   @Override
-  public SettlementQuantity onLocalSettlementPayment(
-      final String idempotencyKey, final SettlementEngineAccountId settlementEngineAccountId,
+  public SettlementQuantity onIncomingSettlementPayment(
+      final String idempotencyKey,
+      final SettlementEngineAccountId settlementEngineAccountId,
       final SettlementQuantity incomingSettlementInSettlementUnits
   ) {
     Objects.requireNonNull(idempotencyKey, "idempotencyKey must not be null");
     Objects.requireNonNull(settlementEngineAccountId, "settlementEngineAccountId must not be null");
-    Objects.requireNonNull(incomingSettlementInSettlementUnits, "incomingSettlement must not be null");
+    Objects.requireNonNull(incomingSettlementInSettlementUnits, "incomingSettlementInSettlementUnits must not be null");
 
     final AccountSettings accountSettings = this.accountSettingsRepository
         .findBySettlementEngineAccountIdWithConversion(settlementEngineAccountId)
-        .orElseThrow(() -> new AccountBySettlementEngineAccountNotFoundProblem(settlementEngineAccountId));
+        .orElseThrow(() -> {
+          eventBus.post(IncomingSettlementFailedEvent.builder()
+              .idempotencyKey(idempotencyKey)
+              .settlementEngineAccountId(settlementEngineAccountId)
+              .incomingSettlementInSettlementUnits(incomingSettlementInSettlementUnits));
+          return new AccountBySettlementEngineAccountNotFoundProblem(settlementEngineAccountId);
+        });
 
-    // Determine the normalized SettlementQuantity (i.e., translate from Settlement Ledger units to ILP Clearing Ledger
-    // units
-    final BigInteger settlementQuantityToAdjustInClearingLayer = NumberScalingUtils.translate(
-        incomingSettlementInSettlementUnits.amount(),
-        incomingSettlementInSettlementUnits.scale(),
-        accountSettings.assetScale()
-    );
+    try {
+      // Determine the normalized SettlementQuantity (i.e., translate from Settlement Ledger units to ILP
+      // Clearing layer units
+      final BigInteger settlementQuantityToAdjustInClearingLayer = NumberScalingUtils.translate(
+          incomingSettlementInSettlementUnits.amount(),
+          incomingSettlementInSettlementUnits.scale(),
+          accountSettings.assetScale()
+      );
 
-    // Update the balance in the clearing layer based upon what was settled to this account.
-    this.balanceTracker.updateBalanceForIncomingSettlement(
-        idempotencyKey, accountSettings.accountId(), settlementQuantityToAdjustInClearingLayer.longValue()
-    );
+      // Update the balance in the clearing layer based upon what was settled to this account.
+      this.balanceTracker.updateBalanceForIncomingSettlement(
+          idempotencyKey, accountSettings.accountId(), settlementQuantityToAdjustInClearingLayer.longValue()
+      );
 
-    final SettlementQuantity settledQuantity =
-        SettlementQuantity.builder()
-            .amount(settlementQuantityToAdjustInClearingLayer)
-            .scale(accountSettings.assetScale())
-            .build();
+      final SettlementQuantity settledQuantity =
+          SettlementQuantity.builder()
+              .amount(settlementQuantityToAdjustInClearingLayer)
+              .scale(accountSettings.assetScale())
+              .build();
 
-    // Notify the system that a settlement was processed...
-    eventBus.post(LocalSettlementProcessedEvent.builder()
-        .idempotencyKey(idempotencyKey)
-        .settlementEngineAccountId(settlementEngineAccountId)
-        .incomingSettlementInSettlementUnits(incomingSettlementInSettlementUnits)
-        .processedQuantity(settledQuantity)
-        .build());
+      // Notify the system that a settlement was processed...
+      eventBus.post(IncomingSettlementSucceededEvent.builder()
+          .accountSettings(accountSettings)
+          .idempotencyKey(idempotencyKey)
+          .settlementEngineAccountId(settlementEngineAccountId)
+          .incomingSettlementInSettlementUnits(incomingSettlementInSettlementUnits)
+          .processedQuantity(settledQuantity)
+          .build());
 
-    // This is the amount that was successfully adjusted in the clearing layer.
-    return settledQuantity;
+      // This is the amount that was successfully adjusted in the clearing layer.
+      return settledQuantity;
+    } catch (Exception e) {
+      final SettlementServiceException settlementServiceException = new SettlementServiceException(e,
+          accountSettings.accountId(), settlementEngineAccountId);
+      eventBus.post(IncomingSettlementFailedEvent.builder()
+          .accountSettings(accountSettings)
+          .idempotencyKey(idempotencyKey)
+          .settlementEngineAccountId(settlementEngineAccountId)
+          .incomingSettlementInSettlementUnits(incomingSettlementInSettlementUnits)
+          .settlementServiceException(settlementServiceException)
+          .build());
+      throw settlementServiceException;
+    }
   }
 
   @Override
@@ -251,11 +273,11 @@ public class DefaultSettlementService implements SettlementService {
                 .scale(clearingScale)
                 .build();
 
-            eventBus.post(SettlementInitiatedEvent.builder()
+            eventBus.post(OutgoingSettlementInitiationSucceededEvent.builder()
                 .idempotencyKey(idempotencyKey)
                 .accountSettings(accountSettings)
                 .settlementQuantityInClearingUnits(settlementQuantityInClearingUnits)
-                .processedQuantity(settledQuantity)
+                .processedQuantityInClearingUnits(settledQuantity)
                 .build());
 
             return settledQuantity;

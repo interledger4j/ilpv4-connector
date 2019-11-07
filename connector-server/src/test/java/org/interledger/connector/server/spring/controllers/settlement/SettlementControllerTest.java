@@ -113,7 +113,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
       .andExpect(header().string(HeaderConstants.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE))
       .andExpect(header().string(IDEMPOTENCY_KEY, idempotenceId));
 
-    verify(settlementServiceMock).onLocalSettlementPayment(
+    verify(settlementServiceMock).onIncomingSettlementPayment(
       SETTLEMENT_IDEMPOTENCE + ":" + idempotenceId,
       settlementEngineAccountId,
       settledSettlementQuantity
@@ -137,7 +137,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
       settledSettlementQuantity.scale(),
       9);
     when(settlementServiceMock
-      .onLocalSettlementPayment(idempotenceId, settlementEngineAccountId, settledSettlementQuantity))
+      .onIncomingSettlementPayment(idempotenceId, settlementEngineAccountId, settledSettlementQuantity))
       .thenReturn(
         SettlementQuantity.builder()
           .amount(clearedSettlementQuantity)
@@ -156,7 +156,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
       .andExpect(header().string(HeaderConstants.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE))
       .andExpect(header().string(IDEMPOTENCY_KEY, idempotenceId));
 
-    verify(settlementServiceMock).onLocalSettlementPayment(
+    verify(settlementServiceMock).onIncomingSettlementPayment(
       SETTLEMENT_IDEMPOTENCE + ":" + idempotenceId,
       settlementEngineAccountId,
       settledSettlementQuantity
