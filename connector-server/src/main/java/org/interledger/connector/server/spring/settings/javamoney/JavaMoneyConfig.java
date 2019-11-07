@@ -1,12 +1,16 @@
 package org.interledger.connector.server.spring.settings.javamoney;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
+import static okhttp3.CookieJar.NO_COOKIES;
+import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.XRP;
+
 import org.interledger.connector.fx.JavaMoneyUtils;
 import org.interledger.connector.javax.money.providers.CryptoCompareRateProvider;
 import org.interledger.connector.javax.money.providers.DropRoundingProvider;
 import org.interledger.connector.javax.money.providers.XrpCurrencyProvider;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.google.common.collect.Lists;
 import okhttp3.ConnectionPool;
 import okhttp3.ConnectionSpec;
 import okhttp3.OkHttpClient;
@@ -25,14 +29,14 @@ import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
-import javax.money.convert.ExchangeRateProvider;
-import javax.money.spi.RoundingProviderSpi;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import static okhttp3.CookieJar.NO_COOKIES;
-import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.XRP;
+import javax.money.convert.ConversionQuery;
+import javax.money.convert.ExchangeRate;
+import javax.money.convert.ExchangeRateProvider;
+import javax.money.spi.RoundingProviderSpi;
 
 /**
  * Configures JavaMoney.
@@ -69,9 +73,9 @@ public class JavaMoneyConfig {
   @Bean
   @Qualifier(FX)
   protected RestTemplate fxRestTemplate(ObjectMapper objectMapper,
-                                        @Qualifier(FX) OkHttp3ClientHttpRequestFactory requestFactory) {
+      @Qualifier(FX) OkHttp3ClientHttpRequestFactory requestFactory) {
     final MappingJackson2HttpMessageConverter httpMessageConverter =
-      new MappingJackson2HttpMessageConverter(objectMapper);
+        new MappingJackson2HttpMessageConverter(objectMapper);
     RestTemplate restTemplate = new RestTemplate(requestFactory);
     restTemplate.setMessageConverters(Lists.newArrayList(httpMessageConverter));
     return restTemplate;
@@ -90,16 +94,17 @@ public class JavaMoneyConfig {
 
   @Bean
   protected CryptoCompareRateProvider cryptoCompareRateProvider(
-    @Qualifier(CRYPTO_COMPARE) Supplier<String> cryptoCompareApiKeySupplier,
-    @Qualifier(FX) RestTemplate restTemplate
+      @Qualifier(CRYPTO_COMPARE) Supplier<String> cryptoCompareApiKeySupplier,
+      @Qualifier(FX) RestTemplate restTemplate,
+      Cache<ConversionQuery, ExchangeRate> fxCache
   ) {
-    return new CryptoCompareRateProvider(cryptoCompareApiKeySupplier, restTemplate);
+    return new CryptoCompareRateProvider(cryptoCompareApiKeySupplier, restTemplate, fxCache);
   }
 
   @Bean
   protected ExchangeRateProvider exchangeRateProvider(CryptoCompareRateProvider cryptoCompareRateProvider) {
     return new CompoundRateProvider(
-      Lists.newArrayList(cryptoCompareRateProvider, new IdentityRateProvider())
+        Lists.newArrayList(cryptoCompareRateProvider, new IdentityRateProvider())
     );
   }
 
@@ -145,12 +150,9 @@ public class JavaMoneyConfig {
   @Qualifier(FX)
   OkHttpClient fxHttpClient(
       @Qualifier(FX) final ConnectionPool fxConnectionPool,
-      @Value("${interledger.connector.fx.connectionDefaults.connectTimeoutMillis:1000}")
-      final long defaultConnectTimeoutMillis,
-      @Value("${interledger.connector.fx.connectionDefaults.readTimeoutMillis:60000}")
-      final long defaultReadTimeoutMillis,
-      @Value("${interledger.connector.fx.connectionDefaults.writeTimeoutMillis:60000}")
-      final long defaultWriteTimeoutMillis
+      @Value("${interledger.connector.fx.connectionDefaults.connectTimeoutMillis:1000}") final long defaultConnectTimeoutMillis,
+      @Value("${interledger.connector.fx.connectionDefaults.readTimeoutMillis:60000}") final long defaultReadTimeoutMillis,
+      @Value("${interledger.connector.fx.connectionDefaults.writeTimeoutMillis:60000}") final long defaultWriteTimeoutMillis
   ) {
     OkHttpClient.Builder builder = new OkHttpClient.Builder();
     ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).build();
@@ -175,10 +177,8 @@ public class JavaMoneyConfig {
   @Bean
   @Qualifier(FX)
   public ConnectionPool fxConnectionPool(
-      @Value("${interledger.connector.fx.connectionDefaults.maxIdleConnections:5}")
-      final int defaultMaxIdleConnections,
-      @Value("${interledger.connector.fx.connectionDefaults.keepAliveMinutes:1}")
-      final long defaultConnectionKeepAliveMinutes
+      @Value("${interledger.connector.fx.connectionDefaults.maxIdleConnections:5}") final int defaultMaxIdleConnections,
+      @Value("${interledger.connector.fx.connectionDefaults.keepAliveMinutes:1}") final long defaultConnectionKeepAliveMinutes
   ) {
     return new ConnectionPool(
         defaultMaxIdleConnections,

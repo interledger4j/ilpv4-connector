@@ -18,6 +18,9 @@ import org.springframework.context.annotation.Configuration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import javax.money.convert.ConversionQuery;
+import javax.money.convert.ExchangeRate;
+
 /**
  * Configuration for manually-used caches (e.g., Caffeine caches).
  */
@@ -85,5 +88,24 @@ public class CaffeineCacheConfig {
     cacheMetricsCollector.addCache("rateLimiterCache", rateLimiterCache);
 
     return rateLimiterCache;
+  }
+
+  /**
+   * Cache used for rate-limiting inside of {@link RateLimitIlpPacketFilter}.
+   *
+   * @return A {@link Cache}.
+   */
+  @Bean
+  public Cache<ConversionQuery, ExchangeRate> fxCache(CacheMetricsCollector cacheMetricsCollector) {
+    final Cache<ConversionQuery, ExchangeRate> fxCache = Caffeine.newBuilder()
+        .recordStats() // Publish stats to prometheus
+        // TODO: Make this configurable in order to support more frequent FX rate lookups.
+        // See https://github.com/sappenin/java-ilpv4-connector/issues/401
+        .expireAfterAccess(30, TimeUnit.SECONDS)
+        .build(); // No default loading function.
+
+    cacheMetricsCollector.addCache("fxCache", fxCache);
+
+    return fxCache;
   }
 }

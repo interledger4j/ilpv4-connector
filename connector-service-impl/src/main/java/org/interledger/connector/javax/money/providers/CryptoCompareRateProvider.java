@@ -3,8 +3,7 @@ package org.interledger.connector.javax.money.providers;
 import static org.javamoney.moneta.spi.AbstractCurrencyConversion.KEY_SCALE;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.annotations.VisibleForTesting;
 import org.javamoney.moneta.convert.ExchangeRateBuilder;
 import org.javamoney.moneta.spi.AbstractRateProvider;
@@ -21,7 +20,7 @@ import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.money.MonetaryException;
@@ -39,22 +38,38 @@ import javax.money.convert.RateType;
  *
  * @see "https://min-api.cryptocompare.com/documentation"
  * @see "https://github.com/JavaMoney/javamoney-lib/blob/master/exchange/exchange-rate-frb/src/main/java/org/javamoney/
- *   moneta/convert/frb/USFederalReserveRateProvider.java"
+ *     moneta/convert/frb/USFederalReserveRateProvider.java"
  */
 public class CryptoCompareRateProvider extends AbstractRateProvider {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CryptoCompareRateProvider.class.getName());
 
   private static final ProviderContext CONTEXT = ProviderContextBuilder.of("CC", RateType.DEFERRED)
-    .set("providerDescription", "CryptoCompare API Rate (https://min-api.cryptocompare.com)").build();
+      .set("providerDescription", "CryptoCompare API Rate (https://min-api.cryptocompare.com)").build();
 
-  private final LoadingCache<ConversionQuery, ExchangeRate> exchangeRateCache;
 
   private final Supplier<String> apiKeySupplier;
   private final RestTemplate restTemplate;
-  private String apiUrlTemplate;
+  private final Cache<ConversionQuery, ExchangeRate> exchangeRateCache;
+
+  private final String apiUrlTemplate;
 
   // TODO: Add spread.
+
+  public CryptoCompareRateProvider(
+      final Supplier<String> apiKeySupplier,
+      final RestTemplate restTemplate,
+      final Cache<ConversionQuery, ExchangeRate> exchangeRateCache
+  ) {
+    super(CONTEXT);
+    this.apiKeySupplier = Objects.requireNonNull(apiKeySupplier);
+    this.restTemplate = Objects.requireNonNull(restTemplate);
+    this.exchangeRateCache = Objects.requireNonNull(exchangeRateCache);
+
+    // Sensible defaults (override with setter-injection)
+    this.apiUrlTemplate
+        = "https://min-api.cryptocompare.com/data/price?fsym={fsym}&tsyms={tsyms}&extraParams=java.ilpv4.connector";
+  }
 
   // The spread is subtracted from the rate when going in either direction,
   // so that the DestinationAmount always ends up being slightly less than
@@ -68,69 +83,13 @@ public class CryptoCompareRateProvider extends AbstractRateProvider {
   //    .toPrecision(15)
   // '0.005'` Set the connector's spread to 0.5%. This is an example for how to pass configuration to the connector.
 
-
-  public CryptoCompareRateProvider(final Supplier<String> apiKeySupplier, final RestTemplate restTemplate) {
-    super(CONTEXT);
-    this.apiKeySupplier = Objects.requireNonNull(apiKeySupplier);
-
-    this.restTemplate = Objects.requireNonNull(restTemplate);
-
-    // Sensible defaults (override with setter-injection)
-    this.apiUrlTemplate =
-      "https://min-api.cryptocompare.com/data/price?fsym={fsym}&tsyms={tsyms}&extraParams=java.ilpv4.connector";
-    this.exchangeRateCache = this.fxLoader();
-  }
-
-  private LoadingCache<ConversionQuery, ExchangeRate> fxLoader() {
-    return Caffeine.newBuilder()
-      .recordStats() // Publish stats to prometheus
-      //.maximumSize(100) // Not enabled for now in order to support many accounts.
-      .expireAfterAccess(30, TimeUnit.SECONDS)
-      .build(conversionQuery -> {
-        // Computes or retrieves the value corresponding to {@code conversionQuery}.
-        Objects.requireNonNull(conversionQuery);
-
-        final ExchangeRateBuilder builder = exchangeRateBuilder(conversionQuery);
-        // WARNING: CryptoCompare will fail if the currency codes aren't upper-cased!
-        final String baseCurrencyCode = conversionQuery.getBaseCurrency().getCurrencyCode().toUpperCase();
-        final String terminatingCurrencyCode = conversionQuery.getCurrency().getCurrencyCode().toUpperCase();
-
-        if (baseCurrencyCode.equals(terminatingCurrencyCode)) {
-          builder.setFactor(DefaultNumberValue.ONE);
-        } else {
-
-          // In JavaMoney, the Base currency is the currency being dealt with, and the terminating currency is
-          // the currency that the base is converted into. E.g., `XRP, in USD, is $0.3133`, then XRP would be the
-          // base currency, and USD would be the terminating currency. In CryptoCompare, the `fsym` and `tsym`
-          // map this relationship. We ask the API, convert `XRP` (fsym) into `USD` (tsym). We get a response
-          // containing a map of values keyed by each `tsym`. So, we can map the `tsym` to the terminating currency.
-
-          // Call Remote API to load the rate.
-          final Map<String, String> ratesResponse = restTemplate.exchange(
-            apiUrlTemplate, HttpMethod.GET, httpEntityWithCustomHeaders(),
-            new ParameterizedTypeReference<Map<String, String>>() {
-            },
-            baseCurrencyCode, terminatingCurrencyCode
-          ).getBody();
-
-          Optional.ofNullable(ratesResponse.get(terminatingCurrencyCode))
-            .map(value -> builder.setFactor(new DefaultNumberValue(new BigDecimal(value))))
-            .orElseThrow(
-              () -> new RuntimeException(String.format("No Rate found for ConversionQuery: %s", conversionQuery))
-            );
-        }
-
-        return builder.build();
-      });
-  }
-
   // Access a {@link ExchangeRate} using the given currencies.
   @Override
   public ExchangeRate getExchangeRate(ConversionQuery conversionQuery) {
     Objects.requireNonNull(conversionQuery);
     try {
       // TODO: Interface contract says "never-null" but all implementations return null. :(
-      return this.exchangeRateCache.get(conversionQuery);
+      return this.exchangeRateCache.get(conversionQuery, fxLoader());
     } catch (Exception e) {
       throw new MonetaryException("Failed to load currency conversion data", e);
     }
@@ -151,7 +110,7 @@ public class CryptoCompareRateProvider extends AbstractRateProvider {
       return ConversionContext.of(CONTEXT.getProviderName(), RateType.DEFERRED);
     } else {
       return ConversionContext.of(CONTEXT.getProviderName(), RateType.DEFERRED).toBuilder().set(KEY_SCALE, scale)
-        .build();
+          .build();
     }
   }
 
@@ -163,7 +122,48 @@ public class CryptoCompareRateProvider extends AbstractRateProvider {
     return new HttpEntity<>(null, apiGetHeaders);
   }
 
-  public void setApiUrlTemplate(String apiUrlTemplate) {
-    this.apiUrlTemplate = apiUrlTemplate;
+  /**
+   * A {@link Function} that can be used by the FX Cache as a "mapping function" in order to load data into the cache in
+   * the event of a cache-miss.
+   *
+   * @return A {@link Function} that accepts a {@link ConversionQuery} and returns an {@link ExchangeRate}.
+   */
+  private Function<ConversionQuery, ExchangeRate> fxLoader() {
+    return (conversionQuery) -> {
+      // Computes or retrieves the value corresponding to {@code conversionQuery}.
+      Objects.requireNonNull(conversionQuery);
+
+      final ExchangeRateBuilder builder = exchangeRateBuilder(conversionQuery);
+      // WARNING: CryptoCompare will fail if the currency codes aren't upper-cased!
+      final String baseCurrencyCode = conversionQuery.getBaseCurrency().getCurrencyCode().toUpperCase();
+      final String terminatingCurrencyCode = conversionQuery.getCurrency().getCurrencyCode().toUpperCase();
+
+      if (baseCurrencyCode.equals(terminatingCurrencyCode)) {
+        builder.setFactor(DefaultNumberValue.ONE);
+      } else {
+
+        // In JavaMoney, the Base currency is the currency being dealt with, and the terminating currency is
+        // the currency that the base is converted into. E.g., `XRP, in USD, is $0.3133`, then XRP would be the
+        // base currency, and USD would be the terminating currency. In CryptoCompare, the `fsym` and `tsym`
+        // map this relationship. We ask the API, convert `XRP` (fsym) into `USD` (tsym). We get a response
+        // containing a map of values keyed by each `tsym`. So, we can map the `tsym` to the terminating currency.
+
+        // Call Remote API to load the rate.
+        final Map<String, String> ratesResponse = restTemplate.exchange(
+            apiUrlTemplate, HttpMethod.GET, httpEntityWithCustomHeaders(),
+            new ParameterizedTypeReference<Map<String, String>>() {
+            },
+            baseCurrencyCode, terminatingCurrencyCode
+        ).getBody();
+
+        Optional.ofNullable(ratesResponse.get(terminatingCurrencyCode))
+            .map(value -> builder.setFactor(new DefaultNumberValue(new BigDecimal(value))))
+            .orElseThrow(
+                () -> new RuntimeException(String.format("No Rate found for ConversionQuery: %s", conversionQuery))
+            );
+      }
+
+      return builder.build();
+    };
   }
 }
