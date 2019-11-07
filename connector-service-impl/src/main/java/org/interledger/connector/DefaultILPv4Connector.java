@@ -7,7 +7,9 @@ import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
+import org.interledger.connector.routes.StaticRoutesManager;
 import org.interledger.connector.routing.ExternalRoutingService;
+import org.interledger.connector.routing.StaticRoute;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.link.Link;
@@ -16,10 +18,12 @@ import org.interledger.link.StatefulLink;
 import org.interledger.link.events.LinkConnectedEvent;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -63,6 +67,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
 
   private final AccountManager accountManager;
+  private final StaticRoutesManager staticRoutesManager;
   private final AccountSettingsRepository accountSettingsRepository;
   private final FxRateOverridesRepository fxRateOverridesRepository;
   private final LinkManager linkManager;
@@ -79,6 +84,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   DefaultILPv4Connector(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountManager accountManager,
+    final StaticRoutesManager staticRoutesManager,
     final AccountSettingsRepository accountSettingsRepository,
     final FxRateOverridesRepository fxRateOverridesRepository,
     final LinkManager linkManager,
@@ -90,6 +96,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     this(
       connectorSettingsSupplier,
       accountManager,
+      staticRoutesManager,
       accountSettingsRepository,
       fxRateOverridesRepository,
       linkManager,
@@ -107,6 +114,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   public DefaultILPv4Connector(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountManager accountManager,
+    final StaticRoutesManager staticRoutesManager,
     final AccountSettingsRepository accountSettingsRepository,
     final FxRateOverridesRepository fxRateOverridesRepository,
     final LinkManager linkManager,
@@ -118,6 +126,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountManager = Objects.requireNonNull(accountManager);
+    this.staticRoutesManager = Objects.requireNonNull(staticRoutesManager);
     this.accountSettingsRepository = accountSettingsRepository;
     this.fxRateOverridesRepository = Objects.requireNonNull(fxRateOverridesRepository);
     this.linkManager = Objects.requireNonNull(linkManager);
@@ -143,6 +152,8 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     } else { // Otherwise, we use the configured address.
       this.configureAccounts();
     }
+
+    this.configureStaticRoutes();
 
     this.getExternalRoutingService().start();
   }
@@ -180,6 +191,11 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   @Override
   public AccountManager getAccountManager() {
     return this.accountManager;
+  }
+
+  @Override
+  public StaticRoutesManager getStaticRoutesManager() {
+    return staticRoutesManager;
   }
 
   @Override
@@ -242,6 +258,14 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       .filter(link -> link instanceof StatefulLink)
       .map(link -> (StatefulLink) link)
       .forEach(StatefulLink::connect);
+  }
+
+  private void configureStaticRoutes() {
+    // FIXME we shouldn't be storing these here anymore
+    List<? extends StaticRoute> staticRoutes = connectorSettingsSupplier.get().globalRoutingSettings().staticRoutes();
+    if (!staticRoutes.isEmpty()) {
+      staticRoutesManager.updateAll(Sets.newHashSet(staticRoutes));
+    }
   }
 
 }

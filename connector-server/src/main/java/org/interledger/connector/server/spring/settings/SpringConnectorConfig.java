@@ -17,7 +17,6 @@ import org.interledger.connector.accounts.DefaultAccountManager;
 import org.interledger.connector.accounts.DefaultAccountSettingsResolver;
 import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
-import org.interledger.connector.caching.StaticRoutesLoadingCache;
 import org.interledger.connector.config.BalanceTrackerConfig;
 import org.interledger.connector.config.CaffeineCacheConfig;
 import org.interledger.connector.config.RedisConfig;
@@ -241,9 +240,8 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  StaticRoutesManager staticRoutesManager(StaticRoutesRepository staticRoutesRepository,
-                                          StaticRoutesLoadingCache staticRoutesLoadingCache) {
-    return new DefaultStaticRoutesManager(staticRoutesRepository, staticRoutesLoadingCache);
+  StaticRoutesManager staticRoutesManager(StaticRoutesRepository staticRoutesRepository) {
+    return new DefaultStaticRoutesManager(staticRoutesRepository);
   }
 
   @Bean
@@ -300,11 +298,12 @@ public class SpringConnectorConfig {
     final AccountSettingsRepository accountSettingsRepository,
     final ChildAccountPaymentRouter childAccountPaymentRouter,
     final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
-    final RouteBroadcaster routeBroadcaster
+    final RouteBroadcaster routeBroadcaster,
+    final StaticRoutesManager staticRoutesManager
   ) {
     return new InMemoryExternalRoutingService(
       eventBus, connectorSettingsSupplier, decryptor, accountSettingsRepository, childAccountPaymentRouter,
-      outgoingRoutingTable, routeBroadcaster
+      outgoingRoutingTable, routeBroadcaster, staticRoutesManager
     );
   }
 
@@ -479,6 +478,7 @@ public class SpringConnectorConfig {
   ILPv4Connector ilpConnector(
     Supplier<ConnectorSettings> connectorSettingsSupplier,
     AccountManager accountManager,
+    StaticRoutesManager staticRoutesManager,
     AccountSettingsRepository accountSettingsRepository,
     FxRateOverridesRepository fxRateOverridesRepository,
     LinkManager linkManager,
@@ -491,6 +491,7 @@ public class SpringConnectorConfig {
     return new DefaultILPv4Connector(
       connectorSettingsSupplier,
       accountManager,
+      staticRoutesManager,
       accountSettingsRepository,
       fxRateOverridesRepository,
       linkManager,

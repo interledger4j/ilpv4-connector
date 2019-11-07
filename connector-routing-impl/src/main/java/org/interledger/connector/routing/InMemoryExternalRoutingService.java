@@ -6,6 +6,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.routes.StaticRoutesManager;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
@@ -65,6 +66,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
   private final EventBus eventBus;
   private final AccountSettingsRepository accountSettingsRepository;
+  private final StaticRoutesManager staticRoutesManager;
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final Decryptor decryptor;
@@ -97,7 +99,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
       final AccountSettingsRepository accountSettingsRepository,
       final ChildAccountPaymentRouter childAccountPaymentRouter,
       final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
-      final RouteBroadcaster routeBroadcaster
+      final RouteBroadcaster routeBroadcaster,
+      final StaticRoutesManager staticRoutesManager
   ) {
     this.eventBus = Objects.requireNonNull(eventBus);
     this.eventBus.register(this);
@@ -112,6 +115,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     this.outgoingRoutingTable = Objects.requireNonNull(outgoingRoutingTable);
     this.routeBroadcaster = routeBroadcaster;
+    this.staticRoutesManager = staticRoutesManager;
   }
 
   @Override
@@ -197,7 +201,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     //////////////////
 
     // For any statically configured route...
-    this.connectorSettingsSupplier.get().globalRoutingSettings().staticRoutes().stream()
+    this.staticRoutesManager.getAllRoutesUncached().stream()
         .forEach(staticRoute -> {
 
           // ...attempt to register a CCP-enabled account (duplicate requests are fine).
@@ -416,7 +420,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     // Static-routes have highest priority...
     return Optional.ofNullable(
-        connectorSettingsSupplier.get().globalRoutingSettings().staticRoutes().stream()
+        staticRoutesManager.getAllRoutesUncached().stream()
             .filter(staticRoute -> staticRoute.prefix().equals(addressPrefix))
             .findFirst()
             .map(staticRoute -> {
