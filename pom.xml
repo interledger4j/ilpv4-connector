@@ -311,7 +311,7 @@
       <dependency>
         <groupId>org.springframework.hateoas</groupId>
         <artifactId>spring-hateoas</artifactId>
-        <version>0.25.2.RELEASE</version>
+        <version>1.0.1.RELEASE</version>
         <exclusions>
           <exclusion>
             <groupId>org.springframework</groupId>
