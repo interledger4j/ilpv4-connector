@@ -1,27 +1,38 @@
 package org.interledger.connector.server.spring.auth.blast;
 
+import org.interledger.connector.accounts.AccountId;
+
 import com.auth0.jwt.JWT;
 import com.google.common.collect.Lists;
-import org.interledger.connector.server.spring.auth.blast.ImmutableBlastCredentials;
 import org.immutables.value.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * Authentication credentials for a BLAST connection.
  */
 @Value.Immutable
-public interface BlastCredentials extends Authentication {
+public interface SimpleCredentials extends Authentication {
 
-  static ImmutableBlastCredentials.Builder builder() {
-    return ImmutableBlastCredentials.builder();
+  static ImmutableSimpleCredentials.Builder builder() {
+    return ImmutableSimpleCredentials.builder();
+  }
+
+  @Override
+  AccountId getPrincipal();
+
+  @Override
+  @Value.Default()
+  default boolean isAuthenticated() {
+    return false;
   }
 
   @Value.Redacted
-  JWT getAuthToken();
+  byte[] getAuthToken();
 
   @Override
   @Value.Derived
@@ -43,48 +54,9 @@ public interface BlastCredentials extends Authentication {
    */
   @Override
   @Value.Derived
+  @Nullable
   default Object getDetails() {
     return null;
-  }
-
-  /**
-   * The identity of the principal being authenticated. In the case of an authentication request with username and
-   * password, this would be the username. Callers are expected to populate the principal for an authentication
-   * request.
-   * <p>
-   * The <tt>AuthenticationManager</tt> implementation will often return an
-   * <tt>Authentication</tt> containing richer information as the principal for use by
-   * the application. Many of the authentication providers will create a {@code UserDetails} object as the principal.
-   *
-   * @return the <code>Principal</code> being authenticated or the authenticated principal after authentication.
-   */
-  @Override
-  @Value.Derived
-  default Object getPrincipal() {
-    return getAuthToken();
-  }
-
-  /**
-   * Used to indicate to {@code AbstractSecurityInterceptor} whether it should present the authentication token to the
-   * <code>AuthenticationManager</code>. Typically an
-   * <code>AuthenticationManager</code> (or, more often, one of its
-   * <code>AuthenticationProvider</code>s) will return an immutable authentication token
-   * after successful authentication, in which case that token can safely return
-   * <code>true</code> to this method. Returning <code>true</code> will improve
-   * performance, as calling the <code>AuthenticationManager</code> for every request will no longer be necessary.
-   * <p>
-   * For security reasons, implementations of this interface should be very careful about returning <code>true</code>
-   * from this method unless they are either immutable, or have some way of ensuring the properties have not been
-   * changed since original creation.
-   *
-   * @return true if the token has been authenticated and the
-   * <code>AbstractSecurityInterceptor</code> does not need to present the token to the
-   * <code>AuthenticationManager</code> again for re-authentication.
-   */
-  @Override
-  @Value.Derived
-  default boolean isAuthenticated() {
-    return true;
   }
 
   /**

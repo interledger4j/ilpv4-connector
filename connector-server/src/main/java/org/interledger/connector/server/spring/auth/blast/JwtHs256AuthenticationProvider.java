@@ -14,6 +14,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 
+import java.util.Optional;
+
 /**
  * An extension of the Auth0 {@link AuthenticationProvider} that implements the `JWT_HS_256` Authentication profile
  * defined in IL-RFC-35. This implementation closely mirrors {@link JwtAuthenticationProvider} except that it allows for
@@ -25,48 +27,36 @@ public class JwtHs256AuthenticationProvider implements AuthenticationProvider {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  private final byte[] secret;
-
   // TODO: Remove these once https://github.com/interledger/rfcs/pull/531 is closed.
-  //private final String issuer;
-  //private final String audience;
+  private final Optional<String> issuer;
+  private final Optional<String>  audience;
+
   private long leeway = 0L;
+  private byte[] decryptedSharedSecret;
 
-  public JwtHs256AuthenticationProvider(byte[] secret) {
-    this.secret = secret;
-    //this.issuer = issuer;
-    //this.audience = audience;
+  public JwtHs256AuthenticationProvider(byte[] decryptedSharedSecret) {
+    this.decryptedSharedSecret = decryptedSharedSecret;
+    this.issuer = Optional.empty();
+    this.audience = Optional.empty();
   }
 
-  //  public JwtHs256AuthenticationProvider(byte[] secret, String issuer, String audience) {
-  //    this.secret = secret;
-  //    //this.issuer = issuer;
-  //    //this.audience = audience;
-  //  }
-
-  private static JWTVerifier providerForHS256(byte[] secret, String issuer, String audience, long leeway) {
-    return JWT.require(Algorithm.HMAC256(secret)).withIssuer(issuer).withAudience(new String[]{audience})
-      .acceptLeeway(leeway).build();
+  public JwtHs256AuthenticationProvider(byte[] decryptedSharedSecret,
+                                        String issuer,
+                                        String audience) {
+    this.decryptedSharedSecret = decryptedSharedSecret;
+    this.issuer = Optional.of(issuer);
+    this.audience = Optional.of(audience);
   }
 
-  /**
-   * @deprecated Exists for now pending the outcome of https://github.com/interledger/rfcs/pull/531/files#r285350424
-   */
-  @Deprecated
   private static JWTVerifier providerForHS256(byte[] secret, long leeway) {
     return JWT.require(Algorithm.HMAC256(secret))
-      //.withIssuer(issuer)
-      //.withAudience(new String[]{audience})
-      .acceptLeeway(leeway).build();
+        //.withIssuer(issuer)
+        //.withAudience(new String[]{audience})
+        .acceptLeeway(leeway).build();
   }
 
   public boolean supports(Class<?> authentication) {
     return JwtAuthentication.class.isAssignableFrom(authentication);
-  }
-
-  public JwtHs256AuthenticationProvider withJwtVerifierLeeway(long leeway) {
-    this.leeway = leeway;
-    return this;
   }
 
   @Override
@@ -76,7 +66,7 @@ public class JwtHs256AuthenticationProvider implements AuthenticationProvider {
     } else {
       final JwtAuthentication jwt = (JwtAuthentication) authentication;
       try {
-        final Authentication jwtAuth = jwt.verify(this.jwtVerifier());
+        final Authentication jwtAuth = jwt.verify(this.jwtVerifier(decryptedSharedSecret));
         logger.debug("Authenticated jwt with scopes {}", jwtAuth.getAuthorities());
         return jwtAuth;
       } catch (JWTVerificationException var4) {
@@ -85,13 +75,13 @@ public class JwtHs256AuthenticationProvider implements AuthenticationProvider {
     }
   }
 
-  private JWTVerifier jwtVerifier() throws AuthenticationException {
-    if (this.secret != null) {
+  private JWTVerifier jwtVerifier(byte[] secret) throws AuthenticationException {
+    if (secret != null) {
       return providerForHS256(
-        this.secret,
-        //this.issuer,
-        //this.audience,
-        this.leeway);
+          secret,
+          //this.issuer,
+          //this.audience,
+          this.leeway);
     } else {
       throw new AuthenticationServiceException("Missing shared-secret!");
     }

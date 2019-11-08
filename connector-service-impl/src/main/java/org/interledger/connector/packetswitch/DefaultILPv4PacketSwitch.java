@@ -17,6 +17,8 @@ import org.interledger.link.LinkId;
 import org.interledger.link.PacketRejector;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
@@ -37,6 +39,8 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   // given account. Instead, for higher performance, we only load account settings once per period, and otherwise
   // rely upon AccountSettings found in this cache.
   private final AccountSettingsLoadingCache accountSettingsLoadingCache;
+
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   /**
    * For testing purposes.
@@ -106,6 +110,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
             ).doFilter(accountSettings, incomingSourcePreparePacket);
 
           } catch (Exception e) {
+            logger.info("Rejecting packet. Reason: " + e.getMessage());
             // Any rejections should be caught here, and returned as such....
             return this.connectorExceptionHandler.handleException(sourceAccountId, incomingSourcePreparePacket, e);
           }

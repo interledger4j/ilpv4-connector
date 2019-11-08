@@ -6,6 +6,7 @@ import org.interledger.connector.core.ConfigConstants;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.server.spring.auth.blast.AuthConstants;
+import org.interledger.connector.server.spring.auth.blast.BearerTokenSecurityContextRepository;
 import org.interledger.connector.server.spring.auth.blast.IlpOverHttpAuthenticationProvider;
 import org.interledger.connector.server.spring.controllers.HealthController;
 import org.interledger.connector.server.spring.controllers.IlpHttpController;
@@ -15,7 +16,7 @@ import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionService;
 
-import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
+import com.auth0.spring.security.api.JwtAuthenticationEntryPoint;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +37,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -145,14 +147,11 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Override
   public void configure(final HttpSecurity http) throws Exception {
 
-    // Must come first in order to register properly due to 'denyAll' directive below.
-    JwtWebSecurityConfigurer
-        // `audience` and `issuer` are not statically configured, but are instead specified in account-settings on a
-        // per-account basis.
-        .forHS256("n/a", "n/a", ilpOverHttpAuthenticationProvider())
-        .configure(http)
-        .authorizeRequests()
+    byte[] ephemeralBytes = generate32RandomBytes();
 
+    // Must come first in order to register properly due to 'denyAll' directive below.
+    configureBearerTokenSecurity(http, ephemeralBytes)
+        .authorizeRequests()
         //////
         // ILP-over-HTTP
         //////
@@ -213,6 +212,35 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         .exceptionHandling()
         .authenticationEntryPoint(problemSupport)
         .accessDeniedHandler(problemSupport);
+  }
+
+  private HttpSecurity configureBearerTokenSecurity(HttpSecurity http, byte[] ephemeralBytes) throws Exception {
+    return http
+        .authenticationProvider(ilpOverHttpAuthenticationProvider())
+        .securityContext()
+        .securityContextRepository(new BearerTokenSecurityContextRepository(ephemeralBytes))
+        .and()
+        .exceptionHandling()
+        .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+        .and()
+        .httpBasic().disable()
+        .csrf().disable()
+        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
+  }
+
+  /**
+   * Generate 32 random bytes that can be used as an ephemeral HMAC key. This key is only used to Hash actual
+   * shared-secret values that are stored in an in-memory cache. If this server goes away, this this cache will go away
+   * too, so this secret key can be ephemeral.
+   * <p>
+   * Note too that the "values" being HMAC'd are also not in memory, so re-creating them using just this ephemeral value
+   * would not be possible.
+   */
+  private byte[] generate32RandomBytes() {
+    final SecureRandom secureRandom = new SecureRandom();
+    final byte[] rndBytes = new byte[32];
+    secureRandom.nextBytes(rndBytes);
+    return rndBytes;
   }
 
 }
