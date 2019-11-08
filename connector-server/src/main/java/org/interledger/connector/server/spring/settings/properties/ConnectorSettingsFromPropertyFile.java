@@ -47,9 +47,9 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   private GlobalRoutingSettingsFromPropertyFile globalRoutingSettings = new GlobalRoutingSettingsFromPropertyFile();
 
-  private int maxHoldTimeMillis;
+  private int maxHoldTimeMillis = 30000; // default if not set in config
 
-  private int minMessageWindowMillis;
+  private int minMessageWindowMillis = 1000;
 
   @Override
   public InterledgerAddress operatorAddress() {
