@@ -48,7 +48,7 @@ public abstract class AbstractBlastHttpSender implements BlastHttpSender {
   /**
    * Required-args Constructor.
    *
-   * @param operatorAddressSupplier A {@link Supplier} for the ILP address of the node operating this BLAST sender.
+   * @param operatorAddressSupplier A {@link Supplier} of this sender's operator {@link InterledgerAddress}.
    * @param restTemplate            A {@link RestTemplate} to use to communicate with the remote BLAST endpoint.
    * @param outgoingLinkSettings    A {@link OutgoingLinkSettings} for communicating with the remote endpoint.
    */

@@ -3,10 +3,10 @@ package org.interledger.connector.server.spring.settings.javamoney;
 import org.springframework.beans.factory.serviceloader.ServiceListFactoryBean;
 import org.springframework.core.Ordered;
 
-import javax.money.spi.ServiceProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.money.spi.ServiceProvider;
 
 /**
  * <p>A custom JavaMoney {@link ServiceProvider} that integrates with Spring and this connector infrastructure.</</p>
@@ -38,27 +38,27 @@ public class SpringServiceProvider implements ServiceProvider {
    * the most significant should be first in order. If no such services are found, an empty list should be returned.
    *
    * @param serviceType the service type.
-   *
    * @return The instance to be used, never {@code null}
    */
   @Override
   public <T> List<T> getServices(Class<T> serviceType) {
-    return ApplicationContextProvider.getAllApplicationContexts().values().stream().findFirst()
-      .map(context -> context.getBeansOfType(serviceType))
-      .map(Map::values)
-      .map(ArrayList::new)
-      .map(al -> (List<T>) al)
-      .orElseGet(() -> {
-        // Allows the normal ServiceLoader interface to operate.
-        ServiceListFactoryBean serviceListFactoryBean = new ServiceListFactoryBean();
-        serviceListFactoryBean.setServiceType(serviceType);
-        try {
-          return (List<T>) serviceListFactoryBean.getObject();
-        } catch (Exception e) {
+    return ApplicationContextProvider.getAllApplicationContexts().stream()
+        .findFirst()
+        .map(context -> context.getBeansOfType(serviceType))
+        .map(Map::values)
+        .map(ArrayList::new)
+        .map(al -> (List<T>) al)
+        .orElseGet(() -> {
+          // Allows the normal ServiceLoader interface to operate.
+          ServiceListFactoryBean serviceListFactoryBean = new ServiceListFactoryBean();
+          serviceListFactoryBean.setServiceType(serviceType);
+          try {
+            return (List<T>) serviceListFactoryBean.getObject();
+          } catch (Exception e) {
 
-          throw new RuntimeException(e);
-        }
-      });
+            throw new RuntimeException(e);
+          }
+        });
   }
 
 }

@@ -97,7 +97,7 @@ public class SettlementController {
     Objects.requireNonNull(settlementEngineAccountId);
     Objects.requireNonNull(settlementQuantity);
 
-    final SettlementQuantity settledSettlementQuantity = settlementService.onLocalSettlementPayment(
+    final SettlementQuantity settledSettlementQuantity = settlementService.onIncomingSettlementPayment(
       SETTLEMENT_IDEMPOTENCE + ":" + idempotencyKeyString,
       settlementEngineAccountId,
       settlementQuantity
