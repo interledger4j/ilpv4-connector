@@ -62,5 +62,9 @@
       <groupId>org.interledger</groupId>
       <artifactId>codecs-ilp</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.zalando</groupId>
+      <artifactId>problem</artifactId>
+    </dependency>
   </dependencies>
 </project>

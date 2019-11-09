@@ -11,11 +11,13 @@ import org.interledger.core.InterledgerAddressPrefix;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.json.BasicJsonTester;
+import org.springframework.boot.test.json.JsonContentAssert;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -52,6 +54,12 @@ public class StaticRoutesSpringBootTest {
 
   private BasicJsonTester jsonTester = new BasicJsonTester(getClass());
 
+  @Before
+  public void setUp() {
+    // "empty" what's there before each test
+    getRoutes().forEach(this::deleteRoute);
+  }
+
   @Test
   public void createIndividualAndDelete() {
     StaticRoute charlie = charlieKelleyRoute();
@@ -72,6 +80,24 @@ public class StaticRoutesSpringBootTest {
 
     deleteRoute(frank);
     assertThat(getStaticRoutes()).isEmpty();
+  }
+
+  @Test
+  public void cannotCreateWhatAlreadyExists() {
+    StaticRoute ricketyCricket = ricketyCricketRoute();
+    assertPutRoute(ricketyCricket, HttpStatus.CREATED);
+
+    final HttpEntity httpEntity = new HttpEntity(ricketyCricket, authHeaders());
+    ResponseEntity<String> response = restTemplate
+        .exchange(SLASH_ROUTES_STATIC + "/" + ricketyCricket.prefix().getValue(), HttpMethod.PUT, httpEntity,
+            String.class);
+
+    JsonContentAssert assertJson = assertThat(jsonTester.from(response.getBody()));
+    assertJson.extractingJsonPathValue("status").isEqualTo(409);
+    assertJson.extractingJsonPathValue("title").isEqualTo("Route Already Exists (`g.philly.shelter`)");
+    assertJson.extractingJsonPathValue("prefix").isEqualTo(ricketyCricket.prefix().getValue());
+    assertJson.extractingJsonPathValue("type")
+        .isEqualTo("https://errors.interledger.org/routes/static/static-route-already-exists");
   }
 
   /**

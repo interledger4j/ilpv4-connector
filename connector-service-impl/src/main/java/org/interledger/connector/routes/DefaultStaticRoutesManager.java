@@ -2,7 +2,10 @@ package org.interledger.connector.routes;
 
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
 import org.interledger.connector.routing.StaticRoute;
+import org.interledger.connector.routing.StaticRouteAlreadyExistsProblem;
 import org.interledger.core.InterledgerAddressPrefix;
+
+import org.hibernate.exception.ConstraintViolationException;
 
 import java.util.Objects;
 import java.util.Set;
@@ -30,7 +33,16 @@ public class DefaultStaticRoutesManager implements StaticRoutesManager {
   @Override
   public StaticRoute update(StaticRoute route) {
     Objects.requireNonNull(route);
-    StaticRoute saved = staticRoutesRepository.saveStaticRoute(route);
-    return saved;
+    try {
+      StaticRoute saved = staticRoutesRepository.saveStaticRoute(route);
+      return saved;
+    }
+    catch(Exception e) {
+      if (e.getCause() instanceof ConstraintViolationException) {
+        throw new StaticRouteAlreadyExistsProblem(route.prefix());
+      }
+      throw e;
+    }
+
   }
 }
