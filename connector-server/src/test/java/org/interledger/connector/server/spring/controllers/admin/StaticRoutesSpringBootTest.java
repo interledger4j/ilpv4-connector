@@ -10,6 +10,7 @@ import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.core.InterledgerAddressPrefix;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -72,6 +74,26 @@ public class StaticRoutesSpringBootTest {
     assertThat(getStaticRoutes()).isEmpty();
   }
 
+  /**
+   * Verify API ignores unknown properties
+   */
+  @Test
+  public void testJsonMarshalling() {
+
+    InterledgerAddressPrefix prefix = InterledgerAddressPrefix.of("g.foo.baz");
+    Map<String, Object> rawValues = ImmutableMap.<String, Object>builder()
+        .put("accountId", AccountId.of("testJsonMarshalling"))
+        .put("prefix", prefix)
+        .put("whatIsThatSmell", "ifYouHaveToAskYouDoNotWantToKnow")
+        .build();
+
+    final HttpEntity httpEntity = new HttpEntity(rawValues, authHeaders());
+
+    ResponseEntity response =
+        restTemplate.exchange(SLASH_ROUTES_STATIC + "/" + prefix.getValue(), HttpMethod.PUT, httpEntity, Void.class);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+  }
+
   private StaticRoute frankReynoldsRoute() {
     return StaticRoute.builder()
         .accountId(AccountId.of("frankReynolds"))
@@ -83,6 +105,13 @@ public class StaticRoutesSpringBootTest {
     return StaticRoute.builder()
         .accountId(AccountId.of("charlieKelley"))
         .prefix(InterledgerAddressPrefix.of("g.philly.birdlaw"))
+        .build();
+  }
+
+  private StaticRoute ricketyCricketRoute() {
+    return StaticRoute.builder()
+        .accountId(AccountId.of("ricketyCricket"))
+        .prefix(InterledgerAddressPrefix.of("g.philly.shelter"))
         .build();
   }
 
