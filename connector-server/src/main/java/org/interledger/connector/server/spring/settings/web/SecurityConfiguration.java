@@ -202,17 +202,13 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         .logout().disable()
         //.anonymous().disable()
         .jee().disable()
-        .authorizeRequests()
+        //.authorizeRequests()
         //.antMatchers(HttpMethod.GET, HealthController.SLASH_AH_SLASH_HEALTH).permitAll()
-        .anyRequest().denyAll()
+        //.anyRequest().denyAll()
+        //.and()
+        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.NEVER).enableSessionUrlRewriting(false)
         .and()
-        .sessionManagement()
-        .sessionCreationPolicy(SessionCreationPolicy.NEVER)
-        .enableSessionUrlRewriting(false)
-        .and()
-        .exceptionHandling()
-        .authenticationEntryPoint(problemSupport)
-        .accessDeniedHandler(problemSupport);
+        .exceptionHandling().authenticationEntryPoint(problemSupport).accessDeniedHandler(problemSupport);
   }
 
 }

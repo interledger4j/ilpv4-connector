@@ -8,4 +8,12 @@ interledger:
   connector:
     ## ILP address of the connector.
     nodeIlpAddress: test1.connie
+    adminPassword: password
     defaultJwtTokenIssuer: https://jwt.example.com
+    keystore:
+      jks:
+        enabled: true
+        filename: crypto/crypto.p12
+        password: password
+        secret0_alias: secret0
+        secret0_password: password

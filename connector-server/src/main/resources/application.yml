@@ -23,19 +23,21 @@ spring:
     ansi:
       enabled: ALWAYS
   http:
-    # MULTIPART (MultipartProperties)
-    multipart:
-      enabled: false
-      max-file-size: 32KB
-      max-request-size: 32KB
+    log-request-details: false
 
-  # example database Settings. Or alternatively activate the h2 profile for in-memory database
+  # example database Settings. Or alternatively activate the `h2` profile for in-memory database or the
+  # `postgres` profile for a local postgres
   #datasource:
     #url: jdbc:postgresql://localhost:5432/connector
     #platform: postgresql
     #username: sa
     #password:
     #driverClassName: org.postgresql.Driver
+
+  #redis:
+  #  host: localhost
+  #  port: 6379
+
   jpa:
     hibernate:
       ddl-auto: none
@@ -52,6 +54,10 @@ spring:
   resources:
     add-mappings: false
   servlet:
+    multipart:
+      enabled: false
+      max-file-size: 32KB
+      max-request-size: 32KB
     session:
       persistent: false # Whether to persist session data between restarts.
       timeout: 0 # Session timeout. If a duration suffix is not specified, seconds will be used.
@@ -59,67 +65,56 @@ spring:
   session:
     store-type: NONE
 
-###
-#   Redis settings
-###
-#redis:
-#  host: localhost
-#  port: 6379
-
-
 interledger:
   connector:
-    settlementEngines:
-      connectionDefaults:
-        # Default connect timeout (in milliseconds).
-        # connectTimeoutMillis: 10000
-        # Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must
-        # be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If unspecified, defaults to 10.
-        # This is applied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
-        # otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If
-        # unspecified, defaults to 10000.
-        # readTimeoutMillis: 10000
-        # Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1
-        # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
-        # writeTimeoutMillis: 30000
-        # maxIdleConnections: 5
-        # keepAliveMinutes: 5
-    ilpOverHttp:
-      connectionDefaults:
-        # Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must
-        # be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If unspecified, defaults to 10.
-        # connectTimeoutMillis: 10000
-        # This is applied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
-        # otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If
-        # unspecified, defaults to 10.
-        # readTimeoutMillis: 60000
-        # Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1
-        # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
-        # writeTimeoutMillis: 60000
-        # maxIdleConnections: 5
-        # keepAliveMinutes: 5
-    btp.enabled: false
-    adminPassword: password
-    keystore:
-      jks:
-        enabled: true
-        filename: crypto/crypto.p12
-        password: password
-        secret0_alias: secret0
-        secret0_password: password
+    # ILP address of the connector (can be omitted if an account with relation=parent is configured under accounts).
+    # nodeIlpAddress: test.connie
+    # adminPassword: password
+    # Deprecated via https://github.com/sappenin/java-ilpv4-connector/issues/407
+    # defaultJwtTokenIssuer: https://example.com
+    # Global Routing Settings for this connector.
+    # globalRoutingSettings:
+    #  routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
+    # Deprecated
+    # btp.enabled: false
+#    keystore:
+#      jks:
+#        enabled: true
+#        filename: crypto/crypto.p12
+#        password: password
+#        secret0_alias: secret0
+#        secret0_password: password
     enabledProtocols:
       blastEnabled: true
       pingProtocolEnabled: true
       peerConfigEnabled: true
       peerRoutingEnabled: true
-    # defaultJwtTokenIssuer: https://java1.xpring.dev/
-    # Global Routing Settings for this connector.
-    globalRoutingSettings:
-      routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
-      staticRoutes:
-    # - targetPrefix: test
-    # peerAccountId: bob # set by the operator
-    ## ILP address of the connector.
-    ## This property can be omitted if an account with relation=parent is configured under accounts.
-    # nodeIlpAddress: test1.connie
-
+    #settlementEngines:
+      # connectionDefaults:
+      # Default connect timeout (in milliseconds).
+      # connectTimeoutMillis: 10000
+      # Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must
+      # be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If unspecified, defaults to 10.
+      # This is applied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
+      # otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If
+      # unspecified, defaults to 10000.
+      # readTimeoutMillis: 10000
+      # Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1
+      # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
+      # writeTimeoutMillis: 30000
+      # maxIdleConnections: 5
+      # keepAliveMinutes: 5
+    # ilpOverHttp:
+      # connectionDefaults:
+      # Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must
+      # be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If unspecified, defaults to 10.
+      # connectTimeoutMillis: 10000
+      # This is applied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
+      # otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If
+      # unspecified, defaults to 10.
+      # readTimeoutMillis: 60000
+      # Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1
+      # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
+      # writeTimeoutMillis: 60000
+      # maxIdleConnections: 5
+      # keepAliveMinutes: 5
