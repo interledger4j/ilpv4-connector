@@ -28,13 +28,6 @@ public class DefaultStaticRoutesManager implements StaticRoutesManager {
   }
 
   @Override
-  public Set<StaticRoute> updateAll(Set<StaticRoute> routes) {
-    Objects.requireNonNull(routes);
-    Set<StaticRoute> savedRoutes = staticRoutesRepository.saveAllStaticRoutes(routes);
-    return savedRoutes;
-  }
-
-  @Override
   public StaticRoute update(StaticRoute route) {
     Objects.requireNonNull(route);
     StaticRoute saved = staticRoutesRepository.saveStaticRoute(route);

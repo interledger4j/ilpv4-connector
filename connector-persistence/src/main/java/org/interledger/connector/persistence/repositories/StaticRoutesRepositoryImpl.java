@@ -7,6 +7,7 @@ import org.interledger.core.InterledgerAddressPrefix;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 import java.util.Set;
@@ -29,14 +30,6 @@ public class StaticRoutesRepositoryImpl implements StaticRoutesRepositoryCustom 
   }
 
   @Override
-  public Set<StaticRoute> saveAllStaticRoutes(Set<StaticRoute> staticRoutes) {
-    Objects.requireNonNull(staticRoutes);
-    Iterable<StaticRouteEntity> savedEntities = staticRoutesRepository
-        .saveAll(staticRoutes.stream().map(s -> new StaticRouteEntity(s)).collect(Collectors.toSet()));
-    return mapEntitiesToDtos(savedEntities);
-  }
-
-  @Override
   public StaticRoute saveStaticRoute(StaticRoute staticRoute) {
     Objects.requireNonNull(staticRoute);
     StaticRouteEntity saved = staticRoutesRepository.save(new StaticRouteEntity(staticRoute));
@@ -44,6 +37,7 @@ public class StaticRoutesRepositoryImpl implements StaticRoutesRepositoryCustom 
   }
 
   @Override
+  @Transactional
   public void deleteStaticRoute(InterledgerAddressPrefix prefix) {
     Objects.requireNonNull(prefix);
     staticRoutesRepository.deleteByNaturalId(prefix.getValue());

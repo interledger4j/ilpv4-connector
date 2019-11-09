@@ -16,6 +16,9 @@ import javax.annotation.Nullable;
  * A statically configured route. Static routes take precedence over the same or shorter prefixes that are local or
  * published by peers. More specific prefixes will still take precedence.
  */
+@JsonSerialize(as = ImmutableStaticRoute.class)
+@JsonDeserialize(as = ImmutableStaticRoute.class)
+@JsonPropertyOrder( {"id", "createdAt", "modifiedAt", "prefix", "accountId"} )
 public interface StaticRoute {
 
   InterledgerAddressPrefix SELF_INTERNAL = InterledgerAddressPrefix.SELF.with("internal");

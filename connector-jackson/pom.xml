@@ -23,6 +23,10 @@
       <artifactId>connector-accounts</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>ilp-core</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>

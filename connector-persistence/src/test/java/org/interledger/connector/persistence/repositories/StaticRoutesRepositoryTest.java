@@ -10,8 +10,8 @@ import org.interledger.connector.routing.StaticRoute;
 import org.interledger.core.InterledgerAddressPrefix;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Sets;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import org.assertj.core.api.Condition;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +23,6 @@ import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import java.util.Set;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {
@@ -39,82 +37,65 @@ public class StaticRoutesRepositoryTest {
   private StaticRoutesRepository staticRoutesRepository;
 
   @Test
-  public void saveAndLoadAndSaveSomeMore() {
-    StaticRoute frankReynolds = StaticRoute.builder()
-        .accountId(AccountId.of("frankReynolds"))
-        .prefix(InterledgerAddressPrefix.of("g.philly.paddys"))
-        .build();
-
-    StaticRoute dennisReynolds = StaticRoute.builder()
-        .accountId(AccountId.of("dennisReynolds"))
-        .prefix(InterledgerAddressPrefix.of("g.philly.rangerover"))
-        .build();
-
-    Set<StaticRoute> routes = Sets.newHashSet(
-        frankReynolds,
-        dennisReynolds,
-        StaticRoute.builder()
-            .accountId(AccountId.of("ricketyCricket"))
-            .prefix(InterledgerAddressPrefix.of("g.philly.shelter"))
-            .build()
-    );
-
-    Set<StaticRoute> savedRoutes = staticRoutesRepository.saveAllStaticRoutes(routes);
-    assertThat(savedRoutes).hasSize(3).extracting("accountId", "prefix")
-        .containsOnly(
-            tuple(AccountId.of("frankReynolds"), InterledgerAddressPrefix.of("g.philly.paddys")),
-            tuple(AccountId.of("dennisReynolds"), InterledgerAddressPrefix.of("g.philly.rangerover")),
-            tuple(AccountId.of("ricketyCricket"), InterledgerAddressPrefix.of("g.philly.shelter"))
-        );
-
-    assertThat(staticRoutesRepository.getAllStaticRoutes()).isEqualTo(savedRoutes);
-
-    StaticRoute charlieKelley = StaticRoute.builder()
-        .accountId(AccountId.of("charlieKelley"))
-        .prefix(InterledgerAddressPrefix.of("g.philly.birdlaw"))
-        .build();
-
-    routes.remove(frankReynolds);
-    routes.remove(dennisReynolds);
-    routes.add(charlieKelley);
-    frankReynolds = StaticRoute.builder()
-        .accountId(AccountId.of("frankReynolds"))
-        .prefix(InterledgerAddressPrefix.of("g.philly.prison"))
-        .build();
-
-    routes.add(frankReynolds);
-
-    savedRoutes = staticRoutesRepository.saveAllStaticRoutes(routes);
-    assertThat(savedRoutes).hasSize(3).extracting("accountId", "prefix")
-        .containsOnly(
-            tuple(AccountId.of("frankReynolds"), InterledgerAddressPrefix.of("g.philly.prison")),
-            tuple(AccountId.of("ricketyCricket"), InterledgerAddressPrefix.of("g.philly.shelter")),
-            tuple(AccountId.of("charlieKelley"), InterledgerAddressPrefix.of("g.philly.birdlaw"))
-        );
-  }
-
-  @Test
-  public void saveAndDelete() {
+  public void saveGetSaveGetDeleteGet() {
     StaticRoute mac = StaticRoute.builder()
         .accountId(AccountId.of("mac"))
         .prefix(InterledgerAddressPrefix.of("g.philly.paddys"))
         .build();
 
-    StaticRoute savedRoute = staticRoutesRepository.saveStaticRoute(mac);
+    StaticRoute charlie = StaticRoute.builder()
+        .accountId(AccountId.of("charlie"))
+        .prefix(InterledgerAddressPrefix.of("g.philly.birdlaw"))
+        .build();
 
-    assertThat(savedRoute).extracting("accountId", "prefix")
-        .containsExactly(AccountId.of("mac"), InterledgerAddressPrefix.of("g.philly.paddys"));
+    StaticRoute savedMac = saveAndGetRoute(mac);
 
-    StaticRoute fetchedRoute = staticRoutesRepository.getByPrefix(InterledgerAddressPrefix.of("g.philly.paddys"));
-    assertThat(fetchedRoute).extracting("accountId", "prefix")
-        .containsExactly(AccountId.of("mac"), InterledgerAddressPrefix.of("g.philly.paddys"));
+    assertThat(staticRoutesRepository.getAllStaticRoutes())
+        .hasSize(1)
+        .extracting("id", "accountId", "prefix")
+        .containsExactly(tuple(savedMac.id(), mac.accountId(), mac.prefix()));
 
-    staticRoutesRepository.deleteStaticRoute(InterledgerAddressPrefix.of("g.philly.paddys"));
+    StaticRoute savedCharlie = saveAndGetRoute(charlie);
 
-    StaticRoute deletedRoute = staticRoutesRepository.getByPrefix(InterledgerAddressPrefix.of("g.philly.paddys"));
+    assertThat(staticRoutesRepository.getAllStaticRoutes())
+        .hasSize(2)
+        .extracting("id", "accountId", "prefix")
+        .containsExactly(
+            tuple(savedMac.id(), mac.accountId(), mac.prefix()),
+            tuple(savedCharlie.id(), charlie.accountId(), charlie.prefix())
+        );
+
+    staticRoutesRepository.deleteStaticRoute(mac.prefix());
+    StaticRoute deletedRoute = staticRoutesRepository.getByPrefix(mac.prefix());
     assertThat(deletedRoute).isNull();
+
+    assertThat(staticRoutesRepository.getAllStaticRoutes())
+        .hasSize(1)
+        .extracting("id", "accountId", "prefix")
+        .containsExactly(tuple(savedCharlie.id(), charlie.accountId(), charlie.prefix()));
   }
 
+  private StaticRoute saveAndGetRoute(StaticRoute routeToSave) {
+    StaticRoute savedRoute = staticRoutesRepository.saveStaticRoute(routeToSave);
+
+    assertThat(savedRoute).extracting("accountId", "prefix")
+        .containsExactly(routeToSave.accountId(), routeToSave.prefix());
+
+    StaticRoute fetchedRoute = staticRoutesRepository.getByPrefix(routeToSave.prefix());
+
+    assertThat(fetchedRoute)
+        .doesNotHave(nullId)
+        .extracting("accountId", "prefix")
+        .containsExactly(routeToSave.accountId(), routeToSave.prefix());
+    return fetchedRoute;
+  }
+
+  private final Condition<StaticRoute> nullId = new Condition<StaticRoute>() {
+    @Override
+    public boolean matches(StaticRoute value) {
+      return value.id() == null;
+    }
+  };
 
   @Configuration("application.yml")
   public static class TestPersistenceConfig {

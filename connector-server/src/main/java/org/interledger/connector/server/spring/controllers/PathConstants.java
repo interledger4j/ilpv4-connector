@@ -16,5 +16,5 @@ public class PathConstants {
   public static final String SLASH_ROUTES = "/routes";
   public static final String SLASH_ROUTES_STATIC = SLASH_ROUTES + "/static";
   public static final String PREFIX = "prefix";
-  public static final String SLASH_ROUTES_STATIC_PREFIX = SLASH_ROUTES_STATIC + "/{" + PREFIX + "}";
+  public static final String SLASH_ROUTES_STATIC_PREFIX = SLASH_ROUTES_STATIC + "/{" + PREFIX + ":.+}";
 }

@@ -9,8 +9,6 @@ public interface StaticRoutesRepositoryCustom {
 
   Set<StaticRoute> getAllStaticRoutes();
 
-  Set<StaticRoute> saveAllStaticRoutes(Set<StaticRoute> staticRoutes);
-
   StaticRoute saveStaticRoute(StaticRoute staticRoute);
 
   void deleteStaticRoute(InterledgerAddressPrefix prefix);

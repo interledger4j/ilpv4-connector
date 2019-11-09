@@ -2,6 +2,7 @@ package org.interledger.connector.jackson;
 
 import org.interledger.connector.jackson.modules.AccountIdModule;
 import org.interledger.connector.jackson.modules.HttpUrlModule;
+import org.interledger.connector.jackson.modules.InterledgerAddressPrefixModule;
 import org.interledger.connector.jackson.modules.SettlementAccountIdModule;
 import org.interledger.quilt.jackson.link.LinkIdModule;
 import org.interledger.quilt.jackson.link.LinkTypeModule;
@@ -22,6 +23,7 @@ import org.zalando.problem.violations.ConstraintViolationProblemModule;
 public class ObjectMapperFactory {
 
   public static ObjectMapper create() {
+
     return new ObjectMapper()
         .registerModule(new Jdk8Module())
         .registerModule(new HttpUrlModule())
@@ -30,6 +32,7 @@ public class ObjectMapperFactory {
         .registerModule(new ProblemModule())
         .registerModule(new ConstraintViolationProblemModule())
         .registerModule(new AccountIdModule())
+        .registerModule(new InterledgerAddressPrefixModule())
         .registerModule(new SettlementAccountIdModule())
         .registerModule(new LinkIdModule())
         .registerModule(new LinkTypeModule())
