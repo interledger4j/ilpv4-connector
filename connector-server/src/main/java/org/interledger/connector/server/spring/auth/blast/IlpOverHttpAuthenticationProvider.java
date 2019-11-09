@@ -26,6 +26,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 
+import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -167,7 +168,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
 
       return decryptor.withDecrypted(encryptedSecret, decryptedSecret -> {
         Authentication authResult = new JwtHs256AuthenticationProvider(decryptedSecret)
-            .authenticate(pendingAuth);
+            .authenticate(jwt);
 
         logger.debug("authenticationProvider returned with an AuthResult: {}", authResult.isAuthenticated());
 
@@ -185,7 +186,6 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
 
   private AuthenticationDecision authenticateAsSimple(BearerAuthentication authentication) {
     try {
-
       SimpleCredentials simpleCredentials = getSimpleCredentials(authentication.getBearerToken())
           .orElseThrow(() -> new BadCredentialsException("invalid simple auth credentials"));
 
@@ -216,19 +216,19 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
   }
 
   private static Optional<SimpleCredentials> getSimpleCredentials(byte[] token) {
-    String[] parts = new String(token).split(":");
-    if (parts.length == 2) {
+    String tokenString = new String(token);
+    int tokenIndex = tokenString.lastIndexOf(":");
+    if (tokenIndex > 0) {
       return Optional.of(SimpleCredentials.builder()
-          .principal(AccountId.of(parts[0]))
-          .authToken(parts[1].getBytes())
+          .principal(AccountId.of(tokenString.substring(0, tokenIndex).trim()))
+          .authToken(Base64.getDecoder().decode(tokenString.substring(tokenIndex+1).trim()))
           .build());
     }
     return Optional.empty();
   }
 
   private static boolean isSimple(byte[] token) {
-    String[] parts = new String(token).split(":");
-    return parts.length == 2;
+    return new String(token).indexOf(":") > 0;
   }
 
 

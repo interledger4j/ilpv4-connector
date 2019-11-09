@@ -13,7 +13,7 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 /**
- * Authentication credentials for a BLAST connection.
+ * Authentication credentials for a simple auth (username:base64-encoded-secret)
  */
 @Value.Immutable
 public interface SimpleCredentials extends Authentication {

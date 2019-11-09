@@ -40,13 +40,15 @@ public class BearerTokenSecurityContextRepository implements SecurityContextRepo
   }
 
   private Optional<byte[]> parseToken(HttpServletRequest request) {
-    String authHeader = request.getHeader("Authorization");
-    int bearerIndex = authHeader.indexOf("Bearer ");
-    SecurityContext context = SecurityContextHolder.createEmptyContext();
-    if (bearerIndex == 0) {
-      byte[] token = authHeader.substring(7).getBytes();
-      return Optional.of(token);
-    }
-    return Optional.empty();
+    return Optional.ofNullable(request.getHeader("Authorization"))
+        .map(authHeader -> {
+          int bearerIndex = authHeader.indexOf("Bearer ");
+          if (bearerIndex == 0) {
+            byte[] token = authHeader.substring(7).getBytes();
+            return token;
+          } else {
+            return null;
+          }
+        });
   }
 }

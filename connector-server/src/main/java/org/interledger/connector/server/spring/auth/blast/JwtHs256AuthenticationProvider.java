@@ -66,7 +66,7 @@ public class JwtHs256AuthenticationProvider implements AuthenticationProvider {
     } else {
       final JwtAuthentication jwt = (JwtAuthentication) authentication;
       try {
-        final Authentication jwtAuth = jwt.verify(this.jwtVerifier(decryptedSharedSecret));
+        final Authentication jwtAuth = jwt.verify(this.jwtVerifier());
         logger.debug("Authenticated jwt with scopes {}", jwtAuth.getAuthorities());
         return jwtAuth;
       } catch (JWTVerificationException var4) {
@@ -75,10 +75,10 @@ public class JwtHs256AuthenticationProvider implements AuthenticationProvider {
     }
   }
 
-  private JWTVerifier jwtVerifier(byte[] secret) throws AuthenticationException {
-    if (secret != null) {
+  private JWTVerifier jwtVerifier() throws AuthenticationException {
+    if (decryptedSharedSecret != null) {
       return providerForHS256(
-          secret,
+          decryptedSharedSecret,
           //this.issuer,
           //this.audience,
           this.leeway);
