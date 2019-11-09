@@ -52,20 +52,24 @@ public class StaticRoutesSpringBootTest {
 
   @Test
   public void createIndividualAndDelete() {
-    StaticRoute staticRoute = charlieKelleyRoute();
+    StaticRoute charlie = charlieKelleyRoute();
 
-    assertPutRoute(staticRoute, HttpStatus.CREATED);
-    assertThat(getRoutes()).hasSize(1).containsOnly(charlieKelleyRoute());
+    assertPutRoute(charlie, HttpStatus.CREATED);
+    assertThat(getStaticRoutes()).hasSize(1).containsOnly(charlie);
 
-    deleteRoute(staticRoute);
-    assertThat(getRoutes()).isEmpty();
-  }
+    StaticRoute frank = frankReynoldsRoute();
 
-  private StaticRoute ricketyCricketRoute() {
-    return StaticRoute.builder()
-        .accountId(AccountId.of("ricketyCricket"))
-        .prefix(InterledgerAddressPrefix.of("g.philly.shelter"))
-        .build();
+    assertPutRoute(frank, HttpStatus.CREATED);
+    assertThat(getStaticRoutes()).hasSize(2).containsOnly(charlie, frank);
+
+    Set<StaticRoute> allRoutes = getRoutes();
+    assertThat(allRoutes).hasSize(2).containsOnly(charlie, frank);
+
+    deleteRoute(charlie);
+    assertThat(getStaticRoutes()).hasSize(1).containsOnly(frank);
+
+    deleteRoute(frank);
+    assertThat(getStaticRoutes()).isEmpty();
   }
 
   private StaticRoute frankReynoldsRoute() {
@@ -80,19 +84,6 @@ public class StaticRoutesSpringBootTest {
         .accountId(AccountId.of("charlieKelley"))
         .prefix(InterledgerAddressPrefix.of("g.philly.birdlaw"))
         .build();
-  }
-
-  private void assertPutRoutes(Set<StaticRoute> routes, HttpStatus expectedStatus) {
-    final HttpHeaders headers = authHeaders();
-    final HttpEntity httpEntity = new HttpEntity(routes, headers);
-
-    ResponseEntity<Set<StaticRoute>> savedRoutes = restTemplate.exchange(SLASH_ROUTES_STATIC, HttpMethod.PUT,
-        httpEntity, new ParameterizedTypeReference<Set<StaticRoute>>() {});
-
-    assertThat(savedRoutes.getStatusCode()).isEqualTo(expectedStatus);
-    assertThat(savedRoutes.getBody()).hasSize(2)
-        .isEqualTo(routes)
-        .extracting("id").doesNotContainNull();
   }
 
   private HttpHeaders authHeaders() {
@@ -126,6 +117,14 @@ public class StaticRoutesSpringBootTest {
     final HttpEntity requestBody = new HttpEntity(authHeaders());
 
     ResponseEntity<Set<StaticRoute>> routes = restTemplate.exchange(SLASH_ROUTES, HttpMethod.GET, requestBody,
+        new ParameterizedTypeReference<Set<StaticRoute>>() {});
+    return routes.getBody();
+  }
+
+  private Set<StaticRoute> getStaticRoutes() {
+    final HttpEntity requestBody = new HttpEntity(authHeaders());
+
+    ResponseEntity<Set<StaticRoute>> routes = restTemplate.exchange(SLASH_ROUTES_STATIC, HttpMethod.GET, requestBody,
         new ParameterizedTypeReference<Set<StaticRoute>>() {});
     return routes.getBody();
   }

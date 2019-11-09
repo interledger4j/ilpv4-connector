@@ -26,6 +26,11 @@ public class NoOpExternalRoutingService implements ExternalRoutingService {
   }
 
   @Override
+  public RoutingTable<Route> getLocalRoutingTable() {
+    return this.routeRoutingTable;
+  }
+
+  @Override
   public Optional<Route> findBestNexHop(final InterledgerAddress finalDestinationAddress) {
     Objects.requireNonNull(finalDestinationAddress);
     return this.routeRoutingTable.findNextHopRoute(finalDestinationAddress);

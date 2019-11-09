@@ -124,6 +124,11 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   }
 
   @Override
+  public RoutingTable<Route> getLocalRoutingTable() {
+    return localRoutingTable;
+  }
+
+  @Override
   public Optional<Route> findBestNexHop(final InterledgerAddress finalDestinationAddress) {
     Objects.requireNonNull(finalDestinationAddress);
 

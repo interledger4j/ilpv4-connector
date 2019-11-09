@@ -12,8 +12,8 @@ public interface ExternalRoutingService extends PaymentRouter<Route> {
    */
   void start();
 
-  //  /**
-  //   * Accessor for the underlying {@link RoutingTable} used by this payment router.
-  //   */
-  //  public RoutingTable<Route> getRoutingTable();
+  /**
+   * Accessor for the underlying local {@link RoutingTable} used by this payment router.
+   */
+  RoutingTable<Route> getLocalRoutingTable();
 }
