@@ -6,7 +6,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.connector.routes.StaticRoutesManager;
+import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
@@ -18,13 +18,17 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.eventbus.EventBus;
 import com.google.common.hash.Hashing;
+import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -66,7 +70,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
   private final EventBus eventBus;
   private final AccountSettingsRepository accountSettingsRepository;
-  private final StaticRoutesManager staticRoutesManager;
+  private final StaticRoutesRepository staticRoutesRepository;
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final Decryptor decryptor;
@@ -97,10 +101,10 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
       final Supplier<ConnectorSettings> connectorSettingsSupplier,
       final Decryptor decryptor,
       final AccountSettingsRepository accountSettingsRepository,
+      final StaticRoutesRepository staticRoutesRepository,
       final ChildAccountPaymentRouter childAccountPaymentRouter,
       final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
-      final RouteBroadcaster routeBroadcaster,
-      final StaticRoutesManager staticRoutesManager
+      final RouteBroadcaster routeBroadcaster
   ) {
     this.eventBus = Objects.requireNonNull(eventBus);
     this.eventBus.register(this);
@@ -110,12 +114,12 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.decryptor = decryptor;
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
+    this.staticRoutesRepository = Objects.requireNonNull(staticRoutesRepository);
     this.childAccountPaymentRouter = Objects.requireNonNull(childAccountPaymentRouter);
     this.localRoutingTable = new InMemoryRoutingTable();
 
     this.outgoingRoutingTable = Objects.requireNonNull(outgoingRoutingTable);
     this.routeBroadcaster = routeBroadcaster;
-    this.staticRoutesManager = staticRoutesManager;
   }
 
   @Override
@@ -124,8 +128,10 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   }
 
   @Override
-  public RoutingTable<Route> getLocalRoutingTable() {
-    return localRoutingTable;
+  public Collection<Route> getAllRoutes() {
+    Set<Route> allRoutes = new HashSet<>();
+    localRoutingTable.forEach((prefix, route) -> allRoutes.add(route));
+    return allRoutes;
   }
 
   @Override
@@ -142,6 +148,39 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
       // get a child-address into this table, it would never be honored.
       return this.localRoutingTable.findNextHopRoute(finalDestinationAddress);
     }
+  }
+
+  @Override
+  public Set<StaticRoute> getAllStaticRoutes() {
+    return staticRoutesRepository.getAllStaticRoutes();
+  }
+
+
+  @Override
+  public void deleteStaticRouteByPrefix(InterledgerAddressPrefix prefix) {
+    Objects.requireNonNull(prefix);
+    if (!staticRoutesRepository.deleteStaticRoute(prefix)) {
+      throw new StaticRouteNotFoundProblem(prefix);
+    } else {
+      localRoutingTable.removeRoute(prefix);
+    }
+  }
+
+  @Override
+  public StaticRoute updateStaticRoute(StaticRoute route) {
+    Objects.requireNonNull(route);
+    try {
+      StaticRoute saved = staticRoutesRepository.saveStaticRoute(route);
+      addStaticRoute(saved);
+      return saved;
+    }
+    catch(Exception e) {
+      if (e.getCause() instanceof ConstraintViolationException) {
+        throw new StaticRouteAlreadyExistsProblem(route.addressPrefix());
+      }
+      throw e;
+    }
+
   }
 
   /**
@@ -206,15 +245,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     //////////////////
 
     // For any statically configured route...
-    this.staticRoutesManager.getAll().stream()
-        .forEach(staticRoute -> {
-
-          // ...attempt to register a CCP-enabled account (duplicate requests are fine).
-          routeBroadcaster.registerCcpEnabledAccount(staticRoute.accountId());
-
-          // This will add the prefix correctly _and_ update the forwarding table...
-          updatePrefix(staticRoute.addressPrefix());
-        });
+    this.staticRoutesRepository.getAllStaticRoutes().stream().forEach(this::addStaticRoute);
 
     ////////////////////
     // Choose Best Paths
@@ -228,6 +259,14 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
       this.updatePrefix(route.routePrefix());
     });
 
+  }
+
+  private void addStaticRoute(StaticRoute staticRoute) {
+    // ...attempt to register a CCP-enabled account (duplicate requests are fine).
+    routeBroadcaster.registerCcpEnabledAccount(staticRoute.accountId());
+
+    // This will add the prefix correctly _and_ update the forwarding table...
+    updatePrefix(staticRoute.addressPrefix());
   }
 
   /**
@@ -425,7 +464,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     // Static-routes have highest priority...
     return Optional.ofNullable(
-        staticRoutesManager.getAll().stream()
+        staticRoutesRepository.getAllStaticRoutes().stream()
             .filter(staticRoute -> staticRoute.addressPrefix().equals(addressPrefix))
             .findFirst()
             .map(staticRoute -> {

@@ -6,6 +6,9 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.hash.Hashing;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
@@ -21,6 +24,9 @@ import java.util.Optional;
  * <p>For more details about the structure of this class as it relates to other routes in a routing table, reference
  * {@link RoutingTable}.</p>
  */
+@JsonSerialize(as = ImmutableRoute.class)
+@JsonDeserialize(as = ImmutableRoute.class)
+@JsonPropertyOrder( {"nextHopAccountId", "routePrefix"} )
 public interface Route extends BaseRoute {
 
   byte[] EMPTY_AUTH = new byte[32];

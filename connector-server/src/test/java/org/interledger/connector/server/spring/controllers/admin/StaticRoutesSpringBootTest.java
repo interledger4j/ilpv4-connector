@@ -1,10 +1,12 @@
 package org.interledger.connector.server.spring.controllers.admin;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_ROUTES;
 import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_ROUTES_STATIC;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.routing.Route;
 import org.interledger.connector.routing.StaticRoute;
 import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.core.InterledgerAddressPrefix;
@@ -29,6 +31,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -57,7 +60,7 @@ public class StaticRoutesSpringBootTest {
   @Before
   public void setUp() {
     // "empty" what's there before each test
-    getRoutes().forEach(this::deleteRoute);
+    getRoutes().forEach(r -> this.deleteRoute(r.routePrefix()));
   }
 
   @Test
@@ -72,15 +75,20 @@ public class StaticRoutesSpringBootTest {
     assertPutRoute(frank, HttpStatus.CREATED);
     assertThat(getStaticRoutes()).hasSize(2).containsOnly(charlie, frank);
 
-    Set<StaticRoute> allRoutes = getRoutes();
-    assertThat(allRoutes).hasSize(2).containsOnly(charlie, frank);
+    Collection<Route> allRoutes = getRoutes();
+    assertThat(allRoutes).hasSize(2)
+        .extracting("nextHopAccountId", "routePrefix")
+        .containsOnly(
+            tuple(charlie.accountId(), charlie.addressPrefix()),
+            tuple(frank.accountId(), frank.addressPrefix())
+        );
 
-    assertThat(deleteRoute(charlie).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-    assertThat(deleteRoute(charlie).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    assertThat(deleteRoute(charlie.addressPrefix()).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+    assertThat(deleteRoute(charlie.addressPrefix()).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     assertThat(getStaticRoutes()).hasSize(1).containsOnly(frank);
 
-    assertThat(deleteRoute(frank).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-    assertThat(deleteRoute(frank).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    assertThat(deleteRoute(frank.addressPrefix()).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+    assertThat(deleteRoute(frank.addressPrefix()).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     assertThat(getStaticRoutes()).isEmpty();
   }
 
@@ -90,7 +98,7 @@ public class StaticRoutesSpringBootTest {
         .addressPrefix(InterledgerAddressPrefix.of("g.philly.dairy"))
         .accountId(AccountId.of("mcpoyle"))
         .build();
-    ResponseEntity<String> response = deleteRoute(mcpoyle);
+    ResponseEntity<String> response = deleteRoute(mcpoyle.addressPrefix());
 
     JsonContentAssert assertJson = assertThat(jsonTester.from(response.getBody()));
     assertJson.extractingJsonPathValue("status").isEqualTo(404);
@@ -202,19 +210,19 @@ public class StaticRoutesSpringBootTest {
         .isEqualTo(route);
   }
 
-  private ResponseEntity<String> deleteRoute(StaticRoute route) {
+  private ResponseEntity<String> deleteRoute(InterledgerAddressPrefix routePrefix) {
     final HttpEntity httpEntity = new HttpEntity(authHeaders());
-    String prefix = route.addressPrefix().getValue();
+    String prefix = routePrefix.getValue();
     ResponseEntity<String> response = restTemplate.exchange(SLASH_ROUTES_STATIC + "/" + prefix, HttpMethod.DELETE, httpEntity,
         String.class);
     return response;
   }
 
-  private Set<StaticRoute> getRoutes() {
+  private Collection<Route> getRoutes() {
     final HttpEntity requestBody = new HttpEntity(authHeaders());
 
-    ResponseEntity<Set<StaticRoute>> routes = restTemplate.exchange(SLASH_ROUTES, HttpMethod.GET, requestBody,
-        new ParameterizedTypeReference<Set<StaticRoute>>() {});
+    ResponseEntity<Collection<Route>> routes = restTemplate.exchange(SLASH_ROUTES, HttpMethod.GET, requestBody,
+        new ParameterizedTypeReference<Collection<Route>>() {});
     return routes.getBody();
   }
 

@@ -2,14 +2,13 @@ package org.interledger.connector.server.spring.controllers.admin;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-import org.interledger.connector.routes.StaticRoutesManager;
 import org.interledger.connector.routing.ExternalRoutingService;
+import org.interledger.connector.routing.Route;
 import org.interledger.connector.routing.StaticRoute;
 import org.interledger.connector.routing.StaticRouteUnprocessableProblem;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.core.InterledgerAddressPrefix;
 
-import com.google.common.collect.Sets;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,17 +18,15 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.spring.common.MediaTypes;
 
+import java.util.Collection;
 import java.util.Set;
 
 @RestController(PathConstants.SLASH_ROUTES)
 public class StaticRoutesController {
 
-  private final StaticRoutesManager staticRoutesManager;
-
   private final ExternalRoutingService externalRoutingService;
 
-  public StaticRoutesController(StaticRoutesManager staticRoutesManager, ExternalRoutingService externalRoutingService) {
-    this.staticRoutesManager = staticRoutesManager;
+  public StaticRoutesController(ExternalRoutingService externalRoutingService) {
     this.externalRoutingService = externalRoutingService;
   }
 
@@ -39,12 +36,9 @@ public class StaticRoutesController {
       consumes = {APPLICATION_JSON_VALUE},
       produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public Set<StaticRoute> getRoutes() {
-    Set<StaticRoute> routes = Sets.newHashSet(this.staticRoutesManager.getAll());
-    // FIXME probably shouldn't be mapping non-static routes as a static route, but makes transport easier for meow
-    externalRoutingService.getLocalRoutingTable()
-        .forEach((prefix, route) -> routes.add(StaticRoute.builder().addressPrefix(prefix).accountId(route.nextHopAccountId()).build()));
-    return routes;
+  public Collection<Route> getRoutes() {
+    // FIXME add paging
+    return externalRoutingService.getAllRoutes();
   }
 
   @RequestMapping(
@@ -54,7 +48,7 @@ public class StaticRoutesController {
       produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public Set<StaticRoute> getStaticRoutes() {
-    return this.staticRoutesManager.getAll();
+    return this.externalRoutingService.getAllStaticRoutes();
   }
 
   @RequestMapping(
@@ -68,7 +62,7 @@ public class StaticRoutesController {
     if (!prefix.equals(staticRoute.addressPrefix().getValue())) {
       throw new StaticRouteUnprocessableProblem(prefix, staticRoute.addressPrefix());
     }
-    return new ResponseEntity<>(this.staticRoutesManager.update(staticRoute), HttpStatus.CREATED);
+    return new ResponseEntity<>(this.externalRoutingService.updateStaticRoute(staticRoute), HttpStatus.CREATED);
   }
 
   @RequestMapping(
@@ -78,7 +72,7 @@ public class StaticRoutesController {
       produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public ResponseEntity deleteStaticRouteAtPrefix(@PathVariable(PathConstants.PREFIX) String prefix) {
-    this.staticRoutesManager.deleteByPrefix(InterledgerAddressPrefix.of(prefix));
+    this.externalRoutingService.deleteStaticRouteByPrefix(InterledgerAddressPrefix.of(prefix));
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 

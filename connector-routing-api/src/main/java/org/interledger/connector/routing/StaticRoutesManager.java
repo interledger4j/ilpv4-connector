@@ -1,4 +1,4 @@
-package org.interledger.connector.routes;
+package org.interledger.connector.routing;
 
 import org.interledger.connector.routing.StaticRoute;
 import org.interledger.core.InterledgerAddressPrefix;
@@ -11,10 +11,10 @@ import java.util.Set;
  */
 public interface StaticRoutesManager {
 
-  Set<StaticRoute> getAll();
+  Set<StaticRoute> getAllStaticRoutes();
 
-  void deleteByPrefix(InterledgerAddressPrefix prefix);
+  void deleteStaticRouteByPrefix(InterledgerAddressPrefix prefix);
 
-  StaticRoute update(StaticRoute route);
+  StaticRoute updateStaticRoute(StaticRoute route);
 
 }

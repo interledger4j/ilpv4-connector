@@ -62,7 +62,7 @@ public interface StaticRoute {
   @Value.Immutable
   @JsonSerialize(as = ImmutableStaticRoute.class)
   @JsonDeserialize(as = ImmutableStaticRoute.class)
-  @JsonPropertyOrder( {"id", "createdAt", "modifiedAt", "prefix", "accountId"} )
+  @JsonPropertyOrder( {"createdAt", "modifiedAt", "prefix", "accountId"} )
   abstract class AbstractStaticRoute implements StaticRoute {
 
     @Override

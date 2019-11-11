@@ -1,9 +1,13 @@
 package org.interledger.connector.routing;
 
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerAddressPrefix;
 
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * An implementation of {@link ExternalRoutingService} that neither responds to nor issues routing requests, and assumes
@@ -26,8 +30,10 @@ public class NoOpExternalRoutingService implements ExternalRoutingService {
   }
 
   @Override
-  public RoutingTable<Route> getLocalRoutingTable() {
-    return this.routeRoutingTable;
+  public Collection<Route> getAllRoutes() {
+    Set<Route> allRoutes = new HashSet<>();
+    routeRoutingTable.forEach((prefix, route) -> allRoutes.add(route));
+    return allRoutes;
   }
 
   @Override
@@ -36,11 +42,18 @@ public class NoOpExternalRoutingService implements ExternalRoutingService {
     return this.routeRoutingTable.findNextHopRoute(finalDestinationAddress);
   }
 
-//  /**
-//   * Accessor for the underlying {@link RoutingTable} used by this payment router.
-//   */
-//  @Override
-//  public RoutingTable<Route> getRoutingTable() {
-//    return this.routeRoutingTable;
-//  }
+  @Override
+  public Set<StaticRoute> getAllStaticRoutes() {
+    return null;
+  }
+
+  @Override
+  public void deleteStaticRouteByPrefix(InterledgerAddressPrefix prefix) {
+
+  }
+
+  @Override
+  public StaticRoute updateStaticRoute(StaticRoute route) {
+    return null;
+  }
 }
