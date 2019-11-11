@@ -8,6 +8,10 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
 import java.io.IOException;
 
+/**
+ * @deprecated https://github.com/hyperledger/quilt/issues/371
+ */
+@Deprecated
 public class InterledgerAddressPrefixDeserializer extends StdDeserializer<InterledgerAddressPrefix> {
 
   public InterledgerAddressPrefixDeserializer() {

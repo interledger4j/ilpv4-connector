@@ -5,6 +5,10 @@ import org.interledger.core.InterledgerAddressPrefix;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
+/**
+ * @deprecated https://github.com/hyperledger/quilt/issues/371
+ */
+@Deprecated
 public class InterledgerAddressPrefixModule extends SimpleModule {
 
   private static final String NAME = "InterledgerAddressPrefixModule";

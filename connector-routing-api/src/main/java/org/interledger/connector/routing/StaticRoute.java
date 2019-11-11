@@ -20,9 +20,6 @@ import java.time.Instant;
 @JsonPropertyOrder( {"createdAt", "modifiedAt", "prefix", "accountId"} )
 public interface StaticRoute {
 
-  InterledgerAddressPrefix SELF_INTERNAL = InterledgerAddressPrefix.SELF.with("internal");
-  InterledgerAddress STANDARD_DEFAULT_ROUTE = InterledgerAddress.of(SELF_INTERNAL.getValue());
-
   static ImmutableStaticRoute.Builder builder() {
     return ImmutableStaticRoute.builder();
   }

@@ -8,6 +8,10 @@ import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
 
 import java.io.IOException;
 
+/**
+ * @deprecated https://github.com/hyperledger/quilt/issues/371
+ */
+@Deprecated
 public class InterledgerAddressPrefixSerializer extends StdScalarSerializer<InterledgerAddressPrefix> {
 
   public InterledgerAddressPrefixSerializer() {
