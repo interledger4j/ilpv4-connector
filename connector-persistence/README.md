@@ -11,8 +11,7 @@ To generate the DDL for the Connector database, execute the following commands:
 mvn -DskipTests clean package -P liquibase-pg-sql liquibase:updateSQL
 ``` 
 
-This will emit a file `/target/liquibase/migrate.sql` that can be used to populate your database. Alternatively, 
-executing this command will actully connect to the database and run this DDL for you:
+This will emit a file `ddl/migrate.sql` that can be used to populate your database. Alternatively, executing this command will actually connect to the database and run this DDL for you:
 
 ```bash
 mvn -DskipTests clean package -P liquibase-pg-sql liquibase:update

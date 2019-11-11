@@ -196,12 +196,18 @@
         <plugins>
           <plugin>
             <groupId>org.liquibase</groupId>
+            <!-- This plugin is engaged via this Maven command:
+                 `mvn -DskipTests clean package -P liquibase-pg-sql liquibase:updateSQL`
+                 NOTE: In order to run the above via Maven, a Postgres DB must be running on port 5432 and there must be
+                 a database called `connector` that already exists (liquibase will not create the DB in postgres). -->
             <artifactId>liquibase-maven-plugin</artifactId>
             <configuration>
+              <migrationSqlOutputFile>ddl/migrate.sql</migrationSqlOutputFile>
               <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
               <driver>org.postgresql.Driver</driver>
               <changeLogFile>db/changelog-master.xml</changeLogFile>
-              <url>jdbc:postgresql://localhost:5432/circle_test</url>
+              <url>jdbc:postgresql://localhost:5432/connector</url>
+              <username>postgres</username>
             </configuration>
             <executions>
               <execution>

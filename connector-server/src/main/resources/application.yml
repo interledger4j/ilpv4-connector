@@ -24,20 +24,6 @@ spring:
       enabled: ALWAYS
   http:
     log-request-details: false
-
-  # example database Settings. Or alternatively activate the `h2` profile for in-memory database or the
-  # `postgres` profile for a local postgres
-  #datasource:
-    #url: jdbc:postgresql://localhost:5432/connector
-    #platform: postgresql
-    #username: sa
-    #password:
-    #driverClassName: org.postgresql.Driver
-
-  #redis:
-  #  host: localhost
-  #  port: 6379
-
   jpa:
     hibernate:
       ddl-auto: none

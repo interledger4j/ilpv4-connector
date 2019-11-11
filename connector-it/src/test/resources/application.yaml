@@ -1,24 +1,18 @@
+# These setting MUST be overridden in order for the docker-based Postgres and Redis ITs to work properly.
 spring:
-  # Database Settings
+  profiles:
+    include: migrate
   datasource:
-    url: jdbc:postgresql://localhost:5432/connector
-    platform: postgresql
-    username: postgres
-    password: postgres
-    driverClassName: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:35432/connector
+    username: connector
+    password: connector
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQL10Dialect
-#    hibernate:
-#      ddl-auto: none
-#    open-in-view: false
     properties:
       hibernate:
         show_sql: true
         use_sql_comments: true
         format_sql: true
-#  liquibase:
-#    enabled: false
-
-  redis:
-    host=localhost
-    port=36379
+redis:
+  host: localhost
+  port: 36379
