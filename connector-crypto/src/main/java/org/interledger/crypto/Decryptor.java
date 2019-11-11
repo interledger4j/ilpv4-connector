@@ -53,25 +53,7 @@ public interface Decryptor {
    * @return true if encrypted decrypts to the expected byte array
    */
   default boolean isEqualDecrypted(EncryptedSecret encrypted, byte[] expected) {
-    return withDecrypted(encrypted, decrypted -> isContantTimeEqual(decrypted, expected));
-  }
-
-  /**
-   * Checks if the byte arrays are equal using a constant-time algorithm to prevent timing based attacks
-   * {@see https://codahale.com/a-lesson-in-timing-attacks/}
-   * @param val1 first value to compare
-   * @param val2 second value to compare
-   * @return true if val1 equals val2
-   */
-  static boolean isContantTimeEqual(byte[] val1, byte[] val2) {
-    if (val1.length != val2.length) {
-      return false;
-    }
-    int result = 0;
-    for (int i = 0; i < val1.length; i++) {
-      result |= val1[i] ^ val2[i];
-    }
-    return result == 0;
+    return withDecrypted(encrypted, decrypted -> ByteArrays.isEqualUsingConstantTime(decrypted, expected));
   }
 
 }
