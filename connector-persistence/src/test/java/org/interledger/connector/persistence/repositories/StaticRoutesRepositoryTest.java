@@ -11,7 +11,6 @@ import org.interledger.core.InterledgerAddressPrefix;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
-import org.assertj.core.api.Condition;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,17 +51,17 @@ public class StaticRoutesRepositoryTest {
 
     assertThat(staticRoutesRepository.getAllStaticRoutes())
         .hasSize(1)
-        .extracting("id", "accountId", "addressPrefix")
-        .containsExactly(tuple(savedMac.id(), mac.accountId(), mac.addressPrefix()));
+        .extracting("accountId", "addressPrefix")
+        .containsExactly(tuple(mac.accountId(), mac.addressPrefix()));
 
     StaticRoute savedCharlie = saveAndGetRoute(charlie);
 
     assertThat(staticRoutesRepository.getAllStaticRoutes())
         .hasSize(2)
-        .extracting("id", "accountId", "addressPrefix")
+        .extracting("accountId", "addressPrefix")
         .containsExactly(
-            tuple(savedMac.id(), mac.accountId(), mac.addressPrefix()),
-            tuple(savedCharlie.id(), charlie.accountId(), charlie.addressPrefix())
+            tuple(mac.accountId(), mac.addressPrefix()),
+            tuple(charlie.accountId(), charlie.addressPrefix())
         );
 
     staticRoutesRepository.deleteStaticRoute(mac.addressPrefix());
@@ -71,8 +70,8 @@ public class StaticRoutesRepositoryTest {
 
     assertThat(staticRoutesRepository.getAllStaticRoutes())
         .hasSize(1)
-        .extracting("id", "accountId", "addressPrefix")
-        .containsExactly(tuple(savedCharlie.id(), charlie.accountId(), charlie.addressPrefix()));
+        .extracting("accountId", "addressPrefix")
+        .containsExactly(tuple(charlie.accountId(), charlie.addressPrefix()));
   }
 
   private StaticRoute saveAndGetRoute(StaticRoute routeToSave) {
@@ -84,18 +83,10 @@ public class StaticRoutesRepositoryTest {
     StaticRoute fetchedRoute = staticRoutesRepository.getByPrefix(routeToSave.addressPrefix());
 
     assertThat(fetchedRoute)
-        .doesNotHave(nullId)
         .extracting("accountId", "addressPrefix")
         .containsExactly(routeToSave.accountId(), routeToSave.addressPrefix());
     return fetchedRoute;
   }
-
-  private final Condition<StaticRoute> nullId = new Condition<StaticRoute>() {
-    @Override
-    public boolean matches(StaticRoute value) {
-      return value.id() == null;
-    }
-  };
 
   @Configuration("application.yml")
   public static class TestPersistenceConfig {

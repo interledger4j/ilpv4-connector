@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 import java.time.Instant;
-import javax.annotation.Nullable;
 
 /**
  * A statically configured route. Static routes take precedence over the same or shorter prefixes that are local or
@@ -18,7 +17,7 @@ import javax.annotation.Nullable;
  */
 @JsonSerialize(as = ImmutableStaticRoute.class)
 @JsonDeserialize(as = ImmutableStaticRoute.class)
-@JsonPropertyOrder( {"id", "createdAt", "modifiedAt", "prefix", "accountId"} )
+@JsonPropertyOrder( {"createdAt", "modifiedAt", "prefix", "accountId"} )
 public interface StaticRoute {
 
   InterledgerAddressPrefix SELF_INTERNAL = InterledgerAddressPrefix.SELF.with("internal");
@@ -27,9 +26,6 @@ public interface StaticRoute {
   static ImmutableStaticRoute.Builder builder() {
     return ImmutableStaticRoute.builder();
   }
-
-  @Nullable
-  Long id();
 
   /**
    * A target address prefix that corresponds to {@code #getPeerAddress}.
@@ -67,15 +63,10 @@ public interface StaticRoute {
   // were to be interned, then constructing a new instance with the same id as an already interned instance
   // would simply return the old, immutable value, which would be incorrect.
   @Value.Immutable
-  @Value.Modifiable
   @JsonSerialize(as = ImmutableStaticRoute.class)
   @JsonDeserialize(as = ImmutableStaticRoute.class)
   @JsonPropertyOrder( {"id", "createdAt", "modifiedAt", "prefix", "accountId"} )
   abstract class AbstractStaticRoute implements StaticRoute {
-
-    @Override
-    @Nullable
-    public abstract Long id();
 
     @Override
     @Value.Default

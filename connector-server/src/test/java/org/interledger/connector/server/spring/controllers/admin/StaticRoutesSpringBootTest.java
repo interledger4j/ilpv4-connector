@@ -94,7 +94,7 @@ public class StaticRoutesSpringBootTest {
 
     JsonContentAssert assertJson = assertThat(jsonTester.from(response.getBody()));
     assertJson.extractingJsonPathValue("status").isEqualTo(409);
-    assertJson.extractingJsonPathValue("title").isEqualTo("Route Already Exists (`g.philly.shelter`)");
+    assertJson.extractingJsonPathValue("title").isEqualTo("Static Route Already Exists (`g.philly.shelter`)");
     assertJson.extractingJsonPathValue("prefix").isEqualTo(ricketyCricket.addressPrefix().getValue());
     assertJson.extractingJsonPathValue("type")
         .isEqualTo("https://errors.interledger.org/routes/static/static-route-already-exists");
@@ -157,8 +157,7 @@ public class StaticRoutesSpringBootTest {
 
     assertThat(savedRoutes.getStatusCode()).isEqualTo(expectedStatus);
     assertThat(savedRoutes.getBody())
-        .isEqualTo(route)
-        .extracting("id").isNotNull();
+        .isEqualTo(route);
   }
 
   private void deleteRoute(StaticRoute route) {

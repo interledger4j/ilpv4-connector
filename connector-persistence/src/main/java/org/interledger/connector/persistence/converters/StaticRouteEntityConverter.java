@@ -18,7 +18,6 @@ public class StaticRouteEntityConverter implements Converter<StaticRouteEntity, 
     return StaticRoute.builder()
         .accountId(staticRouteEntity.getBoxedAccountId())
         .addressPrefix(staticRouteEntity.getPrefix())
-        .id(staticRouteEntity.getId())
         .createdAt(Optional.ofNullable(staticRouteEntity.getCreatedDate()).orElseGet(() -> Instant.now()))
         .modifiedAt(Optional.ofNullable(staticRouteEntity.getModifiedDate()).orElseGet(() -> Instant.now()))
         .build();
