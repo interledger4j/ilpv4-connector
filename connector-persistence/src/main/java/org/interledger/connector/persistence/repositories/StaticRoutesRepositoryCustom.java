@@ -11,7 +11,7 @@ public interface StaticRoutesRepositoryCustom {
 
   StaticRoute saveStaticRoute(StaticRoute staticRoute);
 
-  void deleteStaticRoute(InterledgerAddressPrefix prefix);
+  boolean deleteStaticRoute(InterledgerAddressPrefix prefix);
 
   StaticRoute getByPrefix(InterledgerAddressPrefix prefix);
 }

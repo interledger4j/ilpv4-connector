@@ -75,11 +75,29 @@ public class StaticRoutesSpringBootTest {
     Set<StaticRoute> allRoutes = getRoutes();
     assertThat(allRoutes).hasSize(2).containsOnly(charlie, frank);
 
-    deleteRoute(charlie);
+    assertThat(deleteRoute(charlie).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+    assertThat(deleteRoute(charlie).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     assertThat(getStaticRoutes()).hasSize(1).containsOnly(frank);
 
-    deleteRoute(frank);
+    assertThat(deleteRoute(frank).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+    assertThat(deleteRoute(frank).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     assertThat(getStaticRoutes()).isEmpty();
+  }
+
+  @Test
+  public void deleteNotFoundErrorMessage() {
+    StaticRoute mcpoyle = StaticRoute.builder()
+        .addressPrefix(InterledgerAddressPrefix.of("g.philly.dairy"))
+        .accountId(AccountId.of("mcpoyle"))
+        .build();
+    ResponseEntity<String> response = deleteRoute(mcpoyle);
+
+    JsonContentAssert assertJson = assertThat(jsonTester.from(response.getBody()));
+    assertJson.extractingJsonPathValue("status").isEqualTo(404);
+    assertJson.extractingJsonPathValue("title").isEqualTo("Static Route Does Not Exist (`g.philly.dairy`)");
+    assertJson.extractingJsonPathValue("prefix").isEqualTo(mcpoyle.addressPrefix().getValue());
+    assertJson.extractingJsonPathValue("type")
+        .isEqualTo("https://errors.interledger.org/routes/static/static-route-not-found");
   }
 
   @Test
@@ -98,6 +116,30 @@ public class StaticRoutesSpringBootTest {
     assertJson.extractingJsonPathValue("prefix").isEqualTo(ricketyCricket.addressPrefix().getValue());
     assertJson.extractingJsonPathValue("type")
         .isEqualTo("https://errors.interledger.org/routes/static/static-route-already-exists");
+  }
+
+  @Test
+  public void mismatchedPrefixIsUnprocessable() {
+    StaticRoute ricketyCricket = ricketyCricketRoute();
+
+    StaticRoute ricketyMismatch = StaticRoute.builder()
+        .accountId(ricketyCricket.accountId())
+        .addressPrefix(InterledgerAddressPrefix.of("g.philly.priesthood"))
+        .build();
+
+    final HttpEntity httpEntity = new HttpEntity(ricketyMismatch, authHeaders());
+
+    ResponseEntity<String> response = restTemplate
+        .exchange(SLASH_ROUTES_STATIC + "/" + ricketyCricket.addressPrefix().getValue(), HttpMethod.PUT, httpEntity,
+            String.class);
+
+    JsonContentAssert assertJson = assertThat(jsonTester.from(response.getBody()));
+    assertJson.extractingJsonPathValue("status").isEqualTo(422);
+    assertJson.extractingJsonPathValue("title")
+        .isEqualTo("Static Route Unprocessable [entityPrefix: `g.philly.priesthood`, urlPrefix: `g.philly.shelter`]");
+    assertJson.extractingJsonPathValue("prefix").isEqualTo(ricketyMismatch.addressPrefix().getValue());
+    assertJson.extractingJsonPathValue("type")
+        .isEqualTo("https://errors.interledger.org/routes/static/static-route-unprocessable");
   }
 
   /**
@@ -160,11 +202,12 @@ public class StaticRoutesSpringBootTest {
         .isEqualTo(route);
   }
 
-  private void deleteRoute(StaticRoute route) {
+  private ResponseEntity<String> deleteRoute(StaticRoute route) {
     final HttpEntity httpEntity = new HttpEntity(authHeaders());
     String prefix = route.addressPrefix().getValue();
-    restTemplate.exchange(SLASH_ROUTES_STATIC + "/" + prefix, HttpMethod.DELETE, httpEntity,
-        Void.class);
+    ResponseEntity<String> response = restTemplate.exchange(SLASH_ROUTES_STATIC + "/" + prefix, HttpMethod.DELETE, httpEntity,
+        String.class);
+    return response;
   }
 
   private Set<StaticRoute> getRoutes() {

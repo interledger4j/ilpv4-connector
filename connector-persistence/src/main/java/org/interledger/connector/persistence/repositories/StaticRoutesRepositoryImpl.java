@@ -38,9 +38,9 @@ public class StaticRoutesRepositoryImpl implements StaticRoutesRepositoryCustom 
 
   @Override
   @Transactional
-  public void deleteStaticRoute(InterledgerAddressPrefix prefix) {
+  public boolean deleteStaticRoute(InterledgerAddressPrefix prefix) {
     Objects.requireNonNull(prefix);
-    staticRoutesRepository.deleteByNaturalId(prefix.getValue());
+    return !staticRoutesRepository.deleteByNaturalId(prefix.getValue()).isEmpty();
   }
 
   @Override

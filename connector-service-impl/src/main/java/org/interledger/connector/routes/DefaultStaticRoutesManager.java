@@ -3,6 +3,7 @@ package org.interledger.connector.routes;
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
 import org.interledger.connector.routing.StaticRoute;
 import org.interledger.connector.routing.StaticRouteAlreadyExistsProblem;
+import org.interledger.connector.routing.StaticRouteNotFoundProblem;
 import org.interledger.core.InterledgerAddressPrefix;
 
 import org.hibernate.exception.ConstraintViolationException;
@@ -27,7 +28,9 @@ public class DefaultStaticRoutesManager implements StaticRoutesManager {
   @Override
   public void deleteByPrefix(InterledgerAddressPrefix prefix) {
     Objects.requireNonNull(prefix);
-    staticRoutesRepository.deleteStaticRoute(prefix);
+    if (!staticRoutesRepository.deleteStaticRoute(prefix)) {
+      throw new StaticRouteNotFoundProblem(prefix);
+    }
   }
 
   @Override

@@ -64,7 +64,10 @@ public class StaticRoutesRepositoryTest {
             tuple(charlie.accountId(), charlie.addressPrefix())
         );
 
-    staticRoutesRepository.deleteStaticRoute(mac.addressPrefix());
+    // delete only really deletes the first time
+    assertThat(staticRoutesRepository.deleteStaticRoute(mac.addressPrefix())).isTrue();
+    assertThat(staticRoutesRepository.deleteStaticRoute(mac.addressPrefix())).isFalse();
+
     StaticRoute deletedRoute = staticRoutesRepository.getByPrefix(mac.addressPrefix());
     assertThat(deletedRoute).isNull();
 

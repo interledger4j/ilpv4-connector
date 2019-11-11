@@ -5,6 +5,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import org.interledger.connector.routes.StaticRoutesManager;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.routing.StaticRoute;
+import org.interledger.connector.routing.StaticRouteUnprocessableProblem;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.core.InterledgerAddressPrefix;
 
@@ -62,8 +63,11 @@ public class StaticRoutesController {
       consumes = {APPLICATION_JSON_VALUE},
       produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public ResponseEntity<StaticRoute> updateStaticRouteAtPrefix(@PathVariable(PathConstants.PREFIX) String prefix,
+  public ResponseEntity<StaticRoute> createStaticRouteAtPrefix(@PathVariable(PathConstants.PREFIX) String prefix,
                                                                @RequestBody StaticRoute staticRoute) {
+    if (!prefix.equals(staticRoute.addressPrefix().getValue())) {
+      throw new StaticRouteUnprocessableProblem(prefix, staticRoute.addressPrefix());
+    }
     return new ResponseEntity<>(this.staticRoutesManager.update(staticRoute), HttpStatus.CREATED);
   }
 
@@ -73,8 +77,9 @@ public class StaticRoutesController {
       consumes = {APPLICATION_JSON_VALUE},
       produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public void deleteStaticRouteAtPrefix(@PathVariable(PathConstants.PREFIX) String prefix) {
+  public ResponseEntity deleteStaticRouteAtPrefix(@PathVariable(PathConstants.PREFIX) String prefix) {
     this.staticRoutesManager.deleteByPrefix(InterledgerAddressPrefix.of(prefix));
+    return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 
 }
