@@ -11,7 +11,7 @@ import java.util.Set;
  */
 public interface StaticRoutesManager {
 
-  Set<StaticRoute> getAllRoutesUncached();
+  Set<StaticRoute> getAll();
 
   void deleteByPrefix(InterledgerAddressPrefix prefix);
 

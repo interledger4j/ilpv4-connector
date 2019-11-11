@@ -89,13 +89,13 @@ public class StaticRoutesSpringBootTest {
 
     final HttpEntity httpEntity = new HttpEntity(ricketyCricket, authHeaders());
     ResponseEntity<String> response = restTemplate
-        .exchange(SLASH_ROUTES_STATIC + "/" + ricketyCricket.prefix().getValue(), HttpMethod.PUT, httpEntity,
+        .exchange(SLASH_ROUTES_STATIC + "/" + ricketyCricket.addressPrefix().getValue(), HttpMethod.PUT, httpEntity,
             String.class);
 
     JsonContentAssert assertJson = assertThat(jsonTester.from(response.getBody()));
     assertJson.extractingJsonPathValue("status").isEqualTo(409);
     assertJson.extractingJsonPathValue("title").isEqualTo("Route Already Exists (`g.philly.shelter`)");
-    assertJson.extractingJsonPathValue("prefix").isEqualTo(ricketyCricket.prefix().getValue());
+    assertJson.extractingJsonPathValue("prefix").isEqualTo(ricketyCricket.addressPrefix().getValue());
     assertJson.extractingJsonPathValue("type")
         .isEqualTo("https://errors.interledger.org/routes/static/static-route-already-exists");
   }
@@ -109,7 +109,7 @@ public class StaticRoutesSpringBootTest {
     InterledgerAddressPrefix prefix = InterledgerAddressPrefix.of("g.foo.baz");
     Map<String, Object> rawValues = ImmutableMap.<String, Object>builder()
         .put("accountId", AccountId.of("testJsonMarshalling"))
-        .put("prefix", prefix)
+        .put("addressPrefix", prefix)
         .put("whatIsThatSmell", "ifYouHaveToAskYouDoNotWantToKnow")
         .build();
 
@@ -123,21 +123,21 @@ public class StaticRoutesSpringBootTest {
   private StaticRoute frankReynoldsRoute() {
     return StaticRoute.builder()
         .accountId(AccountId.of("frankReynolds"))
-        .prefix(InterledgerAddressPrefix.of("g.philly.paddys"))
+        .addressPrefix(InterledgerAddressPrefix.of("g.philly.paddys"))
         .build();
   }
 
   private StaticRoute charlieKelleyRoute() {
     return StaticRoute.builder()
         .accountId(AccountId.of("charlieKelley"))
-        .prefix(InterledgerAddressPrefix.of("g.philly.birdlaw"))
+        .addressPrefix(InterledgerAddressPrefix.of("g.philly.birdlaw"))
         .build();
   }
 
   private StaticRoute ricketyCricketRoute() {
     return StaticRoute.builder()
         .accountId(AccountId.of("ricketyCricket"))
-        .prefix(InterledgerAddressPrefix.of("g.philly.shelter"))
+        .addressPrefix(InterledgerAddressPrefix.of("g.philly.shelter"))
         .build();
   }
 
@@ -152,7 +152,7 @@ public class StaticRoutesSpringBootTest {
     final HttpEntity httpEntity = new HttpEntity(route, authHeaders());
 
     ResponseEntity<StaticRoute> savedRoutes = restTemplate
-        .exchange(SLASH_ROUTES_STATIC + "/" + route.prefix().getValue(), HttpMethod.PUT, httpEntity,
+        .exchange(SLASH_ROUTES_STATIC + "/" + route.addressPrefix().getValue(), HttpMethod.PUT, httpEntity,
             StaticRoute.class);
 
     assertThat(savedRoutes.getStatusCode()).isEqualTo(expectedStatus);
@@ -163,7 +163,7 @@ public class StaticRoutesSpringBootTest {
 
   private void deleteRoute(StaticRoute route) {
     final HttpEntity httpEntity = new HttpEntity(authHeaders());
-    String prefix = route.prefix().getValue();
+    String prefix = route.addressPrefix().getValue();
     restTemplate.exchange(SLASH_ROUTES_STATIC + "/" + prefix, HttpMethod.DELETE, httpEntity,
         Void.class);
   }

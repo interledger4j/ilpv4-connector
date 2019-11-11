@@ -47,7 +47,7 @@ public class StaticRouteEntity extends AbstractEntity {
   public StaticRouteEntity(final StaticRoute staticRoute) {
     Objects.requireNonNull(staticRoute);
     this.id = staticRoute.id();
-    this.naturalId = staticRoute.prefix().getValue();
+    this.naturalId = staticRoute.addressPrefix().getValue();
     this.accountId = staticRoute.accountId().value();
   }
 

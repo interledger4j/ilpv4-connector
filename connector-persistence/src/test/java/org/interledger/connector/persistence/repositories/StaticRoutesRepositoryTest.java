@@ -40,53 +40,53 @@ public class StaticRoutesRepositoryTest {
   public void saveGetSaveGetDeleteGet() {
     StaticRoute mac = StaticRoute.builder()
         .accountId(AccountId.of("mac"))
-        .prefix(InterledgerAddressPrefix.of("g.philly.paddys"))
+        .addressPrefix(InterledgerAddressPrefix.of("g.philly.paddys"))
         .build();
 
     StaticRoute charlie = StaticRoute.builder()
         .accountId(AccountId.of("charlie"))
-        .prefix(InterledgerAddressPrefix.of("g.philly.birdlaw"))
+        .addressPrefix(InterledgerAddressPrefix.of("g.philly.birdlaw"))
         .build();
 
     StaticRoute savedMac = saveAndGetRoute(mac);
 
     assertThat(staticRoutesRepository.getAllStaticRoutes())
         .hasSize(1)
-        .extracting("id", "accountId", "prefix")
-        .containsExactly(tuple(savedMac.id(), mac.accountId(), mac.prefix()));
+        .extracting("id", "accountId", "addressPrefix")
+        .containsExactly(tuple(savedMac.id(), mac.accountId(), mac.addressPrefix()));
 
     StaticRoute savedCharlie = saveAndGetRoute(charlie);
 
     assertThat(staticRoutesRepository.getAllStaticRoutes())
         .hasSize(2)
-        .extracting("id", "accountId", "prefix")
+        .extracting("id", "accountId", "addressPrefix")
         .containsExactly(
-            tuple(savedMac.id(), mac.accountId(), mac.prefix()),
-            tuple(savedCharlie.id(), charlie.accountId(), charlie.prefix())
+            tuple(savedMac.id(), mac.accountId(), mac.addressPrefix()),
+            tuple(savedCharlie.id(), charlie.accountId(), charlie.addressPrefix())
         );
 
-    staticRoutesRepository.deleteStaticRoute(mac.prefix());
-    StaticRoute deletedRoute = staticRoutesRepository.getByPrefix(mac.prefix());
+    staticRoutesRepository.deleteStaticRoute(mac.addressPrefix());
+    StaticRoute deletedRoute = staticRoutesRepository.getByPrefix(mac.addressPrefix());
     assertThat(deletedRoute).isNull();
 
     assertThat(staticRoutesRepository.getAllStaticRoutes())
         .hasSize(1)
-        .extracting("id", "accountId", "prefix")
-        .containsExactly(tuple(savedCharlie.id(), charlie.accountId(), charlie.prefix()));
+        .extracting("id", "accountId", "addressPrefix")
+        .containsExactly(tuple(savedCharlie.id(), charlie.accountId(), charlie.addressPrefix()));
   }
 
   private StaticRoute saveAndGetRoute(StaticRoute routeToSave) {
     StaticRoute savedRoute = staticRoutesRepository.saveStaticRoute(routeToSave);
 
-    assertThat(savedRoute).extracting("accountId", "prefix")
-        .containsExactly(routeToSave.accountId(), routeToSave.prefix());
+    assertThat(savedRoute).extracting("accountId", "addressPrefix")
+        .containsExactly(routeToSave.accountId(), routeToSave.addressPrefix());
 
-    StaticRoute fetchedRoute = staticRoutesRepository.getByPrefix(routeToSave.prefix());
+    StaticRoute fetchedRoute = staticRoutesRepository.getByPrefix(routeToSave.addressPrefix());
 
     assertThat(fetchedRoute)
         .doesNotHave(nullId)
-        .extracting("accountId", "prefix")
-        .containsExactly(routeToSave.accountId(), routeToSave.prefix());
+        .extracting("accountId", "addressPrefix")
+        .containsExactly(routeToSave.accountId(), routeToSave.addressPrefix());
     return fetchedRoute;
   }
 

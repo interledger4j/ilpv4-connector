@@ -17,15 +17,15 @@ public class StaticRouteEntityConverterTest {
 
     StaticRoute route = StaticRoute.builder()
         .id(1l)
-        .prefix(InterledgerAddressPrefix.of("g.example"))
+        .addressPrefix(InterledgerAddressPrefix.of("g.example"))
         .accountId(AccountId.of("foo"))
         .build();
 
     StaticRouteEntity entity = new StaticRouteEntity(route);
     StaticRoute converted = converter.convert(entity);
 
-    assertThat(converted).extracting("id", "prefix", "accountId")
-        .containsExactly(route.id(), route.prefix(), route.accountId());
+    assertThat(converted).extracting("id", "addressPrefix", "accountId")
+        .containsExactly(route.id(), route.addressPrefix(), route.accountId());
     // test this separately from fields because we're trying to mirror the hibernate behavior
     assertThat(converted).isEqualTo(route);
     assertThat(entity).isEqualTo(new StaticRouteEntity(converted));

@@ -39,10 +39,10 @@ public class StaticRoutesController {
       produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public Set<StaticRoute> getRoutes() {
-    Set<StaticRoute> routes = Sets.newHashSet(this.staticRoutesManager.getAllRoutesUncached());
+    Set<StaticRoute> routes = Sets.newHashSet(this.staticRoutesManager.getAll());
     // FIXME probably shouldn't be mapping non-static routes as a static route, but makes transport easier for meow
     externalRoutingService.getLocalRoutingTable()
-        .forEach((prefix, route) -> routes.add(StaticRoute.builder().prefix(prefix).accountId(route.nextHopAccountId()).build()));
+        .forEach((prefix, route) -> routes.add(StaticRoute.builder().addressPrefix(prefix).accountId(route.nextHopAccountId()).build()));
     return routes;
   }
 
@@ -53,7 +53,7 @@ public class StaticRoutesController {
       produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public Set<StaticRoute> getStaticRoutes() {
-    return this.staticRoutesManager.getAllRoutesUncached();
+    return this.staticRoutesManager.getAll();
   }
 
   @RequestMapping(

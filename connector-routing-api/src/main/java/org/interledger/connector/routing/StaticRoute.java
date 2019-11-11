@@ -36,7 +36,7 @@ public interface StaticRoute {
    *
    * @return
    */
-  InterledgerAddressPrefix prefix();
+  InterledgerAddressPrefix addressPrefix();
 
   /**
    * The ILP address of the peer this route should route through.
@@ -90,7 +90,7 @@ public interface StaticRoute {
     }
 
     @Override
-    public abstract InterledgerAddressPrefix prefix();
+    public abstract InterledgerAddressPrefix addressPrefix();
 
     @Override
     public abstract AccountId accountId();
@@ -106,12 +106,12 @@ public interface StaticRoute {
 
       StaticRoute staticRoute = (StaticRoute) o;
 
-      return this.prefix().equals(staticRoute.prefix());
+      return this.addressPrefix().equals(staticRoute.addressPrefix());
     }
 
     @Override
     public int hashCode() {
-      return this.prefix().hashCode();
+      return this.addressPrefix().hashCode();
     }
   }
 

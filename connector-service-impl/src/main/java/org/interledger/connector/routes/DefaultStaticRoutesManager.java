@@ -19,7 +19,7 @@ public class DefaultStaticRoutesManager implements StaticRoutesManager {
   }
 
   @Override
-  public Set<StaticRoute> getAllRoutesUncached() {
+  public Set<StaticRoute> getAll() {
     return staticRoutesRepository.getAllStaticRoutes();
   }
 
@@ -39,7 +39,7 @@ public class DefaultStaticRoutesManager implements StaticRoutesManager {
     }
     catch(Exception e) {
       if (e.getCause() instanceof ConstraintViolationException) {
-        throw new StaticRouteAlreadyExistsProblem(route.prefix());
+        throw new StaticRouteAlreadyExistsProblem(route.addressPrefix());
       }
       throw e;
     }

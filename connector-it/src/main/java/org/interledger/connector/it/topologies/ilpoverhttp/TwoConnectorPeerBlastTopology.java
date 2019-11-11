@@ -237,7 +237,7 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
   private static Set<StaticRoute> constructStaticRoutesForAlice() {
     // Always route packets to Bob...
     return Sets.newHashSet(StaticRoute.builder()
-        .prefix(InterledgerAddressPrefix.from(BOB_CONNECTOR_ADDRESS))
+        .addressPrefix(InterledgerAddressPrefix.from(BOB_CONNECTOR_ADDRESS))
         .accountId(BOB_ACCOUNT)
         .build()
     );
@@ -306,7 +306,7 @@ public class TwoConnectorPeerBlastTopology extends AbstractTopology {
   private static Set<StaticRoute> constructStaticRoutesForBob() {
     // Always route packets to Alice...
     return Sets.newHashSet(StaticRoute.builder()
-        .prefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
+        .addressPrefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
         .accountId(ALICE_ACCOUNT)
         .build()
     );

@@ -206,14 +206,14 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     //////////////////
 
     // For any statically configured route...
-    this.staticRoutesManager.getAllRoutesUncached().stream()
+    this.staticRoutesManager.getAll().stream()
         .forEach(staticRoute -> {
 
           // ...attempt to register a CCP-enabled account (duplicate requests are fine).
           routeBroadcaster.registerCcpEnabledAccount(staticRoute.accountId());
 
           // This will add the prefix correctly _and_ update the forwarding table...
-          updatePrefix(staticRoute.prefix());
+          updatePrefix(staticRoute.addressPrefix());
         });
 
     ////////////////////
@@ -425,8 +425,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     // Static-routes have highest priority...
     return Optional.ofNullable(
-        staticRoutesManager.getAllRoutesUncached().stream()
-            .filter(staticRoute -> staticRoute.prefix().equals(addressPrefix))
+        staticRoutesManager.getAll().stream()
+            .filter(staticRoute -> staticRoute.addressPrefix().equals(addressPrefix))
             .findFirst()
             .map(staticRoute -> {
               // If there's a static route, then use it, even if the account doesn't exist. In this

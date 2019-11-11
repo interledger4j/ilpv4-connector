@@ -20,7 +20,6 @@ import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import okhttp3.HttpUrl;
 import org.slf4j.Logger;
@@ -235,7 +234,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
   private static Set<StaticRoute> constructStaticRoutesForAlice() {
     // Always route packets to Bob...
     return Sets.newHashSet(StaticRoute.builder()
-        .prefix(InterledgerAddressPrefix.from(BOB_CONNECTOR_ADDRESS))
+        .addressPrefix(InterledgerAddressPrefix.from(BOB_CONNECTOR_ADDRESS))
         .accountId(BOB_ACCOUNT)
         .build()
     );
@@ -313,7 +312,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
   private static Set<StaticRoute> constructStaticRoutesForBob() {
     // Always route packets to Alice...
     return Sets.newHashSet(StaticRoute.builder()
-        .prefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
+        .addressPrefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
         .accountId(ALICE_ACCOUNT)
         .build()
     );
