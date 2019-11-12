@@ -49,7 +49,7 @@ public class StaticRoutesSpringBootTest {
   private static final String ADMIN = "admin";
 
   @Autowired
-  TestRestTemplate restTemplate;
+  private TestRestTemplate restTemplate;
 
   private BasicJsonTester jsonTester = new BasicJsonTester(getClass());
 
