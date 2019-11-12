@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableMap;
 import okhttp3.HttpUrl;
 import org.assertj.core.util.Maps;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Running-server test that validates behavior of account settings resource.
@@ -56,7 +58,7 @@ import java.util.Optional;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = {ConnectorServerConfig.class}
 )
-@ActiveProfiles( {"dev", "test"})
+@ActiveProfiles( {"test"})
 public class AccountSettingsSpringBootTest {
 
   private static final String PASSWORD = "password";
@@ -77,15 +79,16 @@ public class AccountSettingsSpringBootTest {
   public void setUp() {
     when(settlementEngineClientMock.createSettlementAccount(any(), any(), any()))
         .thenReturn(CreateSettlementAccountResponse.builder()
-            .settlementEngineAccountId(SettlementEngineAccountId.of("seAccount"))
+            .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
             .build()
         );
   }
 
   @Test
   public void testMinimalCreate() throws IOException {
+    final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     AccountSettings settings = AccountSettings.builder()
-        .accountId(AccountId.of("minimallyPopulatedAccount"))
+        .accountId(accountId)
         .accountRelationship(AccountRelationship.CHILD)
         .assetCode("FUD")
         .assetScale(6)
@@ -99,7 +102,7 @@ public class AccountSettingsSpringBootTest {
 
   @Test
   public void testFullyPopulatedCreate() throws IOException {
-    final AccountId accountId = AccountId.of("fullyPopulatedAccount");
+    final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     final AccountSettings settings = constructFullyPopulatedAccountSettings(accountId);
 
     String response = assertPostAccount(settings, HttpStatus.CREATED);
@@ -107,8 +110,25 @@ public class AccountSettingsSpringBootTest {
   }
 
   @Test
+  @Ignore("Will be fixed once https://github.com/sappenin/java-ilpv4-connector/issues/416 is fixed.")
+  public void testFullyPopulatedCreateWithDuplicateSEAccountId() throws IOException {
+    final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
+    final AccountSettings accountSettings = constructFullyPopulatedAccountSettings(accountId);
+
+    String response = assertPostAccount(accountSettings, HttpStatus.CREATED);
+    assertThat(as(response, ImmutableAccountSettings.class)).isEqualTo(accountSettings);
+
+    // Same account details with different accountId but same SettlementAccountId
+    final AccountSettings newAccountSettingsWithDupSE = AccountSettings.builder().from(accountSettings)
+        .accountId(AccountId.of(UUID.randomUUID().toString())).build();
+
+    response = assertPostAccount(newAccountSettingsWithDupSE, HttpStatus.CONFLICT);
+    assertThat(as(response, AccountSettings.class)).isEqualTo(accountSettings);
+  }
+
+  @Test
   public void testFullyPopulatedCreateWithSettlementEngineFailure() {
-    final AccountId accountId = AccountId.of("fullyPopulatedAccount");
+    final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     doThrow(new SettlementEngineClientException(
         "Unable to create account in settlement engine.", accountId, Optional.empty())
     ).when(settlementEngineClientMock).createSettlementAccount(any(), any(), any());
@@ -124,8 +144,7 @@ public class AccountSettingsSpringBootTest {
 
   @Test
   public void testCreateExistingIdReturns409() throws IOException {
-
-    AccountId accountId = AccountId.of("testCreateExistingIdReturns409");
+    final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     AccountSettings settings = AccountSettings.builder()
         .accountId(accountId)
         .accountRelationship(AccountRelationship.CHILD)
@@ -143,7 +162,7 @@ public class AccountSettingsSpringBootTest {
     String recreateResponse = assertPostAccount(settings, HttpStatus.CONFLICT);
     JsonContentAssert assertJson = assertThat(jsonTester.from(recreateResponse));
     assertJson.extractingJsonPathValue("status").isEqualTo(409);
-    assertJson.extractingJsonPathValue("title").isEqualTo("Account Already Exists (`testCreateExistingIdReturns409`)");
+    assertJson.extractingJsonPathValue("title").isEqualTo("Account Already Exists (`" + accountId.value() + "`)");
     assertJson.extractingJsonPathValue("accountId").isEqualTo(accountId.value());
     assertJson.extractingJsonPathValue("type")
         .isEqualTo("https://errors.interledger.org/accounts/account-already-exists");
@@ -159,7 +178,7 @@ public class AccountSettingsSpringBootTest {
     headers.setContentType(MediaType.APPLICATION_JSON);
 
     Map<String, Object> rawValues = ImmutableMap.<String, Object>builder()
-        .put("accountId", AccountId.of("testJsonMarshalling"))
+        .put("accountId", AccountId.of(UUID.randomUUID().toString()))
         .put("accountRelationship", AccountRelationship.CHILD)
         .put("assetCode", "FUD")
         .put("assetScale", 6)
@@ -208,7 +227,7 @@ public class AccountSettingsSpringBootTest {
             .build())
         .settlementEngineDetails(SettlementEngineDetails.builder()
             .baseUrl(HttpUrl.parse("http://example.com"))
-            .settlementEngineAccountId(SettlementEngineAccountId.of("seAccount"))
+            .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
             .putCustomSettings("settlementFoo", "settlementBar")
             .build())
         .rateLimitSettings(AccountRateLimitSettings.builder()
