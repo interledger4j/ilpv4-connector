@@ -58,7 +58,8 @@ public class AccountsController {
    *     AccountSettings}.
    */
   @RequestMapping(
-      path = PathConstants.SLASH_ACCOUNTS, method = RequestMethod.POST,
+      path = PathConstants.SLASH_ACCOUNTS,
+      method = RequestMethod.POST,
       consumes = {APPLICATION_JSON_VALUE},
       produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
@@ -85,7 +86,11 @@ public class AccountsController {
    * @return A {@link HttpEntity} that contains a {@link CollectionModel} that contains an {@link AccountSettings} for
    *     each account that exist on this Connector.
    */
-  @RequestMapping(method = RequestMethod.GET, produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE})
+  @RequestMapping(
+      path = PathConstants.SLASH_ACCOUNTS,
+      method = RequestMethod.GET,
+      produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+  )
   public HttpEntity<PagedModel<EntityModel<AccountSettings>>> getAccounts() {
 
     // TODO: Add paging per https://github.com/sappenin/java-ilpv4-connector/issues/404
@@ -113,7 +118,8 @@ public class AccountsController {
    *     AccountSettings}.
    */
   @RequestMapping(
-      path = PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID, method = RequestMethod.GET,
+      path = PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID,
+      method = RequestMethod.GET,
       produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public EntityModel<AccountSettings> getAccount(
@@ -135,7 +141,9 @@ public class AccountsController {
    *     AccountSettings}.
    */
   @RequestMapping(
-      path = PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID, method = RequestMethod.PUT,
+      path = PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID,
+      method = RequestMethod.PUT,
+      consumes = {APPLICATION_JSON_VALUE},
       produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public EntityModel<AccountSettings> updateAccount(
