@@ -1,20 +1,21 @@
 package org.interledger.connector.server.spring.controllers.model;
 
-import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import org.interledger.connector.accounts.AccountSettings;
-import org.springframework.hateoas.ResourceSupport;
+
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import org.springframework.hateoas.RepresentationModel;
 
 import java.util.Objects;
 
 /**
- * An {@link AccountSettings} with HATEOAS links.
+ * A RESTful representation of an {@link AccountSettings}, with HATEOAS links.
  */
-public class AccountSettingsResource extends ResourceSupport {
+public class AccountSettingsRepresentation extends RepresentationModel {
 
   @JsonUnwrapped
   private final AccountSettings accountSettings;
 
-  public AccountSettingsResource(final AccountSettings accountSettings) {
+  public AccountSettingsRepresentation(final AccountSettings accountSettings) {
     this.accountSettings = Objects.requireNonNull(accountSettings);
   }
 

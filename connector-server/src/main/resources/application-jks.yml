@@ -1,0 +1,9 @@
+interledger:
+  connector:
+    keystore:
+      jks:
+        enabled: true
+        filename: crypto/crypto.p12
+        password: password
+        secret0_alias: secret0
+        secret0_password: password

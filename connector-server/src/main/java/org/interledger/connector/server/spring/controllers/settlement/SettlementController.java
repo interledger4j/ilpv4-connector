@@ -1,9 +1,24 @@
 package org.interledger.connector.server.spring.controllers.settlement;
 
-import com.google.common.collect.Lists;
-import org.interledger.connector.settlement.SettlementService;
+import static org.interledger.connector.server.spring.controllers.PathConstants.ACCOUNT_ID;
+import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH;
+import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS;
+import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_MESSAGES;
+import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_SETTLEMENTS;
+import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_SE_ACCOUNT_ID;
+import static org.interledger.connector.server.spring.settings.web.IdempotenceCacheConfig.SETTLEMENT_IDEMPOTENCE;
+import static org.interledger.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
+import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
+
 import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.core.settlement.SettlementQuantity;
+import org.interledger.connector.settlement.SettlementService;
+
+import com.google.common.collect.Lists;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.hateoas.Link;
 import org.springframework.http.HttpHeaders;
@@ -22,20 +37,6 @@ import org.zalando.problem.spring.common.MediaTypes;
 import java.net.URI;
 import java.util.Objects;
 import java.util.UUID;
-
-import static org.interledger.connector.server.spring.controllers.PathConstants.ACCOUNT_ID;
-import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH;
-import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS;
-import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_MESSAGES;
-import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_SETTLEMENTS;
-import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_SE_ACCOUNT_ID;
-import static org.interledger.connector.server.spring.settings.web.IdempotenceCacheConfig.SETTLEMENT_IDEMPOTENCE;
-import static org.interledger.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
-import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
-import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
 
 /**
  * Allows a Settlement Engine to make requests to this Connector. This Controller is structured in such a way that it
@@ -78,41 +79,41 @@ public class SettlementController {
    *                                  that the settlement engine is tracking.
    *
    * @return A {@link SettlementQuantity} (in clearing units) that allows the clearing/accounting system indicate the
-   * amount it acknowledged receipt of so the settlement engine can track the amount leftover (e.g., if the accounting
-   * system uses a unit of account that is less-precise than the Settlement Engine).
+   *     amount it acknowledged receipt of so the settlement engine can track the amount leftover (e.g., if the
+   *     accounting system uses a unit of account that is less-precise than the Settlement Engine).
    */
   @RequestMapping(
-    path = SLASH_ACCOUNTS + SLASH_SE_ACCOUNT_ID + SLASH_SETTLEMENTS,
-    method = RequestMethod.POST,
-    consumes = {APPLICATION_JSON_VALUE},
-    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+      path = SLASH_ACCOUNTS + SLASH_SE_ACCOUNT_ID + SLASH_SETTLEMENTS,
+      method = RequestMethod.POST,
+      consumes = {APPLICATION_JSON_VALUE},
+      produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   @Cacheable(cacheNames = SETTLEMENT_IDEMPOTENCE, sync = true)
   public ResponseEntity<SettlementQuantity> creditIncomingSettlement(
-    @RequestHeader(IDEMPOTENCY_KEY) final String idempotencyKeyString,
-    @PathVariable(ACCOUNT_ID) final SettlementEngineAccountId settlementEngineAccountId,
-    @RequestBody final SettlementQuantity settlementQuantity
+      @RequestHeader(IDEMPOTENCY_KEY) final String idempotencyKeyString,
+      @PathVariable(ACCOUNT_ID) final SettlementEngineAccountId settlementEngineAccountId,
+      @RequestBody final SettlementQuantity settlementQuantity
   ) {
     this.requireIdempotenceId(idempotencyKeyString);
     Objects.requireNonNull(settlementEngineAccountId);
     Objects.requireNonNull(settlementQuantity);
 
     final SettlementQuantity settledSettlementQuantity = settlementService.onIncomingSettlementPayment(
-      SETTLEMENT_IDEMPOTENCE + ":" + idempotencyKeyString,
-      settlementEngineAccountId,
-      settlementQuantity
+        SETTLEMENT_IDEMPOTENCE + ":" + idempotencyKeyString,
+        settlementEngineAccountId,
+        settlementQuantity
     );
 
     final HttpHeaders headers = new HttpHeaders();
     final Link selfRel = linkTo(SettlementController.class)
-      .slash(SLASH_ACCOUNTS)
-      .slash(settlementEngineAccountId)
-      .slash(SLASH_SETTLEMENTS)
-      .withSelfRel();
+        .slash(SLASH_ACCOUNTS)
+        .slash(settlementEngineAccountId)
+        .slash(SLASH_SETTLEMENTS)
+        .withSelfRel();
 
     headers.setLocation(URI.create(selfRel.getHref()));
     headers.put(IDEMPOTENCY_KEY, Lists.newArrayList(idempotencyKeyString));
-    headers.setContentType(APPLICATION_JSON_UTF8);
+    headers.setContentType(APPLICATION_JSON);
 
     return new ResponseEntity<>(settledSettlementQuantity, headers, HttpStatus.OK);
   }
@@ -130,24 +131,24 @@ public class SettlementController {
    *                                  to our peer's settlement engine for processing.
    *
    * @return A {@link SettlementQuantity} that allows the accounting system indicate the amount it acknowledged receipt
-   * of so the settlement engine can track the amount leftover (e.g., if the accounting system uses a unit of account
-   * that is less-precise than the Settlement Engine).
+   *     of so the settlement engine can track the amount leftover (e.g., if the accounting system uses a unit of
+   *     account that is less-precise than the Settlement Engine).
    */
   @RequestMapping(
-    path = SLASH_ACCOUNTS + SLASH_SE_ACCOUNT_ID + SLASH_MESSAGES,
-    method = RequestMethod.POST,
-    consumes = {APPLICATION_OCTET_STREAM_VALUE},
-    produces = {APPLICATION_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE}
+      path = SLASH_ACCOUNTS + SLASH_SE_ACCOUNT_ID + SLASH_MESSAGES,
+      method = RequestMethod.POST,
+      consumes = {APPLICATION_OCTET_STREAM_VALUE},
+      produces = {APPLICATION_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public ResponseEntity<byte[]> processOutgoingMessageFromLocalSettlementEngine(
-    @PathVariable(ACCOUNT_ID) final SettlementEngineAccountId settlementEngineAccountId,
-    @RequestBody final byte[] settlementEngineMessage
+      @PathVariable(ACCOUNT_ID) final SettlementEngineAccountId settlementEngineAccountId,
+      @RequestBody final byte[] settlementEngineMessage
   ) {
     Objects.requireNonNull(settlementEngineAccountId);
     Objects.requireNonNull(settlementEngineMessage);
 
     final byte[] responseBytes = settlementService.onLocalSettlementMessage(
-      settlementEngineAccountId, settlementEngineMessage
+        settlementEngineAccountId, settlementEngineMessage
     );
 
     final HttpHeaders headers = new HttpHeaders();
@@ -166,10 +167,10 @@ public class SettlementController {
     Objects.requireNonNull(idempotencyKey);
     if (idempotencyKey == null || idempotencyKey.length() <= 0) {
       throw Problem.builder()
-        .withTitle("Idempotency header required")
-        .withStatus(Status.BAD_REQUEST)
-        .withDetail("The `" + IDEMPOTENCY_KEY + "` header must be supplied in order to accept a settlement")
-        .build();
+          .withTitle("Idempotency header required")
+          .withStatus(Status.BAD_REQUEST)
+          .withDetail("The `" + IDEMPOTENCY_KEY + "` header must be supplied in order to accept a settlement")
+          .build();
     }
   }
 }
