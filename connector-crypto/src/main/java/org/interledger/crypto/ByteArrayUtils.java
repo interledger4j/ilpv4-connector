@@ -5,7 +5,7 @@ import java.security.SecureRandom;
 /**
  * Crypto utility methods for byte arrays.
  */
-public class ByteArrays {
+public class ByteArrayUtils {
 
   private static final SecureRandom secureRandom = new SecureRandom();
 

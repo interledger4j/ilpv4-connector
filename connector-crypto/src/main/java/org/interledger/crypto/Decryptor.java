@@ -74,7 +74,7 @@ public interface Decryptor {
    * @return true if encrypted decrypts to the expected byte array
    */
   default boolean isEqualDecrypted(EncryptedSecret encrypted, byte[] expected) {
-    return withDecrypted(encrypted, decrypted -> ByteArrays.isEqualUsingConstantTime(decrypted, expected));
+    return withDecrypted(encrypted, decrypted -> ByteArrayUtils.isEqualUsingConstantTime(decrypted, expected));
   }
 
 }

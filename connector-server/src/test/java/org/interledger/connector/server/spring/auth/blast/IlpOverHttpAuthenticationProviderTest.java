@@ -14,7 +14,6 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.server.spring.settings.crypto.JksCryptoConfig;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.ModifiableConnectorSettings;
-import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
@@ -33,12 +32,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -102,21 +97,32 @@ public class IlpOverHttpAuthenticationProviderTest {
     );
 
     assertThat(result.isAuthenticated()).isTrue();
-    assertThat(result.getPrincipal()).isEqualTo(ACCOUNT_ID);
+    assertThat(result.getPrincipal()).isEqualTo(Optional.of(ACCOUNT_ID));
   }
 
   @Test
   public void authenticateSimpleWithInvalidSecret() {
     mockAccountSettings()
         .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString());
-    expectedException.expect(BadCredentialsException.class);
-    expectedException.expectMessage("Invalid token");
-    ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
+    Authentication result = ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
         .isAuthenticated(false)
         .bearerToken("bob:badtoken".getBytes())
         .hmacSha256(HashCode.fromString("1234"))
         .build()
     );
+    assertThat(result.isAuthenticated()).isFalse();
+  }
+
+  @Test
+  public void authenticateSimpleWithInvalidPrincipal() {
+    mockAccountSettings()
+        .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString());
+    Authentication result = ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
+        .isAuthenticated(false)
+        .bearerToken(("foo:" + SECRET).getBytes())
+        .hmacSha256(HashCode.fromString("1234"))
+        .build());
+    assertThat(result.isAuthenticated()).isFalse();
   }
 
   @Test
@@ -131,7 +137,7 @@ public class IlpOverHttpAuthenticationProviderTest {
     );
 
     assertThat(result.isAuthenticated()).isTrue();
-    assertThat(result.getPrincipal()).isEqualTo(ACCOUNT_ID);
+    assertThat(result.getPrincipal()).isEqualTo(Optional.of(ACCOUNT_ID));
   }
 
   @Test
@@ -139,11 +145,29 @@ public class IlpOverHttpAuthenticationProviderTest {
     mockAccountSettings()
         .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.JWT_HS_256.toString());
 
-    expectedException.expect(BadCredentialsException.class);
-    expectedException.expectMessage("Not a valid token");
-    ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
+    Authentication result = ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
         .isAuthenticated(false)
         .bearerToken("not a jwt".getBytes())
+        .hmacSha256(HashCode.fromString("1234"))
+        .build()
+    );
+    assertThat(result.isAuthenticated()).isFalse();
+  }
+
+  @Test
+  public void authenticateInternalServerError() {
+    mockAccountSettings()
+        .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.JWT_HS_256.toString());
+
+    when(accountSettingsRepository.findByAccountIdWithConversion(any())).thenThrow(
+        new RuntimeException("Something bad happened on the server")
+    );
+
+    expectedException.expect(BadCredentialsException.class);
+    expectedException.expectMessage("Unable to validate token due to system error");
+    ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
+        .isAuthenticated(false)
+        .bearerToken(JWT_TOKEN.getBytes())
         .hmacSha256(HashCode.fromString("1234"))
         .build()
     );

@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.Verification;
 import com.auth0.spring.security.api.JwtAuthenticationProvider;
 import com.auth0.spring.security.api.authentication.JwtAuthentication;
 import org.slf4j.Logger;
@@ -48,11 +49,12 @@ public class JwtHs256AuthenticationProvider implements AuthenticationProvider {
     this.audience = Optional.of(audience);
   }
 
-  private static JWTVerifier providerForHS256(byte[] secret, long leeway) {
-    return JWT.require(Algorithm.HMAC256(secret))
-        //.withIssuer(issuer)
-        //.withAudience(new String[]{audience})
-        .acceptLeeway(leeway).build();
+  private static JWTVerifier providerForHS256(JwtHs256AuthenticationProvider provider) {
+    Verification verifier = JWT.require(Algorithm.HMAC256(provider.decryptedSharedSecret))
+        .acceptLeeway(provider.leeway);
+    provider.issuer.ifPresent(verifier::withIssuer);
+    provider.audience.ifPresent(verifier::withAudience);
+    return verifier.build();
   }
 
   public boolean supports(Class<?> authentication) {
@@ -77,11 +79,7 @@ public class JwtHs256AuthenticationProvider implements AuthenticationProvider {
 
   private JWTVerifier jwtVerifier() throws AuthenticationException {
     if (decryptedSharedSecret != null) {
-      return providerForHS256(
-          decryptedSharedSecret,
-          //this.issuer,
-          //this.audience,
-          this.leeway);
+      return providerForHS256(this);
     } else {
       throw new AuthenticationServiceException("Missing shared-secret!");
     }

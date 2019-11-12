@@ -12,6 +12,7 @@ import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.SharedSecretTokenSettings;
 
+import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.spring.security.api.authentication.PreAuthenticatedAuthenticationJsonWebToken;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -96,12 +97,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       throws AuthenticationException {
     try {
       if (authentication instanceof BearerAuthentication) {
-        AuthenticationDecision result = authenticateBearer((BearerAuthentication) authentication);
-        if (result.isAuthenticated()) {
-          return result;
-        } else {
-          throw new BadCredentialsException("Invalid token for Principal: " + result.getPrincipal());
-        }
+        return authenticateBearer((BearerAuthentication) authentication);
       } else {
         logger.debug("Unsupported authentication type: " + authentication.getClass());
         return null;
@@ -112,7 +108,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       if (e.getCause() != null && BadCredentialsException.class.isAssignableFrom(e.getCause().getClass())) {
         throw e;
       } else {
-        throw new BadCredentialsException("Not a valid token", e);
+        throw new BadCredentialsException("Unable to validate token due to system error", e);
       }
     }
   }
@@ -163,6 +159,9 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
 
       PreAuthenticatedAuthenticationJsonWebToken jwt =
           PreAuthenticatedAuthenticationJsonWebToken.usingToken(new String(pendingAuth.getBearerToken()));
+      if (jwt == null) {
+        throw new JWTDecodeException("jwt decoded to null");
+      }
       AccountId accountId = AccountId.of(jwt.getPrincipal().toString());
       EncryptedSecret encryptedSecret = getIncomingSecret(accountId);
 
@@ -178,7 +177,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
             .credentialHmac(pendingAuth.hmacSha256())
             .build();
       });
-    } catch (AccountNotFoundProblem e) { // All other exceptions should be thrown!
+    } catch (AccountNotFoundProblem | JWTDecodeException e) { // All other exceptions should be thrown!
       logger.error(e.getMessage(), e);
     }
     return notAuthenticated();

@@ -24,12 +24,12 @@ public interface AuthenticationDecision extends Authentication {
   }
 
   /**
-   * The principal that this Authentication decision represents.
+   * The principal that this Authentication decision represents. Empty if not authenticated
    *
    * @return The principal that the original authentication request was attempting to authenticate.
    */
   @Override
-  AccountId getPrincipal();
+  Optional<AccountId> getPrincipal();
 
   /**
    * An HMAC of the original credential, for comparison purposes.

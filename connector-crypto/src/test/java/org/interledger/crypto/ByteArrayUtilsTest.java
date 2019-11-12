@@ -8,7 +8,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-public class ByteArraysTest {
+public class ByteArrayUtilsTest {
 
   @Test
   public void isEqualUsingConstantTime() {
@@ -16,16 +16,16 @@ public class ByteArraysTest {
     byte [] sameBytes = "some bytes".getBytes();
     byte [] differentBytes = "different bytes".getBytes();
 
-    assertThat(ByteArrays.isEqualUsingConstantTime(bytes, sameBytes)).isTrue();
-    assertThat(ByteArrays.isEqualUsingConstantTime(sameBytes, bytes)).isTrue();
-    assertThat(ByteArrays.isEqualUsingConstantTime(new byte[0], new byte[0])).isTrue();
+    assertThat(ByteArrayUtils.isEqualUsingConstantTime(bytes, sameBytes)).isTrue();
+    assertThat(ByteArrayUtils.isEqualUsingConstantTime(sameBytes, bytes)).isTrue();
+    assertThat(ByteArrayUtils.isEqualUsingConstantTime(new byte[0], new byte[0])).isTrue();
 
-    assertThat(ByteArrays.isEqualUsingConstantTime(bytes, differentBytes)).isFalse();
-    assertThat(ByteArrays.isEqualUsingConstantTime(differentBytes, bytes)).isFalse();
+    assertThat(ByteArrayUtils.isEqualUsingConstantTime(bytes, differentBytes)).isFalse();
+    assertThat(ByteArrayUtils.isEqualUsingConstantTime(differentBytes, bytes)).isFalse();
   }
 
   /**
-   * Test {@link ByteArrays#isEqualUsingConstantTime} actually runs in constant time.
+   * Test {@link ByteArrayUtils#isEqualUsingConstantTime} actually runs in constant time.
    */
   @Test
   public void isEqualRunsInConstantTime() {
@@ -46,18 +46,18 @@ public class ByteArraysTest {
 
     // prime the JIT before benchmarking
     for (int i = 0; i < 1000; i++) {
-      assertThat(ByteArrays.isEqualUsingConstantTime(lotsOfBytes, lotsMoreDifferentBytes)).isFalse();
+      assertThat(ByteArrayUtils.isEqualUsingConstantTime(lotsOfBytes, lotsMoreDifferentBytes)).isFalse();
     }
 
     Stopwatch baseline = Stopwatch.createStarted();
     for (int i = 0; i < iterations; i++) {
-      assertThat(ByteArrays.isEqualUsingConstantTime(lotsOfBytes, sameLotsOfBytes)).isTrue();
+      assertThat(ByteArrayUtils.isEqualUsingConstantTime(lotsOfBytes, sameLotsOfBytes)).isTrue();
     }
     baseline.stop();
 
     Stopwatch test = Stopwatch.createStarted();
     for (int i = 0; i < iterations; i++) {
-      assertThat(ByteArrays.isEqualUsingConstantTime(lotsOfBytes, lotsMoreDifferentBytes)).isFalse();
+      assertThat(ByteArrayUtils.isEqualUsingConstantTime(lotsOfBytes, lotsMoreDifferentBytes)).isFalse();
     }
     test.stop();
 
@@ -68,9 +68,9 @@ public class ByteArraysTest {
 
   @Test
   public void generateRandom32Bytes() {
-    assertThat(ByteArrays.generate32RandomBytes())
+    assertThat(ByteArrayUtils.generate32RandomBytes())
         .hasSize(32)
-        .isNotEqualTo(ByteArrays.generate32RandomBytes());
+        .isNotEqualTo(ByteArrayUtils.generate32RandomBytes());
   }
 
 }

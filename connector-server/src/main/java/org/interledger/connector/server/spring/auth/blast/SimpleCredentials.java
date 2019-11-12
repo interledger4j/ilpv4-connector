@@ -2,7 +2,6 @@ package org.interledger.connector.server.spring.auth.blast;
 
 import org.interledger.connector.accounts.AccountId;
 
-import com.auth0.jwt.JWT;
 import com.google.common.collect.Lists;
 import org.immutables.value.Value;
 import org.springframework.security.core.Authentication;

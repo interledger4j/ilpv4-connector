@@ -10,7 +10,6 @@ import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.crypto.Decryptor;
 import org.interledger.link.LinkId;
 import org.interledger.link.exceptions.LinkException;
 import org.interledger.link.http.IlpOverHttpLink;
@@ -32,8 +31,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -58,24 +55,18 @@ public class SimpleBearerIlpOverHttpEndpointTest extends AbstractEndpointTest {
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
 
-  @LocalServerPort
-  int randomServerPort;
-
   @Autowired
   @Qualifier(BLAST)
-  OkHttpClient okHttpClient;
+  private OkHttpClient okHttpClient;
 
   @Autowired
-  Decryptor decryptor;
+  private ObjectMapper objectMapper;
 
   @Autowired
-  ObjectMapper objectMapper;
+  private TestRestTemplate template;
 
   @Autowired
-  TestRestTemplate template;
-
-  @Autowired
-  AccountSettingsRepository accountSettingsRepository;
+  private AccountSettingsRepository accountSettingsRepository;
 
   @Before
   public void setUp() {
@@ -119,7 +110,7 @@ public class SimpleBearerIlpOverHttpEndpointTest extends AbstractEndpointTest {
   public void ildcpTestConnection() {
     final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, ACCOUNT_ID + ":" +  SECRET);
     simpleBearerLink.setLinkId(LinkId.of(ACCOUNT_ID));
-    simpleBearerLink.testConnection();
+    assertLink(simpleBearerLink);
   }
 
   /**
@@ -131,7 +122,7 @@ public class SimpleBearerIlpOverHttpEndpointTest extends AbstractEndpointTest {
     simpleBearerLink.setLinkId(LinkId.of(ACCOUNT_ID));
     expectedException.expect(LinkException.class);
     expectedException.expectMessage("Unauthorized");
-    simpleBearerLink.testConnection();
+    assertLink(simpleBearerLink);
   }
 
   private IlpOverHttpLink simpleBearerLink(String sharedSecret, String bearerToken) {
@@ -167,6 +158,10 @@ public class SimpleBearerIlpOverHttpEndpointTest extends AbstractEndpointTest {
         new SimpleBearerTokenSupplier(bearerToken)
     );
 
+  }
+
+  private void assertLink(IlpOverHttpLink simpleBearerLink) {
+    simpleBearerLink.testConnection();
   }
 
 }

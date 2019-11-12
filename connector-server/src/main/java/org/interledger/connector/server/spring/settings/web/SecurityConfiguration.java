@@ -12,7 +12,7 @@ import org.interledger.connector.server.spring.controllers.HealthController;
 import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.connector.settings.ConnectorSettings;
-import org.interledger.crypto.ByteArrays;
+import org.interledger.crypto.ByteArrayUtils;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionService;
@@ -38,7 +38,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport;
 
-import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -148,7 +147,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Override
   public void configure(final HttpSecurity http) throws Exception {
 
-    byte[] ephemeralBytes = ByteArrays.generate32RandomBytes();
+    byte[] ephemeralBytes = ByteArrayUtils.generate32RandomBytes();
 
     // Must come first in order to register properly due to 'denyAll' directive below.
     configureBearerTokenSecurity(http, ephemeralBytes)
