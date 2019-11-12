@@ -34,6 +34,27 @@ public interface Decryptor {
       KeyMetadata keyMetadata, EncryptionAlgorithm encryptionAlgorithm, byte[] cipherMessage
   );
 
+  /**
+   * Wrapper for accessing a decrypted secret that afterward cleans up the decrypted bytes in memory
+   * for better security.
+   * <p>
+   *   For example, the following code:
+   *   <pre>
+   *     byte[] decrypted = decryptor.decrypt(encryptedSecret);
+   *     boolean valid = validateSecret(decrypted);
+   *   </pre>
+   *   can instead be written as:
+   *   <pre>
+   *     boolean valid = decryptor.withDecrypted(encryptedSecret,
+   *                                            (decrypted) -> validateSecret(decrypted));
+   *   </pre>
+   * </p>
+   *
+   * @param encryptedSecret secret to decrupt
+   * @param callable lambda to execute with access to the decrypted secret
+   * @param <T> return type
+   * @return result of call the callable with the decrypted secret
+   */
   default <T> T withDecrypted(EncryptedSecret encryptedSecret, Function<byte[], T> callable) {
     // decrypt
     byte[] decrypted = decrypt(encryptedSecret);
