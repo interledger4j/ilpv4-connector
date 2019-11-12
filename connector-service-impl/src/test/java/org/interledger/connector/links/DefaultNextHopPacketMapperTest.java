@@ -291,7 +291,7 @@ public class DefaultNextHopPacketMapperTest {
     expectedException.expect(NullPointerException.class);
     mapper.determineDestinationExpiresAt(clock, null, RECEIVER);
   }
-  
+
   @Test
   public void lesser() {
     Instant now = Instant.now(clock);
