@@ -11,6 +11,7 @@ import org.springframework.security.core.GrantedAuthority;
 import java.util.Collection;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import javax.validation.constraints.Null;
 
 /**
  * Contains information about an ILP-over-HTTP Authentication decision, generally used for caching purposes to shield
@@ -29,7 +30,8 @@ public interface AuthenticationDecision extends Authentication {
    * @return The principal that the original authentication request was attempting to authenticate.
    */
   @Override
-  Optional<AccountId> getPrincipal();
+  @Nullable
+  AccountId getPrincipal();
 
   /**
    * An HMAC of the original credential, for comparison purposes.
@@ -83,6 +85,7 @@ public interface AuthenticationDecision extends Authentication {
    */
   @Override
   @Value.Default
+  @Nullable
   default String getName() {
     return Optional.ofNullable(getPrincipal())
         .map(Object::toString)

@@ -97,7 +97,7 @@ public class IlpOverHttpAuthenticationProviderTest {
     );
 
     assertThat(result.isAuthenticated()).isTrue();
-    assertThat(result.getPrincipal()).isEqualTo(Optional.of(ACCOUNT_ID));
+    assertThat(result.getPrincipal()).isEqualTo(ACCOUNT_ID);
   }
 
   @Test
@@ -137,7 +137,7 @@ public class IlpOverHttpAuthenticationProviderTest {
     );
 
     assertThat(result.isAuthenticated()).isTrue();
-    assertThat(result.getPrincipal()).isEqualTo(Optional.of(ACCOUNT_ID));
+    assertThat(result.getPrincipal()).isEqualTo(ACCOUNT_ID);
   }
 
   @Test
