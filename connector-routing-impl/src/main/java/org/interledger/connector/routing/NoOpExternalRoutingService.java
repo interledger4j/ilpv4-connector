@@ -4,6 +4,7 @@ import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -44,12 +45,12 @@ public class NoOpExternalRoutingService implements ExternalRoutingService {
 
   @Override
   public Set<StaticRoute> getAllStaticRoutes() {
-    return null;
+    return Collections.emptySet();
   }
 
   @Override
   public void deleteStaticRouteByPrefix(InterledgerAddressPrefix prefix) {
-
+    this.routeRoutingTable.removeRoute(prefix);
   }
 
   @Override

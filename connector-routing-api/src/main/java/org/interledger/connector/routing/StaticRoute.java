@@ -1,7 +1,6 @@
 package org.interledger.connector.routing;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;

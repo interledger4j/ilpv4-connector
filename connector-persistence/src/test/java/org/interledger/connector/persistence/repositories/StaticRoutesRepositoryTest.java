@@ -47,14 +47,14 @@ public class StaticRoutesRepositoryTest {
         .addressPrefix(InterledgerAddressPrefix.of("g.philly.birdlaw"))
         .build();
 
-    StaticRoute savedMac = saveAndGetRoute(mac);
+    saveAndGetRoute(mac);
 
     assertThat(staticRoutesRepository.getAllStaticRoutes())
         .hasSize(1)
         .extracting("accountId", "addressPrefix")
         .containsExactly(tuple(mac.accountId(), mac.addressPrefix()));
 
-    StaticRoute savedCharlie = saveAndGetRoute(charlie);
+    saveAndGetRoute(charlie);
 
     assertThat(staticRoutesRepository.getAllStaticRoutes())
         .hasSize(2)

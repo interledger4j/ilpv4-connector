@@ -11,7 +11,6 @@ import org.interledger.connector.routing.StaticRoute;
 import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.core.InterledgerAddressPrefix;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,9 +50,6 @@ public class StaticRoutesSpringBootTest {
 
   @Autowired
   TestRestTemplate restTemplate;
-
-  @Autowired
-  private ObjectMapper objectMapper;
 
   private BasicJsonTester jsonTester = new BasicJsonTester(getClass());
 
