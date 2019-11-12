@@ -7,6 +7,9 @@ import org.zalando.problem.Status;
 import java.net.URI;
 import java.util.Objects;
 
+/**
+ * Thrown if no static route exists for the given prefix
+ */
 public class StaticRouteNotFoundProblem extends StaticRouteProblem {
 
   public StaticRouteNotFoundProblem(InterledgerAddressPrefix prefix) {

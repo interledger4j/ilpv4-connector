@@ -8,6 +8,9 @@ import org.zalando.problem.StatusType;
 import java.net.URI;
 import java.util.Objects;
 
+/**
+ * A root exception for all exceptions relating to static routes.
+ */
 public abstract class StaticRouteProblem extends AbstractConnectorProblem {
 
   protected static final String STATIC_ROUTES_PATH = "/routes/static";
@@ -24,6 +27,9 @@ public abstract class StaticRouteProblem extends AbstractConnectorProblem {
     this.prefix = Objects.requireNonNull(prefix, "prefix must not be null!");
   }
 
+  /**
+   * @return the prefix that caused the associated problem
+   */
   public InterledgerAddressPrefix getPrefix() {
     return this.prefix;
   }

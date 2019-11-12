@@ -26,14 +26,14 @@ public interface StaticRoute {
   /**
    * A target address prefix that corresponds to {@code #getPeerAddress}.
    *
-   * @return
+   * @return the prefix of the route
    */
   InterledgerAddressPrefix addressPrefix();
 
   /**
    * The ILP address of the peer this route should route through.
    *
-   * @return
+   * @return the account id of the route
    */
   AccountId accountId();
 
@@ -93,6 +93,7 @@ public interface StaticRoute {
 
       StaticRoute staticRoute = (StaticRoute) o;
 
+      // to match hibernate behavior
       return this.addressPrefix().equals(staticRoute.addressPrefix());
     }
 

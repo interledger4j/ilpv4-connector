@@ -7,6 +7,9 @@ import org.zalando.problem.Status;
 import java.net.URI;
 import java.util.Objects;
 
+/**
+ * Thrown on a request to create static route for an already existing prefix
+ */
 public class StaticRouteAlreadyExistsProblem extends StaticRouteProblem {
 
   public StaticRouteAlreadyExistsProblem(InterledgerAddressPrefix prefix) {

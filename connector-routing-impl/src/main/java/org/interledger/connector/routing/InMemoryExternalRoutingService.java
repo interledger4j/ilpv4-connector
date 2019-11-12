@@ -22,9 +22,8 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -128,8 +127,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   }
 
   @Override
-  public Collection<Route> getAllRoutes() {
-    Set<Route> allRoutes = new HashSet<>();
+  public List<Route> getAllRoutes() {
+    List<Route> allRoutes = new ArrayList<>();
     localRoutingTable.forEach((prefix, route) -> allRoutes.add(route));
     return allRoutes;
   }

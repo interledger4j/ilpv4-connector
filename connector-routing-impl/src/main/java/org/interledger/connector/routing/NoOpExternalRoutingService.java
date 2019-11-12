@@ -3,9 +3,9 @@ package org.interledger.connector.routing;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -31,8 +31,8 @@ public class NoOpExternalRoutingService implements ExternalRoutingService {
   }
 
   @Override
-  public Collection<Route> getAllRoutes() {
-    Set<Route> allRoutes = new HashSet<>();
+  public List<Route> getAllRoutes() {
+    List<Route> allRoutes = new ArrayList<>();
     routeRoutingTable.forEach((prefix, route) -> allRoutes.add(route));
     return allRoutes;
   }

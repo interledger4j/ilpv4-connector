@@ -6,6 +6,9 @@ import org.springframework.data.repository.CrudRepository;
 
 import java.util.List;
 
+/**
+ * Allows static routes to be persisted to a datastore.
+ */
 public interface StaticRoutesRepository extends CrudRepository<StaticRouteEntity, Long>, StaticRoutesRepositoryCustom {
 
   /**

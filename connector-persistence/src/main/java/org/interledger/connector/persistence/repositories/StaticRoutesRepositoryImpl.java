@@ -14,6 +14,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+/**
+ * An extension of {@link StaticRoutesRepository} for use by Spring Data.
+ *
+ * @see "https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repositories.single-repository-behavior"
+ */
 public class StaticRoutesRepositoryImpl implements StaticRoutesRepositoryCustom {
 
   @Autowired
