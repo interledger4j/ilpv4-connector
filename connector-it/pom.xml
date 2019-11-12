@@ -73,7 +73,7 @@
     </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-core</artifactId>
+      <artifactId>hamcrest</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -91,6 +91,13 @@
     <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>stream-core</artifactId>
+    </dependency>
+    <!-- This dependency is required by the IT harness so that Spring can autodetect it and then run the liquidbase
+         scripts. Without this dependency, Spring will not autodetect liquibase (even though its enabled via properties
+         and the database initialization will not be performed, failing the ITs). -->
+    <dependency>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -188,7 +195,7 @@
               <groups>
                 org.interledger.connector.it.markers.Performance
               </groups>
-<!--              <threadCount>1</threadCount>-->
+              <!-- <threadCount>1</threadCount> -->
             </configuration>
           </plugin>
         </plugins>

@@ -1,77 +1,13 @@
 # See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
-logging:
-  level:
-    ROOT: INFO
-    org.interledger: INFO
-    org.springframework: INFO
-    org.springframework.security: INFO
-    com.auth0: ERROR
-    org.springframework.web.socket: ERROR
-server:
-  port: 8080
-  http2:
-    enabled: true
-  jetty:
-    max-http-post-size: 32767
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-#  endpoint:
-#    refresh:
-#      enabled: true
 
 spring:
-  #  application:
-  #    name: connector
-  #  cloud:
-  #    config:
-  #      #uri: ${server.address}:${server.url}
-  #      uri: http://localhost:8080
-  #      server:
-  #        prefix: /config
-  #        composite:
-  #          - type: native
-  #            search-locations: classpath:/
-  #            #order: 1
-  ##          - type: git
-  ##            uri: https://fixme.example.com
-  ##            order: 2
-  #        bootstrap: true
-
   output:
     ansi:
       enabled: ALWAYS
-  http:
-    # MULTIPART (MultipartProperties)
-    multipart:
-      enabled: false
-      max-file-size: 32KB
-      max-request-size: 32KB
-  resources:
-    add-mappings: false
-  mvc:
-    throw-exception-if-no-handler-found: true
-  jpa:
-    hibernate:
-      ddl-auto: create
-    properties:
-      hibernate:
-        temp:
-          use_jdbc_metadata_defaults: false
-
 interledger:
   connector:
-    adminPassword: password
-    keystore:
-      jks:
-        enabled: true
-        filename: crypto/crypto.p12
-        password: password
-        secret0_alias: secret0
-        secret0_password: password
-    defaultJwtTokenIssuer: https://connie.example.com
+    #adminPassword: password
+    #defaultJwtTokenIssuer: https://connie.example.com
     enabledProtocols:
       blastEnabled: true
       pingProtocolEnabled: true

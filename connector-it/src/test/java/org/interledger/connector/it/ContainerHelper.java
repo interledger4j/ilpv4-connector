@@ -24,11 +24,6 @@ public final class ContainerHelper {
         .withEnv("POSTGRES_USER", "connector")
         .withEnv("POSTGRES_PASSWORD", "connector")
         .withEnv("POSTGRES_DB", "connector")
-        .withClasspathResourceMapping(
-            "initialization.sql",
-            "/docker-entrypoint-initdb.d/1-init.sql",
-            BindMode.READ_ONLY
-        )
         // this gets emitted twice before the db is ready: once before the init scripts run and once after
         .waitingFor(Wait.forLogMessage(".*database system is ready to accept connections.*\\n", 2))
         .withNetwork(network);

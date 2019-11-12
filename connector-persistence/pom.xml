@@ -19,7 +19,7 @@
         <plugin>
           <groupId>org.liquibase</groupId>
           <artifactId>liquibase-maven-plugin</artifactId>
-          <version>3.8.0</version>
+          <version>3.8.1</version>
           <dependencies>
             <dependency>
               <groupId>org.postgresql</groupId>
@@ -42,11 +42,11 @@
             <configuration>
               <!-- we're actually using these to validate hitting the database but the dependency plugin gets fussy-->
               <ignoredDependencies>
-                <ignoredDependency>org.liquibase:liquibase-core:jar:3.8.0</ignoredDependency>
-                <ignoredDependency>com.h2database:h2:jar:1.4.199</ignoredDependency>
-                <ignoredDependency>org.postgresql:postgresql:jar:42.2.8</ignoredDependency>
-                <ignoredDependency>org.hibernate:hibernate-entitymanager:jar:5.3.12.Final</ignoredDependency>
-                <ignoredDependency>org.springframework.boot:spring-boot-starter-data-jpa:jar:2.1.9.RELEASE</ignoredDependency>
+                <ignoredDependency>org.liquibase:liquibase-core:jar</ignoredDependency>
+                <ignoredDependency>com.h2database:h2:jar</ignoredDependency>
+                <ignoredDependency>org.postgresql:postgresql:jar</ignoredDependency>
+                <ignoredDependency>org.hibernate:hibernate-entitymanager:jar</ignoredDependency>
+                <ignoredDependency>org.springframework.boot:spring-boot-starter-data-jpa:jar</ignoredDependency>
               </ignoredDependencies>
             </configuration>
           </execution>
@@ -113,7 +113,8 @@
     </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-core</artifactId>
+      <artifactId>hamcrest</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.hibernate</groupId>
@@ -195,12 +196,18 @@
         <plugins>
           <plugin>
             <groupId>org.liquibase</groupId>
+            <!-- This plugin is engaged via this Maven command:
+                 `mvn -DskipTests clean package -P liquibase-pg-sql liquibase:updateSQL`
+                 NOTE: In order to run the above via Maven, a Postgres DB must be running on port 5432 and there must be
+                 a database called `connector` that already exists (liquibase will not create the DB in postgres). -->
             <artifactId>liquibase-maven-plugin</artifactId>
             <configuration>
+              <migrationSqlOutputFile>ddl/migrate.sql</migrationSqlOutputFile>
               <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
               <driver>org.postgresql.Driver</driver>
               <changeLogFile>db/changelog-master.xml</changeLogFile>
-              <url>jdbc:postgresql://localhost:5432/circle_test</url>
+              <url>jdbc:postgresql://localhost:5432/connector</url>
+              <username>postgres</username>
             </configuration>
             <executions>
               <execution>

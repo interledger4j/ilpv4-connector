@@ -2,23 +2,36 @@ package org.interledger.connector.server.spring.controllers.admin;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
+import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings;
+import org.interledger.connector.accounts.SettlementEngineAccountId;
+import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.connector.server.ConnectorServerConfig;
+import org.interledger.connector.settlement.SettlementEngineClient;
+import org.interledger.connector.settlement.SettlementEngineClientException;
+import org.interledger.connector.settlement.client.CreateSettlementAccountResponse;
 import org.interledger.link.LoopbackLink;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import okhttp3.HttpUrl;
 import org.assertj.core.util.Maps;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.json.BasicJsonTester;
 import org.springframework.boot.test.json.JsonContentAssert;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -32,6 +45,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Running-server test that validates behavior of account settings resource.
@@ -41,42 +56,72 @@ import java.util.Map;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = {ConnectorServerConfig.class}
 )
-@ActiveProfiles( {"test"})
+@ActiveProfiles( {"dev", "test"})
 public class AccountSettingsSpringBootTest {
 
   private static final String PASSWORD = "password";
   private static final String ADMIN = "admin";
 
+  @MockBean
+  private SettlementEngineClient settlementEngineClientMock;
+
   @Autowired
-  TestRestTemplate restTemplate;
+  private TestRestTemplate restTemplate;
 
   @Autowired
   private ObjectMapper objectMapper;
 
   private BasicJsonTester jsonTester = new BasicJsonTester(getClass());
 
-  /**
-   * Verify settings can be created via API
-   */
+  @Before
+  public void setUp() {
+    when(settlementEngineClientMock.createSettlementAccount(any(), any(), any()))
+        .thenReturn(CreateSettlementAccountResponse.builder()
+            .settlementEngineAccountId(SettlementEngineAccountId.of("seAccount"))
+            .build()
+        );
+  }
+
   @Test
-  public void testCreate() throws IOException {
+  public void testMinimalCreate() throws IOException {
     AccountSettings settings = AccountSettings.builder()
-        .accountId(AccountId.of("testCreate"))
+        .accountId(AccountId.of("minimallyPopulatedAccount"))
         .accountRelationship(AccountRelationship.CHILD)
         .assetCode("FUD")
         .assetScale(6)
         .linkType(LoopbackLink.LINK_TYPE)
         .createdAt(Instant.now())
-        .customSettings(Maps.newHashMap("custom", "value"))
         .build();
 
     String response = assertPostAccount(settings, HttpStatus.CREATED);
     assertThat(as(response, ImmutableAccountSettings.class)).isEqualTo(settings);
   }
 
-  /**
-   * Verify settings can be created via API
-   */
+  @Test
+  public void testFullyPopulatedCreate() throws IOException {
+    final AccountId accountId = AccountId.of("fullyPopulatedAccount");
+    final AccountSettings settings = constructFullyPopulatedAccountSettings(accountId);
+
+    String response = assertPostAccount(settings, HttpStatus.CREATED);
+    assertThat(as(response, ImmutableAccountSettings.class)).isEqualTo(settings);
+  }
+
+  @Test
+  public void testFullyPopulatedCreateWithSettlementEngineFailure() {
+    final AccountId accountId = AccountId.of("fullyPopulatedAccount");
+    doThrow(new SettlementEngineClientException(
+        "Unable to create account in settlement engine.", accountId, Optional.empty())
+    ).when(settlementEngineClientMock).createSettlementAccount(any(), any(), any());
+
+    final AccountSettings settings = constructFullyPopulatedAccountSettings(accountId);
+
+    String response = assertPostAccount(settings, HttpStatus.INTERNAL_SERVER_ERROR);
+    JsonContentAssert assertJson = assertThat(jsonTester.from(response));
+    assertJson.extractingJsonPathValue("status").isEqualTo("500");
+    assertJson.extractingJsonPathValue("title").isEqualTo("Internal Server Error");
+    assertJson.extractingJsonPathValue("detail").isEqualTo("Unable to create account in settlement engine.");
+  }
+
   @Test
   public void testCreateExistingIdReturns409() throws IOException {
 
@@ -104,18 +149,6 @@ public class AccountSettingsSpringBootTest {
         .isEqualTo("https://errors.interledger.org/accounts/account-already-exists");
   }
 
-  private String assertPostAccount(AccountSettings settings, HttpStatus expectedStatus) {
-    final HttpHeaders headers = new HttpHeaders();
-    headers.setBasicAuth(ADMIN, PASSWORD);
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    final HttpEntity httpEntity = new HttpEntity(settings, headers);
-
-    ResponseEntity<String> response =
-        restTemplate.postForEntity(SLASH_ACCOUNTS, httpEntity, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(expectedStatus);
-    return response.getBody();
-  }
-
   /**
    * Verify API ignores unknown properties
    */
@@ -141,8 +174,58 @@ public class AccountSettingsSpringBootTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
   }
 
+  //////////////////
+  // Private Helpers
+  //////////////////
+
+  private String assertPostAccount(AccountSettings settings, HttpStatus expectedStatus) {
+    final HttpHeaders headers = new HttpHeaders();
+    headers.setBasicAuth(ADMIN, PASSWORD);
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    final HttpEntity httpEntity = new HttpEntity(settings, headers);
+
+    ResponseEntity<String> response =
+        restTemplate.postForEntity(SLASH_ACCOUNTS, httpEntity, String.class);
+    assertThat(response.getStatusCode()).isEqualTo(expectedStatus);
+    return response.getBody();
+  }
+
+  private ImmutableAccountSettings constructFullyPopulatedAccountSettings(final AccountId accountId) {
+    Objects.requireNonNull(accountId);
+
+    return AccountSettings.builder()
+        .accountId(accountId)
+        .description("A fully-populated account")
+        .accountRelationship(AccountRelationship.CHILD)
+        .assetCode("FUD")
+        .assetScale(6)
+        .linkType(LoopbackLink.LINK_TYPE)
+        .createdAt(Instant.now())
+        .balanceSettings(AccountBalanceSettings.builder()
+            .settleThreshold(10L)
+            .minBalance(9L)
+            .settleTo(8L)
+            .build())
+        .settlementEngineDetails(SettlementEngineDetails.builder()
+            .baseUrl(HttpUrl.parse("http://example.com"))
+            .settlementEngineAccountId(SettlementEngineAccountId.of("seAccount"))
+            .putCustomSettings("settlementFoo", "settlementBar")
+            .build())
+        .rateLimitSettings(AccountRateLimitSettings.builder()
+            .maxPacketsPerSecond(100)
+            .build())
+        .maximumPacketAmount(200L)
+        .isConnectionInitiator(true)
+        .ilpAddressSegment("foo")
+        .isSendRoutes(true)
+        .isReceiveRoutes(true)
+        .isInternal(true)
+        .modifiedAt(Instant.MAX)
+        .customSettings(Maps.newHashMap("custom", "value"))
+        .build();
+  }
+
   private <T> T as(String value, Class<T> toClass) throws IOException {
     return objectMapper.readValue(value, toClass);
   }
-
 }

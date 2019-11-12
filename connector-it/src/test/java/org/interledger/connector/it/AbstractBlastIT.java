@@ -73,8 +73,6 @@ public abstract class AbstractBlastIT {
     // code is engaged).
     Bootstrap.init(new SpringServiceProvider());
 
-    System.setProperty("spring.jpa.properties.hibernate.temp.use_jdbc_metadata_defaults", "false");
-
     System.setProperty(DEFAULT_JWT_TOKEN_ISSUER, "https://connie.example.com");
     System.setProperty(ADMIN_PASSWORD, "password");
 
