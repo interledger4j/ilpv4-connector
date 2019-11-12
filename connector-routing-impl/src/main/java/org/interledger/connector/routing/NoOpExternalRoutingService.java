@@ -54,7 +54,7 @@ public class NoOpExternalRoutingService implements ExternalRoutingService {
   }
 
   @Override
-  public StaticRoute updateStaticRoute(StaticRoute route) {
+  public StaticRoute createStaticRoute(StaticRoute route) {
     return null;
   }
 }

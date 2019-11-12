@@ -62,7 +62,7 @@ public class StaticRoutesController {
     if (!prefix.equals(staticRoute.addressPrefix().getValue())) {
       throw new StaticRouteUnprocessableProblem(prefix, staticRoute.addressPrefix());
     }
-    return new ResponseEntity<>(this.externalRoutingService.updateStaticRoute(staticRoute), HttpStatus.CREATED);
+    return new ResponseEntity<>(this.externalRoutingService.createStaticRoute(staticRoute), HttpStatus.CREATED);
   }
 
   @RequestMapping(

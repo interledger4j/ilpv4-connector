@@ -15,6 +15,6 @@ public interface StaticRoutesManager {
 
   void deleteStaticRouteByPrefix(InterledgerAddressPrefix prefix);
 
-  StaticRoute updateStaticRoute(StaticRoute route);
+  StaticRoute createStaticRoute(StaticRoute route);
 
 }

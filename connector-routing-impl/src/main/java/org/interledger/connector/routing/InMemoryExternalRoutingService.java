@@ -167,7 +167,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   }
 
   @Override
-  public StaticRoute updateStaticRoute(StaticRoute route) {
+  public StaticRoute createStaticRoute(StaticRoute route) {
     Objects.requireNonNull(route);
     try {
       StaticRoute saved = staticRoutesRepository.saveStaticRoute(route);

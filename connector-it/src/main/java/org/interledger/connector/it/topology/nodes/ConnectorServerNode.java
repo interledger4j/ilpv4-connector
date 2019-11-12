@@ -40,7 +40,7 @@ public class ConnectorServerNode extends AbstractServerNode<ConnectorServer> {
     // reload routing for static routes
     // FIXME we should be doing this via a client
     ILPv4Connector connector = getILPv4Connector();
-    staticRoutes.stream().forEach(r -> connector.getStaticRoutesManager().updateStaticRoute(r));
+    staticRoutes.stream().forEach(r -> connector.getStaticRoutesManager().createStaticRoute(r));
   }
 
   @Override
