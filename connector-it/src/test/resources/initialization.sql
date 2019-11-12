@@ -3,7 +3,7 @@
 -- *********************************************************************
 -- Change Log: db/changelog-master.xml
 -- Ran at: 6/28/19 4:03 PM
--- Against: fuelling@jdbc:postgresql://localhost:5432/circle_test
+-- Against: fuelling@jdbc:postgresql://localhost:5432/connector
 -- Liquibase version: 3.6.3
 -- *********************************************************************
 

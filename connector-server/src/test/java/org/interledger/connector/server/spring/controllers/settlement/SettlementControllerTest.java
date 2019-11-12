@@ -110,7 +110,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
         .with(httpBasic("admin", "password")).with(csrf())
       )
       .andExpect(status().isOk())
-      .andExpect(header().string(HeaderConstants.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE))
+      .andExpect(header().string(HeaderConstants.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE))
       .andExpect(header().string(IDEMPOTENCY_KEY, idempotenceId));
 
     verify(settlementServiceMock).onIncomingSettlementPayment(
@@ -153,7 +153,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
         .with(httpBasic("admin", "password")).with(csrf())
       )
       .andExpect(status().isOk())
-      .andExpect(header().string(HeaderConstants.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE))
+      .andExpect(header().string(HeaderConstants.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE))
       .andExpect(header().string(IDEMPOTENCY_KEY, idempotenceId));
 
     verify(settlementServiceMock).onIncomingSettlementPayment(
@@ -170,7 +170,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
         .with(httpBasic("admin", "password")).with(csrf())
       )
       .andExpect(status().isOk())
-      .andExpect(header().string(HeaderConstants.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE))
+      .andExpect(header().string(HeaderConstants.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE))
       .andExpect(header().string(IDEMPOTENCY_KEY, idempotenceId));
 
     // Due to request caching, the Controller should not be triggered more than once.

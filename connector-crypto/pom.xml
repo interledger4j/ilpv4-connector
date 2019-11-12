@@ -24,14 +24,22 @@
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-kms</artifactId>
+      <!-- Excluded so that only Jakarta annotations are used.
+      See https://dzone.com/articles/jakarta-ee-without-javax-the-world-wont-end-this-time-either for more details -->
+      <exclusions>
+        <exclusion>
+          <groupId>javax.annotation</groupId>
+          <artifactId>javax.annotation-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
     <dependency>
-      <groupId>javax.annotation</groupId>
-      <artifactId>javax.annotation-api</artifactId>
+      <groupId>jakarta.annotation</groupId>
+      <artifactId>jakarta.annotation-api</artifactId>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -40,7 +48,7 @@
     </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-core</artifactId>
+      <artifactId>hamcrest</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
