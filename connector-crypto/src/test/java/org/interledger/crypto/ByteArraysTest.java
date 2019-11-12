@@ -59,4 +59,11 @@ public class ByteArraysTest {
     assertThat(test.elapsed().toMillis()).isCloseTo(baseline.elapsed().toMillis(), Percentage.withPercentage(10.0));
   }
 
+  @Test
+  public void generateRandom32Bytes() {
+    assertThat(ByteArrays.generate32RandomBytes())
+        .hasSize(32)
+        .isNotEqualTo(ByteArrays.generate32RandomBytes());
+  }
+
 }

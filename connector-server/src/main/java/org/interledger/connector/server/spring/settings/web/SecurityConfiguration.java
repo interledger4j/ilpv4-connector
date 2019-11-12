@@ -12,6 +12,7 @@ import org.interledger.connector.server.spring.controllers.HealthController;
 import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.crypto.ByteArrays;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionService;
@@ -147,7 +148,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Override
   public void configure(final HttpSecurity http) throws Exception {
 
-    byte[] ephemeralBytes = generate32RandomBytes();
+    byte[] ephemeralBytes = ByteArrays.generate32RandomBytes();
 
     // Must come first in order to register properly due to 'denyAll' directive below.
     configureBearerTokenSecurity(http, ephemeralBytes)
@@ -226,21 +227,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         .httpBasic().disable()
         .csrf().disable()
         .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
-  }
-
-  /**
-   * Generate 32 random bytes that can be used as an ephemeral HMAC key. This key is only used to Hash actual
-   * shared-secret values that are stored in an in-memory cache. If this server goes away, this this cache will go away
-   * too, so this secret key can be ephemeral.
-   * <p>
-   * Note too that the "values" being HMAC'd are also not in memory, so re-creating them using just this ephemeral value
-   * would not be possible.
-   */
-  private byte[] generate32RandomBytes() {
-    final SecureRandom secureRandom = new SecureRandom();
-    final byte[] rndBytes = new byte[32];
-    secureRandom.nextBytes(rndBytes);
-    return rndBytes;
   }
 
 }

@@ -1,5 +1,7 @@
 package org.interledger.crypto;
 
+import java.security.SecureRandom;
+
 /**
  * Crypto utility methods for byte arrays.
  */
@@ -23,5 +25,19 @@ public class ByteArrays {
     return result == 0;
   }
 
+  /**
+   * Generate 32 random bytes that can be used as an ephemeral HMAC key. This key is only used to Hash actual
+   * shared-secret values that are stored in an in-memory cache. If this server goes away, this this cache will go away
+   * too, so this secret key can be ephemeral.
+   * <p>
+   * Note too that the "values" being HMAC'd are also not in memory, so re-creating them using just this ephemeral value
+   * would not be possible.
+   */
+  public static byte[] generate32RandomBytes() {
+    final SecureRandom secureRandom = new SecureRandom();
+    final byte[] rndBytes = new byte[32];
+    secureRandom.nextBytes(rndBytes);
+    return rndBytes;
+  }
 
 }

@@ -36,7 +36,7 @@ public class BearerTokenSecurityContextRepository implements SecurityContextRepo
 
   @Override
   public boolean containsContext(HttpServletRequest request) {
-    return false;
+    return parseToken(request).isPresent();
   }
 
   private Optional<byte[]> parseToken(HttpServletRequest request) {

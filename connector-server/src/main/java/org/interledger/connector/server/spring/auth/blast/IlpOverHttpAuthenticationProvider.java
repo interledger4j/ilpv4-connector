@@ -112,7 +112,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       if (e.getCause() != null && BadCredentialsException.class.isAssignableFrom(e.getCause().getClass())) {
         throw e;
       } else {
-        throw new BadCredentialsException("Not a valid Token", e);
+        throw new BadCredentialsException("Not a valid token", e);
       }
     }
   }
