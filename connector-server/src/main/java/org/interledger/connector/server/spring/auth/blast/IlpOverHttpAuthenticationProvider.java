@@ -97,7 +97,12 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       throws AuthenticationException {
     try {
       if (authentication instanceof BearerAuthentication) {
-        return authenticateBearer((BearerAuthentication) authentication);
+        AuthenticationDecision result = authenticateBearer((BearerAuthentication) authentication);
+        if (result.isAuthenticated()) {
+          return result;
+        } else {
+          throw new BadCredentialsException("Authentication failed for principal: " + result.getPrincipal());
+        }
       } else {
         logger.debug("Unsupported authentication type: " + authentication.getClass());
         return null;
@@ -160,7 +165,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       PreAuthenticatedAuthenticationJsonWebToken jwt =
           PreAuthenticatedAuthenticationJsonWebToken.usingToken(new String(pendingAuth.getBearerToken()));
       if (jwt == null) {
-        throw new JWTDecodeException("jwt decoded to null");
+        throw new JWTDecodeException("jwt decoded to null. Value: " + new String(pendingAuth.getBearerToken()));
       }
       AccountId accountId = AccountId.of(jwt.getPrincipal().toString());
       EncryptedSecret encryptedSecret = getIncomingSecret(accountId);

@@ -104,25 +104,27 @@ public class IlpOverHttpAuthenticationProviderTest {
   public void authenticateSimpleWithInvalidSecret() {
     mockAccountSettings()
         .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString());
-    Authentication result = ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
+    expectedException.expect(BadCredentialsException.class);
+    expectedException.expectMessage("Authentication failed for principal: bob");
+    ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
         .isAuthenticated(false)
         .bearerToken("bob:badtoken".getBytes())
         .hmacSha256(HashCode.fromString("1234"))
         .build()
     );
-    assertThat(result.isAuthenticated()).isFalse();
   }
 
   @Test
   public void authenticateSimpleWithInvalidPrincipal() {
     mockAccountSettings()
         .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString());
-    Authentication result = ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
+    expectedException.expect(BadCredentialsException.class);
+    expectedException.expectMessage("Authentication failed for principal");
+    ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
         .isAuthenticated(false)
         .bearerToken(("foo:" + SECRET).getBytes())
         .hmacSha256(HashCode.fromString("1234"))
         .build());
-    assertThat(result.isAuthenticated()).isFalse();
   }
 
   @Test
@@ -145,13 +147,14 @@ public class IlpOverHttpAuthenticationProviderTest {
     mockAccountSettings()
         .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.JWT_HS_256.toString());
 
-    Authentication result = ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
+    expectedException.expect(BadCredentialsException.class);
+    expectedException.expectMessage("Authentication failed for principal");
+    ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
         .isAuthenticated(false)
         .bearerToken("not a jwt".getBytes())
         .hmacSha256(HashCode.fromString("1234"))
         .build()
     );
-    assertThat(result.isAuthenticated()).isFalse();
   }
 
   @Test
