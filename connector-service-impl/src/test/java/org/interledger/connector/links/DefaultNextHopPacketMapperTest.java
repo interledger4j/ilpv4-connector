@@ -1,7 +1,9 @@
 package org.interledger.connector.links;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 
@@ -32,7 +34,6 @@ import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runners.MethodSorters;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
@@ -51,18 +52,22 @@ import javax.money.convert.ExchangeRate;
 /**
  * Unit tests for {@link DefaultNextHopPacketMapper}.
  */
-@FixMethodOrder(MethodSorters.DEFAULT)
+@FixMethodOrder
 public class DefaultNextHopPacketMapperTest {
 
-  private static final ImmutableRoute NEXT_HOP = Route.builder().nextHopAccountId(AccountId.of("g.ovaltine-jenkins"))
-    .routePrefix(InterledgerAddressPrefix.GLOBAL)
-    .build();
+  private static final ImmutableRoute NEXT_HOP = Route.builder().nextHopAccountId(AccountId.of("ovaltine-jenkins"))
+      .routePrefix(InterledgerAddressPrefix.GLOBAL)
+      .build();
+  private static final ImmutableRoute NEXT_HOP_2 = Route.builder().nextHopAccountId(AccountId.of("galileo-humpkins"))
+      .routePrefix(InterledgerAddressPrefix.GLOBAL)
+      .build();
+
   private static final int MIN_MESSAGE_WINDOW_MILLIS = 1000;
   private static final AccountId RECEIVER_ACCOUNT_ID = AccountId.of("trapezius-milkington");
   private static final InterledgerAddress RECEIVER = InterledgerAddress.of("g.test").with(RECEIVER_ACCOUNT_ID.value());
   private static final AccountId SENDER_ACCOUNT_ID = AccountId.of("galileo-humpkins");
   private static final InterledgerCondition CONDITION = InterledgerCondition.of(
-    Base64.getDecoder().decode("jAC8DGFPZPfh4AtZpXuvXFe2oRmpDVSvSJg2oT+bx34="));
+      Base64.getDecoder().decode("jAC8DGFPZPfh4AtZpXuvXFe2oRmpDVSvSJg2oT+bx34="));
 
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
@@ -95,11 +100,11 @@ public class DefaultNextHopPacketMapperTest {
     mockExternalForwardingAllowed(true);
     Supplier<ConnectorSettings> connectorSettingsSupplier = () -> connectorSettings;
     mapper = new DefaultNextHopPacketMapper(connectorSettingsSupplier,
-      mockRoutingService,
-      mockAddressUtils,
-      new JavaMoneyUtils(),
-      mockAccountCache,
-      (currencyUnit -> mockCurrencyConversion));
+        mockRoutingService,
+        mockAddressUtils,
+        new JavaMoneyUtils(),
+        mockAccountCache,
+        (currencyUnit -> mockCurrencyConversion));
   }
 
   private void mockExternalForwardingAllowed(boolean value) {
@@ -113,7 +118,7 @@ public class DefaultNextHopPacketMapperTest {
     InterledgerPreparePacket preparePacket = defaultPreparePacket(now).build();
 
     when(mockAccountCache.safeGetAccountId(NEXT_HOP.nextHopAccountId()))
-      .thenReturn(defaultNextHopSettings().build());
+        .thenReturn(defaultNextHopSettings().build());
 
     when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.of(NEXT_HOP));
 
@@ -123,17 +128,47 @@ public class DefaultNextHopPacketMapperTest {
   }
 
   @Test
+  public void getNextHopPacketNoDestinationAddressFoundFromRoutingService() {
+    Instant now = Instant.now(clock);
+    AccountSettings settings = defaultSenderAccountSettings().build();
+    InterledgerPreparePacket preparePacket = defaultPreparePacket(now).build();
+
+    when(mockAccountCache.safeGetAccountId(NEXT_HOP.nextHopAccountId()))
+        .thenReturn(defaultNextHopSettings().build());
+    when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.empty());
+    expectedException.expect(InterledgerProtocolException.class);
+    expectedException.expectMessage(containsString("No route found from accountId to destination"));
+    mapper.getNextHopPacket(settings, preparePacket);
+  }
+
+  @Test
+  public void getNextHopPacketSourceAccountIdMatchesNextHopAccountId() {
+    Instant now = Instant.now(clock);
+    AccountSettings settings = defaultSenderAccountSettings().build();
+    InterledgerPreparePacket preparePacket = defaultPreparePacket(now).build();
+
+    when(mockAccountCache.safeGetAccountId(NEXT_HOP_2.nextHopAccountId()))
+        .thenReturn(defaultNextHopSettings().build());
+
+    when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.of(NEXT_HOP_2));
+
+    expectedException.expect(InterledgerProtocolException.class);
+    expectedException.expectMessage(containsString("Refusing to route payments back to sender"));
+    mapper.getNextHopPacket(settings, preparePacket);
+  }
+
+  @Test
   public void determineNextAmountWithConversion() {
     Instant now = Instant.now(clock);
     AccountSettings sourceSettings = defaultSenderAccountSettings()
-      .assetCode("EUR")
-      .build();
+        .assetCode("EUR")
+        .build();
     InterledgerPreparePacket preparePacket = defaultPreparePacket(now)
-      .amount(UnsignedLong.valueOf(100))
-      .build();
+        .amount(UnsignedLong.valueOf(100))
+        .build();
 
     when(mockAccountCache.safeGetAccountId(NEXT_HOP.nextHopAccountId()))
-      .thenReturn(defaultNextHopSettings().build());
+        .thenReturn(defaultNextHopSettings().build());
 
     when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.of(NEXT_HOP));
 
@@ -142,6 +177,16 @@ public class DefaultNextHopPacketMapperTest {
 
     UnsignedLong result = mapper.determineNextAmount(sourceSettings, defaultNextHopSettings().build(), preparePacket);
     assertThat(result).isEqualTo(UnsignedLong.valueOf(200));
+  }
+
+  @Test
+  public void determineNextAmountExternalForwardingNotAllowedForDestination() {
+    Instant now = Instant.now(clock);
+    AccountSettings sourceSettings = defaultSenderAccountSettings().build();
+    InterledgerPreparePacket preparePacket = defaultPreparePacket(now).build();
+
+    UnsignedLong result = mapper.determineNextAmount(sourceSettings, defaultNextHopSettings().build(), preparePacket);
+    assertThat(result).isEqualTo(UnsignedLong.valueOf(10000));
   }
 
   @Test
@@ -161,7 +206,25 @@ public class DefaultNextHopPacketMapperTest {
     connectorSettings.setMinMessageWindowMillis(minMessageWindowMillis);
     mockExternalForwardingAllowed(true);
     assertThat(mapper.determineDestinationExpiresAt(clock, expiry, RECEIVER))
-      .isEqualTo(now.plusMillis(maxHoldTimeMillis));
+        .isEqualTo(now.plusMillis(maxHoldTimeMillis));
+  }
+
+  @Test
+  public void determineNextAmountWithNullSourceAccountSettings() {
+    expectedException.expect(NullPointerException.class);
+    mapper.determineNextAmount(null, mock(AccountSettings.class), mock(InterledgerPreparePacket.class));
+  }
+
+  @Test
+  public void determineNextAmountWithNullDestinationAccountSettings() {
+    expectedException.expect(NullPointerException.class);
+    mapper.determineNextAmount(mock(AccountSettings.class), null, mock(InterledgerPreparePacket.class));
+  }
+
+  @Test
+  public void determineNextAmountWithNullSourcePacket() {
+    expectedException.expect(NullPointerException.class);
+    mapper.determineNextAmount(mock(AccountSettings.class), mock(AccountSettings.class), null);
   }
 
   @Test
@@ -174,7 +237,7 @@ public class DefaultNextHopPacketMapperTest {
     connectorSettings.setMinMessageWindowMillis(minMessageWindowMillis);
     mockExternalForwardingAllowed(true);
     assertThat(mapper.determineDestinationExpiresAt(clock, expiry, RECEIVER))
-      .isEqualTo(expiry.minusMillis(minMessageWindowMillis));
+        .isEqualTo(expiry.minusMillis(minMessageWindowMillis));
   }
 
   @Test
@@ -215,39 +278,39 @@ public class DefaultNextHopPacketMapperTest {
 
   private ImmutableAccountSettings.Builder defaultNextHopSettings() {
     return AccountSettings.builder()
-      .accountId(NEXT_HOP.nextHopAccountId())
-      .linkType(LoopbackLink.LINK_TYPE)
-      .accountRelationship(AccountRelationship.PEER)
-      .assetCode("USD")
-      .assetScale(3);
+        .accountId(NEXT_HOP.nextHopAccountId())
+        .linkType(LoopbackLink.LINK_TYPE)
+        .accountRelationship(AccountRelationship.PEER)
+        .assetCode("USD")
+        .assetScale(3);
   }
 
   private InterledgerPreparePacketBuilder defaultPreparePacket(Instant now) {
     return InterledgerPreparePacket.builder()
-      .destination(RECEIVER)
-      .expiresAt(now.plusSeconds(5))
-      .amount(UnsignedLong.valueOf(10000))
-      .executionCondition(CONDITION);
+        .destination(RECEIVER)
+        .expiresAt(now.plusSeconds(5))
+        .amount(UnsignedLong.valueOf(10000))
+        .executionCondition(CONDITION);
   }
 
   private ImmutableAccountSettings.Builder defaultSenderAccountSettings() {
     return AccountSettings.builder()
-      .accountRelationship(AccountRelationship.PEER)
-      .assetCode("USD")
-      .assetScale(3)
-      .linkType(LoopbackLink.LINK_TYPE)
-      .accountId(SENDER_ACCOUNT_ID);
+        .accountRelationship(AccountRelationship.PEER)
+        .assetCode("USD")
+        .assetScale(3)
+        .linkType(LoopbackLink.LINK_TYPE)
+        .accountId(SENDER_ACCOUNT_ID);
   }
 
   private void assertPreparePacket(NextHopInfo result, InterledgerPreparePacket expectedPreparePacket) {
     assertThat(result).isEqualTo(NextHopInfo.builder().nextHopAccountId(NEXT_HOP.nextHopAccountId())
-      .nextHopPacket(expectedPreparePacket).build());
+        .nextHopPacket(expectedPreparePacket).build());
   }
 
   private InterledgerPreparePacketBuilder defaultExpectedPreparePacket(InterledgerPreparePacket preparePacket) {
     return InterledgerPreparePacket.builder()
-      .from(preparePacket)
-      .expiresAt(preparePacket.getExpiresAt().minusMillis(MIN_MESSAGE_WINDOW_MILLIS));
+        .from(preparePacket)
+        .expiresAt(preparePacket.getExpiresAt().minusMillis(MIN_MESSAGE_WINDOW_MILLIS));
   }
 
   /**
@@ -259,8 +322,10 @@ public class DefaultNextHopPacketMapperTest {
     reset(mockExchangeRate, mockCurrencyConversion);
     when(mockExchangeRate.getFactor()).thenReturn(new DefaultNumberValue(rate));
     when(mockCurrencyConversion.apply(any())).thenAnswer(
-      (Answer<MonetaryAmount>) invocationOnMock ->
-        invocationOnMock.getArgument(0, MonetaryAmount.class).multiply(rate));
+        (Answer<MonetaryAmount>) invocationOnMock -> invocationOnMock
+            .getArgument(0, MonetaryAmount.class)
+            .multiply(rate)
+    );
   }
 
 }
