@@ -1,24 +1,14 @@
 # See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
-
 spring:
   profiles:
     include: dev
   output:
     ansi:
       enabled: ALWAYS
+
 interledger:
   connector:
-    #adminPassword: password
-    #defaultJwtTokenIssuer: https://connie.example.com
-    enabledProtocols:
-      blastEnabled: true
-      pingProtocolEnabled: true
-      peerConfigEnabled: true
-      peerRoutingEnabled: true
-    ## ILP address of the connector.
-    ## This property can be omitted if an account with relation=parent is configured under accounts.
     nodeIlpAddress: test.connie
-    # Global Routing Settings for this connector.
     globalRoutingSettings:
       # A simulated routing secret, which is a seed used for generating routing table auth values.
       # Represents the plaintext value of `shh`, encrypted.
