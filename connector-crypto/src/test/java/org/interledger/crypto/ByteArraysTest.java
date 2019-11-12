@@ -33,30 +33,37 @@ public class ByteArraysTest {
     // calculate comparing 2 byte arrays with different values (which does not require comparing every byte but should)
     // if the 2 timings are roughly the same, then the algorithm is constant time
 
-    byte [] lotsOfBytes = new byte[100000];
+    int arraySize = 250000;
+    byte [] lotsOfBytes = new byte[arraySize];
     Arrays.fill(lotsOfBytes, (byte) 0);
 
-    byte [] sameLotsOfBytes = new byte[100000];
-    Arrays.fill(lotsOfBytes, (byte) 0);
+    byte [] sameLotsOfBytes = new byte[arraySize];
+    Arrays.fill(sameLotsOfBytes, (byte) 0);
 
-    byte [] lotsMoreDifferentBytes = new byte[100000];
+    byte [] lotsMoreDifferentBytes = new byte[arraySize];
     Arrays.fill(lotsMoreDifferentBytes, (byte) 1);
     int iterations = 10000;
 
+    // prime the JIT before benchmarking
+    for (int i = 0; i < 1000; i++) {
+      assertThat(ByteArrays.isEqualUsingConstantTime(lotsOfBytes, lotsMoreDifferentBytes)).isFalse();
+    }
+
     Stopwatch baseline = Stopwatch.createStarted();
     for (int i = 0; i < iterations; i++) {
-      ByteArrays.isEqualUsingConstantTime(lotsOfBytes, sameLotsOfBytes);
+      assertThat(ByteArrays.isEqualUsingConstantTime(lotsOfBytes, sameLotsOfBytes)).isTrue();
     }
     baseline.stop();
 
     Stopwatch test = Stopwatch.createStarted();
     for (int i = 0; i < iterations; i++) {
-      ByteArrays.isEqualUsingConstantTime(lotsOfBytes, lotsMoreDifferentBytes);
+      assertThat(ByteArrays.isEqualUsingConstantTime(lotsOfBytes, lotsMoreDifferentBytes)).isFalse();
     }
     test.stop();
 
-    // timings should be approximately within 10% of each other
-    assertThat(test.elapsed().toMillis()).isCloseTo(baseline.elapsed().toMillis(), Percentage.withPercentage(10.0));
+    // timings have lots of noise since benchmark doesnt run for a long time.
+    // 25% seems like a reasonable variance but may need to be widened if we find more jitter in the results
+    assertThat(test.elapsed().toMillis()).isCloseTo(baseline.elapsed().toMillis(), Percentage.withPercentage(25.0));
   }
 
   @Test
