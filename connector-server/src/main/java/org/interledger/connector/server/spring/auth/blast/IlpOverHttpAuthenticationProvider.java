@@ -183,7 +183,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
             .build();
       });
     } catch (AccountNotFoundProblem | JWTDecodeException e) { // All other exceptions should be thrown!
-      logger.error(e.getMessage(), e);
+      logger.debug(e.getMessage(), e);
     }
     return notAuthenticated();
   }

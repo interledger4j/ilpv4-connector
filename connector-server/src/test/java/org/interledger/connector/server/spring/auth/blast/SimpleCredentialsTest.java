@@ -1,22 +1,27 @@
 package org.interledger.connector.server.spring.auth.blast;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.*;
+
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 
 import com.google.common.hash.HashCode;
 import org.junit.Test;
 
-public class BearerAuthenticationTest {
+public class SimpleCredentialsTest {
 
-  public static final HashCode HASH_CODE = HashCode.fromString("ab");
-  public static final byte[] BEARER_TOKEN = new byte[32];
-  private static final BearerAuthentication AUTH = BearerAuthentication.builder()
-      .bearerToken(BEARER_TOKEN)
-      .hmacSha256(HASH_CODE)
+  private static final AccountId ACCOUNT_ID = AccountId.of("bob");
+  private static final byte[] BEARER_TOKEN = new byte[32];
+
+  private static final SimpleCredentials AUTH = SimpleCredentials.builder()
+      .principal(ACCOUNT_ID)
+      .authToken(BEARER_TOKEN)
       .build();
 
   @Test
   public void getPrincipal() {
-    assertThat(AUTH.getPrincipal()).isNull();
+    assertThat(AUTH.getPrincipal()).isEqualTo(ACCOUNT_ID);
   }
 
   @Test
@@ -41,6 +46,6 @@ public class BearerAuthenticationTest {
 
   @Test
   public void getName() {
-    assertThat(AUTH.getName()).isNull();
+    assertThat(AUTH.getName()).isEqualTo(ACCOUNT_ID.value());
   }
 }
