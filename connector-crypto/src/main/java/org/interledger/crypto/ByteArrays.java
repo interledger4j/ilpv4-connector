@@ -7,6 +7,8 @@ import java.security.SecureRandom;
  */
 public class ByteArrays {
 
+  private static final SecureRandom secureRandom = new SecureRandom();
+
   /**
    * Checks if the byte arrays are equal using a constant-time algorithm to prevent timing based attacks
    * {@see https://codahale.com/a-lesson-in-timing-attacks/}
@@ -34,7 +36,6 @@ public class ByteArrays {
    * would not be possible.
    */
   public static byte[] generate32RandomBytes() {
-    final SecureRandom secureRandom = new SecureRandom();
     final byte[] rndBytes = new byte[32];
     secureRandom.nextBytes(rndBytes);
     return rndBytes;
