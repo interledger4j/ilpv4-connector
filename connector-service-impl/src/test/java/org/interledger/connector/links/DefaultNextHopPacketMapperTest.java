@@ -263,9 +263,35 @@ public class DefaultNextHopPacketMapperTest {
     connectorSettings.setMinMessageWindowMillis(minMessageWindowMillis);
     mockExternalForwardingAllowed(true);
     expectedException.expect(InterledgerProtocolException.class);
+    expectedException.expectMessage("Interledger Rejection: Source transfer expires too soon to complete payment");
     mapper.determineDestinationExpiresAt(clock, expiry, RECEIVER);
   }
 
+  @Test
+  public void determineDestinationExpiresAlreadyExpired() {
+    Instant now = Instant.now(clock);
+    Instant expiry = now.minusMillis(500);
+    int maxHoldTimeMillis = 10000;
+    int minMessageWindowMillis = 2000;
+    connectorSettings.setMaxHoldTimeMillis(maxHoldTimeMillis);
+    connectorSettings.setMinMessageWindowMillis(minMessageWindowMillis);
+    mockExternalForwardingAllowed(true);
+    expectedException.expect(InterledgerProtocolException.class);
+    expectedException.expectMessage(containsString("Interledger Rejection: Source transfer has already expired"));
+    mapper.determineDestinationExpiresAt(clock, expiry, RECEIVER);
+  }
+
+  @Test
+  public void determineDestinationExpiresAtSourceExpiryRequired() {
+    int maxHoldTimeMillis = 10000;
+    int minMessageWindowMillis = 1000;
+    connectorSettings.setMaxHoldTimeMillis(maxHoldTimeMillis);
+    connectorSettings.setMinMessageWindowMillis(minMessageWindowMillis);
+    mockExternalForwardingAllowed(true);
+    expectedException.expect(NullPointerException.class);
+    mapper.determineDestinationExpiresAt(clock, null, RECEIVER);
+  }
+  
   @Test
   public void lesser() {
     Instant now = Instant.now(clock);
