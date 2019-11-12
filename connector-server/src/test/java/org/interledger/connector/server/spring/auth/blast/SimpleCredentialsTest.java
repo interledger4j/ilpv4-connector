@@ -1,12 +1,9 @@
 package org.interledger.connector.server.spring.auth.blast;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.*;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountSettings;
 
-import com.google.common.hash.HashCode;
 import org.junit.Test;
 
 public class SimpleCredentialsTest {
