@@ -11,7 +11,6 @@ import org.springframework.security.core.GrantedAuthority;
 import java.util.Collection;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.validation.constraints.Null;
 
 /**
  * Contains information about an ILP-over-HTTP Authentication decision, generally used for caching purposes to shield
