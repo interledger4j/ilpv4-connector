@@ -9,6 +9,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
@@ -31,7 +32,7 @@ import java.util.function.Supplier;
 public class JwtBlastHttpSender extends AbstractBlastHttpSender implements BlastHttpSender {
 
   // See Javadoc above for how this is used.
-  private final LoadingCache<String, String> ilpOverHttpAuthTokens;
+  private final LoadingCache<String, String> ilpOverHttpAuthTokensCache;
 
   /**
    * Required-args Constructor.
@@ -40,13 +41,16 @@ public class JwtBlastHttpSender extends AbstractBlastHttpSender implements Blast
       final Supplier<Optional<InterledgerAddress>> operatorAddressSupplier,
       final RestTemplate restTemplate,
       final Decryptor decryptor,
-      final OutgoingLinkSettings outgoingLinkSettings
+      final OutgoingLinkSettings outgoingLinkSettings,
+      final CacheMetricsCollector cacheMetrics
   ) {
     super(operatorAddressSupplier, restTemplate, outgoingLinkSettings);
+
     final EncryptedSecret encryptedSecret =
         EncryptedSecret.fromEncodedValue(getOutgoingLinkSettings().encryptedTokenSharedSecret());
 
-    ilpOverHttpAuthTokens = Caffeine.newBuilder()
+    ilpOverHttpAuthTokensCache = Caffeine.newBuilder()
+        .recordStats() // Publish stats to prometheus
         // There should only ever be 1 or 2 tokens in-memory for a given client instance.
         .maximumSize(3)
         // Expire after this duration, which will correspond to the last incoming request from the peer.
@@ -77,10 +81,12 @@ public class JwtBlastHttpSender extends AbstractBlastHttpSender implements Blast
             Arrays.fill(sharedSecretBytes, (byte) 0);
           }
         });
+
+    Objects.requireNonNull(cacheMetrics).addCache("ilpOverHttpAuthTokensCache", ilpOverHttpAuthTokensCache);
   }
 
   @Override
   protected String constructAuthToken() {
-    return this.ilpOverHttpAuthTokens.get(getOutgoingLinkSettings().tokenSubject());
+    return this.ilpOverHttpAuthTokensCache.get(getOutgoingLinkSettings().tokenSubject());
   }
 }

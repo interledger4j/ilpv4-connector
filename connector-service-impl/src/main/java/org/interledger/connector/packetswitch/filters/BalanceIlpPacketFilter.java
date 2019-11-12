@@ -33,18 +33,19 @@ public class BalanceIlpPacketFilter extends AbstractPacketFilter implements Pack
     try {
       // Preemptively decrease the account balance....
       this.balanceTracker.updateBalanceForPrepare(
-          sourceAccountSettings.accountId(), sourcePreparePacket.getAmount().longValue(),
+          sourceAccountSettings.accountId(),
+          sourcePreparePacket.getAmount().longValue(),
           sourceAccountSettings.balanceSettings().minBalance()
       );
-
-      // TODO: Stats (Should half of this instead be in the balance tracker?)
-      // this.stats.balance.setValue(account, {}, balance.getValue().toNumber())
-      // this.stats.incomingDataPacketValue.increment(account, {result :'rejected' },+amount)
-
     } catch (BalanceTrackerException e) {
       // If there's an error, it means the prepare balance update was not applied, so simply log the exception and
       // reject.
       logger.error(e.getMessage(), e);
+
+      logger.debug("Incoming Prepare Packet refunded due to error. accountId={} amount={}",
+          sourceAccountSettings.accountId().value(), sourcePreparePacket.getAmount()
+      );
+
       return packetRejector.reject(
           LinkId.of(sourceAccountSettings.accountId().value()),
           sourcePreparePacket,
@@ -70,11 +71,6 @@ public class BalanceIlpPacketFilter extends AbstractPacketFilter implements Pack
             balanceTracker.updateBalanceForReject(
                 sourceAccountSettings.accountId(), sourcePreparePacket.getAmount().longValue()
             );
-
-            // TODO: Stats
-            // this.stats.balance.setValue(account, {}, balance.getValue().toNumber())
-            // this.stats.incomingDataPacketValue.increment(account, {result :'rejected' },+amount)
-
           } catch (BalanceTrackerException e) {
             logger.error("RECONCILIATION REQUIRED: Unable to reverse balance update in Redis. " +
                 "PreparePacket: {} RejectPacket: {}", sourcePreparePacket, interledgerRejectPacket

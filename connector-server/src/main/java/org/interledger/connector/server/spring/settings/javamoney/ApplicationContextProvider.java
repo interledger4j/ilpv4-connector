@@ -1,36 +1,41 @@
 package org.interledger.connector.server.spring.settings.javamoney;
 
-import com.google.common.collect.Maps;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Sets;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ConfigurableApplicationContext;
 
-import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Exists to provide a static accessor for the ApplicationContext of the current Spring context so that JavaMoney can be
- * conencted into the Spring Bean framework.
+ * connected into the Spring Bean framework.
  */
 public class ApplicationContextProvider implements ApplicationContextAware {
 
-  private static Map<String, ApplicationContext> ctx = Maps.newConcurrentMap();
+  private static Set<ApplicationContext> ctx = Sets.newConcurrentHashSet();
 
-  public static Map<String, ApplicationContext> getAllApplicationContexts() {
-    return ctx;
+  /**
+   * Returns all active application contexts.
+   * @return set of active contexts
+   */
+  public static Set<ApplicationContext> getAllApplicationContexts() {
+    return findActiveContexts(ctx);
   }
 
-  public static ApplicationContext getApplicationContext(String contextId) {
-    return ctx.get(contextId);
+  @VisibleForTesting
+  static Set<ApplicationContext> findActiveContexts(Set<ApplicationContext> contexts) {
+    return contexts.stream()
+        .filter(ctx -> ctx instanceof ConfigurableApplicationContext)
+        .map(ctx -> (ConfigurableApplicationContext) ctx)
+        .filter(ctx -> ctx.isActive())
+        .collect(Collectors.toSet());
   }
 
   public void setApplicationContext(ApplicationContext ctx) throws BeansException {
-    // Identify the context by the ILP Operator Address (falling back to the context-id), in order to support multiple
-    // topologies in the same JVM.
-    final String contextId = Optional
-      .ofNullable(ctx.getEnvironment().getProperty("interledger.connector.nodeIlpAddress"))
-      .orElseGet(() -> ctx.getId());
-
-    this.ctx.put(contextId, ctx);
+    this.ctx.add(ctx);
   }
 }

@@ -64,7 +64,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
 
   private final AccountManager accountManager;
-  private final StaticRoutesManager staticRoutesManager;
   private final AccountSettingsRepository accountSettingsRepository;
   private final FxRateOverridesRepository fxRateOverridesRepository;
   private final LinkManager linkManager;
@@ -81,7 +80,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   DefaultILPv4Connector(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountManager accountManager,
-    final StaticRoutesManager staticRoutesManager,
     final AccountSettingsRepository accountSettingsRepository,
     final FxRateOverridesRepository fxRateOverridesRepository,
     final LinkManager linkManager,
@@ -93,7 +91,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     this(
       connectorSettingsSupplier,
       accountManager,
-      staticRoutesManager,
       accountSettingsRepository,
       fxRateOverridesRepository,
       linkManager,
@@ -111,7 +108,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   public DefaultILPv4Connector(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountManager accountManager,
-    final StaticRoutesManager staticRoutesManager,
     final AccountSettingsRepository accountSettingsRepository,
     final FxRateOverridesRepository fxRateOverridesRepository,
     final LinkManager linkManager,
@@ -123,7 +119,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountManager = Objects.requireNonNull(accountManager);
-    this.staticRoutesManager = Objects.requireNonNull(staticRoutesManager);
     this.accountSettingsRepository = accountSettingsRepository;
     this.fxRateOverridesRepository = Objects.requireNonNull(fxRateOverridesRepository);
     this.linkManager = Objects.requireNonNull(linkManager);
@@ -192,7 +187,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
 
   @Override
   public StaticRoutesManager getStaticRoutesManager() {
-    return staticRoutesManager;
+    return this.externalRoutingService;
   }
 
   @Override

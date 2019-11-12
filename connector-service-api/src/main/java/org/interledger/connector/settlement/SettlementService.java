@@ -31,7 +31,7 @@ public interface SettlementService {
    *
    * @throws BalanceTrackerException If anything goes wrong while attempting to update the clearingBalance.
    */
-  SettlementQuantity onLocalSettlementPayment(
+  SettlementQuantity onIncomingSettlementPayment(
     String idempotencyKey,
     SettlementEngineAccountId settlementEngineAccountId,
     SettlementQuantity incomingSettlementInSettlementUnits

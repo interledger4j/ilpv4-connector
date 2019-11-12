@@ -1,11 +1,12 @@
 package org.interledger.connector.links.filters;
 
-import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,8 +23,12 @@ public abstract class AbstractLinkFilter implements LinkFilter {
 
   protected final Supplier<InterledgerAddress> operatorAddressSupplier;
 
-  public AbstractLinkFilter(
-    final Supplier<InterledgerAddress> operatorAddressSupplier) {
+  /**
+   * Required-args Constructor.
+   *
+   * @param operatorAddressSupplier A {@link Supplier} of this Connector's operator {@link InterledgerAddress}.
+   */
+  public AbstractLinkFilter(final Supplier<InterledgerAddress> operatorAddressSupplier) {
     this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
   }
 
@@ -40,18 +45,18 @@ public abstract class AbstractLinkFilter implements LinkFilter {
    * @return An {@link InterledgerRejectPacket} with information about why {@code preparePacket} was reject.
    */
   protected InterledgerRejectPacket reject(
-    final AccountId accountId, final InterledgerPreparePacket preparePacket,
-    final InterledgerErrorCode errorCode, final String errorMessage
+      final AccountId accountId, final InterledgerPreparePacket preparePacket,
+      final InterledgerErrorCode errorCode, final String errorMessage
   ) {
     Objects.requireNonNull(errorCode);
     Objects.requireNonNull(errorMessage);
 
     // Reject.
     final InterledgerRejectPacket rejectPacket = InterledgerRejectPacket.builder()
-      .triggeredBy(operatorAddressSupplier.get())
-      .code(errorCode)
-      .message(errorMessage)
-      .build();
+        .triggeredBy(operatorAddressSupplier.get())
+        .code(errorCode)
+        .message(errorMessage)
+        .build();
 
     logger.warn("Rejecting from `{}`: {} {}", accountId, preparePacket, rejectPacket);
     return rejectPacket;
