@@ -70,7 +70,6 @@ public class IlpOverHttpAuthenticationProviderTest {
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
 
-  private Decryptor decryptor;
   @Mock
   private AccountSettingsRepository accountSettingsRepository;
   @Mock
@@ -80,13 +79,12 @@ public class IlpOverHttpAuthenticationProviderTest {
   private EncryptionService encryptionService;
 
   @Before
-  public void setUp() throws NoSuchAlgorithmException {
+  public void setUp() {
     initMocks(this);
     ConnectorSettings connectorSettings = ModifiableConnectorSettings.create();
-    decryptor = encryptionService;
     ilpOverHttpAuthenticationProvider = new IlpOverHttpAuthenticationProvider(
         () -> connectorSettings,
-        decryptor,
+        encryptionService,
         accountSettingsRepository,
         new DefaultLinkSettingsFactory(),
         cacheMetrics);
