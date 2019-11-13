@@ -32,6 +32,7 @@ spring:
     enabled: false
 
 ---
+## default h2 profile makes a persistent database. this additional profile overrides it to in-memory
 spring:
   profiles: h2-in-memory
   datasource:
