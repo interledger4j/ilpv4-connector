@@ -5,6 +5,8 @@ import org.interledger.connector.persistence.converters.AccountSettingsEntityCon
 import org.interledger.connector.persistence.converters.FxRateOverridesEntityConverter;
 import org.interledger.connector.persistence.converters.RateLimitSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.SettlementEngineDetailsEntityConverter;
+import org.interledger.connector.persistence.converters.StaticRouteEntityConverter;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -37,6 +39,11 @@ public class ConvertersConfig {
   @Bean
   FxRateOverridesEntityConverter fxRateOverrideEntityConverter() {
     return new FxRateOverridesEntityConverter();
+  }
+
+  @Bean
+  StaticRouteEntityConverter staticRouteEntityConverter() {
+    return new StaticRouteEntityConverter();
   }
 
 }

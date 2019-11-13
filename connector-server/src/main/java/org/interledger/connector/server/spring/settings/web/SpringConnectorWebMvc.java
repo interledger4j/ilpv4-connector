@@ -7,6 +7,7 @@ import org.interledger.connector.persistence.converters.AccountSettingsEntityCon
 import org.interledger.connector.persistence.converters.FxRateOverridesEntityConverter;
 import org.interledger.connector.persistence.converters.RateLimitSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.SettlementEngineDetailsEntityConverter;
+import org.interledger.connector.persistence.converters.StaticRouteEntityConverter;
 import org.interledger.connector.server.spring.controllers.converters.OerPreparePacketHttpMessageConverter;
 import org.interledger.connector.server.spring.settings.CodecContextConfig;
 import org.interledger.connector.server.spring.settings.link.IlpOverHttpConfig;
@@ -71,6 +72,9 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
   @Autowired
   private FxRateOverridesEntityConverter fxRateOverrideEntityConverter;
 
+  @Autowired
+  private StaticRouteEntityConverter staticRouteEntityConverter;
+
   ////////////////////////
   // HttpMessageConverters
   ////////////////////////
@@ -110,5 +114,6 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
     registry.addConverter(settlementEngineDetailsEntityConverter);
     registry.addConverter(accountSettingsConverter);
     registry.addConverter(fxRateOverrideEntityConverter);
+    registry.addConverter(staticRouteEntityConverter);
   }
 }

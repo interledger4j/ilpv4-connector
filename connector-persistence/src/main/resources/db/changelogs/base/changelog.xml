@@ -97,6 +97,36 @@
     <createSequence incrementBy="1" sequenceName="hibernate_sequence" startValue="1"/>
   </changeSet>
 
+  <changeSet author="isimpson" id="static_routes">
+    <createTable tableName="STATIC_ROUTES">
+      <column autoIncrement="true" name="ID" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="ADDRESS_PREFIX" type="VARCHAR(255)">
+        <constraints nullable="false" unique="true"/>
+      </column>
+      <column name="CREATED_DTTM" type="DATETIME">
+        <constraints nullable="false"/>
+      </column>
+      <column name="MODIFIED_DTTM" type="DATETIME">
+        <constraints nullable="false"/>
+      </column>
+      <column name="VERSION" type="SMALLINT">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="ACCOUNT_ID" type="VARCHAR(64)">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+
+    <createIndex indexName="STATIC_ROUTES_PREFIX_IDX"
+                 tableName="STATIC_ROUTES"
+                 unique="true">
+      <column name="ADDRESS_PREFIX"/>
+    </createIndex>
+  </changeSet>
+
   <changeSet id="fx_rate_overrides" author="isimpson">
     <createTable tableName="fx_rate_overrides">
 

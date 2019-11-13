@@ -7,6 +7,7 @@ import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
+import org.interledger.connector.routing.StaticRoutesManager;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementService;
@@ -144,6 +145,8 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       this.configureAccounts();
     }
 
+//    this.configureStaticRoutes();
+
     this.getExternalRoutingService().start();
   }
 
@@ -180,6 +183,11 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   @Override
   public AccountManager getAccountManager() {
     return this.accountManager;
+  }
+
+  @Override
+  public StaticRoutesManager getStaticRoutesManager() {
+    return this.externalRoutingService;
   }
 
   @Override

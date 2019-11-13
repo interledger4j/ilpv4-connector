@@ -10,8 +10,11 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.routing.ExternalRoutingService;
+import org.interledger.connector.routing.StaticRoute;
 import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.crypto.Decryptor;
 import org.interledger.link.LoopbackLink;
@@ -70,6 +73,9 @@ public class JwtHs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
 
   @Autowired
   AccountManager accountManager;
+
+  @Autowired
+  ExternalRoutingService externalRoutingService;
 
   @Autowired
   ObjectMapper objectMapper;
@@ -138,6 +144,24 @@ public class JwtHs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
           .assetCode("XRP")
           .build();
       accountManager.createAccount(accountSettings);
+    }
+
+    if (!externalRoutingService.findBestNexHop(InterledgerAddress.of("test.connie.alice")).isPresent()) {
+      externalRoutingService.createStaticRoute(
+          StaticRoute.builder()
+              .nextHopAccountId(AccountId.of("alice"))
+              .routePrefix(InterledgerAddressPrefix.of("test.connie.alice"))
+              .build()
+      );
+    }
+
+    if (!externalRoutingService.findBestNexHop(InterledgerAddress.of("test.connie.bob")).isPresent()) {
+      externalRoutingService.createStaticRoute(
+          StaticRoute.builder()
+              .nextHopAccountId(AccountId.of("bob"))
+              .routePrefix(InterledgerAddressPrefix.of("test.connie.bob"))
+              .build()
+      );
     }
   }
 
