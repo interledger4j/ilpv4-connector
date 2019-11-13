@@ -80,7 +80,7 @@ public abstract class AbstractTopology {
   }
 
   /**
-   * Overridden for console emission, e.g., "Starting test topology `TwoConnectorParentChildBlastTopology`"
+   * Overridden for console emission, e.g., "Starting test topology `TwoConnectorParentChildIlpOverHttpTopology`"
    */
   @Override
   public String toString() {

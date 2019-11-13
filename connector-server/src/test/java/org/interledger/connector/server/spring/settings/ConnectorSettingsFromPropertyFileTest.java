@@ -39,7 +39,7 @@ public class ConnectorSettingsFromPropertyFileTest {
 
     // Enabled Protocol Settings
     final EnabledProtocolSettings enabledProtocolSettings = connectorSettings.enabledProtocols();
-    assertThat(enabledProtocolSettings.isBlastEnabled()).isEqualTo((true));
+    assertThat(enabledProtocolSettings.isIlpOverHttpEnabled()).isEqualTo((true));
     assertThat(enabledProtocolSettings.isPeerConfigEnabled()).isEqualTo((true));
     assertThat(enabledProtocolSettings.isPeerRoutingEnabled()).isEqualTo((true));
     assertThat(enabledProtocolSettings.isPingProtocolEnabled()).isEqualTo((true));

@@ -23,7 +23,7 @@ package org.interledger.connector.it.topologies.btp;
  *                                  └──────────────┘
  * </pre>
  *
- * @deprecated Remove once Blast ITs are completed.
+ * @deprecated Remove once ILP-over-HTTP ITs are completed.
  */
 @Deprecated
 public class SingleConnectorMultiAccountBtpTopology {

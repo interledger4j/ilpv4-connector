@@ -16,7 +16,7 @@ public interface EnabledProtocolSettings {
    *
    * @see "https://github.com/interledger/rfcs/blob/master/0035-ilp-over-http/0035-ilp-over-http.md"
    */
-  default boolean isBlastEnabled() {
+  default boolean isIlpOverHttpEnabled() {
     return true;
   }
 
@@ -61,7 +61,7 @@ public interface EnabledProtocolSettings {
 
     @Override
     @Value.Default
-    public boolean isBlastEnabled() {
+    public boolean isIlpOverHttpEnabled() {
       return true;
     }
 

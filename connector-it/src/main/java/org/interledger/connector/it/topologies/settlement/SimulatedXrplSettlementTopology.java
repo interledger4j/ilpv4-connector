@@ -213,7 +213,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
     return ImmutableConnectorSettings.builder()
       .operatorAddress(ALICE_CONNECTOR_ADDRESS)
       .enabledProtocols(EnabledProtocolSettings.builder()
-        .isBlastEnabled(true)
+        .isIlpOverHttpEnabled(true)
         .isPingProtocolEnabled(true)
         .isPeerRoutingEnabled(false)
         .isPeerConfigEnabled(false)
@@ -242,7 +242,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
   private static AccountSettings constructAliceAccountSettingsOnBob(final int alicePort, final int containerPort) {
     return AccountSettings.builder()
       .accountId(ALICE_ACCOUNT)
-      .description("Blast account for Alice")
+      .description("ILP-over-HTTP account for Alice")
       .settlementEngineDetails(
         SettlementEngineDetails.builder()
           .baseUrl(HttpUrl.parse("http://localhost:" + containerPort))
@@ -288,7 +288,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
     return ImmutableConnectorSettings.builder()
       .operatorAddress(BOB_CONNECTOR_ADDRESS)
       .enabledProtocols(EnabledProtocolSettings.builder()
-        .isBlastEnabled(true)
+        .isIlpOverHttpEnabled(true)
         .isPingProtocolEnabled(true)
         .isPeerConfigEnabled(false)
         .isPeerRoutingEnabled(false)
@@ -316,7 +316,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
   private static AccountSettings constructPaulAccountSettingsOnAlice() {
     return AccountSettings.builder()
       .accountId(PAUL_ACCOUNT)
-      .description("Blast sender account for Paul")
+      .description("ILP-over-HTTP sender account for Paul")
       .accountRelationship(AccountRelationship.CHILD)
       .linkType(IlpOverHttpLink.LINK_TYPE)
       .assetScale(9)
@@ -344,7 +344,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
   private static AccountSettings constructPeterAccountSettingsOnBob() {
     return AccountSettings.builder()
       .accountId(PETER_ACCOUNT)
-      .description("Blast sender account for Peter")
+      .description("ILP-over-HTTP sender account for Peter")
       .accountRelationship(AccountRelationship.CHILD)
       .linkType(IlpOverHttpLink.LINK_TYPE)
       .assetScale(9)
