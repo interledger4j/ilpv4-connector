@@ -33,7 +33,6 @@ public class ConnectorSettingsTest {
     assertThat(defaultConnectorSettings.globalRoutingSettings().routeBroadcastInterval())
         .isEqualTo(Duration.ofMillis(30000L));
     assertThat(defaultConnectorSettings.globalRoutingSettings().routingSecret()).isEqualTo("foo");
-    assertThat(defaultConnectorSettings.globalRoutingSettings().staticRoutes().size()).isEqualTo(0);
     assertThat(defaultConnectorSettings.globalRoutingSettings().isUseParentForDefaultRoute()).isFalse();
     assertThat(defaultConnectorSettings.globalRoutingSettings().isRouteBroadcastEnabled()).isFalse();
     assertThat(defaultConnectorSettings.globalRoutingSettings().maxEpochsPerRoutingTable()).isEqualTo(50);

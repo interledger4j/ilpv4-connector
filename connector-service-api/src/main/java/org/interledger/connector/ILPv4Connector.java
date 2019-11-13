@@ -6,6 +6,7 @@ import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
+import org.interledger.connector.routing.StaticRoutesManager;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementService;
@@ -34,6 +35,8 @@ public interface ILPv4Connector {
   LinkManager getLinkManager();
 
   AccountManager getAccountManager();
+
+  StaticRoutesManager getStaticRoutesManager();
 
   AccountSettingsRepository getAccountSettingsRepository();
 

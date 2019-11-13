@@ -57,11 +57,6 @@ public class ConnectorSettingsFromPropertyFileTest {
     assertThat(globalRoutingSettings.routeCleanupInterval()).isEqualTo((Duration.ofMillis(30002L)));
     assertThat(globalRoutingSettings.routeExpiry()).isEqualTo((Duration.ofMillis(30003L)));
     assertThat(globalRoutingSettings.maxEpochsPerRoutingTable()).isEqualTo((77));
-    assertThat(globalRoutingSettings.staticRoutes().size()).isEqualTo((1));
-    assertThat(globalRoutingSettings.staticRoutes().stream().findFirst().get().targetPrefix())
-        .isEqualTo((InterledgerAddressPrefix.of("test.parent")));
-    assertThat(globalRoutingSettings.staticRoutes().stream().findFirst().get().peerAccountId())
-        .isEqualTo((AccountId.of("bob")));
   }
 
   @EnableConfigurationProperties(ConnectorSettingsFromPropertyFile.class)
