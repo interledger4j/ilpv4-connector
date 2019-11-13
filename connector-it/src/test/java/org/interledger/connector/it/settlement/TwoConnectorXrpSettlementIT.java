@@ -14,7 +14,7 @@ import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.core.settlement.SettlementQuantity;
 import org.interledger.connector.events.IncomingSettlementSucceededEvent;
-import org.interledger.connector.it.AbstractBlastIT;
+import org.interledger.connector.it.AbstractIlpOverHttpIT;
 import org.interledger.connector.it.ContainerHelper;
 import org.interledger.connector.it.markers.Settlement;
 import org.interledger.connector.it.topologies.settlement.SimulatedXrplSettlementTopology;
@@ -50,7 +50,7 @@ import java.util.function.Consumer;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Category(Settlement.class)
 @SuppressWarnings("UnstableApiUsage")
-public class TwoConnectorXrpSettlementIT extends AbstractBlastIT {
+public class TwoConnectorXrpSettlementIT extends AbstractIlpOverHttpIT {
 
   private static final BigInteger ONE_HUNDRED = BigInteger.valueOf(100L);
   private static final BigInteger NINE_HUNDRED = BigInteger.valueOf(900L);

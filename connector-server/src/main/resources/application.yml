@@ -71,7 +71,7 @@ interledger:
     #     secret0_alias: secret0
     #     secret0_password: password
     enabledProtocols:
-      blastEnabled: true
+      ilpOverHttpEnabled: true
       pingProtocolEnabled: true
       peerRoutingEnabled: true
       ildcpEnabled: true

@@ -4,6 +4,7 @@ import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.core.InterledgerPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
+
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
@@ -18,19 +19,16 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Objects;
 
-import static org.interledger.connector.link.http.BlastHeaders.APPLICATION_ILP_HEADER_OCTET_STREAM;
-import static org.interledger.connector.link.http.BlastHeaders.APPLICATON_ILP_OCTET_STREAM;
-
 /**
  * An {@link HttpMessageConverter} that handles instances of {@link InterledgerPreparePacket}.
  */
 public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMessageConverter<InterledgerPacket>
-  implements HttpMessageConverter<InterledgerPacket> {
+    implements HttpMessageConverter<InterledgerPacket> {
 
   private final CodecContext ilpCodecContext;
 
   public OerPreparePacketHttpMessageConverter(final CodecContext ilpCodecContext) {
-    super(MediaType.APPLICATION_OCTET_STREAM, APPLICATON_ILP_OCTET_STREAM, APPLICATION_ILP_HEADER_OCTET_STREAM);
+    super(MediaType.APPLICATION_OCTET_STREAM);
     this.ilpCodecContext = Objects.requireNonNull(ilpCodecContext);
   }
 
@@ -58,9 +56,9 @@ public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMes
    */
   @Override
   protected void writeInternal(
-    final InterledgerPacket interledgerPacket,
-    final Type type,
-    final HttpOutputMessage outputMessage
+      final InterledgerPacket interledgerPacket,
+      final Type type,
+      final HttpOutputMessage outputMessage
   ) throws IOException, HttpMessageNotWritableException {
     ilpCodecContext.write(interledgerPacket, outputMessage.getBody());
   }
@@ -78,7 +76,7 @@ public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMes
    */
   @Override
   protected InterledgerPacket readInternal(Class<? extends InterledgerPacket> clazz, HttpInputMessage inputMessage)
-    throws IOException, HttpMessageNotReadableException {
+      throws IOException, HttpMessageNotReadableException {
 
     // This line is necessary in order to fully consume the message body...
     final byte[] bytes = StreamUtils.copyToByteArray(inputMessage.getBody());
@@ -103,7 +101,7 @@ public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMes
    */
   @Override
   public InterledgerPacket read(Type type, Class<?> contextClass, HttpInputMessage inputMessage)
-    throws IOException, HttpMessageNotReadableException {
+      throws IOException, HttpMessageNotReadableException {
 
     // This line is necessary in order to fully consume the message body...
     final byte[] bytes = StreamUtils.copyToByteArray(inputMessage.getBody());

@@ -41,7 +41,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   private boolean websocketServerEnabled;
 
-  private boolean blastEnabled;
+  private boolean ilpOverHttpEnabled;
 
   private InterledgerAddressPrefix globalPrefix = InterledgerAddressPrefix.TEST;
 
@@ -104,12 +104,12 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     this.websocketServerEnabled = websocketServerEnabled;
   }
 
-  public boolean isBlastEnabled() {
-    return blastEnabled;
+  public boolean isIlpOverHttpEnabled() {
+    return ilpOverHttpEnabled;
   }
 
-  public void setBlastEnabled(boolean blastEnabled) {
-    this.blastEnabled = blastEnabled;
+  public void setIlpOverHttpEnabled(boolean ilpOverHttpEnabled) {
+    this.ilpOverHttpEnabled = ilpOverHttpEnabled;
   }
 
   @Override
