@@ -1,6 +1,6 @@
 package org.interledger.connector.routing;
 
-import java.util.Collection;
+import java.util.List;
 
 /**
  * Defines a centralized service that manages incoming and outgoing <tt>external</tt> (i.e., shared with ILP nodes
@@ -18,6 +18,6 @@ public interface ExternalRoutingService extends PaymentRouter<Route>, StaticRout
    *
    * @return all routes known by the connector
    */
-  Collection<Route> getAllRoutes();
+  List<Route> getAllRoutes();
 
 }

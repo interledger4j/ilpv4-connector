@@ -11,6 +11,9 @@ import org.interledger.connector.routing.StaticRoute;
 import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.core.InterledgerAddressPrefix;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,7 +23,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.json.BasicJsonTester;
 import org.springframework.boot.test.json.JsonContentAssert;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -31,8 +33,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 
 /**
  * Running-server test that validates behavior of StaticRoutesController
@@ -51,16 +55,19 @@ public class StaticRoutesSpringBootTest {
   @Autowired
   private TestRestTemplate restTemplate;
 
+  @Autowired
+  private ObjectMapper objectMapper;
+
   private BasicJsonTester jsonTester = new BasicJsonTester(getClass());
 
   @Before
-  public void setUp() {
+  public void setUp() throws Exception {
     // "empty" what's there before each test
     getRoutes().forEach(r -> this.deleteRoute(r.routePrefix()));
   }
 
   @Test
-  public void createIndividualAndDelete() {
+  public void createIndividualAndDelete() throws Exception {
     StaticRoute charlie = charlieKelleyRoute();
 
     assertPutRoute(charlie, HttpStatus.CREATED);
@@ -214,20 +221,25 @@ public class StaticRoutesSpringBootTest {
     return response;
   }
 
-  private Collection<Route> getRoutes() {
+  private Collection<Route> getRoutes() throws Exception {
     final HttpEntity requestBody = new HttpEntity(authHeaders());
+    ResponseEntity<String> resp = restTemplate.exchange(SLASH_ROUTES, HttpMethod.GET, requestBody, String.class);
+    String body = resp.getBody();
+    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    ResponseEntity<Collection<Route>> routes = restTemplate.exchange(SLASH_ROUTES, HttpMethod.GET, requestBody,
-        new ParameterizedTypeReference<Collection<Route>>() {});
-    return routes.getBody();
+    String routeList = objectMapper.readTree(body).at("/_embedded/immutableRouteList").toString();
+    return Optional.ofNullable(objectMapper.readValue(routeList, new TypeReference<List<Route>>() {})).orElse(Collections.emptyList());
+
   }
 
-  private Set<StaticRoute> getStaticRoutes() {
+  private Collection<StaticRoute> getStaticRoutes() throws Exception {
     final HttpEntity requestBody = new HttpEntity(authHeaders());
+    ResponseEntity<String> resp = restTemplate.exchange(SLASH_ROUTES_STATIC, HttpMethod.GET, requestBody, String.class);
+    String body = resp.getBody();
+    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    ResponseEntity<Set<StaticRoute>> routes = restTemplate.exchange(SLASH_ROUTES_STATIC, HttpMethod.GET, requestBody,
-        new ParameterizedTypeReference<Set<StaticRoute>>() {});
-    return routes.getBody();
+    String routeList = objectMapper.readTree(body).at("/_embedded/immutableStaticRouteList").toString();
+    return Optional.ofNullable(objectMapper.readValue(routeList, new TypeReference<List<StaticRoute>>() {})).orElse(Collections.emptyList());
   }
 
 }
