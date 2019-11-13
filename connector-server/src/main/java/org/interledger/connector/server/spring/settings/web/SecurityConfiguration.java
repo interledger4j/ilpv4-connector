@@ -5,9 +5,9 @@ import static org.interledger.connector.server.spring.settings.metrics.MetricsCo
 import org.interledger.connector.core.ConfigConstants;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.connector.server.spring.auth.blast.AuthConstants;
-import org.interledger.connector.server.spring.auth.blast.BearerTokenSecurityContextRepository;
-import org.interledger.connector.server.spring.auth.blast.IlpOverHttpAuthenticationProvider;
+import org.interledger.connector.server.spring.auth.ilpoverhttp.AuthConstants;
+import org.interledger.connector.server.spring.auth.ilpoverhttp.BearerTokenSecurityContextRepository;
+import org.interledger.connector.server.spring.auth.ilpoverhttp.IlpOverHttpAuthenticationProvider;
 import org.interledger.connector.server.spring.controllers.HealthController;
 import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.connector.server.spring.controllers.PathConstants;

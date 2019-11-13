@@ -80,5 +80,5 @@ public class SettlementEngineClientConfig {
     return new OkHttpSettlementEngineClient(okHttpClient, objectMapper);
   }
 
-  // TODO: Add security. See BlastConfig for one example.
+  // TODO: Add security. See IlpOverHttp for one example.
 }
