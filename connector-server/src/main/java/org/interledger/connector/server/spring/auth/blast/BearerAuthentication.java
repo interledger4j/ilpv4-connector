@@ -1,7 +1,5 @@
 package org.interledger.connector.server.spring.auth.blast;
 
-import org.interledger.connector.accounts.AccountId;
-
 import com.google.common.collect.Lists;
 import com.google.common.hash.HashCode;
 import org.immutables.value.Value;
@@ -13,38 +11,31 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 /**
- * Contains information about an ILP-over-HTTP Authentication decision, generally used for caching purposes to shield
- * any actual underlying shared-secrets from memory.
+ * Authentication credentials for a BLAST connection.
  */
 @Value.Immutable
-public interface AuthenticationDecision extends Authentication {
+public interface BearerAuthentication extends Authentication {
 
-  static ImmutableAuthenticationDecision.Builder builder() {
-    return ImmutableAuthenticationDecision.builder();
+  static ImmutableBearerAuthentication.Builder builder() {
+    return ImmutableBearerAuthentication.builder();
   }
 
-  /**
-   * The principal that this Authentication decision represents. Empty if not authenticated
-   *
-   * @return The principal that the original authentication request was attempting to authenticate.
-   */
   @Override
   @Nullable
-  AccountId getPrincipal();
-
-  /**
-   * An HMAC of the original credential, for comparison purposes.
-   *
-   * @return The HMAC of a credential.
-   */
-  @Value.Redacted
-  HashCode credentialHmac();
+  default Object getPrincipal() {
+    return null;
+  }
 
   @Override
   @Value.Default()
   default boolean isAuthenticated() {
     return false;
   }
+
+  @Value.Redacted
+  byte[] getBearerToken();
+
+  HashCode hmacSha256();
 
   @Override
   @Value.Derived
@@ -55,7 +46,7 @@ public interface AuthenticationDecision extends Authentication {
   @Override
   @Value.Derived
   default Object getCredentials() {
-    return this.credentialHmac();
+    return this.getBearerToken();
   }
 
   /**
@@ -83,12 +74,10 @@ public interface AuthenticationDecision extends Authentication {
    * @return the name of this principal.
    */
   @Override
-  @Value.Default
   @Nullable
   default String getName() {
     return Optional.ofNullable(getPrincipal())
-        .map(Object::toString)
-        .orElse(null);
+      .map(Object::toString)
+      .orElse(null);
   }
-
 }
