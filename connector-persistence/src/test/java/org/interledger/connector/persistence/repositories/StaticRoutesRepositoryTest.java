@@ -38,56 +38,56 @@ public class StaticRoutesRepositoryTest {
   @Test
   public void saveGetSaveGetDeleteGet() {
     StaticRoute mac = StaticRoute.builder()
-        .accountId(AccountId.of("mac"))
-        .addressPrefix(InterledgerAddressPrefix.of("g.philly.paddys"))
+        .nextHopAccountId(AccountId.of("mac"))
+        .routePrefix(InterledgerAddressPrefix.of("g.philly.paddys"))
         .build();
 
     StaticRoute charlie = StaticRoute.builder()
-        .accountId(AccountId.of("charlie"))
-        .addressPrefix(InterledgerAddressPrefix.of("g.philly.birdlaw"))
+        .nextHopAccountId(AccountId.of("charlie"))
+        .routePrefix(InterledgerAddressPrefix.of("g.philly.birdlaw"))
         .build();
 
     saveAndGetRoute(mac);
 
     assertThat(staticRoutesRepository.getAllStaticRoutes())
         .hasSize(1)
-        .extracting("accountId", "addressPrefix")
-        .containsExactly(tuple(mac.accountId(), mac.addressPrefix()));
+        .extracting("nextHopAccountId", "routePrefix")
+        .containsExactly(tuple(mac.nextHopAccountId(), mac.routePrefix()));
 
     saveAndGetRoute(charlie);
 
     assertThat(staticRoutesRepository.getAllStaticRoutes())
         .hasSize(2)
-        .extracting("accountId", "addressPrefix")
+        .extracting("nextHopAccountId", "routePrefix")
         .containsExactly(
-            tuple(mac.accountId(), mac.addressPrefix()),
-            tuple(charlie.accountId(), charlie.addressPrefix())
+            tuple(mac.nextHopAccountId(), mac.routePrefix()),
+            tuple(charlie.nextHopAccountId(), charlie.routePrefix())
         );
 
     // delete only really deletes the first time
-    assertThat(staticRoutesRepository.deleteStaticRoute(mac.addressPrefix())).isTrue();
-    assertThat(staticRoutesRepository.deleteStaticRoute(mac.addressPrefix())).isFalse();
+    assertThat(staticRoutesRepository.deleteStaticRouteByPrefix(mac.routePrefix())).isTrue();
+    assertThat(staticRoutesRepository.deleteStaticRouteByPrefix(mac.routePrefix())).isFalse();
 
-    StaticRoute deletedRoute = staticRoutesRepository.getByPrefix(mac.addressPrefix());
+    StaticRoute deletedRoute = staticRoutesRepository.findByAddressPrefix(mac.routePrefix());
     assertThat(deletedRoute).isNull();
 
     assertThat(staticRoutesRepository.getAllStaticRoutes())
         .hasSize(1)
-        .extracting("accountId", "addressPrefix")
-        .containsExactly(tuple(charlie.accountId(), charlie.addressPrefix()));
+        .extracting("nextHopAccountId", "routePrefix")
+        .containsExactly(tuple(charlie.nextHopAccountId(), charlie.routePrefix()));
   }
 
   private StaticRoute saveAndGetRoute(StaticRoute routeToSave) {
     StaticRoute savedRoute = staticRoutesRepository.saveStaticRoute(routeToSave);
 
-    assertThat(savedRoute).extracting("accountId", "addressPrefix")
-        .containsExactly(routeToSave.accountId(), routeToSave.addressPrefix());
+    assertThat(savedRoute).extracting("nextHopAccountId", "routePrefix")
+        .containsExactly(routeToSave.nextHopAccountId(), routeToSave.routePrefix());
 
-    StaticRoute fetchedRoute = staticRoutesRepository.getByPrefix(routeToSave.addressPrefix());
+    StaticRoute fetchedRoute = staticRoutesRepository.findByAddressPrefix(routeToSave.routePrefix());
 
     assertThat(fetchedRoute)
-        .extracting("accountId", "addressPrefix")
-        .containsExactly(routeToSave.accountId(), routeToSave.addressPrefix());
+        .extracting("nextHopAccountId", "routePrefix")
+        .containsExactly(routeToSave.nextHopAccountId(), routeToSave.routePrefix());
     return fetchedRoute;
   }
 

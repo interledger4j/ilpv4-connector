@@ -19,8 +19,8 @@ public class StaticRouteEntityConverter implements Converter<StaticRouteEntity, 
     Objects.requireNonNull(staticRouteEntity);
 
     return StaticRoute.builder()
-        .accountId(staticRouteEntity.getBoxedAccountId())
-        .addressPrefix(staticRouteEntity.getPrefix())
+        .nextHopAccountId(staticRouteEntity.getBoxedAccountId())
+        .routePrefix(staticRouteEntity.getPrefix())
         // Entity created and modified dates are automatically set by Spring Data, and are technically read-only from
         // the perspective of a normal Java developer. However, for testing purposes, we need a default value because
         // these dates will be null if an entity is not created by Spring Data.

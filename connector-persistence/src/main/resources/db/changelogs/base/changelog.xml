@@ -98,11 +98,11 @@
   </changeSet>
 
   <changeSet author="isimpson" id="static_routes">
-    <createTable tableName="static_routes">
+    <createTable tableName="STATIC_ROUTES">
       <column autoIncrement="true" name="ID" type="BIGINT">
         <constraints nullable="false" primaryKey="true"/>
       </column>
-      <column name="NATURAL_ID" type="VARCHAR(255)">
+      <column name="ADDRESS_PREFIX" type="VARCHAR(255)">
         <constraints nullable="false" unique="true"/>
       </column>
       <column name="CREATED_DTTM" type="DATETIME">
@@ -123,7 +123,7 @@
     <createIndex indexName="STATIC_ROUTES_PREFIX_IDX"
                  tableName="STATIC_ROUTES"
                  unique="true">
-      <column name="NATURAL_ID"/>
+      <column name="ADDRESS_PREFIX"/>
     </createIndex>
   </changeSet>
 

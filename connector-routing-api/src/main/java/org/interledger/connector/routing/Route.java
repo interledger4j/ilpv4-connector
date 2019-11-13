@@ -26,7 +26,7 @@ import java.util.Optional;
  */
 @JsonSerialize(as = ImmutableRoute.class)
 @JsonDeserialize(as = ImmutableRoute.class)
-@JsonPropertyOrder( {"nextHopAccountId", "routePrefix"} )
+@JsonPropertyOrder( {"routePrefix", "nextHopAccountId"} )
 public interface Route extends BaseRoute {
 
   byte[] EMPTY_AUTH = new byte[32];

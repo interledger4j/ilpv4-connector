@@ -234,8 +234,8 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
   private static Set<StaticRoute> constructStaticRoutesForAlice() {
     // Always route packets to Bob...
     return Sets.newHashSet(StaticRoute.builder()
-        .addressPrefix(InterledgerAddressPrefix.from(BOB_CONNECTOR_ADDRESS))
-        .accountId(BOB_ACCOUNT)
+        .routePrefix(InterledgerAddressPrefix.from(BOB_CONNECTOR_ADDRESS))
+        .nextHopAccountId(BOB_ACCOUNT)
         .build()
     );
   }
@@ -312,8 +312,8 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
   private static Set<StaticRoute> constructStaticRoutesForBob() {
     // Always route packets to Alice...
     return Sets.newHashSet(StaticRoute.builder()
-        .addressPrefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
-        .accountId(ALICE_ACCOUNT)
+        .routePrefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
+        .nextHopAccountId(ALICE_ACCOUNT)
         .build()
     );
   }

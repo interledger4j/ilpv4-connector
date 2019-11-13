@@ -149,8 +149,8 @@ public class JwtHs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
     if (!externalRoutingService.findBestNexHop(InterledgerAddress.of("test.connie.alice")).isPresent()) {
       externalRoutingService.createStaticRoute(
           StaticRoute.builder()
-              .accountId(AccountId.of("alice"))
-              .addressPrefix(InterledgerAddressPrefix.of("test.connie.alice"))
+              .nextHopAccountId(AccountId.of("alice"))
+              .routePrefix(InterledgerAddressPrefix.of("test.connie.alice"))
               .build()
       );
     }
@@ -158,8 +158,8 @@ public class JwtHs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
     if (!externalRoutingService.findBestNexHop(InterledgerAddress.of("test.connie.bob")).isPresent()) {
       externalRoutingService.createStaticRoute(
           StaticRoute.builder()
-              .accountId(AccountId.of("bob"))
-              .addressPrefix(InterledgerAddressPrefix.of("test.connie.bob"))
+              .nextHopAccountId(AccountId.of("bob"))
+              .routePrefix(InterledgerAddressPrefix.of("test.connie.bob"))
               .build()
       );
     }

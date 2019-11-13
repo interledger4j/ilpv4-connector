@@ -84,18 +84,18 @@ public class InMemoryExternalRoutingServiceTest {
     when(connectorSettings.globalRoutingSettings()).thenReturn(globalRoutingSettings);
 
     shawn = StaticRoute.builder()
-        .accountId(AccountId.of("shawnSpencer"))
-        .addressPrefix(InterledgerAddressPrefix.of("g.psych"))
+        .nextHopAccountId(AccountId.of("shawnSpencer"))
+        .routePrefix(InterledgerAddressPrefix.of("g.psych"))
         .build();
 
     lassiter = StaticRoute.builder()
-        .accountId(AccountId.of("carltonLassiter"))
-        .addressPrefix(InterledgerAddressPrefix.of("g.sbpd"))
+        .nextHopAccountId(AccountId.of("carltonLassiter"))
+        .routePrefix(InterledgerAddressPrefix.of("g.sbpd"))
         .build();
 
     woody = StaticRoute.builder()
-        .accountId(AccountId.of("woody"))
-        .addressPrefix(InterledgerAddressPrefix.of("g.sbpd.morgue"))
+        .nextHopAccountId(AccountId.of("woody"))
+        .routePrefix(InterledgerAddressPrefix.of("g.sbpd.morgue"))
         .build();
   }
 
@@ -122,11 +122,11 @@ public class InMemoryExternalRoutingServiceTest {
     assertThat(service.getAllRoutes())
         .extracting("nextHopAccountId", "routePrefix")
         .containsOnly(
-            tuple(shawn.accountId(), shawn.addressPrefix()),
-            tuple(lassiter.accountId(), lassiter.addressPrefix())
+            tuple(shawn.nextHopAccountId(), shawn.routePrefix()),
+            tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
         );
-    verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(shawn.accountId());
-    verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(lassiter.accountId());
+    verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(shawn.nextHopAccountId());
+    verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(lassiter.nextHopAccountId());
 
     when(staticRoutesRepository.saveStaticRoute(woody)).thenReturn(woody);
     when(staticRoutesRepository.getAllStaticRoutes()).thenReturn(Sets.newHashSet(shawn, lassiter, woody));
@@ -134,22 +134,22 @@ public class InMemoryExternalRoutingServiceTest {
     assertThat(service.getAllRoutes())
         .extracting("nextHopAccountId", "routePrefix")
         .containsOnly(
-            tuple(shawn.accountId(), shawn.addressPrefix()),
-            tuple(woody.accountId(), woody.addressPrefix()),
-            tuple(lassiter.accountId(), lassiter.addressPrefix())
+            tuple(shawn.nextHopAccountId(), shawn.routePrefix()),
+            tuple(woody.nextHopAccountId(), woody.routePrefix()),
+            tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
         );
-    verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(woody.accountId());
+    verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(woody.nextHopAccountId());
     verify(staticRoutesRepository, times(1)).saveStaticRoute(woody);
 
-    when(staticRoutesRepository.deleteStaticRoute(shawn.addressPrefix())).thenReturn(true);
-    service.deleteStaticRouteByPrefix(shawn.addressPrefix());
+    when(staticRoutesRepository.deleteStaticRouteByPrefix(shawn.routePrefix())).thenReturn(true);
+    service.deleteStaticRouteByPrefix(shawn.routePrefix());
     assertThat(service.getAllRoutes())
         .extracting("nextHopAccountId", "routePrefix")
         .containsOnly(
-            tuple(woody.accountId(), woody.addressPrefix()),
-            tuple(lassiter.accountId(), lassiter.addressPrefix())
+            tuple(woody.nextHopAccountId(), woody.routePrefix()),
+            tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
         );
-    verify(staticRoutesRepository, times(1)).deleteStaticRoute(shawn.addressPrefix());
+    verify(staticRoutesRepository, times(1)).deleteStaticRouteByPrefix(shawn.routePrefix());
   }
 
   private Set<StaticRoute> defaultRoutes() {

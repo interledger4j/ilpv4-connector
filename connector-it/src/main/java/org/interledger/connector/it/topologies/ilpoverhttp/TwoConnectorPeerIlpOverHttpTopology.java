@@ -20,12 +20,10 @@ import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
 import org.interledger.stream.Denomination;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -236,8 +234,8 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
   private static Set<StaticRoute> constructStaticRoutesForAlice() {
     // Always route packets to Bob...
     return Sets.newHashSet(StaticRoute.builder()
-        .addressPrefix(InterledgerAddressPrefix.from(BOB_CONNECTOR_ADDRESS))
-        .accountId(BOB_ACCOUNT)
+        .routePrefix(InterledgerAddressPrefix.from(BOB_CONNECTOR_ADDRESS))
+        .nextHopAccountId(BOB_ACCOUNT)
         .build());
   }
 
@@ -304,8 +302,8 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
   private static Set<StaticRoute> constructStaticRoutesForBob() {
     // Always route packets to Alice...
     return Sets.newHashSet(StaticRoute.builder()
-        .addressPrefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
-        .accountId(ALICE_ACCOUNT)
+        .routePrefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
+        .nextHopAccountId(ALICE_ACCOUNT)
         .build());
   }
 

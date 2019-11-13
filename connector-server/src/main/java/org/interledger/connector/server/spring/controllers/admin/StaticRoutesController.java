@@ -68,8 +68,8 @@ public class StaticRoutesController {
   )
   public ResponseEntity<StaticRoute> createStaticRouteAtPrefix(@PathVariable(PathConstants.PREFIX) String prefix,
                                                                @RequestBody StaticRoute staticRoute) {
-    if (!prefix.equals(staticRoute.addressPrefix().getValue())) {
-      throw new StaticRouteUnprocessableProblem(prefix, staticRoute.addressPrefix());
+    if (!prefix.equals(staticRoute.routePrefix().getValue())) {
+      throw new StaticRouteUnprocessableProblem(prefix, staticRoute.routePrefix());
     }
     return new ResponseEntity<>(this.externalRoutingService.createStaticRoute(staticRoute), HttpStatus.CREATED);
   }

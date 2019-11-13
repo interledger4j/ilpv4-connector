@@ -1,6 +1,6 @@
 package org.interledger.connector.persistence.entities;
 
-import static org.interledger.connector.persistence.entities.DataConstants.ColumnNames.PREFIX;
+import static org.interledger.connector.persistence.entities.DataConstants.ColumnNames.ADDRESS_PREFIX;
 import static org.interledger.connector.persistence.entities.DataConstants.IndexNames.STATIC_ROUTES_IDX;
 import static org.interledger.connector.persistence.entities.DataConstants.TableNames.STATIC_ROUTES;
 
@@ -23,7 +23,7 @@ import javax.persistence.Table;
 @Entity
 @Access(AccessType.FIELD)
 @Table(name = STATIC_ROUTES, indexes = {
-    @Index(name = STATIC_ROUTES_IDX, columnList = PREFIX)
+    @Index(name = STATIC_ROUTES_IDX, columnList = ADDRESS_PREFIX)
 })
 public class StaticRouteEntity extends AbstractEntity {
 
@@ -34,8 +34,8 @@ public class StaticRouteEntity extends AbstractEntity {
 
   // this is really the interledger prefix
   @NaturalId
-  @Column(name = "NATURAL_ID") // Hibernate treats this as unique, but Liquibase is explicit about uniqueness.
-  private String naturalId;
+  @Column(name = "ADDRESS_PREFIX") // Hibernate treats this as unique, but Liquibase is explicit about uniqueness.
+  private String addressPrefix;
 
   @Column(name = "ACCOUNT_ID")
   private String accountId;
@@ -46,16 +46,16 @@ public class StaticRouteEntity extends AbstractEntity {
 
   public StaticRouteEntity(final StaticRoute staticRoute) {
     Objects.requireNonNull(staticRoute);
-    this.naturalId = staticRoute.addressPrefix().getValue();
-    this.accountId = staticRoute.accountId().value();
+    this.addressPrefix = staticRoute.routePrefix().getValue();
+    this.accountId = staticRoute.nextHopAccountId().value();
   }
 
   public Long getId() {
     return this.id;
   }
 
-  public String getNaturalId() {
-    return naturalId;
+  public String getAddressPrefix() {
+    return addressPrefix;
   }
 
   public String getAccountId() {
@@ -71,7 +71,7 @@ public class StaticRouteEntity extends AbstractEntity {
   }
 
   public InterledgerAddressPrefix getPrefix() {
-    return InterledgerAddressPrefix.of(this.naturalId);
+    return InterledgerAddressPrefix.of(this.addressPrefix);
   }
 
   /**
@@ -89,7 +89,7 @@ public class StaticRouteEntity extends AbstractEntity {
     }
 
     StaticRouteEntity that = (StaticRouteEntity) o;
-    return Objects.equals(getNaturalId(), that.getNaturalId());
+    return Objects.equals(getAddressPrefix(), that.getAddressPrefix());
   }
 
   /**
@@ -101,7 +101,7 @@ public class StaticRouteEntity extends AbstractEntity {
    */
   @Override
   public int hashCode() {
-    return Objects.hash(getNaturalId());
+    return Objects.hash(getAddressPrefix());
   }
 
 }

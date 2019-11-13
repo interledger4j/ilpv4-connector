@@ -16,7 +16,7 @@ import java.time.Instant;
  */
 @JsonSerialize(as = ImmutableStaticRoute.class)
 @JsonDeserialize(as = ImmutableStaticRoute.class)
-@JsonPropertyOrder( {"createdAt", "modifiedAt", "prefix", "accountId"} )
+@JsonPropertyOrder( {"createdAt", "modifiedAt", "routePrefix", "nextHopAccountId"} )
 public interface StaticRoute {
 
   static ImmutableStaticRoute.Builder builder() {
@@ -28,14 +28,14 @@ public interface StaticRoute {
    *
    * @return the prefix of the route
    */
-  InterledgerAddressPrefix addressPrefix();
+  InterledgerAddressPrefix routePrefix();
 
   /**
    * The ILP address of the peer this route should route through.
    *
    * @return the account id of the route
    */
-  AccountId accountId();
+  AccountId nextHopAccountId();
 
   /**
    * The date/time this StaticRoute was created.
@@ -61,7 +61,7 @@ public interface StaticRoute {
   @Value.Immutable
   @JsonSerialize(as = ImmutableStaticRoute.class)
   @JsonDeserialize(as = ImmutableStaticRoute.class)
-  @JsonPropertyOrder( {"createdAt", "modifiedAt", "prefix", "accountId"} )
+  @JsonPropertyOrder( {"createdAt", "modifiedAt", "routePrefix", "nextHopAccountId"} )
   abstract class AbstractStaticRoute implements StaticRoute {
 
     @Override
@@ -77,10 +77,10 @@ public interface StaticRoute {
     }
 
     @Override
-    public abstract InterledgerAddressPrefix addressPrefix();
+    public abstract InterledgerAddressPrefix routePrefix();
 
     @Override
-    public abstract AccountId accountId();
+    public abstract AccountId nextHopAccountId();
 
     @Override
     public boolean equals(Object o) {
@@ -94,12 +94,12 @@ public interface StaticRoute {
       StaticRoute staticRoute = (StaticRoute) o;
 
       // to match hibernate behavior
-      return this.addressPrefix().equals(staticRoute.addressPrefix());
+      return this.routePrefix().equals(staticRoute.routePrefix());
     }
 
     @Override
     public int hashCode() {
-      return this.addressPrefix().hashCode();
+      return this.routePrefix().hashCode();
     }
   }
 

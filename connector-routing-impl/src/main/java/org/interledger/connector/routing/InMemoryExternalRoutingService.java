@@ -158,7 +158,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   @Override
   public void deleteStaticRouteByPrefix(InterledgerAddressPrefix prefix) {
     Objects.requireNonNull(prefix);
-    if (!staticRoutesRepository.deleteStaticRoute(prefix)) {
+    if (!staticRoutesRepository.deleteStaticRouteByPrefix(prefix)) {
       throw new StaticRouteNotFoundProblem(prefix);
     } else {
       localRoutingTable.removeRoute(prefix);
@@ -175,7 +175,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     }
     catch(Exception e) {
       if (e.getCause() instanceof ConstraintViolationException) {
-        throw new StaticRouteAlreadyExistsProblem(route.addressPrefix());
+        throw new StaticRouteAlreadyExistsProblem(route.routePrefix());
       }
       throw e;
     }
@@ -262,10 +262,10 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
   private void addStaticRoute(StaticRoute staticRoute) {
     // ...attempt to register a CCP-enabled account (duplicate requests are fine).
-    routeBroadcaster.registerCcpEnabledAccount(staticRoute.accountId());
+    routeBroadcaster.registerCcpEnabledAccount(staticRoute.nextHopAccountId());
 
     // This will add the prefix correctly _and_ update the forwarding table...
-    updatePrefix(staticRoute.addressPrefix());
+    updatePrefix(staticRoute.routePrefix());
   }
 
   /**
@@ -464,7 +464,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     // Static-routes have highest priority...
     return Optional.ofNullable(
         staticRoutesRepository.getAllStaticRoutes().stream()
-            .filter(staticRoute -> staticRoute.addressPrefix().equals(addressPrefix))
+            .filter(staticRoute -> staticRoute.routePrefix().equals(addressPrefix))
             .findFirst()
             .map(staticRoute -> {
               // If there's a static route, then use it, even if the account doesn't exist. In this
@@ -472,7 +472,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
               // comes into existence, then the Router and/or Link will simply reject if anything is attempted.
               return (Route) ImmutableRoute.builder()
                   .routePrefix(addressPrefix)
-                  .nextHopAccountId(staticRoute.accountId())
+                  .nextHopAccountId(staticRoute.nextHopAccountId())
                   .auth(this.constructRouteAuth(addressPrefix))
                   .build();
             })

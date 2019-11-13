@@ -31,12 +31,12 @@ public interface StaticRoutesRepositoryCustom {
    * @param prefix the unique identifier of the route
    * @return true if a route was deleted; false otherwise
    */
-  boolean deleteStaticRoute(InterledgerAddressPrefix prefix);
+  boolean deleteStaticRouteByPrefix(InterledgerAddressPrefix prefix);
 
   /**
    * Fetches a static route by the prefix associated with it (a unique constraint)
    * @param prefix the unique identifier of the route
    * @return the associated route if it exists
    */
-  StaticRoute getByPrefix(InterledgerAddressPrefix prefix);
+  StaticRoute findByAddressPrefix(InterledgerAddressPrefix prefix);
 }

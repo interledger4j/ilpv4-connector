@@ -17,7 +17,7 @@ public interface DataConstants {
     String ASSET_CODE_IDX_COLUMNS = "ASSET_CODE_FROM,ASSET_CODE_TO";
 
     // STATIC_ROUTES
-    String PREFIX = "NATURAL_ID";
+    String ADDRESS_PREFIX = "ADDRESS_PREFIX";
   }
 
   interface IndexNames {

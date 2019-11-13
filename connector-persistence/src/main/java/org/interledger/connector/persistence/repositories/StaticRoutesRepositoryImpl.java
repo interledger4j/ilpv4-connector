@@ -43,15 +43,15 @@ public class StaticRoutesRepositoryImpl implements StaticRoutesRepositoryCustom 
 
   @Override
   @Transactional
-  public boolean deleteStaticRoute(InterledgerAddressPrefix prefix) {
+  public boolean deleteStaticRouteByPrefix(InterledgerAddressPrefix prefix) {
     Objects.requireNonNull(prefix);
-    return !staticRoutesRepository.deleteByNaturalId(prefix.getValue()).isEmpty();
+    return !staticRoutesRepository.deleteByAddressPrefix(prefix.getValue()).isEmpty();
   }
 
   @Override
-  public StaticRoute getByPrefix(InterledgerAddressPrefix prefix) {
+  public StaticRoute findByAddressPrefix(InterledgerAddressPrefix prefix) {
     Objects.requireNonNull(prefix);
-    StaticRouteEntity staticRoute = staticRoutesRepository.findFirstByNaturalId(prefix.getValue());
+    StaticRouteEntity staticRoute = staticRoutesRepository.findFirstByAddressPrefix(prefix.getValue());
     return conversionService.convert(staticRoute, StaticRoute.class);
   }
 
