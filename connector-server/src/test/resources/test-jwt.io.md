@@ -1,5 +1,5 @@
 This file contains information that can be plugged-into https://jwt.io in order to experiment with token-types 
-currently used by the BLAST (ILP-over-HTTP) protocol in this implementaiton:
+currently used by the ILP-over-HTTP protocol in this implementation:
 
 # Headers
 ```json
