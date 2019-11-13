@@ -191,7 +191,8 @@ public class DefaultCcpSender implements CcpSender {
       // routing table's Log. These are the udpates that should be sent to the remote peer.
 
       int skip = nextRequestedEpoch;
-      int limit = 0;
+      // arbitrarily limiting to 10. This may need to be larger or dynamic in the future.
+      int limit = 10;
       // TODO:FIXME
       //        (int) (nextRequestedEpoch + this.connectorSettingsSupplier.get().getRouteBroadcastSettings()
       //          .maxEpochsPerRoutingTable());
