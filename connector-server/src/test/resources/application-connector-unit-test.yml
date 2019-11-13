@@ -26,9 +26,8 @@ interledger:
       rateLimitingEnabled: true
     # Which protocols this Connector supports
     enabledProtocols:
-      blastEnabled: true
+      ilpOverHttpEnabled: true
       pingProtocolEnabled: true
-      peerConfigEnabled: true
       peerRoutingEnabled: true
       ildcpEnabled: true
     # Global Routing Settings for this connector.

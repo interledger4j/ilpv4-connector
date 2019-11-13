@@ -16,7 +16,7 @@ public interface EnabledProtocolSettings {
    *
    * @see "https://github.com/interledger/rfcs/blob/master/0035-ilp-over-http/0035-ilp-over-http.md"
    */
-  default boolean isBlastEnabled() {
+  default boolean isIlpOverHttpEnabled() {
     return true;
   }
 
@@ -26,15 +26,6 @@ public interface EnabledProtocolSettings {
    * @see "RFC-LINK"
    */
   default boolean isPingProtocolEnabled() {
-    return true;
-  }
-
-  /**
-   * Whether this Connector can handle ILDCP Config packets addressed to `peer.config` per RFC-TODO.
-   *
-   * @see "RFC-LINK"
-   */
-  default boolean isPeerConfigEnabled() {
     return true;
   }
 
@@ -61,19 +52,13 @@ public interface EnabledProtocolSettings {
 
     @Override
     @Value.Default
-    public boolean isBlastEnabled() {
+    public boolean isIlpOverHttpEnabled() {
       return true;
     }
 
     @Override
     @Value.Default
     public boolean isPingProtocolEnabled() {
-      return true;
-    }
-
-    @Override
-    @Value.Default
-    public boolean isPeerConfigEnabled() {
       return true;
     }
 

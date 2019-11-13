@@ -10,7 +10,7 @@ import org.interledger.connector.persistence.converters.SettlementEngineDetailsE
 import org.interledger.connector.persistence.converters.StaticRouteEntityConverter;
 import org.interledger.connector.server.spring.controllers.converters.OerPreparePacketHttpMessageConverter;
 import org.interledger.connector.server.spring.settings.CodecContextConfig;
-import org.interledger.connector.server.spring.settings.blast.IlpOverHttpConfig;
+import org.interledger.connector.server.spring.settings.link.IlpOverHttpConfig;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,7 +29,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
 
-import static org.interledger.connector.core.ConfigConstants.BLAST_ENABLED;
+import static org.interledger.connector.core.ConfigConstants.ILP_OVER_HTTP_ENABLED;
 import static org.interledger.connector.core.ConfigConstants.ENABLED_PROTOCOLS;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 
@@ -37,7 +37,7 @@ import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
  * Web config for the Spring Connector.
  */
 @Configuration
-@ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = BLAST_ENABLED, havingValue = "true")
+@ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = ILP_OVER_HTTP_ENABLED, havingValue = "true")
 @EnableWebMvc
 @EnableHypermediaSupport(type = {EnableHypermediaSupport.HypermediaType.HAL})
 @ComponentScan(basePackages = "org.interledger.connector.server.spring.controllers")

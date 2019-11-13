@@ -71,10 +71,10 @@ interledger:
     #     secret0_alias: secret0
     #     secret0_password: password
     enabledProtocols:
-      blastEnabled: true
+      ilpOverHttpEnabled: true
       pingProtocolEnabled: true
-      peerConfigEnabled: true
       peerRoutingEnabled: true
+      ildcpEnabled: true
     # settlementEngines:
       # connectionDefaults:
       # Default connect timeout (in milliseconds).

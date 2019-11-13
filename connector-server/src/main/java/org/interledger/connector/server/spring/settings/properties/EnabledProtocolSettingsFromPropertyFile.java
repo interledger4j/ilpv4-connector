@@ -8,7 +8,6 @@ import org.interledger.connector.settings.EnabledProtocolSettings;
 public class EnabledProtocolSettingsFromPropertyFile implements EnabledProtocolSettings {
 
   private boolean pingProtocolEnabled;
-  private boolean peerConfigEnabled;
   private boolean peerRoutingEnabled;
   private boolean ildcpEnabled;
 
@@ -19,15 +18,6 @@ public class EnabledProtocolSettingsFromPropertyFile implements EnabledProtocolS
 
   public void setPingProtocolEnabled(boolean pingProtocolEnabled) {
     this.pingProtocolEnabled = pingProtocolEnabled;
-  }
-
-  @Override
-  public boolean isPeerConfigEnabled() {
-    return peerConfigEnabled;
-  }
-
-  public void setPeerConfigEnabled(boolean peerConfigEnabled) {
-    this.peerConfigEnabled = peerConfigEnabled;
   }
 
   @Override

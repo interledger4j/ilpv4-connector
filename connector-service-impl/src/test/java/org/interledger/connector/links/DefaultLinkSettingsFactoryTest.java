@@ -57,7 +57,7 @@ public class DefaultLinkSettingsFactoryTest {
   }
 
   @Test
-  public void constructBlastLink() {
+  public void constructIlpOverHttpLink() {
     final Map<String, Object> customSettings = Maps.newHashMap();
     customSettings
         .put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256.name());

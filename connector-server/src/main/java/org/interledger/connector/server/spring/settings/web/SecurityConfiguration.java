@@ -5,17 +5,19 @@ import static org.interledger.connector.server.spring.settings.metrics.MetricsCo
 import org.interledger.connector.core.ConfigConstants;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.connector.server.spring.auth.blast.AuthConstants;
-import org.interledger.connector.server.spring.auth.blast.IlpOverHttpAuthenticationProvider;
+import org.interledger.connector.server.spring.auth.ilpoverhttp.AuthConstants;
+import org.interledger.connector.server.spring.auth.ilpoverhttp.BearerTokenSecurityContextRepository;
+import org.interledger.connector.server.spring.auth.ilpoverhttp.IlpOverHttpAuthenticationProvider;
 import org.interledger.connector.server.spring.controllers.HealthController;
 import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.crypto.ByteArrayUtils;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionService;
 
-import com.auth0.spring.security.api.JwtWebSecurityConfigurer;
+import com.auth0.spring.security.api.JwtAuthenticationEntryPoint;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -145,14 +147,11 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Override
   public void configure(final HttpSecurity http) throws Exception {
 
-    // Must come first in order to register properly due to 'denyAll' directive below.
-    JwtWebSecurityConfigurer
-        // `audience` and `issuer` are not statically configured, but are instead specified in account-settings on a
-        // per-account basis.
-        .forHS256("n/a", "n/a", ilpOverHttpAuthenticationProvider())
-        .configure(http)
-        .authorizeRequests()
+    byte[] ephemeralBytes = ByteArrayUtils.generate32RandomBytes();
 
+    // Must come first in order to register properly due to 'denyAll' directive below.
+    configureBearerTokenSecurity(http, ephemeralBytes)
+        .authorizeRequests()
         //////
         // ILP-over-HTTP
         //////
@@ -213,6 +212,20 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.NEVER).enableSessionUrlRewriting(false)
         .and()
         .exceptionHandling().authenticationEntryPoint(problemSupport).accessDeniedHandler(problemSupport);
+  }
+
+  private HttpSecurity configureBearerTokenSecurity(HttpSecurity http, byte[] ephemeralBytes) throws Exception {
+    return http
+        .authenticationProvider(ilpOverHttpAuthenticationProvider())
+        .securityContext()
+        .securityContextRepository(new BearerTokenSecurityContextRepository(ephemeralBytes))
+        .and()
+        .exceptionHandling()
+        .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+        .and()
+        .httpBasic().disable()
+        .csrf().disable()
+        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
   }
 
 }
