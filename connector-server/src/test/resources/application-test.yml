@@ -1,14 +1,16 @@
 # See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
 spring:
   profiles:
-    include: dev
+    include: dev,h2-in-memory
   output:
     ansi:
       enabled: ALWAYS
 
 interledger:
   connector:
-    nodeIlpAddress: test.connie
+    nodeIlpAddress: test1.connie
+    adminPassword: password
+    defaultJwtTokenIssuer: https://jwt.example.com
     globalRoutingSettings:
       # A simulated routing secret, which is a seed used for generating routing table auth values.
       # Represents the plaintext value of `shh`, encrypted.
