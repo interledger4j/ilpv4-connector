@@ -160,7 +160,7 @@ public class PeerProtocolPacketFilterTest {
 
   @Test
   public void doFilterForPeerDotConfigWhenDisabled() {
-    when(enabledProtocolSettingsMock.isPeerConfigEnabled()).thenReturn(false);
+    when(enabledProtocolSettingsMock.isIldcpEnabled()).thenReturn(false);
     final InterledgerPreparePacket preparePacket = this.constructPreparePacket(IldcpRequestPacket.PEER_DOT_CONFIG);
 
     filter.doFilter(accountSettingsMock, preparePacket, filterChainMock).handle(
@@ -183,7 +183,7 @@ public class PeerProtocolPacketFilterTest {
    */
   @Test
   public void doFilterForPeerDotConfigWithVariousSettings() {
-    when(enabledProtocolSettingsMock.isPeerConfigEnabled()).thenReturn(true);
+    when(enabledProtocolSettingsMock.isIldcpEnabled()).thenReturn(true);
     final InterledgerPreparePacket preparePacket = this.constructPreparePacket(IldcpRequestPacket.PEER_DOT_CONFIG);
 
     filter.doFilter(accountSettingsMock, preparePacket, filterChainMock)
