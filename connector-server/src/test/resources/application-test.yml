@@ -1,7 +1,7 @@
 # See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
 spring:
   profiles:
-    include: dev
+    include: dev,h2-in-memory
   output:
     ansi:
       enabled: ALWAYS
