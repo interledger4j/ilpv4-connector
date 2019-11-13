@@ -82,7 +82,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
       // `peer.config`
       if (sourcePreparePacket.getDestination().equals(IldcpRequestPacket.PEER_DOT_CONFIG)) {
-        if (connectorSettingsSupplier.get().enabledProtocols().isPeerConfigEnabled()) {
+        if (connectorSettingsSupplier.get().enabledProtocols().isIldcpEnabled()) {
           return this.handleIldcpRequest(sourceAccountSettings, sourcePreparePacket);
         } else {
           return packetRejector.reject(

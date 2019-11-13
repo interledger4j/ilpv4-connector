@@ -30,15 +30,6 @@ public interface EnabledProtocolSettings {
   }
 
   /**
-   * Whether this Connector can handle ILDCP Config packets addressed to `peer.config` per RFC-TODO.
-   *
-   * @see "RFC-LINK"
-   */
-  default boolean isPeerConfigEnabled() {
-    return true;
-  }
-
-  /**
    * Whether this Connector can supports IL-DCP in order to obtain its operator address.
    *
    * @see "https://github.com/interledger/rfcs/blob/master/0031-dynamic-configuration-protocol/0031-dynamic-configuration-protocol.md"
@@ -68,12 +59,6 @@ public interface EnabledProtocolSettings {
     @Override
     @Value.Default
     public boolean isPingProtocolEnabled() {
-      return true;
-    }
-
-    @Override
-    @Value.Default
-    public boolean isPeerConfigEnabled() {
       return true;
     }
 
