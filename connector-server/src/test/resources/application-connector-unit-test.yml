@@ -28,7 +28,6 @@ interledger:
     enabledProtocols:
       ilpOverHttpEnabled: true
       pingProtocolEnabled: true
-      peerConfigEnabled: true
       peerRoutingEnabled: true
       ildcpEnabled: true
     # Global Routing Settings for this connector.

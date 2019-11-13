@@ -73,8 +73,8 @@ interledger:
     enabledProtocols:
       ilpOverHttpEnabled: true
       pingProtocolEnabled: true
-      peerConfigEnabled: true
       peerRoutingEnabled: true
+      ildcpEnabled: true
     # settlementEngines:
       # connectionDefaults:
       # Default connect timeout (in milliseconds).
