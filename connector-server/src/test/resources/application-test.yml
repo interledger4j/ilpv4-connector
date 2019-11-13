@@ -9,8 +9,6 @@ spring:
 interledger:
   connector:
     nodeIlpAddress: test1.connie
-    adminPassword: password
-    defaultJwtTokenIssuer: https://jwt.example.com
     globalRoutingSettings:
       # A simulated routing secret, which is a seed used for generating routing table auth values.
       # Represents the plaintext value of `shh`, encrypted.
