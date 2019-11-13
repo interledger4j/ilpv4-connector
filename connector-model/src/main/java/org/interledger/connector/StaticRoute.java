@@ -1,10 +1,10 @@
 package org.interledger.connector;
 
-import org.interledger.connector.ImmutableStaticRoute;
-import org.immutables.value.Value;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
+
+import org.immutables.value.Value;
 
 /**
  * A statically configured route. Static routes take precedence over the same or shorter prefixes that are local or
