@@ -12,14 +12,13 @@ import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.SharedSecretTokenSettings;
 
-import com.auth0.jwt.exceptions.InvalidClaimException;
-import com.auth0.jwt.exceptions.SignatureVerificationException;
-import com.auth0.spring.security.api.authentication.JwtAuthentication;
+import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.spring.security.api.authentication.PreAuthenticatedAuthenticationJsonWebToken;
+import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.hash.Hashing;
+import com.google.common.hash.HashCode;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,8 +27,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 
-import java.security.SecureRandom;
-import java.util.Arrays;
+import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -61,15 +59,12 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final Decryptor decryptor;
-  //  Used to construct an HMAC of an authentication token (note that in `JWT_HS_256`, the token itself is derived
-  //  from an underlying shared-secret, but the token is still sensitive since it is a bearer-auth instrument. Using
-  //  this construction, the implementation can trivially determine if request's token has been authenticated by the
-  //  cache without actually caching the token itself. The rationale here is that if an attacker were to perform a
-  //  memory dump, then the attacker would only be able to grab only derivatives of actual tokens (which are useless),
-  //  and would not be able to replay actual requests nor generate new tokens.
-  private final byte[] ephemeralHmacBytes;
+
   // See Javadoc above for how this is used.
-  private final LoadingCache<AuthenticationRequest, AuthenticationDecision> ilpOverHttpAuthenticationDecisions;
+  private final Cache<HashCode, AuthenticationDecision> authenticationDecisions;
+  private AccountSettingsRepository accountSettingsRepository;
+  private LinkSettingsFactory linkSettingsFactory;
+
 
   public IlpOverHttpAuthenticationProvider(
       final Supplier<ConnectorSettings> connectorSettingsSupplier,
@@ -78,123 +73,69 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       final LinkSettingsFactory linkSettingsFactory,
       final CacheMetricsCollector cacheMetrics
   ) {
+    this.accountSettingsRepository = accountSettingsRepository;
+    this.linkSettingsFactory = linkSettingsFactory;
     Objects.requireNonNull(connectorSettingsSupplier);
-
-    this.ephemeralHmacBytes = this.generate32RandomBytes();
     this.decryptor = Objects.requireNonNull(decryptor);
 
-    ilpOverHttpAuthenticationDecisions = Caffeine.newBuilder()
+    authenticationDecisions = Caffeine.newBuilder()
         .recordStats() // Publish stats to prometheus
         .maximumSize(5000)
         // Expire after this duration, which will correspond to the last incoming request from the peer.
         // TODO: This value should be configurable and match the server-global token expiry.
         .expireAfterAccess(30, TimeUnit.MINUTES)
-        .removalListener((RemovalListener<AuthenticationRequest, AuthenticationDecision>)
+        .removalListener((RemovalListener<HashCode, AuthenticationDecision>)
             (authenticationRequest, authenticationDecision, cause) ->
                 logger.debug("Removing IlpOverHttp AuthenticationDecision from Cache for Principal: {}",
-                    authenticationDecision.principal()))
-        .build(
-            authenticationRequest -> {
-              Objects.requireNonNull(authenticationRequest);
-
-              try {
-                final AccountId authPrincipal =
-                    AccountId.of(authenticationRequest.incomingAuthentication().getPrincipal().toString());
-                final AccountSettings accountSettings =
-                    accountSettingsRepository.findByAccountIdWithConversion(authPrincipal)
-                        .orElseThrow(() -> new AccountNotFoundProblem(authPrincipal));
-
-                // Discover the BlastSettings
-                final IlpOverHttpLinkSettings ilpOverHttpLinkSettings =
-                    Objects.requireNonNull(linkSettingsFactory).constructTyped(accountSettings);
-                final IlpOverHttpLinkSettings.AuthType authType = ilpOverHttpLinkSettings.incomingHttpLinkSettings()
-                    .authType();
-
-                // This implementation performs the same logic for either token type. In order to utilize SIMPLE in this
-                // scheme, the peer should be given a very-long duration JWT token which it can use as a SIMPLE Bearer
-                // token.
-                if (
-                    IlpOverHttpLinkSettings.AuthType.JWT_HS_256.equals(authType) ||
-                        IlpOverHttpLinkSettings.AuthType.SIMPLE.equals(authType)
-                ) {
-                  final IncomingLinkSettings incomingLinkSettings = ilpOverHttpLinkSettings.incomingHttpLinkSettings();
-
-                  // These bytes will be zeroed-out immediately after making the auth decision.
-                  final byte[] sharedSecretBytes = decryptSharedSecret(authPrincipal, incomingLinkSettings);
-                  final byte[] sharedSecretBytesHmac =
-                      Hashing.hmacSha256(ephemeralHmacBytes).hashBytes(sharedSecretBytes).asBytes();
-
-                  try {
-                    // Even though the bytes are passed-into this provider, the bytes are zeroed out below which render
-                    // this provider unusable after this method. Because the provider is only ever used once, it can
-                    // be garbage collected after this method is finished.
-                    final Authentication jwtAuthResult = new JwtHs256AuthenticationProvider(sharedSecretBytes)
-                        .authenticate(authenticationRequest.incomingAuthentication());
-
-                    if (logger.isDebugEnabled()) {
-                      logger.debug(
-                          "JwtHs256AuthenticationProvider returned with an AuthResult: {}",
-                          jwtAuthResult.isAuthenticated()
-                      );
-                    }
-
-                    return AuthenticationDecision.builder()
-                        .authentication(jwtAuthResult)
-                        .credentialHmac(sharedSecretBytesHmac)
-                        .build();
-                  } finally {
-                    // Zero-out all bytes in the `sharedSecretBytes` array.
-                    Arrays.fill(sharedSecretBytes, (byte) 0);
-                  }
-
-                } else {
-                  throw new RuntimeException("Unsupported AuthType: " + authType);
-                }
-              } catch (AccountNotFoundProblem e) { // All other exceptions should be thrown!
-                logger.debug(e.getMessage(), e);
-                // Cache this result and return it if an exception was encountered. Note that the authenticationRequest
-                // always returns false for isAuthenticated, which is what we want here.
-                return AuthenticationDecision.builder()
-                    .authentication(authenticationRequest.incomingAuthentication())
-                    .credentialHmac(new byte[32])
-                    .build();
-              }
-            });
-
-    Objects.requireNonNull(cacheMetrics).addCache(AUTH_DECISIONS_CACHE_NAME, ilpOverHttpAuthenticationDecisions);
+                    authenticationDecision.getPrincipal()))
+        .build();
+    Objects.requireNonNull(cacheMetrics).addCache(AUTH_DECISIONS_CACHE_NAME, authenticationDecisions);
   }
 
   @Override
-  public Authentication authenticate(final Authentication authentication) throws AuthenticationException {
+  public Authentication authenticate(Authentication authentication)
+      throws AuthenticationException {
     try {
-      final AuthenticationDecision result = ilpOverHttpAuthenticationDecisions.get(
-          AuthenticationRequest.builder().incomingAuthentication(authentication).build()
-      );
-
-      if (result.isAuthenticated()) {
-        return result.authentication();
+      if (authentication instanceof BearerAuthentication) {
+        AuthenticationDecision result = authenticateBearer((BearerAuthentication) authentication);
+        if (result.isAuthenticated()) {
+          return result;
+        } else {
+          throw new BadCredentialsException("Authentication failed for principal: " + result.getPrincipal());
+        }
       } else {
-        throw new BadCredentialsException("Invalid token for Principal: " + authentication.getPrincipal());
+        logger.debug("Unsupported authentication type: " + authentication.getClass());
+        return null;
       }
     } catch (BadCredentialsException e) {
-      if (e.getCause() != null && (InvalidClaimException.class.isAssignableFrom(e.getCause().getClass()) ||
-          SignatureVerificationException.class.isAssignableFrom(e.getCause().getClass()))) {
-        throw new BadCredentialsException(String.format("Not a valid token (%s)", e.getCause().getMessage()), e);
-      } else {
-        throw e;
-      }
+      throw e;
     } catch (Exception e) {
-      if (BadCredentialsException.class.isAssignableFrom(e.getCause().getClass())) {
+      if (e.getCause() != null && BadCredentialsException.class.isAssignableFrom(e.getCause().getClass())) {
         throw e;
       } else {
-        throw new BadCredentialsException("Not a valid Token", e);
+        throw new BadCredentialsException("Unable to validate token due to system error", e);
       }
     }
   }
 
+  private static AuthenticationDecision notAuthenticated() {
+    // Cache this result and return it if an exception was encountered. Note that the authenticationRequest
+    // always returns false for isAuthenticated, which is what we want here.
+    return AuthenticationDecision.builder()
+        .credentialHmac(HashCode.fromBytes(new byte[32]))
+        .isAuthenticated(false)
+        .build();
+  }
+
+  private AuthenticationDecision authenticateBearer(BearerAuthentication bearerAuth) {
+    return authenticationDecisions.get(bearerAuth.hmacSha256(), (request) ->
+        isSimple(bearerAuth.getBearerToken()) ? authenticateAsSimple(bearerAuth) :
+        authenticateAsJwt(bearerAuth));
+  }
+
   @Override
   public boolean supports(Class<?> authentication) {
-    return JwtAuthentication.class.isAssignableFrom(authentication);
+    return BearerAuthentication.class.isAssignableFrom(authentication);
   }
 
   /**
@@ -203,11 +144,10 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
    *
    * @param authPrincipal             An {@link AccountId} to decrypt a shared secret for.
    * @param sharedSecretTokenSettings A {@link SharedSecretTokenSettings} to use while decrypting a shared secret.
-   *
    * @return The actual underlying shared-secret.
    */
   @VisibleForTesting
-  protected final byte[] decryptSharedSecret(
+  protected final EncryptedSecret getIncomingSecret(
       final AccountId authPrincipal, final SharedSecretTokenSettings sharedSecretTokenSettings
   ) {
     Objects.requireNonNull(authPrincipal);
@@ -216,23 +156,84 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     return Optional.of(sharedSecretTokenSettings)
         .map(SharedSecretTokenSettings::encryptedTokenSharedSecret)
         .map(EncryptedSecret::fromEncodedValue)
-        .map(decryptor::decrypt)
         .orElseThrow(() -> new BadCredentialsException(String.format("No account found for `%s`", authPrincipal)));
   }
 
-  /**
-   * Generate 32 random bytes that can be used as an ephemeral HMAC key. This key is only used to Hash actual
-   * shared-secret values that are stored in an in-memory cache. If this server goes away, this this cache will go away
-   * too, so this secret key can be ephemeral.
-   *
-   * Note too that the "values" being HMAC'd are also not in memory, so re-creating them using just this ephemeral value
-   * would not be possible.
-   */
-  private byte[] generate32RandomBytes() {
-    final SecureRandom secureRandom = new SecureRandom();
-    final byte[] rndBytes = new byte[32];
-    secureRandom.nextBytes(rndBytes);
-    return rndBytes;
+  private AuthenticationDecision authenticateAsJwt(BearerAuthentication pendingAuth) {
+    try {
+
+      PreAuthenticatedAuthenticationJsonWebToken jwt =
+          PreAuthenticatedAuthenticationJsonWebToken.usingToken(new String(pendingAuth.getBearerToken()));
+      if (jwt == null) {
+        throw new JWTDecodeException("jwt decoded to null. Value: " + new String(pendingAuth.getBearerToken()));
+      }
+      AccountId accountId = AccountId.of(jwt.getPrincipal().toString());
+      EncryptedSecret encryptedSecret = getIncomingSecret(accountId);
+
+      return decryptor.withDecrypted(encryptedSecret, decryptedSecret -> {
+        Authentication authResult = new JwtHs256AuthenticationProvider(decryptedSecret)
+            .authenticate(jwt);
+
+        logger.debug("authenticationProvider returned with an AuthResult: {}", authResult.isAuthenticated());
+
+        return AuthenticationDecision.builder()
+            .principal(accountId)
+            .isAuthenticated(authResult.isAuthenticated())
+            .credentialHmac(pendingAuth.hmacSha256())
+            .build();
+      });
+    } catch (AccountNotFoundProblem | JWTDecodeException e) { // All other exceptions should be thrown!
+      logger.debug(e.getMessage(), e);
+    }
+    return notAuthenticated();
   }
+
+  private AuthenticationDecision authenticateAsSimple(BearerAuthentication authentication) {
+    try {
+      SimpleCredentials simpleCredentials = getSimpleCredentials(authentication.getBearerToken())
+          .orElseThrow(() -> new BadCredentialsException("invalid simple auth credentials"));
+
+      EncryptedSecret encryptedSecret = getIncomingSecret(simpleCredentials.getPrincipal());
+
+      boolean isAuthenticated = decryptor.isEqualDecrypted(encryptedSecret, simpleCredentials.getAuthToken());
+
+      return AuthenticationDecision.builder()
+          .principal(simpleCredentials.getPrincipal())
+          .credentialHmac(authentication.hmacSha256())
+          .isAuthenticated(isAuthenticated)
+          .build();
+    } catch (AccountNotFoundProblem e) { // All other exceptions should be thrown!
+      logger.debug(e.getMessage(), e);
+    }
+    return notAuthenticated();
+  }
+
+  private EncryptedSecret getIncomingSecret(AccountId accountId) {
+    final AccountSettings accountSettings =
+        accountSettingsRepository.findByAccountIdWithConversion(accountId)
+            .orElseThrow(() -> new AccountNotFoundProblem(accountId));
+    final IlpOverHttpLinkSettings ilpOverHttpLinkSettings =
+        Objects.requireNonNull(linkSettingsFactory).constructTyped(accountSettings);
+
+    final IncomingLinkSettings incomingLinkSettings = ilpOverHttpLinkSettings.incomingHttpLinkSettings();
+    return getIncomingSecret(accountId, incomingLinkSettings);
+  }
+
+  private static Optional<SimpleCredentials> getSimpleCredentials(byte[] token) {
+    String tokenString = new String(token);
+    int tokenIndex = tokenString.lastIndexOf(":");
+    if (tokenIndex > 0) {
+      return Optional.of(SimpleCredentials.builder()
+          .principal(AccountId.of(tokenString.substring(0, tokenIndex).trim()))
+          .authToken(Base64.getDecoder().decode(tokenString.substring(tokenIndex+1).trim()))
+          .build());
+    }
+    return Optional.empty();
+  }
+
+  private static boolean isSimple(byte[] token) {
+    return new String(token).indexOf(":") > 0;
+  }
+
 
 }
