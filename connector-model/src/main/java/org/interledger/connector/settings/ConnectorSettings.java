@@ -83,7 +83,7 @@ public interface ConnectorSettings {
    */
   @Value.Default
   default int minMessageWindowMillis() {
-    return 1000;
+    return 100;
   }
 
   /**
@@ -95,6 +95,15 @@ public interface ConnectorSettings {
   @Value.Default
   default int maxHoldTimeMillis() {
     return 30000;
+  }
+
+  /**
+   * FIXME
+   * @return
+   */
+  @Value.Default
+  default ConnectorKeys keys() {
+    return ConnectorKeys.builder().build();
   }
 
 }

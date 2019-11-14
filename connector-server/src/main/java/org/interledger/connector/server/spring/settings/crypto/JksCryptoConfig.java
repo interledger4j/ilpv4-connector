@@ -1,25 +1,31 @@
 package org.interledger.connector.server.spring.settings.crypto;
 
-import org.interledger.crypto.EncryptionException;
-import org.interledger.crypto.EncryptionService;
-import org.interledger.crypto.JavaKeystoreLoader;
-import org.interledger.crypto.impl.JksEncryptionService;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import javax.crypto.SecretKey;
-import java.security.KeyStore;
-import java.security.NoSuchAlgorithmException;
-
+import static org.interledger.connector.core.ConfigConstants.ENABLED;
+import static org.interledger.connector.core.ConfigConstants.TRUE;
 import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS;
 import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_FILENAME;
 import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_PASSWORD;
 import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS;
 import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD;
-import static org.interledger.connector.core.ConfigConstants.ENABLED;
-import static org.interledger.connector.core.ConfigConstants.TRUE;
+
+import org.interledger.connector.crypto.ConnectorEncryptionService;
+import org.interledger.connector.crypto.DefaultConnectorEncryptionService;
+import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.crypto.EncryptionAlgorithm;
+import org.interledger.crypto.EncryptionException;
+import org.interledger.crypto.EncryptionService;
+import org.interledger.crypto.JavaKeystoreLoader;
+import org.interledger.crypto.KeyStoreType;
+import org.interledger.crypto.impl.JksEncryptionService;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import javax.crypto.SecretKey;
 
 /**
  * Keystore Configuration that defines keys and secrets as being stored in a Java Keystore located on the classpath.
@@ -59,6 +65,16 @@ public class JksCryptoConfig {
   @Bean
   EncryptionService encryptionService(SecretKey secret0Key) throws NoSuchAlgorithmException {
     return new JksEncryptionService(secret0Key);
+  }
+
+  @Bean
+  ConnectorEncryptionService connectorEncryptionService(EncryptionService encryptionService,
+                                                        ConnectorSettings connectorSettings) {
+    return new DefaultConnectorEncryptionService(encryptionService,
+        KeyStoreType.JKS,
+        jksFilename,
+        connectorSettings.keys(),
+        EncryptionAlgorithm.AES_GCM);
   }
 
 }

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
+import org.interledger.connector.settings.ConnectorKey;
 import org.interledger.connector.settings.EnabledFeatureSettings;
 import org.interledger.connector.settings.EnabledProtocolSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
@@ -62,6 +63,14 @@ public class ConnectorSettingsFromPropertyFileTest {
         .isEqualTo((InterledgerAddressPrefix.of("test.parent")));
     assertThat(globalRoutingSettings.staticRoutes().stream().findFirst().get().peerAccountId())
         .isEqualTo((AccountId.of("bob")));
+
+    assertThat(connectorSettings.keys().secret0())
+        .isEqualTo(ConnectorKey.builder().alias("secret0").version("2").build());
+
+    assertThat(connectorSettings.keys().accountSettings())
+        .isEqualTo(ConnectorKey.builder().alias("accounts").version("3").build());
+
+
   }
 
   @EnableConfigurationProperties(ConnectorSettingsFromPropertyFile.class)

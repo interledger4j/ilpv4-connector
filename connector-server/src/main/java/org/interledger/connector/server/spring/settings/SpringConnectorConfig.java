@@ -22,14 +22,17 @@ import org.interledger.connector.config.BalanceTrackerConfig;
 import org.interledger.connector.config.CaffeineCacheConfig;
 import org.interledger.connector.config.RedisConfig;
 import org.interledger.connector.config.SettlementConfig;
+import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.fx.JavaMoneyUtils;
 import org.interledger.connector.fxrates.DefaultFxRateOverridesManager;
 import org.interledger.connector.fxrates.FxRateOverridesManager;
 import org.interledger.connector.links.DefaultLinkManager;
 import org.interledger.connector.links.DefaultLinkSettingsFactory;
+import org.interledger.connector.links.DefaultLinkSettingsValidator;
 import org.interledger.connector.links.DefaultNextHopPacketMapper;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.LinkSettingsFactory;
+import org.interledger.connector.links.LinkSettingsValidator;
 import org.interledger.connector.links.NextHopPacketMapper;
 import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.links.filters.OutgoingBalanceLinkFilter;
@@ -43,10 +46,10 @@ import org.interledger.connector.packetswitch.filters.AllowedDestinationPacketFi
 import org.interledger.connector.packetswitch.filters.BalanceIlpPacketFilter;
 import org.interledger.connector.packetswitch.filters.ExpiryPacketFilter;
 import org.interledger.connector.packetswitch.filters.MaxPacketAmountFilter;
+import org.interledger.connector.packetswitch.filters.PacketMetricsFilter;
 import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
 import org.interledger.connector.packetswitch.filters.PeerProtocolPacketFilter;
 import org.interledger.connector.packetswitch.filters.RateLimitIlpPacketFilter;
-import org.interledger.connector.packetswitch.filters.PacketMetricsFilter;
 import org.interledger.connector.packetswitch.filters.ValidateFulfillmentPacketFilter;
 import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
@@ -194,6 +197,12 @@ public class SpringConnectorConfig {
   }
 
   @Bean
+  LinkSettingsValidator linkSettingsValidator(ConnectorEncryptionService encryptionService) {
+    return new DefaultLinkSettingsValidator(encryptionService);
+  }
+
+
+  @Bean
   LinkConnectionEventEmitter linkEventEmitter(EventBus eventBus) {
     return new EventBusConnectionEventEmitter(eventBus);
   }
@@ -234,11 +243,14 @@ public class SpringConnectorConfig {
       AccountSettingsRepository accountSettingsRepository,
       LinkManager linkManager,
       ConversionService conversionService,
-      SettlementEngineClient settlementEngineClient
+      SettlementEngineClient settlementEngineClient,
+      LinkSettingsFactory linkSettingsFactory,
+      LinkSettingsValidator linkSettingsValidator
   ) {
     return new DefaultAccountManager(
-        connectorSettingsSupplier, conversionService, accountSettingsRepository, linkManager, settlementEngineClient
-    );
+        connectorSettingsSupplier, conversionService, accountSettingsRepository, linkManager, settlementEngineClient,
+        linkSettingsFactory,
+        linkSettingsValidator);
   }
 
   @Bean

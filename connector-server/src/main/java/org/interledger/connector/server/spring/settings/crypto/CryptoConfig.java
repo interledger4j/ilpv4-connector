@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @Import(
   {
-    GcpCryptoConfig.class,
+    //GcpCryptoConfig.class,
     JksCryptoConfig.class
   }
 )
