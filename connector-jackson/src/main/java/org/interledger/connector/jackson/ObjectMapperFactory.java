@@ -24,8 +24,7 @@ public class ObjectMapperFactory {
 
   /**
    * Construct an {@link ObjectMapper} that can be used to serialize and deserialize JSON where all numbers are Strings,
-   * by default. Because Problems+Json requires HTTP status codes to be marshalled as numbers (and not String) per
-   * RFC-7807, this ObjectMapper should not be used for payloads that involve Problems.
+   * by default.
    *
    * @return An {@link ObjectMapper}.
    */
@@ -54,9 +53,12 @@ public class ObjectMapperFactory {
 
   /**
    * Construct an {@link ObjectMapper} that can be used to serialize and deserialize ProblemsJSON where JSON numbers
-   * emit as non-String values.
+   * emit as non-String values. Because Problems+Json requires HTTP status codes to be serialized as numbers (and not
+   * Strings) per RFC-7807, this ObjectMapper should not be used for payloads that involve Problems.
    *
    * @return An {@link ObjectMapper}.
+   *
+   * @see "https://tools.ietf.org/html/rfc7807"
    */
   public static ObjectMapper createObjectMapperForProblemsJson() {
     return create()
