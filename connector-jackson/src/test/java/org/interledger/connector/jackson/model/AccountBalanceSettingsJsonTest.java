@@ -1,7 +1,6 @@
 package org.interledger.connector.jackson.model;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.ImmutableAccountBalanceSettings;
@@ -24,16 +23,16 @@ public class AccountBalanceSettingsJsonTest {
     final AccountBalanceSettings accountBalanceSettings = AccountBalanceSettings.builder().build();
 
     final String json = objectMapper.writeValueAsString(accountBalanceSettings);
-    assertThat(json, is("{" +
+    assertThat(json).isEqualTo("{" +
       "\"minBalance\":null," +
       "\"settleThreshold\":null," +
       "\"settleTo\":\"0\"" +
       "}"
-    ));
+    );
 
     final AccountBalanceSettings deserializedAccountSettings = objectMapper
       .readValue(json, ImmutableAccountBalanceSettings.class);
-    assertThat(deserializedAccountSettings, is(accountBalanceSettings));
+    assertThat(deserializedAccountSettings).isEqualTo(accountBalanceSettings);
   }
 
   @Test
@@ -45,16 +44,16 @@ public class AccountBalanceSettingsJsonTest {
       .build();
 
     final String json = objectMapper.writeValueAsString(accountBalanceSettings);
-    assertThat(json, is("{" +
+    assertThat(json).isEqualTo("{" +
       "\"minBalance\":\"-200\"," +
       "\"settleThreshold\":\"10\"," +
       "\"settleTo\":\"1\"" +
       "}"
-    ));
+    );
 
     final AccountBalanceSettings deserializedAccountSettings = objectMapper
       .readValue(json, ImmutableAccountBalanceSettings.class);
-    assertThat(deserializedAccountSettings, is(accountBalanceSettings));
+    assertThat(deserializedAccountSettings).isEqualTo(accountBalanceSettings);
   }
 
 }

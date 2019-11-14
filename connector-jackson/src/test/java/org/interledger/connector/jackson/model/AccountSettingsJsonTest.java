@@ -1,7 +1,6 @@
 package org.interledger.connector.jackson.model;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountId;
@@ -43,7 +42,7 @@ public class AccountSettingsJsonTest {
       .build();
 
     final String json = objectMapper.writeValueAsString(accountSettings);
-    assertThat(json, is("{" +
+    assertThat(json).isEqualTo("{" +
       "\"accountId\":\"bob\"," +
       "\"createdAt\":\"+1000000000-12-31T23:59:59.999999999Z\"," +
       "\"modifiedAt\":\"+1000000000-12-31T23:59:59.999999999Z\"," +
@@ -69,10 +68,10 @@ public class AccountSettingsJsonTest {
       "\"settlementEngineDetails\":null," +
       "\"customSettings\":{}" +
       "}"
-    ));
+    );
 
     final AccountSettings deserializedAccountSettings = objectMapper.readValue(json, ImmutableAccountSettings.class);
-    assertThat(deserializedAccountSettings, is(accountSettings));
+    assertThat(deserializedAccountSettings).isEqualTo(accountSettings);
   }
 
   @Test
@@ -109,7 +108,7 @@ public class AccountSettingsJsonTest {
       .build();
 
     final String json = objectMapper.writeValueAsString(accountSettings);
-    assertThat(json, is("{" +
+    assertThat(json).isEqualTo("{" +
       "\"accountId\":\"bob\"," +
       "\"createdAt\":\"+1000000000-12-31T23:59:59.999999999Z\"," +
       "\"modifiedAt\":\"+1000000000-12-31T23:59:59.999999999Z\"," +
@@ -139,10 +138,10 @@ public class AccountSettingsJsonTest {
       "}," +
       "\"customSettings\":{}" +
       "}"
-    ));
+    );
 
     final AccountSettings deserializedAccountSettings = objectMapper.readValue(json, ImmutableAccountSettings.class);
-    assertThat(deserializedAccountSettings, is(accountSettings));
+    assertThat(deserializedAccountSettings).isEqualTo(accountSettings);
   }
 
 }
