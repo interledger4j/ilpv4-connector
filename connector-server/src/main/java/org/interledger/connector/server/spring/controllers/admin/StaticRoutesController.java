@@ -22,6 +22,7 @@ import org.zalando.problem.spring.common.MediaTypes;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @RestController(PathConstants.SLASH_ROUTES)
@@ -29,15 +30,14 @@ public class StaticRoutesController {
 
   private final ExternalRoutingService externalRoutingService;
 
-  public StaticRoutesController(ExternalRoutingService externalRoutingService) {
-    this.externalRoutingService = externalRoutingService;
+  public StaticRoutesController(final ExternalRoutingService externalRoutingService) {
+    this.externalRoutingService = Objects.requireNonNull(externalRoutingService);
   }
 
   @RequestMapping(
-      path = PathConstants.SLASH_ROUTES,
-      method = RequestMethod.GET,
-      consumes = {APPLICATION_JSON_VALUE},
-      produces = {org.springframework.hateoas.MediaTypes.HAL_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    path = PathConstants.SLASH_ROUTES,
+    method = RequestMethod.GET,
+    produces = {APPLICATION_JSON_VALUE, org.springframework.hateoas.MediaTypes.HAL_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public HttpEntity<PagedModel<Route>> getRoutes() {
 
@@ -48,10 +48,9 @@ public class StaticRoutesController {
   }
 
   @RequestMapping(
-      path = PathConstants.SLASH_ROUTES_STATIC,
-      method = RequestMethod.GET,
-      consumes = {APPLICATION_JSON_VALUE},
-      produces = {org.springframework.hateoas.MediaTypes.HAL_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    path = PathConstants.SLASH_ROUTES_STATIC,
+    method = RequestMethod.GET,
+    produces = {APPLICATION_JSON_VALUE, org.springframework.hateoas.MediaTypes.HAL_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public HttpEntity<PagedModel<StaticRoute>> getStaticRoutes() {
 
@@ -61,13 +60,14 @@ public class StaticRoutesController {
   }
 
   @RequestMapping(
-      path = PathConstants.SLASH_ROUTES_STATIC_PREFIX,
-      method = RequestMethod.PUT,
-      consumes = {APPLICATION_JSON_VALUE},
-      produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    path = PathConstants.SLASH_ROUTES_STATIC_PREFIX,
+    method = RequestMethod.PUT,
+    consumes = {APPLICATION_JSON_VALUE},
+    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public ResponseEntity<StaticRoute> createStaticRouteAtPrefix(@PathVariable(PathConstants.PREFIX) String prefix,
-                                                               @RequestBody StaticRoute staticRoute) {
+  public ResponseEntity<StaticRoute> createStaticRouteAtPrefix(
+    @PathVariable(PathConstants.PREFIX) String prefix, @RequestBody StaticRoute staticRoute
+  ) {
     if (!prefix.equals(staticRoute.routePrefix().getValue())) {
       throw new StaticRouteUnprocessableProblem(prefix, staticRoute.routePrefix());
     }
@@ -75,10 +75,9 @@ public class StaticRoutesController {
   }
 
   @RequestMapping(
-      path = PathConstants.SLASH_ROUTES_STATIC_PREFIX,
-      method = RequestMethod.DELETE,
-      consumes = {APPLICATION_JSON_VALUE},
-      produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    path = PathConstants.SLASH_ROUTES_STATIC_PREFIX,
+    method = RequestMethod.DELETE,
+    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public ResponseEntity deleteStaticRouteAtPrefix(@PathVariable(PathConstants.PREFIX) String prefix) {
     this.externalRoutingService.deleteStaticRouteByPrefix(InterledgerAddressPrefix.of(prefix));
