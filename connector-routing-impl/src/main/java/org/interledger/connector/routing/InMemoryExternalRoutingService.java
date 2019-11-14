@@ -368,7 +368,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
               .map(routePrefix -> routePrefix.equals(nblr.routePrefix()))
               .orElse(false);
 
-          // Don't advertise local customer routes that we originated. Packets for these destinations should still
+          // Don't advertise local custom routes that we originated. Packets for these destinations should still
           // reach us because we are advertising our own address as a prefix.
           final boolean isLocalCustomerRoute = addressPrefix.getValue()
               .startsWith(this.connectorSettingsSupplier.get().operatorAddress().getValue()) &&
