@@ -21,7 +21,7 @@ import java.net.URI;
 /**
  * Unit tests to validate that Problems marshal to/from JSON using Jackson.
  */
-public class ProblemJsonMessageConverterTest {
+public class ProblemSerializerTest {
 
   private ObjectMapper objectMapper;
 
