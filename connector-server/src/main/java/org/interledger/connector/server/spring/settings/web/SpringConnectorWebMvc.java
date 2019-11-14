@@ -107,8 +107,9 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
     converters.replaceAll(messageConverter -> {
       if (messageConverter instanceof MappingJackson2HttpMessageConverter) {
         // in `configureMessageConverters`, there is at least one extra MessageConverter that is used specifically to
-        // marshal Problems to JSON with non-String numbers (e.g., the status code). In that case, we don't want to
-        // replace the message converter because we want it to use a custom ObjectMapper.
+        // serialize Problems to JSON with non-String numbers (e.g., the status code). In that case, we don't want to
+        // replace the message converter because we want it to use the custom ObjectMapper that it was configured
+        // with.
         if (((MappingJackson2HttpMessageConverter) messageConverter).getObjectMapper().getRegisteredModuleIds()
           .contains(ProblemModule.class.getName())) {
           return messageConverter;
