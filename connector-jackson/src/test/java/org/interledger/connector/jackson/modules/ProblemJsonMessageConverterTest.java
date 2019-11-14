@@ -19,7 +19,7 @@ import org.zalando.problem.ThrowableProblem;
 import java.net.URI;
 
 /**
- * Unit tests for {@link ProblemJsonMessageConverter}.
+ * Unit tests to validate that Problems marshal to/from JSON using Jackson.
  */
 public class ProblemJsonMessageConverterTest {
 
