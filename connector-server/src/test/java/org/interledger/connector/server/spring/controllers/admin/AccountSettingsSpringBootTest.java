@@ -69,8 +69,8 @@ import java.util.UUID;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = {ConnectorServerConfig.class}
+  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  classes = {ConnectorServerConfig.class}
 )
 @EnableFeignClients(clients = ConnectorAdminClient.class)
 @ActiveProfiles( {"test", "jks"})
@@ -105,23 +105,23 @@ public class AccountSettingsSpringBootTest {
   public void setUp() throws URISyntaxException {
     baseURI = new URI("http://localhost:" + localServerPort);
     when(settlementEngineClientMock.createSettlementAccount(any(), any(), any()))
-        .thenReturn(CreateSettlementAccountResponse.builder()
-            .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
-            .build()
-        );
+      .thenReturn(CreateSettlementAccountResponse.builder()
+        .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
+        .build()
+      );
   }
 
   @Test
   public void testMinimalCreate() {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     AccountSettings settings = AccountSettings.builder()
-        .accountId(accountId)
-        .accountRelationship(AccountRelationship.CHILD)
-        .assetCode("FUD")
-        .assetScale(6)
-        .linkType(LoopbackLink.LINK_TYPE)
-        .createdAt(Instant.now())
-        .build();
+      .accountId(accountId)
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(LoopbackLink.LINK_TYPE)
+      .createdAt(Instant.now())
+      .build();
 
     AccountSettings response = assertPostAccount(settings, HttpStatus.CREATED);
     assertThat(response).isEqualTo(settings);
@@ -147,7 +147,7 @@ public class AccountSettingsSpringBootTest {
 
     // Same account details with different accountId but same SettlementAccountId
     final AccountSettings newAccountSettingsWithDupSE = AccountSettings.builder().from(accountSettings)
-        .accountId(AccountId.of(UUID.randomUUID().toString())).build();
+      .accountId(AccountId.of(UUID.randomUUID().toString())).build();
 
     response = assertPostAccount(newAccountSettingsWithDupSE, HttpStatus.CONFLICT);
     assertThat(response).isEqualTo(accountSettings);
@@ -157,7 +157,7 @@ public class AccountSettingsSpringBootTest {
   public void testFullyPopulatedCreateWithSettlementEngineFailure() {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     doThrow(new SettlementEngineClientException(
-        "Unable to create account in settlement engine.", accountId, Optional.empty())
+      "Unable to create account in settlement engine.", accountId, Optional.empty())
     ).when(settlementEngineClientMock).createSettlementAccount(any(), any(), any());
 
     final AccountSettings settings = constructFullyPopulatedAccountSettings(accountId);
@@ -173,14 +173,14 @@ public class AccountSettingsSpringBootTest {
   public void testCreateExistingIdReturns409() throws IOException {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     AccountSettings settings = AccountSettings.builder()
-        .accountId(accountId)
-        .accountRelationship(AccountRelationship.CHILD)
-        .assetCode("FUD")
-        .assetScale(6)
-        .linkType(LoopbackLink.LINK_TYPE)
-        .createdAt(Instant.now())
-        .customSettings(Maps.newHashMap("custom", "value"))
-        .build();
+      .accountId(accountId)
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(LoopbackLink.LINK_TYPE)
+      .createdAt(Instant.now())
+      .customSettings(Maps.newHashMap("custom", "value"))
+      .build();
 
     AccountSettings createResponse = assertPostAccount(settings, HttpStatus.CREATED);
     assertThat(createResponse).isEqualTo(settings);
@@ -192,7 +192,7 @@ public class AccountSettingsSpringBootTest {
     assertJson.extractingJsonPathValue("title").isEqualTo("Account Already Exists (`" + accountId.value() + "`)");
     assertJson.extractingJsonPathValue("accountId").isEqualTo(accountId.value());
     assertJson.extractingJsonPathValue("type")
-        .isEqualTo("https://errors.interledger.org/accounts/account-already-exists");
+      .isEqualTo("https://errors.interledger.org/accounts/account-already-exists");
   }
 
 
@@ -213,20 +213,20 @@ public class AccountSettingsSpringBootTest {
 
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     AccountSettings settings = AccountSettings.builder()
-        .accountId(accountId)
-        .accountRelationship(AccountRelationship.CHILD)
-        .assetCode("FUD")
-        .assetScale(6)
-        .linkType(IlpOverHttpLink.LINK_TYPE)
-        .createdAt(Instant.now())
-        .customSettings(customSettings)
-        .build();
+      .accountId(accountId)
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
+      .createdAt(Instant.now())
+      .customSettings(customSettings)
+      .build();
 
     AccountSettings created = assertPostAccount(settings, HttpStatus.CREATED);
     assertThat(created.customSettings().get(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET))
-        .isEqualTo(Redactor.REDACTED);
+      .isEqualTo(Redactor.REDACTED);
     assertThat(created.customSettings().get(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET))
-        .isEqualTo(Redactor.REDACTED);
+      .isEqualTo(Redactor.REDACTED);
   }
 
   /**
@@ -239,18 +239,18 @@ public class AccountSettingsSpringBootTest {
     headers.setContentType(MediaType.APPLICATION_JSON);
 
     Map<String, Object> rawValues = ImmutableMap.<String, Object>builder()
-        .put("accountId", AccountId.of(UUID.randomUUID().toString()))
-        .put("accountRelationship", AccountRelationship.CHILD)
-        .put("assetCode", "FUD")
-        .put("assetScale", 6)
-        .put("linkType", LoopbackLink.LINK_TYPE)
-        .put("whatHasTwoThumbsAndLikesInterledger", "this guy") // random unknown property, should be ignored by server
-        .build();
+      .put("accountId", AccountId.of(UUID.randomUUID().toString()))
+      .put("accountRelationship", AccountRelationship.CHILD)
+      .put("assetCode", "FUD")
+      .put("assetScale", 6)
+      .put("linkType", LoopbackLink.LINK_TYPE)
+      .put("whatHasTwoThumbsAndLikesInterledger", "this guy") // random unknown property, should be ignored by server
+      .build();
 
     final HttpEntity httpEntity = new HttpEntity(rawValues, headers);
 
     ResponseEntity response =
-        restTemplate.exchange(SLASH_ACCOUNTS, HttpMethod.POST, httpEntity, Void.class);
+      restTemplate.exchange(SLASH_ACCOUNTS, HttpMethod.POST, httpEntity, Void.class);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
   }
 
@@ -279,35 +279,35 @@ public class AccountSettingsSpringBootTest {
     Objects.requireNonNull(accountId);
 
     return AccountSettings.builder()
-        .accountId(accountId)
-        .description("A fully-populated account")
-        .accountRelationship(AccountRelationship.CHILD)
-        .assetCode("FUD")
-        .assetScale(6)
-        .linkType(LoopbackLink.LINK_TYPE)
-        .createdAt(Instant.now())
-        .balanceSettings(AccountBalanceSettings.builder()
-            .settleThreshold(10L)
-            .minBalance(9L)
-            .settleTo(8L)
-            .build())
-        .settlementEngineDetails(SettlementEngineDetails.builder()
-            .baseUrl(HttpUrl.parse("http://example.com"))
-            .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
-            .putCustomSettings("settlementFoo", "settlementBar")
-            .build())
-        .rateLimitSettings(AccountRateLimitSettings.builder()
-            .maxPacketsPerSecond(100)
-            .build())
-        .maximumPacketAmount(200L)
-        .isConnectionInitiator(true)
-        .ilpAddressSegment("foo")
-        .isSendRoutes(true)
-        .isReceiveRoutes(true)
-        .isInternal(true)
-        .modifiedAt(Instant.MAX)
-        .customSettings(Maps.newHashMap("custom", "value"))
-        .build();
+      .accountId(accountId)
+      .description("A fully-populated account")
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(LoopbackLink.LINK_TYPE)
+      .createdAt(Instant.now())
+      .balanceSettings(AccountBalanceSettings.builder()
+        .settleThreshold(10L)
+        .minBalance(9L)
+        .settleTo(8L)
+        .build())
+      .settlementEngineDetails(SettlementEngineDetails.builder()
+        .baseUrl(HttpUrl.parse("http://example.com"))
+        .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
+        .putCustomSettings("settlementFoo", "settlementBar")
+        .build())
+      .rateLimitSettings(AccountRateLimitSettings.builder()
+        .maxPacketsPerSecond(100)
+        .build())
+      .maximumPacketAmount(200L)
+      .isConnectionInitiator(true)
+      .ilpAddressSegment("foo")
+      .isSendRoutes(true)
+      .isReceiveRoutes(true)
+      .isInternal(true)
+      .modifiedAt(Instant.MAX)
+      .customSettings(Maps.newHashMap("custom", "value"))
+      .build();
   }
 
 }

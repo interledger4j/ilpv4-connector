@@ -38,7 +38,7 @@ import java.util.Base64;
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   classes = {ConnectorServerConfig.class}
 )
-@ActiveProfiles({"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
+@ActiveProfiles( {"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 public class SimpleBearerIlpOverHttpEndpointTest extends AbstractEndpointTest {
 
   private static final String BAD_SECRET = Base64.getEncoder().encodeToString("pfft".getBytes());
@@ -63,7 +63,7 @@ public class SimpleBearerIlpOverHttpEndpointTest extends AbstractEndpointTest {
   public void ildcpTestConnectionWithEncryptedSecret() {
     String accountId = "bob:ross";
     createAccount(AccountId.of(accountId), ENCRYPTED_SHH);
-    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" +  BASE64_SHH);
+    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" + BASE64_SHH);
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     assertLink(simpleBearerLink);
   }
@@ -75,7 +75,7 @@ public class SimpleBearerIlpOverHttpEndpointTest extends AbstractEndpointTest {
   public void ildcpTestConnectionWithBase64Secret() {
     String accountId = "bob:marley";
     createAccount(AccountId.of(accountId), BASE64_SHH);
-    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" +  BASE64_SHH);
+    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" + BASE64_SHH);
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     assertLink(simpleBearerLink);
   }
@@ -87,7 +87,7 @@ public class SimpleBearerIlpOverHttpEndpointTest extends AbstractEndpointTest {
   public void incorrectTokenCredentials() {
     String accountId = "alice:cooper";
     createAccount(AccountId.of(accountId), BASE64_SHH);
-    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" +  BAD_SECRET);
+    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" + BAD_SECRET);
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     expectedException.expect(LinkException.class);
     expectedException.expectMessage("Unauthorized");
@@ -97,34 +97,34 @@ public class SimpleBearerIlpOverHttpEndpointTest extends AbstractEndpointTest {
   private IlpOverHttpLink simpleBearerLink(String sharedSecret, String bearerToken) {
 
     final OutgoingLinkSettings outgoingLinkSettings = OutgoingLinkSettings.builder()
-        .authType(IlpOverHttpLinkSettings.AuthType.SIMPLE)
-        .tokenSubject("bob")
-        .tokenIssuer(HttpUrl.parse("https://bob.example.com/"))
-        .tokenAudience(HttpUrl.parse("https://n-a.example.com"))
-        .url(HttpUrl.parse(template.getRootUri() + "/ilp"))
-        // The is the encrypted variant of `shh`
-        .encryptedTokenSharedSecret(sharedSecret)
-        .build();
+      .authType(IlpOverHttpLinkSettings.AuthType.SIMPLE)
+      .tokenSubject("bob")
+      .tokenIssuer(HttpUrl.parse("https://bob.example.com/"))
+      .tokenAudience(HttpUrl.parse("https://n-a.example.com"))
+      .url(HttpUrl.parse(template.getRootUri() + "/ilp"))
+      // The is the encrypted variant of `shh`
+      .encryptedTokenSharedSecret(sharedSecret)
+      .build();
 
     final IncomingLinkSettings incomingLinkSettings = IncomingLinkSettings.builder()
-        .encryptedTokenSharedSecret(sharedSecret)
-        .authType(IlpOverHttpLinkSettings.AuthType.SIMPLE)
-        .tokenIssuer(outgoingLinkSettings.tokenIssuer())
-        .tokenAudience(outgoingLinkSettings.tokenAudience())
-        .build();
+      .encryptedTokenSharedSecret(sharedSecret)
+      .authType(IlpOverHttpLinkSettings.AuthType.SIMPLE)
+      .tokenIssuer(outgoingLinkSettings.tokenIssuer())
+      .tokenAudience(outgoingLinkSettings.tokenAudience())
+      .build();
 
     final IlpOverHttpLinkSettings linkSettings = IlpOverHttpLinkSettings.builder()
-        .incomingHttpLinkSettings(incomingLinkSettings)
-        .outgoingHttpLinkSettings(outgoingLinkSettings)
-        .build();
+      .incomingHttpLinkSettings(incomingLinkSettings)
+      .outgoingHttpLinkSettings(outgoingLinkSettings)
+      .build();
 
     return new IlpOverHttpLink(
-        () -> InterledgerAddress.of("test.bob"),
-        linkSettings,
-        okHttpClient,
-        objectMapper,
-        InterledgerCodecContextFactory.oer(),
-        new SimpleBearerTokenSupplier(bearerToken)
+      () -> InterledgerAddress.of("test.bob"),
+      linkSettings,
+      okHttpClient,
+      objectMapper,
+      InterledgerCodecContextFactory.oer(),
+      new SimpleBearerTokenSupplier(bearerToken)
     );
 
   }

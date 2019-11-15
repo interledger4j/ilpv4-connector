@@ -32,32 +32,32 @@ public class DefaultLinkSettingsValidator implements LinkSettingsValidator {
 
   private IlpOverHttpLinkSettings validateIlpLinkSettings(IlpOverHttpLinkSettings linkSettings) {
     EncryptedSecret incomingSecret =
-        validate(getOrCreateEncryptedSecret(linkSettings.incomingHttpLinkSettings().encryptedTokenSharedSecret()));
+      validate(getOrCreateEncryptedSecret(linkSettings.incomingHttpLinkSettings().encryptedTokenSharedSecret()));
 
     EncryptedSecret outgoingSecret =
-        validate(getOrCreateEncryptedSecret(linkSettings.incomingHttpLinkSettings().encryptedTokenSharedSecret()));
+      validate(getOrCreateEncryptedSecret(linkSettings.incomingHttpLinkSettings().encryptedTokenSharedSecret()));
 
     IncomingLinkSettings incomingLinkSettings =
-        IncomingLinkSettings.builder().from(linkSettings.incomingHttpLinkSettings())
-            .encryptedTokenSharedSecret(incomingSecret.encodedValue())
-            .build();
+      IncomingLinkSettings.builder().from(linkSettings.incomingHttpLinkSettings())
+        .encryptedTokenSharedSecret(incomingSecret.encodedValue())
+        .build();
 
     OutgoingLinkSettings outgoingLinkSettings =
-        OutgoingLinkSettings.builder().from(linkSettings.outgoingHttpLinkSettings())
-            .encryptedTokenSharedSecret(outgoingSecret.encodedValue())
-            .build();
+      OutgoingLinkSettings.builder().from(linkSettings.outgoingHttpLinkSettings())
+        .encryptedTokenSharedSecret(outgoingSecret.encodedValue())
+        .build();
 
     Map<String, Object> newCustomSettings = Maps.newHashMap(linkSettings.getCustomSettings());
     newCustomSettings.put(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET,
-        incomingLinkSettings.encryptedTokenSharedSecret());
+      incomingLinkSettings.encryptedTokenSharedSecret());
     newCustomSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET,
-        outgoingLinkSettings.encryptedTokenSharedSecret());
+      outgoingLinkSettings.encryptedTokenSharedSecret());
 
     return IlpOverHttpLinkSettings.builder().from(linkSettings)
-        .incomingHttpLinkSettings(incomingLinkSettings)
-        .outgoingHttpLinkSettings(outgoingLinkSettings)
-        .customSettings(newCustomSettings)
-        .build();
+      .incomingHttpLinkSettings(incomingLinkSettings)
+      .outgoingHttpLinkSettings(outgoingLinkSettings)
+      .customSettings(newCustomSettings)
+      .build();
   }
 
   private EncryptedSecret getOrCreateEncryptedSecret(String sharedSecret) {

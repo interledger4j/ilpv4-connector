@@ -42,8 +42,7 @@ public abstract class AbstractEndpointTest {
   protected URI baseURI() {
     try {
       return new URI("http://localhost:" + localServerPort);
-    }
-    catch (URISyntaxException e) {
+    } catch (URISyntaxException e) {
       throw new RuntimeException(e);
     }
   }
@@ -64,14 +63,14 @@ public abstract class AbstractEndpointTest {
     customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://bob.example.com");
 
     final AccountSettings accountSettings = AccountSettings.builder()
-        .accountId(accountId)
-        .description("HTTP account for Bob using a simple shared-secret")
-        .accountRelationship(AccountRelationship.PEER)
-        .linkType(IlpOverHttpLink.LINK_TYPE)
-        .customSettings(customSettings)
-        .assetScale(2)
-        .assetCode("XRP")
-        .build();
+      .accountId(accountId)
+      .description("HTTP account for Bob using a simple shared-secret")
+      .accountRelationship(AccountRelationship.PEER)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
+      .customSettings(customSettings)
+      .assetScale(2)
+      .assetCode("XRP")
+      .build();
 
     ResponseEntity<ImmutableAccountSettings> result = adminClient.createAccount(baseURI(), accountSettings);
     return result.getBody();

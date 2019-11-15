@@ -63,25 +63,25 @@ public class ConnectorSettingsFromPropertyFileTest {
     assertThat(globalRoutingSettings.maxEpochsPerRoutingTable()).isEqualTo((77));
     assertThat(globalRoutingSettings.staticRoutes().size()).isEqualTo((1));
     assertThat(globalRoutingSettings.staticRoutes().stream().findFirst().get().targetPrefix())
-        .isEqualTo((InterledgerAddressPrefix.of("test.parent")));
+      .isEqualTo((InterledgerAddressPrefix.of("test.parent")));
     assertThat(globalRoutingSettings.staticRoutes().stream().findFirst().get().peerAccountId())
-        .isEqualTo((AccountId.of("bob")));
+      .isEqualTo((AccountId.of("bob")));
 
     assertThat(connectorSettings.keys().secret0())
-        .isEqualTo(ConnectorKey.builder().alias("secret0").version("2").build());
+      .isEqualTo(ConnectorKey.builder().alias("secret0").version("2").build());
 
     assertThat(connectorSettings.keys().accountSettings())
-        .isEqualTo(ConnectorKey.builder().alias("accounts").version("3").build());
+      .isEqualTo(ConnectorKey.builder().alias("accounts").version("3").build());
 
 
   }
 
   @EnableConfigurationProperties(ConnectorSettingsFromPropertyFile.class)
   public static class TestConfiguration {
-     @Bean
-     Supplier<ConnectorSettings> connectorSettingsSupplier(ConnectorSettingsFromPropertyFile settings) {
-       return () -> settings;
-     }
+    @Bean
+    Supplier<ConnectorSettings> connectorSettingsSupplier(ConnectorSettingsFromPropertyFile settings) {
+      return () -> settings;
+    }
 
   }
 }

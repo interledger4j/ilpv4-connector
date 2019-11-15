@@ -32,9 +32,9 @@ public class DefaultConnectorEncryptionService implements ConnectorEncryptionSer
   @Override
   public EncryptedSecret encryptWithAccountSettingsKey(byte[] secret) {
     KeyMetadata keyMetadata = newKeyMetadataBuilder()
-        .keyIdentifier(connectorKeys.accountSettings().alias())
-        .keyVersion(connectorKeys.accountSettings().version())
-        .build();
+      .keyIdentifier(connectorKeys.accountSettings().alias())
+      .keyVersion(connectorKeys.accountSettings().version())
+      .build();
 
     return encryptionService.encrypt(keyMetadata, encryptionAlgorithm, secret);
   }
@@ -42,9 +42,9 @@ public class DefaultConnectorEncryptionService implements ConnectorEncryptionSer
   @Override
   public EncryptedSecret encryptWithSecret0(byte[] secret) {
     KeyMetadata keyMetadata = newKeyMetadataBuilder()
-        .keyIdentifier(connectorKeys.secret0().alias())
-        .keyVersion(connectorKeys.secret0().version())
-        .build();
+      .keyIdentifier(connectorKeys.secret0().alias())
+      .keyVersion(connectorKeys.secret0().version())
+      .build();
 
     return encryptionService.encrypt(keyMetadata, encryptionAlgorithm, secret);
   }
@@ -56,7 +56,7 @@ public class DefaultConnectorEncryptionService implements ConnectorEncryptionSer
 
   private ImmutableKeyMetadata.Builder newKeyMetadataBuilder() {
     return KeyMetadata.builder()
-        .keyringIdentifier(keyringIdentifier)
-        .platformIdentifier(keyStoreType.getKeystoreId());
+      .keyringIdentifier(keyringIdentifier)
+      .platformIdentifier(keyStoreType.getKeystoreId());
   }
 }

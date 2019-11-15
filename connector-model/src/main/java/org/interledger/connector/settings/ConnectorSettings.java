@@ -104,9 +104,9 @@ public interface ConnectorSettings {
   @Value.Default
   default ConnectorKeys keys() {
     return ConnectorKeys.builder()
-        .accountSettings(ConnectorKey.builder().alias("accountSettings").version("1").build())
-        .secret0(ConnectorKey.builder().alias("secret0").version("1").build())
-        .build();
+      .accountSettings(ConnectorKey.builder().alias("accountSettings").version("1").build())
+      .secret0(ConnectorKey.builder().alias("secret0").version("1").build())
+      .build();
   }
 
 }

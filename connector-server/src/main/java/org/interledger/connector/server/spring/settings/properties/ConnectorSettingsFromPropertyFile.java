@@ -2,7 +2,6 @@ package org.interledger.connector.server.spring.settings.properties;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.connector.settings.ConnectorKeys;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
 import org.interledger.core.InterledgerAddress;
@@ -19,7 +18,7 @@ import java.util.Optional;
 /**
  * Pojo class for automatic mapping of configuration properties via Spring's {@link ConfigurationProperties}
  * annotation.
- *
+ * <p>
  * Note that this class supports adding Accounts from a properties file, although these accounts are not accessible from
  * {@link ConnectorSettings}. Instead, all accounts should be accessed via the {@link AccountSettingsRepository}
  * instead.

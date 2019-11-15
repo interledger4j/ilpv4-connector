@@ -36,7 +36,7 @@ public class ConnectorKeyFromPropertyFile implements ConnectorKey {
     }
     ConnectorKey that = (ConnectorKey) o;
     return alias.equals(that.alias()) &&
-        version.equals(that.version());
+      version.equals(that.version());
   }
 
   @Override
@@ -47,8 +47,8 @@ public class ConnectorKeyFromPropertyFile implements ConnectorKey {
   @Override
   public String toString() {
     return "ConnectorKeyFromPropertyFile{" +
-        "alias='" + alias + '\'' +
-        ", version='" + version + '\'' +
-        '}';
+      "alias='" + alias + '\'' +
+      ", version='" + version + '\'' +
+      '}';
   }
 }

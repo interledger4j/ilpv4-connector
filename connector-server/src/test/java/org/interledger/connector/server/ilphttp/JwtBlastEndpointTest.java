@@ -7,7 +7,6 @@ import static org.junit.Assert.fail;
 
 import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.server.ConnectorServerConfig;
@@ -50,8 +49,8 @@ import java.util.Map;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = {ConnectorServerConfig.class}
+  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  classes = {ConnectorServerConfig.class}
 )
 @ActiveProfiles( {"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 public class JwtBlastEndpointTest extends AbstractEndpointTest {
@@ -82,13 +81,13 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
     if (!adminClient.findAccount(baseURI(), ALICE).isPresent()) {
       final Map<String, Object> customSettings = Maps.newHashMap();
       customSettings
-          .put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256.name());
+        .put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256.name());
       //customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, "https://alice.example.com/");
       //customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
       customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH);
 
       customSettings
-          .put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256.name());
+        .put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256.name());
       //customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
       //customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_AUDIENCE, "https://alice.example.com/");
       customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, CONNIE);
@@ -96,14 +95,14 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
       customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://alice.example.com");
 
       final AccountSettings accountSettings = AccountSettings.builder()
-          .accountId(AccountId.of("alice"))
-          .description("Loopback account for Alice using a simple shared-secret")
-          .accountRelationship(AccountRelationship.PEER)
-          .linkType(LoopbackLink.LINK_TYPE)
-          .customSettings(customSettings)
-          .assetScale(2)
-          .assetCode("XRP")
-          .build();
+        .accountId(AccountId.of("alice"))
+        .description("Loopback account for Alice using a simple shared-secret")
+        .accountRelationship(AccountRelationship.PEER)
+        .linkType(LoopbackLink.LINK_TYPE)
+        .customSettings(customSettings)
+        .assetScale(2)
+        .assetCode("XRP")
+        .build();
       adminClient.createAccount(baseURI(), accountSettings);
     }
   }
@@ -119,15 +118,15 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
     final IlpOverHttpLink ilpOverHttpLink = ilpOverHttpLink(AccountId.of(BOB));
 
     ilpOverHttpLink.sendPacket(
-        InterledgerPreparePacket.builder()
-            .destination(InterledgerAddress.of("test.connie.alice"))
-            .amount(UnsignedLong.ONE)
-            .expiresAt(Instant.now().plus(5, ChronoUnit.MINUTES))
-            .executionCondition(LOOPBACK_FULFILLMENT.getCondition())
-            .build()
+      InterledgerPreparePacket.builder()
+        .destination(InterledgerAddress.of("test.connie.alice"))
+        .amount(UnsignedLong.ONE)
+        .expiresAt(Instant.now().plus(5, ChronoUnit.MINUTES))
+        .executionCondition(LOOPBACK_FULFILLMENT.getCondition())
+        .build()
     ).handle(
-        fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LOOPBACK_FULFILLMENT),
-        rejectPacket -> fail("Packet rejected but should not have!")
+      fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LOOPBACK_FULFILLMENT),
+      rejectPacket -> fail("Packet rejected but should not have!")
     );
   }
 
@@ -164,37 +163,37 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
   private IlpOverHttpLink ilpOverHttpLink(AccountId accountId) {
 
     final IncomingLinkSettings incomingLinkSettings = IncomingLinkSettings.builder()
-        .encryptedTokenSharedSecret(ENCRYPTED_SHH)
-        .authType(AuthType.JWT_HS_256)
-        .tokenIssuer(HttpUrl.parse("https://bob.example.com/"))
-        .tokenAudience(HttpUrl.parse("https://connie.example.com/"))
-        .build();
+      .encryptedTokenSharedSecret(ENCRYPTED_SHH)
+      .authType(AuthType.JWT_HS_256)
+      .tokenIssuer(HttpUrl.parse("https://bob.example.com/"))
+      .tokenAudience(HttpUrl.parse("https://connie.example.com/"))
+      .build();
 
     final OutgoingLinkSettings outgoingLinkSettings = OutgoingLinkSettings.builder()
-        .authType(IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
-        .tokenSubject(BOB)
-        .tokenIssuer(HttpUrl.parse("https://bob.example.com/"))
-        .tokenAudience(HttpUrl.parse("https://connie.example.com/"))
-        .url(HttpUrl.parse(template.getRootUri() + "/ilp"))
-        .tokenExpiry(Duration.ofMinutes(5))
-        .encryptedTokenSharedSecret(ENCRYPTED_SHH)
-        .build();
+      .authType(IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      .tokenSubject(BOB)
+      .tokenIssuer(HttpUrl.parse("https://bob.example.com/"))
+      .tokenAudience(HttpUrl.parse("https://connie.example.com/"))
+      .url(HttpUrl.parse(template.getRootUri() + "/ilp"))
+      .tokenExpiry(Duration.ofMinutes(5))
+      .encryptedTokenSharedSecret(ENCRYPTED_SHH)
+      .build();
 
     final IlpOverHttpLinkSettings linkSettings = IlpOverHttpLinkSettings.builder()
-        .incomingHttpLinkSettings(incomingLinkSettings)
-        .outgoingHttpLinkSettings(outgoingLinkSettings)
-        .build();
+      .incomingHttpLinkSettings(incomingLinkSettings)
+      .outgoingHttpLinkSettings(outgoingLinkSettings)
+      .build();
 
     IlpOverHttpLink link = new IlpOverHttpLink(
-        () -> InterledgerAddress.of("test." + accountId.value()),
-        linkSettings,
-        okHttpClient,
-        objectMapper,
-        InterledgerCodecContextFactory.oer(),
-        new JwtHs256BearerTokenSupplier(
-            "shh"::getBytes,
-            outgoingLinkSettings
-        )
+      () -> InterledgerAddress.of("test." + accountId.value()),
+      linkSettings,
+      okHttpClient,
+      objectMapper,
+      InterledgerCodecContextFactory.oer(),
+      new JwtHs256BearerTokenSupplier(
+        "shh"::getBytes,
+        outgoingLinkSettings
+      )
     );
     link.setLinkId(LinkId.of(accountId.value()));
     return link;

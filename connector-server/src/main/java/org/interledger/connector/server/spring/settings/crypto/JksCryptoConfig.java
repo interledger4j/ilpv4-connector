@@ -72,10 +72,10 @@ public class JksCryptoConfig {
   ConnectorEncryptionService connectorEncryptionService(EncryptionService encryptionService,
                                                         Supplier<ConnectorSettings> connectorSettings) {
     return new DefaultConnectorEncryptionService(encryptionService,
-        KeyStoreType.JKS,
-        jksFilename,
-        connectorSettings.get().keys(),
-        EncryptionAlgorithm.AES_GCM);
+      KeyStoreType.JKS,
+      jksFilename,
+      connectorSettings.get().keys(),
+      EncryptionAlgorithm.AES_GCM);
   }
 
 }

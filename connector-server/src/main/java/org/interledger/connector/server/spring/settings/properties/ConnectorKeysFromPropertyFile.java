@@ -39,7 +39,7 @@ public class ConnectorKeysFromPropertyFile implements ConnectorKeys {
     }
     ConnectorKeys that = (ConnectorKeys) o;
     return secret0.equals(that.secret0()) &&
-        accountSettings.equals(that.accountSettings());
+      accountSettings.equals(that.accountSettings());
   }
 
   @Override
@@ -50,8 +50,8 @@ public class ConnectorKeysFromPropertyFile implements ConnectorKeys {
   @Override
   public String toString() {
     return "ConnectorKeysFromPropertyFile{" +
-        "secret0=" + secret0 +
-        ", accountSettings=" + accountSettings +
-        '}';
+      "secret0=" + secret0 +
+      ", accountSettings=" + accountSettings +
+      '}';
   }
 }

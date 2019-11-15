@@ -48,12 +48,12 @@ public class DefaultAccountManager implements AccountManager {
    * Required-args Constructor.
    */
   public DefaultAccountManager(
-      final Supplier<ConnectorSettings> connectorSettingsSupplier,
-      final ConversionService conversionService,
-      final AccountSettingsRepository accountSettingsRepository,
-      final LinkManager linkManager,
-      final SettlementEngineClient settlementEngineClient,
-      LinkSettingsFactory linkSettingsFactory, LinkSettingsValidator linkSettingsValidator) {
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final ConversionService conversionService,
+    final AccountSettingsRepository accountSettingsRepository,
+    final LinkManager linkManager,
+    final SettlementEngineClient settlementEngineClient,
+    LinkSettingsFactory linkSettingsFactory, LinkSettingsValidator linkSettingsValidator) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.linkManager = Objects.requireNonNull(linkManager);
@@ -82,7 +82,7 @@ public class DefaultAccountManager implements AccountManager {
     }
 
     final AccountSettingsEntity accountSettingsEntity =
-        new AccountSettingsEntity(validateLinkSettings(accountSettings));
+      new AccountSettingsEntity(validateLinkSettings(accountSettings));
     final SettlementEngineDetailsEntity settlementEngineDetailsEntity =
       accountSettingsEntity.getSettlementEngineDetailsEntity();
 
@@ -137,12 +137,12 @@ public class DefaultAccountManager implements AccountManager {
   private AccountSettings validateLinkSettings(AccountSettings accountSettings) {
     if (accountSettings.linkType().equals(IlpOverHttpLink.LINK_TYPE)) {
       IlpOverHttpLinkSettings ilpOverHttpLinkSettings =
-          linkSettingsValidator.validateSettings(linkSettingsFactory.constructTyped(accountSettings));
+        linkSettingsValidator.validateSettings(linkSettingsFactory.constructTyped(accountSettings));
 
       return AccountSettings.builder()
-          .from(accountSettings)
-          .customSettings(ilpOverHttpLinkSettings.getCustomSettings())
-          .build();
+        .from(accountSettings)
+        .customSettings(ilpOverHttpLinkSettings.getCustomSettings())
+        .build();
     }
     return accountSettings;
   }
@@ -151,7 +151,6 @@ public class DefaultAccountManager implements AccountManager {
    * Initialize a parent account with new settings from the parent connector.
    *
    * @param accountId The {@link AccountId} to initialize via IL-DCP.
-   *
    * @return The new {@link AccountSettings} after performing IL-DCP.
    */
   @Override

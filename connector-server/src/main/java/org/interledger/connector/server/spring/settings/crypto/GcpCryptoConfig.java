@@ -40,10 +40,10 @@ public class GcpCryptoConfig {
   ConnectorEncryptionService connectorEncryptionService(EncryptionService encryptionService,
                                                         Supplier<ConnectorSettings> connectorSettings) {
     return new DefaultConnectorEncryptionService(encryptionService,
-        KeyStoreType.GCP,
-        gcpLocationId,
-        connectorSettings.get().keys(),
-        EncryptionAlgorithm.GOOGLE_SYMMETRIC);
+      KeyStoreType.GCP,
+      gcpLocationId,
+      connectorSettings.get().keys(),
+      EncryptionAlgorithm.GOOGLE_SYMMETRIC);
   }
 
 }

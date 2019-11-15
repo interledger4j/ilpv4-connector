@@ -29,20 +29,20 @@ import java.util.Optional;
  * Hence the reason that the url property is initialzed to a placeholder value.
  */
 @FeignClient(name = "connector-admin-client", url = "http://placeholder", decode404 = true,
-    configuration = ConnectorAdminClient.ConnectorAdminClientConfiguration.class)
+  configuration = ConnectorAdminClient.ConnectorAdminClientConfiguration.class)
 public interface ConnectorAdminClient {
 
-  @PostMapping(value = "/accounts", consumes = APPLICATION_JSON_VALUE, produces =  APPLICATION_JSON_VALUE)
+  @PostMapping(value = "/accounts", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
   ResponseEntity<ImmutableAccountSettings> createAccount(URI baseURL, @RequestBody AccountSettings accountSettings);
 
-  @GetMapping(value = "/accounts/{id}", produces =  APPLICATION_JSON_VALUE)
+  @GetMapping(value = "/accounts/{id}", produces = APPLICATION_JSON_VALUE)
   Optional<ImmutableAccountSettings> findAccount(URI baseURL, @RequestParam("id") String accountId);
 
 
   class ConnectorAdminClientConfiguration {
     @Bean
     public BasicAuthRequestInterceptor basicAuthRequestInterceptor(
-        @Value("${interledger.connector.adminPassword}") String adminPassword) {
+      @Value("${interledger.connector.adminPassword}") String adminPassword) {
       return new BasicAuthRequestInterceptor("admin", adminPassword);
     }
   }
