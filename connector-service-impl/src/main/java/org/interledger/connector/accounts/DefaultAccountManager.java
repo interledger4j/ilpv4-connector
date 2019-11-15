@@ -18,6 +18,7 @@ import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
 import org.interledger.link.Link;
 
+import com.google.common.annotations.VisibleForTesting;
 import okhttp3.HttpUrl;
 import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -101,24 +102,8 @@ public class DefaultAccountManager implements AccountManager {
       );
       settlementEngineDetailsEntity.setSettlementEngineAccountId(response.settlementEngineAccountId().value());
     }
+    AccountSettingsEntity entity = persistAccountSettingsEntity(accountSettingsEntity);
 
-    ////////////////
-    // Persist the AccountSettingsEntity
-    ////////////////
-    AccountSettingsEntity entity;
-    try {
-      entity = this.accountSettingsRepository.save(accountSettingsEntity);
-    } catch (Exception e) {
-      if (e.getCause() instanceof ConstraintViolationException) {
-        ConstraintViolationException cause = (ConstraintViolationException) e.getCause();
-        if (cause.getConstraintName().contains(DataConstants.ConstraintNames.ACCOUNT_SETTINGS_SETTLEMENT_ENGINE)) {
-          System.out.println(e);
-          throw new AccountSettlementEngineAlreadyExistsProblem(accountSettingsEntity.getAccountId(),
-              accountSettingsEntity.getSettlementEngineDetailsEntity().getSettlementEngineAccountId());
-        }
-      }
-      throw e;
-    }
     final AccountSettings returnableAccountSettings = this.conversionService.convert(entity, AccountSettings.class);
 
     // It is _not_ a requirement that a Connector startup with any accounts configured. Thus, the first account added
@@ -137,6 +122,27 @@ public class DefaultAccountManager implements AccountManager {
 
     // No need to prematurely connect to this account. When packets need to flow over it, it will become connected.
     return returnableAccountSettings;
+  }
+
+  @VisibleForTesting
+  protected AccountSettingsEntity persistAccountSettingsEntity(AccountSettingsEntity accountSettingsEntity) {
+    ////////////////
+    // Persist the AccountSettingsEntity
+    ////////////////
+    AccountSettingsEntity entity;
+    try {
+      entity = this.accountSettingsRepository.save(accountSettingsEntity);
+    } catch (Exception e) {
+      if (e.getCause() instanceof ConstraintViolationException) {
+        ConstraintViolationException cause = (ConstraintViolationException) e.getCause();
+        if (cause.getConstraintName().contains(DataConstants.ConstraintNames.ACCOUNT_SETTINGS_SETTLEMENT_ENGINE)) {
+          throw new AccountSettlementEngineAlreadyExistsProblem(accountSettingsEntity.getAccountId(),
+              accountSettingsEntity.getSettlementEngineDetailsEntity().getSettlementEngineAccountId());
+        }
+      }
+      throw e;
+    }
+    return entity;
   }
 
   /**
