@@ -1,7 +1,6 @@
 package org.interledger.connector.server.spring.controllers.converters;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.interledger.connector.core.Ilpv4Constants.ALL_ZEROS_FULFILLMENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -102,7 +101,7 @@ public class OerPreparePacketHttpMessageConverterTest {
     // Test readInternal
     InterledgerPacket actualPreparePacket =
         converter.readInternal(InterledgerPreparePacket.class, inputMessageMock);
-    assertThat(actualPreparePacket, is(expectedPacket));
+    assertThat(actualPreparePacket).isEqualTo(expectedPacket);
   }
 
   @Test
@@ -118,32 +117,28 @@ public class OerPreparePacketHttpMessageConverterTest {
 
     // Test read
     final InterledgerPacket actualPreparePacket = converter.read(null, null, inputMessageMock);
-    assertThat(actualPreparePacket, is(expectedPacket));
+    assertThat(actualPreparePacket).isEqualTo(expectedPacket);
   }
 
   @Test
   public void testCanRead() {
     // Happy paths...
-    assertThat(converter.canRead(InterledgerPreparePacket.class, IlpHttpController.class, APPLICATION_JSON),
-        is(false));
-    assertThat(converter.canRead(InterledgerPreparePacket.class, IlpHttpController.class, APPLICATION_OCTET_STREAM),
-        is(true));
+    assertThat(converter.canRead(InterledgerPreparePacket.class, IlpHttpController.class, APPLICATION_JSON)).isFalse();
+    assertThat(converter.canRead(InterledgerPreparePacket.class, IlpHttpController.class, APPLICATION_OCTET_STREAM)).isTrue();
 
     // Wrong Controller...
-    assertThat(converter.canRead(InterledgerPreparePacket.class, SettlementController.class, APPLICATION_JSON),
-        is(false));
-    assertThat(converter.canRead(InterledgerPreparePacket.class, SettlementController.class, APPLICATION_OCTET_STREAM),
-        is(false));
+    assertThat(converter.canRead(InterledgerPreparePacket.class, SettlementController.class, APPLICATION_JSON)).isFalse();
+    assertThat(converter.canRead(InterledgerPreparePacket.class, SettlementController.class, APPLICATION_OCTET_STREAM)).isFalse();
 
     // Wrong payload...
-    assertThat(converter.canRead(String.class, IlpHttpController.class, APPLICATION_JSON), is(false));
-    assertThat(converter.canRead(String.class, IlpHttpController.class, APPLICATION_OCTET_STREAM), is(true));
+    assertThat(converter.canRead(String.class, IlpHttpController.class, APPLICATION_JSON)).isFalse();
+    assertThat(converter.canRead(String.class, IlpHttpController.class, APPLICATION_OCTET_STREAM)).isTrue();
 
     // Null combos
-    assertThat(converter.canRead(null, IlpHttpController.class, APPLICATION_OCTET_STREAM), is(true));
-    assertThat(converter.canRead(InterledgerPreparePacket.class, null, APPLICATION_OCTET_STREAM), is(false));
-    assertThat(converter.canRead(InterledgerPreparePacket.class, IlpHttpController.class, null), is(true));
-    assertThat(converter.canRead(null, null, null), is(false));
+    assertThat(converter.canRead(null, IlpHttpController.class, APPLICATION_OCTET_STREAM)).isTrue();
+    assertThat(converter.canRead(InterledgerPreparePacket.class, null, APPLICATION_OCTET_STREAM)).isFalse();
+    assertThat(converter.canRead(InterledgerPreparePacket.class, IlpHttpController.class, null)).isTrue();
+    assertThat(converter.canRead(null, null, null)).isFalse();
   }
 
 }

@@ -1,7 +1,6 @@
 package org.interledger.connector.packetswitch.filters;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -113,17 +112,11 @@ public class RateLimitIlpPacketFilterTest {
     when(rateLimitSettingsMock.maxPacketsPerSecond()).thenReturn(Optional.empty());
 
     InterledgerResponsePacket response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
-    assertThat(response instanceof InterledgerFulfillPacket, is(true));
+    assertThat(response instanceof InterledgerFulfillPacket).isTrue();
     response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
-    assertThat(
-        "Response was: " + response.getClass().getName(),
-        response instanceof InterledgerFulfillPacket, is(true)
-    );
+    assertThat(response instanceof InterledgerFulfillPacket).as("Response was: " + response.getClass().getName()).isTrue();
     response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
-    assertThat(
-        "Response was: " + response.getClass().getName(),
-        response instanceof InterledgerFulfillPacket, is(true)
-    );
+    assertThat(response instanceof InterledgerFulfillPacket).as("Response was: " + response.getClass().getName()).isTrue();
 
     verify(filterChainMock, times(3)).doFilter(accountSettingsMock, PREPARE_PACKET);
   }
@@ -135,13 +128,13 @@ public class RateLimitIlpPacketFilterTest {
     when(rateLimitSettingsMock.maxPacketsPerSecond()).thenReturn(Optional.of(1));
 
     InterledgerResponsePacket response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
-    assertThat(response instanceof InterledgerRejectPacket, is(true));
+    assertThat(response instanceof InterledgerRejectPacket).isTrue();
 
     response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
-    assertThat(response instanceof InterledgerRejectPacket, is(true));
+    assertThat(response instanceof InterledgerRejectPacket).isTrue();
 
     response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
-    assertThat(response instanceof InterledgerRejectPacket, is(true));
+    assertThat(response instanceof InterledgerRejectPacket).isTrue();
 
     verifyNoInteractions(filterChainMock);
     verify(packetRejectorMock, times(3)).reject(any(), any(), any(), any());
@@ -157,9 +150,9 @@ public class RateLimitIlpPacketFilterTest {
     when(rateLimiterMock.tryAcquire(1)).thenReturn(Boolean.FALSE);
 
     InterledgerResponsePacket response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
-    assertThat(response instanceof InterledgerRejectPacket, is(true));
+    assertThat(response instanceof InterledgerRejectPacket).isTrue();
     response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
-    assertThat(response instanceof InterledgerRejectPacket, is(true));
+    assertThat(response instanceof InterledgerRejectPacket).isTrue();
 
     verifyNoInteractions(filterChainMock);
   }
@@ -170,9 +163,9 @@ public class RateLimitIlpPacketFilterTest {
     when(rateLimiterMock.tryAcquire(1)).thenReturn(true);
 
     InterledgerResponsePacket response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
-    assertThat(response instanceof InterledgerFulfillPacket, is(true));
+    assertThat(response instanceof InterledgerFulfillPacket).isTrue();
     response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
-    assertThat(response instanceof InterledgerFulfillPacket, is(true));
+    assertThat(response instanceof InterledgerFulfillPacket).isTrue();
 
     verify(filterChainMock, times(2)).doFilter(accountSettingsMock, PREPARE_PACKET);
   }
@@ -182,9 +175,9 @@ public class RateLimitIlpPacketFilterTest {
     when(cacheMock.get(any(), any())).thenReturn(Optional.empty());
 
     InterledgerResponsePacket response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
-    assertThat(response instanceof InterledgerFulfillPacket, is(true));
+    assertThat(response instanceof InterledgerFulfillPacket).isTrue();
     response = filter.doFilter(accountSettingsMock, PREPARE_PACKET, filterChainMock);
-    assertThat(response instanceof InterledgerFulfillPacket, is(true));
+    assertThat(response instanceof InterledgerFulfillPacket).isTrue();
 
     verify(filterChainMock, times(2)).doFilter(accountSettingsMock, PREPARE_PACKET);
   }

@@ -1,11 +1,5 @@
 package org.interledger.connector.routing;
 
-import org.interledger.connector.routing.BaseRoute;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsNot.not;
-
 /**
  * Unit tests for {@link BaseRoute}.
  */

@@ -1,12 +1,12 @@
 package org.interledger.connector.persistence.converters;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.persistence.entities.AccountRateLimitSettingsEntity;
+
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Unit tests for {@link RateLimitSettingsEntityConverter}.
@@ -29,6 +29,6 @@ public class RateLimitSettingsEntityConverterTest {
 
     AccountRateLimitSettings actual = converter.convert(entity);
 
-    assertThat(actual.maxPacketsPerSecond(), is(rateLimitSettings.maxPacketsPerSecond()));
+    assertThat(actual.maxPacketsPerSecond()).isEqualTo(rateLimitSettings.maxPacketsPerSecond());
   }
 }

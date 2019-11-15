@@ -1,14 +1,13 @@
 package org.interledger.connector.jackson.modules;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.jackson.modules.ImmutableAccountIdContainer;
+
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.UUID;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
 
 /**
  * Unit tests for {@link AccountIdDeserializer}.
@@ -22,7 +21,7 @@ public class AccountIdDeserializerTest extends AbstractIdTest {
     final AccountId actual = objectMapper
       .readValue("\"" + ACCOUNT_ID.value() + "\"", AccountId.class);
 
-    assertThat(actual, is(ACCOUNT_ID));
+    assertThat(actual).isEqualTo(ACCOUNT_ID);
   }
 
   @Test
@@ -36,7 +35,7 @@ public class AccountIdDeserializerTest extends AbstractIdTest {
       AccountIdContainer.class
     );
 
-    assertThat(actualContainer, is(expectedContainer));
+    assertThat(actualContainer).isEqualTo(expectedContainer);
   }
 
 }

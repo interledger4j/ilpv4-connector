@@ -1,7 +1,10 @@
 package org.interledger.connector.balances;
 
-import com.google.common.collect.ImmutableList;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.interledger.connector.accounts.AccountId;
+
+import com.google.common.collect.ImmutableList;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -16,9 +19,6 @@ import org.springframework.test.context.junit4.rules.SpringMethodRule;
 
 import java.util.Collection;
 import java.util.UUID;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Unit tests for {@link RedisBalanceTracker} that validates the script and balance-change functionality for handling
@@ -106,7 +106,7 @@ public class RedisBalanceTrackerIncomingSettlementTest extends AbstractRedisBala
     try {
       balanceTracker.updateBalanceForIncomingSettlement(null, ACCOUNT_ID, ONE);
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("idempotencyKey must not be null"));
+      assertThat(e.getMessage()).isEqualTo("idempotencyKey must not be null");
       throw e;
     }
   }
@@ -116,7 +116,7 @@ public class RedisBalanceTrackerIncomingSettlementTest extends AbstractRedisBala
     try {
       balanceTracker.updateBalanceForIncomingSettlement(UUID.randomUUID().toString(), null, ONE);
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("accountId must not be null"));
+      assertThat(e.getMessage()).isEqualTo("accountId must not be null");
       throw e;
     }
   }
@@ -126,7 +126,7 @@ public class RedisBalanceTrackerIncomingSettlementTest extends AbstractRedisBala
     try {
       balanceTracker.updateBalanceForIncomingSettlement(UUID.randomUUID().toString(), null, -10L);
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("accountId must not be null"));
+      assertThat(e.getMessage()).isEqualTo("accountId must not be null");
       throw e;
     }
   }
@@ -144,9 +144,9 @@ public class RedisBalanceTrackerIncomingSettlementTest extends AbstractRedisBala
     balanceTracker.updateBalanceForIncomingSettlement(UUID.randomUUID().toString(), accountId, ONE);
 
     final AccountBalance loadedBalance = balanceTracker.balance(accountId);
-    assertThat(loadedBalance.clearingBalance(), is(ZERO));
-    assertThat(loadedBalance.prepaidAmount(), is(ONE));
-    assertThat(loadedBalance.netBalance().longValue(), is(ONE));
+    assertThat(loadedBalance.clearingBalance()).isEqualTo(ZERO);
+    assertThat(loadedBalance.prepaidAmount()).isEqualTo(ONE);
+    assertThat(loadedBalance.netBalance().longValue()).isEqualTo(ONE);
   }
 
   @Test
@@ -156,10 +156,9 @@ public class RedisBalanceTrackerIncomingSettlementTest extends AbstractRedisBala
     balanceTracker.updateBalanceForIncomingSettlement(UUID.randomUUID().toString(), ACCOUNT_ID, this.prepareAmount);
 
     final AccountBalance loadedBalance = balanceTracker.balance(ACCOUNT_ID);
-    assertThat(loadedBalance.clearingBalance(), is(expectedClearingBalanceInRedis));
-    assertThat(loadedBalance.prepaidAmount(), is(expectedPrepaidAmountInRedis));
-    assertThat(loadedBalance.netBalance().longValue(),
-      is(expectedClearingBalanceInRedis + expectedPrepaidAmountInRedis));
+    assertThat(loadedBalance.clearingBalance()).isEqualTo(expectedClearingBalanceInRedis);
+    assertThat(loadedBalance.prepaidAmount()).isEqualTo(expectedPrepaidAmountInRedis);
+    assertThat(loadedBalance.netBalance().longValue()).isEqualTo(expectedClearingBalanceInRedis + expectedPrepaidAmountInRedis);
   }
 
 }

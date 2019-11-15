@@ -1,7 +1,7 @@
 package org.interledger.connector.links.filters;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -105,7 +105,7 @@ public class OutgoingMetricsLinkFilterTest {
 
     try {
       filter.doFilter(accountSettings, preparePacket, filterChainMock);
-      fail();
+      fail("cannot run doFilter");
     } catch (Exception e) {
       verifyNoMoreInteractions(packetRejectorMock);
       verify(metricsServiceMock).trackOutgoingPacketPrepared(accountSettings, preparePacket);
@@ -126,7 +126,7 @@ public class OutgoingMetricsLinkFilterTest {
 
     try {
       filter.doFilter(accountSettings, preparePacket, filterChainMock);
-      fail();
+      fail("cannot run doFilter");
     } catch (Exception e) {
       verifyNoMoreInteractions(packetRejectorMock);
       verify(metricsServiceMock).trackOutgoingPacketPrepared(accountSettings, preparePacket);

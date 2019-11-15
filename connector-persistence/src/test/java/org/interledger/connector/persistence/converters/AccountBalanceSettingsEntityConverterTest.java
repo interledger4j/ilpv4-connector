@@ -1,12 +1,12 @@
 package org.interledger.connector.persistence.converters;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.persistence.entities.AccountBalanceSettingsEntity;
+
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Unit test for {@linkn AccountBalanceSettingsConverter}.
@@ -31,8 +31,8 @@ public class AccountBalanceSettingsEntityConverterTest {
 
     final AccountBalanceSettings actual = converter.convert(entity);
 
-    assertThat(actual.settleThreshold(), is(accountBalanceSettings.settleThreshold()));
-    assertThat(actual.settleTo(), is(accountBalanceSettings.settleTo()));
-    assertThat(actual.minBalance(), is(accountBalanceSettings.minBalance()));
+    assertThat(actual.settleThreshold()).isEqualTo(accountBalanceSettings.settleThreshold());
+    assertThat(actual.settleTo()).isEqualTo(accountBalanceSettings.settleTo());
+    assertThat(actual.minBalance()).isEqualTo(accountBalanceSettings.minBalance());
   }
 }

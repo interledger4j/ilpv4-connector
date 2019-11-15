@@ -1,7 +1,6 @@
 package org.interledger.connector.links;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -44,7 +43,6 @@ import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.function.Supplier;
-
 import javax.money.MonetaryAmount;
 import javax.money.convert.CurrencyConversion;
 import javax.money.convert.ExchangeRate;
@@ -137,7 +135,7 @@ public class DefaultNextHopPacketMapperTest {
         .thenReturn(defaultNextHopSettings().build());
     when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.empty());
     expectedException.expect(InterledgerProtocolException.class);
-    expectedException.expectMessage(containsString("No route found from accountId to destination"));
+    expectedException.expectMessage("No route found from accountId to destination");
     mapper.getNextHopPacket(settings, preparePacket);
   }
 
@@ -153,7 +151,7 @@ public class DefaultNextHopPacketMapperTest {
     when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.of(NEXT_HOP_2));
 
     expectedException.expect(InterledgerProtocolException.class);
-    expectedException.expectMessage(containsString("Refusing to route payments back to sender"));
+    expectedException.expectMessage("Refusing to route payments back to sender");
     mapper.getNextHopPacket(settings, preparePacket);
   }
 
@@ -277,7 +275,7 @@ public class DefaultNextHopPacketMapperTest {
     connectorSettings.setMinMessageWindowMillis(minMessageWindowMillis);
     mockExternalForwardingAllowed(true);
     expectedException.expect(InterledgerProtocolException.class);
-    expectedException.expectMessage(containsString("Interledger Rejection: Source transfer has already expired"));
+    expectedException.expectMessage("Interledger Rejection: Source transfer has already expired");
     mapper.determineDestinationExpiresAt(clock, expiry, RECEIVER);
   }
 
