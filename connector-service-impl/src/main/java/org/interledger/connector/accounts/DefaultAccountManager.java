@@ -3,6 +3,7 @@ package org.interledger.connector.accounts;
 import org.interledger.codecs.ildcp.IldcpUtils;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.connector.persistence.entities.DataConstants;
 import org.interledger.connector.persistence.entities.SettlementEngineDetailsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -18,9 +19,11 @@ import org.interledger.ildcp.IldcpResponse;
 import org.interledger.link.Link;
 
 import okhttp3.HttpUrl;
+import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -103,9 +106,21 @@ public class DefaultAccountManager implements AccountManager {
     ////////////////
     // Persist the AccountSettingsEntity
     ////////////////
-    final AccountSettings returnableAccountSettings = this.conversionService.convert(
-      this.accountSettingsRepository.save(accountSettingsEntity), AccountSettings.class
-    );
+    AccountSettingsEntity entity;
+    try {
+      entity = this.accountSettingsRepository.save(accountSettingsEntity);
+    } catch (Exception e) {
+      if (e instanceof DataIntegrityViolationException && e.getCause() instanceof ConstraintViolationException) {
+        ConstraintViolationException cause = (ConstraintViolationException) e.getCause();
+        if (cause.getConstraintName().contains(DataConstants.ConstraintNames.ACCOUNT_SETTINGS_SETTLEMENT_ENGINE)) {
+          System.out.println(e);
+          throw new AccountSettlementEngineAlreadyExistsProblem(accountSettingsEntity.getAccountId(),
+              accountSettingsEntity.getSettlementEngineDetailsEntity().getSettlementEngineAccountId());
+        }
+      }
+      throw e;
+    }
+    final AccountSettings returnableAccountSettings = this.conversionService.convert(entity, AccountSettings.class);
 
     // It is _not_ a requirement that a Connector startup with any accounts configured. Thus, the first account added
     // to the connector with a relationship type `PARENT` should trigger IL-DCP, but only if the operator address has

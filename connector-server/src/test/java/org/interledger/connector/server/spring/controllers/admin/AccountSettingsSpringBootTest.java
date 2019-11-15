@@ -25,7 +25,6 @@ import com.google.common.collect.ImmutableMap;
 import okhttp3.HttpUrl;
 import org.assertj.core.util.Maps;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,12 +73,15 @@ public class AccountSettingsSpringBootTest {
   private ObjectMapper objectMapper;
 
   private BasicJsonTester jsonTester = new BasicJsonTester(getClass());
+  
+  private SettlementEngineAccountId mockSettlementEngineAccountId;
 
   @Before
   public void setUp() {
+    mockSettlementEngineAccountId = SettlementEngineAccountId.of(UUID.randomUUID().toString());
     when(settlementEngineClientMock.createSettlementAccount(any(), any(), any()))
         .thenReturn(CreateSettlementAccountResponse.builder()
-            .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
+            .settlementEngineAccountId(mockSettlementEngineAccountId)
             .build()
         );
   }
@@ -110,7 +112,6 @@ public class AccountSettingsSpringBootTest {
   }
 
   @Test
-  @Ignore("Will be fixed once https://github.com/sappenin/java-ilpv4-connector/issues/416 is fixed.")
   public void testFullyPopulatedCreateWithDuplicateSEAccountId() throws IOException {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     final AccountSettings accountSettings = constructFullyPopulatedAccountSettings(accountId);
@@ -123,7 +124,12 @@ public class AccountSettingsSpringBootTest {
         .accountId(AccountId.of(UUID.randomUUID().toString())).build();
 
     response = assertPostAccount(newAccountSettingsWithDupSE, HttpStatus.CONFLICT);
-    assertThat(as(response, AccountSettings.class)).isEqualTo(accountSettings);
+    JsonContentAssert assertJson = assertThat(jsonTester.from(response));
+    assertJson.extractingJsonPathValue("status").isEqualTo(409);
+    assertJson.extractingJsonPathValue("title")
+        .isEqualTo("Account Settlement Engine Already Exists [accountId: `" +
+            newAccountSettingsWithDupSE.accountId().value() + "`, settlementEngineId: `" +
+            mockSettlementEngineAccountId.value() + "`]");
   }
 
   @Test
