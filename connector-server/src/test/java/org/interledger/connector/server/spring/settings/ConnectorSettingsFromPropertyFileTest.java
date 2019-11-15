@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
+import org.interledger.connector.settings.ConnectorKey;
+import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.EnabledFeatureSettings;
 import org.interledger.connector.settings.EnabledProtocolSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
@@ -15,10 +17,12 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.Duration;
+import java.util.function.Supplier;
 
 /**
  * Unit test to validate loading of properties into a {@link ConnectorSettingsFromPropertyFile}.
@@ -57,10 +61,21 @@ public class ConnectorSettingsFromPropertyFileTest {
     assertThat(globalRoutingSettings.routeCleanupInterval()).isEqualTo((Duration.ofMillis(30002L)));
     assertThat(globalRoutingSettings.routeExpiry()).isEqualTo((Duration.ofMillis(30003L)));
     assertThat(globalRoutingSettings.maxEpochsPerRoutingTable()).isEqualTo((77));
+
+    assertThat(connectorSettings.isRequire32ByteSharedSecrets()).isTrue();
+
+    assertThat(connectorSettings.keys().secret0())
+      .isEqualTo(ConnectorKey.builder().alias("secret0").version("2").build());
+    assertThat(connectorSettings.keys().accountSettings())
+      .isEqualTo(ConnectorKey.builder().alias("accounts").version("3").build());
   }
 
   @EnableConfigurationProperties(ConnectorSettingsFromPropertyFile.class)
   public static class TestConfiguration {
-    // nothing
+    @Bean
+    public Supplier<ConnectorSettings> connectorSettingsSupplier(ConnectorSettingsFromPropertyFile settings) {
+      return () -> settings;
+    }
+
   }
 }

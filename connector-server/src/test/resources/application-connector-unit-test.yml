@@ -3,6 +3,14 @@ interledger:
   connector:
     # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
     adminPassword: password
+    require32ByteSharedSecrets: true
+    keys:
+      secret0:
+        alias: secret0
+        version: 2
+      accountSettings:
+        alias: accounts
+        version: 3
     keystore:
       jks:
         enabled: true
