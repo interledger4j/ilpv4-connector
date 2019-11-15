@@ -67,7 +67,6 @@ public interface ConnectorSettings {
    * append it to this connector's address to create a child address that this Connector can advertise as its own.
    *
    * @param childAccountId The {@link AccountId} of a child account.
-   *
    * @return An {@link InterledgerAddress } representing the new address of the supplied child account.
    */
   default InterledgerAddress toChildAddress(final AccountId childAccountId) {
@@ -98,12 +97,16 @@ public interface ConnectorSettings {
   }
 
   /**
-   * FIXME
-   * @return
+   * Keys the connector will use for various core functions.
+   *
+   * @return keys
    */
   @Value.Default
   default ConnectorKeys keys() {
-    return ConnectorKeys.builder().build();
+    return ConnectorKeys.builder()
+        .accountSettings(ConnectorKey.builder().alias("accountSettings").version("1").build())
+        .secret0(ConnectorKey.builder().alias("secret0").version("1").build())
+        .build();
   }
 
 }

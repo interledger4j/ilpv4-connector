@@ -11,6 +11,7 @@ import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.persistence.entities.AccountBalanceSettingsEntity;
 import org.interledger.connector.persistence.entities.AccountRateLimitSettingsEntity;
 import org.interledger.connector.server.spring.controllers.PathConstants;
+import org.interledger.connector.server.spring.settings.Redactor;
 
 import org.springframework.core.convert.ConversionService;
 import org.springframework.hateoas.CollectionModel;
@@ -43,10 +44,14 @@ public class AccountsController {
 
   private final AccountManager accountManager;
   private final ConversionService conversionService;
+  private final Redactor redactor;
 
-  public AccountsController(final AccountManager accountManager, final ConversionService conversionService) {
+  public AccountsController(final AccountManager accountManager,
+                            final ConversionService conversionService,
+                            final Redactor redactor) {
     this.accountManager = Objects.requireNonNull(accountManager);
     this.conversionService = Objects.requireNonNull(conversionService);
+    this.redactor = Objects.requireNonNull(redactor);
   }
 
   /**
@@ -68,7 +73,8 @@ public class AccountsController {
   ) {
     Objects.requireNonNull(accountSettings);
 
-    final AccountSettings returnableAccountSettings = this.accountManager.createAccount(accountSettings);
+    final AccountSettings returnableAccountSettings =
+        redactor.redact(this.accountManager.createAccount(accountSettings));
     final Link selfLink =
         linkTo(methodOn(AccountsController.class).getAccount(returnableAccountSettings.accountId())).withSelfRel();
     final EntityModel resource = new EntityModel(returnableAccountSettings, selfLink);
@@ -97,6 +103,7 @@ public class AccountsController {
     final List<EntityModel<AccountSettings>> accountSettingsResources =
         StreamSupport.stream(this.accountManager.getAccountSettingsRepository().findAll().spliterator(), false)
             .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
+            .map(redactor::redact)
             .map(this::toEntityModel)
             .collect(Collectors.toList());
 
@@ -127,6 +134,7 @@ public class AccountsController {
   ) {
     return accountManager.getAccountSettingsRepository().findByAccountId(accountId)
         .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
+        .map(redactor::redact)
         .map(this::toEntityModel)
         .orElseThrow(() -> new AccountNotFoundProblem(accountId));
   }
@@ -178,6 +186,7 @@ public class AccountsController {
           return accountManager.getAccountSettingsRepository().save(entity);
         })
         .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
+        .map(redactor::redact)
         .map(this::toEntityModel)
         .orElseThrow(() -> new AccountNotFoundProblem(accountId));
   }

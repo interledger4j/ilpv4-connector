@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
+import java.util.function.Supplier;
 import javax.crypto.SecretKey;
 
 /**
@@ -69,11 +70,11 @@ public class JksCryptoConfig {
 
   @Bean
   ConnectorEncryptionService connectorEncryptionService(EncryptionService encryptionService,
-                                                        ConnectorSettings connectorSettings) {
+                                                        Supplier<ConnectorSettings> connectorSettings) {
     return new DefaultConnectorEncryptionService(encryptionService,
         KeyStoreType.JKS,
         jksFilename,
-        connectorSettings.keys(),
+        connectorSettings.get().keys(),
         EncryptionAlgorithm.AES_GCM);
   }
 

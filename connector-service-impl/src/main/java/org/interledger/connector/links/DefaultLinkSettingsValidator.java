@@ -7,8 +7,8 @@ import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.Base64;
@@ -21,7 +21,6 @@ public class DefaultLinkSettingsValidator implements LinkSettingsValidator {
   public DefaultLinkSettingsValidator(ConnectorEncryptionService encryptionService) {
     this.encryptionService = encryptionService;
   }
-
 
   @Override
   public <T extends LinkSettings> T validateSettings(T linkSettings) {
@@ -62,7 +61,7 @@ public class DefaultLinkSettingsValidator implements LinkSettingsValidator {
   }
 
   private EncryptedSecret getOrCreateEncryptedSecret(String sharedSecret) {
-    if (StringUtils.isEmpty(sharedSecret)) {
+    if (Strings.isNullOrEmpty(sharedSecret)) {
       throw new IllegalArgumentException("sharedSecret cannot be empty");
     }
     if (sharedSecret.startsWith("enc:")) {

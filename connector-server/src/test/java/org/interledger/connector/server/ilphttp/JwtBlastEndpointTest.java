@@ -14,6 +14,7 @@ import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.crypto.Decryptor;
+import org.interledger.link.LinkId;
 import org.interledger.link.LoopbackLink;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
@@ -69,9 +70,6 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
   TestRestTemplate template;
 
   @Autowired
-  AccountManager accountManager;
-
-  @Autowired
   ObjectMapper objectMapper;
 
   @Before
@@ -81,7 +79,7 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
     // Add the Alice Account to the Connector.
     ////////////////
 
-    if (!accountManager.getAccountSettingsRepository().findByAccountId(AccountId.of(ALICE)).isPresent()) {
+    if (!adminClient.findAccount(baseURI(), ALICE).isPresent()) {
       final Map<String, Object> customSettings = Maps.newHashMap();
       customSettings
           .put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256.name());
@@ -106,38 +104,7 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
           .assetScale(2)
           .assetCode("XRP")
           .build();
-      accountManager.createAccount(accountSettings);
-    }
-
-    ///////////////////////
-    // Add the Bob Account to the Connector.
-    ///////////////////////
-    if (!accountManager.getAccountSettingsRepository().findByAccountId(AccountId.of(BOB)).isPresent()) {
-      final Map<String, Object> customSettings = Maps.newHashMap();
-      customSettings
-          .put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256.name());
-      //customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, "https://bob.example.com/");
-      //customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
-      customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH);
-
-      customSettings
-          .put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256.name());
-      //customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
-      //customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_AUDIENCE, "https://bob.example.com/");
-      customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, CONNIE);
-      customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH);
-      customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://bob.example.com");
-
-      final AccountSettings accountSettings = AccountSettings.builder()
-          .accountId(AccountId.of("bob"))
-          .description("HTTP account for Bob using a simple shared-secret")
-          .accountRelationship(AccountRelationship.PEER)
-          .linkType(IlpOverHttpLink.LINK_TYPE)
-          .customSettings(customSettings)
-          .assetScale(2)
-          .assetCode("XRP")
-          .build();
-      accountManager.createAccount(accountSettings);
+      adminClient.createAccount(baseURI(), accountSettings);
     }
   }
 
@@ -148,7 +115,8 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
    */
   @Test
   public void bobPaysAliceUsingIlpOverHttp() {
-    final IlpOverHttpLink ilpOverHttpLink = ilpOverHttpLinkForBob();
+    createAccount(AccountId.of(BOB), ENCRYPTED_SHH);
+    final IlpOverHttpLink ilpOverHttpLink = ilpOverHttpLink(AccountId.of(BOB));
 
     ilpOverHttpLink.sendPacket(
         InterledgerPreparePacket.builder()
@@ -165,12 +133,25 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
 
 
   /**
-   * Validate the "test connection" method in the IL-DCP requestor.
+   * Validate the "test connection" method in the IL-DCP requestor created with an encrypted secret.
    */
   @Test
-  public void ildcpTestConnection() {
-    final IlpOverHttpLink ilpOverHttpLink = ilpOverHttpLinkForBob();
-    ilpOverHttpLink.testConnection();
+  public void ildcpTestConnectionWithEncryptedSecret() {
+    AccountId accountId = AccountId.of("mark");
+    createAccount(accountId, ENCRYPTED_SHH);
+    IlpOverHttpLink link = ilpOverHttpLink(accountId);
+    assertLink(link);
+  }
+
+  /**
+   * Validate the "test connection" method in the IL-DCP requestor created with an base64 encoded secret.
+   */
+  @Test
+  public void ildcpTestConnectionWithBase64Secret() {
+    AccountId accountId = AccountId.of("lisa");
+    createAccount(accountId, BASE64_SHH);
+    IlpOverHttpLink link = ilpOverHttpLink(accountId);
+    assertLink(link);
   }
 
   //////////////////
@@ -180,7 +161,7 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
   /**
    * Construct a new HTTP HTTP Client for the `bob` account
    */
-  private IlpOverHttpLink ilpOverHttpLinkForBob() {
+  private IlpOverHttpLink ilpOverHttpLink(AccountId accountId) {
 
     final IncomingLinkSettings incomingLinkSettings = IncomingLinkSettings.builder()
         .encryptedTokenSharedSecret(ENCRYPTED_SHH)
@@ -204,8 +185,8 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
         .outgoingHttpLinkSettings(outgoingLinkSettings)
         .build();
 
-    return new IlpOverHttpLink(
-        () -> InterledgerAddress.of("test.bob"),
+    IlpOverHttpLink link = new IlpOverHttpLink(
+        () -> InterledgerAddress.of("test." + accountId.value()),
         linkSettings,
         okHttpClient,
         objectMapper,
@@ -215,6 +196,8 @@ public class JwtBlastEndpointTest extends AbstractEndpointTest {
             outgoingLinkSettings
         )
     );
+    link.setLinkId(LinkId.of(accountId.value()));
+    return link;
   }
 
 }

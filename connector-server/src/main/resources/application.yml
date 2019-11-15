@@ -73,11 +73,9 @@ interledger:
     keys:
       secret0:
         alias: secret0
-        password: password
         version: 1
       accountSettings:
         alias: secret0
-        password: password
         version: 1
 
     enabledProtocols:

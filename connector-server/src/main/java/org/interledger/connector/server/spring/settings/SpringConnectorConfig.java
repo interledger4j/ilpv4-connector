@@ -68,6 +68,7 @@ import org.interledger.connector.server.spring.settings.javamoney.JavaMoneyConfi
 import org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration;
 import org.interledger.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
+import org.interledger.connector.settings.ConnectorKeys;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.SettlementService;
@@ -531,5 +532,15 @@ public class SpringConnectorConfig {
     executor.setThreadNamePrefix("default_task_executor_thread");
     executor.initialize();
     return executor;
+  }
+
+  @Bean
+  ConnectorKeys connectorKeys(Supplier<ConnectorSettings> connectorSettingsSupplier) {
+    return connectorSettingsSupplier.get().keys();
+  }
+
+  @Bean
+  Redactor redactor() {
+    return new Redactor();
   }
 }

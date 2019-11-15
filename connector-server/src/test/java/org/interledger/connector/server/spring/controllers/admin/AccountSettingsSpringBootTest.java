@@ -1,13 +1,12 @@
 package org.interledger.connector.server.spring.controllers.admin;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS;
-import static org.interledger.connector.server.spring.settings.blast.IlpOverHttpConfig.BLAST;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
-import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
@@ -17,23 +16,20 @@ import org.interledger.connector.accounts.ImmutableAccountSettings;
 import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.connector.server.ConnectorServerConfig;
+import org.interledger.connector.server.client.ConnectorAdminClient;
+import org.interledger.connector.server.spring.settings.Redactor;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.SettlementEngineClientException;
 import org.interledger.connector.settlement.client.CreateSettlementAccountResponse;
-import org.interledger.core.InterledgerAddress;
-import org.interledger.link.LinkId;
 import org.interledger.link.LoopbackLink;
-import org.interledger.link.exceptions.LinkException;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
-import org.interledger.link.http.auth.SimpleBearerTokenSupplier;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import feign.FeignException;
 import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
 import org.assertj.core.util.Maps;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -42,12 +38,13 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.json.BasicJsonTester;
 import org.springframework.boot.test.json.JsonContentAssert;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -58,6 +55,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
@@ -73,6 +72,7 @@ import java.util.UUID;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     classes = {ConnectorServerConfig.class}
 )
+@EnableFeignClients(clients = ConnectorAdminClient.class)
 @ActiveProfiles( {"test", "jks"})
 public class AccountSettingsSpringBootTest {
 
@@ -89,19 +89,21 @@ public class AccountSettingsSpringBootTest {
   private SettlementEngineClient settlementEngineClientMock;
 
   @Autowired
-  private TestRestTemplate restTemplate;
-
-  @Autowired
-  private ObjectMapper objectMapper;
-
-  @Autowired
-  @Qualifier(BLAST)
-  private OkHttpClient okHttpClient;
+  private ConnectorAdminClient adminClient;
 
   private BasicJsonTester jsonTester = new BasicJsonTester(getClass());
 
+  @Autowired
+  private TestRestTemplate restTemplate;
+
+  @LocalServerPort
+  private int localServerPort;
+
+  private URI baseURI;
+
   @Before
-  public void setUp() {
+  public void setUp() throws URISyntaxException {
+    baseURI = new URI("http://localhost:" + localServerPort);
     when(settlementEngineClientMock.createSettlementAccount(any(), any(), any()))
         .thenReturn(CreateSettlementAccountResponse.builder()
             .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
@@ -110,7 +112,7 @@ public class AccountSettingsSpringBootTest {
   }
 
   @Test
-  public void testMinimalCreate() throws IOException {
+  public void testMinimalCreate() {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     AccountSettings settings = AccountSettings.builder()
         .accountId(accountId)
@@ -121,34 +123,34 @@ public class AccountSettingsSpringBootTest {
         .createdAt(Instant.now())
         .build();
 
-    String response = assertPostAccount(settings, HttpStatus.CREATED);
-    assertThat(as(response, ImmutableAccountSettings.class)).isEqualTo(settings);
+    AccountSettings response = assertPostAccount(settings, HttpStatus.CREATED);
+    assertThat(response).isEqualTo(settings);
   }
 
   @Test
-  public void testFullyPopulatedCreate() throws IOException {
+  public void testFullyPopulatedCreate() {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     final AccountSettings settings = constructFullyPopulatedAccountSettings(accountId);
 
-    String response = assertPostAccount(settings, HttpStatus.CREATED);
-    assertThat(as(response, ImmutableAccountSettings.class)).isEqualTo(settings);
+    AccountSettings response = assertPostAccount(settings, HttpStatus.CREATED);
+    assertThat(response).isEqualTo(settings);
   }
 
   @Test
   @Ignore("Will be fixed once https://github.com/sappenin/java-ilpv4-connector/issues/416 is fixed.")
-  public void testFullyPopulatedCreateWithDuplicateSEAccountId() throws IOException {
+  public void testFullyPopulatedCreateWithDuplicateSEAccountId() {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     final AccountSettings accountSettings = constructFullyPopulatedAccountSettings(accountId);
 
-    String response = assertPostAccount(accountSettings, HttpStatus.CREATED);
-    assertThat(as(response, ImmutableAccountSettings.class)).isEqualTo(accountSettings);
+    AccountSettings response = assertPostAccount(accountSettings, HttpStatus.CREATED);
+    assertThat(response).isEqualTo(accountSettings);
 
     // Same account details with different accountId but same SettlementAccountId
     final AccountSettings newAccountSettingsWithDupSE = AccountSettings.builder().from(accountSettings)
         .accountId(AccountId.of(UUID.randomUUID().toString())).build();
 
     response = assertPostAccount(newAccountSettingsWithDupSE, HttpStatus.CONFLICT);
-    assertThat(as(response, AccountSettings.class)).isEqualTo(accountSettings);
+    assertThat(response).isEqualTo(accountSettings);
   }
 
   @Test
@@ -160,7 +162,7 @@ public class AccountSettingsSpringBootTest {
 
     final AccountSettings settings = constructFullyPopulatedAccountSettings(accountId);
 
-    String response = assertPostAccount(settings, HttpStatus.INTERNAL_SERVER_ERROR);
+    String response = assertPostAccountFailure(settings, HttpStatus.INTERNAL_SERVER_ERROR);
     JsonContentAssert assertJson = assertThat(jsonTester.from(response));
     assertJson.extractingJsonPathValue("status").isEqualTo("500");
     assertJson.extractingJsonPathValue("title").isEqualTo("Internal Server Error");
@@ -180,11 +182,11 @@ public class AccountSettingsSpringBootTest {
         .customSettings(Maps.newHashMap("custom", "value"))
         .build();
 
-    String createResponse = assertPostAccount(settings, HttpStatus.CREATED);
-    assertThat(as(createResponse, ImmutableAccountSettings.class)).isEqualTo(settings);
+    AccountSettings createResponse = assertPostAccount(settings, HttpStatus.CREATED);
+    assertThat(createResponse).isEqualTo(settings);
 
     // already exists
-    String recreateResponse = assertPostAccount(settings, HttpStatus.CONFLICT);
+    String recreateResponse = assertPostAccountFailure(settings, HttpStatus.CONFLICT);
     JsonContentAssert assertJson = assertThat(jsonTester.from(recreateResponse));
     assertJson.extractingJsonPathValue("status").isEqualTo(409);
     assertJson.extractingJsonPathValue("title").isEqualTo("Account Already Exists (`" + accountId.value() + "`)");
@@ -220,18 +222,11 @@ public class AccountSettingsSpringBootTest {
         .customSettings(customSettings)
         .build();
 
-    AccountSettings created = as(assertPostAccount(settings, HttpStatus.CREATED), AccountSettings.class);
+    AccountSettings created = assertPostAccount(settings, HttpStatus.CREATED);
     assertThat(created.customSettings().get(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET))
-        .isEqualTo("REDACTED");
-
-    String bearerToken = accountId + ":" + INCOMING_SECRET;
-    String badNewsBearerToken = accountId + ":" + OUTGOING_SECRET;
-
-    assertLink(simpleBearerLink(INCOMING_SECRET, bearerToken));
-
-    expectedException.expect(LinkException.class);
-    expectedException.expectMessage("Unauthorized");
-    assertLink(simpleBearerLink(INCOMING_SECRET, badNewsBearerToken));
+        .isEqualTo(Redactor.REDACTED);
+    assertThat(created.customSettings().get(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET))
+        .isEqualTo(Redactor.REDACTED);
   }
 
   /**
@@ -263,16 +258,21 @@ public class AccountSettingsSpringBootTest {
   // Private Helpers
   //////////////////
 
-  private String assertPostAccount(AccountSettings settings, HttpStatus expectedStatus) {
-    final HttpHeaders headers = new HttpHeaders();
-    headers.setBasicAuth(ADMIN, PASSWORD);
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    final HttpEntity httpEntity = new HttpEntity(settings, headers);
-
-    ResponseEntity<String> response =
-        restTemplate.postForEntity(SLASH_ACCOUNTS, httpEntity, String.class);
+  private AccountSettings assertPostAccount(AccountSettings settings, HttpStatus expectedStatus) {
+    ResponseEntity<ImmutableAccountSettings> response = adminClient.createAccount(baseURI, settings);
     assertThat(response.getStatusCode()).isEqualTo(expectedStatus);
     return response.getBody();
+  }
+
+  private String assertPostAccountFailure(AccountSettings settings, HttpStatus expectedStatus) {
+    try {
+      adminClient.createAccount(baseURI, settings);
+    } catch (FeignException e) {
+      assertThat(e.status()).isEqualTo(expectedStatus.value());
+      return e.contentUTF8();
+    }
+    fail("Expected failure");
+    return "not reachable";
   }
 
   private ImmutableAccountSettings constructFullyPopulatedAccountSettings(final AccountId accountId) {
@@ -310,47 +310,4 @@ public class AccountSettingsSpringBootTest {
         .build();
   }
 
-  private <T> T as(String value, Class<T> toClass) throws IOException {
-    return objectMapper.readValue(value, toClass);
-  }
-
-  private IlpOverHttpLink simpleBearerLink(String sharedSecret, String bearerToken) {
-
-    final OutgoingLinkSettings outgoingLinkSettings = OutgoingLinkSettings.builder()
-        .authType(IlpOverHttpLinkSettings.AuthType.SIMPLE)
-        .tokenSubject("bob")
-        .tokenIssuer(HttpUrl.parse("https://bob.example.com/"))
-        .tokenAudience(HttpUrl.parse("https://n-a.example.com"))
-        .url(HttpUrl.parse(restTemplate.getRootUri() + "/ilp"))
-        // The is the encrypted variant of `shh`
-        .encryptedTokenSharedSecret(sharedSecret)
-        .build();
-
-    final IncomingLinkSettings incomingLinkSettings = IncomingLinkSettings.builder()
-        .encryptedTokenSharedSecret(sharedSecret)
-        .authType(IlpOverHttpLinkSettings.AuthType.SIMPLE)
-        .tokenIssuer(outgoingLinkSettings.tokenIssuer())
-        .tokenAudience(outgoingLinkSettings.tokenAudience())
-        .build();
-
-    final IlpOverHttpLinkSettings linkSettings = IlpOverHttpLinkSettings.builder()
-        .incomingHttpLinkSettings(incomingLinkSettings)
-        .outgoingHttpLinkSettings(outgoingLinkSettings)
-        .build();
-
-    IlpOverHttpLink link = new IlpOverHttpLink(
-        () -> InterledgerAddress.of("test.bob"),
-        linkSettings,
-        okHttpClient,
-        objectMapper,
-        InterledgerCodecContextFactory.oer(),
-        new SimpleBearerTokenSupplier(bearerToken)
-    );
-    link.setLinkId(LinkId.of(bearerToken));
-    return link;
-  }
-
-  private void assertLink(IlpOverHttpLink simpleBearerLink) {
-    simpleBearerLink.testConnection();
-  }
 }

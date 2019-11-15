@@ -11,6 +11,7 @@ import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings;
 import org.interledger.connector.links.DefaultLinkSettingsFactory;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.server.spring.settings.ConnectorSettingsFromPropertyFileTest;
 import org.interledger.connector.server.spring.settings.crypto.JksCryptoConfig;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.ModifiableConnectorSettings;
@@ -39,7 +40,7 @@ import java.util.Optional;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(
-    classes = {JksCryptoConfig.class}
+    classes = {JksCryptoConfig.class, ConnectorSettingsFromPropertyFileTest.TestConfiguration.class}
 )
 @ActiveProfiles("connector-unit-test")
 public class IlpOverHttpAuthenticationProviderTest {
