@@ -89,6 +89,9 @@ public class AccountSettingsSpringBootTest {
   private SettlementEngineClient settlementEngineClientMock;
 
   @Autowired
+  private TestRestTemplate restTemplate;
+
+  @Autowired
   private ConnectorAdminClient adminClient;
 
   private BasicJsonTester jsonTester = new BasicJsonTester(getClass());
@@ -148,8 +151,8 @@ public class AccountSettingsSpringBootTest {
     final AccountSettings newAccountSettingsWithDupSE = AccountSettings.builder().from(accountSettings)
       .accountId(AccountId.of(UUID.randomUUID().toString())).build();
 
-    response = assertPostAccount(newAccountSettingsWithDupSE, HttpStatus.CONFLICT);
-    JsonContentAssert assertJson = assertThat(jsonTester.from(response));
+    String rawResponse = assertPostAccountFailure(newAccountSettingsWithDupSE, HttpStatus.CONFLICT);
+    JsonContentAssert assertJson = assertThat(jsonTester.from(rawResponse));
     assertJson.extractingJsonPathValue("status").isEqualTo(409);
     assertJson.extractingJsonPathValue("title")
       .isEqualTo("Account Settlement Engine Already Exists [accountId: `" +
