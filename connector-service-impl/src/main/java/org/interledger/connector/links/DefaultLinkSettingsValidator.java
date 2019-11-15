@@ -1,6 +1,7 @@
 package org.interledger.connector.links;
 
 import org.interledger.connector.crypto.ConnectorEncryptionService;
+import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.link.LinkSettings;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
@@ -13,13 +14,21 @@ import com.google.common.collect.Maps;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Map;
+import java.util.function.Supplier;
 
+/**
+ * Implementation that validates that links settings have required fields and that for ILP-OVER-HTTP link settings,
+ * that the incoming and/or outgoing secrets are decryptable
+ */
 public class DefaultLinkSettingsValidator implements LinkSettingsValidator {
 
   private final ConnectorEncryptionService encryptionService;
+  private final Supplier<ConnectorSettings> connectorSettingsSupplier;
 
-  public DefaultLinkSettingsValidator(ConnectorEncryptionService encryptionService) {
+  public DefaultLinkSettingsValidator(ConnectorEncryptionService encryptionService,
+                                      Supplier<ConnectorSettings> connectorSettingsSupplier) {
     this.encryptionService = encryptionService;
+    this.connectorSettingsSupplier = connectorSettingsSupplier;
   }
 
   @Override
@@ -78,7 +87,12 @@ public class DefaultLinkSettingsValidator implements LinkSettingsValidator {
   }
 
   private EncryptedSecret validate(EncryptedSecret encryptedSecret) {
-    return encryptionService.getDecryptor().withDecrypted(encryptedSecret, (decrypted) -> encryptedSecret);
+    return encryptionService.getDecryptor().withDecrypted(encryptedSecret, (decrypted) -> {
+      if (connectorSettingsSupplier.get().isRequire32ByteSharedSecrets() && decrypted.length < 32) {
+        throw new IllegalArgumentException("shared secret must be 32 bytes");
+      }
+      return encryptedSecret;
+    });
   }
 
 }

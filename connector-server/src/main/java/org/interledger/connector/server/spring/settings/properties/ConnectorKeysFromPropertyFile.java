@@ -11,8 +11,6 @@ public class ConnectorKeysFromPropertyFile implements ConnectorKeys {
 
   private ConnectorKeyFromPropertyFile accountSettings;
 
-  private boolean require32Bytes;
-
   public ConnectorKeyFromPropertyFile secret0() {
     return secret0;
   }

@@ -3,6 +3,7 @@ interledger:
   connector:
     # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
     adminPassword: password
+    require32ByteSharedSecrets: false
     keys:
       secret0:
         alias: secret0

@@ -205,8 +205,9 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  LinkSettingsValidator linkSettingsValidator(ConnectorEncryptionService encryptionService) {
-    return new DefaultLinkSettingsValidator(encryptionService);
+  LinkSettingsValidator linkSettingsValidator(ConnectorEncryptionService encryptionService,
+                                              Supplier<ConnectorSettings> connectorSettingsSupplier) {
+    return new DefaultLinkSettingsValidator(encryptionService, connectorSettingsSupplier);
   }
 
 
@@ -546,12 +547,8 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  ConnectorKeys connectorKeys(Supplier<ConnectorSettings> connectorSettingsSupplier) {
+  protected ConnectorKeys connectorKeys(Supplier<ConnectorSettings> connectorSettingsSupplier) {
     return connectorSettingsSupplier.get().keys();
   }
 
-  @Bean
-  Redactor redactor() {
-    return new Redactor();
-  }
 }

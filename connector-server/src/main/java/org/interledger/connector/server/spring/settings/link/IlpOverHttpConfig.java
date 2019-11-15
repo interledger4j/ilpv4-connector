@@ -9,6 +9,7 @@ import static org.interledger.connector.core.ConfigConstants.TRUE;
 import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.connector.accounts.DefaultAccountIdResolver;
 import org.interledger.connector.accounts.IlpOverHttpAccountIdResolver;
+import org.interledger.connector.server.spring.settings.Redactor;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.link.LinkFactoryProvider;
@@ -138,6 +139,11 @@ public class IlpOverHttpConfig {
   @Bean
   protected IlpOverHttpAccountIdResolver ilpOverHttpAccountIdResolver() {
     return new DefaultAccountIdResolver();
+  }
+
+  @Bean
+  protected Redactor redactor() {
+    return new Redactor();
   }
 
   @PostConstruct
