@@ -1,11 +1,11 @@
 package org.interledger.connector.settlement.client;
 
+import org.interledger.connector.accounts.SettlementEngineAccountId;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
-import org.interledger.connector.accounts.SettlementEngineAccountId;
-import org.interledger.connector.settlement.client.ImmutableCreateSettlementAccountRequest;
 
 import java.util.Optional;
 

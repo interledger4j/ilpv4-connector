@@ -21,32 +21,32 @@ public class MaxPacketAmountFilter extends AbstractPacketFilter implements Packe
 
   @Override
   public InterledgerResponsePacket doFilter(
-      final AccountSettings sourceAccountSettings,
-      final InterledgerPreparePacket sourcePreparePacket,
-      final PacketSwitchFilterChain filterChain
+    final AccountSettings sourceAccountSettings,
+    final InterledgerPreparePacket sourcePreparePacket,
+    final PacketSwitchFilterChain filterChain
   ) {
     Objects.requireNonNull(sourceAccountSettings);
     Objects.requireNonNull(sourcePreparePacket);
     Objects.requireNonNull(filterChain);
     // If the max packet amount is present...
     return sourceAccountSettings.maximumPacketAmount()
-        //  if Packet amount is greater-than `maxPacketAmount`, then Reject.
-        .filter(maxPacketAmount -> sourcePreparePacket.getAmount().longValue() > maxPacketAmount)
-        .map(maxPacketAmount -> {
-          logger.error(
-              "Rejecting packet for exceeding max amount. accountId={} maxAmount={} actualAmount={}",
-              sourceAccountSettings.accountId(), maxPacketAmount, sourcePreparePacket.getAmount()
-          );
-          return (InterledgerResponsePacket) packetRejector.reject(
-              LinkId.of(sourceAccountSettings.accountId().value()),
-              sourcePreparePacket,
-              InterledgerErrorCode.F08_AMOUNT_TOO_LARGE,
-              String.format(
-                  "Packet size too large: maxAmount=%s actualAmount=%s", maxPacketAmount,
-                  sourcePreparePacket.getAmount())
-          );
-        })
-        // Otherwise, the packet amount is fine...
-        .orElseGet(() -> filterChain.doFilter(sourceAccountSettings, sourcePreparePacket));
+      //  if Packet amount is greater-than `maxPacketAmount`, then Reject.
+      .filter(maxPacketAmount -> sourcePreparePacket.getAmount().compareTo(maxPacketAmount) > 0)
+      .map(maxPacketAmount -> {
+        logger.error(
+          "Rejecting packet for exceeding max amount. accountId={} maxAmount={} actualAmount={}",
+          sourceAccountSettings.accountId(), maxPacketAmount, sourcePreparePacket.getAmount()
+        );
+        return (InterledgerResponsePacket) packetRejector.reject(
+          LinkId.of(sourceAccountSettings.accountId().value()),
+          sourcePreparePacket,
+          InterledgerErrorCode.F08_AMOUNT_TOO_LARGE,
+          String.format(
+            "Packet size too large: maxAmount=%s actualAmount=%s", maxPacketAmount,
+            sourcePreparePacket.getAmount())
+        );
+      })
+      // Otherwise, the packet amount is fine...
+      .orElseGet(() -> filterChain.doFilter(sourceAccountSettings, sourcePreparePacket));
   }
 }
