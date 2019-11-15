@@ -23,7 +23,6 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;
-import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -110,7 +109,7 @@ public class DefaultAccountManager implements AccountManager {
     try {
       entity = this.accountSettingsRepository.save(accountSettingsEntity);
     } catch (Exception e) {
-      if (e instanceof DataIntegrityViolationException && e.getCause() instanceof ConstraintViolationException) {
+      if (e.getCause() instanceof ConstraintViolationException) {
         ConstraintViolationException cause = (ConstraintViolationException) e.getCause();
         if (cause.getConstraintName().contains(DataConstants.ConstraintNames.ACCOUNT_SETTINGS_SETTLEMENT_ENGINE)) {
           System.out.println(e);

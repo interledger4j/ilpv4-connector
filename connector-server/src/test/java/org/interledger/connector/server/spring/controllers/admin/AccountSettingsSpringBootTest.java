@@ -22,6 +22,7 @@ import org.interledger.link.LoopbackLink;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
 import org.assertj.core.util.Maps;
 import org.junit.Before;
@@ -54,8 +55,8 @@ import java.util.UUID;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = {ConnectorServerConfig.class}
+  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  classes = {ConnectorServerConfig.class}
 )
 @ActiveProfiles( {"test"})
 public class AccountSettingsSpringBootTest {
@@ -73,30 +74,30 @@ public class AccountSettingsSpringBootTest {
   private ObjectMapper objectMapper;
 
   private BasicJsonTester jsonTester = new BasicJsonTester(getClass());
-  
+
   private SettlementEngineAccountId mockSettlementEngineAccountId;
 
   @Before
   public void setUp() {
     mockSettlementEngineAccountId = SettlementEngineAccountId.of(UUID.randomUUID().toString());
     when(settlementEngineClientMock.createSettlementAccount(any(), any(), any()))
-        .thenReturn(CreateSettlementAccountResponse.builder()
-            .settlementEngineAccountId(mockSettlementEngineAccountId)
-            .build()
-        );
+      .thenReturn(CreateSettlementAccountResponse.builder()
+        .settlementEngineAccountId(mockSettlementEngineAccountId)
+        .build()
+      );
   }
 
   @Test
   public void testMinimalCreate() throws IOException {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     AccountSettings settings = AccountSettings.builder()
-        .accountId(accountId)
-        .accountRelationship(AccountRelationship.CHILD)
-        .assetCode("FUD")
-        .assetScale(6)
-        .linkType(LoopbackLink.LINK_TYPE)
-        .createdAt(Instant.now())
-        .build();
+      .accountId(accountId)
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(LoopbackLink.LINK_TYPE)
+      .createdAt(Instant.now())
+      .build();
 
     String response = assertPostAccount(settings, HttpStatus.CREATED);
     assertThat(as(response, ImmutableAccountSettings.class)).isEqualTo(settings);
@@ -121,29 +122,29 @@ public class AccountSettingsSpringBootTest {
 
     // Same account details with different accountId but same SettlementAccountId
     final AccountSettings newAccountSettingsWithDupSE = AccountSettings.builder().from(accountSettings)
-        .accountId(AccountId.of(UUID.randomUUID().toString())).build();
+      .accountId(AccountId.of(UUID.randomUUID().toString())).build();
 
     response = assertPostAccount(newAccountSettingsWithDupSE, HttpStatus.CONFLICT);
     JsonContentAssert assertJson = assertThat(jsonTester.from(response));
     assertJson.extractingJsonPathValue("status").isEqualTo(409);
     assertJson.extractingJsonPathValue("title")
-        .isEqualTo("Account Settlement Engine Already Exists [accountId: `" +
-            newAccountSettingsWithDupSE.accountId().value() + "`, settlementEngineId: `" +
-            mockSettlementEngineAccountId.value() + "`]");
+      .isEqualTo("Account Settlement Engine Already Exists [accountId: `" +
+        newAccountSettingsWithDupSE.accountId().value() + "`, settlementEngineId: `" +
+        mockSettlementEngineAccountId.value() + "`]");
   }
 
   @Test
   public void testFullyPopulatedCreateWithSettlementEngineFailure() {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     doThrow(new SettlementEngineClientException(
-        "Unable to create account in settlement engine.", accountId, Optional.empty())
+      "Unable to create account in settlement engine.", accountId, Optional.empty())
     ).when(settlementEngineClientMock).createSettlementAccount(any(), any(), any());
 
     final AccountSettings settings = constructFullyPopulatedAccountSettings(accountId);
 
     String response = assertPostAccount(settings, HttpStatus.INTERNAL_SERVER_ERROR);
     JsonContentAssert assertJson = assertThat(jsonTester.from(response));
-    assertJson.extractingJsonPathValue("status").isEqualTo("500");
+    assertJson.extractingJsonPathValue("status").isEqualTo(500);
     assertJson.extractingJsonPathValue("title").isEqualTo("Internal Server Error");
     assertJson.extractingJsonPathValue("detail").isEqualTo("Unable to create account in settlement engine.");
   }
@@ -152,14 +153,14 @@ public class AccountSettingsSpringBootTest {
   public void testCreateExistingIdReturns409() throws IOException {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     AccountSettings settings = AccountSettings.builder()
-        .accountId(accountId)
-        .accountRelationship(AccountRelationship.CHILD)
-        .assetCode("FUD")
-        .assetScale(6)
-        .linkType(LoopbackLink.LINK_TYPE)
-        .createdAt(Instant.now())
-        .customSettings(Maps.newHashMap("custom", "value"))
-        .build();
+      .accountId(accountId)
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(LoopbackLink.LINK_TYPE)
+      .createdAt(Instant.now())
+      .customSettings(Maps.newHashMap("custom", "value"))
+      .build();
 
     String createResponse = assertPostAccount(settings, HttpStatus.CREATED);
     assertThat(as(createResponse, ImmutableAccountSettings.class)).isEqualTo(settings);
@@ -171,7 +172,7 @@ public class AccountSettingsSpringBootTest {
     assertJson.extractingJsonPathValue("title").isEqualTo("Account Already Exists (`" + accountId.value() + "`)");
     assertJson.extractingJsonPathValue("accountId").isEqualTo(accountId.value());
     assertJson.extractingJsonPathValue("type")
-        .isEqualTo("https://errors.interledger.org/accounts/account-already-exists");
+      .isEqualTo("https://errors.interledger.org/accounts/account-already-exists");
   }
 
   /**
@@ -184,18 +185,18 @@ public class AccountSettingsSpringBootTest {
     headers.setContentType(MediaType.APPLICATION_JSON);
 
     Map<String, Object> rawValues = ImmutableMap.<String, Object>builder()
-        .put("accountId", AccountId.of(UUID.randomUUID().toString()))
-        .put("accountRelationship", AccountRelationship.CHILD)
-        .put("assetCode", "FUD")
-        .put("assetScale", 6)
-        .put("linkType", LoopbackLink.LINK_TYPE)
-        .put("whatHasTwoThumbsAndLikesInterledger", "this guy") // random unknown property, should be ignored by server
-        .build();
+      .put("accountId", AccountId.of(UUID.randomUUID().toString()))
+      .put("accountRelationship", AccountRelationship.CHILD)
+      .put("assetCode", "FUD")
+      .put("assetScale", 6)
+      .put("linkType", LoopbackLink.LINK_TYPE)
+      .put("whatHasTwoThumbsAndLikesInterledger", "this guy") // random unknown property, should be ignored by server
+      .build();
 
     final HttpEntity httpEntity = new HttpEntity(rawValues, headers);
 
     ResponseEntity response =
-        restTemplate.exchange(SLASH_ACCOUNTS, HttpMethod.POST, httpEntity, Void.class);
+      restTemplate.exchange(SLASH_ACCOUNTS, HttpMethod.POST, httpEntity, Void.class);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
   }
 
@@ -210,7 +211,7 @@ public class AccountSettingsSpringBootTest {
     final HttpEntity httpEntity = new HttpEntity(settings, headers);
 
     ResponseEntity<String> response =
-        restTemplate.postForEntity(SLASH_ACCOUNTS, httpEntity, String.class);
+      restTemplate.postForEntity(SLASH_ACCOUNTS, httpEntity, String.class);
     assertThat(response.getStatusCode()).isEqualTo(expectedStatus);
     return response.getBody();
   }
@@ -219,35 +220,35 @@ public class AccountSettingsSpringBootTest {
     Objects.requireNonNull(accountId);
 
     return AccountSettings.builder()
-        .accountId(accountId)
-        .description("A fully-populated account")
-        .accountRelationship(AccountRelationship.CHILD)
-        .assetCode("FUD")
-        .assetScale(6)
-        .linkType(LoopbackLink.LINK_TYPE)
-        .createdAt(Instant.now())
-        .balanceSettings(AccountBalanceSettings.builder()
-            .settleThreshold(10L)
-            .minBalance(9L)
-            .settleTo(8L)
-            .build())
-        .settlementEngineDetails(SettlementEngineDetails.builder()
-            .baseUrl(HttpUrl.parse("http://example.com"))
-            .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
-            .putCustomSettings("settlementFoo", "settlementBar")
-            .build())
-        .rateLimitSettings(AccountRateLimitSettings.builder()
-            .maxPacketsPerSecond(100)
-            .build())
-        .maximumPacketAmount(200L)
-        .isConnectionInitiator(true)
-        .ilpAddressSegment("foo")
-        .isSendRoutes(true)
-        .isReceiveRoutes(true)
-        .isInternal(true)
-        .modifiedAt(Instant.MAX)
-        .customSettings(Maps.newHashMap("custom", "value"))
-        .build();
+      .accountId(accountId)
+      .description("A fully-populated account")
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(LoopbackLink.LINK_TYPE)
+      .createdAt(Instant.now())
+      .balanceSettings(AccountBalanceSettings.builder()
+        .settleThreshold(10L)
+        .minBalance(9L)
+        .settleTo(8L)
+        .build())
+      .settlementEngineDetails(SettlementEngineDetails.builder()
+        .baseUrl(HttpUrl.parse("http://example.com"))
+        .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
+        .putCustomSettings("settlementFoo", "settlementBar")
+        .build())
+      .rateLimitSettings(AccountRateLimitSettings.builder()
+        .maxPacketsPerSecond(100)
+        .build())
+      .maximumPacketAmount(UnsignedLong.valueOf(200L))
+      .isConnectionInitiator(true)
+      .ilpAddressSegment("foo")
+      .isSendRoutes(true)
+      .isReceiveRoutes(true)
+      .isInternal(true)
+      .modifiedAt(Instant.MAX)
+      .customSettings(Maps.newHashMap("custom", "value"))
+      .build();
   }
 
   private <T> T as(String value, Class<T> toClass) throws IOException {

@@ -51,7 +51,9 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorMixedAssetCodeTestIT.class);
   private static final Network network = Network.newNetwork();
-  private static Topology topology = TwoConnectorPeerIlpOverHttpTopology.init(NANO_YEN, MICROCENTS_EUR, 1000000000L);
+  private static Topology topology = TwoConnectorPeerIlpOverHttpTopology.init(
+      NANO_YEN, MICROCENTS_EUR, UnsignedLong.valueOf(1000000000L)
+  );
   private static GenericContainer redis = ContainerHelper.redis(network);
   private static GenericContainer postgres = ContainerHelper.postgres(network);
 

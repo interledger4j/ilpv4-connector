@@ -12,6 +12,7 @@ import org.interledger.connector.persistence.entities.AccountBalanceSettingsEnti
 import org.interledger.connector.persistence.entities.AccountRateLimitSettingsEntity;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 
+import com.google.common.primitives.UnsignedLong;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
@@ -55,22 +56,22 @@ public class AccountsController {
    * @param accountSettings The {@link AccountSettings} to create in this Connector.
    *
    * @return An {@link HttpEntity} that contains a {@link EntityModel} that contains the created {@link
-   *     AccountSettings}.
+   *   AccountSettings}.
    */
   @RequestMapping(
-      path = PathConstants.SLASH_ACCOUNTS,
-      method = RequestMethod.POST,
-      consumes = {APPLICATION_JSON_VALUE},
-      produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    path = PathConstants.SLASH_ACCOUNTS,
+    method = RequestMethod.POST,
+    consumes = {APPLICATION_JSON_VALUE},
+    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public HttpEntity<EntityModel<AccountSettings>> createAccount(
-      @RequestBody final AccountSettings.AbstractAccountSettings accountSettings
+    @RequestBody final AccountSettings.AbstractAccountSettings accountSettings
   ) {
     Objects.requireNonNull(accountSettings);
 
     final AccountSettings returnableAccountSettings = this.accountManager.createAccount(accountSettings);
     final Link selfLink =
-        linkTo(methodOn(AccountsController.class).getAccount(returnableAccountSettings.accountId())).withSelfRel();
+      linkTo(methodOn(AccountsController.class).getAccount(returnableAccountSettings.accountId())).withSelfRel();
     final EntityModel resource = new EntityModel(returnableAccountSettings, selfLink);
 
     final HttpHeaders headers = new HttpHeaders();
@@ -84,26 +85,26 @@ public class AccountsController {
    * Obtain a pageable collection of accounts on this connector.
    *
    * @return A {@link HttpEntity} that contains a {@link CollectionModel} that contains an {@link AccountSettings} for
-   *     each account that exist on this Connector.
+   *   each account that exist on this Connector.
    */
   @RequestMapping(
-      path = PathConstants.SLASH_ACCOUNTS,
-      method = RequestMethod.GET,
-      produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    path = PathConstants.SLASH_ACCOUNTS,
+    method = RequestMethod.GET,
+    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public HttpEntity<PagedModel<EntityModel<AccountSettings>>> getAccounts() {
 
     // TODO: Add paging per https://github.com/sappenin/java-ilpv4-connector/issues/404
     final List<EntityModel<AccountSettings>> accountSettingsResources =
-        StreamSupport.stream(this.accountManager.getAccountSettingsRepository().findAll().spliterator(), false)
-            .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
-            .map(this::toEntityModel)
-            .collect(Collectors.toList());
+      StreamSupport.stream(this.accountManager.getAccountSettingsRepository().findAll().spliterator(), false)
+        .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
+        .map(this::toEntityModel)
+        .collect(Collectors.toList());
 
     PagedModel<EntityModel<AccountSettings>> pagedCollectionModel = new PagedModel(
-        accountSettingsResources,
-        // TODO: Connect these numbers to spring-data paging result per #404 above.
-        new PageMetadata(accountSettingsResources.size(), 0, accountSettingsResources.size())
+      accountSettingsResources,
+      // TODO: Connect these numbers to spring-data paging result per #404 above.
+      new PageMetadata(accountSettingsResources.size(), 0, accountSettingsResources.size())
     );
 
     return new HttpEntity(pagedCollectionModel);
@@ -115,20 +116,20 @@ public class AccountsController {
    * @param accountId The {@link AccountId} for the account to retrieve.
    *
    * @return An {@link HttpEntity} that contains a {@link EntityModel} that contains the created {@link
-   *     AccountSettings}.
+   *   AccountSettings}.
    */
   @RequestMapping(
-      path = PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID,
-      method = RequestMethod.GET,
-      produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    path = PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID,
+    method = RequestMethod.GET,
+    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public EntityModel<AccountSettings> getAccount(
-      @PathVariable(PathConstants.ACCOUNT_ID) final AccountId accountId
+    @PathVariable(PathConstants.ACCOUNT_ID) final AccountId accountId
   ) {
     return accountManager.getAccountSettingsRepository().findByAccountId(accountId)
-        .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
-        .map(this::toEntityModel)
-        .orElseThrow(() -> new AccountNotFoundProblem(accountId));
+      .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
+      .map(this::toEntityModel)
+      .orElseThrow(() -> new AccountNotFoundProblem(accountId));
   }
 
   /**
@@ -138,55 +139,55 @@ public class AccountsController {
    * @param accountSettings An {@link AccountSettings} containing information to update the account with.
    *
    * @return An {@link HttpEntity} that contains a {@link EntityModel} that contains the created {@link
-   *     AccountSettings}.
+   *   AccountSettings}.
    */
   @RequestMapping(
-      path = PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID,
-      method = RequestMethod.PUT,
-      consumes = {APPLICATION_JSON_VALUE},
-      produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    path = PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID,
+    method = RequestMethod.PUT,
+    consumes = {APPLICATION_JSON_VALUE},
+    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public EntityModel<AccountSettings> updateAccount(
-      @PathVariable(PathConstants.ACCOUNT_ID) final AccountId accountId,
-      @RequestBody final AccountSettings.AbstractAccountSettings accountSettings
+    @PathVariable(PathConstants.ACCOUNT_ID) final AccountId accountId,
+    @RequestBody final AccountSettings.AbstractAccountSettings accountSettings
   ) {
 
     return accountManager.getAccountSettingsRepository().findByAccountId(accountId)
-        .map(entity -> {
+      .map(entity -> {
 
-          // Ignore update accountId
+        // Ignore update accountId
 
-          entity.setAssetCode(accountSettings.assetCode());
-          entity.setAssetScale(accountSettings.assetScale());
-          entity.setAccountRelationship(accountSettings.accountRelationship());
-          entity.setBalanceSettings(
-              new AccountBalanceSettingsEntity(accountSettings.balanceSettings())
-          );
-          entity.setConnectionInitiator(accountSettings.isConnectionInitiator());
-          entity.setDescription(accountSettings.description());
-          entity.setCustomSettings(accountSettings.customSettings());
-          entity.setIlpAddressSegment(accountSettings.ilpAddressSegment());
-          entity.setInternal(accountSettings.isInternal());
-          entity.setLinkType(accountSettings.linkType());
-          entity.setMaximumPacketAmount(accountSettings.maximumPacketAmount());
-          entity.setRateLimitSettings(
-              new AccountRateLimitSettingsEntity(accountSettings.rateLimitSettings())
-          );
-          entity.setReceiveRoutes(accountSettings.isReceiveRoutes());
-          entity.setSendRoutes(accountSettings.isSendRoutes());
+        entity.setAssetCode(accountSettings.assetCode());
+        entity.setAssetScale(accountSettings.assetScale());
+        entity.setAccountRelationship(accountSettings.accountRelationship());
+        entity.setBalanceSettings(
+          new AccountBalanceSettingsEntity(accountSettings.balanceSettings())
+        );
+        entity.setConnectionInitiator(accountSettings.isConnectionInitiator());
+        entity.setDescription(accountSettings.description());
+        entity.setCustomSettings(accountSettings.customSettings());
+        entity.setIlpAddressSegment(accountSettings.ilpAddressSegment());
+        entity.setInternal(accountSettings.isInternal());
+        entity.setLinkType(accountSettings.linkType());
+        entity.setMaximumPacketAmount(accountSettings.maximumPacketAmount().map(UnsignedLong::bigIntegerValue));
+        entity.setRateLimitSettings(
+          new AccountRateLimitSettingsEntity(accountSettings.rateLimitSettings())
+        );
+        entity.setReceiveRoutes(accountSettings.isReceiveRoutes());
+        entity.setSendRoutes(accountSettings.isSendRoutes());
 
-          return accountManager.getAccountSettingsRepository().save(entity);
-        })
-        .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
-        .map(this::toEntityModel)
-        .orElseThrow(() -> new AccountNotFoundProblem(accountId));
+        return accountManager.getAccountSettingsRepository().save(entity);
+      })
+      .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
+      .map(this::toEntityModel)
+      .orElseThrow(() -> new AccountNotFoundProblem(accountId));
   }
 
   private EntityModel<AccountSettings> toEntityModel(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
 
     final Link selfLink =
-        linkTo(methodOn(AccountsController.class).getAccount(accountSettings.accountId())).withSelfRel();
+      linkTo(methodOn(AccountsController.class).getAccount(accountSettings.accountId())).withSelfRel();
     return new EntityModel(accountSettings, selfLink);
 
   }
