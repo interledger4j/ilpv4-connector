@@ -171,7 +171,7 @@ public class AccountSettingsSpringBootTest {
   }
 
   @Test
-  public void testCreateExistingIdReturns409() throws IOException {
+  public void testCreateExistingIdReturns409() {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     AccountSettings settings = AccountSettings.builder()
       .accountId(accountId)
@@ -196,9 +196,8 @@ public class AccountSettingsSpringBootTest {
       .isEqualTo("https://errors.interledger.org/accounts/account-already-exists");
   }
 
-
   @Test
-  public void testCreateAndAuthAccountWithSimple() throws IOException {
+  public void testCreateAndAuthAccountWithSimple() {
     Map<String, Object> customSettings = com.google.common.collect.Maps.newHashMap();
     customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE.name());
     customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, "https://bob.example.com/");
@@ -228,6 +227,37 @@ public class AccountSettingsSpringBootTest {
       .isEqualTo(Redactor.REDACTED);
     assertThat(created.customSettings().get(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET))
       .isEqualTo(Redactor.REDACTED);
+  }
+
+  @Test
+  public void createWithBadSecretFails() {
+    String badEncodedSecret = "enc:JKS:crypto.p12:secret0:1:aes_gcm:!!!!!";
+
+    Map<String, Object> customSettings = com.google.common.collect.Maps.newHashMap();
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE.name());
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, "https://bob.example.com/");
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, badEncodedSecret);
+
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE.name());
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_AUDIENCE, "https://bob.example.com/");
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, "connie");
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, OUTGOING_SECRET);
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://bob.example.com");
+
+    final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
+    AccountSettings settings = AccountSettings.builder()
+      .accountId(accountId)
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
+      .createdAt(Instant.now())
+      .customSettings(customSettings)
+      .build();
+
+    assertPostAccountFailure(settings, HttpStatus.BAD_REQUEST);
   }
 
   /**
@@ -280,35 +310,6 @@ public class AccountSettingsSpringBootTest {
     Objects.requireNonNull(accountId);
 
     return AccountSettings.builder()
-      .accountId(accountId)
-      .description("A fully-populated account")
-      .accountRelationship(AccountRelationship.CHILD)
-      .assetCode("FUD")
-      .assetScale(6)
-      .linkType(LoopbackLink.LINK_TYPE)
-      .createdAt(Instant.now())
-      .balanceSettings(AccountBalanceSettings.builder()
-        .settleThreshold(10L)
-        .minBalance(9L)
-        .settleTo(8L)
-        .build())
-      .settlementEngineDetails(SettlementEngineDetails.builder()
-        .baseUrl(HttpUrl.parse("http://example.com"))
-        .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
-        .putCustomSettings("settlementFoo", "settlementBar")
-        .build())
-      .rateLimitSettings(AccountRateLimitSettings.builder()
-        .maxPacketsPerSecond(100)
-        .build())
-      .maximumPacketAmount(200L)
-      .isConnectionInitiator(true)
-      .ilpAddressSegment("foo")
-      .isSendRoutes(true)
-      .isReceiveRoutes(true)
-      .isInternal(true)
-      .modifiedAt(Instant.MAX)
-      .customSettings(Maps.newHashMap("custom", "value"))
-      .build();
       .accountId(accountId)
       .description("A fully-populated account")
       .accountRelationship(AccountRelationship.CHILD)

@@ -82,7 +82,7 @@ public interface ConnectorSettings {
    */
   @Value.Default
   default int minMessageWindowMillis() {
-    return 100;
+    return 1000;
   }
 
   /**

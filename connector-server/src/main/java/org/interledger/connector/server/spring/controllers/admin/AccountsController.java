@@ -174,7 +174,7 @@ public class AccountsController {
         entity.setIlpAddressSegment(accountSettings.ilpAddressSegment());
         entity.setInternal(accountSettings.isInternal());
         entity.setLinkType(accountSettings.linkType());
-        entity.setMaximumPacketAmount(accountSettings.maximumPacketAmount());
+        entity.setMaximumPacketAmount(accountSettings.maximumPacketAmount().map(UnsignedLong::bigIntegerValue));
         entity.setRateLimitSettings(
           new AccountRateLimitSettingsEntity(accountSettings.rateLimitSettings())
         );

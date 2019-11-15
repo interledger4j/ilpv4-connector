@@ -135,16 +135,21 @@ public class DefaultAccountManager implements AccountManager {
   }
 
   private AccountSettings validateLinkSettings(AccountSettings accountSettings) {
-    if (accountSettings.linkType().equals(IlpOverHttpLink.LINK_TYPE)) {
-      IlpOverHttpLinkSettings ilpOverHttpLinkSettings =
-        linkSettingsValidator.validateSettings(linkSettingsFactory.constructTyped(accountSettings));
+    try {
+      if (accountSettings.linkType().equals(IlpOverHttpLink.LINK_TYPE)) {
+        IlpOverHttpLinkSettings ilpOverHttpLinkSettings =
+          linkSettingsValidator.validateSettings(linkSettingsFactory.constructTyped(accountSettings));
 
-      return AccountSettings.builder()
-        .from(accountSettings)
-        .customSettings(ilpOverHttpLinkSettings.getCustomSettings())
-        .build();
+        return AccountSettings.builder()
+          .from(accountSettings)
+          .customSettings(ilpOverHttpLinkSettings.getCustomSettings())
+          .build();
+      }
+      return accountSettings;
+    } catch (IllegalArgumentException e) {
+      throw new InvalidAccountSettingsProblem("Bad shared secret: " + e.getMessage()
+        , accountSettings.accountId());
     }
-    return accountSettings;
   }
 
   /**
