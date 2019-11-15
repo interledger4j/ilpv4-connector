@@ -82,6 +82,16 @@ interledger:
     #     password: password
     #     secret0_alias: secret0
     #     secret0_password: password
+
+    require32ByteSharedSecrets: true
+    keys:
+      secret0:
+        alias: secret0
+        version: 1
+      accountSettings:
+        alias: secret0
+        version: 1
+
     enabledProtocols:
       ilpOverHttpEnabled: true
       pingProtocolEnabled: true

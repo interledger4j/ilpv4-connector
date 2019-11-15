@@ -22,14 +22,17 @@ import org.interledger.connector.config.BalanceTrackerConfig;
 import org.interledger.connector.config.CaffeineCacheConfig;
 import org.interledger.connector.config.RedisConfig;
 import org.interledger.connector.config.SettlementConfig;
+import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.fx.JavaMoneyUtils;
 import org.interledger.connector.fxrates.DefaultFxRateOverridesManager;
 import org.interledger.connector.fxrates.FxRateOverridesManager;
 import org.interledger.connector.links.DefaultLinkManager;
 import org.interledger.connector.links.DefaultLinkSettingsFactory;
+import org.interledger.connector.links.DefaultLinkSettingsValidator;
 import org.interledger.connector.links.DefaultNextHopPacketMapper;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.LinkSettingsFactory;
+import org.interledger.connector.links.LinkSettingsValidator;
 import org.interledger.connector.links.NextHopPacketMapper;
 import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.links.filters.OutgoingBalanceLinkFilter;
@@ -43,10 +46,10 @@ import org.interledger.connector.packetswitch.filters.AllowedDestinationPacketFi
 import org.interledger.connector.packetswitch.filters.BalanceIlpPacketFilter;
 import org.interledger.connector.packetswitch.filters.ExpiryPacketFilter;
 import org.interledger.connector.packetswitch.filters.MaxPacketAmountFilter;
+import org.interledger.connector.packetswitch.filters.PacketMetricsFilter;
 import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
 import org.interledger.connector.packetswitch.filters.PeerProtocolPacketFilter;
 import org.interledger.connector.packetswitch.filters.RateLimitIlpPacketFilter;
-import org.interledger.connector.packetswitch.filters.PacketMetricsFilter;
 import org.interledger.connector.packetswitch.filters.ValidateFulfillmentPacketFilter;
 import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
@@ -67,6 +70,7 @@ import org.interledger.connector.server.spring.settings.javamoney.JavaMoneyConfi
 import org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration;
 import org.interledger.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
+import org.interledger.connector.settings.ConnectorKeys;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.SettlementService;
@@ -117,15 +121,15 @@ import java.util.function.Supplier;
 @Configuration
 @EnableConfigurationProperties( {ConnectorSettingsFromPropertyFile.class})
 @Import( {
-    JavaMoneyConfig.class,
-    CodecContextConfig.class,
-    ConnectorPersistenceConfig.class,
-    CryptoConfig.class,
-    ResiliencyConfig.class,
-    CaffeineCacheConfig.class,
-    RedisConfig.class, SettlementConfig.class, BalanceTrackerConfig.class,
-    MetricsConfiguration.class,
-    SpringConnectorWebMvc.class
+  JavaMoneyConfig.class,
+  CodecContextConfig.class,
+  ConnectorPersistenceConfig.class,
+  CryptoConfig.class,
+  ResiliencyConfig.class,
+  CaffeineCacheConfig.class,
+  RedisConfig.class, SettlementConfig.class, BalanceTrackerConfig.class,
+  MetricsConfiguration.class,
+  SpringConnectorWebMvc.class
 })
 public class SpringConnectorConfig {
 
@@ -181,7 +185,7 @@ public class SpringConnectorConfig {
 
   @Bean
   LinkFactoryProvider linkFactoryProvider(
-      LoopbackLinkFactory loopbackLinkFactory, PingLoopbackLinkFactory pingLoopbackLinkFactory
+    LoopbackLinkFactory loopbackLinkFactory, PingLoopbackLinkFactory pingLoopbackLinkFactory
   ) {
     final LinkFactoryProvider provider = new LinkFactoryProvider();
 
@@ -201,27 +205,34 @@ public class SpringConnectorConfig {
   }
 
   @Bean
+  LinkSettingsValidator linkSettingsValidator(ConnectorEncryptionService encryptionService,
+                                              Supplier<ConnectorSettings> connectorSettingsSupplier) {
+    return new DefaultLinkSettingsValidator(encryptionService, connectorSettingsSupplier);
+  }
+
+
+  @Bean
   LinkConnectionEventEmitter linkEventEmitter(EventBus eventBus) {
     return new EventBusConnectionEventEmitter(eventBus);
   }
 
   @Bean
   LinkManager linkManager(
-      EventBus eventBus,
-      AccountSettingsRepository accountSettingsRepository,
-      LinkSettingsFactory linkSettingsFactory,
-      LinkFactoryProvider linkFactoryProvider,
-      AccountIdResolver accountIdResolver,
-      CircuitBreakerConfig circuitBreakerConfig
+    EventBus eventBus,
+    AccountSettingsRepository accountSettingsRepository,
+    LinkSettingsFactory linkSettingsFactory,
+    LinkFactoryProvider linkFactoryProvider,
+    AccountIdResolver accountIdResolver,
+    CircuitBreakerConfig circuitBreakerConfig
   ) {
     return new DefaultLinkManager(
-        () -> connectorSettingsSupplier().get().operatorAddress(),
-        accountSettingsRepository,
-        linkSettingsFactory,
-        linkFactoryProvider,
-        accountIdResolver,
-        circuitBreakerConfig,
-        eventBus
+      () -> connectorSettingsSupplier().get().operatorAddress(),
+      accountSettingsRepository,
+      linkSettingsFactory,
+      linkFactoryProvider,
+      accountIdResolver,
+      circuitBreakerConfig,
+      eventBus
     );
   }
 
@@ -237,15 +248,18 @@ public class SpringConnectorConfig {
 
   @Bean
   AccountManager accountManager(
-      Supplier<ConnectorSettings> connectorSettingsSupplier,
-      AccountSettingsRepository accountSettingsRepository,
-      LinkManager linkManager,
-      ConversionService conversionService,
-      SettlementEngineClient settlementEngineClient
+    Supplier<ConnectorSettings> connectorSettingsSupplier,
+    AccountSettingsRepository accountSettingsRepository,
+    LinkManager linkManager,
+    ConversionService conversionService,
+    SettlementEngineClient settlementEngineClient,
+    LinkSettingsFactory linkSettingsFactory,
+    LinkSettingsValidator linkSettingsValidator
   ) {
     return new DefaultAccountManager(
-        connectorSettingsSupplier, conversionService, accountSettingsRepository, linkManager, settlementEngineClient
-    );
+      connectorSettingsSupplier, conversionService, accountSettingsRepository, linkManager, settlementEngineClient,
+      linkSettingsFactory,
+      linkSettingsValidator);
   }
 
   @Bean
@@ -260,7 +274,7 @@ public class SpringConnectorConfig {
 
   @Bean
   AccountSettingsResolver accountSettingsResolver(
-      AccountSettingsRepository accountSettingsRepository, AccountIdResolver accountIdResolver
+    AccountSettingsRepository accountSettingsRepository, AccountIdResolver accountIdResolver
   ) {
     return new DefaultAccountSettingsResolver(accountSettingsRepository, accountIdResolver);
   }
@@ -272,31 +286,31 @@ public class SpringConnectorConfig {
 
   @Bean
   ChildAccountPaymentRouter childAccountPaymentRouter(
-      final Supplier<ConnectorSettings> connectorSettingsSupplier,
-      final AccountSettingsRepository accountSettingsRepository,
-      final Decryptor decryptor
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final AccountSettingsRepository accountSettingsRepository,
+    final Decryptor decryptor
   ) {
 
     // If the Ping Protocol is enabled, we need to ensure that there is a Ping account suitable to accept value for
     // Ping requests.
     if (connectorSettingsSupplier.get().enabledProtocols().isPingProtocolEnabled() &&
-        !accountSettingsRepository.findByAccountId(PING_ACCOUNT_ID).isPresent()) {
+      !accountSettingsRepository.findByAccountId(PING_ACCOUNT_ID).isPresent()) {
       // Create this account.
 
       final AccountSettings pingAccountSettings = AccountSettings.builder()
-          .accountId(PING_ACCOUNT_ID)
-          .accountRelationship(AccountRelationship.CHILD)
-          .assetCode("USD") // TODO: Make this configurable, or else the same as the Connector's base currency.
-          .assetScale(2) // TODO: Make this configurable, or else the same as the Connector's base currency.
-          .description("A receiver-like child account for collecting all Ping protocol revenues.")
-          // TODO: In theory we don't need a rate limit for ping requests because they should always contain value.
-          //  However, some systems may ping with a 0-value packet. Also, consider the case where 1M accounts each
-          //  ping a Connector cluster every 5 or 10 or 60 seconds.
-          .rateLimitSettings(AccountRateLimitSettings.builder()
-              .maxPacketsPerSecond(1) // TODO: Make Configurable, per the above comment.
-              .build())
-          .linkType(PingLoopbackLink.LINK_TYPE)
-          .build();
+        .accountId(PING_ACCOUNT_ID)
+        .accountRelationship(AccountRelationship.CHILD)
+        .assetCode("USD") // TODO: Make this configurable, or else the same as the Connector's base currency.
+        .assetScale(2) // TODO: Make this configurable, or else the same as the Connector's base currency.
+        .description("A receiver-like child account for collecting all Ping protocol revenues.")
+        // TODO: In theory we don't need a rate limit for ping requests because they should always contain value.
+        //  However, some systems may ping with a 0-value packet. Also, consider the case where 1M accounts each
+        //  ping a Connector cluster every 5 or 10 or 60 seconds.
+        .rateLimitSettings(AccountRateLimitSettings.builder()
+          .maxPacketsPerSecond(1) // TODO: Make Configurable, per the above comment.
+          .build())
+        .linkType(PingLoopbackLink.LINK_TYPE)
+        .build();
 
       accountSettingsRepository.save(new AccountSettingsEntity(pingAccountSettings));
     }
@@ -323,25 +337,25 @@ public class SpringConnectorConfig {
 
   @Bean
   RouteBroadcaster routeBroadcaster(
-      Supplier<ConnectorSettings> connectorSettingsSupplier,
-      @Qualifier(CodecContextConfig.CCP) CodecContext ccpCodecContext,
-      AccountSettingsRepository accountSettingsRepository,
-      ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
-      LinkManager linkManager
+    Supplier<ConnectorSettings> connectorSettingsSupplier,
+    @Qualifier(CodecContextConfig.CCP) CodecContext ccpCodecContext,
+    AccountSettingsRepository accountSettingsRepository,
+    ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
+    LinkManager linkManager
   ) {
     return new DefaultRouteBroadcaster(
-        connectorSettingsSupplier,
-        ccpCodecContext,
-        outgoingRoutingTable,
-        accountSettingsRepository,
-        linkManager
+      connectorSettingsSupplier,
+      ccpCodecContext,
+      outgoingRoutingTable,
+      accountSettingsRepository,
+      linkManager
     );
   }
 
   @Bean
   InterledgerAddressUtils interledgerAddressUtils(
-      final Supplier<ConnectorSettings> connectorSettingsSupplier,
-      final AccountSettingsRepository accountSettingsRepository
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final AccountSettingsRepository accountSettingsRepository
   ) {
     return new InterledgerAddressUtils(connectorSettingsSupplier, accountSettingsRepository);
   }
@@ -389,15 +403,15 @@ public class SpringConnectorConfig {
    */
   @Bean
   List<PacketSwitchFilter> packetSwitchFilters(
-      RouteBroadcaster routeBroadcaster,
-      InterledgerAddressUtils addressUtils,
-      BalanceTracker balanceTracker,
-      PacketRejector packetRejector,
-      SettlementService settlementService,
-      MetricsService metricsService,
-      @Qualifier(CodecContextConfig.CCP) CodecContext ccpCodecContext,
-      @Qualifier(CodecContextConfig.ILDCP) CodecContext ildcpCodecContext,
-      Cache<AccountId, Optional<RateLimiter>> rateLimiterCache
+    RouteBroadcaster routeBroadcaster,
+    InterledgerAddressUtils addressUtils,
+    BalanceTracker balanceTracker,
+    PacketRejector packetRejector,
+    SettlementService settlementService,
+    MetricsService metricsService,
+    @Qualifier(CodecContextConfig.CCP) CodecContext ccpCodecContext,
+    @Qualifier(CodecContextConfig.ILDCP) CodecContext ildcpCodecContext,
+    Cache<AccountId, Optional<RateLimiter>> rateLimiterCache
   ) {
     final ConnectorSettings connectorSettings = connectorSettingsSupplier().get();
     final ImmutableList.Builder<PacketSwitchFilter> filterList = ImmutableList.builder();
@@ -407,32 +421,32 @@ public class SpringConnectorConfig {
 
     if (connectorSettings.enabledFeatures().isRateLimitingEnabled()) {
       filterList.add(
-          new RateLimitIlpPacketFilter(packetRejector, metricsService, rateLimiterCache));// Limits Data packets...
+        new RateLimitIlpPacketFilter(packetRejector, metricsService, rateLimiterCache));// Limits Data packets...
     }
 
     filterList.add(
-        /////////////////////////////////
-        // Incoming Prepare packet Preconditions
-        new ExpiryPacketFilter(packetRejector), // Start the expiry timer first to account for delay by other filters
-        new AllowedDestinationPacketFilter(packetRejector, addressUtils),
-        new MaxPacketAmountFilter(packetRejector),
+      /////////////////////////////////
+      // Incoming Prepare packet Preconditions
+      new ExpiryPacketFilter(packetRejector), // Start the expiry timer first to account for delay by other filters
+      new AllowedDestinationPacketFilter(packetRejector, addressUtils),
+      new MaxPacketAmountFilter(packetRejector),
 
-        // Once the Prepare packet is considered valid, process balance changes.
-        new BalanceIlpPacketFilter(packetRejector, balanceTracker),
+      // Once the Prepare packet is considered valid, process balance changes.
+      new BalanceIlpPacketFilter(packetRejector, balanceTracker),
 
-        //
-        new ValidateFulfillmentPacketFilter(packetRejector),
+      //
+      new ValidateFulfillmentPacketFilter(packetRejector),
 
-        /////////////////////////////////
-        // WARNING: This filter can short-circuit a request, so be careful adding filters after it.
-        new PeerProtocolPacketFilter(
-            connectorSettingsSupplier(),
-            packetRejector,
-            routeBroadcaster,
-            ccpCodecContext,
-            ildcpCodecContext,
-            settlementService
-        )
+      /////////////////////////////////
+      // WARNING: This filter can short-circuit a request, so be careful adding filters after it.
+      new PeerProtocolPacketFilter(
+        connectorSettingsSupplier(),
+        packetRejector,
+        routeBroadcaster,
+        ccpCodecContext,
+        ildcpCodecContext,
+        settlementService
+      )
     );
 
     // TODO: Throughput for Money...
@@ -446,48 +460,48 @@ public class SpringConnectorConfig {
 
   @Bean
   List<LinkFilter> linkFilters(
-      BalanceTracker balanceTracker, SettlementService settlementService, MetricsService metricsService
+    BalanceTracker balanceTracker, SettlementService settlementService, MetricsService metricsService
   ) {
     final Supplier<InterledgerAddress> operatorAddressSupplier =
-        () -> connectorSettingsSupplier().get().operatorAddress();
+      () -> connectorSettingsSupplier().get().operatorAddress();
 
     return Lists.newArrayList(
-        // TODO: Throughput for Money...
-        new OutgoingMetricsLinkFilter(operatorAddressSupplier, metricsService),
-        new OutgoingMaxPacketAmountLinkFilter(operatorAddressSupplier),
-        new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker, settlementService, eventBus())
+      // TODO: Throughput for Money...
+      new OutgoingMetricsLinkFilter(operatorAddressSupplier, metricsService),
+      new OutgoingMaxPacketAmountLinkFilter(operatorAddressSupplier),
+      new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker, settlementService, eventBus())
     );
   }
 
   @Bean
   NextHopPacketMapper nextHopLinkMapper(
-      Supplier<ConnectorSettings> connectorSettingsSupplier,
-      ExternalRoutingService externalRoutingService,
-      InterledgerAddressUtils addressUtils,
-      JavaMoneyUtils javaMoneyUtils,
-      AccountSettingsLoadingCache accountSettingsLoadingCache
+    Supplier<ConnectorSettings> connectorSettingsSupplier,
+    ExternalRoutingService externalRoutingService,
+    InterledgerAddressUtils addressUtils,
+    JavaMoneyUtils javaMoneyUtils,
+    AccountSettingsLoadingCache accountSettingsLoadingCache
   ) {
     return new DefaultNextHopPacketMapper(
-        connectorSettingsSupplier, externalRoutingService, addressUtils, javaMoneyUtils, accountSettingsLoadingCache
+      connectorSettingsSupplier, externalRoutingService, addressUtils, javaMoneyUtils, accountSettingsLoadingCache
     );
   }
 
   @Bean
   ConnectorExceptionHandler connectorExceptionHandler(
-      Supplier<ConnectorSettings> connectorSettingsSupplier, PacketRejector packetRejector
+    Supplier<ConnectorSettings> connectorSettingsSupplier, PacketRejector packetRejector
   ) {
     return new ConnectorExceptionHandler(connectorSettingsSupplier, packetRejector);
   }
 
   @Bean
   ILPv4PacketSwitch ilpPacketSwitch(
-      List<PacketSwitchFilter> packetSwitchFilters,
-      List<LinkFilter> linkFilters,
-      LinkManager linkManager,
-      NextHopPacketMapper nextHopPacketMapper,
-      ConnectorExceptionHandler connectorExceptionHandler,
-      PacketRejector packetRejector,
-      AccountSettingsLoadingCache accountSettingsLoadingCache
+    List<PacketSwitchFilter> packetSwitchFilters,
+    List<LinkFilter> linkFilters,
+    LinkManager linkManager,
+    NextHopPacketMapper nextHopPacketMapper,
+    ConnectorExceptionHandler connectorExceptionHandler,
+    PacketRejector packetRejector,
+    AccountSettingsLoadingCache accountSettingsLoadingCache
   ) {
     return new DefaultILPv4PacketSwitch(
       packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler,
@@ -531,4 +545,10 @@ public class SpringConnectorConfig {
     executor.initialize();
     return executor;
   }
+
+  @Bean
+  protected ConnectorKeys connectorKeys(Supplier<ConnectorSettings> connectorSettingsSupplier) {
+    return connectorSettingsSupplier.get().keys();
+  }
+
 }

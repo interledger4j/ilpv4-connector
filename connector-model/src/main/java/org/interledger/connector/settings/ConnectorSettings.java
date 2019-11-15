@@ -67,7 +67,6 @@ public interface ConnectorSettings {
    * append it to this connector's address to create a child address that this Connector can advertise as its own.
    *
    * @param childAccountId The {@link AccountId} of a child account.
-   *
    * @return An {@link InterledgerAddress } representing the new address of the supplied child account.
    */
   default InterledgerAddress toChildAddress(final AccountId childAccountId) {
@@ -95,6 +94,29 @@ public interface ConnectorSettings {
   @Value.Default
   default int maxHoldTimeMillis() {
     return 30000;
+  }
+
+
+  /**
+   * Flag to control if shared secrets must be 32 bytes
+   * @return true if required otherwise anything goes
+   */
+  @Value.Default
+  default boolean isRequire32ByteSharedSecrets() {
+    return false;
+  };
+
+  /**
+   * Keys the connector will use for various core functions.
+   *
+   * @return keys
+   */
+  @Value.Default
+  default ConnectorKeys keys() {
+    return ConnectorKeys.builder()
+      .accountSettings(ConnectorKey.builder().alias("accountSettings").version("1").build())
+      .secret0(ConnectorKey.builder().alias("secret0").version("1").build())
+      .build();
   }
 
 }
