@@ -6,6 +6,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
@@ -17,13 +18,16 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.eventbus.EventBus;
 import com.google.common.hash.Hashing;
+import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -65,6 +69,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
   private final EventBus eventBus;
   private final AccountSettingsRepository accountSettingsRepository;
+  private final StaticRoutesRepository staticRoutesRepository;
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final Decryptor decryptor;
@@ -95,6 +100,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
       final Supplier<ConnectorSettings> connectorSettingsSupplier,
       final Decryptor decryptor,
       final AccountSettingsRepository accountSettingsRepository,
+      final StaticRoutesRepository staticRoutesRepository,
       final ChildAccountPaymentRouter childAccountPaymentRouter,
       final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
       final RouteBroadcaster routeBroadcaster
@@ -107,6 +113,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.decryptor = decryptor;
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
+    this.staticRoutesRepository = Objects.requireNonNull(staticRoutesRepository);
     this.childAccountPaymentRouter = Objects.requireNonNull(childAccountPaymentRouter);
     this.localRoutingTable = new InMemoryRoutingTable();
 
@@ -117,6 +124,13 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   @Override
   public void start() {
     this.initRoutingTables();
+  }
+
+  @Override
+  public List<Route> getAllRoutes() {
+    List<Route> allRoutes = new ArrayList<>();
+    localRoutingTable.forEach((prefix, route) -> allRoutes.add(route));
+    return allRoutes;
   }
 
   @Override
@@ -133,6 +147,39 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
       // get a child-address into this table, it would never be honored.
       return this.localRoutingTable.findNextHopRoute(finalDestinationAddress);
     }
+  }
+
+  @Override
+  public Set<StaticRoute> getAllStaticRoutes() {
+    return staticRoutesRepository.getAllStaticRoutes();
+  }
+
+
+  @Override
+  public void deleteStaticRouteByPrefix(InterledgerAddressPrefix prefix) {
+    Objects.requireNonNull(prefix);
+    if (!staticRoutesRepository.deleteStaticRouteByPrefix(prefix)) {
+      throw new StaticRouteNotFoundProblem(prefix);
+    } else {
+      localRoutingTable.removeRoute(prefix);
+    }
+  }
+
+  @Override
+  public StaticRoute createStaticRoute(StaticRoute route) {
+    Objects.requireNonNull(route);
+    try {
+      StaticRoute saved = staticRoutesRepository.saveStaticRoute(route);
+      addStaticRoute(saved);
+      return saved;
+    }
+    catch(Exception e) {
+      if (e.getCause() instanceof ConstraintViolationException) {
+        throw new StaticRouteAlreadyExistsProblem(route.routePrefix());
+      }
+      throw e;
+    }
+
   }
 
   /**
@@ -197,15 +244,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     //////////////////
 
     // For any statically configured route...
-    this.connectorSettingsSupplier.get().globalRoutingSettings().staticRoutes().stream()
-        .forEach(staticRoute -> {
-
-          // ...attempt to register a CCP-enabled account (duplicate requests are fine).
-          routeBroadcaster.registerCcpEnabledAccount(staticRoute.peerAccountId());
-
-          // This will add the prefix correctly _and_ update the forwarding table...
-          updatePrefix(staticRoute.targetPrefix());
-        });
+    this.staticRoutesRepository.getAllStaticRoutes().stream().forEach(this::addStaticRoute);
 
     ////////////////////
     // Choose Best Paths
@@ -219,6 +258,14 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
       this.updatePrefix(route.routePrefix());
     });
 
+  }
+
+  private void addStaticRoute(StaticRoute staticRoute) {
+    // ...attempt to register a CCP-enabled account (duplicate requests are fine).
+    routeBroadcaster.registerCcpEnabledAccount(staticRoute.nextHopAccountId());
+
+    // This will add the prefix correctly _and_ update the forwarding table...
+    updatePrefix(staticRoute.routePrefix());
   }
 
   /**
@@ -321,7 +368,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
               .map(routePrefix -> routePrefix.equals(nblr.routePrefix()))
               .orElse(false);
 
-          // Don't advertise local customer routes that we originated. Packets for these destinations should still
+          // Don't advertise local custom routes that we originated. Packets for these destinations should still
           // reach us because we are advertising our own address as a prefix.
           final boolean isLocalCustomerRoute = addressPrefix.getValue()
               .startsWith(this.connectorSettingsSupplier.get().operatorAddress().getValue()) &&
@@ -416,8 +463,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     // Static-routes have highest priority...
     return Optional.ofNullable(
-        connectorSettingsSupplier.get().globalRoutingSettings().staticRoutes().stream()
-            .filter(staticRoute -> staticRoute.targetPrefix().equals(addressPrefix))
+        staticRoutesRepository.getAllStaticRoutes().stream()
+            .filter(staticRoute -> staticRoute.routePrefix().equals(addressPrefix))
             .findFirst()
             .map(staticRoute -> {
               // If there's a static route, then use it, even if the account doesn't exist. In this
@@ -425,7 +472,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
               // comes into existence, then the Router and/or Link will simply reject if anything is attempted.
               return (Route) ImmutableRoute.builder()
                   .routePrefix(addressPrefix)
-                  .nextHopAccountId(staticRoute.peerAccountId())
+                  .nextHopAccountId(staticRoute.nextHopAccountId())
                   .auth(this.constructRouteAuth(addressPrefix))
                   .build();
             })

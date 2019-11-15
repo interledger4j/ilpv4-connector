@@ -28,6 +28,7 @@ import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.primitives.UnsignedLong;
 import feign.FeignException;
 import okhttp3.HttpUrl;
 import org.assertj.core.util.Maps;
@@ -164,7 +165,7 @@ public class AccountSettingsSpringBootTest {
 
     String response = assertPostAccountFailure(settings, HttpStatus.INTERNAL_SERVER_ERROR);
     JsonContentAssert assertJson = assertThat(jsonTester.from(response));
-    assertJson.extractingJsonPathValue("status").isEqualTo("500");
+    assertJson.extractingJsonPathValue("status").isEqualTo(500);
     assertJson.extractingJsonPathValue("title").isEqualTo("Internal Server Error");
     assertJson.extractingJsonPathValue("detail").isEqualTo("Unable to create account in settlement engine.");
   }
@@ -300,6 +301,35 @@ public class AccountSettingsSpringBootTest {
         .maxPacketsPerSecond(100)
         .build())
       .maximumPacketAmount(200L)
+      .isConnectionInitiator(true)
+      .ilpAddressSegment("foo")
+      .isSendRoutes(true)
+      .isReceiveRoutes(true)
+      .isInternal(true)
+      .modifiedAt(Instant.MAX)
+      .customSettings(Maps.newHashMap("custom", "value"))
+      .build();
+      .accountId(accountId)
+      .description("A fully-populated account")
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(LoopbackLink.LINK_TYPE)
+      .createdAt(Instant.now())
+      .balanceSettings(AccountBalanceSettings.builder()
+        .settleThreshold(10L)
+        .minBalance(9L)
+        .settleTo(8L)
+        .build())
+      .settlementEngineDetails(SettlementEngineDetails.builder()
+        .baseUrl(HttpUrl.parse("http://example.com"))
+        .settlementEngineAccountId(SettlementEngineAccountId.of(UUID.randomUUID().toString()))
+        .putCustomSettings("settlementFoo", "settlementBar")
+        .build())
+      .rateLimitSettings(AccountRateLimitSettings.builder()
+        .maxPacketsPerSecond(100)
+        .build())
+      .maximumPacketAmount(UnsignedLong.valueOf(200L))
       .isConnectionInitiator(true)
       .ilpAddressSegment("foo")
       .isSendRoutes(true)

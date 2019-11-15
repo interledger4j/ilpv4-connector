@@ -55,6 +55,7 @@ import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
+import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
 import org.interledger.connector.routing.ChildAccountPaymentRouter;
 import org.interledger.connector.routing.DefaultRouteBroadcaster;
 import org.interledger.connector.routing.ExternalRoutingService;
@@ -63,6 +64,7 @@ import org.interledger.connector.routing.InMemoryExternalRoutingService;
 import org.interledger.connector.routing.InMemoryForwardingRoutingTable;
 import org.interledger.connector.routing.RouteBroadcaster;
 import org.interledger.connector.routing.RouteUpdate;
+import org.interledger.connector.routing.StaticRoutesManager;
 import org.interledger.connector.server.spring.settings.crypto.CryptoConfig;
 import org.interledger.connector.server.spring.settings.javamoney.JavaMoneyConfig;
 import org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration;
@@ -100,6 +102,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -134,6 +137,10 @@ public class SpringConnectorConfig {
 
   @Autowired
   private ApplicationContext applicationContext;
+
+  @Autowired
+  @Lazy
+  private ExternalRoutingService externalRoutingService;
 
   /**
    * All internal Connector events propagate locally in this JVM using this EventBus.
@@ -260,6 +267,11 @@ public class SpringConnectorConfig {
   }
 
   @Bean
+  StaticRoutesManager staticRoutesManager(StaticRoutesRepository staticRoutesRepository) {
+    return externalRoutingService;
+  }
+
+  @Bean
   AccountSettingsResolver accountSettingsResolver(
     AccountSettingsRepository accountSettingsRepository, AccountIdResolver accountIdResolver
   ) {
@@ -307,17 +319,18 @@ public class SpringConnectorConfig {
 
   @Bean
   ExternalRoutingService externalRoutingService(
-    final EventBus eventBus,
-    final Supplier<ConnectorSettings> connectorSettingsSupplier,
-    final Decryptor decryptor,
-    final AccountSettingsRepository accountSettingsRepository,
-    final ChildAccountPaymentRouter childAccountPaymentRouter,
-    final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
-    final RouteBroadcaster routeBroadcaster
+      final EventBus eventBus,
+      final Supplier<ConnectorSettings> connectorSettingsSupplier,
+      final Decryptor decryptor,
+      final AccountSettingsRepository accountSettingsRepository,
+      final StaticRoutesRepository staticRoutesRepository,
+      final ChildAccountPaymentRouter childAccountPaymentRouter,
+      final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
+      final RouteBroadcaster routeBroadcaster
   ) {
     return new InMemoryExternalRoutingService(
-      eventBus, connectorSettingsSupplier, decryptor, accountSettingsRepository, childAccountPaymentRouter,
-      outgoingRoutingTable, routeBroadcaster
+        eventBus, connectorSettingsSupplier, decryptor, accountSettingsRepository, staticRoutesRepository,
+        childAccountPaymentRouter, outgoingRoutingTable, routeBroadcaster
     );
   }
 
@@ -496,8 +509,6 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  @Profile("!migrate-only")
-    // to prevent connector from starting if server  is run with migrate-only profile
   ILPv4Connector ilpConnector(
     Supplier<ConnectorSettings> connectorSettingsSupplier,
     AccountManager accountManager,

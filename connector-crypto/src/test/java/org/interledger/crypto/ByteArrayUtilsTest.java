@@ -62,8 +62,8 @@ public class ByteArrayUtilsTest {
     test.stop();
 
     // timings have lots of noise since benchmark doesnt run for a long time.
-    // 40% seems like a reasonable variance but may need to be widened if we find more jitter in the results
-    assertThat(test.elapsed().toMillis()).isCloseTo(baseline.elapsed().toMillis(), Percentage.withPercentage(40.0));
+    // 75% seems like a reasonable variance but may need to be widened if we find more jitter in the results
+    assertThat(test.elapsed().toMillis()).isCloseTo(baseline.elapsed().toMillis(), Percentage.withPercentage(75.0));
   }
 
   @Test

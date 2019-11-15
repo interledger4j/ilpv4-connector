@@ -8,11 +8,9 @@ import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.link.Link;
 
-import com.google.common.collect.Lists;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -41,7 +39,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   private boolean websocketServerEnabled;
 
-  private boolean blastEnabled;
+  private boolean ilpOverHttpEnabled;
 
   private InterledgerAddressPrefix globalPrefix = InterledgerAddressPrefix.TEST;
 
@@ -106,12 +104,12 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     this.websocketServerEnabled = websocketServerEnabled;
   }
 
-  public boolean isBlastEnabled() {
-    return blastEnabled;
+  public boolean isIlpOverHttpEnabled() {
+    return ilpOverHttpEnabled;
   }
 
-  public void setBlastEnabled(boolean blastEnabled) {
-    this.blastEnabled = blastEnabled;
+  public void setIlpOverHttpEnabled(boolean ilpOverHttpEnabled) {
+    this.ilpOverHttpEnabled = ilpOverHttpEnabled;
   }
 
   @Override
@@ -163,7 +161,6 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     private String routingSecret;
     private boolean useParentForDefaultRoute;
     private Duration routeBroadcastInterval = Duration.ofSeconds(30);
-    private List<StaticRouteFromPropertyFile> staticRoutes = Lists.newArrayList();
 
     @Override
     public boolean isRouteBroadcastEnabled() {
@@ -237,13 +234,5 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
       this.routeBroadcastInterval = routeBroadcastInterval;
     }
 
-    @Override
-    public List<StaticRouteFromPropertyFile> staticRoutes() {
-      return staticRoutes;
-    }
-
-    public void setStaticRoutes(List<StaticRouteFromPropertyFile> staticRoutes) {
-      this.staticRoutes = staticRoutes;
-    }
   }
 }

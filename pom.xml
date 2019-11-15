@@ -300,6 +300,11 @@
       </dependency>
       <dependency>
         <groupId>org.zalando</groupId>
+        <artifactId>jackson-datatype-problem</artifactId>
+        <version>${problem.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.zalando</groupId>
         <artifactId>problem</artifactId>
         <version>${problem.version}</version>
       </dependency>
@@ -310,8 +315,8 @@
       </dependency>
       <dependency>
         <groupId>org.zalando</groupId>
-        <artifactId>jackson-datatype-problem</artifactId>
-        <version>${problem.version}</version>
+        <artifactId>problem-spring-common</artifactId>
+        <version>${problem-spring-web.version}</version>
       </dependency>
       <dependency>
         <groupId>org.zalando</groupId>
@@ -415,7 +420,7 @@
         <plugin>
           <groupId>org.owasp</groupId>
           <artifactId>dependency-check-maven</artifactId>
-          <version>5.2.3</version>
+          <version>5.2.4</version>
           <executions>
             <execution>
               <goals>

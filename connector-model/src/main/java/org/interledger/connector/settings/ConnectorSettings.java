@@ -35,7 +35,7 @@ public interface ConnectorSettings {
    */
   @Value.Default
   default InterledgerAddressPrefix globalPrefix() {
-    return InterledgerAddressPrefix.of("test");
+    return InterledgerAddressPrefix.GLOBAL;
   }
 
   @Value.Default

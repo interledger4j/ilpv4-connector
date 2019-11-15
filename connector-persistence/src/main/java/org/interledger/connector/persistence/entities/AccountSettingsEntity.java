@@ -1,6 +1,9 @@
 package org.interledger.connector.persistence.entities;
 
-import org.hibernate.annotations.NaturalId;
+import static org.interledger.connector.persistence.entities.DataConstants.ColumnNames.ACCOUNT_RELATIONSHIP;
+import static org.interledger.connector.persistence.entities.DataConstants.IndexNames.ACCT_REL_IDX;
+import static org.interledger.connector.persistence.entities.DataConstants.TableNames.ACCOUNT_SETTINGS;
+
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
@@ -8,6 +11,14 @@ import org.interledger.connector.persistence.AccountRelationshipConverter;
 import org.interledger.connector.persistence.HashMapConverter;
 import org.interledger.connector.persistence.LinkTypeConverter;
 import org.interledger.link.LinkType;
+
+import com.google.common.primitives.UnsignedLong;
+import org.hibernate.annotations.NaturalId;
+
+import java.math.BigInteger;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -19,20 +30,13 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.Table;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-
-import static org.interledger.connector.persistence.entities.DataConstants.ColumnNames.ACCOUNT_RELATIONSHIP;
-import static org.interledger.connector.persistence.entities.DataConstants.IndexNames.ACCT_REL_IDX;
-import static org.interledger.connector.persistence.entities.DataConstants.TableNames.ACCOUNT_SETTINGS;
 
 @Entity
 @Access(AccessType.FIELD)
 @Table(name = ACCOUNT_SETTINGS, indexes = {
   @Index(name = ACCT_REL_IDX, columnList = ACCOUNT_RELATIONSHIP)
 })
-@SuppressWarnings({"PMD"})
+@SuppressWarnings( {"PMD"})
 public class AccountSettingsEntity extends AbstractEntity {
 
   @Id
@@ -71,7 +75,7 @@ public class AccountSettingsEntity extends AbstractEntity {
   private int assetScale;
 
   @Column(name = "MAX_PACKET_AMT")
-  private Long maximumPacketAmount;
+  private BigInteger maximumPacketAmount;
 
   @Column(name = "SEND_ROUTES")
   private boolean sendRoutes;
@@ -110,7 +114,7 @@ public class AccountSettingsEntity extends AbstractEntity {
     this.linkType = accountSettings.linkType();
     this.assetCode = accountSettings.assetCode();
     this.assetScale = accountSettings.assetScale();
-    this.maximumPacketAmount = accountSettings.maximumPacketAmount().orElse(null);
+    this.maximumPacketAmount = accountSettings.maximumPacketAmount().map(UnsignedLong::bigIntegerValue).orElse(null);
     this.balanceSettings = new AccountBalanceSettingsEntity(accountSettings.balanceSettings());
     this.rateLimitSettings = new AccountRateLimitSettingsEntity(accountSettings.rateLimitSettings());
     this.settlementEngineDetails =
@@ -197,11 +201,11 @@ public class AccountSettingsEntity extends AbstractEntity {
     this.assetScale = assetScale;
   }
 
-  public Optional<Long> getMaximumPacketAmount() {
+  public Optional<BigInteger> getMaximumPacketAmount() {
     return Optional.ofNullable(maximumPacketAmount);
   }
 
-  public void setMaximumPacketAmount(Optional<Long> maximumPacketAmount) {
+  public void setMaximumPacketAmount(Optional<BigInteger> maximumPacketAmount) {
     this.maximumPacketAmount = maximumPacketAmount.orElse(null);
   }
 
@@ -286,7 +290,7 @@ public class AccountSettingsEntity extends AbstractEntity {
   /**
    * Return the hashcode of the natural identifier.
    *
-   * @return
+   * @return An integer representing the natural identifier for this entity.
    *
    * @see "https://vladmihalcea.com/the-best-way-to-implement-equals-hashcode-and-tostring-with-jpa-and-hibernate/"
    */

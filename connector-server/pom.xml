@@ -108,10 +108,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>connector-link</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>connector-crypto</artifactId>
     </dependency>
     <dependency>
@@ -312,7 +308,15 @@
     </dependency>
     <dependency>
       <groupId>org.zalando</groupId>
+      <artifactId>jackson-datatype-problem</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.zalando</groupId>
       <artifactId>problem</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.zalando</groupId>
+      <artifactId>problem-spring-common</artifactId>
     </dependency>
     <dependency>
       <groupId>org.zalando</groupId>

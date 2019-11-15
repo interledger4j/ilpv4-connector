@@ -33,7 +33,7 @@ interledger:
       rateLimitingEnabled: true
     # Which protocols this Connector supports
     enabledProtocols:
-      blastEnabled: true
+      ilpOverHttpEnabled: true
       pingProtocolEnabled: true
       peerRoutingEnabled: true
       ildcpEnabled: true
@@ -57,12 +57,3 @@ interledger:
       routeExpiry: 30003
       # The maximum number of epochs per routing table update.
       maxEpochsPerRoutingTable: 77
-      # Static Routes
-      staticRoutes:
-        # ILP address prefix that this static route applies to. Configured routes take precedence over the same or
-        # shorter prefixes that are local or published by peers. More specific prefixes will still take precedence.
-        # NOTE: Prefixes should NOT include a trailing period.
-        - targetPrefix: test.parent
-          # ID of the account that destinations matching `targetPrefix` should be forwarded to. Must be one of the
-          # accounts in `accounts`.
-          peerAccountId: bob

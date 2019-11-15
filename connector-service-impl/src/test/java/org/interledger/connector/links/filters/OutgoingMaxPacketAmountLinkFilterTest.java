@@ -52,20 +52,20 @@ public class OutgoingMaxPacketAmountLinkFilterTest {
   public void filterHatesNullPrepare() {
     OutgoingMaxPacketAmountLinkFilter filter = createFilter();
     expectedException.expect(NullPointerException.class);
-    filter.doFilter(createAccountSettingsWithMaxAmount(100), null, filterChain);
+    filter.doFilter(createAccountSettingsWithMaxAmount(UnsignedLong.valueOf(100)), null, filterChain);
   }
 
   @Test
   public void filterHatesNullChain() {
     OutgoingMaxPacketAmountLinkFilter filter = createFilter();
     expectedException.expect(NullPointerException.class);
-    filter.doFilter(createAccountSettingsWithMaxAmount(100), createPrepareWithAmount(10), null);
+    filter.doFilter(createAccountSettingsWithMaxAmount(UnsignedLong.valueOf(100)), createPrepareWithAmount(10), null);
   }
 
   @Test
   public void passAlongWhenBelowMax() {
     OutgoingMaxPacketAmountLinkFilter filter = createFilter();
-    AccountSettings settings = createAccountSettingsWithMaxAmount(1000);
+    AccountSettings settings = createAccountSettingsWithMaxAmount(UnsignedLong.valueOf(1000));
     InterledgerPreparePacket prepare = createPrepareWithAmount(999);
     filter.doFilter(settings, prepare, filterChain);
     verify(filterChain, times(1)).doFilter(settings, prepare);
@@ -74,13 +74,13 @@ public class OutgoingMaxPacketAmountLinkFilterTest {
   @Test
   public void rejectWhenBeyondMax() {
     OutgoingMaxPacketAmountLinkFilter filter = createFilter();
-    AccountSettings settings = createAccountSettingsWithMaxAmount(1000);
+    AccountSettings settings = createAccountSettingsWithMaxAmount(UnsignedLong.valueOf(1000));
     InterledgerPreparePacket prepare = createPrepareWithAmount(1001);
     InterledgerResponsePacket response = filter.doFilter(settings, prepare, filterChain);
     assertThat(response).isInstanceOf(InterledgerRejectPacket.class)
-        .extracting("code", "message")
-        .containsExactly(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE,
-            "Packet size too large: maxAmount=1000 actualAmount=1001");
+      .extracting("code", "message")
+      .containsExactly(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE,
+        "Packet size too large: maxAmount=1000 actualAmount=1001");
     verify(filterChain, times(0)).doFilter(settings, prepare);
   }
 
@@ -88,7 +88,7 @@ public class OutgoingMaxPacketAmountLinkFilterTest {
     return new OutgoingMaxPacketAmountLinkFilter(addressSupplier);
   }
 
-  private AccountSettings createAccountSettingsWithMaxAmount(long max) {
+  private AccountSettings createAccountSettingsWithMaxAmount(UnsignedLong max) {
     AccountSettings settings = mock(AccountSettings.class);
     when(settings.maximumPacketAmount()).thenReturn(Optional.of(max));
     when(settings.accountId()).thenReturn(AccountId.of(UUID.randomUUID().toString()));
@@ -97,10 +97,10 @@ public class OutgoingMaxPacketAmountLinkFilterTest {
 
   private InterledgerPreparePacket createPrepareWithAmount(long amount) {
     return InterledgerPreparePacket.builder()
-        .executionCondition(InterledgerCondition.of(new byte[32]))
-        .amount(UnsignedLong.valueOf(amount))
-        .expiresAt(Instant.now())
-        .destination(InterledgerAddress.of("example.destination"))
-        .build();
+      .executionCondition(InterledgerCondition.of(new byte[32]))
+      .amount(UnsignedLong.valueOf(amount))
+      .expiresAt(Instant.now())
+      .destination(InterledgerAddress.of("example.destination"))
+      .build();
   }
 }

@@ -79,7 +79,7 @@ interledger:
         version: 1
 
     enabledProtocols:
-      blastEnabled: true
+      ilpOverHttpEnabled: true
       pingProtocolEnabled: true
       peerRoutingEnabled: true
       ildcpEnabled: true

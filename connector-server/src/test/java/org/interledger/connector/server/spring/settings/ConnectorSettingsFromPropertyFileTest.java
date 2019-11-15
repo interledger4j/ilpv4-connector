@@ -43,7 +43,7 @@ public class ConnectorSettingsFromPropertyFileTest {
 
     // Enabled Protocol Settings
     final EnabledProtocolSettings enabledProtocolSettings = connectorSettings.enabledProtocols();
-    assertThat(enabledProtocolSettings.isBlastEnabled()).isEqualTo((true));
+    assertThat(enabledProtocolSettings.isIlpOverHttpEnabled()).isEqualTo((true));
     assertThat(enabledProtocolSettings.isPeerRoutingEnabled()).isEqualTo((true));
     assertThat(enabledProtocolSettings.isPingProtocolEnabled()).isEqualTo((true));
     assertThat(enabledProtocolSettings.isIldcpEnabled()).isEqualTo((true));
@@ -61,19 +61,11 @@ public class ConnectorSettingsFromPropertyFileTest {
     assertThat(globalRoutingSettings.routeCleanupInterval()).isEqualTo((Duration.ofMillis(30002L)));
     assertThat(globalRoutingSettings.routeExpiry()).isEqualTo((Duration.ofMillis(30003L)));
     assertThat(globalRoutingSettings.maxEpochsPerRoutingTable()).isEqualTo((77));
-    assertThat(globalRoutingSettings.staticRoutes().size()).isEqualTo((1));
-    assertThat(globalRoutingSettings.staticRoutes().stream().findFirst().get().targetPrefix())
-      .isEqualTo((InterledgerAddressPrefix.of("test.parent")));
-    assertThat(globalRoutingSettings.staticRoutes().stream().findFirst().get().peerAccountId())
-      .isEqualTo((AccountId.of("bob")));
 
     assertThat(connectorSettings.keys().secret0())
       .isEqualTo(ConnectorKey.builder().alias("secret0").version("2").build());
-
     assertThat(connectorSettings.keys().accountSettings())
       .isEqualTo(ConnectorKey.builder().alias("accounts").version("3").build());
-
-
   }
 
   @EnableConfigurationProperties(ConnectorSettingsFromPropertyFile.class)

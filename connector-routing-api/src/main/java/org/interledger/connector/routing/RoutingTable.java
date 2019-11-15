@@ -65,6 +65,9 @@ import java.util.function.BiConsumer;
  */
 public interface RoutingTable<R extends BaseRoute> {
 
+  InterledgerAddressPrefix SELF_INTERNAL = InterledgerAddressPrefix.SELF.with("internal");
+  InterledgerAddress STANDARD_DEFAULT_ROUTE = InterledgerAddress.of(SELF_INTERNAL.getValue());
+
   /**
    * Add a route to this routing table. If the route already exists (keyed by {@code prefix}, then this operation is a
    * no-op.

@@ -5,9 +5,9 @@ import static org.interledger.connector.server.spring.settings.metrics.MetricsCo
 import org.interledger.connector.core.ConfigConstants;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.connector.server.spring.auth.blast.AuthConstants;
-import org.interledger.connector.server.spring.auth.blast.BearerTokenSecurityContextRepository;
-import org.interledger.connector.server.spring.auth.blast.IlpOverHttpAuthenticationProvider;
+import org.interledger.connector.server.spring.auth.ilpoverhttp.AuthConstants;
+import org.interledger.connector.server.spring.auth.ilpoverhttp.BearerTokenSecurityContextRepository;
+import org.interledger.connector.server.spring.auth.ilpoverhttp.IlpOverHttpAuthenticationProvider;
 import org.interledger.connector.server.spring.controllers.HealthController;
 import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.connector.server.spring.controllers.PathConstants;
@@ -182,14 +182,18 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         ////////
         // Admin API
         ////////
-        .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS)
-        .hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
-        .antMatchers(HttpMethod.GET, PathConstants.SLASH_ACCOUNTS)
-        .hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+        .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+        .antMatchers(HttpMethod.GET, PathConstants.SLASH_ACCOUNTS).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
         .antMatchers(HttpMethod.GET, PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID).hasAuthority(
-        AuthConstants.Authorities.CONNECTOR_ADMIN)
+            AuthConstants.Authorities.CONNECTOR_ADMIN)
         .antMatchers(HttpMethod.PUT, PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID).hasAuthority(
-        AuthConstants.Authorities.CONNECTOR_ADMIN)
+            AuthConstants.Authorities.CONNECTOR_ADMIN)
+        .antMatchers(HttpMethod.GET, PathConstants.SLASH_ROUTES).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+        .antMatchers(HttpMethod.GET, PathConstants.SLASH_ROUTES_STATIC).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+        .antMatchers(HttpMethod.PUT, PathConstants.SLASH_ROUTES_STATIC_PREFIX)
+            .hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+        .antMatchers(HttpMethod.DELETE, PathConstants.SLASH_ROUTES_STATIC_PREFIX)
+            .hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
         // Everything else...
         .anyRequest().denyAll()
 
