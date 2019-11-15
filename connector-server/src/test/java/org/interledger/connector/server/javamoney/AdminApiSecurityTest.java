@@ -1,7 +1,6 @@
 package org.interledger.connector.server.javamoney;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS;
 
 import org.interledger.connector.server.ConnectorServerConfig;
@@ -101,16 +100,16 @@ public class AdminApiSecurityTest {
       final HttpStatus expectedUpdateAccountStatus
   ) {
     final ResponseEntity postAccount = restTemplate.exchange(SLASH_ACCOUNTS, HttpMethod.POST, httpEntity, Void.class);
-    assertThat(postAccount.getStatusCode(), is(expectedCreateAccountStatus));
+    assertThat(postAccount.getStatusCode()).isEqualTo(expectedCreateAccountStatus);
 
     final ResponseEntity getAccounts = restTemplate.exchange(SLASH_ACCOUNTS, HttpMethod.GET, httpEntity, Void.class);
-    assertThat(getAccounts.getStatusCode(), is(expectedGetAccountsStatus));
+    assertThat(getAccounts.getStatusCode()).isEqualTo(expectedGetAccountsStatus);
 
     final ResponseEntity getAccount = restTemplate.exchange(SLASH_ACCOUNTS + FOO, HttpMethod.GET, httpEntity, Void.class);
-    assertThat(getAccount.getStatusCode(), is(expectedGetAccountStatus));
+    assertThat(getAccount.getStatusCode()).isEqualTo(expectedGetAccountStatus);
 
     final ResponseEntity putAccount = restTemplate.exchange(SLASH_ACCOUNTS + FOO, HttpMethod.PUT, httpEntity, Void.class);
-    assertThat(putAccount.getStatusCode(), is(expectedUpdateAccountStatus));
+    assertThat(putAccount.getStatusCode()).isEqualTo(expectedUpdateAccountStatus);
   }
 
   /**

@@ -1,8 +1,6 @@
 package org.interledger.connector.links;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
@@ -18,7 +16,9 @@ import org.interledger.link.http.OutgoingLinkSettings;
 
 import com.google.common.collect.Maps;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.Map;
 
@@ -32,28 +32,27 @@ public class DefaultLinkSettingsFactoryTest {
 
   DefaultLinkSettingsFactory factory;
 
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
+
   @Before
   public void setUp() {
     this.factory = new DefaultLinkSettingsFactory();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void constructUnsupportedLink() {
-    try {
-      factory.construct(
-          AccountSettings.builder()
-              .accountId(AccountId.of("foo"))
-              .linkType(LinkType.of("foo"))
-              .accountRelationship(AccountRelationship.PEER)
-              .assetScale(2)
-              .assetCode("XRP")
-              .build()
-      );
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(), is("Unsupported LinkType: LinkType(FOO)"));
-      throw e;
-    }
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("Unsupported LinkType: LinkType(FOO)");
+    factory.construct(
+        AccountSettings.builder()
+            .accountId(AccountId.of("foo"))
+            .linkType(LinkType.of("foo"))
+            .accountRelationship(AccountRelationship.PEER)
+            .assetScale(2)
+            .assetCode("XRP")
+            .build()
+    );
   }
 
   @Test
@@ -81,8 +80,8 @@ public class DefaultLinkSettingsFactoryTest {
         .customSettings(customSettings)
         .build();
     final LinkSettings actual = factory.construct(accountSettings);
-    assertThat(actual.getLinkType(), is(IlpOverHttpLink.LINK_TYPE));
-    assertThat(actual.getCustomSettings(), is(customSettings));
+    assertThat(actual.getLinkType()).isEqualTo(IlpOverHttpLink.LINK_TYPE);
+    assertThat(actual.getCustomSettings()).isEqualTo(customSettings);
   }
 
   @Test
@@ -95,8 +94,8 @@ public class DefaultLinkSettingsFactoryTest {
         .assetCode("XRP")
         .build();
     final LinkSettings actual = factory.construct(accountSettings);
-    assertThat(actual.getLinkType(), is(LoopbackLink.LINK_TYPE));
-    assertThat(actual.getCustomSettings().isEmpty(), is(true));
+    assertThat(actual.getLinkType()).isEqualTo(LoopbackLink.LINK_TYPE);
+    assertThat(actual.getCustomSettings().isEmpty()).isTrue();
   }
 
   @Test
@@ -109,7 +108,7 @@ public class DefaultLinkSettingsFactoryTest {
         .assetCode("XRP")
         .build();
     final LinkSettings actual = factory.construct(accountSettings);
-    assertThat(actual.getLinkType(), is(PingLoopbackLink.LINK_TYPE));
-    assertThat(actual.getCustomSettings().isEmpty(), is(true));
+    assertThat(actual.getLinkType()).isEqualTo(PingLoopbackLink.LINK_TYPE);
+    assertThat(actual.getCustomSettings().isEmpty()).isTrue();
   }
 }

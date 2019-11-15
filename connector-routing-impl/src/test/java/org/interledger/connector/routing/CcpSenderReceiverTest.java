@@ -1,7 +1,6 @@
 package org.interledger.connector.routing;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.connector.accounts.AccountId;
@@ -283,41 +282,33 @@ public class CcpSenderReceiverTest {
 
   private void assertRoutingTableEpoch(final int expectedEpoch, final SimulatedConnector... connectors) {
     Stream.of(connectors).forEach(connector ->
-      assertThat(((DefaultCcpSender) connector.ccpSender).getForwardingRoutingTable().getCurrentEpoch(),
-        is(expectedEpoch))
+      assertThat(((DefaultCcpSender) connector.ccpSender).getForwardingRoutingTable().getCurrentEpoch()).isEqualTo(expectedEpoch)
     );
   }
 
   private void assertSyncMode(final CcpSyncMode syncMode, final SimulatedConnector... connectors) {
     Stream.of(connectors).forEach(connector ->
-      assertThat(((DefaultCcpSender) connector.ccpSender).getSyncMode(), is(syncMode))
+      assertThat(((DefaultCcpSender) connector.ccpSender).getSyncMode()).isEqualTo(syncMode)
     );
   }
 
   private void assertRoutingTableIsNotExpired(final SimulatedConnector... connectors) {
     Stream.of(connectors).forEach(connector ->
-      assertThat(
-        ((DefaultCcpReceiver) connector.ccpReceiver).getRoutingTableExpiry().isAfter(Instant.now()),
-        is(true))
+      assertThat(((DefaultCcpReceiver) connector.ccpReceiver).getRoutingTableExpiry().isAfter(Instant.now())).isTrue()
     );
   }
 
   private void assertRoutingTableIsExpired(final SimulatedConnector... connectors) {
     Stream.of(connectors).forEach(connector ->
-      assertThat(
-        ((DefaultCcpReceiver) connector.ccpReceiver).getRoutingTableExpiry()
-          .isBefore(Instant.now().plusMillis(1)),
-        is(true))
+      assertThat(((DefaultCcpReceiver) connector.ccpReceiver).getRoutingTableExpiry()
+        .isBefore(Instant.now().plusMillis(1))).isTrue()
     );
   }
 
   private void assertHasRouteForPrefix(final InterledgerAddressPrefix prefix, final SimulatedConnector... connectors) {
     Stream.of(connectors).forEach(connector ->
-      assertThat(
-        ((DefaultCcpSender) connector.ccpSender)
-          .getForwardingRoutingTable().getRouteByPrefix(prefix).isPresent(),
-        is(true)
-      )
+      assertThat(((DefaultCcpSender) connector.ccpSender)
+        .getForwardingRoutingTable().getRouteByPrefix(prefix).isPresent()).isTrue()
     );
   }
 

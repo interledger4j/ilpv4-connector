@@ -1,10 +1,5 @@
 package org.interledger.connector.routing;
 
-import org.interledger.connector.routing.InMemoryRoutingTable;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 /**
  * Unit tests for {@link InMemoryRoutingTable}.
  */

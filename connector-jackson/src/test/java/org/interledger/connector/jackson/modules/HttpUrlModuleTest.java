@@ -1,5 +1,7 @@
 package org.interledger.connector.jackson.modules;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -7,9 +9,6 @@ import okhttp3.HttpUrl;
 import org.immutables.value.Value;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Unit test for the {@link HttpUrlModule}.
@@ -28,10 +27,10 @@ public class HttpUrlModuleTest {
     final Earl earl = Earl.builder().href(HttpUrl.parse("https://api.example.com/foo")).build();
 
     final String serializedHrefUrl = this.objectMapper.writeValueAsString(earl);
-    assertThat(serializedHrefUrl, is("{\"href\":\"https://api.example.com/foo\"}"));
+    assertThat(serializedHrefUrl).isEqualTo("{\"href\":\"https://api.example.com/foo\"}");
 
     final Earl deserializedEarl = this.objectMapper.readValue(serializedHrefUrl, Earl.class);
-    assertThat(deserializedEarl.href(), is(earl.href()));
+    assertThat(deserializedEarl.href()).isEqualTo(earl.href());
   }
 
   @Test
@@ -40,11 +39,10 @@ public class HttpUrlModuleTest {
       .addEncodedPathSegment("foo").addEncodedPathSegment("http:%2F%2Fwww.cnn.com%2Fstory%2F123").build()).build();
 
     final String serializedHrefUrl = this.objectMapper.writeValueAsString(earl);
-    assertThat(serializedHrefUrl,
-      is("{\"href\":\"https://api.example.com/foo/http:%2F%2Fwww.cnn.com%2Fstory%2F123\"}"));
+    assertThat(serializedHrefUrl).isEqualTo("{\"href\":\"https://api.example.com/foo/http:%2F%2Fwww.cnn.com%2Fstory%2F123\"}");
 
     final Earl deserializedEarl = this.objectMapper.readValue(serializedHrefUrl, Earl.class);
-    assertThat(deserializedEarl.href(), is(earl.href()));
+    assertThat(deserializedEarl.href()).isEqualTo(earl.href());
   }
 
   @Test
@@ -54,11 +52,10 @@ public class HttpUrlModuleTest {
         .addEncodedPathSegment("诶比西迪伊").build()).build();
 
     final String serializedHrefUrl = this.objectMapper.writeValueAsString(earl);
-    assertThat(serializedHrefUrl,
-      is("{\"href\":\"https://api.example.com/foo/%E8%AF%B6%E6%AF%94%E8%A5%BF%E8%BF%AA%E4%BC%8A\"}"));
+    assertThat(serializedHrefUrl).isEqualTo("{\"href\":\"https://api.example.com/foo/%E8%AF%B6%E6%AF%94%E8%A5%BF%E8%BF%AA%E4%BC%8A\"}");
 
     final Earl deserializedEarl = this.objectMapper.readValue(serializedHrefUrl, Earl.class);
-    assertThat(deserializedEarl.href(), is(earl.href()));
+    assertThat(deserializedEarl.href()).isEqualTo(earl.href());
   }
 
   /**

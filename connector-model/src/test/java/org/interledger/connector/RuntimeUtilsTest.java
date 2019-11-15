@@ -1,23 +1,22 @@
 package org.interledger.connector;
 
-import org.interledger.connector.RuntimeProperties;
-import org.interledger.connector.RuntimeUtils;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_GCP_ENABLED;
+import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_ENABLED;
+import static org.mockito.Mockito.when;
+
 import org.interledger.crypto.KeyStoreType;
+
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.core.env.Environment;
 
 import java.lang.reflect.Field;
 import java.util.Map;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_GCP_ENABLED;
-import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_ENABLED;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link RuntimeUtils}.
@@ -29,6 +28,9 @@ public class RuntimeUtilsTest {
     "Unsupported Keystore Type. Please defined either `%s` or `%s`",
     INTERLEDGER_CONNECTOR_KEYSTORE_GCP_ENABLED, INTERLEDGER_CONNECTOR_KEYSTORE_JKS_ENABLED
   );
+
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
 
   @Mock
   Environment environmentMock;
@@ -54,77 +56,61 @@ public class RuntimeUtilsTest {
   @Test
   public void testGcpProfileEnabled() {
     when(environmentMock.getActiveProfiles()).thenReturn(new String[]{"foo", "bar"});
-    assertThat(RuntimeUtils.gcpProfileEnabled(environmentMock), is(false));
+    assertThat(RuntimeUtils.gcpProfileEnabled(environmentMock)).isFalse();
     when(environmentMock.getActiveProfiles()).thenReturn(new String[]{RuntimeProperties.Runtimes.GCP});
-    assertThat(RuntimeUtils.gcpProfileEnabled(environmentMock), is(true));
+    assertThat(RuntimeUtils.gcpProfileEnabled(environmentMock)).isTrue();
   }
 
   @Test
   public void testGetGcpProjectName() throws ReflectiveOperationException {
-    assertThat(RuntimeUtils.getGoogleCloudProjectId().isPresent(), is(false));
+    assertThat(RuntimeUtils.getGoogleCloudProjectId().isPresent()).isFalse();
     System.setProperty(GOOGLE_CLOUD_PROJECT, "foo");
-    assertThat(RuntimeUtils.getGoogleCloudProjectId().isPresent(), is(false));
+    assertThat(RuntimeUtils.getGoogleCloudProjectId().isPresent()).isFalse();
     updateEnv(GOOGLE_CLOUD_PROJECT, "foo");
-    assertThat(RuntimeUtils.getGoogleCloudProjectId().isPresent(), is(true));
+    assertThat(RuntimeUtils.getGoogleCloudProjectId().isPresent()).isTrue();
   }
 
-  @Test(expected = RuntimeException.class)
+  @Test
   public void testDetermineKeystoreTypeGcpKmsNull() {
     when(environmentMock.getProperty(INTERLEDGER_CONNECTOR_KEYSTORE_GCP_ENABLED)).thenReturn(null);
-    try {
-      RuntimeUtils.determineKeystoreType(environmentMock);
-      fail();
-    } catch (Exception e) {
-      assertThat(e.getMessage(), is(ERR_MESSAGE));
-      throw e;
-    }
+    expectedException.expect(RuntimeException.class);
+    expectedException.expectMessage(ERR_MESSAGE);
+    RuntimeUtils.determineKeystoreType(environmentMock);
   }
 
-  @Test(expected = RuntimeException.class)
+  @Test
   public void testDetermineKeystoreTypeGcpKmsFalse() {
     when(environmentMock.getProperty(INTERLEDGER_CONNECTOR_KEYSTORE_GCP_ENABLED)).thenReturn(Boolean.FALSE.toString());
-    try {
-      RuntimeUtils.determineKeystoreType(environmentMock);
-      fail();
-    } catch (Exception e) {
-      assertThat(e.getMessage(), is(ERR_MESSAGE));
-      throw e;
-    }
+    expectedException.expect(RuntimeException.class);
+    expectedException.expectMessage(ERR_MESSAGE);
+    RuntimeUtils.determineKeystoreType(environmentMock);
   }
 
   @Test
   public void testDetermineKeystoreTypeGcpKmsTrue() {
     when(environmentMock.getProperty(INTERLEDGER_CONNECTOR_KEYSTORE_GCP_ENABLED)).thenReturn(Boolean.TRUE.toString());
-    assertThat(RuntimeUtils.determineKeystoreType(environmentMock), is(KeyStoreType.GCP));
+    assertThat(RuntimeUtils.determineKeystoreType(environmentMock)).isEqualTo(KeyStoreType.GCP);
   }
 
-  @Test(expected = RuntimeException.class)
+  @Test
   public void testDetermineKeystoreTypeJksNull() {
     when(environmentMock.getProperty(INTERLEDGER_CONNECTOR_KEYSTORE_JKS_ENABLED)).thenReturn(null);
-    try {
-      RuntimeUtils.determineKeystoreType(environmentMock);
-      fail();
-    } catch (Exception e) {
-      assertThat(e.getMessage(), is(ERR_MESSAGE));
-      throw e;
-    }
+    expectedException.expect(RuntimeException.class);
+    expectedException.expectMessage(ERR_MESSAGE);
+    RuntimeUtils.determineKeystoreType(environmentMock);
   }
 
-  @Test(expected = RuntimeException.class)
+  @Test
   public void testDetermineKeystoreTypeJksFalse() {
     when(environmentMock.getProperty(INTERLEDGER_CONNECTOR_KEYSTORE_JKS_ENABLED)).thenReturn(Boolean.FALSE.toString());
-    try {
-      RuntimeUtils.determineKeystoreType(environmentMock);
-      fail();
-    } catch (Exception e) {
-      assertThat(e.getMessage(), is(ERR_MESSAGE));
-      throw e;
-    }
+    expectedException.expect(RuntimeException.class);
+    expectedException.expectMessage(ERR_MESSAGE);
+    RuntimeUtils.determineKeystoreType(environmentMock);
   }
 
   @Test
   public void testDetermineKeystoreTypeJksTrue() {
     when(environmentMock.getProperty(INTERLEDGER_CONNECTOR_KEYSTORE_JKS_ENABLED)).thenReturn(Boolean.TRUE.toString());
-    assertThat(RuntimeUtils.determineKeystoreType(environmentMock), is(KeyStoreType.JKS));
+    assertThat(RuntimeUtils.determineKeystoreType(environmentMock)).isEqualTo(KeyStoreType.JKS);
   }
 }

@@ -1,20 +1,22 @@
 package org.interledger.crypto;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.common.collect.ImmutableList;
-import org.hamcrest.core.Is;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Base64;
 import java.util.Collection;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.fail;
-
 @RunWith(Parameterized.class)
 public class EncryptedSecretTest {
+
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
 
   private final String encodedValueToTest;
 
@@ -66,136 +68,91 @@ public class EncryptedSecretTest {
     );
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testUnspecifiedString() {
-    try {
-      EncryptedSecret.builder().build();
-      fail();
-    } catch (IllegalStateException e) {
-      assertThat(e.getMessage(),
-        is(
-          "Cannot build EncryptedSecret, some of required attributes are not set [keyMetadata, encryptionAlgorithm, cipherMessage]"));
-      throw e;
-    }
+    expectedException.expect(IllegalStateException.class);
+    expectedException.expectMessage("Cannot build EncryptedSecret, some of required attributes are not set [keyMetadata, encryptionAlgorithm, cipherMessage]");
+    EncryptedSecret.builder().build();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testEmptyString() {
-    try {
-      EncryptedSecret.fromEncodedValue("");
-      fail();
-    } catch (IllegalStateException e) {
-      assertThat(e.getMessage(), is("encodedValue must start with `enc` prefix"));
-      throw e;
-    }
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("encodedValue must start with `enc` prefix");
+    EncryptedSecret.fromEncodedValue("");
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testEncodedValueWithNoCipherText() {
-    try {
-      EncryptedSecret.fromEncodedValue("enc:gcpkms:kr1:foo_password:1:gs:");
-      fail();
-    } catch (IllegalStateException e) {
-      assertThat(e.getMessage(), is("Invalid ciphertext!"));
-      throw e;
-    }
+    expectedException.expect(IllegalStateException.class);
+    expectedException.expectMessage("Invalid ciphertext!");
+    EncryptedSecret.fromEncodedValue("enc:gcpkms:kr1:foo_password:1:gs:");
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testEncodedValueWithNoPrefix() {
-    try {
-      EncryptedSecret.fromEncodedValue("gcpkms:kr1:foo_password:1:gs:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(), is(
-        "encodedValue must start with `enc` prefix. Value was instead: gcpkms:kr1:foo_password:1:gs:VGhpcyBpcyBhIHRoZSBzZWNyZXQ="));
-      throw e;
-    }
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("encodedValue must start with `enc` prefix. Value was instead: gcpkms:kr1:foo_password:1:gs:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
+    EncryptedSecret.fromEncodedValue("gcpkms:kr1:foo_password:1:gs:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testEncodedValueWithEmptyPrefix() {
-    try {
-      EncryptedSecret.fromEncodedValue(":gcpkms:kr1:gs:foo_password:1:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(), is(
-        "encodedValue must start with `enc` prefix. Value was instead: :gcpkms:kr1:gs:foo_password:1:VGhpcyBpcyBhIHRoZSBzZWNyZXQ="));
-      throw e;
-    }
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("encodedValue must start with `enc` prefix. Value was instead: :gcpkms:kr1:gs:foo_password:1:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
+    EncryptedSecret.fromEncodedValue(":gcpkms:kr1:gs:foo_password:1:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testEncodedValueWithInvalidPrefix() {
-    try {
+      expectedException.expect(IllegalArgumentException.class);
+      expectedException.expectMessage("encodedValue must start with `enc` prefix. Value was instead: enc2:gcpkms:kr1:gs:foo_password:1:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
       EncryptedSecret.fromEncodedValue("enc2:gcpkms:kr1:gs:foo_password:1:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(), is(
-        "encodedValue must start with `enc` prefix. Value was instead: enc2:gcpkms:kr1:gs:foo_password:1:VGhpcyBpcyBhIHRoZSBzZWNyZXQ="));
-      throw e;
-    }
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testEncodedValueWithNoKeyIdentifier() {
-    try {
-      EncryptedSecret.fromEncodedValue(EncryptedSecret.ENCODING_PREFIX + ":gcpkms:kr1::1:gs:ct");
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(), is("keyIdentifier must not be empty"));
-      throw e;
-    }
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("keyIdentifier must not be empty");
+    EncryptedSecret.fromEncodedValue(EncryptedSecret.ENCODING_PREFIX + ":gcpkms:kr1::1:gs:ct");
   }
 
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testEncodedValueWithNoKeyringId() {
-    try {
-      EncryptedSecret.fromEncodedValue(
-        EncryptedSecret.ENCODING_PREFIX + ":gcpkms::foo_password:1:gs:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=)"
-      );
-      fail();
-    } catch (IllegalStateException e) {
-      assertThat(e.getMessage(), is("keyringIdentifier must not be empty"));
-      throw e;
-    }
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("keyringIdentifier must not be empty");
+    EncryptedSecret.fromEncodedValue(
+      EncryptedSecret.ENCODING_PREFIX + ":gcpkms::foo_password:1:gs:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=)"
+    );
   }
 
-  @Test(expected = RuntimeException.class)
+  @Test
   public void testEncodedValueWithNoEncryptionAlg() {
-    try {
-      EncryptedSecret.fromEncodedValue(
-        EncryptedSecret.ENCODING_PREFIX + ":gcpkms:kr1:foo_password:1::VGhpcyBpcyBhIHRoZSBzZWNyZXQ=)"
-      );
-      fail();
-    } catch (RuntimeException e) {
-      assertThat(e.getMessage(), is("Invalid Encryption Algorithm: "));
-      throw e;
-    }
+    expectedException.expect(RuntimeException.class);
+    expectedException.expectMessage("Invalid Encryption Algorithm: ");
+    EncryptedSecret.fromEncodedValue(
+      EncryptedSecret.ENCODING_PREFIX + ":gcpkms:kr1:foo_password:1::VGhpcyBpcyBhIHRoZSBzZWNyZXQ=)"
+    );
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testEncodedValueWithNoKeyId() {
-    try {
-      EncryptedSecret.fromEncodedValue(EncryptedSecret.ENCODING_PREFIX + ":gcpkms:kr1::1:gs:ciphertext");
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(), is("keyIdentifier must not be empty"));
-      throw e;
-    }
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("keyIdentifier must not be empty");
+    EncryptedSecret.fromEncodedValue(EncryptedSecret.ENCODING_PREFIX + ":gcpkms:kr1::1:gs:ciphertext");
   }
 
   @Test
   public void testEncryptedSecretFrom() {
     final EncryptedSecret metadata = EncryptedSecret.fromEncodedValue(encodedValueToTest);
 
-    assertThat(metadata.keyMetadata().platformIdentifier(), is(this.expectedPlatformIdentifier));
-    assertThat(metadata.keyMetadata().keyringIdentifier(), is(this.expectedKeyringIdentifier));
-    assertThat(metadata.keyMetadata().keyIdentifier(), is(this.expectedKeyIdentifier));
-    assertThat(metadata.keyMetadata().keyVersion(), is(this.expectedKeyVersion));
-    assertThat(metadata.encryptionAlgorithm(), is(this.expectedGcpEncryptionAlgorithm));
-    assertThat(Base64.getUrlEncoder().encodeToString(metadata.cipherMessage()), is(this.expectedCipherText));
+    assertThat(metadata.keyMetadata().platformIdentifier()).isEqualTo(this.expectedPlatformIdentifier);
+    assertThat(metadata.keyMetadata().keyringIdentifier()).isEqualTo(this.expectedKeyringIdentifier);
+    assertThat(metadata.keyMetadata().keyIdentifier()).isEqualTo(this.expectedKeyIdentifier);
+    assertThat(metadata.keyMetadata().keyVersion()).isEqualTo(this.expectedKeyVersion);
+    assertThat(metadata.encryptionAlgorithm()).isEqualTo(this.expectedGcpEncryptionAlgorithm);
+    assertThat(Base64.getUrlEncoder().encodeToString(metadata.cipherMessage())).isEqualTo(this.expectedCipherText);
   }
 
 
@@ -205,15 +162,14 @@ public class EncryptedSecretTest {
       + ":gcpkms:kr1:foo_password:1:gs:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=";
     final EncryptedSecret gcpEncodedSecret = EncryptedSecret.fromEncodedValue(actualEncodedValue);
 
-    assertThat(gcpEncodedSecret.keyMetadata().platformIdentifier(), is("gcpkms"));
-    assertThat(gcpEncodedSecret.keyMetadata().keyringIdentifier(), is("kr1"));
-    assertThat(gcpEncodedSecret.keyMetadata().keyIdentifier(), is("foo_password"));
-    assertThat(gcpEncodedSecret.keyMetadata().keyVersion(), is("1"));
-    assertThat(gcpEncodedSecret.encryptionAlgorithm(), Is.is(EncryptionAlgorithm.GOOGLE_SYMMETRIC));
-    assertThat(Base64.getUrlEncoder().encodeToString(gcpEncodedSecret.cipherMessage()),
-      is("VGhpcyBpcyBhIHRoZSBzZWNyZXQ="));
-    assertThat(gcpEncodedSecret.encodedValue(), is(actualEncodedValue));
-    assertThat(gcpEncodedSecret.toString(), is(actualEncodedValue));
+    assertThat(gcpEncodedSecret.keyMetadata().platformIdentifier()).isEqualTo("gcpkms");
+    assertThat(gcpEncodedSecret.keyMetadata().keyringIdentifier()).isEqualTo("kr1");
+    assertThat(gcpEncodedSecret.keyMetadata().keyIdentifier()).isEqualTo("foo_password");
+    assertThat(gcpEncodedSecret.keyMetadata().keyVersion()).isEqualTo("1");
+    assertThat(gcpEncodedSecret.encryptionAlgorithm()).isEqualTo(EncryptionAlgorithm.GOOGLE_SYMMETRIC);
+    assertThat(Base64.getUrlEncoder().encodeToString(gcpEncodedSecret.cipherMessage())).isEqualTo("VGhpcyBpcyBhIHRoZSBzZWNyZXQ=");
+    assertThat(gcpEncodedSecret.encodedValue()).isEqualTo(actualEncodedValue);
+    assertThat(gcpEncodedSecret.toString()).isEqualTo(actualEncodedValue);
   }
 
 }

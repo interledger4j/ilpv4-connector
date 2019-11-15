@@ -1,15 +1,15 @@
 package org.interledger.connector.jackson.modules;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.jackson.ObjectMapperFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.UUID;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
 
 /**
  * Unit tests for {@link SettlementAccountIdModule}.
@@ -29,7 +29,7 @@ public class SettlementAccountIdModuleTest extends AbstractIdTest {
     final SettlementAccountIdContainer actualContainer = objectMapper
       .readValue(json, SettlementAccountIdContainer.class);
 
-    assertThat(actualContainer, is(expectedContainer));
+    assertThat(actualContainer).isEqualTo(expectedContainer);
   }
 
   @Test
@@ -42,6 +42,6 @@ public class SettlementAccountIdModuleTest extends AbstractIdTest {
     final String actualJson = objectMapperWithoutModule.writeValueAsString(expectedContainer);
     final SettlementAccountIdContainer decodedJson =
       objectMapperWithoutModule.readValue(actualJson, SettlementAccountIdContainer.class);
-    assertThat(decodedJson, is(expectedContainer));
+    assertThat(decodedJson).isEqualTo(expectedContainer);
   }
 }

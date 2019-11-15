@@ -1,10 +1,14 @@
 package org.interledger.connector.balances;
 
-import com.google.common.collect.ImmutableList;
-import org.hamcrest.core.Is;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
+
+import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -23,11 +27,6 @@ import org.springframework.test.context.junit4.rules.SpringMethodRule;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link RedisBalanceTracker} that validates the script and balance-change functionality for handling
@@ -183,7 +182,7 @@ public class RedisBalanceTrackerFulfillPacketSettlementTest extends AbstractRedi
     try {
       balanceTracker.updateBalanceForFulfill(null, ONE);
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("destinationAccountSettings must not be null"));
+      assertThat(e.getMessage()).isEqualTo("destinationAccountSettings must not be null");
       throw e;
     }
   }
@@ -202,9 +201,9 @@ public class RedisBalanceTrackerFulfillPacketSettlementTest extends AbstractRedi
     balanceTracker.updateBalanceForFulfill(accountSettingsMock, ONE);
 
     final AccountBalance loadedBalance = balanceTracker.balance(accountId);
-    assertThat(loadedBalance.clearingBalance(), is(ONE));
-    assertThat(loadedBalance.prepaidAmount(), is(ZERO));
-    assertThat(loadedBalance.netBalance().longValue(), is(ONE));
+    assertThat(loadedBalance.clearingBalance()).isEqualTo(ONE);
+    assertThat(loadedBalance.prepaidAmount()).isEqualTo(ZERO);
+    assertThat(loadedBalance.netBalance().longValue()).isEqualTo(ONE);
   }
 
   /**
@@ -214,13 +213,13 @@ public class RedisBalanceTrackerFulfillPacketSettlementTest extends AbstractRedi
   public void computeSettlementQuantityWithParamterizedValues() {
     this.initializeAccount(ACCOUNT_ID, this.existingClearingBalance, this.existingPrepaidBalance);
 
-    assertThat(accountSettingsMock.balanceSettings().settleTo(), Is.is(settleTo));
-    assertThat(accountSettingsMock.balanceSettings().settleThreshold(), Is.is(settleThreshold));
+    assertThat(accountSettingsMock.balanceSettings().settleTo()).isEqualTo(settleTo);
+    assertThat(accountSettingsMock.balanceSettings().settleThreshold()).isEqualTo(settleThreshold);
 
     BalanceTracker.UpdateBalanceForFulfillResponse prepareResponse =
       balanceTracker.updateBalanceForFulfill(accountSettingsMock, prepareAmount);
 
-    assertThat(prepareResponse.clearingAmountToSettle(), is(expectedClearingAmountToSettle));
+    assertThat(prepareResponse.clearingAmountToSettle()).isEqualTo(expectedClearingAmountToSettle);
   }
 
 }

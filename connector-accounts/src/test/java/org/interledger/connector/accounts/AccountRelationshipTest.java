@@ -1,35 +1,31 @@
 package org.interledger.connector.accounts;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 /**
  * Unit tests for {@link AccountRelationship}.
  */
 public class AccountRelationshipTest {
 
-  @Test(expected = IllegalArgumentException.class)
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
+
+  @Test
   public void fromInvalidNegativeWeight() {
-    try {
-      AccountRelationship.fromWeight(-1);
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage()).isEqualTo("Invalid `weight`: -1");
-      throw e;
-    }
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("Invalid `weight`: -1");
+    AccountRelationship.fromWeight(-1);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void fromInvalidWeight() {
-    try {
-      AccountRelationship.fromWeight(4);
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage()).isEqualTo("Invalid `weight`: 4");
-      throw e;
-    }
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("Invalid `weight`: 4");
+    AccountRelationship.fromWeight(4);
   }
 
   @Test

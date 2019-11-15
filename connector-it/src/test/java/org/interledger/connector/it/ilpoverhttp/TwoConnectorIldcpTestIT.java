@@ -1,6 +1,6 @@
 package org.interledger.connector.it.ilpoverhttp;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
@@ -8,7 +8,6 @@ import static org.interledger.connector.it.topologies.AbstractTopology.BOB_AT_AL
 import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorParentChildIlpOverHttpTopology.ALICE;
 import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorParentChildIlpOverHttpTopology.BOB;
 import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
-import static org.junit.Assert.assertThat;
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.it.AbstractIlpOverHttpIT;
@@ -86,14 +85,12 @@ public class TwoConnectorIldcpTestIT extends AbstractIlpOverHttpIT {
   @Test
   public void testAliceNodeSettings() {
     final ILPv4Connector connector = getILPv4NodeFromGraph(getAliceConnectorAddress());
-    assertThat(connector.getConnectorSettings().operatorAddress(), is(getAliceConnectorAddress()));
+    assertThat(connector.getConnectorSettings().operatorAddress()).isEqualTo(getAliceConnectorAddress());
 
     final IlpOverHttpLink ilpOverHttpLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), BOB_ACCOUNT);
-    assertThat(ilpOverHttpLink.getLinkSettings().outgoingHttpLinkSettings().tokenSubject(), is(ALICE));
-    assertThat(ilpOverHttpLink.getLinkSettings().outgoingHttpLinkSettings().authType(),
-        is(IlpOverHttpLinkSettings.AuthType.JWT_HS_256));
-    assertThat(ilpOverHttpLink.getLinkSettings().incomingHttpLinkSettings().authType(),
-        is(IlpOverHttpLinkSettings.AuthType.JWT_HS_256));
+    assertThat(ilpOverHttpLink.getLinkSettings().outgoingHttpLinkSettings().tokenSubject()).isEqualTo(ALICE);
+    assertThat(ilpOverHttpLink.getLinkSettings().outgoingHttpLinkSettings().authType()).isEqualTo(IlpOverHttpLinkSettings.AuthType.JWT_HS_256);
+    assertThat(ilpOverHttpLink.getLinkSettings().incomingHttpLinkSettings().authType()).isEqualTo(IlpOverHttpLinkSettings.AuthType.JWT_HS_256);
   }
 
   @Test
@@ -102,14 +99,12 @@ public class TwoConnectorIldcpTestIT extends AbstractIlpOverHttpIT {
     Thread.sleep(2000);
 
     final ILPv4Connector connector = getILPv4NodeFromGraph(getBobConnectorAddress());
-    assertThat(connector.getConnectorSettings().operatorAddress(), is(getBobConnectorAddress()));
+    assertThat(connector.getConnectorSettings().operatorAddress()).isEqualTo(getBobConnectorAddress());
 
     final IlpOverHttpLink ilpOverHttpLink = getIlpOverHttpLinkFromGraph(getBobConnectorAddress(), ALICE_ACCOUNT);
-    assertThat(ilpOverHttpLink.getLinkSettings().outgoingHttpLinkSettings().tokenSubject(), is(BOB));
-    assertThat(ilpOverHttpLink.getLinkSettings().outgoingHttpLinkSettings().authType(),
-        is(IlpOverHttpLinkSettings.AuthType.JWT_HS_256));
-    assertThat(ilpOverHttpLink.getLinkSettings().incomingHttpLinkSettings().authType(),
-        is(IlpOverHttpLinkSettings.AuthType.JWT_HS_256));
+    assertThat(ilpOverHttpLink.getLinkSettings().outgoingHttpLinkSettings().tokenSubject()).isEqualTo(BOB);
+    assertThat(ilpOverHttpLink.getLinkSettings().outgoingHttpLinkSettings().authType()).isEqualTo(IlpOverHttpLinkSettings.AuthType.JWT_HS_256);
+    assertThat(ilpOverHttpLink.getLinkSettings().incomingHttpLinkSettings().authType()).isEqualTo(IlpOverHttpLinkSettings.AuthType.JWT_HS_256);
   }
 
   /**

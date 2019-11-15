@@ -1,5 +1,7 @@
 package org.interledger.connector.ccp.codecs;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.common.io.BaseEncoding;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,10 +10,6 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.UUID;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
 
 /**
  * Unit tests that test the encoding/decoding of a {@link UUID} to/from ASN.1 OER.
@@ -55,7 +53,7 @@ public class AsnUuidCodecTest extends AbstractAsnCodecTest<UUID> {
     final UUID uuid = UUID.randomUUID();
     final byte[] result = AsnUuidCodec.getBytesFromUUID(uuid);
 
-    assertThat("Resulting byte array should have had 16 elements.", result.length, is(16));
+    assertThat(result.length).as("Resulting byte array should have had 16 elements.").isEqualTo(16);
   }
 
   @Test
@@ -64,7 +62,7 @@ public class AsnUuidCodecTest extends AbstractAsnCodecTest<UUID> {
     byte[] bytes = AsnUuidCodec.getBytesFromUUID(uuid);
     final UUID reconstructedUuid = AsnUuidCodec.getUUIDFromBytes(bytes);
 
-    assertThat(uuid, is(reconstructedUuid));
+    assertThat(uuid).isEqualTo(reconstructedUuid);
   }
 
   @Test
@@ -73,6 +71,6 @@ public class AsnUuidCodecTest extends AbstractAsnCodecTest<UUID> {
     final byte[] result = AsnUuidCodec.getBytesFromUUID(uuid);
     final UUID newUuid = UUID.nameUUIDFromBytes(result);
 
-    assertThat(uuid, is(not(newUuid)));
+    assertThat(uuid).isNotEqualTo(newUuid);
   }
 }

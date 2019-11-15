@@ -1,15 +1,13 @@
 package org.interledger.connector.server.spring.controllers.settlement;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.UUID;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Unit tests for {@link SettlementEngineIdempotencyKeyGenerator}.
@@ -35,26 +33,25 @@ public class SettlementEngineIdempotencyKeyGeneratorTest {
     try {
       generator.generate(settlementControllerMock, null, new Object[0]);
     } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(), is("params is expected to have at least 1 value"));
+      assertThat(e.getMessage()).isEqualTo("params is expected to have at least 1 value");
       throw e;
     }
   }
 
   @Test
   public void generateWithNonSettlementControllerTarget() {
-    assertThat(generator.generate(objectMock, null, new Object[0]), is(nullValue()));
+    assertThat(generator.generate(objectMock, null, new Object[0])).isNull();
   }
 
   @Test
   public void generateWithOneParam() {
     final String idempotencyId = UUID.randomUUID().toString();
-    assertThat(generator.generate(settlementControllerMock, null, new Object[]{idempotencyId}), is(idempotencyId));
+    assertThat(generator.generate(settlementControllerMock, null, new Object[] {idempotencyId})).isEqualTo(idempotencyId);
   }
 
   @Test
   public void generateWithMultipleParams() {
     final String idempotencyId = UUID.randomUUID().toString();
-    assertThat(generator.generate(settlementControllerMock, null, new Object[]{idempotencyId, "foo", "bar"}),
-      is(idempotencyId));
+    assertThat(generator.generate(settlementControllerMock, null, new Object[] {idempotencyId, "foo", "bar"})).isEqualTo(idempotencyId);
   }
 }

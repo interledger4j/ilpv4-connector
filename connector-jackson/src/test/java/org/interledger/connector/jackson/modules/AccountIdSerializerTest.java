@@ -1,13 +1,13 @@
 package org.interledger.connector.jackson.modules;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.interledger.connector.accounts.AccountId;
+
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.UUID;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
 
 /**
  * Unit tests for {@link AccountIdSerializer}.
@@ -19,7 +19,7 @@ public class AccountIdSerializerTest extends AbstractIdTest {
   @Test
   public void shouldSerialize() throws IOException {
     final String actual = objectMapper.writeValueAsString(ACCOUNT_ID);
-    assertThat(actual, is("\"" + ACCOUNT_ID.value() + "\""));
+    assertThat(actual).isEqualTo("\"" + ACCOUNT_ID.value() + "\"");
   }
 
   @Test
@@ -30,6 +30,6 @@ public class AccountIdSerializerTest extends AbstractIdTest {
 
     final String actualJson = objectMapper.writeValueAsString(expectedContainer);
 
-    assertThat(actualJson, is("{\"account_id\":\"" + ACCOUNT_ID.value() + "\"}"));
+    assertThat(actualJson).isEqualTo("{\"account_id\":\"" + ACCOUNT_ID.value() + "\"}");
   }
 }
