@@ -73,7 +73,7 @@ public class ConnectorSettingsFromPropertyFileTest {
   @EnableConfigurationProperties(ConnectorSettingsFromPropertyFile.class)
   public static class TestConfiguration {
     @Bean
-    Supplier<ConnectorSettings> connectorSettingsSupplier(ConnectorSettingsFromPropertyFile settings) {
+    public Supplier<ConnectorSettings> connectorSettingsSupplier(ConnectorSettingsFromPropertyFile settings) {
       return () -> settings;
     }
 

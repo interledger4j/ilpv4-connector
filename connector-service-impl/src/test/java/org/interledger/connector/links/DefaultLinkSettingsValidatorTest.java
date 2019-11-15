@@ -25,7 +25,6 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 
 import java.time.Duration;
-import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 public class DefaultLinkSettingsValidatorTest {

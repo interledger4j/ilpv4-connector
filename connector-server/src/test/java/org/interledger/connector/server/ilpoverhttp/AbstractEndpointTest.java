@@ -10,6 +10,7 @@ import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.server.LocalServerPort;
@@ -39,11 +40,16 @@ public abstract class AbstractEndpointTest {
   @LocalServerPort
   private int localServerPort;
 
+  /**
+   * To test the local connector using Feign, the baseURI has to be provide
+   * after injection so that the random local server port is known
+   * @return base uri for the local connector
+   */
   protected URI baseURI() {
     try {
       return new URI("http://localhost:" + localServerPort);
     } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
+      throw new IllegalArgumentException(e);
     }
   }
 
