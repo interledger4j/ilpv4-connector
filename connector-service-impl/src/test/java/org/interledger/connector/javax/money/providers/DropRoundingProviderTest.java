@@ -1,21 +1,19 @@
 package org.interledger.connector.javax.money.providers;
 
-import org.interledger.connector.javax.money.providers.DropRoundingProvider;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.DROP;
+import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.XRP;
+
 import org.javamoney.moneta.Money;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import javax.money.Monetary;
 import javax.money.MonetaryAmount;
 import javax.money.MonetaryRounding;
 import javax.money.RoundingQueryBuilder;
 import javax.money.UnknownCurrencyException;
-import java.math.BigDecimal;
-
-import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.DROP;
-import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.XRP;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Unit tests for {@link DropRoundingProvider}.
@@ -38,7 +36,7 @@ public class DropRoundingProviderTest {
 
     // round it to Drops
     final MonetaryAmount xrpRounded = xrpAmount.with(Monetary.getRounding(xrpAmount.getCurrency()));
-    assertThat(xrpRounded.getNumber().numberValue(BigDecimal.class), is(new BigDecimal("0.123457")));
+    assertThat(xrpRounded.getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.123457"));
   }
 
   @Test
@@ -50,7 +48,7 @@ public class DropRoundingProviderTest {
 
     // round it to Drops
     final MonetaryAmount xrpRounded = xrpAmount.with(Monetary.getRounding(xrpAmount.getCurrency()));
-    assertThat(xrpRounded.getNumber().numberValue(BigDecimal.class), is(new BigDecimal("1.123457")));
+    assertThat(xrpRounded.getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("1.123457"));
   }
 
   @Test
@@ -62,7 +60,7 @@ public class DropRoundingProviderTest {
 
     // round it to Drops
     final MonetaryAmount xrpRounded = xrpAmount.with(Monetary.getRounding(xrpAmount.getCurrency()));
-    assertThat(xrpRounded.getNumber().numberValue(BigDecimal.class), is(new BigDecimal("221.123456")));
+    assertThat(xrpRounded.getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("221.123456"));
   }
 
   @Test
@@ -71,8 +69,8 @@ public class DropRoundingProviderTest {
       .setCurrency(Monetary.getCurrency(XRP))
       //.set("cashRounding", true)
       .build());
-    assertThat(rounding.getRoundingContext().getProviderName(), is("DropsProvider"));
-    assertThat(rounding.getRoundingContext().getRoundingName(), is(DROP));
+    assertThat(rounding.getRoundingContext().getProviderName()).isEqualTo("DropsProvider");
+    assertThat(rounding.getRoundingContext().getRoundingName()).isEqualTo(DROP);
   }
 
   @Test(expected = UnknownCurrencyException.class)
@@ -82,14 +80,14 @@ public class DropRoundingProviderTest {
         .setCurrency(Monetary.getCurrency("Foo"))
         .build());
     } catch (UnknownCurrencyException e) {
-      assertThat(e.getMessage(), is("Unknown currency code: Foo"));
+      assertThat(e.getMessage()).isEqualTo("Unknown currency code: Foo");
       throw e;
     }
   }
 
   @Test
   public void getRoundingNames() {
-    assertThat(dropRoundingProvider.getRoundingNames().size(), is(1));
-    assertThat(dropRoundingProvider.getRoundingNames().contains(DROP), is(true));
+    assertThat(dropRoundingProvider.getRoundingNames().size()).isEqualTo(1);
+    assertThat(dropRoundingProvider.getRoundingNames().contains(DROP)).isTrue();
   }
 }

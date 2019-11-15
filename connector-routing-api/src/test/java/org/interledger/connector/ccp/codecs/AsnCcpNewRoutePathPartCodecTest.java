@@ -1,9 +1,10 @@
 package org.interledger.connector.ccp.codecs;
 
-import com.google.common.io.BaseEncoding;
 import org.interledger.connector.ccp.CcpRoutePathPart;
 import org.interledger.connector.ccp.ImmutableCcpRoutePathPart;
 import org.interledger.core.InterledgerAddress;
+
+import com.google.common.io.BaseEncoding;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 

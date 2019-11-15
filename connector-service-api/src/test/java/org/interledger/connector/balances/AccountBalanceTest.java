@@ -1,12 +1,12 @@
 package org.interledger.connector.balances;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.interledger.connector.accounts.AccountId;
+
 import org.junit.Test;
 
 import java.math.BigInteger;
-
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
 
 /**
  * Unit tess for {@link AccountBalance}.
@@ -23,8 +23,7 @@ public class AccountBalanceTest {
         .prepaidAmount(0L)
         .build();
     } catch (IllegalStateException e) {
-      assertThat(e.getMessage(),
-        is("Cannot build AccountBalance, some of required attributes are not set [accountId]"));
+      assertThat(e.getMessage()).isEqualTo("Cannot build AccountBalance, some of required attributes are not set [accountId]");
       throw e;
     }
   }
@@ -37,8 +36,7 @@ public class AccountBalanceTest {
         .prepaidAmount(0L)
         .build();
     } catch (IllegalStateException e) {
-      assertThat(e.getMessage(),
-        is("Cannot build AccountBalance, some of required attributes are not set [clearingBalance]"));
+      assertThat(e.getMessage()).isEqualTo("Cannot build AccountBalance, some of required attributes are not set [clearingBalance]");
       throw e;
     }
   }
@@ -51,8 +49,7 @@ public class AccountBalanceTest {
         .clearingBalance(0L)
         .build();
     } catch (IllegalStateException e) {
-      assertThat(e.getMessage(),
-        is("Cannot build AccountBalance, some of required attributes are not set [prepaidAmount]"));
+      assertThat(e.getMessage()).isEqualTo("Cannot build AccountBalance, some of required attributes are not set [prepaidAmount]");
       throw e;
     }
   }
@@ -65,9 +62,9 @@ public class AccountBalanceTest {
       .prepaidAmount(25L)
       .build();
 
-    assertThat(balance.accountId(), is(ACCOUNT_ID));
-    assertThat(balance.netBalance(), is(BigInteger.valueOf(30L)));
-    assertThat(balance.clearingBalance(), is(5L));
-    assertThat(balance.prepaidAmount(), is(25L));
+    assertThat(balance.accountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(balance.netBalance()).isEqualTo(BigInteger.valueOf(30L));
+    assertThat(balance.clearingBalance()).isEqualTo(5L);
+    assertThat(balance.prepaidAmount()).isEqualTo(25L);
   }
 }

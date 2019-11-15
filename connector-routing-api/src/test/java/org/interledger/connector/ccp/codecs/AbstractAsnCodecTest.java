@@ -1,9 +1,11 @@
 package org.interledger.connector.ccp.codecs;
 
-import com.google.common.io.BaseEncoding;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.junit.Assert;
+
+import com.google.common.io.BaseEncoding;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -11,10 +13,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.UUID;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertArrayEquals;
 
 /**
  * Unit tests that test the encoding/decoding of a {@link UUID} to/from ASN.1 OER.
@@ -51,7 +49,7 @@ public abstract class AbstractAsnCodecTest<T> {
     // This getAllAccountSettings allows the codec to read the asn1Bytes...
     final ByteArrayInputStream inputStream = new ByteArrayInputStream(this.asn1OerBytes);
     final T actual = codecContext.read(clazz, inputStream);
-    Assert.assertThat(actual, is(expectedObject));
+    assertThat(actual).isEqualTo(expectedObject);
   }
 
   @Test
@@ -64,8 +62,8 @@ public abstract class AbstractAsnCodecTest<T> {
 
     final String expectedHex = BaseEncoding.base16().encode(this.asn1OerBytes);
     final String actualHex = BaseEncoding.base16().encode(actualBytes);
-    assertThat(actualHex, is(expectedHex));
-    assertArrayEquals(this.asn1OerBytes, actualBytes);
+    assertThat(actualHex).isEqualTo(expectedHex);
+    assertThat(actualBytes).isEqualTo(this.asn1OerBytes);
   }
 
   @Test
@@ -77,13 +75,13 @@ public abstract class AbstractAsnCodecTest<T> {
     // Read octets...
     final ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
     final T actual = codecContext.read(clazz, inputStream);
-    Assert.assertThat(actual, is(expectedObject));
+    assertThat(actual).isEqualTo(expectedObject);
 
     // Write octets again...
     final ByteArrayOutputStream outputStream2 = new ByteArrayOutputStream();
     codecContext.write(expectedObject, outputStream2);
 
     // Assert originally written bytes equals newly written bytes.
-    Assert.assertArrayEquals(outputStream.toByteArray(), outputStream2.toByteArray());
+    assertThat(outputStream2.toByteArray()).isEqualTo(outputStream.toByteArray());
   }
 }

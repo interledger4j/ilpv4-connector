@@ -1,10 +1,9 @@
 package org.interledger.connector.packetswitch.filters;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static org.interledger.link.PingLoopbackLink.PING_PROTOCOL_CONDITION;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -130,7 +129,7 @@ public class DefaultPacketSwitchFilterChainTest {
 
   @Test
   public void filterPacketWithNoFilters() {
-    assertThat(this.packetSwitchFilters.size(), is(0));
+    assertThat(this.packetSwitchFilters.size()).isEqualTo(0);
 
     final NextHopInfo nextHopInfo = NextHopInfo.builder()
         .nextHopAccountId(OUTGOING_ACCOUNT_ID)
@@ -141,7 +140,7 @@ public class DefaultPacketSwitchFilterChainTest {
     when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_ID)).thenReturn(outgoingLink);
 
     filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET).handle(
-        fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(LoopbackLink.LOOPBACK_FULFILLMENT)),
+        fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LoopbackLink.LOOPBACK_FULFILLMENT),
         rejectPacket -> fail("Should have fulfilled but rejected!")
     );
 
@@ -149,7 +148,7 @@ public class DefaultPacketSwitchFilterChainTest {
     verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_ID);
     verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET);
 
-    assertThat(this.packetSwitchFilters.size(), is(0));
+    assertThat(this.packetSwitchFilters.size()).isEqualTo(0);
     verifyNoMoreInteractions(nextHopPacketMapperMock);
     verifyNoMoreInteractions(linkFiltersMock);
   }
@@ -165,7 +164,7 @@ public class DefaultPacketSwitchFilterChainTest {
         filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
     this.packetSwitchFilters.add(packetSwitchFilter2);
 
-    assertThat(this.packetSwitchFilters.size(), is(2));
+    assertThat(this.packetSwitchFilters.size()).isEqualTo(2);
 
     final NextHopInfo nextHopInfo = NextHopInfo.builder()
         .nextHopAccountId(OUTGOING_ACCOUNT_ID)
@@ -175,7 +174,7 @@ public class DefaultPacketSwitchFilterChainTest {
     when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_ID)).thenReturn(outgoingLink);
 
     filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET).handle(
-        fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(LoopbackLink.LOOPBACK_FULFILLMENT)),
+        fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LoopbackLink.LOOPBACK_FULFILLMENT),
         rejectPacket -> fail("Should have fulfilled but rejected!")
     );
 
@@ -193,7 +192,7 @@ public class DefaultPacketSwitchFilterChainTest {
    */
   @Test
   public void filterPacketForPingLink() {
-    assertThat(this.packetSwitchFilters.size(), is(0));
+    assertThat(this.packetSwitchFilters.size()).isEqualTo(0);
 
     final InterledgerPreparePacket pingPreparePacket = InterledgerPreparePacket.builder()
         .destination(OPERATOR_ADDRESS)
@@ -215,7 +214,7 @@ public class DefaultPacketSwitchFilterChainTest {
     when(linkManagerMock.getPingLink()).thenReturn(outgoingLink);
 
     filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket).handle(
-        fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT)),
+        fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT),
         rejectPacket -> fail("Should have fulfilled but rejected!")
     );
 
@@ -223,7 +222,7 @@ public class DefaultPacketSwitchFilterChainTest {
     verify(linkManagerMock).getPingLink();
     verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket);
 
-    assertThat(this.packetSwitchFilters.size(), is(0));
+    assertThat(this.packetSwitchFilters.size()).isEqualTo(0);
     verifyNoMoreInteractions(nextHopPacketMapperMock);
     verifyNoMoreInteractions(linkFiltersMock);
   }

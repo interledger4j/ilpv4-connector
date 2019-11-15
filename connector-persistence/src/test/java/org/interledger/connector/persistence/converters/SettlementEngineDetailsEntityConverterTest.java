@@ -1,17 +1,16 @@
 package org.interledger.connector.persistence.converters;
 
-import okhttp3.HttpUrl;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.accounts.SettlementEngineDetails;
-import org.interledger.connector.persistence.converters.SettlementEngineDetailsEntityConverter;
 import org.interledger.connector.persistence.entities.SettlementEngineDetailsEntity;
+
+import okhttp3.HttpUrl;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.UUID;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Unit tests for {@link SettlementEngineDetailsEntityConverter}.
@@ -36,8 +35,8 @@ public class SettlementEngineDetailsEntityConverterTest {
 
     SettlementEngineDetails actual = converter.convert(entity);
 
-    assertThat(actual.baseUrl(), is(settlementEngineDetails.baseUrl()));
-    assertThat(actual.settlementEngineAccountId(), is(settlementEngineDetails.settlementEngineAccountId()));
-    assertThat(actual.customSettings().get("xrpAddress"), is("rsWs4m35EJctu7Go3FydVwQeGdMQX96XLH"));
+    assertThat(actual.baseUrl()).isEqualTo(settlementEngineDetails.baseUrl());
+    assertThat(actual.settlementEngineAccountId()).isEqualTo(settlementEngineDetails.settlementEngineAccountId());
+    assertThat(actual.customSettings().get("xrpAddress")).isEqualTo("rsWs4m35EJctu7Go3FydVwQeGdMQX96XLH");
   }
 }

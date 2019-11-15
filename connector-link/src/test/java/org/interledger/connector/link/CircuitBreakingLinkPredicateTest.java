@@ -1,7 +1,7 @@
 package org.interledger.connector.link;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.interledger.core.InterledgerErrorCode.F00_BAD_REQUEST;
 import static org.interledger.core.InterledgerErrorCode.F01_INVALID_PACKET;
 import static org.interledger.core.InterledgerErrorCode.F02_UNREACHABLE;
@@ -22,7 +22,6 @@ import static org.interledger.core.InterledgerErrorCode.T03_CONNECTOR_BUSY;
 import static org.interledger.core.InterledgerErrorCode.T04_INSUFFICIENT_LIQUIDITY;
 import static org.interledger.core.InterledgerErrorCode.T05_RATE_LIMITED;
 import static org.interledger.core.InterledgerErrorCode.T99_APPLICATION_ERROR;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -142,7 +141,7 @@ public class CircuitBreakingLinkPredicateTest {
 
     final CountDownLatch doneSignal = new CountDownLatch(1);
     circuitBreakingLink.getCircuitBreaker().getEventPublisher().onIgnoredError(error -> {
-      assertThat(error.getThrowable() instanceof InterledgerProtocolException, is(true));
+      assertThat(error.getThrowable() instanceof InterledgerProtocolException).isTrue();
       doneSignal.countDown();
     });
 
@@ -154,10 +153,7 @@ public class CircuitBreakingLinkPredicateTest {
       circuitBreakingLink.sendPacket(mock(InterledgerPreparePacket.class));
       fail("Should have thrown an InterledgerProtocolException");
     } catch (InterledgerProtocolException e) {
-      assertThat(
-        circuitBreakingLink.getCircuitBreaker().getState().equals(expectedCircuitBreakerState),
-        is(true)
-      );
+      assertThat(circuitBreakingLink.getCircuitBreaker().getState().equals(expectedCircuitBreakerState)).isTrue();
     }
 
     if (!doneSignal.await(10, TimeUnit.MILLISECONDS)) {
@@ -175,8 +171,8 @@ public class CircuitBreakingLinkPredicateTest {
     });
 
     circuitBreakingLink.getCircuitBreaker().getEventPublisher().onError(error -> {
-      assertThat(error.getThrowable().getMessage(), is("hello"));
-      assertThat(error.getThrowable() instanceof RuntimeException, is(true));
+      assertThat(error.getThrowable().getMessage()).isEqualTo("hello");
+      assertThat(error.getThrowable() instanceof RuntimeException).isTrue();
       doneSignal.countDown();
     });
 
@@ -184,10 +180,7 @@ public class CircuitBreakingLinkPredicateTest {
       circuitBreakingLink.sendPacket(mock(InterledgerPreparePacket.class));
       fail("Should have thrown an InterledgerProtocolException");
     } catch (RuntimeException e) {
-      assertThat(
-        circuitBreakingLink.getCircuitBreaker().getState().equals(expectedCircuitBreakerState),
-        is(true)
-      );
+      assertThat(circuitBreakingLink.getCircuitBreaker().getState().equals(expectedCircuitBreakerState)).isTrue();
     }
 
     if (!doneSignal.await(10, TimeUnit.MILLISECONDS)) {

@@ -1,8 +1,11 @@
 package org.interledger.connector.ccp.codecs;
 
-import com.google.common.io.BaseEncoding;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.interledger.connector.ccp.CcpRouteProperty;
 import org.interledger.connector.ccp.ImmutableCcpRouteProperty;
+
+import com.google.common.io.BaseEncoding;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,9 +13,6 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Unit tests for {@link AsnCcpRoutePropertyCodec} that tests the encoding/decoding.
@@ -92,46 +92,46 @@ public class AsnCcpNewRoutePropertyCodecTest extends AbstractAsnCodecTest<CcpRou
   @Test
   public void decodeMeta() {
     CcpRouteProperty properties = codec.decodeBooleanProperties((short) 0x80).id(0).build();
-    assertThat(properties.optional(), is(true));
-    assertThat(properties.transitive(), is(false));
-    assertThat(properties.partial(), is(false));
-    assertThat(properties.utf8(), is(false));
+    assertThat(properties.optional()).isTrue();
+    assertThat(properties.transitive()).isFalse();
+    assertThat(properties.partial()).isFalse();
+    assertThat(properties.utf8()).isFalse();
 
     properties = codec.decodeBooleanProperties((short) 0x40).id(0).build();
-    assertThat(properties.optional(), is(false));
-    assertThat(properties.transitive(), is(true));
-    assertThat(properties.partial(), is(false));
-    assertThat(properties.utf8(), is(false));
+    assertThat(properties.optional()).isFalse();
+    assertThat(properties.transitive()).isTrue();
+    assertThat(properties.partial()).isFalse();
+    assertThat(properties.utf8()).isFalse();
 
     properties = codec.decodeBooleanProperties((short) 0x60).id(0).build();
-    assertThat(properties.optional(), is(false));
-    assertThat(properties.transitive(), is(true));
-    assertThat(properties.partial(), is(true));
-    assertThat(properties.utf8(), is(false));
+    assertThat(properties.optional()).isFalse();
+    assertThat(properties.transitive()).isTrue();
+    assertThat(properties.partial()).isTrue();
+    assertThat(properties.utf8()).isFalse();
 
     properties = codec.decodeBooleanProperties((short) 0x50).id(0).build();
-    assertThat(properties.optional(), is(false));
-    assertThat(properties.transitive(), is(true));
-    assertThat(properties.partial(), is(false));
-    assertThat(properties.utf8(), is(true));
+    assertThat(properties.optional()).isFalse();
+    assertThat(properties.transitive()).isTrue();
+    assertThat(properties.partial()).isFalse();
+    assertThat(properties.utf8()).isTrue();
 
     properties = codec.decodeBooleanProperties((short) 0xC0).id(0).build();
-    assertThat(properties.optional(), is(true));
-    assertThat(properties.transitive(), is(true));
-    assertThat(properties.partial(), is(false));
-    assertThat(properties.utf8(), is(false));
+    assertThat(properties.optional()).isTrue();
+    assertThat(properties.transitive()).isTrue();
+    assertThat(properties.partial()).isFalse();
+    assertThat(properties.utf8()).isFalse();
 
     properties = codec.decodeBooleanProperties((short) 0xE0).id(0).build();
-    assertThat(properties.optional(), is(true));
-    assertThat(properties.transitive(), is(true));
-    assertThat(properties.partial(), is(true));
-    assertThat(properties.utf8(), is(false));
+    assertThat(properties.optional()).isTrue();
+    assertThat(properties.transitive()).isTrue();
+    assertThat(properties.partial()).isTrue();
+    assertThat(properties.utf8()).isFalse();
 
     properties = codec.decodeBooleanProperties((short) 0xF0).id(0).build();
-    assertThat(properties.optional(), is(true));
-    assertThat(properties.transitive(), is(true));
-    assertThat(properties.partial(), is(true));
-    assertThat(properties.utf8(), is(true));
+    assertThat(properties.optional()).isTrue();
+    assertThat(properties.transitive()).isTrue();
+    assertThat(properties.partial()).isTrue();
+    assertThat(properties.utf8()).isTrue();
   }
 
   @Test
@@ -142,7 +142,7 @@ public class AsnCcpNewRoutePropertyCodecTest extends AbstractAsnCodecTest<CcpRou
       .partial(false)
       .utf8(false)
       .build());
-    assertThat(encodedValue, is((short) 0x40));
+    assertThat(encodedValue).isEqualTo((short) 0x40);
 
     encodedValue = codec.encodeBooleanProperties(ImmutableCcpRouteProperty.builder().id(0)
       .optional(true)
@@ -150,7 +150,7 @@ public class AsnCcpNewRoutePropertyCodecTest extends AbstractAsnCodecTest<CcpRou
       .partial(false)
       .utf8(false)
       .build());
-    assertThat(encodedValue, is((short) 0x80));
+    assertThat(encodedValue).isEqualTo((short) 0x80);
 
     encodedValue = codec.encodeBooleanProperties(ImmutableCcpRouteProperty.builder().id(0)
       .optional(false)
@@ -158,7 +158,7 @@ public class AsnCcpNewRoutePropertyCodecTest extends AbstractAsnCodecTest<CcpRou
       .partial(false)
       .utf8(false)
       .build());
-    assertThat(encodedValue, is((short) 0x40));
+    assertThat(encodedValue).isEqualTo((short) 0x40);
 
     encodedValue = codec.encodeBooleanProperties(ImmutableCcpRouteProperty.builder().id(0)
       .optional(false)
@@ -166,7 +166,7 @@ public class AsnCcpNewRoutePropertyCodecTest extends AbstractAsnCodecTest<CcpRou
       .partial(true)
       .utf8(false)
       .build());
-    assertThat(encodedValue, is((short) 0x40));
+    assertThat(encodedValue).isEqualTo((short) 0x40);
 
     encodedValue = codec.encodeBooleanProperties(ImmutableCcpRouteProperty.builder().id(0)
       .optional(false)
@@ -174,7 +174,7 @@ public class AsnCcpNewRoutePropertyCodecTest extends AbstractAsnCodecTest<CcpRou
       .partial(false)
       .utf8(true)
       .build());
-    assertThat(encodedValue, is((short) 0x50));
+    assertThat(encodedValue).isEqualTo((short) 0x50);
 
     encodedValue = codec.encodeBooleanProperties(ImmutableCcpRouteProperty.builder().id(0)
       .optional(true)
@@ -182,7 +182,7 @@ public class AsnCcpNewRoutePropertyCodecTest extends AbstractAsnCodecTest<CcpRou
       .partial(false)
       .utf8(false)
       .build());
-    assertThat(encodedValue, is((short) 0xC0));
+    assertThat(encodedValue).isEqualTo((short) 0xC0);
 
 
     encodedValue = codec.encodeBooleanProperties(ImmutableCcpRouteProperty.builder().id(0)
@@ -191,7 +191,7 @@ public class AsnCcpNewRoutePropertyCodecTest extends AbstractAsnCodecTest<CcpRou
       .partial(true)
       .utf8(false)
       .build());
-    assertThat(encodedValue, is((short) 0xE0));
+    assertThat(encodedValue).isEqualTo((short) 0xE0);
 
 
     encodedValue = codec.encodeBooleanProperties(ImmutableCcpRouteProperty.builder().id(0)
@@ -200,7 +200,7 @@ public class AsnCcpNewRoutePropertyCodecTest extends AbstractAsnCodecTest<CcpRou
       .partial(true)
       .utf8(true)
       .build());
-    assertThat(encodedValue, is((short) 0xF0));
+    assertThat(encodedValue).isEqualTo((short) 0xF0);
   }
 
 }

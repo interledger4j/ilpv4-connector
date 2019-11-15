@@ -1,9 +1,9 @@
 package org.interledger.connector.server.ilpoverhttp;
 
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.interledger.connector.server.spring.settings.link.IlpOverHttpConfig.ILP_OVER_HTTP;
 import static org.interledger.link.LoopbackLink.LOOPBACK_FULFILLMENT;
-import static org.junit.Assert.fail;
 
 import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.connector.accounts.AccountId;

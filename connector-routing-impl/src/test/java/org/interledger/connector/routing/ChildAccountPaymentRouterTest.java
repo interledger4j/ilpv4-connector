@@ -1,10 +1,16 @@
 package org.interledger.connector.routing;
 
-import org.interledger.connector.settings.ConnectorSettings;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.core.InterledgerAddress;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Answers;
@@ -12,12 +18,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Optional;
-
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link ChildAccountPaymentRouter}.
@@ -57,31 +57,26 @@ public class ChildAccountPaymentRouterTest {
     try {
       childAccountPaymentRouter.parseChildAccountId(null);
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("address must not be null!"));
+      assertThat(e.getMessage()).isEqualTo("address must not be null!");
       throw e;
     }
   }
 
   @Test
   public void parseChildAccountIdWithNoChildAccount() {
-    assertThat(childAccountPaymentRouter.parseChildAccountId(OPERATOR_ADDRESS),
-      is(AccountId.of("foo")));
+    assertThat(childAccountPaymentRouter.parseChildAccountId(OPERATOR_ADDRESS)).isEqualTo(AccountId.of("foo"));
   }
 
   @Test
   public void parseChildAccountId() {
-    assertThat(childAccountPaymentRouter.parseChildAccountId(InterledgerAddress.of("test.foo.child123")),
-      is(AccountId.of("child123")));
+    assertThat(childAccountPaymentRouter.parseChildAccountId(InterledgerAddress.of("test.foo.child123"))).isEqualTo(AccountId.of("child123"));
   }
 
   @Test
   public void parseChildAccountIdFromAddressWithInteraction() {
-    assertThat(childAccountPaymentRouter.parseChildAccountId(InterledgerAddress.of("g.foo.bar~foo.bar")),
-      is(AccountId.of("bar")));
-    assertThat(childAccountPaymentRouter.parseChildAccountId(InterledgerAddress.of("test.foo.bar~foo.bar")),
-      is(AccountId.of("bar")));
-    assertThat(childAccountPaymentRouter.parseChildAccountId(InterledgerAddress.of("private.foo.bar~foo.bar")),
-      is(AccountId.of("bar")));
+    assertThat(childAccountPaymentRouter.parseChildAccountId(InterledgerAddress.of("g.foo.bar~foo.bar"))).isEqualTo(AccountId.of("bar"));
+    assertThat(childAccountPaymentRouter.parseChildAccountId(InterledgerAddress.of("test.foo.bar~foo.bar"))).isEqualTo(AccountId.of("bar"));
+    assertThat(childAccountPaymentRouter.parseChildAccountId(InterledgerAddress.of("private.foo.bar~foo.bar"))).isEqualTo(AccountId.of("bar"));
   }
 
   /////////////////
@@ -93,7 +88,7 @@ public class ChildAccountPaymentRouterTest {
     try {
       childAccountPaymentRouter.isChildAccount(null);
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("interledgerAddress must not be null!"));
+      assertThat(e.getMessage()).isEqualTo("interledgerAddress must not be null!");
       throw e;
     }
   }
@@ -102,13 +97,13 @@ public class ChildAccountPaymentRouterTest {
   public void isChildAccount() {
     when(connectorSettingsMock.operatorAddress()).thenReturn(OPERATOR_ADDRESS);
 
-    assertThat(childAccountPaymentRouter.isChildAccount(OPERATOR_ADDRESS), is(true));
-    assertThat(childAccountPaymentRouter.isChildAccount(InterledgerAddress.of("test.foo.bar")), is(true));
-    assertThat(childAccountPaymentRouter.isChildAccount(InterledgerAddress.of("test.foo.bar~foo.bar")), is(true));
+    assertThat(childAccountPaymentRouter.isChildAccount(OPERATOR_ADDRESS)).isTrue();
+    assertThat(childAccountPaymentRouter.isChildAccount(InterledgerAddress.of("test.foo.bar"))).isTrue();
+    assertThat(childAccountPaymentRouter.isChildAccount(InterledgerAddress.of("test.foo.bar~foo.bar"))).isTrue();
 
-    assertThat(childAccountPaymentRouter.isChildAccount(InterledgerAddress.of("g.foo.bar")), is(false));
-    assertThat(childAccountPaymentRouter.isChildAccount(InterledgerAddress.of("g.foo.bar~foo.bar")), is(false));
-    assertThat(childAccountPaymentRouter.isChildAccount(InterledgerAddress.of("private.foo.bar~foo.bar")), is(false));
+    assertThat(childAccountPaymentRouter.isChildAccount(InterledgerAddress.of("g.foo.bar"))).isFalse();
+    assertThat(childAccountPaymentRouter.isChildAccount(InterledgerAddress.of("g.foo.bar~foo.bar"))).isFalse();
+    assertThat(childAccountPaymentRouter.isChildAccount(InterledgerAddress.of("private.foo.bar~foo.bar"))).isFalse();
   }
 
   /////////////////
@@ -120,7 +115,7 @@ public class ChildAccountPaymentRouterTest {
     try {
       childAccountPaymentRouter.findBestNexHop(null);
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("finalDestinationAddress must not be null!"));
+      assertThat(e.getMessage()).isEqualTo("finalDestinationAddress must not be null!");
       throw e;
     }
   }
@@ -132,18 +127,18 @@ public class ChildAccountPaymentRouterTest {
   public void findBestNexHopForUniPingWhenPingDisabled() {
     when(connectorSettingsMock.enabledProtocols().isPingProtocolEnabled()).thenReturn(false);
     Optional<Route> actual = childAccountPaymentRouter.findBestNexHop(OPERATOR_ADDRESS);
-    assertThat(actual.isPresent(), is(false));
+    assertThat(actual.isPresent()).isFalse();
   }
 
   @Test
   public void findBestNexHopForUniPingWhenPingEnabled() {
     Optional<Route> actual = childAccountPaymentRouter.findBestNexHop(OPERATOR_ADDRESS);
-    assertThat(actual.isPresent(), is(true));
+    assertThat(actual.isPresent()).isTrue();
 
-    assertThat(actual.get().nextHopAccountId(), is(PING_ACCOUNT_ID));
-    assertThat(actual.get().expiresAt().isPresent(), is(false));
-    assertThat(actual.get().auth().length, is(32));
-    assertThat(actual.get().path().isEmpty(), is(true));
+    assertThat(actual.get().nextHopAccountId()).isEqualTo(PING_ACCOUNT_ID);
+    assertThat(actual.get().expiresAt().isPresent()).isFalse();
+    assertThat(actual.get().auth().length).isEqualTo(32);
+    assertThat(actual.get().path().isEmpty()).isTrue();
   }
 
   /////////////////
@@ -153,7 +148,7 @@ public class ChildAccountPaymentRouterTest {
   @Test
   public void findBestNexHopForNonExistentChildAccount() {
     Optional<Route> actual = childAccountPaymentRouter.findBestNexHop(OPERATOR_ADDRESS.with("foo"));
-    assertThat(actual.isPresent(), is(false));
+    assertThat(actual.isPresent()).isFalse();
   }
 
   @Test
@@ -163,12 +158,12 @@ public class ChildAccountPaymentRouterTest {
       .thenReturn(Optional.of(accountSettingsEntityMock));
 
     Optional<Route> actual = childAccountPaymentRouter.findBestNexHop(OPERATOR_ADDRESS.with("foo"));
-    assertThat(actual.isPresent(), is(true));
+    assertThat(actual.isPresent()).isTrue();
 
-    assertThat(actual.get().nextHopAccountId(), is(AccountId.of("foo")));
-    assertThat(actual.get().expiresAt().isPresent(), is(false));
-    assertThat(actual.get().auth().length, is(32));
-    assertThat(actual.get().path().isEmpty(), is(true));
+    assertThat(actual.get().nextHopAccountId()).isEqualTo(AccountId.of("foo"));
+    assertThat(actual.get().expiresAt().isPresent()).isFalse();
+    assertThat(actual.get().auth().length).isEqualTo(32);
+    assertThat(actual.get().path().isEmpty()).isTrue();
   }
 
 }

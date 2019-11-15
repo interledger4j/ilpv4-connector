@@ -1,8 +1,7 @@
 package org.interledger.connector.settlement;
 
 import static java.math.BigInteger.ONE;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -72,7 +71,7 @@ public class DefaultSettlementServiceTest {
     try {
       settlementService.onIncomingSettlementPayment(null, SETTLEMENT_ACCOUNT_ID, INCOMING_SETTLEMENT);
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("idempotencyKey must not be null"));
+      assertThat(e.getMessage()).isEqualTo("idempotencyKey must not be null");
       throw e;
     }
   }
@@ -82,7 +81,7 @@ public class DefaultSettlementServiceTest {
     try {
       settlementService.onIncomingSettlementPayment(UUID.randomUUID().toString(), null, INCOMING_SETTLEMENT);
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("settlementEngineAccountId must not be null"));
+      assertThat(e.getMessage()).isEqualTo("settlementEngineAccountId must not be null");
       throw e;
     }
   }
@@ -92,7 +91,7 @@ public class DefaultSettlementServiceTest {
     try {
       settlementService.onIncomingSettlementPayment(UUID.randomUUID().toString(), SETTLEMENT_ACCOUNT_ID, null);
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("incomingSettlementInSettlementUnits must not be null"));
+      assertThat(e.getMessage()).isEqualTo("incomingSettlementInSettlementUnits must not be null");
       throw e;
     }
   }
@@ -106,8 +105,8 @@ public class DefaultSettlementServiceTest {
       settlementService
           .onIncomingSettlementPayment(UUID.randomUUID().toString(), SETTLEMENT_ACCOUNT_ID, INCOMING_SETTLEMENT);
     } catch (AccountNotFoundProblem e) {
-      assertThat(e.getAccountId(), is(SETTLEMENT_ACCOUNT_ID));
-      assertThat(e.getMessage(), is("Account Not Found (`alice`)"));
+      assertThat(e.getAccountId()).isEqualTo(SETTLEMENT_ACCOUNT_ID);
+      assertThat(e.getMessage()).isEqualTo("Account Not Found (`alice`)");
       throw e;
     }
   }
@@ -141,7 +140,7 @@ public class DefaultSettlementServiceTest {
     SettlementQuantity actualClearedSettlementQuantity =
         settlementService.onIncomingSettlementPayment(idempotencyKey, SETTLEMENT_ACCOUNT_ID, INCOMING_SETTLEMENT);
 
-    assertThat(actualClearedSettlementQuantity, is(expectedClearedSettlementQuantity));
+    assertThat(actualClearedSettlementQuantity).isEqualTo(expectedClearedSettlementQuantity);
     verify(accountSettingsRepositoryMock).findBySettlementEngineAccountIdWithConversion(SETTLEMENT_ACCOUNT_ID);
     verify(balanceTrackerMock).updateBalanceForIncomingSettlement(
         idempotencyKey, ACCOUNT_ID, expectedClearedSettlementQuantity.amount().longValue()

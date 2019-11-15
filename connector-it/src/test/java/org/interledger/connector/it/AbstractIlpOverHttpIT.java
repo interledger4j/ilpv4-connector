@@ -1,7 +1,7 @@
 package org.interledger.connector.it;
 
 import static junit.framework.TestCase.fail;
-import static org.hamcrest.CoreMatchers.is;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.interledger.connector.config.BalanceTrackerConfig.BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME;
 import static org.interledger.connector.core.ConfigConstants.ADMIN_PASSWORD;
 import static org.interledger.connector.core.ConfigConstants.DEFAULT_JWT_TOKEN_ISSUER;
@@ -17,7 +17,6 @@ import static org.interledger.connector.it.topologies.AbstractTopology.BOB;
 import static org.interledger.connector.it.topologies.AbstractTopology.PAUL;
 import static org.interledger.connector.it.topologies.AbstractTopology.PETER;
 import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
-import static org.junit.Assert.assertThat;
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.accounts.AccountId;
@@ -57,7 +56,6 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
 import javax.money.spi.Bootstrap;
 
 /**
@@ -151,11 +149,8 @@ public abstract class AbstractIlpOverHttpIT {
     AtomicReference<InterledgerResponsePacket> response = new AtomicReference<>();
     pingInitiator.ping(destinationAddress, numUnits).handle(
       fulfillPacket -> {
-        assertThat(fulfillPacket.getFulfillment(), is(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT));
-        assertThat(
-          fulfillPacket.getFulfillment().validateCondition(PingLoopbackLink.PING_PROTOCOL_CONDITION),
-          is(true)
-        );
+        assertThat(fulfillPacket.getFulfillment()).isEqualTo(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT);
+        assertThat(fulfillPacket.getFulfillment().validateCondition(PingLoopbackLink.PING_PROTOCOL_CONDITION)).isTrue();
         latch.countDown();
         response.set(fulfillPacket);
       }, interledgerRejectPacket -> {
@@ -255,10 +250,7 @@ public abstract class AbstractIlpOverHttpIT {
     final AccountId accountId,
     final BigInteger expectedAmount
   ) {
-    assertThat(
-      String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.toString()),
-      connector.getBalanceTracker().balance(accountId).netBalance(), is(expectedAmount)
-    );
+    assertThat(connector.getBalanceTracker().balance(accountId).netBalance()).as(String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.toString())).isEqualTo(expectedAmount);
   }
 
   /**
