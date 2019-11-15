@@ -1,7 +1,6 @@
 package org.interledger.connector.persistence.converters;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountId;
@@ -51,16 +50,16 @@ public class AccountSettingsEntityConverterTest {
 
     AccountSettings actual = converter.convert(entity);
 
-    assertThat(actual.accountId(), is(accountSettings.accountId()));
-    assertThat(actual.description(), is(accountSettings.description()));
-    assertThat(actual.assetScale(), is(accountSettings.assetScale()));
-    assertThat(actual.assetCode(), is(accountSettings.assetCode()));
-    assertThat(actual.accountRelationship(), is(accountSettings.accountRelationship()));
-    assertThat(actual.ilpAddressSegment(), is(accountSettings.ilpAddressSegment()));
-    assertThat(actual.linkType(), is(accountSettings.linkType()));
-    assertThat(actual.rateLimitSettings(), is(accountSettings.rateLimitSettings()));
-    assertThat(actual.balanceSettings(), is(accountSettings.balanceSettings()));
-    assertThat(actual.settlementEngineDetails(), is(accountSettings.settlementEngineDetails()));
+    assertThat(actual.accountId()).isEqualTo(accountSettings.accountId());
+    assertThat(actual.description()).isEqualTo(accountSettings.description());
+    assertThat(actual.assetScale()).isEqualTo(accountSettings.assetScale());
+    assertThat(actual.assetCode()).isEqualTo(accountSettings.assetCode());
+    assertThat(actual.accountRelationship()).isEqualTo(accountSettings.accountRelationship());
+    assertThat(actual.ilpAddressSegment()).isEqualTo(accountSettings.ilpAddressSegment());
+    assertThat(actual.linkType()).isEqualTo(accountSettings.linkType());
+    assertThat(actual.rateLimitSettings()).isEqualTo(accountSettings.rateLimitSettings());
+    assertThat(actual.balanceSettings()).isEqualTo(accountSettings.balanceSettings());
+    assertThat(actual.settlementEngineDetails()).isEqualTo(accountSettings.settlementEngineDetails());
   }
 
   @Test
@@ -98,18 +97,18 @@ public class AccountSettingsEntityConverterTest {
 
     AccountSettings actual = converter.convert(entity);
 
-    assertThat(actual.accountId(), is(accountSettings.accountId()));
+    assertThat(actual.accountId()).isEqualTo(accountSettings.accountId());
     // These will be set to "now", but it's not possible to know the value exactly, so we don't assert them to finely.
-    assertThat(actual.createdAt().minusSeconds(1).isBefore(Instant.now()), is(true));
-    assertThat(actual.modifiedAt().minusSeconds(1).isBefore(Instant.now()), is(true));
-    assertThat(actual.description(), is(accountSettings.description()));
-    assertThat(actual.assetScale(), is(accountSettings.assetScale()));
-    assertThat(actual.assetCode(), is(accountSettings.assetCode()));
-    assertThat(actual.accountRelationship(), is(accountSettings.accountRelationship()));
-    assertThat(actual.ilpAddressSegment(), is(accountSettings.ilpAddressSegment()));
-    assertThat(actual.linkType(), is(accountSettings.linkType()));
-    assertThat(actual.rateLimitSettings(), is(accountSettings.rateLimitSettings()));
-    assertThat(actual.balanceSettings(), is(accountSettings.balanceSettings()));
-    assertThat(actual.settlementEngineDetails(), is(accountSettings.settlementEngineDetails()));
+    assertThat(actual.createdAt().minusSeconds(1).isBefore(Instant.now())).isTrue();
+    assertThat(actual.modifiedAt().minusSeconds(1).isBefore(Instant.now())).isTrue();
+    assertThat(actual.description()).isEqualTo(accountSettings.description());
+    assertThat(actual.assetScale()).isEqualTo(accountSettings.assetScale());
+    assertThat(actual.assetCode()).isEqualTo(accountSettings.assetCode());
+    assertThat(actual.accountRelationship()).isEqualTo(accountSettings.accountRelationship());
+    assertThat(actual.ilpAddressSegment()).isEqualTo(accountSettings.ilpAddressSegment());
+    assertThat(actual.linkType()).isEqualTo(accountSettings.linkType());
+    assertThat(actual.rateLimitSettings()).isEqualTo(accountSettings.rateLimitSettings());
+    assertThat(actual.balanceSettings()).isEqualTo(accountSettings.balanceSettings());
+    assertThat(actual.settlementEngineDetails()).isEqualTo(accountSettings.settlementEngineDetails());
   }
 }

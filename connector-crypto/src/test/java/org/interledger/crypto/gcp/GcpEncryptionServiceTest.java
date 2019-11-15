@@ -1,14 +1,14 @@
 package org.interledger.crypto.gcp;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionAlgorithm;
 import org.interledger.crypto.KeyMetadata;
 import org.interledger.crypto.impl.GcpEncryptionService;
+
 import org.junit.Ignore;
 import org.junit.Test;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
 
 /**
  * Unit test for {@link GcpEncryptionService}.
@@ -39,9 +39,9 @@ public class GcpEncryptionServiceTest {
       metaData, EncryptionAlgorithm.GOOGLE_SYMMETRIC, TEST_SECRET.getBytes()
     );
     final EncryptedSecret derivedEncryptedSecret = EncryptedSecret.fromEncodedValue(encryptedSecret.encodedValue());
-    assertThat(derivedEncryptedSecret, is(encryptedSecret));
+    assertThat(derivedEncryptedSecret).isEqualTo(encryptedSecret);
 
     final byte[] byteString = gcpEncryptionService.decrypt(encryptedSecret);
-    assertThat(new String(byteString), is(TEST_SECRET));
+    assertThat(new String(byteString)).isEqualTo(TEST_SECRET);
   }
 }

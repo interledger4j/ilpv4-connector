@@ -1,7 +1,6 @@
 package org.interledger.connector.fx;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.javamoney.moneta.Money;
 import org.junit.Before;
@@ -34,10 +33,7 @@ public class JavaMoneyUtilsTest {
     final int assetScale = 2;
 
     BigDecimal cents = BigDecimal.valueOf(0.1);
-    assertThat(
-      javaMoneyUtils.toMonetaryAmount(currencyUSD, cents.toBigInteger(), assetScale).getNumber().intValueExact(),
-      is(0)
-    );
+    assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents.toBigInteger(), assetScale).getNumber().intValueExact()).isEqualTo(0);
   }
 
   @Test
@@ -47,27 +43,19 @@ public class JavaMoneyUtilsTest {
 
     BigInteger cents = BigInteger.valueOf(1);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("1"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("1"));
 
     cents = BigInteger.valueOf(100);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("100"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("100"));
 
     cents = BigInteger.valueOf(199);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("199"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("199"));
 
     cents = BigInteger.valueOf(1999);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("1999"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("1999"));
 
   }
 
@@ -78,27 +66,19 @@ public class JavaMoneyUtilsTest {
 
     BigInteger cents = BigInteger.valueOf(1);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("0.01"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.01"));
 
     cents = BigInteger.valueOf(100);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("1"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("1"));
 
     cents = BigInteger.valueOf(199);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("1.99"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("1.99"));
 
     cents = BigInteger.valueOf(1999);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("19.99"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("19.99"));
 
   }
 
@@ -109,27 +89,19 @@ public class JavaMoneyUtilsTest {
 
     BigInteger cents = BigInteger.valueOf(1);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("0.000000001"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.000000001"));
 
     cents = BigInteger.valueOf(100);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("0.0000001"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.0000001"));
 
     cents = BigInteger.valueOf(199);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("0.000000199"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.000000199"));
 
     cents = BigInteger.valueOf(1999);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("0.000001999"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.000001999"));
 
   }
 
@@ -140,27 +112,19 @@ public class JavaMoneyUtilsTest {
 
     BigInteger cents = BigInteger.valueOf(1);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("0.000001"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.000001"));
 
     cents = BigInteger.valueOf(100);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("0.0001"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.0001"));
 
     cents = BigInteger.valueOf(199);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("0.000199"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.000199"));
 
     cents = BigInteger.valueOf(1999);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("0.001999"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.001999"));
 
   }
 
@@ -171,27 +135,19 @@ public class JavaMoneyUtilsTest {
 
     BigInteger cents = BigInteger.valueOf(1);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("1"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("1"));
 
     cents = BigInteger.valueOf(100);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("100"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("100"));
 
     cents = BigInteger.valueOf(199);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("199"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("199"));
 
     cents = BigInteger.valueOf(1999);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, cents, assetScale)
-        .getNumber().numberValue(BigDecimal.class),
-      is(new BigDecimal("1999"))
-    );
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("1999"));
 
   }
 
@@ -210,7 +166,7 @@ public class JavaMoneyUtilsTest {
         assetScale
       );
     } catch (ArithmeticException e) {
-      assertThat(e.getMessage(), is("Rounding necessary"));
+      assertThat(e.getMessage()).isEqualTo("Rounding necessary");
       throw e;
     }
   }
@@ -221,19 +177,19 @@ public class JavaMoneyUtilsTest {
     final int assetScale = 0;
 
     Money money = Money.of(BigInteger.valueOf(1), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(1L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1L));
 
     money = Money.of(BigInteger.valueOf(100), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(100L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(100L));
 
     money = Money.of(BigInteger.valueOf(199), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(199L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(199L));
 
     money = Money.of(BigInteger.valueOf(1999), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(1999L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1999L));
 
     money = Money.of(BigInteger.valueOf(600000000), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(600000000L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(600000000L));
   }
 
   @Test
@@ -242,19 +198,19 @@ public class JavaMoneyUtilsTest {
     final int assetScale = 2;
 
     Money money = Money.of(new BigDecimal("0.01"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(1L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1L));
 
     money = Money.of(new BigDecimal("1.00"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(100L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(100L));
 
     money = Money.of(new BigDecimal("1.99"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(199L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(199L));
 
     money = Money.of(new BigDecimal("19.99"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(1999L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1999L));
 
     money = Money.of(new BigDecimal("6000000"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(600000000L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(600000000L));
   }
 
   @Test
@@ -263,19 +219,19 @@ public class JavaMoneyUtilsTest {
     final int assetScale = 9;
 
     Money money = Money.of(new BigDecimal("0.000000001"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(1L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1L));
 
     money = Money.of(new BigDecimal("0.0000001"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(100L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(100L));
 
     money = Money.of(new BigDecimal("0.000000199"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(199L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(199L));
 
     money = Money.of(new BigDecimal("0.000001999"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(1999L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1999L));
 
     money = Money.of(new BigDecimal("6000000"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(6000000000000000L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(6000000000000000L));
   }
 
   @Test
@@ -285,19 +241,19 @@ public class JavaMoneyUtilsTest {
     final int assetScale = 6;
 
     Money money = Money.of(new BigDecimal("0.000001"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(1L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1L));
 
     money = Money.of(new BigDecimal("0.0001"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(100L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(100L));
 
     money = Money.of(new BigDecimal("0.000199"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(199L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(199L));
 
     money = Money.of(new BigDecimal("0.001999"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(1999L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1999L));
 
     money = Money.of(new BigDecimal("6000001"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(6000001000000L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(6000001000000L));
   }
 
   @Test
@@ -307,18 +263,18 @@ public class JavaMoneyUtilsTest {
     final int assetScale = 0;
 
     Money money = Money.of(BigInteger.valueOf(1), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(1L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1L));
 
     money = Money.of(BigInteger.valueOf(100), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(100L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(100L));
 
     money = Money.of(BigInteger.valueOf(199), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(199L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(199L));
 
     money = Money.of(BigInteger.valueOf(1999), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(1999L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1999L));
 
     money = Money.of(BigInteger.valueOf(600000000), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale), is(BigInteger.valueOf(600000000L)));
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(600000000L));
   }
 }

@@ -1,9 +1,8 @@
 package org.interledger.connector.packetswitch;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.interledger.core.InterledgerErrorCode.T00_INTERNAL_ERROR;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -143,7 +142,7 @@ public class DefaultILPv4PacketSwitchTest {
         eq("No Account found: `123`")
       );
 
-      assertThat(e.getInterledgerRejectPacket(), is(rejectPacket));
+      assertThat(e.getInterledgerRejectPacket()).isEqualTo(rejectPacket);
 
       verify(accountSettingsLoadingCacheMock).getAccount(eq(NON_EXISTENT_ACCOUNT_ID));
       verifyNoInteractions(connectorExceptionHandlerMock);
@@ -196,7 +195,7 @@ public class DefaultILPv4PacketSwitchTest {
     final int numReps = 5;
     for (int i = 0; i < numReps; i++) {
       packetSwitch.switchPacket(INCOMING_ACCOUNT_ID, PREPARE_PACKET).handle(
-        fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(LoopbackLink.LOOPBACK_FULFILLMENT)),
+        fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LoopbackLink.LOOPBACK_FULFILLMENT),
         rejectPacket -> fail("Should have fulfilled but rejected!")
       );
     }
@@ -247,7 +246,7 @@ public class DefaultILPv4PacketSwitchTest {
       when(linkManagerMock.getOrCreateLink(outgoingAccountID)).thenReturn(outgoingLink);
 
       packetSwitch.switchPacket(incomingAccountID, PREPARE_PACKET).handle(
-        fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(LoopbackLink.LOOPBACK_FULFILLMENT)),
+        fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LoopbackLink.LOOPBACK_FULFILLMENT),
         rejectPacket -> fail("Should have fulfilled but rejected!")
       );
 

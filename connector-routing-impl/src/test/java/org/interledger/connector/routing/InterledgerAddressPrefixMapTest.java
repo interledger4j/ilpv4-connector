@@ -1,18 +1,18 @@
 package org.interledger.connector.routing;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
+
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.fail;
 
 /**
  * Unit tests for {@link InterledgerAddressPrefixMap}.
@@ -52,6 +52,9 @@ public class InterledgerAddressPrefixMapTest {
 
   private InterledgerAddressPrefixMap<Route> prefixMap;
 
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
+
   @Before
   public void setUp() {
     this.prefixMap = new InterledgerAddressPrefixMap<>();
@@ -65,7 +68,7 @@ public class InterledgerAddressPrefixMapTest {
         .nextHopAccountId(DEFAULT_CONNECTOR_ACCOUNT)
         .build();
       prefixMap.putEntry(route.routePrefix(), route);
-      assertThat(prefixMap.getNumKeys(), is(i));
+      assertThat(prefixMap.getNumKeys()).isEqualTo(i);
     }
   }
 
@@ -74,7 +77,7 @@ public class InterledgerAddressPrefixMapTest {
     try {
       prefixMap.putEntry(null, null);
     } catch (NullPointerException npe) {
-      assertThat(npe.getMessage(), is(nullValue()));
+      assertThat(npe.getMessage()).isNull();
       throw npe;
     }
   }
@@ -92,7 +95,7 @@ public class InterledgerAddressPrefixMapTest {
 
     for (int i = 0; i < 10; i++) {
       prefixMap.putEntry(globalRoute.routePrefix(), globalRoute);
-      assertThat("Duplicate Route Keys should not be added more than once!", prefixMap.getNumKeys(), is(1));
+      assertThat(prefixMap.getNumKeys()).as("Duplicate Route Keys should not be added more than once!").isEqualTo(1);
     }
   }
 
@@ -320,7 +323,7 @@ public class InterledgerAddressPrefixMapTest {
     try {
       prefixMap.getEntry(null);
     } catch (NullPointerException npe) {
-      assertThat(npe.getMessage(), is("addressPrefix must not be null!"));
+      assertThat(npe.getMessage()).isEqualTo("addressPrefix must not be null!");
       throw npe;
     }
   }
@@ -334,8 +337,7 @@ public class InterledgerAddressPrefixMapTest {
 
     for (int i = 0; i < 10; i++) {
       prefixMap.putEntry(globalRoute.routePrefix(), globalRoute);
-      assertThat("Duplicate RoutingTableEntry should not be added more than once!",
-        prefixMap.getEntry(DEFAULT_TARGET_ADDRESS_PREFIX).get(), is(globalRoute));
+      assertThat(prefixMap.getEntry(DEFAULT_TARGET_ADDRESS_PREFIX).get()).as("Duplicate RoutingTableEntry should not be added more than once!").isEqualTo(globalRoute);
     }
   }
 
@@ -356,13 +358,13 @@ public class InterledgerAddressPrefixMapTest {
     final AtomicInteger atomicInteger = new AtomicInteger();
     prefixMap.forEach((targetAddress, routingTableEntry) -> atomicInteger.getAndIncrement());
 
-    assertThat(atomicInteger.get(), is(2));
+    assertThat(atomicInteger.get()).isEqualTo(2);
   }
 
   @Test
   public void testGetPrefixMapKeys() {
     this.prefixMap = this.constructPopulatedPrefixMap();
-    assertThat(this.prefixMap.getKeys().size(), is(5));
+    assertThat(this.prefixMap.getKeys().size()).isEqualTo(5);
   }
 
   ////////////////////
@@ -378,14 +380,10 @@ public class InterledgerAddressPrefixMapTest {
         .build();
       prefixMap.putEntry(route.routePrefix(), route);
 
-      assertThat(prefixMap.getNumKeys(), is(i));
+      assertThat(prefixMap.getNumKeys()).isEqualTo(i);
       final InterledgerAddress destinationAddress = InterledgerAddress.of("g." + i + ".bob");
-      assertThat("Bob should map to g." + i,
-        prefixMap.findNextHop(destinationAddress).isPresent(), is(true)
-      );
-      assertThat("Each nextHop should be route!",
-        prefixMap.findNextHop(destinationAddress).get(), is(route)
-      );
+      assertThat(prefixMap.findNextHop(destinationAddress).isPresent()).as("Bob should map to g." + i).isTrue();
+      assertThat(prefixMap.findNextHop(destinationAddress).get()).as("Each nextHop should be route!").isEqualTo(route);
     }
   }
 
@@ -399,15 +397,13 @@ public class InterledgerAddressPrefixMapTest {
       prefixMap.putEntry(route.routePrefix(), route);
 
       final InterledgerAddress destinationAddress = DEFAULT_CONNECTOR_ADDRESS.with("bob");
-      assertThat("Each destination address should map to N number of RoutingTableEntries!",
-        prefixMap.findNextHop(destinationAddress).isPresent(), is(true)
-      );
+      assertThat(prefixMap.findNextHop(destinationAddress).isPresent()).as("Each destination address should map to N number of RoutingTableEntries!").isTrue();
     }
   }
 
   @Test
   public void testGetNextHopRoutingTableEntryWithNoRoutingTableEntrysInMap() {
-    assertThat(prefixMap.findNextHop(DEFAULT_CONNECTOR_ADDRESS.with("bob")).isPresent(), is(false));
+    assertThat(prefixMap.findNextHop(DEFAULT_CONNECTOR_ADDRESS.with("bob")).isPresent()).isFalse();
   }
 
   ////////////////////
@@ -423,11 +419,11 @@ public class InterledgerAddressPrefixMapTest {
 
     prefixMap.putEntry(route.routePrefix(), route);
 
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("self.me")).isPresent(), is(false));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1.me")).isPresent(), is(true));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1.m")).isPresent(), is(true));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1")).isPresent(), is(true));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.2")).isPresent(), is(true));
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("self.me")).isPresent()).isFalse();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1.me")).isPresent()).isTrue();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1.m")).isPresent()).isTrue();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1")).isPresent()).isTrue();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.2")).isPresent()).isTrue();
   }
 
   ////////////////////
@@ -443,28 +439,28 @@ public class InterledgerAddressPrefixMapTest {
 
     prefixMap.putEntry(route.routePrefix(), route);
 
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("self.me")).isPresent(), is(false));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1.me")).isPresent(), is(false));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1.m")).isPresent(), is(false));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1")).isPresent(), is(false));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.2")).isPresent(), is(false));
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("self.me")).isPresent()).isFalse();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1.me")).isPresent()).isFalse();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1.m")).isPresent()).isFalse();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1")).isPresent()).isFalse();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.2")).isPresent()).isFalse();
   }
 
   @Test
   public void testGetNextHopRoutingTableEntryWithDifferringLengthsInTable() {
     this.prefixMap = this.constructPopulatedPrefixMap();
 
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("self.me")).isPresent(), is(false));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1.me")).isPresent(), is(true));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1.m")).isPresent(), is(true));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1")).isPresent(), is(true));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.2")).isPresent(), is(true));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.foo.bob")).isPresent(), is(true));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.bar.bob")).isPresent(), is(true));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.baz.boo.alice")).isPresent(), is(true));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.baz.boo.bob")).isPresent(), is(true));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.baz.boo.bar.alice")).isPresent(), is(true));
-    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.baz.boo.bar.bob")).isPresent(), is(true));
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("self.me")).isPresent()).isFalse();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1.me")).isPresent()).isTrue();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1.m")).isPresent()).isTrue();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.1")).isPresent()).isTrue();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.2")).isPresent()).isTrue();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.foo.bob")).isPresent()).isTrue();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.bar.bob")).isPresent()).isTrue();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.baz.boo.alice")).isPresent()).isTrue();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.baz.boo.bob")).isPresent()).isTrue();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.baz.boo.bar.alice")).isPresent()).isTrue();
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.baz.boo.bar.bob")).isPresent()).isTrue();
   }
 
   @Test
@@ -477,7 +473,7 @@ public class InterledgerAddressPrefixMapTest {
       .build();
     prefixMap.putEntry(newRoute1.routePrefix(), newRoute1);
     Optional<Route> route = prefixMap.findNextHop(InterledgerAddress.of("g.unittest.receiver"));
-    assertThat(route.get(), is(newRoute1));
+    assertThat(route.get()).isEqualTo(newRoute1);
 
     final Route newRoute2 = ImmutableRoute.builder()
       .routePrefix(GLOBAL_ROUTING_TABLE_ENTRY.with("unittest"))
@@ -486,33 +482,24 @@ public class InterledgerAddressPrefixMapTest {
     prefixMap.putEntry(newRoute2.routePrefix(), newRoute2);
 
     route = prefixMap.findNextHop(InterledgerAddress.of("g.unittest.receiver"));
-    assertThat("Should return the newRoute2", route.get(), is(newRoute2));
+    assertThat(route.get()).as("Should return the newRoute2").isEqualTo(newRoute2);
   }
 
-  @Test(expected = NullPointerException.class)
+  @Test
   public void testFindLongestPrefixWithNullAddressPrefix() {
+    expectedException.expect(NullPointerException.class);
+    expectedException.expectMessage("destinationAddressPrefix must not be null!");
     this.prefixMap = constructPopulatedPrefixMap();
-    try {
-      final InterledgerAddressPrefix nullAddress = null;
-      prefixMap.findLongestPrefix(nullAddress);
-      fail();
-    } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("destinationAddressPrefix must not be null!"));
-      throw e;
-    }
+    final InterledgerAddressPrefix nullAddress = null;
+    prefixMap.findLongestPrefix(nullAddress);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testFindLongestPrefixWithNonPrefix() {
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("An InterledgerAddressPrefix MUST not end with a period (.) character");
     this.prefixMap = constructPopulatedPrefixMap();
-    try {
-      prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo."));
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e.getMessage(),
-        is("An InterledgerAddressPrefix MUST not end with a period (.) character"));
-      throw e;
-    }
+    prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo."));
   }
 
   @Test
@@ -520,86 +507,74 @@ public class InterledgerAddressPrefixMapTest {
     this.prefixMap = constructPopulatedPrefixMap();
 
     // g.
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.b")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bo")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bob")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.b")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.f")).get().getValue(), is("g"));
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.b")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bo")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bob")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.b")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.f")).get().getValue()).isEqualTo("g");
     // contains g.foo, but then some...
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.fool")).get().getValue(), is("g"));
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.fool")).get().getValue()).isEqualTo("g");
 
     // g.foo.
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.a")).get().getValue(), is("g.foo"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.b")).get().getValue(), is("g.foo"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.bo")).get().getValue(), is("g.foo"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.alice")).get().getValue(), is("g.foo"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.bob")).get().getValue(), is("g.foo"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.foo")).get().getValue(), is("g.foo"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.bar")).get().getValue(), is("g.foo"));
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.a")).get().getValue()).isEqualTo("g.foo");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.b")).get().getValue()).isEqualTo("g.foo");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.bo")).get().getValue()).isEqualTo("g.foo");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.alice")).get().getValue()).isEqualTo("g.foo");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.bob")).get().getValue()).isEqualTo("g.foo");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.foo")).get().getValue()).isEqualTo("g.foo");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.bar")).get().getValue()).isEqualTo("g.foo");
     // contains g.foo, but then some...
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.fool")).get().getValue(), is("g.foo"));
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.foo.fool")).get().getValue()).isEqualTo("g.foo");
 
     // g.bar.
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bar.a")).get().getValue(), is("g.bar"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bar.b")).get().getValue(), is("g.bar"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bar.bo")).get().getValue(), is("g.bar"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bar.alice")).get().getValue(), is("g.bar"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bar.bob")).get().getValue(), is("g.bar"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bar.foo")).get().getValue(), is("g.bar"));
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bar.a")).get().getValue()).isEqualTo("g.bar");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bar.b")).get().getValue()).isEqualTo("g.bar");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bar.bo")).get().getValue()).isEqualTo("g.bar");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bar.alice")).get().getValue()).isEqualTo("g.bar");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bar.bob")).get().getValue()).isEqualTo("g.bar");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bar.foo")).get().getValue()).isEqualTo("g.bar");
     // contains g.bar, but then some...
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bart")).get().getValue(), is("g"));
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bart")).get().getValue()).isEqualTo("g");
 
     // g.baz.boo.
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.a")).get().getValue(),
-      is("g.baz.boo"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.b")).get().getValue(),
-      is("g.baz.boo"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bo")).get().getValue(),
-      is("g.baz.boo"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.alice")).get().getValue(),
-      is("g.baz.boo"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bob")).get().getValue(),
-      is("g.baz.boo"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.foo")).get().getValue(),
-      is("g.baz.boo"));
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.a")).get().getValue()).isEqualTo("g.baz.boo");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.b")).get().getValue()).isEqualTo("g.baz.boo");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bo")).get().getValue()).isEqualTo("g.baz.boo");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.alice")).get().getValue()).isEqualTo("g.baz.boo");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bob")).get().getValue()).isEqualTo("g.baz.boo");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.foo")).get().getValue()).isEqualTo("g.baz.boo");
     // contains g.baz, but then some...
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.bool")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bazl")).get().getValue(), is("g"));
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.bool")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bazl")).get().getValue()).isEqualTo("g");
 
     // g.baz.boo.bar.
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bar.a")).get().getValue(),
-      is("g.baz.boo.bar"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bar.b")).get().getValue(),
-      is("g.baz.boo.bar"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bar.bo")).get().getValue(),
-      is("g.baz.boo.bar"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bar.alice")).get().getValue(),
-      is("g.baz.boo.bar"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bar.bob")).get().getValue(),
-      is("g.baz.boo.bar"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bar.foo")).get().getValue(),
-      is("g.baz.boo.bar"));
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bar.a")).get().getValue()).isEqualTo("g.baz.boo.bar");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bar.b")).get().getValue()).isEqualTo("g.baz.boo.bar");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bar.bo")).get().getValue()).isEqualTo("g.baz.boo.bar");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bar.alice")).get().getValue()).isEqualTo("g.baz.boo.bar");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bar.bob")).get().getValue()).isEqualTo("g.baz.boo.bar");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.boo.bar.foo")).get().getValue()).isEqualTo("g.baz.boo.bar");
     // contains g.baz.boo, but then some...
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.bool.bart")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bazl.boo.bar")).get().getValue(), is("g"));
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.baz.bool.bart")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.bazl.boo.bar")).get().getValue()).isEqualTo("g");
 
     // g.notfound --> Absent
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.notfound.a")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.notfound.b")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.notfound.bo")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.notfound.alice")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.notfound.bob")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.notfound.foo")).get().getValue(), is("g"));
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.notfound.a")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.notfound.b")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.notfound.bo")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.notfound.alice")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.notfound.bob")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.notfound.foo")).get().getValue()).isEqualTo("g");
 
     // g.1. --> g.
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.1.b")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.1.bo")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.1.bob")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.1.b")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.1.f")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.1.foo")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.11")).get().getValue(), is("g"));
-    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.22")).get().getValue(), is("g"));
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.1.b")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.1.bo")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.1.bob")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.1.b")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.1.f")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.1.foo")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.11")).get().getValue()).isEqualTo("g");
+    assertThat(prefixMap.findLongestPrefix(InterledgerAddressPrefix.of("g.22")).get().getValue()).isEqualTo("g");
   }
 
   private InterledgerAddressPrefixMap constructPopulatedPrefixMap() {

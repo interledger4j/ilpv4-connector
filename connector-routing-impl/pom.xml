@@ -69,11 +69,6 @@
       <artifactId>commons-lang3</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>ilp-core</artifactId>
     </dependency>

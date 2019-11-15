@@ -1,13 +1,11 @@
 package org.interledger.connector.packetswitch.filters;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.interledger.connector.ccp.CcpConstants.CCP_CONTROL_DESTINATION_ADDRESS;
 import static org.interledger.connector.ccp.CcpConstants.CCP_UPDATE_DESTINATION_ADDRESS;
 import static org.interledger.connector.ccp.CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION;
 import static org.interledger.connector.ccp.CcpConstants.PEER_PROTOCOL_EXECUTION_FULFILLMENT;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -40,7 +38,9 @@ import org.interledger.link.PacketRejector;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.ArgumentCaptor;
@@ -99,6 +99,9 @@ public class PeerProtocolPacketFilterTest {
     this.receiveRoutesEnabled = receiveRoutesEnabled;
   }
 
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
+
   @Parameterized.Parameters
   public static Collection<Object[]> errorCodes() {
     return ImmutableList.of(
@@ -143,15 +146,9 @@ public class PeerProtocolPacketFilterTest {
     when(routeBroadcasterMock.getCcpEnabledAccount(ACCOUNT_ID)).thenReturn(Optional.of(routableAccountMock));
   }
 
-  @Test(expected = NullPointerException.class)
   public void doFilterWithNullPacket() {
-    try {
-      filter.doFilter(accountSettingsMock, null, filterChainMock);
-      fail();
-    } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is(nullValue()));
-      throw e;
-    }
+    expectedException.expect(NullPointerException.class);
+    filter.doFilter(accountSettingsMock, null, filterChainMock);
   }
 
   ////////////////
@@ -172,8 +169,8 @@ public class PeerProtocolPacketFilterTest {
           verify(packetRejectorMock)
               .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
 
-          assertThat(errorCodeArgumentCaptor.getValue(), is(InterledgerErrorCode.F00_BAD_REQUEST));
-          assertThat(errorMessageCaptor.getValue(), is("IL-DCP is not supported by this Connector."));
+          assertThat(errorCodeArgumentCaptor.getValue()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
+          assertThat(errorMessageCaptor.getValue()).isEqualTo("IL-DCP is not supported by this Connector.");
         }
     );
   }
@@ -188,7 +185,7 @@ public class PeerProtocolPacketFilterTest {
 
     filter.doFilter(accountSettingsMock, preparePacket, filterChainMock)
         .handle(
-            fulfillPacket -> assertThat(fulfillPacket.getFulfillment(), is(IldcpResponsePacket.EXECUTION_FULFILLMENT)),
+            fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(IldcpResponsePacket.EXECUTION_FULFILLMENT),
             rejectPacket -> fail(String.format("Should not reject: %s", rejectPacket))
         );
   }
@@ -214,8 +211,8 @@ public class PeerProtocolPacketFilterTest {
           verify(packetRejectorMock)
               .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
 
-          assertThat(errorCodeArgumentCaptor.getValue(), is(InterledgerErrorCode.F00_BAD_REQUEST));
-          assertThat(errorMessageCaptor.getValue(), is("CCP routing protocol is not supported by this node."));
+          assertThat(errorCodeArgumentCaptor.getValue()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
+          assertThat(errorMessageCaptor.getValue()).isEqualTo("CCP routing protocol is not supported by this node.");
         }
     );
   }
@@ -250,8 +247,7 @@ public class PeerProtocolPacketFilterTest {
           if (!sendRoutesEnabled) {
             fail(String.format("Should not have fulfilled when sendRoutes is disabled! %s", fulfillPacket));
           } else {
-            assertThat("Should have fulfilled when sendRoutes is enabled",
-                fulfillPacket.getFulfillment(), is(PEER_PROTOCOL_EXECUTION_FULFILLMENT));
+            assertThat(fulfillPacket.getFulfillment()).as("Should have fulfilled when sendRoutes is enabled").isEqualTo(PEER_PROTOCOL_EXECUTION_FULFILLMENT);
           }
         },
         rejectPacket -> {
@@ -262,12 +258,11 @@ public class PeerProtocolPacketFilterTest {
             final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
             verify(packetRejectorMock)
                 .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
-            assertThat(errorCodeArgumentCaptor.getValue(), is(InterledgerErrorCode.F00_BAD_REQUEST));
-            assertThat(errorMessageCaptor.getValue(),
-                is("CCP sending is not enabled for this account. destinationAddress=peer.route.control"));
+            assertThat(errorCodeArgumentCaptor.getValue()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
+            assertThat(errorMessageCaptor.getValue()).isEqualTo("CCP sending is not enabled for this account. destinationAddress=peer.route.control");
 
-            assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
-            assertThat(rejectPacket.getTriggeredBy().get(), is(OPERATOR_ADDRESS));
+            assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
+            assertThat(rejectPacket.getTriggeredBy().get()).isEqualTo(OPERATOR_ADDRESS);
           } else {
             fail(String.format("Should not have rejected when sendRoutes is enabled. %s", rejectPacket));
           }
@@ -308,8 +303,7 @@ public class PeerProtocolPacketFilterTest {
           if (!receiveRoutesEnabled) {
             fail(String.format("Should not have fulfilled when sendRoutes is disabled! %s", fulfillPacket));
           } else {
-            assertThat("Should have fulfilled when receiveRoutes is enabled",
-                fulfillPacket.getFulfillment(), is(PEER_PROTOCOL_EXECUTION_FULFILLMENT));
+            assertThat(fulfillPacket.getFulfillment()).as("Should have fulfilled when receiveRoutes is enabled").isEqualTo(PEER_PROTOCOL_EXECUTION_FULFILLMENT);
           }
         },
         rejectPacket -> {
@@ -320,12 +314,11 @@ public class PeerProtocolPacketFilterTest {
             final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
             verify(packetRejectorMock)
                 .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
-            assertThat(errorCodeArgumentCaptor.getValue(), is(InterledgerErrorCode.F00_BAD_REQUEST));
-            assertThat(errorMessageCaptor.getValue(),
-                is("CCP receiving is not enabled for this account. destinationAddress=peer.route.update"));
+            assertThat(errorCodeArgumentCaptor.getValue()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
+            assertThat(errorMessageCaptor.getValue()).isEqualTo("CCP receiving is not enabled for this account. destinationAddress=peer.route.update");
 
-            assertThat(rejectPacket.getCode(), is(InterledgerErrorCode.F00_BAD_REQUEST));
-            assertThat(rejectPacket.getTriggeredBy().get(), is(OPERATOR_ADDRESS));
+            assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
+            assertThat(rejectPacket.getTriggeredBy().get()).isEqualTo(OPERATOR_ADDRESS);
           } else {
             fail(String.format("Should not have rejected when receiveRoutes is enabled! %s", rejectPacket));
           }
@@ -350,8 +343,8 @@ public class PeerProtocolPacketFilterTest {
           verify(packetRejectorMock)
               .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
 
-          assertThat(errorCodeArgumentCaptor.getValue(), is(InterledgerErrorCode.F01_INVALID_PACKET));
-          assertThat(errorMessageCaptor.getValue(), is("unknown peer protocol."));
+          assertThat(errorCodeArgumentCaptor.getValue()).isEqualTo(InterledgerErrorCode.F01_INVALID_PACKET);
+          assertThat(errorMessageCaptor.getValue()).isEqualTo("unknown peer protocol.");
         }
     );
   }

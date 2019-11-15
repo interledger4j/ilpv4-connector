@@ -1,7 +1,10 @@
 package org.interledger.connector.settlement;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+
 import org.interledger.connector.core.settlement.SettlementQuantity;
-import org.interledger.connector.settlement.NumberScalingUtils;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -10,10 +13,6 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * Unit tests for {@link NumberScalingUtils}.
@@ -235,7 +234,7 @@ public class NumberScalingUtilsTest {
       NumberScalingUtils.translate(null, 1, 2);
       fail("Should have thrown an NPE");
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("sourceAmount must not be null"));
+      assertThat(e.getMessage()).isEqualTo("sourceAmount must not be null");
       throw e;
     }
   }
@@ -246,7 +245,7 @@ public class NumberScalingUtilsTest {
       NumberScalingUtils.translate(BigInteger.ZERO, -11, 2);
       fail("Should have thrown an NPE");
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("sourceScale must not be negative"));
+      assertThat(e.getMessage()).isEqualTo("sourceScale must not be negative");
       throw e;
     }
   }
@@ -257,17 +256,15 @@ public class NumberScalingUtilsTest {
       NumberScalingUtils.translate(BigInteger.ZERO, 1, -1);
       fail("Should have thrown an NPE");
     } catch (NullPointerException e) {
-      assertThat(e.getMessage(), is("destinationScale must not be negative"));
+      assertThat(e.getMessage()).isEqualTo("destinationScale must not be negative");
       throw e;
     }
   }
 
   @Test
   public void translate() {
-    assertThat(
-      description, NumberScalingUtils.translate(
-        sourceSettlementQuantity.amount(), sourceSettlementQuantity.scale(), expectedSettlementQuantity.scale()
-      ),
-      is(expectedSettlementQuantity.amount()));
+    assertThat(NumberScalingUtils.translate(
+      sourceSettlementQuantity.amount(), sourceSettlementQuantity.scale(), expectedSettlementQuantity.scale()
+    )).as(description).isEqualTo(expectedSettlementQuantity.amount());
   }
 }

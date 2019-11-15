@@ -1,19 +1,17 @@
 package org.interledger.connector.javax.money.providers;
 
-import org.interledger.connector.javax.money.providers.XrpCurrencyProvider;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.DROP;
+import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.XRP;
+
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.money.CurrencyQueryBuilder;
-import javax.money.CurrencyUnit;
 import java.time.LocalDate;
 import java.util.Locale;
 import java.util.Set;
-
-import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.DROP;
-import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.XRP;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import javax.money.CurrencyQueryBuilder;
+import javax.money.CurrencyUnit;
 
 /**
  * Unit tests for {@link XrpCurrencyProvider}.
@@ -37,8 +35,8 @@ public class XrpCurrencyProviderTest {
         .setProviderNames(XRP).build() // Provider
     );
 
-    assertThat(currencyUnits.size(), is(1));
-    assertThat(currencyUnits.stream().findFirst().get().getCurrencyCode(), is(XRP));
+    assertThat(currencyUnits.size()).isEqualTo(1);
+    assertThat(currencyUnits.stream().findFirst().get().getCurrencyCode()).isEqualTo(XRP);
   }
 
   @Test
@@ -50,6 +48,6 @@ public class XrpCurrencyProviderTest {
         .setProviderNames(DROP).build() // Provider
     );
 
-    assertThat(currencyUnits.size(), is(0));
+    assertThat(currencyUnits.size()).isEqualTo(0);
   }
 }
