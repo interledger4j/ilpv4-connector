@@ -9,12 +9,24 @@ logging:
     org.hibernate.SQL: INFO
     org.hibernate.engine: WARN
 
+# By default, all endpoints except for shutdown are enabled.
+# https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-features.html#production-ready-endpoints-enabling-endpoints
+management:
+  endpoints:
+    enabled-by-default: false
+    health:
+      enabled: true
+    info:
+      enabled: true
+    web:
+      base-path: "/manage"
+
 server:
   port: 8080
   http2:
     enabled: true
   jetty:
-    max-http-post-size: 32767 # Max per ILP ASN.1
+    max-form-post-size: 32767 # Max per ILP ASN.1
 spring:
   cache:
     redis:
