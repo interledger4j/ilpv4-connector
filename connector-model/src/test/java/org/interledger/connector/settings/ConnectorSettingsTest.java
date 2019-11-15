@@ -45,5 +45,13 @@ public class ConnectorSettingsTest {
 
     assertThat(defaultConnectorSettings.enabledFeatures()).isNotNull();
     assertThat(defaultConnectorSettings.enabledFeatures().isRateLimitingEnabled()).isTrue();
+
+    assertThat(defaultConnectorSettings.keys()).isEqualTo(
+      ConnectorKeys.builder()
+        .accountSettings(ConnectorKey.builder().alias("accountSettings").version("1").build())
+        .secret0(ConnectorKey.builder().alias("secret0").version("1").build())
+        .build()
+    );
+
   }
 }
