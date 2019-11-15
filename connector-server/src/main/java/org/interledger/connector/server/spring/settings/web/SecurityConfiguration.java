@@ -183,7 +183,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       ////////
 
       // Actuator URLs
-      .antMatchers(HttpMethod.GET, PathConstants.SLASH_MANAGE).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.GET, PathConstants.SLASH_MANAGE).permitAll()
+      .antMatchers(HttpMethod.GET, PathConstants.SLASH_MANAGE + PathConstants.SLASH_HEALTH).permitAll()
+      .antMatchers(HttpMethod.GET, PathConstants.SLASH_MANAGE + PathConstants.SLASH_INFO).permitAll()
       .antMatchers(HttpMethod.GET, PathConstants.SLASH_MANAGE + "/**").hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
 
       // /accounts
