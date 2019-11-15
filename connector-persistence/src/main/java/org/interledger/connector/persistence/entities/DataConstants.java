@@ -31,4 +31,9 @@ public interface DataConstants {
     String STATIC_ROUTES_IDX = "STATIC_ROUTES_PREFIX_IDX";
   }
 
+  interface ConstraintNames {
+    // ACCOUNT_SETTINGS
+    String ACCOUNT_SETTINGS_SETTLEMENT_ENGINE = "ACCOUNT_SETTINGS(SE_ACCOUNT_ID)";
+  }
+
 }
