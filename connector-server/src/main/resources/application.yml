@@ -68,8 +68,6 @@ interledger:
     # ILP address of the connector (can be omitted if an account with relation=parent is configured under accounts).
     # nodeIlpAddress: test.connie
     # adminPassword: password
-    # Deprecated via https://github.com/sappenin/java-ilpv4-connector/issues/407
-    # defaultJwtTokenIssuer: https://example.com
     # Global Routing Settings for this connector.
     # globalRoutingSettings:
     #  routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=

@@ -11,6 +11,5 @@ interledger:
     require32ByteSharedSecrets: false
     globalPrefix: test
     adminPassword: password
-    defaultJwtTokenIssuer: https://jwt.example.com
     globalRoutingSettings:
       routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=

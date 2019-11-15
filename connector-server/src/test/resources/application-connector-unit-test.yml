@@ -20,7 +20,6 @@ interledger:
         secret0_alias: secret0
         # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
         secret0_password: password
-    defaultJwtTokenIssuer: https://connie.example.com
     ## ILP address of the connector.
     ## This property can be omitted if an account with relation=parent is configured under accounts.
     nodeIlpAddress: test.example

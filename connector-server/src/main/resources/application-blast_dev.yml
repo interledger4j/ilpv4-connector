@@ -5,4 +5,3 @@ spring:
 interledger:
   connector:
     nodeIlpAddress: test.connie
-    defaultJwtTokenIssuer: https://connie.example.com
