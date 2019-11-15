@@ -62,7 +62,7 @@ public class ConnectorSettingsFromPropertyFileTest {
     assertThat(globalRoutingSettings.routeExpiry()).isEqualTo((Duration.ofMillis(30003L)));
     assertThat(globalRoutingSettings.maxEpochsPerRoutingTable()).isEqualTo((77));
 
-    assertThat(connectorSettings.isRequire32ByteSharedSecrets()).isFalse();
+    assertThat(connectorSettings.isRequire32ByteSharedSecrets()).isTrue();
 
     assertThat(connectorSettings.keys().secret0())
       .isEqualTo(ConnectorKey.builder().alias("secret0").version("2").build());

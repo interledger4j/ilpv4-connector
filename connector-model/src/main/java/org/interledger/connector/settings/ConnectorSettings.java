@@ -103,7 +103,7 @@ public interface ConnectorSettings {
    */
   @Value.Default
   default boolean isRequire32ByteSharedSecrets() {
-    return true;
+    return false;
   };
 
   /**
