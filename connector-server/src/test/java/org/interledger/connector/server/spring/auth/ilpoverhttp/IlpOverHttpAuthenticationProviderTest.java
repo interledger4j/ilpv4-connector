@@ -11,6 +11,7 @@ import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings;
 import org.interledger.connector.links.DefaultLinkSettingsFactory;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.server.spring.settings.ConnectorSettingsFromPropertyFileTest;
 import org.interledger.connector.server.spring.settings.crypto.JksCryptoConfig;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.ModifiableConnectorSettings;
@@ -39,24 +40,24 @@ import java.util.Optional;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(
-    classes = {JksCryptoConfig.class}
+  classes = {JksCryptoConfig.class, ConnectorSettingsFromPropertyFileTest.TestConfiguration.class}
 )
 @ActiveProfiles("connector-unit-test")
 public class IlpOverHttpAuthenticationProviderTest {
 
   private static final String SECRET = Base64.getEncoder().encodeToString("shh".getBytes());
   private static final String ENCRYPTED_SHH
-      = "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=";
+    = "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=";
 
   private static final String JWT_TOKEN =
-      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJib2IifQ.E773YFqatHhCSBQKp8kkqpdqFpFf5DkRxdDR35pd67M";
+    "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJib2IifQ.E773YFqatHhCSBQKp8kkqpdqFpFf5DkRxdDR35pd67M";
 
   private static final String SIMPLE_TOKEN = "bob:" + SECRET;
 
   public static final String ILP_OVER_HTTP_INCOMING =
-      IlpOverHttpLinkSettings.ILP_OVER_HTTP + "." + IlpOverHttpLinkSettings.INCOMING + ".";
+    IlpOverHttpLinkSettings.ILP_OVER_HTTP + "." + IlpOverHttpLinkSettings.INCOMING + ".";
   public static final String ILP_OVER_HTTP_OUTGOING =
-      IlpOverHttpLinkSettings.ILP_OVER_HTTP + "." + IlpOverHttpLinkSettings.OUTGOING + ".";
+    IlpOverHttpLinkSettings.ILP_OVER_HTTP + "." + IlpOverHttpLinkSettings.OUTGOING + ".";
 
   public static final AccountId ACCOUNT_ID = AccountId.of("bob");
 
@@ -78,22 +79,22 @@ public class IlpOverHttpAuthenticationProviderTest {
     initMocks(this);
     ConnectorSettings connectorSettings = ModifiableConnectorSettings.create();
     ilpOverHttpAuthenticationProvider = new IlpOverHttpAuthenticationProvider(
-        () -> connectorSettings,
-        encryptionService,
-        accountSettingsRepository,
-        new DefaultLinkSettingsFactory(),
-        cacheMetrics);
+      () -> connectorSettings,
+      encryptionService,
+      accountSettingsRepository,
+      new DefaultLinkSettingsFactory(),
+      cacheMetrics);
   }
 
   @Test
   public void authenticateSimpleWithValidToken() {
     mockAccountSettings()
-        .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString());
+      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString());
     Authentication result = ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
-        .isAuthenticated(false)
-        .bearerToken(SIMPLE_TOKEN.getBytes())
-        .hmacSha256(HashCode.fromString("1234"))
-        .build()
+      .isAuthenticated(false)
+      .bearerToken(SIMPLE_TOKEN.getBytes())
+      .hmacSha256(HashCode.fromString("1234"))
+      .build()
     );
 
     assertThat(result.isAuthenticated()).isTrue();
@@ -103,39 +104,39 @@ public class IlpOverHttpAuthenticationProviderTest {
   @Test
   public void authenticateSimpleWithInvalidSecret() {
     mockAccountSettings()
-        .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString());
+      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString());
     expectedException.expect(BadCredentialsException.class);
     expectedException.expectMessage("Authentication failed for principal: bob");
     ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
-        .isAuthenticated(false)
-        .bearerToken("bob:badtoken".getBytes())
-        .hmacSha256(HashCode.fromString("1234"))
-        .build()
+      .isAuthenticated(false)
+      .bearerToken("bob:badtoken".getBytes())
+      .hmacSha256(HashCode.fromString("1234"))
+      .build()
     );
   }
 
   @Test
   public void authenticateSimpleWithInvalidPrincipal() {
     mockAccountSettings()
-        .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString());
+      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString());
     expectedException.expect(BadCredentialsException.class);
     expectedException.expectMessage("Authentication failed for principal");
     ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
-        .isAuthenticated(false)
-        .bearerToken(("foo:" + SECRET).getBytes())
-        .hmacSha256(HashCode.fromString("1234"))
-        .build());
+      .isAuthenticated(false)
+      .bearerToken(("foo:" + SECRET).getBytes())
+      .hmacSha256(HashCode.fromString("1234"))
+      .build());
   }
 
   @Test
   public void authenticateJwtWithValidToken() {
     mockAccountSettings()
-        .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.JWT_HS_256.toString());
+      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.JWT_HS_256.toString());
     Authentication result = ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
-        .isAuthenticated(false)
-        .bearerToken(JWT_TOKEN.getBytes())
-        .hmacSha256(HashCode.fromString("1234"))
-        .build()
+      .isAuthenticated(false)
+      .bearerToken(JWT_TOKEN.getBytes())
+      .hmacSha256(HashCode.fromString("1234"))
+      .build()
     );
 
     assertThat(result.isAuthenticated()).isTrue();
@@ -145,54 +146,54 @@ public class IlpOverHttpAuthenticationProviderTest {
   @Test
   public void authenticateJwtWithInvalidToken() {
     mockAccountSettings()
-        .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.JWT_HS_256.toString());
+      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.JWT_HS_256.toString());
 
     expectedException.expect(BadCredentialsException.class);
     expectedException.expectMessage("Authentication failed for principal");
     ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
-        .isAuthenticated(false)
-        .bearerToken("not a jwt".getBytes())
-        .hmacSha256(HashCode.fromString("1234"))
-        .build()
+      .isAuthenticated(false)
+      .bearerToken("not a jwt".getBytes())
+      .hmacSha256(HashCode.fromString("1234"))
+      .build()
     );
   }
 
   @Test
   public void authenticateInternalServerError() {
     mockAccountSettings()
-        .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.JWT_HS_256.toString());
+      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.JWT_HS_256.toString());
 
     when(accountSettingsRepository.findByAccountIdWithConversion(any())).thenThrow(
-        new RuntimeException("Something bad happened on the server")
+      new RuntimeException("Something bad happened on the server")
     );
 
     expectedException.expect(BadCredentialsException.class);
     expectedException.expectMessage("Unable to validate token due to system error");
     ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
-        .isAuthenticated(false)
-        .bearerToken(JWT_TOKEN.getBytes())
-        .hmacSha256(HashCode.fromString("1234"))
-        .build()
+      .isAuthenticated(false)
+      .bearerToken(JWT_TOKEN.getBytes())
+      .hmacSha256(HashCode.fromString("1234"))
+      .build()
     );
   }
 
   private ImmutableAccountSettings.Builder mockAccountSettings() {
     ImmutableAccountSettings.Builder builder = AccountSettings.builder()
-        .accountRelationship(AccountRelationship.CHILD)
-        .assetCode("XRP")
-        .assetScale(9)
-        .accountId(ACCOUNT_ID)
-        .linkType(IlpOverHttpLink.LINK_TYPE)
-        .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.URL, "http://test.com")
-        .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.SHARED_SECRET, ENCRYPTED_SHH)
-        .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.TOKEN_SUBJECT, ACCOUNT_ID.value())
-        .putCustomSettings(ILP_OVER_HTTP_OUTGOING + IlpOverHttpLinkSettings.SHARED_SECRET, ENCRYPTED_SHH)
-        .putCustomSettings(ILP_OVER_HTTP_OUTGOING + IlpOverHttpLinkSettings.URL, "http://test.com")
-        .putCustomSettings(ILP_OVER_HTTP_OUTGOING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString())
-        .putCustomSettings(ILP_OVER_HTTP_OUTGOING + IlpOverHttpLinkSettings.TOKEN_SUBJECT, ACCOUNT_ID.value());
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("XRP")
+      .assetScale(9)
+      .accountId(ACCOUNT_ID)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
+      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.URL, "http://test.com")
+      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.TOKEN_SUBJECT, ACCOUNT_ID.value())
+      .putCustomSettings(ILP_OVER_HTTP_OUTGOING + IlpOverHttpLinkSettings.SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(ILP_OVER_HTTP_OUTGOING + IlpOverHttpLinkSettings.URL, "http://test.com")
+      .putCustomSettings(ILP_OVER_HTTP_OUTGOING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString())
+      .putCustomSettings(ILP_OVER_HTTP_OUTGOING + IlpOverHttpLinkSettings.TOKEN_SUBJECT, ACCOUNT_ID.value());
 
     when(accountSettingsRepository.findByAccountIdWithConversion(ACCOUNT_ID))
-        .thenAnswer(($) -> Optional.of(builder.build()));
+      .thenAnswer(($) -> Optional.of(builder.build()));
 
     return builder;
   }

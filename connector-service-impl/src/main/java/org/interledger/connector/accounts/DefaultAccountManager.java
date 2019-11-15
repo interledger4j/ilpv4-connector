@@ -2,6 +2,8 @@ package org.interledger.connector.accounts;
 
 import org.interledger.codecs.ildcp.IldcpUtils;
 import org.interledger.connector.links.LinkManager;
+import org.interledger.connector.links.LinkSettingsFactory;
+import org.interledger.connector.links.LinkSettingsValidator;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.entities.DataConstants;
 import org.interledger.connector.persistence.entities.SettlementEngineDetailsEntity;
@@ -17,6 +19,8 @@ import org.interledger.ildcp.IldcpRequest;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
 import org.interledger.link.Link;
+import org.interledger.link.http.IlpOverHttpLink;
+import org.interledger.link.http.IlpOverHttpLinkSettings;
 
 import com.google.common.annotations.VisibleForTesting;
 import okhttp3.HttpUrl;
@@ -40,6 +44,8 @@ public class DefaultAccountManager implements AccountManager {
   private final LinkManager linkManager;
   private final ConversionService conversionService;
   private final SettlementEngineClient settlementEngineClient;
+  private final LinkSettingsFactory linkSettingsFactory;
+  private final LinkSettingsValidator linkSettingsValidator;
 
   /**
    * Required-args Constructor.
@@ -49,13 +55,15 @@ public class DefaultAccountManager implements AccountManager {
     final ConversionService conversionService,
     final AccountSettingsRepository accountSettingsRepository,
     final LinkManager linkManager,
-    final SettlementEngineClient settlementEngineClient
-  ) {
+    final SettlementEngineClient settlementEngineClient,
+    LinkSettingsFactory linkSettingsFactory, LinkSettingsValidator linkSettingsValidator) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.linkManager = Objects.requireNonNull(linkManager);
     this.conversionService = Objects.requireNonNull(conversionService);
     this.settlementEngineClient = Objects.requireNonNull(settlementEngineClient);
+    this.linkSettingsFactory = linkSettingsFactory;
+    this.linkSettingsValidator = linkSettingsValidator;
   }
 
   @Override
@@ -76,7 +84,8 @@ public class DefaultAccountManager implements AccountManager {
       throw new AccountAlreadyExistsProblem(accountSettings.accountId());
     }
 
-    final AccountSettingsEntity accountSettingsEntity = new AccountSettingsEntity(accountSettings);
+    final AccountSettingsEntity accountSettingsEntity =
+      new AccountSettingsEntity(validateLinkSettings(accountSettings));
     final SettlementEngineDetailsEntity settlementEngineDetailsEntity =
       accountSettingsEntity.getSettlementEngineDetailsEntity();
 
@@ -124,6 +133,24 @@ public class DefaultAccountManager implements AccountManager {
     return returnableAccountSettings;
   }
 
+  private AccountSettings validateLinkSettings(AccountSettings accountSettings) {
+    try {
+      if (accountSettings.linkType().equals(IlpOverHttpLink.LINK_TYPE)) {
+        IlpOverHttpLinkSettings ilpOverHttpLinkSettings =
+          linkSettingsValidator.validateSettings(linkSettingsFactory.constructTyped(accountSettings));
+
+        return AccountSettings.builder()
+          .from(accountSettings)
+          .customSettings(ilpOverHttpLinkSettings.getCustomSettings())
+          .build();
+      }
+      return accountSettings;
+    } catch (IllegalArgumentException e) {
+      throw new InvalidAccountSettingsProblem("Bad shared secret: " + e.getMessage()
+        , accountSettings.accountId());
+    }
+  }
+
   @VisibleForTesting
   protected AccountSettingsEntity persistAccountSettingsEntity(AccountSettingsEntity accountSettingsEntity) {
     ////////////////
@@ -149,7 +176,6 @@ public class DefaultAccountManager implements AccountManager {
    * Initialize a parent account with new settings from the parent connector.
    *
    * @param accountId The {@link AccountId} to initialize via IL-DCP.
-   *
    * @return The new {@link AccountSettings} after performing IL-DCP.
    */
   @Override

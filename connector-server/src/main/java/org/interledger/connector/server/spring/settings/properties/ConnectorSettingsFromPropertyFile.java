@@ -16,7 +16,7 @@ import java.util.Optional;
 /**
  * Pojo class for automatic mapping of configuration properties via Spring's {@link ConfigurationProperties}
  * annotation.
- *
+ * <p>
  * Note that this class supports adding Accounts from a properties file, although these accounts are not accessible from
  * {@link ConnectorSettings}. Instead, all accounts should be accessed via the {@link AccountSettingsRepository}
  * instead.
@@ -48,6 +48,10 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   private int maxHoldTimeMillis = 30000; // default if not set in config
 
   private int minMessageWindowMillis = 1000;
+
+  private boolean require32ByteSharedSecrets;
+
+  private ConnectorKeysFromPropertyFile keys;
 
   @Override
   public InterledgerAddress operatorAddress() {
@@ -135,6 +139,24 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   public void setMinMessageWindowMillis(int minMessageWindowMillis) {
     this.minMessageWindowMillis = minMessageWindowMillis;
+  }
+
+  @Override
+  public boolean isRequire32ByteSharedSecrets() {
+    return require32ByteSharedSecrets;
+  }
+
+  public void setRequire32ByteSharedSecrets(boolean require32ByteSharedSecrets) {
+    this.require32ByteSharedSecrets = require32ByteSharedSecrets;
+  }
+
+  @Override
+  public ConnectorKeysFromPropertyFile keys() {
+    return keys;
+  }
+
+  public void setKeys(ConnectorKeysFromPropertyFile keys) {
+    this.keys = keys;
   }
 
   /**

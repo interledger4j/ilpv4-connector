@@ -4,6 +4,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import org.interledger.connector.links.LinkManager;
+import org.interledger.connector.links.LinkSettingsFactory;
+import org.interledger.connector.links.LinkSettingsValidator;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.entities.SettlementEngineDetailsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
@@ -37,6 +39,11 @@ public class DefaultAccountManagerTest {
   private ConversionService conversionService;
   @Mock
   private SettlementEngineClient settlementEngineClient;
+  @Mock
+  private LinkSettingsValidator linkSettingsValidator;
+  @Mock
+  private LinkSettingsFactory linkSettingsFactory;
+
 
   private DefaultAccountManager accountManager;
 
@@ -47,7 +54,9 @@ public class DefaultAccountManagerTest {
       conversionService,
       accountSettingsRepository,
       linkManager,
-      settlementEngineClient
+      settlementEngineClient,
+      linkSettingsFactory,
+      linkSettingsValidator
     );
   }
 
