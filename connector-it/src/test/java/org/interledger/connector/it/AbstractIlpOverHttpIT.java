@@ -4,7 +4,6 @@ import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.interledger.connector.config.BalanceTrackerConfig.BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME;
 import static org.interledger.connector.core.ConfigConstants.ADMIN_PASSWORD;
-import static org.interledger.connector.core.ConfigConstants.DEFAULT_JWT_TOKEN_ISSUER;
 import static org.interledger.connector.core.ConfigConstants.DOT;
 import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__GLOBAL_ROUTING_SETTINGS__ROUTING_SECRET;
 import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__ENABLED;
@@ -71,7 +70,6 @@ public abstract class AbstractIlpOverHttpIT {
     // code is engaged).
     Bootstrap.init(new SpringServiceProvider());
 
-    System.setProperty(DEFAULT_JWT_TOKEN_ISSUER, "https://connie.example.com");
     System.setProperty(ADMIN_PASSWORD, "password");
 
     // Configure JKS Properly for test purposes
@@ -180,7 +178,7 @@ public abstract class AbstractIlpOverHttpIT {
     Objects.requireNonNull(interledgerAddress);
     Node node = getNode(interledgerAddress);
     return ((ConnectorServer) node.getContentObject()).getContext()
-        .getBean(ILPv4Connector.class);
+      .getBean(ILPv4Connector.class);
   }
 
   protected Node getNode(InterledgerAddress interledgerAddress) {
