@@ -8,7 +8,6 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.server.spring.auth.ilpoverhttp.AuthConstants;
 import org.interledger.connector.server.spring.auth.ilpoverhttp.BearerTokenSecurityContextRepository;
 import org.interledger.connector.server.spring.auth.ilpoverhttp.IlpOverHttpAuthenticationProvider;
-import org.interledger.connector.server.spring.controllers.HealthController;
 import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -94,8 +93,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Bean
   IlpOverHttpAuthenticationProvider ilpOverHttpAuthenticationProvider() {
     return new IlpOverHttpAuthenticationProvider(
-        connectorSettingsSupplier, encryptionService, accountSettingsRepository, linkSettingsFactory,
-        cacheMetricsCollector
+      connectorSettingsSupplier, encryptionService, accountSettingsRepository, linkSettingsFactory,
+      cacheMetricsCollector
     );
   }
 
@@ -115,10 +114,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     }
 
     auth.inMemoryAuthentication()
-        .withUser("admin").password(passwordEncoder().encode(new String(pwBytes)))
-        .authorities("connector:admin", "user")
-        .and()
-        .withUser("user").password(passwordEncoder().encode(new String(pwBytes))).authorities("user");
+      .withUser("admin").password(passwordEncoder().encode(new String(pwBytes)))
+      .authorities("connector:admin", "user")
+      .and()
+      .withUser("user").password(passwordEncoder().encode(new String(pwBytes))).authorities("user");
   }
 
   /**
@@ -151,81 +150,87 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     // Must come first in order to register properly due to 'denyAll' directive below.
     configureBearerTokenSecurity(http, ephemeralBytes)
-        .authorizeRequests()
-        //////
-        // ILP-over-HTTP
-        //////
-        .antMatchers(HttpMethod.HEAD, IlpHttpController.ILP_PATH).authenticated()
-        .antMatchers(HttpMethod.POST, IlpHttpController.ILP_PATH).authenticated()
-        .antMatchers(HttpMethod.GET, HealthController.SLASH_AH_SLASH_HEALTH).permitAll() // permitAll if hidden by LB.
-        .antMatchers(HttpMethod.GET, METRICS_ENDPOINT_URL_PATH).permitAll() // permitAll if hidden by LB.
+      .authorizeRequests()
+      //////
+      // ILP-over-HTTP
+      //////
+      .antMatchers(HttpMethod.HEAD, IlpHttpController.ILP_PATH).authenticated()
+      .antMatchers(HttpMethod.POST, IlpHttpController.ILP_PATH).authenticated()
+      //.antMatchers(HttpMethod.GET, HealthController.SLASH_HEALTH).permitAll() // permitAll if hidden by LB.
+      .antMatchers(HttpMethod.GET, METRICS_ENDPOINT_URL_PATH).permitAll() // permitAll if hidden by LB.
     ;
 
     // WARNING: Don't add `denyAll` here...it's taken care of after the JWT security below. To verify, turn on debugging
     // for Spring Security (e.g.,  org.springframework.security: DEBUG) and look at the security filter chain).
 
     http
-        .httpBasic()
-        .and()
-        .authorizeRequests()
+      .httpBasic()
+      .and()
+      .authorizeRequests()
 
-        /////////////
-        // Settlement
-        /////////////
-        // TODO: See https://github.com/sappenin/java-ilpv4-connector/issues/226
-        // Once that's addressed, then these should be secured.
-        .antMatchers(HttpMethod.POST,
-            PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID + PathConstants.SLASH_SETTLEMENTS).permitAll()
-        .antMatchers(HttpMethod.POST,
-            PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID + PathConstants.SLASH_MESSAGES).permitAll()
+      // @formatter:off
 
-        ////////
-        // Admin API
-        ////////
-        .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
-        .antMatchers(HttpMethod.GET, PathConstants.SLASH_ACCOUNTS).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
-        .antMatchers(HttpMethod.GET, PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID).hasAuthority(
-            AuthConstants.Authorities.CONNECTOR_ADMIN)
-        .antMatchers(HttpMethod.PUT, PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID).hasAuthority(
-            AuthConstants.Authorities.CONNECTOR_ADMIN)
-        .antMatchers(HttpMethod.GET, PathConstants.SLASH_ROUTES).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
-        .antMatchers(HttpMethod.GET, PathConstants.SLASH_ROUTES_STATIC).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
-        .antMatchers(HttpMethod.PUT, PathConstants.SLASH_ROUTES_STATIC_PREFIX)
-            .hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
-        .antMatchers(HttpMethod.DELETE, PathConstants.SLASH_ROUTES_STATIC_PREFIX)
-            .hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
-        // Everything else...
-        .anyRequest().denyAll()
+      /////////////
+      // Settlement
+      /////////////
+      // TODO: See https://github.com/sappenin/java-ilpv4-connector/issues/226
+      // Once that's addressed, then these should be secured.
+      .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID + PathConstants.SLASH_SETTLEMENTS).permitAll()
+      .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID + PathConstants.SLASH_MESSAGES).permitAll()
 
-        .and()
-        .addFilter(securityContextHolderAwareRequestFilter())
-        .cors()
-        .and()
-        .formLogin().disable()
-        .logout().disable()
-        //.anonymous().disable()
-        .jee().disable()
-        //.authorizeRequests()
-        //.antMatchers(HttpMethod.GET, HealthController.SLASH_AH_SLASH_HEALTH).permitAll()
-        //.anyRequest().denyAll()
-        //.and()
-        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.NEVER).enableSessionUrlRewriting(false)
-        .and()
-        .exceptionHandling().authenticationEntryPoint(problemSupport).accessDeniedHandler(problemSupport);
+      ////////
+      // Admin API
+      ////////
+
+      // Actuator URLs
+      .antMatchers(HttpMethod.GET, PathConstants.SLASH_MANAGE).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.GET, PathConstants.SLASH_MANAGE + "/**").hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+
+      // /accounts
+      .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.GET, PathConstants.SLASH_ACCOUNTS).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.GET, PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.PUT, PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+      // /routes
+      .antMatchers(HttpMethod.GET, PathConstants.SLASH_ROUTES).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.GET, PathConstants.SLASH_ROUTES_STATIC).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.PUT, PathConstants.SLASH_ROUTES_STATIC_PREFIX).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.DELETE, PathConstants.SLASH_ROUTES_STATIC_PREFIX).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+
+      // Everything else...
+      .anyRequest().denyAll()
+
+      .and()
+      .addFilter(securityContextHolderAwareRequestFilter())
+      .cors()
+      .and()
+      .formLogin().disable()
+      .logout().disable()
+      //.anonymous().disable()
+      .jee().disable()
+      //.authorizeRequests()
+      //.antMatchers(HttpMethod.GET, HealthController.SLASH_AH_SLASH_HEALTH).permitAll()
+      //.anyRequest().denyAll()
+      //.and()
+      .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.NEVER).enableSessionUrlRewriting(false)
+      .and()
+      .exceptionHandling().authenticationEntryPoint(problemSupport).accessDeniedHandler(problemSupport);
+
+    // @formatter:on
   }
 
   private HttpSecurity configureBearerTokenSecurity(HttpSecurity http, byte[] ephemeralBytes) throws Exception {
     return http
-        .authenticationProvider(ilpOverHttpAuthenticationProvider())
-        .securityContext()
-        .securityContextRepository(new BearerTokenSecurityContextRepository(ephemeralBytes))
-        .and()
-        .exceptionHandling()
-        .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
-        .and()
-        .httpBasic().disable()
-        .csrf().disable()
-        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
+      .authenticationProvider(ilpOverHttpAuthenticationProvider())
+      .securityContext()
+      .securityContextRepository(new BearerTokenSecurityContextRepository(ephemeralBytes))
+      .and()
+      .exceptionHandling()
+      .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+      .and()
+      .httpBasic().disable()
+      .csrf().disable()
+      .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
   }
 
 }

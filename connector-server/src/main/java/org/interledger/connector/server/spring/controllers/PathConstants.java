@@ -5,6 +5,8 @@ package org.interledger.connector.server.spring.controllers;
  */
 public class PathConstants {
 
+  public static final String SLASH_MANAGE = "/manage";
+
   public static final String SLASH = "/";
   public static final String ACCOUNT_ID = "accountId";
   public static final String SE_ACCOUNT_ID = "accountId";
