@@ -5,6 +5,7 @@ import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.links.LinkSettingsValidator;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.connector.persistence.entities.DataConstants;
 import org.interledger.connector.persistence.entities.SettlementEngineDetailsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -21,7 +22,9 @@ import org.interledger.link.Link;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 
+import com.google.common.annotations.VisibleForTesting;
 import okhttp3.HttpUrl;
+import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;
@@ -108,13 +111,9 @@ public class DefaultAccountManager implements AccountManager {
       );
       settlementEngineDetailsEntity.setSettlementEngineAccountId(response.settlementEngineAccountId().value());
     }
+    AccountSettingsEntity entity = persistAccountSettingsEntity(accountSettingsEntity);
 
-    ////////////////
-    // Persist the AccountSettingsEntity
-    ////////////////
-    final AccountSettings returnableAccountSettings = this.conversionService.convert(
-      this.accountSettingsRepository.save(accountSettingsEntity), AccountSettings.class
-    );
+    final AccountSettings returnableAccountSettings = this.conversionService.convert(entity, AccountSettings.class);
 
     // It is _not_ a requirement that a Connector startup with any accounts configured. Thus, the first account added
     // to the connector with a relationship type `PARENT` should trigger IL-DCP, but only if the operator address has
@@ -150,6 +149,27 @@ public class DefaultAccountManager implements AccountManager {
       throw new InvalidAccountSettingsProblem("Bad shared secret: " + e.getMessage()
         , accountSettings.accountId());
     }
+  }
+
+  @VisibleForTesting
+  protected AccountSettingsEntity persistAccountSettingsEntity(AccountSettingsEntity accountSettingsEntity) {
+    ////////////////
+    // Persist the AccountSettingsEntity
+    ////////////////
+    AccountSettingsEntity entity;
+    try {
+      entity = this.accountSettingsRepository.save(accountSettingsEntity);
+    } catch (Exception e) {
+      if (e.getCause() instanceof ConstraintViolationException) {
+        ConstraintViolationException cause = (ConstraintViolationException) e.getCause();
+        if (cause.getConstraintName().contains(DataConstants.ConstraintNames.ACCOUNT_SETTINGS_SETTLEMENT_ENGINE)) {
+          throw new AccountSettlementEngineAlreadyExistsProblem(accountSettingsEntity.getAccountId(),
+              accountSettingsEntity.getSettlementEngineDetailsEntity().getSettlementEngineAccountId());
+        }
+      }
+      throw e;
+    }
+    return entity;
   }
 
   /**
