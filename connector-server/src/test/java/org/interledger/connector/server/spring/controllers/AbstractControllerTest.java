@@ -1,14 +1,22 @@
 package org.interledger.connector.server.spring.controllers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
+import static org.interledger.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
+
+import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.links.LinkSettingsFactory;
+import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.routing.ExternalRoutingService;
+import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.crypto.EncryptionService;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.link.LinkFactoryProvider;
+import org.interledger.link.PacketRejector;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -19,13 +27,14 @@ import org.springframework.test.context.ContextConfiguration;
 
 import java.util.function.Supplier;
 
-import static org.interledger.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
-
 /**
  * An abstract super class for all Controller tests.
  */
-@ContextConfiguration(classes = {ControllerConfig.class})
-@ActiveProfiles({"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
+@ContextConfiguration(classes = {
+  ControllerTestConfig.class, // For custom Beans.
+  SpringConnectorWebMvc.class
+})
+@ActiveProfiles( {"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 public abstract class AbstractControllerTest {
 
   @Autowired
@@ -33,6 +42,9 @@ public abstract class AbstractControllerTest {
 
   @MockBean
   protected SettlementService settlementServiceMock;
+
+  @MockBean
+  protected AccountManager accountManagerMock;
 
   @MockBean
   protected AccountSettingsRepository accountSettingsRepositoryMock;
@@ -47,10 +59,22 @@ public abstract class AbstractControllerTest {
   protected EncryptionService encryptionServiceMock;
 
   @MockBean
+  protected ExternalRoutingService externalRoutingServiceMock;
+
+  @MockBean
   protected LinkSettingsFactory linkSettingsFactoryMock;
 
   @MockBean
   protected CacheMetricsCollector cacheMetricsCollectorMock;
+
+  @MockBean
+  protected PacketRejector packetRejectorMock;
+
+  @MockBean
+  protected LinkFactoryProvider linkFactoryProviderMock;
+
+  @MockBean
+  protected ILPv4PacketSwitch ilPv4PacketSwitchMock;
 
   protected String asJsonString(final Object obj) throws JsonProcessingException {
     return this.objectMapper.writeValueAsString(obj);

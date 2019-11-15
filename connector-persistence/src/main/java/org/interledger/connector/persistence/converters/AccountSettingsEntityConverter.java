@@ -3,6 +3,8 @@ package org.interledger.connector.persistence.converters;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
+
+import com.google.common.primitives.UnsignedLong;
 import org.springframework.core.convert.converter.Converter;
 
 import java.time.Instant;
@@ -44,11 +46,13 @@ public class AccountSettingsEntityConverter implements Converter<AccountSettings
       .assetCode(accountSettingsEntity.getAssetCode())
       .linkType(accountSettingsEntity.getLinkType())
       .accountRelationship(accountSettingsEntity.getAccountRelationship())
-      .maximumPacketAmount(accountSettingsEntity.getMaximumPacketAmount())
       .ilpAddressSegment(accountSettingsEntity.getIlpAddressSegment())
       .isSendRoutes(accountSettingsEntity.isSendRoutes())
       .isReceiveRoutes(accountSettingsEntity.isReceiveRoutes())
       .putAllCustomSettings(accountSettingsEntity.getCustomSettings());
+
+    accountSettingsEntity.getMaximumPacketAmount()
+      .ifPresent(maxPacketAmount -> builder.maximumPacketAmount(UnsignedLong.valueOf(maxPacketAmount)));
 
     Optional.ofNullable(accountSettingsEntity.getRateLimitSettingsEntity())
       .ifPresent(rateLimitSettingsEntity -> builder
@@ -60,7 +64,8 @@ public class AccountSettingsEntityConverter implements Converter<AccountSettings
 
     Optional.ofNullable(accountSettingsEntity.getSettlementEngineDetailsEntity())
       .ifPresent(settlementEngineDetailsEntity ->
-        builder.settlementEngineDetails(settlementEngineDetailsEntityConverter.convert(settlementEngineDetailsEntity))
+        builder
+          .settlementEngineDetails(settlementEngineDetailsEntityConverter.convert(settlementEngineDetailsEntity))
       );
 
     return builder.build();

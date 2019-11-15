@@ -7,9 +7,9 @@ import org.interledger.link.LinkType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.primitives.UnsignedLong;
 import org.immutables.value.Value;
 
 import java.time.Instant;
@@ -27,11 +27,11 @@ public interface AccountSettings {
   }
 
   /**
-   * An optionally present unique identifier for this account. For example, <tt>alice</tt> or <tt>123456789</tt>. Note
-   * that this is not an {@link InterledgerAddress} because an account's address is assigned when a connection is made,
-   * generally using information from the client and this identifier.
+   * <p>An optionally present unique identifier for this account. For example, <tt>alice</tt> or <tt>123456789</tt>.
+   * Note that this is not an {@link InterledgerAddress} because an account's address is assigned when a connection is
+   * made, generally using information from the client and this identifier.</p>
    *
-   * @see {@link #ilpAddressSegment}.
+   * <p>See {@link #ilpAddressSegment} for more details.</p>
    */
   AccountId accountId();
 
@@ -118,7 +118,6 @@ public interface AccountSettings {
    *
    * @return an int representing this account's asset scale.
    */
-  @JsonRawValue
   int assetScale();
 
   /**
@@ -127,7 +126,7 @@ public interface AccountSettings {
    *
    * @return The maximum packet amount allowed by this account.
    */
-  Optional<Long> maximumPacketAmount();
+  Optional<UnsignedLong> maximumPacketAmount();
 
   /**
    * Defines whether the connector should maintain and enforce a balance for this account.
@@ -140,7 +139,7 @@ public interface AccountSettings {
    * <p>Optionally present information about how this account can be settled.</p>
    *
    * @return An optionally present {@link SettlementEngineDetails}. If this value is absent, then this account does not
-   *     support settlement.
+   *   support settlement.
    */
   Optional<SettlementEngineDetails> settlementEngineDetails();
 
@@ -218,9 +217,9 @@ public interface AccountSettings {
   @JsonSerialize(as = ImmutableAccountSettings.class)
   @JsonDeserialize(as = ImmutableAccountSettings.class)
   @JsonPropertyOrder( {"accountId", "createdAt", "modifiedAt", "description", "accountRelationship", "assetCode",
-      "assetScale", "maximumPacketAmount", "linkType", "ilpAddressSegment", "connectionInitiator",
-      "internal", "sendRoutes", "receiveRoutes", "balanceSettings", "rateLimitSettings",
-      "settlementEngineDetails", "customSettings"})
+    "assetScale", "maximumPacketAmount", "linkType", "ilpAddressSegment", "connectionInitiator",
+    "internal", "sendRoutes", "receiveRoutes", "balanceSettings", "rateLimitSettings",
+    "settlementEngineDetails", "customSettings"})
   abstract class AbstractAccountSettings implements AccountSettings {
 
     @Override

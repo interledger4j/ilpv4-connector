@@ -21,6 +21,7 @@ import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
 
 import com.google.common.collect.Sets;
+import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,7 +124,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
       final ConnectorServer aliceServer = new ConnectorServer(constructConnectorSettingsForAlice());
       aliceServer.setPort(ALICE_PORT);
       topology.addNode(ALICE_CONNECTOR_ADDRESS, new ConnectorServerNode(ALICE, aliceServer,
-          constructStaticRoutesForAlice()));
+        constructStaticRoutesForAlice()));
     }
 
     ///////////////////
@@ -184,7 +185,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
           .settleTo(0)
           .build()
       )
-      .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
+      .maximumPacketAmount(UnsignedLong.valueOf(1000000L)) // 1M NanoDollars is $0.001
       .linkType(IlpOverHttpLink.LINK_TYPE)
       .assetScale(9)
       .assetCode(XRP)
@@ -234,9 +235,9 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
   private static Set<StaticRoute> constructStaticRoutesForAlice() {
     // Always route packets to Bob...
     return Sets.newHashSet(StaticRoute.builder()
-        .routePrefix(InterledgerAddressPrefix.from(BOB_CONNECTOR_ADDRESS))
-        .nextHopAccountId(BOB_ACCOUNT)
-        .build()
+      .routePrefix(InterledgerAddressPrefix.from(BOB_CONNECTOR_ADDRESS))
+      .nextHopAccountId(BOB_ACCOUNT)
+      .build()
     );
   }
 
@@ -261,7 +262,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
           .settleTo(0)
           .build()
       )
-      .maximumPacketAmount(1000000L) // 1M NanoDollars is $0.001
+      .maximumPacketAmount(UnsignedLong.valueOf(1000000L)) // 1M NanoDollars is $0.001
       .accountRelationship(AccountRelationship.PEER)
       .linkType(IlpOverHttpLink.LINK_TYPE)
       .assetScale(9)
@@ -312,9 +313,9 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
   private static Set<StaticRoute> constructStaticRoutesForBob() {
     // Always route packets to Alice...
     return Sets.newHashSet(StaticRoute.builder()
-        .routePrefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
-        .nextHopAccountId(ALICE_ACCOUNT)
-        .build()
+      .routePrefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
+      .nextHopAccountId(ALICE_ACCOUNT)
+      .build()
     );
   }
 

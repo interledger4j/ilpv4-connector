@@ -1,25 +1,5 @@
 package org.interledger.connector.server.spring.controllers.settlement;
 
-import org.interledger.connector.server.spring.controllers.AbstractControllerTest;
-import org.interledger.connector.server.spring.controllers.HeaderConstants;
-import org.interledger.connector.accounts.SettlementEngineAccountId;
-import org.interledger.connector.core.settlement.SettlementQuantity;
-import org.interledger.connector.settlement.NumberScalingUtils;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.math.BigInteger;
-import java.util.UUID;
-
 import static org.interledger.connector.server.spring.controllers.HeaderConstants.APPLICATION_PROBLEM_JSON;
 import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH;
 import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS;
@@ -40,6 +20,27 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.interledger.connector.accounts.SettlementEngineAccountId;
+import org.interledger.connector.core.settlement.SettlementQuantity;
+import org.interledger.connector.server.spring.controllers.AbstractControllerTest;
+import org.interledger.connector.server.spring.controllers.HeaderConstants;
+import org.interledger.connector.settlement.NumberScalingUtils;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.math.BigInteger;
+import java.util.UUID;
+
 /**
  * Ensures that the API endpoints for Settlements are valid.
  *
@@ -50,6 +51,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = SettlementController.class)
 @SuppressWarnings("PMD")
 public class SettlementControllerTest extends AbstractControllerTest {
+
   private static final byte[] MESSAGE = new byte[32];
 
   static {
@@ -66,8 +68,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
 
   @Test
   public void sendSettlementWithoutIdempotenceKey() throws Exception {
-    SettlementEngineAccountId settlementEngineAccountId =
-      SettlementEngineAccountId.of(UUID.randomUUID().toString());
+    SettlementEngineAccountId settlementEngineAccountId = SettlementEngineAccountId.of(UUID.randomUUID().toString());
 
     SettlementQuantity settledSettlementQuantity = SettlementQuantity.builder()
       .amount(BigInteger.ONE)
@@ -85,7 +86,7 @@ public class SettlementControllerTest extends AbstractControllerTest {
       .andExpect(status().isBadRequest())
       .andExpect(header().string(HeaderConstants.CONTENT_TYPE, APPLICATION_PROBLEM_JSON))
       .andExpect(jsonPath("$.title").value("Bad Request"))
-      .andExpect(jsonPath("$.status").value("400")) // TODO: Change once Problem support is fixed.
+      .andExpect(jsonPath("$.status").value(400))
       .andExpect(jsonPath("$.detail")
         .value("Missing request header 'Idempotency-Key' for method parameter of type String")
       );
