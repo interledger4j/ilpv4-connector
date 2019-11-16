@@ -38,6 +38,7 @@ import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.links.filters.OutgoingBalanceLinkFilter;
 import org.interledger.connector.links.filters.OutgoingMaxPacketAmountLinkFilter;
 import org.interledger.connector.links.filters.OutgoingMetricsLinkFilter;
+import org.interledger.connector.links.filters.PublishFulfillmentLinkFilter;
 import org.interledger.connector.metrics.MetricsService;
 import org.interledger.connector.packetswitch.DefaultILPv4PacketSwitch;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
@@ -65,6 +66,7 @@ import org.interledger.connector.routing.InMemoryForwardingRoutingTable;
 import org.interledger.connector.routing.RouteBroadcaster;
 import org.interledger.connector.routing.RouteUpdate;
 import org.interledger.connector.routing.StaticRoutesManager;
+import org.interledger.connector.server.spring.gcp.GcpPubSubConfig;
 import org.interledger.connector.server.spring.settings.crypto.CryptoConfig;
 import org.interledger.connector.server.spring.settings.javamoney.JavaMoneyConfig;
 import org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration;
@@ -101,7 +103,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -129,7 +130,8 @@ import java.util.function.Supplier;
   CaffeineCacheConfig.class,
   RedisConfig.class, SettlementConfig.class, BalanceTrackerConfig.class,
   MetricsConfiguration.class,
-  SpringConnectorWebMvc.class
+  SpringConnectorWebMvc.class,
+  GcpPubSubConfig.class
 })
 public class SpringConnectorConfig {
 
@@ -320,18 +322,18 @@ public class SpringConnectorConfig {
 
   @Bean
   ExternalRoutingService externalRoutingService(
-      final EventBus eventBus,
-      final Supplier<ConnectorSettings> connectorSettingsSupplier,
-      final Decryptor decryptor,
-      final AccountSettingsRepository accountSettingsRepository,
-      final StaticRoutesRepository staticRoutesRepository,
-      final ChildAccountPaymentRouter childAccountPaymentRouter,
-      final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
-      final RouteBroadcaster routeBroadcaster
+    final EventBus eventBus,
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final Decryptor decryptor,
+    final AccountSettingsRepository accountSettingsRepository,
+    final StaticRoutesRepository staticRoutesRepository,
+    final ChildAccountPaymentRouter childAccountPaymentRouter,
+    final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
+    final RouteBroadcaster routeBroadcaster
   ) {
     return new InMemoryExternalRoutingService(
-        eventBus, connectorSettingsSupplier, decryptor, accountSettingsRepository, staticRoutesRepository,
-        childAccountPaymentRouter, outgoingRoutingTable, routeBroadcaster
+      eventBus, connectorSettingsSupplier, decryptor, accountSettingsRepository, staticRoutesRepository,
+      childAccountPaymentRouter, outgoingRoutingTable, routeBroadcaster
     );
   }
 
@@ -469,7 +471,8 @@ public class SpringConnectorConfig {
       // TODO: Throughput for Money...
       new OutgoingMetricsLinkFilter(operatorAddressSupplier, metricsService),
       new OutgoingMaxPacketAmountLinkFilter(operatorAddressSupplier),
-      new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker, settlementService, eventBus())
+      new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker, settlementService, eventBus()),
+      new PublishFulfillmentLinkFilter(operatorAddressSupplier, eventBus())
     );
   }
 
