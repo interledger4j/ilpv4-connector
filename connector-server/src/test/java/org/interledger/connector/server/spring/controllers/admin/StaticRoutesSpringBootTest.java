@@ -226,7 +226,7 @@ public class StaticRoutesSpringBootTest {
     ResponseEntity<String> response = restTemplate
       .exchange(SLASH_ROUTES_STATIC + "/" + prefix, HttpMethod.DELETE, httpEntity,
         String.class);
-    logger.info("Delete Static Route Response: {}", response); 
+    logger.info("Delete Static Route Response: {}", response);  
     return response;
   }
 
