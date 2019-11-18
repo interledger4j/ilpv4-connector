@@ -26,7 +26,7 @@
     <problem.version>0.23.0</problem.version>
     <problem-spring-web.version>0.25.2</problem-spring-web.version>
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
-    <spring-cloud.version>Greenwich.RELEASE</spring-cloud.version>
+    <spring-cloud.version>Greenwich.SR2</spring-cloud.version>
     <!-- <spring-cloud.version>Greenwich.SR1</spring-cloud.version> -->
     <resilience4j.version>1.1.0</resilience4j.version>
     <moneta.version>1.3</moneta.version>
@@ -181,6 +181,11 @@
         <groupId>com.google.cloud</groupId>
         <artifactId>google-cloud-kms</artifactId>
         <version>1.35.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.api</groupId>
+        <artifactId>gax-grpc</artifactId>
+        <version>1.50.1</version> <!-- transitive via google-cloud-kms but defaults to 1.45.0 which has conflicts -->
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -410,6 +415,7 @@
                   <ignoredDependency>org.springframework.security</ignoredDependency>
                   <ignoredDependency>org.springframework.data</ignoredDependency>
                   <ignoredDependency>org.springframework.cloud:spring-cloud-starter-openfeign</ignoredDependency>
+                  <ignoredDependency>org.springframework.cloud:spring-cloud-gcp-starter-pubsub</ignoredDependency>
 
                   <ignoredDependency>redis.clients:jedis:jar</ignoredDependency>
                 </ignoredDependencies>

@@ -62,6 +62,11 @@ spring:
       tracking-modes: SSL # Session tracking modes.
   session:
     store-type: NONE
+  cloud:
+    # disabled by default. enabled via the gcp profile
+    gcp:
+      pubsub:
+        enabled: false
 
 interledger:
   connector:
