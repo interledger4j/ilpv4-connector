@@ -1,0 +1,729 @@
+openapi: 3.0.2
+info:
+  title: ILPv4 Connector Admin API
+  version: 1.0.0
+  description: A JSON over HTTP API to administer an ILPv4 Connector.
+  termsOfService: 'http://swagger.io/terms/'
+  contact:
+    name: Interledger.org Team
+    url: 'https://interledger.org'
+  license:
+    name: Apache 2.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
+servers:
+  -
+    url: 'https://{domain}:{port}'
+    description: The default server
+    variables:
+      domain:
+        default: localhost
+      port:
+        default: '3000'
+        description: The default port for a running ILPv4 Connector
+paths:
+  /admin/accounts:
+    summary: Connector Accounts
+    get:
+      tags:
+        - Accounts
+      parameters:
+        -
+          explode: false
+          name: offset
+          description: The offset to use for paging
+          schema:
+            format: uuid
+            type: string
+          in: query
+          required: false
+        -
+          name: numPerPage
+          description: The total number of results to return in a single response.
+          schema:
+            type: number
+          in: query
+        -
+          name: pageNumber
+          description: >-
+            The 0-based page index, computed by dividing the total number of results by the value
+            of `numPerPage`. If not specified, this value should default to `0`.
+          schema:
+            type: number
+          in: query
+          required: false
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountPage'
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/AccountPage'
+          description: A pageable list of Accounts configured at this Connector.
+      security:
+        -
+          BASIC: []
+      operationId: getAccounts
+      summary: All Accounts
+      description: Retrieve a pagable collection of Connector Accounts.
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Account_ILP-over-HTTP'
+        required: true
+      tags:
+        - Accounts
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+          description: Account created.
+        '400':
+          description: 'Invalid Request (missing required fields, etc)'
+        '409':
+          description: An Account with this identifier already exists.
+      security:
+        -
+          BASIC: []
+      operationId: createAccount
+      summary: New Account
+      description: Create a new account in the Connector.
+  '/admin/accounts/{account_id}':
+    summary: Individual Connector Account.
+    get:
+      tags:
+        - Accounts
+      parameters:
+        -
+          name: account_id
+          description: ID of account to return
+          schema:
+            format: uuid
+            type: string
+          in: path
+          required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+              examples:
+                A sample account:
+                  value:
+                    accountId: __ping_account__
+                    createdAt: '2019-11-14T22:24:29.495Z'
+                    modifiedAt: '2019-11-14T22:24:29.495Z'
+                    description: >-
+                      A receiver-like child account for collecting all Ping protocol
+                      revenues.
+                    accountRelationship: CHILD
+                    assetCode: USD
+                    assetScale: '2'
+                    linkType: PING
+                    ilpAddressSegment: __ping_account__
+                    connectionInitiator: true
+                    internal: false
+                    sendRoutes: false
+                    receiveRoutes: false
+                    balanceSettings:
+                      settleTo: '0'
+                    rateLimitSettings:
+                      maxPacketsPerSecond: '1'
+                    customSettings: {}
+                    _links:
+                      self:
+                        href: 'http://localhost:8080/accounts/__ping_account__'
+          description: .
+        '404':
+          content:
+            application/json:
+              examples:
+                Account not found.:
+                  value:
+                    accountId: foo
+                    type: 'https://errors.interledger.org/accounts/account-not-found'
+                    title: Account Not Found (`foo`)
+                    status: 404
+          description: Account not found
+      security:
+        -
+          BASIC: []
+      operationId: getAccount
+      summary: Individual Account
+      description: 'Get the account identified by :account_id.'
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Account'
+            examples:
+              Updated Description:
+                value:
+                  accountId: alice
+                  createdAt: '2019-11-15T21:55:42.683Z'
+                  modifiedAt: '2019-11-15T21:55:42.683Z'
+                  description: ''
+                  accountRelationship: PEER
+                  assetCode: USD
+                  assetScale: '2'
+                  linkType: ILP_OVER_HTTP
+                  ilpAddressSegment: alice
+                  connectionInitiator: true
+                  internal: false
+                  sendRoutes: false
+                  receiveRoutes: false
+                  balanceSettings:
+                    settleTo: '0'
+                  rateLimitSettings: {}
+                  customSettings:
+                    ilpOverHttp.outgoing.url: 'https://alice.example.com/'
+                    __plaintext-ilpOverHttp.incoming.shared_secret: shh
+                    ilpOverHttp.outgoing.token_subject: connie
+                    ilpOverHttp.incoming.token_subject: alice
+                    ilpOverHttp.outgoing.auth_type: JWT_HS_256
+                    ilpOverHttp.incoming.token_audience: 'https://connie.example.com/'
+                    ilpOverHttp.incoming.token_issuer: 'https://alice.example.com/'
+                    ilpOverHttp.incoming.shared_secret: '[**REDACTED**]'
+                    ilpOverHttp.incoming.auth_type: JWT_HS_256
+                    ilpOverHttp.outgoing.token_issuer: 'https://connie.example.com/'
+                    ilpOverHttp.outgoing.token_audience: 'https://alice.example.com/'
+                    ilpOverHttp.outgoing.shared_secret: '[**REDACTED**]'
+                    __plaintext-ilpOverHttp.outgoing.shared_secret: shh
+                  _links:
+                    self:
+                      href: 'http://localhost:8080/accounts/alice'
+        required: true
+      tags:
+        - Accounts
+      parameters:
+        -
+          name: account_id
+          schema:
+            type: string
+          in: path
+          required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+          description: The successfully update Account.
+      security:
+        -
+          BASIC: []
+      operationId: updateAccount
+      summary: Update Account
+      description: Update a Connector account.
+  /routes:
+    get:
+      tags:
+        - Routes
+      responses:
+        '200':
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/RoutePage'
+          description: >-
+            Return a pageable collectio of Routes that this Connector has in it routing table
+            (include both static and dynamic).
+      security:
+        -
+          BASIC: []
+      summary: All Routes
+      description: Retrieve a pageable collection of all routes in this Connector's routing table.
+  /routes/static:
+    put:
+      requestBody:
+        content:
+          application/json:
+            examples:
+              New Static Route:
+                value:
+                  routePrefix: g.foo
+                  nextHopAccountId: '123'
+        required: true
+      tags:
+        - Routes
+      responses:
+        '201':
+          content:
+            application/json:
+              examples:
+                Static Route:
+                  value:
+                    routePrefix: g.foo
+                    nextHopAccountId: '123'
+          description: Returned when a new static route is created on the server.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaticRouteExists'
+          description: The static route already exists in the Connector.
+      security:
+        -
+          BASIC: []
+      operationId: CreateStaticRoute
+      summary: Create Static Route
+    delete:
+      tags:
+        - Routes
+      responses:
+        '204':
+          description: A static route was successfully removed.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaticRouteNotFound'
+          description: The request static route does not exist for removal.
+      security:
+        -
+          BASIC: []
+      operationId: RemoveStaticRoute
+      summary: Remove Static Route
+components:
+  schemas:
+    BalanceUpdate:
+      title: Root Type for BalanceUpdate
+      description: The delta a balance should be updated by
+      required:
+        - amount
+        - scale
+      type: object
+      properties:
+        amount:
+          type: string
+        scale:
+          type: string
+      example: |-
+        {
+            "amount": 100,
+            "scale": 2
+        }
+    Relationship:
+      description: >-
+        The type of relationship between two ILP Connector accounts, from the perspective of the
+        Connector operating this API. Each account will have one of three relationship-types that
+        reflect how the account is related to the counterparaty on the other side of an ILP link.
+        These types include `PEER`, `PARENT` or `CHILD`.
+
+        The Interledger network topology is organized in a tiered hierarchy, similar to the Internet,
+        reflecting these relationships. Large, high volume nodes are peered with one another to form
+        the backbone of the network, using the relationship type `PEER`. Smaller nodes will have links
+        to these "tier 1" nodes and the account will be of type `CHILD`, from the perspective of the
+        tier 1 node; From the perspective of the smaller node, the type will be `PARENT`.
+
+        A node that has links of type child must host an IL-DCP service to allow the nodes on those
+        links to request addresses. Generally these will be sub-addresses of the node's own address
+        however this is not a requirement.
+      enum:
+        - CHILD
+        - PEER
+        - PARENT
+      type: string
+    Account:
+      title: Root Type for Account
+      description: An account that is tracked by the Settlement Engine and Connector
+      required:
+        - accountRelationship
+        - accountId
+        - linkType
+      type: object
+      properties:
+        assetScale:
+          format: int32
+          description: >-
+            Interledger amounts are integers, but most currencies are typically represented as
+            fractional units, e.g. "cents". This property defines how many Interledger units make
+            up one regular unit. For example, to represent very small units in dollars, this could
+            be set to 9, so that Interledger amounts are expressed in nano-dollars.
+          type: integer
+        assetCode:
+          description: >-
+            Currency code or other asset identifier that will be used to select the correct rate
+            for this account.
+          type: string
+        maxPacketsPerSecond:
+          description: >-
+            The maximum number of packets-per-second that is allowed for this account. If this
+            value is not specified, then no limit is applied to this account.
+          type: string
+        balanceSettings:
+          $ref: '#/components/schemas/BalanceSettings'
+          description: >-
+            Defines whether a node (e.g., a Connector) should maintain and enforce a balance for
+            this account. The balance is always from the node's perspective. Therefore, a negative
+            balance implies the node owes money to the counterparty and a positive balance implies
+            the counterparty owes money to the node. This object is optionally-present on an
+            account, since some accounts do not track balances (e.g., client accounts).
+            Alternatively, even if an account does track a balance, it may be desirable to not
+            have any limits.
+        accountId:
+          format: uuid
+          description: The unique identifier of this account.
+          type: string
+        accountRelationship:
+          description: >-
+            The type of relationship between two ILP Connector accounts, from the perspective of
+            the Connector operating this API. Each account will have one of three
+            relationship-types that reflect how the account is related to the counterparaty on the
+            other side of an ILP link. These types include `PEER`, `PARENT` or `CHILD`.
+
+            The Interledger network topology is organized in a tiered hierarchy, similar to the
+            Internet, reflecting these relationships. Large, high volume nodes are peered with one
+            another to form the backbone of the network, using the relationship type `PEER`.
+            Smaller nodes will have links to these "tier 1" nodes and the account will be of type
+            `CHILD`, from the perspective of the tier 1 node; From the perspective of the smaller
+            node, the type will be `PARENT`.
+
+            A node that has links of type child must host an IL-DCP service to allow the nodes on
+            those links to request addresses. Generally these will be sub-addresses of the node's
+            own address however this is not a requirement.
+          enum:
+            - PARENT
+            - PEER
+            - CHILD
+          type: string
+        linkType:
+          description: >-
+            The type of Link that this account uses to communicate with its peer. Default value is
+            `ILP_OVER_HTTP`.
+          enum:
+            - ILP_OVER_HTTP
+            - LOOPBACK
+          type: string
+        maximumPacketAmount:
+          format: int64
+          description: >-
+            The maximum amount per-packet for incoming prepare packets. The connector will reject
+            any incoming prepare packets from this account with a higher amount.
+          type: integer
+        rateLimitSettings:
+          $ref: '#/components/schemas/AccountRateLimitSettings'
+          description: Defines any rate-limiting in effect for an account.
+        sendRoutes:
+          description: >-
+            Whether this account should receive and process route broadcasts from this peer.
+            Defaults to `false` for `CHILD` accounts and `true` otherwise.
+          type: boolean
+        receiveRoutes:
+          description: >-
+            Whether this account should broadcast routes to this peer. Defaults to `false` for
+            `CHILD` accounts and `true` otherwise.
+          type: boolean
+        createdAt:
+          format: date-time
+          description: The ISO-8601 timestamp for when this account was created.
+          type: string
+        modifiedAt:
+          format: date-time
+          description: The ISO-8601 timestamp for when this account was last modified.
+          type: string
+        description:
+          description: A human-readable description of an account.
+          type: string
+        customSettings:
+          description: Custom details for an account.
+          type: array
+          items:
+            type: string
+      example:
+        id: ''
+        relationship: PARENT
+        assetScale: 91
+        assetCode: some text
+        maxPacketsPerSecond: 47
+        balanceSettings:
+          minBalance: 77
+          maxBalance: 49
+          settleThreshold: 11
+          settleTo: 35
+    BalanceSettings:
+      description: >-
+        Defines whether a node (e.g., a Connector) should maintain and enforce a balance for this
+        account. The balance is always from the node's perspective. Therefore, a negative balance
+        implies the node owes money to the counterparty and a positive balance implies the
+        counterparty owes money to the node.
+
+
+        This object is optionally-present on an account, since some accounts do not track balances
+        (e.g., client accounts). Alternatively, even if an account does track a balance, it may be
+        desirable to not have any balance limits.
+      type: object
+      properties:
+        minBalance:
+          description: >-
+            The minimum balance (in this account's indivisible base units) the connector must
+            maintain for this account. For example, the connector will reject incoming packets if
+            the transaction would put the account balance below this number. If this value is not
+            present, then the connector will assume no minimum balance.
+          type: string
+        maxBalance:
+          description: >-
+            Maximum balance (in this account's indivisible base units) the connector will allow.
+            For example, the connector will reject outgoing packets if the transaction would put
+            the account balance above this number. If this value is not present, then the
+            connector will assume no maximum balance.
+          type: string
+        settleThreshold:
+          description: >-
+            Optional Balance (in this account's indivisible base units) numerically below which
+            the connector will automatically initiate a settlement. If this value is not present,
+            then the connector will not automatically settle.
+          type: string
+        settleTo:
+          description: >-
+            Optional Balance (in this account's indivisible base units) the connector will attempt
+            to reach when settling. If this value is not present, then the connector will not
+            automatically settle.
+          type: string
+    SettlementEngineDetails:
+      description: Optionally present information about how this account can be settled.
+      required:
+        - baseUrl
+      type: object
+      properties:
+        settlementEngineAccountId:
+          description: >-
+            The unique identifier of the Settlement Engine account, as created by calling `POST
+            /accounts/:id` on the Settlement Engine. Optional because this value will not be
+            present until an account is created.
+          type: string
+        baseUrl:
+          description: The base URL of the Settlement Engine.
+          type: string
+        customSettings:
+          description: 'Additional, custom settings that any plugin can define.'
+          type: array
+          items:
+            type: string
+    AccountRateLimitSettings:
+      description: Defines any rate-limiting in effect for an account.
+      type: object
+    Route:
+      title: Root Type for Route
+      description: A single Route in the Connector's routing table.
+      type: object
+      properties:
+        routePrefix:
+          description: >-
+            An Interledger address prefix is used to match against the destination address of a
+            particular ILP packet. The longest prefix in the routing table that matches the
+            destination address of a particular packet will be used as the best route for any
+            particular packet.
+          type: string
+        nextHopAccountId:
+          description: >-
+            The account that outgoing packets should be forwarded upon in response to a routing
+            operation.
+          type: string
+        createdAt:
+          format: date-time
+          description: The date/time this StaticRoute was created.
+          type: string
+        modifiedAt:
+          format: date-time
+          description: The date/time this StaticRoute was last modified.
+          type: string
+      example:
+        routePrefix: g.foo
+        nextHopAccountId: '123'
+        createdAt: '2019-11-18T18:25:38.533Z'
+        modifiedAt: '2019-11-18T18:25:38.533Z'
+    RoutePage:
+      description: A page in a collection of routes
+      type: object
+      example:
+        _embedded:
+          routes:
+            -
+              routePrefix: g.foo
+              nextHopAccountId: '123'
+              path: []
+              auth: YPdfhiJL3niltb1hChYzKwFPPimfPIb0gcNtvoKglsY=
+        page:
+          size: '1'
+          totalElements: '1'
+          totalPages: '1'
+          number: '0'
+    AccountPage:
+      description: A page in a collection of Accounts.
+      type: object
+      example:
+        _embedded:
+          accounts:
+            -
+              accountId: __ping_account__
+              createdAt: '2019-11-18T18:23:30.948Z'
+              modifiedAt: '2019-11-18T18:23:30.948Z'
+              description: A receiver-like child account for collecting all Ping protocol revenues.
+              accountRelationship: CHILD
+              assetCode: USD
+              assetScale: '2'
+              linkType: PING
+              ilpAddressSegment: __ping_account__
+              connectionInitiator: true
+              internal: false
+              sendRoutes: false
+              receiveRoutes: false
+              balanceSettings:
+                settleTo: '0'
+              rateLimitSettings:
+                maxPacketsPerSecond: '1'
+              customSettings: {}
+              _links:
+                self:
+                  href: 'http://localhost:8080/accounts/__ping_account__'
+        page:
+          size: '1'
+          totalElements: '1'
+          totalPages: '1'
+          number: '0'
+    Account_ILP-over-HTTP:
+      title: Root Type for Account_ILP-over-HTTP
+      description: ''
+      type: object
+      properties:
+        accountId:
+          type: string
+        accountRelationship:
+          type: string
+        linkType:
+          type: string
+        assetCode:
+          type: string
+        assetScale:
+          type: string
+        customSettings:
+          type: object
+          properties:
+            ilpOverHttp.incoming.auth_type:
+              type: string
+            ilpOverHttp.incoming.token_issuer:
+              type: string
+            ilpOverHttp.incoming.token_audience:
+              type: string
+            ilpOverHttp.incoming.token_subject:
+              type: string
+            __plaintext-ilpOverHttp.incoming.shared_secret:
+              type: string
+            ilpOverHttp.incoming.shared_secret:
+              type: string
+            ilpOverHttp.outgoing.auth_type:
+              type: string
+            ilpOverHttp.outgoing.token_issuer:
+              type: string
+            ilpOverHttp.outgoing.token_audience:
+              type: string
+            ilpOverHttp.outgoing.token_subject:
+              type: string
+            __plaintext-ilpOverHttp.outgoing.shared_secret:
+              type: string
+            ilpOverHttp.outgoing.shared_secret:
+              type: string
+            ilpOverHttp.outgoing.url:
+              type: string
+        sendRoutes:
+          type: boolean
+        receiveRoutes:
+          type: boolean
+      example:
+        accountId: alice
+        accountRelationship: PEER
+        linkType: ILP_OVER_HTTP
+        assetCode: USD
+        assetScale: '2'
+        customSettings:
+          ilpOverHttp.incoming.auth_type: JWT_HS_256
+          ilpOverHttp.incoming.token_issuer: 'https://alice.example.com/'
+          ilpOverHttp.incoming.token_audience: 'https://connie.example.com/'
+          ilpOverHttp.incoming.token_subject: alice
+          ilpOverHttp.incoming.shared_secret: 'enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0='
+          ilpOverHttp.outgoing.auth_type: JWT_HS_256
+          ilpOverHttp.outgoing.token_issuer: 'https://connie.example.com/'
+          ilpOverHttp.outgoing.token_audience: 'https://alice.example.com/'
+          ilpOverHttp.outgoing.token_subject: connie
+          ilpOverHttp.outgoing.shared_secret: 'enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0='
+          ilpOverHttp.outgoing.url: 'https://alice.example.com/'
+        sendRoutes: true
+        receiveRoutes: true
+    StaticRouteRequest:
+      title: Root Type for StaticRouteRequest
+      description: Payload to create a new static route
+      type: object
+      properties:
+        routePrefix:
+          type: string
+        nextHopAccountId:
+          type: string
+      example:
+        routePrefix: g.foo
+        nextHopAccountId: '123'
+    StaticRouteNotFound:
+      title: Root Type for StaticRouteNotFound
+      description: ''
+      type: object
+      properties:
+        prefix:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          format: int32
+          type: integer
+      example:
+        prefix: g
+        type: 'https://errors.interledger.org/routes/static/static-route-not-found'
+        title: Static Route Does Not Exist (`g`)
+        status: 404
+    StaticRouteExists:
+      title: Root Type for StaticRouteExists
+      description: ''
+      type: object
+      properties:
+        prefix:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          format: int32
+          type: integer
+      example:
+        prefix: g.foo
+        type: 'https://errors.interledger.org/routes/static/static-route-already-exists'
+        title: Static Route Already Exists (`g.foo`)
+        status: 409
+  securitySchemes:
+    Bearer:
+      scheme: bearer
+      type: http
+      description: An opaque Bearer token Auth scheme.
+    JWTBearer:
+      scheme: bearer
+      type: http
+      description: A JWT bearer token scheme.
+    BASIC:
+      scheme: basic
+      type: http
+      description: HTTP Basic Authentication
+security:
+  -
+    OAuth2:
+      - 'accounts:read'
+    Bearer: []
+    JWTBearer: []
+    BASIC: []
