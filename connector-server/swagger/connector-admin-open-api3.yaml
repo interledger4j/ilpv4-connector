@@ -233,7 +233,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RoutePage'
           description: >-
-            Return a pageable collectio of Routes that this Connector has in it routing table
+            Return a pageable collection of Routes that this Connector has in it routing table
             (include both static and dynamic).
       security:
         -
