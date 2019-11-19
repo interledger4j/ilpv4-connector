@@ -18,6 +18,8 @@ import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.json.BasicJsonTester;
@@ -43,14 +45,16 @@ import java.util.Optional;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = {ConnectorServerConfig.class}
+  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  classes = {ConnectorServerConfig.class}
 )
 @ActiveProfiles( {"test"})
 public class StaticRoutesSpringBootTest {
 
   private static final String PASSWORD = "password";
   private static final String ADMIN = "admin";
+
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   @Autowired
   private TestRestTemplate restTemplate;
@@ -63,7 +67,10 @@ public class StaticRoutesSpringBootTest {
   @Before
   public void setUp() throws Exception {
     // "empty" what's there before each test
-    getRoutes().forEach(r -> this.deleteRoute(r.routePrefix()));
+    getRoutes().forEach(r -> {
+      logger.info("About to delete Route: {}", r.toString());
+      this.deleteRoute(r.routePrefix());
+    });
   }
 
   @Test
@@ -80,11 +87,11 @@ public class StaticRoutesSpringBootTest {
 
     Collection<Route> allRoutes = getRoutes();
     assertThat(allRoutes).hasSize(2)
-        .extracting("nextHopAccountId", "routePrefix")
-        .containsOnly(
-            tuple(charlie.nextHopAccountId(), charlie.routePrefix()),
-            tuple(frank.nextHopAccountId(), frank.routePrefix())
-        );
+      .extracting("nextHopAccountId", "routePrefix")
+      .containsOnly(
+        tuple(charlie.nextHopAccountId(), charlie.routePrefix()),
+        tuple(frank.nextHopAccountId(), frank.routePrefix())
+      );
 
     assertThat(deleteRoute(charlie.routePrefix()).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
     assertThat(deleteRoute(charlie.routePrefix()).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
@@ -98,9 +105,9 @@ public class StaticRoutesSpringBootTest {
   @Test
   public void deleteNotFoundErrorMessage() {
     StaticRoute mcpoyle = StaticRoute.builder()
-        .routePrefix(InterledgerAddressPrefix.of("g.philly.dairy"))
-        .nextHopAccountId(AccountId.of("mcpoyle"))
-        .build();
+      .routePrefix(InterledgerAddressPrefix.of("g.philly.dairy"))
+      .nextHopAccountId(AccountId.of("mcpoyle"))
+      .build();
     ResponseEntity<String> response = deleteRoute(mcpoyle.routePrefix());
 
     JsonContentAssert assertJson = assertThat(jsonTester.from(response.getBody()));
@@ -108,7 +115,7 @@ public class StaticRoutesSpringBootTest {
     assertJson.extractingJsonPathValue("title").isEqualTo("Static Route Does Not Exist (`g.philly.dairy`)");
     assertJson.extractingJsonPathValue("prefix").isEqualTo(mcpoyle.routePrefix().getValue());
     assertJson.extractingJsonPathValue("type")
-        .isEqualTo("https://errors.interledger.org/routes/static/static-route-not-found");
+      .isEqualTo("https://errors.interledger.org/routes/static/static-route-not-found");
   }
 
   @Test
@@ -118,15 +125,15 @@ public class StaticRoutesSpringBootTest {
 
     final HttpEntity httpEntity = new HttpEntity(ricketyCricket, authHeaders());
     ResponseEntity<String> response = restTemplate
-        .exchange(SLASH_ROUTES_STATIC + "/" + ricketyCricket.routePrefix().getValue(), HttpMethod.PUT, httpEntity,
-            String.class);
+      .exchange(SLASH_ROUTES_STATIC + "/" + ricketyCricket.routePrefix().getValue(), HttpMethod.PUT, httpEntity,
+        String.class);
 
     JsonContentAssert assertJson = assertThat(jsonTester.from(response.getBody()));
     assertJson.extractingJsonPathValue("status").isEqualTo(409);
     assertJson.extractingJsonPathValue("title").isEqualTo("Static Route Already Exists (`g.philly.shelter`)");
     assertJson.extractingJsonPathValue("prefix").isEqualTo(ricketyCricket.routePrefix().getValue());
     assertJson.extractingJsonPathValue("type")
-        .isEqualTo("https://errors.interledger.org/routes/static/static-route-already-exists");
+      .isEqualTo("https://errors.interledger.org/routes/static/static-route-already-exists");
   }
 
   @Test
@@ -134,23 +141,23 @@ public class StaticRoutesSpringBootTest {
     StaticRoute ricketyCricket = ricketyCricketRoute();
 
     StaticRoute ricketyMismatch = StaticRoute.builder()
-        .nextHopAccountId(ricketyCricket.nextHopAccountId())
-        .routePrefix(InterledgerAddressPrefix.of("g.philly.priesthood"))
-        .build();
+      .nextHopAccountId(ricketyCricket.nextHopAccountId())
+      .routePrefix(InterledgerAddressPrefix.of("g.philly.priesthood"))
+      .build();
 
     final HttpEntity httpEntity = new HttpEntity(ricketyMismatch, authHeaders());
 
     ResponseEntity<String> response = restTemplate
-        .exchange(SLASH_ROUTES_STATIC + "/" + ricketyCricket.routePrefix().getValue(), HttpMethod.PUT, httpEntity,
-            String.class);
+      .exchange(SLASH_ROUTES_STATIC + "/" + ricketyCricket.routePrefix().getValue(), HttpMethod.PUT, httpEntity,
+        String.class);
 
     JsonContentAssert assertJson = assertThat(jsonTester.from(response.getBody()));
     assertJson.extractingJsonPathValue("status").isEqualTo(422);
     assertJson.extractingJsonPathValue("title")
-        .isEqualTo("Static Route Unprocessable [entityPrefix: `g.philly.priesthood`, urlPrefix: `g.philly.shelter`]");
+      .isEqualTo("Static Route Unprocessable [entityPrefix: `g.philly.priesthood`, urlPrefix: `g.philly.shelter`]");
     assertJson.extractingJsonPathValue("prefix").isEqualTo(ricketyMismatch.routePrefix().getValue());
     assertJson.extractingJsonPathValue("type")
-        .isEqualTo("https://errors.interledger.org/routes/static/static-route-unprocessable");
+      .isEqualTo("https://errors.interledger.org/routes/static/static-route-unprocessable");
   }
 
   /**
@@ -161,37 +168,37 @@ public class StaticRoutesSpringBootTest {
 
     InterledgerAddressPrefix prefix = InterledgerAddressPrefix.of("g.foo.baz");
     Map<String, Object> rawValues = ImmutableMap.<String, Object>builder()
-        .put("nextHopAccountId", AccountId.of("testJsonMarshalling"))
-        .put("routePrefix", prefix)
-        .put("whatIsThatSmell", "ifYouHaveToAskYouDoNotWantToKnow")
-        .build();
+      .put("nextHopAccountId", AccountId.of("testJsonMarshalling"))
+      .put("routePrefix", prefix)
+      .put("whatIsThatSmell", "ifYouHaveToAskYouDoNotWantToKnow")
+      .build();
 
     final HttpEntity httpEntity = new HttpEntity(rawValues, authHeaders());
 
     ResponseEntity response =
-        restTemplate.exchange(SLASH_ROUTES_STATIC + "/" + prefix.getValue(), HttpMethod.PUT, httpEntity, Void.class);
+      restTemplate.exchange(SLASH_ROUTES_STATIC + "/" + prefix.getValue(), HttpMethod.PUT, httpEntity, Void.class);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
   }
 
   private StaticRoute frankReynoldsRoute() {
     return StaticRoute.builder()
-        .nextHopAccountId(AccountId.of("frankReynolds"))
-        .routePrefix(InterledgerAddressPrefix.of("g.philly.paddys"))
-        .build();
+      .nextHopAccountId(AccountId.of("frankReynolds"))
+      .routePrefix(InterledgerAddressPrefix.of("g.philly.paddys"))
+      .build();
   }
 
   private StaticRoute charlieKelleyRoute() {
     return StaticRoute.builder()
-        .nextHopAccountId(AccountId.of("charlieKelley"))
-        .routePrefix(InterledgerAddressPrefix.of("g.philly.birdlaw"))
-        .build();
+      .nextHopAccountId(AccountId.of("charlieKelley"))
+      .routePrefix(InterledgerAddressPrefix.of("g.philly.birdlaw"))
+      .build();
   }
 
   private StaticRoute ricketyCricketRoute() {
     return StaticRoute.builder()
-        .nextHopAccountId(AccountId.of("ricketyCricket"))
-        .routePrefix(InterledgerAddressPrefix.of("g.philly.shelter"))
-        .build();
+      .nextHopAccountId(AccountId.of("ricketyCricket"))
+      .routePrefix(InterledgerAddressPrefix.of("g.philly.shelter"))
+      .build();
   }
 
   private HttpHeaders authHeaders() {
@@ -205,19 +212,21 @@ public class StaticRoutesSpringBootTest {
     final HttpEntity httpEntity = new HttpEntity(route, authHeaders());
 
     ResponseEntity<StaticRoute> savedRoutes = restTemplate
-        .exchange(SLASH_ROUTES_STATIC + "/" + route.routePrefix().getValue(), HttpMethod.PUT, httpEntity,
-            StaticRoute.class);
+      .exchange(SLASH_ROUTES_STATIC + "/" + route.routePrefix().getValue(), HttpMethod.PUT, httpEntity,
+        StaticRoute.class);
 
     assertThat(savedRoutes.getStatusCode()).isEqualTo(expectedStatus);
     assertThat(savedRoutes.getBody())
-        .isEqualTo(route);
+      .isEqualTo(route);
   }
 
   private ResponseEntity<String> deleteRoute(InterledgerAddressPrefix routePrefix) {
     final HttpEntity httpEntity = new HttpEntity(authHeaders());
     String prefix = routePrefix.getValue();
-    ResponseEntity<String> response = restTemplate.exchange(SLASH_ROUTES_STATIC + "/" + prefix, HttpMethod.DELETE, httpEntity,
+    ResponseEntity<String> response = restTemplate
+      .exchange(SLASH_ROUTES_STATIC + "/" + prefix, HttpMethod.DELETE, httpEntity,
         String.class);
+    logger.info("Delete Static Route Response: {}", response);  
     return response;
   }
 
@@ -228,7 +237,8 @@ public class StaticRoutesSpringBootTest {
     objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     String routeList = objectMapper.readTree(body).at("/_embedded/immutableRouteList").toString();
-    return Optional.ofNullable(objectMapper.readValue(routeList, new TypeReference<List<Route>>() {})).orElse(Collections.emptyList());
+    return Optional.ofNullable(objectMapper.readValue(routeList, new TypeReference<List<Route>>() {
+    })).orElse(Collections.emptyList());
 
   }
 
@@ -239,7 +249,8 @@ public class StaticRoutesSpringBootTest {
     objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     String routeList = objectMapper.readTree(body).at("/_embedded/immutableStaticRouteList").toString();
-    return Optional.ofNullable(objectMapper.readValue(routeList, new TypeReference<List<StaticRoute>>() {})).orElse(Collections.emptyList());
+    return Optional.ofNullable(objectMapper.readValue(routeList, new TypeReference<List<StaticRoute>>() {
+    })).orElse(Collections.emptyList());
   }
 
 }
