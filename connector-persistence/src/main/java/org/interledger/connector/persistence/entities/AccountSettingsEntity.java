@@ -19,7 +19,6 @@ import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
@@ -45,8 +44,8 @@ public class AccountSettingsEntity extends AbstractEntity {
   private Long id;
 
   @NaturalId
-  @Column(name = "NATURAL_ID") // Hibernate treats this as unique, but Liquibase is explicit about uniqueness.
-  private String naturalId;
+  @Column(name = "ACCOUNT_ID") // Hibernate treats this as unique, but Liquibase is explicit about uniqueness.
+  private String accountId;
 
   @Column(name = "DESCRIPTION")
   private String description;
@@ -105,7 +104,7 @@ public class AccountSettingsEntity extends AbstractEntity {
   public AccountSettingsEntity(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
 
-    this.naturalId = accountSettings.accountId().value();
+    this.accountId = accountSettings.accountId().value();
     this.description = accountSettings.description();
     this.internal = accountSettings.isInternal();
     this.connectionInitiator = accountSettings.isConnectionInitiator();
@@ -126,15 +125,11 @@ public class AccountSettingsEntity extends AbstractEntity {
   }
 
   public AccountId getAccountId() {
-    return AccountId.of(getNaturalId());
+    return AccountId.of(accountId);
   }
 
   public Long getId() {
     return this.id;
-  }
-
-  public String getNaturalId() {
-    return naturalId;
   }
 
   public String getDescription() {
@@ -284,7 +279,7 @@ public class AccountSettingsEntity extends AbstractEntity {
     }
 
     AccountSettingsEntity that = (AccountSettingsEntity) o;
-    return Objects.equals(getNaturalId(), that.getNaturalId());
+    return Objects.equals(getAccountId(), that.getAccountId());
   }
 
   /**
@@ -296,7 +291,7 @@ public class AccountSettingsEntity extends AbstractEntity {
    */
   @Override
   public int hashCode() {
-    return Objects.hash(getNaturalId());
+    return Objects.hash(getAccountId());
   }
 }
 
