@@ -58,7 +58,8 @@ public class PublishFulfillmentLinkFilter extends AbstractLinkFilter implements 
           eventBus.post(PacketFulfillmentEvent.builder()
             .accountSettings(destinationAccountSettings)
             .preparePacket(outgoingPreparePacket)
-            .responsePacket(responsePacket)
+            .responsePacket(interledgerFulfillPacket)
+            .destinationAccount(destinationAccountSettings)
             .message("response packet for " + outgoingPreparePacket.getExecutionCondition()) // FIXME what should this be?
             .build()
           );

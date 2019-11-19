@@ -1,5 +1,7 @@
 package org.interledger.connector.events;
 
+import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 
@@ -14,6 +16,8 @@ public interface PacketFulfillmentEvent extends ConnectorEvent {
 
   InterledgerPreparePacket preparePacket();
 
-  InterledgerResponsePacket responsePacket();
+  InterledgerFulfillPacket responsePacket();
+
+  AccountSettings destinationAccount();
 
 }
