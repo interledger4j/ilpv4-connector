@@ -102,7 +102,7 @@ public interface FxRateOverride {
     @Override
     public abstract BigDecimal rate();
 
-    private static String getNaturalId(FxRateOverride override) {
+    private static String getAssetCodeKey(FxRateOverride override) {
       return override.assetCodeFrom() + "-" + override.assetCodeTo();
     }
 
@@ -117,12 +117,12 @@ public interface FxRateOverride {
 
       FxRateOverride fxRateOverride = (FxRateOverride) o;
 
-      return getNaturalId(this).equals(getNaturalId(fxRateOverride));
+      return getAssetCodeKey(this).equals(getAssetCodeKey(fxRateOverride));
     }
 
     @Override
     public int hashCode() {
-      return getNaturalId(this).hashCode();
+      return getAssetCodeKey(this).hashCode();
     }
 
   }

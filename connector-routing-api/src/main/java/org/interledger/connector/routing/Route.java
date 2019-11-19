@@ -26,7 +26,7 @@ import java.util.Optional;
  */
 @JsonSerialize(as = ImmutableRoute.class)
 @JsonDeserialize(as = ImmutableRoute.class)
-@JsonPropertyOrder( {"routePrefix", "nextHopAccountId"} )
+@JsonPropertyOrder( {"routePrefix", "nextHopAccountId"})
 public interface Route extends BaseRoute {
 
   byte[] EMPTY_AUTH = new byte[32];
@@ -46,10 +46,9 @@ public interface Route extends BaseRoute {
   }
 
   /**
-   * <p>An {@link InterledgerAddress} representing the account that should be listed as the recipient of any next-hop
-   * ledger transfers for this route.</p>
+   * Identifies the account that outgoing packets should be forwarded upon in response to a routing operation.
    *
-   * @return An {@link InterledgerAddress}.
+   * @return An {@link AccountId}.
    */
   AccountId nextHopAccountId();
 
@@ -61,7 +60,7 @@ public interface Route extends BaseRoute {
   List<InterledgerAddress> path();
 
   /**
-   * <p>An optionally-present expiration date/time for this route.</p>
+   * An optionally-present expiration date/time for this route.
    *
    * @return An {@link Instant} representing the
    */

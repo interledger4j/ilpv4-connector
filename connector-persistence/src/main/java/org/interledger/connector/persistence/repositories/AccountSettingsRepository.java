@@ -6,6 +6,7 @@ import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
+
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
@@ -24,11 +25,11 @@ public interface AccountSettingsRepository
   /**
    * Find an {@link AccountSettingsEntity} by its natural identifier (i.e., the accountId as a String).
    *
-   * @param naturalId A {@link String} corresponding to {@link AccountSettingsEntity#getNaturalId()}.
+   * @param accountId A {@link String} corresponding to {@link AccountSettingsEntity#getAccountId()}.
    *
    * @return An optionally-present {@link AccountSettingsEntity}.
    */
-  Optional<AccountSettingsEntity> findByNaturalId(String naturalId);
+  Optional<AccountSettingsEntity> findByAccountId(String accountId);
 
   /**
    * Find an {@link AccountSettingsEntity} by the supplied {@code accountId}.
@@ -38,7 +39,7 @@ public interface AccountSettingsRepository
    * @return An optionally-present {@link AccountSettingsEntity}.
    */
   default Optional<AccountSettingsEntity> findByAccountId(AccountId accountId) {
-    return this.findByNaturalId(accountId.value());
+    return this.findByAccountId(accountId.value());
   }
 
   /**
@@ -129,7 +130,7 @@ public interface AccountSettingsRepository
   default Optional<Boolean> isInternal(final AccountId accountId) {
     Objects.requireNonNull(accountId);
 
-    return this.findByNaturalId(accountId.value())
+    return this.findByAccountId(accountId.value())
       .map(AccountSettingsEntity::isInternal)
       .map(Optional::ofNullable)
       .orElse(Optional.empty());
