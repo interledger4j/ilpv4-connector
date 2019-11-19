@@ -32,8 +32,8 @@ public class FxRateOverrideEntity extends AbstractEntity {
   private Long id;
 
   @NaturalId
-  @Column(name = "NATURAL_ID") // Hibernate treats this as unique, but Liquibase is explicit about uniqueness.
-  private String naturalId;
+  @Column(name = "ASSET_CODE_KEY") // Hibernate treats this as unique, but Liquibase is explicit about uniqueness.
+  private String assetCodeKey;
 
   @Column(name = "ASSET_CODE_FROM")
   private String assetCodeFrom;
@@ -53,7 +53,7 @@ public class FxRateOverrideEntity extends AbstractEntity {
   public FxRateOverrideEntity(final FxRateOverride rateOverride) {
     Objects.requireNonNull(rateOverride);
     this.id = rateOverride.id();
-    this.naturalId = rateOverride.assetCodeFrom() + "-" + rateOverride.assetCodeTo();
+    this.assetCodeKey = rateOverride.assetCodeFrom() + "-" + rateOverride.assetCodeTo();
     this.assetCodeFrom = rateOverride.assetCodeFrom();
     this.assetCodeTo = rateOverride.assetCodeTo();
     this.rate = rateOverride.rate();
@@ -67,12 +67,12 @@ public class FxRateOverrideEntity extends AbstractEntity {
     this.id = id;
   }
 
-  public String getNaturalId() {
-    return naturalId;
+  public String getAssetCodeKey() {
+    return assetCodeKey;
   }
 
-  public void setNaturalId(String naturalId) {
-    this.naturalId = naturalId;
+  public void setAssetCodeKey(String assetCodeKey) {
+    this.assetCodeKey = assetCodeKey;
   }
 
   public String getAssetCodeFrom() {
@@ -114,7 +114,7 @@ public class FxRateOverrideEntity extends AbstractEntity {
     }
 
     FxRateOverrideEntity that = (FxRateOverrideEntity) o;
-    return Objects.equals(getNaturalId(), that.getNaturalId());
+    return Objects.equals(getAssetCodeKey(), that.getAssetCodeKey());
   }
 
   /**
@@ -126,7 +126,7 @@ public class FxRateOverrideEntity extends AbstractEntity {
    */
   @Override
   public int hashCode() {
-    return Objects.hash(getNaturalId());
+    return Objects.hash(getAssetCodeKey());
   }
 
 }
