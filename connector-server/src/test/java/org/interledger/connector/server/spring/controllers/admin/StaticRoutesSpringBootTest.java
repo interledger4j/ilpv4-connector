@@ -67,7 +67,7 @@ public class StaticRoutesSpringBootTest {
   @Before
   public void setUp() throws Exception {
     // "empty" what's there before each test
-    getRoutes().forEach(r -> {
+    getStaticRoutes().forEach(r -> {
       logger.info("About to delete Route: {}", r.toString());
       this.deleteRoute(r.routePrefix());
     });
