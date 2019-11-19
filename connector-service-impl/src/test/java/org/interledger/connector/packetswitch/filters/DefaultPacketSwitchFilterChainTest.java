@@ -27,6 +27,7 @@ import org.interledger.link.PacketRejector;
 import org.interledger.link.PingLoopbackLink;
 
 import com.google.common.collect.Lists;
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Test;
@@ -92,6 +93,8 @@ public class DefaultPacketSwitchFilterChainTest {
   private NextHopPacketMapper nextHopPacketMapperMock;
   @Mock
   private AccountSettingsLoadingCache accountSettingsLoadingCacheMock;
+  @Mock
+  private EventBus eventBus;
 
   private Link outgoingLink;
 
@@ -116,8 +119,8 @@ public class DefaultPacketSwitchFilterChainTest {
         linkFiltersMock,
         linkManagerMock,
         nextHopPacketMapperMock,
-        accountSettingsLoadingCacheMock
-    );
+        accountSettingsLoadingCacheMock,
+      eventBus);
 
     when(accountSettingsLoadingCacheMock.getAccount(INCOMING_ACCOUNT_ID))
         .thenReturn(Optional.of(INCOMING_ACCOUNT_SETTINGS));

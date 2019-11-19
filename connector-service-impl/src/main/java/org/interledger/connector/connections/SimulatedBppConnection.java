@@ -47,14 +47,14 @@ public class SimulatedBppConnection {
 //   * process can emulate playing the role of a client making a call into this simulated connection.
 //   */
 //  public CompletableFuture<Optional<InterledgerResponsePacket>> simulateIncomingData(
-//    final InterledgerAddress sourceAccount, final InterledgerPreparePacket preparePacket
+//    final InterledgerAddress sourceAccount, final InterledgerPreparePacket outgoingPreparePacket
 //  ) {
 //    return this.getMultiplexedBilateralReceiver()
 //      .getBilateralReceiver(sourceAccount)
 //      .map(BilateralReceiver::getDataHandler)
 //      .filter(Optional::isPresent)
 //      .map(Optional::get)
-//      .map(handler -> handler.handleIncomingPacket(preparePacket))
+//      .map(handler -> handler.handleIncomingPacket(outgoingPreparePacket))
 //      .orElseThrow(() -> new RuntimeException("No DataHandler present!"));
 //  }
 //

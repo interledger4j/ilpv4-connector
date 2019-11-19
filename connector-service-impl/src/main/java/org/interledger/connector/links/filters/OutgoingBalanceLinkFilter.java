@@ -109,7 +109,7 @@ public class OutgoingBalanceLinkFilter extends AbstractLinkFilter implements Lin
         //////////////////////
         (interledgerRejectPacket) -> logger.warn(
             "Outgoing packet not applied due to ILP Reject. outgoingDestinationAccount={} amount={} newBalance={} "
-                + "preparePacket={} rejectPacket={}",
+                + "outgoingPreparePacket={} rejectPacket={}",
             destinationAccountSettings,
             outgoingPreparePacket.getAmount(),
             balanceTracker.balance(destinationAccountSettings.accountId()),

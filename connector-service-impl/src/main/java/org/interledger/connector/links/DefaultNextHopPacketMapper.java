@@ -18,6 +18,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
@@ -142,6 +143,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
 
     return NextHopInfo.builder()
       .nextHopAccountId(nextHopRoute.nextHopAccountId())
+      .exchangeRate(BigDecimal.ONE) // fixme how to fx?
       .nextHopPacket(
         InterledgerPreparePacket.builder()
           .from(sourcePacket)

@@ -3,6 +3,7 @@ package org.interledger.connector.packetswitch.filters;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
+import org.interledger.connector.events.PacketFulfillmentEvent;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.NextHopInfo;
 import org.interledger.connector.links.NextHopPacketMapper;
@@ -10,17 +11,20 @@ import org.interledger.connector.links.filters.DefaultLinkFilterChain;
 import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.PaymentRouter;
+import org.interledger.core.InterledgerFulfillment;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.link.Link;
 import org.interledger.link.LinkSettings;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * A default implementation of {@link PacketSwitchFilterChain}.
@@ -45,22 +49,23 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
 
   // The index of the filter to call next...
   private int _filterIndex;
+  private final EventBus eventBus;
 
   /**
    * For testing purposes only.
    */
   @VisibleForTesting
   protected DefaultPacketSwitchFilterChain(
-      final List<PacketSwitchFilter> packetSwitchFilters,
-      final List<LinkFilter> linkFilters,
-      final LinkManager linkManager,
-      final NextHopPacketMapper nextHopPacketMapper,
-      final AccountSettingsRepository accountSettingsRepository
-  ) {
+    final List<PacketSwitchFilter> packetSwitchFilters,
+    final List<LinkFilter> linkFilters,
+    final LinkManager linkManager,
+    final NextHopPacketMapper nextHopPacketMapper,
+    final AccountSettingsRepository accountSettingsRepository,
+    final EventBus eventBus) {
     this(
         packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper,
-        new AccountSettingsLoadingCache(accountSettingsRepository)
-    );
+        new AccountSettingsLoadingCache(accountSettingsRepository),
+      eventBus);
   }
 
   /**
@@ -68,16 +73,17 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
    * Link} to forward the packet onto.
    */
   public DefaultPacketSwitchFilterChain(
-      final List<PacketSwitchFilter> packetSwitchFilters,
-      final List<LinkFilter> linkFilters,
-      final LinkManager linkManager,
-      final NextHopPacketMapper nextHopPacketMapper,
-      final AccountSettingsLoadingCache accountSettingsLoadingCache
-  ) {
+    final List<PacketSwitchFilter> packetSwitchFilters,
+    final List<LinkFilter> linkFilters,
+    final LinkManager linkManager,
+    final NextHopPacketMapper nextHopPacketMapper,
+    final AccountSettingsLoadingCache accountSettingsLoadingCache,
+    final EventBus eventBus) {
     this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
     this.linkFilters = Objects.requireNonNull(linkFilters);
     this.linkManager = Objects.requireNonNull(linkManager);
     this.nextHopPacketMapper = nextHopPacketMapper;
+    this.eventBus = eventBus;
     this._filterIndex = 0;
     this.accountSettingsLoadingCache = Objects.requireNonNull(accountSettingsLoadingCache);
   }
@@ -121,8 +127,26 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
           .orElseThrow(() -> new AccountNotFoundProblem(nextHopInfo.nextHopAccountId()));
 
       // The final operation in the filter-chain is `link.sendPacket(newPreparePacket)`.
-      return new DefaultLinkFilterChain(linkFilters, link)
-          .doFilter(nextHopAccountSettings, nextHopInfo.nextHopPacket());
+      InterledgerResponsePacket response = new DefaultLinkFilterChain(linkFilters, link)
+        .doFilter(nextHopAccountSettings, nextHopInfo.nextHopPacket());
+
+      try {
+        response.handle(interledgerFulfillPacket ->
+          eventBus.post(PacketFulfillmentEvent.builder()
+            .accountSettings(sourceAccountSettings)
+            .destinationAccount(nextHopAccountSettings)
+            .exchangeRate(nextHopInfo.exchangeRate())
+            .incomingPreparePacket(preparePacket)
+            .outgoingPreparePacket(nextHopInfo.nextHopPacket())
+            .fulfillment(interledgerFulfillPacket.getFulfillment())
+            .message("response packet for " + preparePacket.getExecutionCondition()) // FIXME what should this be?
+            .build()
+          ), (rejectPacket) -> {});
+      }
+      catch (Exception e) {
+        logger.warn("Could not publish event", e);
+      }
+      return response;
     }
   }
 }

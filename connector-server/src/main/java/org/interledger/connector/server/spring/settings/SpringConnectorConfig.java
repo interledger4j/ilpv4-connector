@@ -38,7 +38,6 @@ import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.links.filters.OutgoingBalanceLinkFilter;
 import org.interledger.connector.links.filters.OutgoingMaxPacketAmountLinkFilter;
 import org.interledger.connector.links.filters.OutgoingMetricsLinkFilter;
-import org.interledger.connector.links.filters.PublishFulfillmentLinkFilter;
 import org.interledger.connector.metrics.MetricsService;
 import org.interledger.connector.packetswitch.DefaultILPv4PacketSwitch;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
@@ -471,8 +470,7 @@ public class SpringConnectorConfig {
       // TODO: Throughput for Money...
       new OutgoingMetricsLinkFilter(operatorAddressSupplier, metricsService),
       new OutgoingMaxPacketAmountLinkFilter(operatorAddressSupplier),
-      new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker, settlementService, eventBus()),
-      new PublishFulfillmentLinkFilter(operatorAddressSupplier, eventBus())
+      new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker, settlementService, eventBus())
     );
   }
 
@@ -504,12 +502,13 @@ public class SpringConnectorConfig {
     NextHopPacketMapper nextHopPacketMapper,
     ConnectorExceptionHandler connectorExceptionHandler,
     PacketRejector packetRejector,
-    AccountSettingsLoadingCache accountSettingsLoadingCache
+    AccountSettingsLoadingCache accountSettingsLoadingCache,
+    EventBus eventBus
   ) {
     return new DefaultILPv4PacketSwitch(
       packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler,
-      packetRejector, accountSettingsLoadingCache
-    );
+      packetRejector, accountSettingsLoadingCache,
+      eventBus);
   }
 
   @Bean

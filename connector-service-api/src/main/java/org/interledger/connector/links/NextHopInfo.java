@@ -5,6 +5,8 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerPreparePacket;
 
+import java.math.BigDecimal;
+
 /**
  * A container that holds the next-hop packet (with a final destination) as well as the address of the next-hop account
  * to send the packet to.
@@ -25,6 +27,12 @@ public interface NextHopInfo {
    * The packet to send to the next hop.
    */
   InterledgerPreparePacket nextHopPacket();
+
+  /**
+   * exchange rate for the next hop
+   * @return
+   */
+  BigDecimal exchangeRate();
 
 }
 

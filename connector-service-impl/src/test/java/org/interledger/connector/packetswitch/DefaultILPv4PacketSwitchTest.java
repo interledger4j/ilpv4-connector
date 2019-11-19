@@ -34,6 +34,7 @@ import org.interledger.link.LinkSettings;
 import org.interledger.link.LoopbackLink;
 import org.interledger.link.PacketRejector;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Rule;
@@ -88,6 +89,8 @@ public class DefaultILPv4PacketSwitchTest {
   private AccountSettingsLoadingCache accountSettingsLoadingCacheMock;
   @Mock
   private PacketRejector packetRejectorMock;
+  @Mock
+  private EventBus eventBus;
 
   private Link outgoingLink;
 
@@ -110,8 +113,8 @@ public class DefaultILPv4PacketSwitchTest {
       nextHopPacketMapperMock,
       connectorExceptionHandlerMock,
       packetRejectorMock,
-      accountSettingsLoadingCacheMock
-    );
+      accountSettingsLoadingCacheMock,
+      eventBus);
   }
 
   /**

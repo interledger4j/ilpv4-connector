@@ -303,7 +303,7 @@ public class DefaultCcpSender implements CcpSender {
           .data(serializeCcpPacket(ccpRouteUpdateRequest))
           .build();
       logger.info(
-          "CcpSender sending RouteUpdate Request: targetPeerAccountId={}. ccpRouteUpdateRequest={} preparePacket={}",
+          "CcpSender sending RouteUpdate Request: targetPeerAccountId={}. ccpRouteUpdateRequest={} outgoingPreparePacket={}",
           this.peerAccountId, ccpRouteUpdateRequest, preparePacket
       );
 
