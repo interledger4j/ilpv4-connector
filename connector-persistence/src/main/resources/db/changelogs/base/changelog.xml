@@ -9,7 +9,7 @@
       <column autoIncrement="true" name="ID" type="BIGINT">
         <constraints nullable="false" primaryKey="true"/>
       </column>
-      <column name="NATURAL_ID" type="VARCHAR(64)">
+      <column name="ACCOUNT_ID" type="VARCHAR(64)">
         <constraints nullable="false" unique="true"/>
       </column>
       <column name="CREATED_DTTM" type="DATETIME">
@@ -133,7 +133,7 @@
       <column autoIncrement="true" name="ID" type="BIGINT">
         <constraints nullable="false" primaryKey="true"/>
       </column>
-      <column name="NATURAL_ID" type="VARCHAR(7)">
+      <column name="ASSET_CODE_KEY" type="VARCHAR(25)">
         <constraints nullable="false" unique="true"/>
       </column>
       <column name="CREATED_DTTM" type="DATETIME">
