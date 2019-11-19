@@ -16,7 +16,7 @@ import java.time.Instant;
  */
 @JsonSerialize(as = ImmutableStaticRoute.class)
 @JsonDeserialize(as = ImmutableStaticRoute.class)
-@JsonPropertyOrder( {"createdAt", "modifiedAt", "routePrefix", "nextHopAccountId"} )
+@JsonPropertyOrder( {"createdAt", "modifiedAt", "routePrefix", "nextHopAccountId"})
 public interface StaticRoute {
 
   static ImmutableStaticRoute.Builder builder() {
@@ -24,16 +24,18 @@ public interface StaticRoute {
   }
 
   /**
-   * A target address prefix that corresponds to {@code #getPeerAddress}.
+   * An Interledger address prefix is used to match against the destination address of a particular ILP packet. The
+   * longest prefix in the routing table that matches the destination address of a particular packet will be used as the
+   * best route for any particular packet.
    *
-   * @return the prefix of the route
+   * @return The {@link InterledgerAddressPrefix} for this static route.
    */
   InterledgerAddressPrefix routePrefix();
 
   /**
-   * The ILP address of the peer this route should route through.
+   * Identifies the account that outgoing packets should be forwarded upon in response to a routing operation.
    *
-   * @return the account id of the route
+   * @return The {@link AccountId} of the route.
    */
   AccountId nextHopAccountId();
 
@@ -61,7 +63,7 @@ public interface StaticRoute {
   @Value.Immutable
   @JsonSerialize(as = ImmutableStaticRoute.class)
   @JsonDeserialize(as = ImmutableStaticRoute.class)
-  @JsonPropertyOrder( {"createdAt", "modifiedAt", "routePrefix", "nextHopAccountId"} )
+  @JsonPropertyOrder( {"createdAt", "modifiedAt", "routePrefix", "nextHopAccountId"})
   abstract class AbstractStaticRoute implements StaticRoute {
 
     @Override
