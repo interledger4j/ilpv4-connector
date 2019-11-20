@@ -6,6 +6,7 @@ import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
 
 public final class ContainerHelper {
@@ -27,6 +28,22 @@ public final class ContainerHelper {
         // this gets emitted twice before the db is ready: once before the init scripts run and once after
         .waitingFor(Wait.forLogMessage(".*database system is ready to accept connections.*\\n", 2))
         .withNetwork(network);
+  }
+
+  public static GenericContainer pubsub(Network network) {
+    int pubsubPort = 8085;
+    return new FixedHostPortGenericContainer("google/cloud-sdk:latest")
+      .withFixedExposedPort(38085, pubsubPort)
+      .withExposedPorts(pubsubPort)
+      .withCommand(
+        "/bin/sh",
+        "-c",
+        String.format(
+          "gcloud beta emulators pubsub start --project %s --host-port=0.0.0.0:%d",
+          "integration-test", pubsubPort)
+      )
+      .waitingFor(new LogMessageWaitStrategy().withRegEx("(?s).*started.*$"))
+      .withNetwork(network);
   }
 
   public static GenericContainer settlement(Network network, int port, int connectorPort) {

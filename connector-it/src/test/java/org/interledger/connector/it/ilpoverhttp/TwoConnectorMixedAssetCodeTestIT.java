@@ -12,6 +12,7 @@ import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.it.AbstractIlpOverHttpIT;
 import org.interledger.connector.it.ContainerHelper;
 import org.interledger.connector.it.markers.IlpOverHttp;
+import org.interledger.connector.it.pubsub.PubSubResourceGenerator;
 import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerIlpOverHttpTopology;
 import org.interledger.connector.it.topology.Topology;
 import org.interledger.core.InterledgerAddress;
@@ -20,7 +21,9 @@ import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.stream.Denomination;
 
+import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.common.primitives.UnsignedLong;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -30,10 +33,15 @@ import org.junit.experimental.categories.Category;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cloud.gcp.pubsub.core.PubSubTemplate;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Category(IlpOverHttp.class)
@@ -56,15 +64,20 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
   );
   private static GenericContainer redis = ContainerHelper.redis(network);
   private static GenericContainer postgres = ContainerHelper.postgres(network);
+  private static GenericContainer pubsub = ContainerHelper.pubsub(network);
 
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
+  private PubSubResourceGenerator pubSubResourceGenerator;
+  private Subscriber fulfillmentEventSubscriber;
+  private List<String> pubsubMessages;
 
   @BeforeClass
   public static void startTopology() {
     LOGGER.info("Starting test topology `{}`...", topology.toString());
     redis.start();
     postgres.start();
+    pubsub.start();
     topology.start();
     LOGGER.info("Test topology `{}` started!", topology.toString());
   }
@@ -75,15 +88,34 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
     topology.stop();
     postgres.stop();
     redis.stop();
+    pubsub.stop();
     LOGGER.info("Test topology `{}` stopped!", topology.toString());
   }
 
   @Before
-  public void setUp() {
+  public void setUp() throws IOException {
     aliceConnector = this.getILPv4NodeFromGraph(getAliceConnectorAddress());
     // Note Bob's Connector's address is purposefully a child of Alice due to IL-DCP
     bobConnector = this.getILPv4NodeFromGraph(getBobConnectorAddress());
     this.resetBalanceTracking();
+    pubSubResourceGenerator = new PubSubResourceGenerator(pubsub.getContainerIpAddress());
+    String topicName = "ilp-fulfillment-event";
+    String subscriptionName = topicName + ".subscription";
+    pubSubResourceGenerator.createTopic(topicName);
+    pubSubResourceGenerator.createSubscription(topicName, subscriptionName);
+    pubsubMessages = new ArrayList<>();
+    fulfillmentEventSubscriber = pubSubResourceGenerator.createSubscriber(subscriptionName,
+      (pubsubMessage, ackReplyConsumer) -> {
+        pubsubMessages.add(pubsubMessage.getData().toString(Charset.defaultCharset()));
+        ackReplyConsumer.ack();
+      });
+    fulfillmentEventSubscriber.startAsync().awaitRunning();
+
+  }
+
+  @After
+  public void destroy() {
+    fulfillmentEventSubscriber.awaitTerminated();
   }
 
   /**
@@ -104,6 +136,9 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
     // to the ping account on Bob.
     assertThat(bobConnector.getBalanceTracker().balance(ALICE_ACCOUNT).netBalance()).isEqualTo(bobBalance.negate());
     assertThat(bobConnector.getBalanceTracker().balance(PING_ACCOUNT_ID).netBalance()).isEqualTo(bobBalance);
+
+    Thread.sleep(5000);
+    assertThat(pubsubMessages).hasSize(1);
   }
 
   /**
