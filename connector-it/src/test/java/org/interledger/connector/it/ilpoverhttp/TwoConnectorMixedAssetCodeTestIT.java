@@ -1,6 +1,7 @@
 package org.interledger.connector.it.ilpoverhttp;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
@@ -33,6 +34,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cloud.gcp.core.GcpProjectIdProvider;
+import org.springframework.cloud.gcp.pubsub.PubSubAdmin;
 import org.springframework.cloud.gcp.pubsub.core.PubSubTemplate;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
@@ -42,6 +45,8 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Category(IlpOverHttp.class)
@@ -93,11 +98,12 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
   }
 
   @Before
-  public void setUp() throws IOException {
+  public void setUp() throws IOException, TimeoutException {
     aliceConnector = this.getILPv4NodeFromGraph(getAliceConnectorAddress());
     // Note Bob's Connector's address is purposefully a child of Alice due to IL-DCP
     bobConnector = this.getILPv4NodeFromGraph(getBobConnectorAddress());
     this.resetBalanceTracking();
+
     pubSubResourceGenerator = new PubSubResourceGenerator(pubsub.getContainerIpAddress());
     String topicName = "ilp-fulfillment-event";
     String subscriptionName = topicName + ".subscription";
@@ -109,13 +115,12 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
         pubsubMessages.add(pubsubMessage.getData().toString(Charset.defaultCharset()));
         ackReplyConsumer.ack();
       });
-    fulfillmentEventSubscriber.startAsync().awaitRunning();
-
+    fulfillmentEventSubscriber.startAsync().awaitRunning(5, TimeUnit.SECONDS);
   }
 
   @After
-  public void destroy() {
-    fulfillmentEventSubscriber.awaitTerminated();
+  public void destroy() throws TimeoutException {
+    fulfillmentEventSubscriber.stopAsync().awaitTerminated(5, TimeUnit.SECONDS);
   }
 
   /**
@@ -137,8 +142,9 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
     assertThat(bobConnector.getBalanceTracker().balance(ALICE_ACCOUNT).netBalance()).isEqualTo(bobBalance.negate());
     assertThat(bobConnector.getBalanceTracker().balance(PING_ACCOUNT_ID).netBalance()).isEqualTo(bobBalance);
 
-    Thread.sleep(5000);
-    assertThat(pubsubMessages).hasSize(1);
+    await().atMost(5, TimeUnit.SECONDS).until(() -> pubsubMessages.size() >= 2);
+
+    assertThat(pubsubMessages).hasSize(2);
   }
 
   /**
