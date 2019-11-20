@@ -43,13 +43,11 @@ public class DefaultFulfillmentPublisherTest {
   @Mock
   private PubSubTemplate template;
 
-  private Clock clock;
-
   @Before
   public void setUp() {
     // mock out time to make it easier to assert the expected JSON
     int nanos = (int) TimeUnit.NANOSECONDS.convert(678, TimeUnit.MILLISECONDS);
-    clock = Clock.fixed(LocalDateTime.of(2000, 1, 2, 3, 4, 5, nanos).toInstant(ZoneOffset.UTC), ZoneId.of("UTC"));
+    Clock clock = Clock.fixed(LocalDateTime.of(2000, 1, 2, 3, 4, 5, nanos).toInstant(ZoneOffset.UTC), ZoneId.of("UTC"));
     ObjectMapper mapper = ObjectMapperFactory.create();
     publisher = new DefaultFulfillmentPublisher(template, TOPIC, OPERATOR_ADDRESS, mapper, clock);
   }

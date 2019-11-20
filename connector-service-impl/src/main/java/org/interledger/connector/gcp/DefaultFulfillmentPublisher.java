@@ -11,7 +11,6 @@ import org.springframework.cloud.gcp.pubsub.core.PubSubTemplate;
 
 import java.time.Clock;
 import java.time.Instant;
-import javax.annotation.PreDestroy;
 
 /**
  * Default implementation of {@link FulfillmentPublisher} that publishes {@link PacketFulfillmentEvent}s to the

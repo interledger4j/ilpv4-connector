@@ -1,11 +1,8 @@
 package org.interledger.connector.events;
 
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.links.NextHopInfo;
-import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerFulfillment;
 import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.core.InterledgerResponsePacket;
 
 import org.immutables.value.Value;
 
