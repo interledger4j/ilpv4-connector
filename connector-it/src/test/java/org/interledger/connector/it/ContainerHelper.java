@@ -2,7 +2,6 @@ package org.interledger.connector.it;
 
 import org.slf4j.Logger;
 import org.testcontainers.Testcontainers;
-import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
@@ -30,7 +29,7 @@ public final class ContainerHelper {
         .withNetwork(network);
   }
 
-  public static GenericContainer pubsub(Network network) {
+  public static GenericContainer pubsub() {
     int pubsubPort = 8085;
     return new FixedHostPortGenericContainer("google/cloud-sdk:latest")
       .withFixedExposedPort(38085, pubsubPort)
@@ -42,8 +41,7 @@ public final class ContainerHelper {
           "gcloud beta emulators pubsub start --project %s --host-port=0.0.0.0:%d",
           "integration-test", pubsubPort)
       )
-      .waitingFor(new LogMessageWaitStrategy().withRegEx("(?s).*started.*$"))
-      .withNetwork(network);
+      .waitingFor(new LogMessageWaitStrategy().withRegEx("(?s).*started.*$"));
   }
 
   public static GenericContainer settlement(Network network, int port, int connectorPort) {

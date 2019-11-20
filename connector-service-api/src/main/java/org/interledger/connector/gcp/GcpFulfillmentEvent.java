@@ -41,10 +41,6 @@ public interface GcpFulfillmentEvent {
 
   BigDecimal exchangeRate();
 
-  Optional<String> senderPaymentPointer();
-
-  Optional<String> destinationPaymentPointer();
-
   InterledgerAddress connectorIlpAddress();
 
   InterledgerAddress destinationIlpAddress();

@@ -10,8 +10,6 @@ import org.interledger.quilt.jackson.conditions.Encoding;
 import org.interledger.quilt.jackson.link.LinkIdModule;
 import org.interledger.quilt.jackson.link.LinkTypeModule;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,8 +53,7 @@ public class ObjectMapperFactory {
       // we do.
       .configure(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS, true)
       .configure(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN, true)
-      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-      .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
   /**

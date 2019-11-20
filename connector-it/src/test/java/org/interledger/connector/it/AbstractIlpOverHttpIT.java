@@ -24,6 +24,7 @@ import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.balances.InMemoryBalanceTracker;
 import org.interledger.connector.balances.RedisBalanceTracker;
 import org.interledger.connector.core.ConfigConstants;
+import org.interledger.connector.it.pubsub.PubSubResourceGenerator;
 import org.interledger.connector.it.topology.Node;
 import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.it.topology.nodes.ConnectorServerNode;
@@ -39,7 +40,11 @@ import org.interledger.link.PingLoopbackLink;
 import org.interledger.link.exceptions.LinkException;
 import org.interledger.link.http.IlpOverHttpLink;
 
+import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.common.primitives.UnsignedLong;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.slf4j.Logger;
 import org.springframework.data.redis.RedisConnectionFailureException;
@@ -47,13 +52,18 @@ import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisKeyCommands;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.testcontainers.containers.GenericContainer;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.money.spi.Bootstrap;
 
@@ -61,6 +71,14 @@ import javax.money.spi.Bootstrap;
  * Abstract parent class for ILP-over-HTTP Integration tests.
  */
 public abstract class AbstractIlpOverHttpIT {
+
+  private static final String TOPIC_NAME = "ilp-fulfillment-event";
+  private static final String SUBSCRIPTION_NAME = TOPIC_NAME + ".subscription";
+
+  protected static GenericContainer pubsub = ContainerHelper.pubsub();
+  protected PubSubResourceGenerator pubSubResourceGenerator;
+  protected ArrayList<Object> pubsubMessages;
+  private Subscriber fulfillmentEventSubscriber;
 
   @BeforeClass
   public static void setupClass() {
@@ -87,6 +105,33 @@ public abstract class AbstractIlpOverHttpIT {
 
     // Required to get the conditional-config to work for this topology...
     System.setProperty(ConfigConstants.ENABLED_PROTOCOLS + DOT + ConfigConstants.ILP_OVER_HTTP_ENABLED, "true");
+    pubsub.start();
+  }
+
+  @AfterClass
+  public static void tearDownClass() {
+    pubsub.stop();
+  }
+
+  @Before
+  public void setupPubSub() throws IOException, TimeoutException {
+    pubSubResourceGenerator = new PubSubResourceGenerator(pubsub.getContainerIpAddress(), pubsub.getFirstMappedPort());
+    pubSubResourceGenerator.getPubSubAdmin().createTopic(TOPIC_NAME);
+    pubSubResourceGenerator.getPubSubAdmin().createSubscription(SUBSCRIPTION_NAME, TOPIC_NAME);
+    pubsubMessages = new ArrayList<>();
+    fulfillmentEventSubscriber = pubSubResourceGenerator.createSubscriber(SUBSCRIPTION_NAME,
+      (pubsubMessage, ackReplyConsumer) -> {
+        pubsubMessages.add(pubsubMessage.getData().toString(Charset.defaultCharset()));
+        ackReplyConsumer.ack();
+      });
+    fulfillmentEventSubscriber.startAsync().awaitRunning(5, TimeUnit.SECONDS);
+  }
+
+  @After
+  public void destroy() throws TimeoutException {
+    fulfillmentEventSubscriber.stopAsync().awaitTerminated(5, TimeUnit.SECONDS);
+    pubSubResourceGenerator.getPubSubAdmin().deleteSubscription(SUBSCRIPTION_NAME);
+    pubSubResourceGenerator.getPubSubAdmin().deleteTopic(TOPIC_NAME);
   }
 
   protected abstract Logger getLogger();

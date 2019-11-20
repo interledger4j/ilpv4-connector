@@ -3,7 +3,6 @@ package org.interledger.connector.it.pubsub;
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.GrpcTransportChannel;
-import com.google.api.gax.rpc.AlreadyExistsException;
 import com.google.api.gax.rpc.FixedTransportChannelProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.cloud.pubsub.v1.MessageReceiver;
@@ -15,9 +14,6 @@ import com.google.cloud.pubsub.v1.TopicAdminClient;
 import com.google.cloud.pubsub.v1.TopicAdminSettings;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 import com.google.pubsub.v1.ProjectTopicName;
-import com.google.pubsub.v1.PushConfig;
-import com.google.pubsub.v1.Subscription;
-import com.google.pubsub.v1.Topic;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.springframework.cloud.gcp.pubsub.PubSubAdmin;
@@ -32,8 +28,6 @@ public class PubSubResourceGenerator {
 
   private final TransportChannelProvider channelProvider;
   private final CredentialsProvider credentialsProvider;
-  private final TopicAdminClient topicAdminClient;
-  private final SubscriptionAdminClient subscriptionAdminClient;
   private String projectId;
   private PubSubAdmin pubSubAdmin;
 
@@ -49,8 +43,6 @@ public class PubSubResourceGenerator {
     ManagedChannel channel = ManagedChannelBuilder.forTarget(emulatorHost + ":" + emulatorPort).usePlaintext().build();
     channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel));
     credentialsProvider = NoCredentialsProvider.create();
-    topicAdminClient = topicAdminClient();
-    subscriptionAdminClient = subscriptionAdminClient();
     pubSubAdmin = new PubSubAdmin(() -> projectId,
       topicAdminClient(),
       subscriptionAdminClient());

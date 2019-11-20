@@ -13,7 +13,6 @@ import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.it.AbstractIlpOverHttpIT;
 import org.interledger.connector.it.ContainerHelper;
 import org.interledger.connector.it.markers.IlpOverHttp;
-import org.interledger.connector.it.pubsub.PubSubResourceGenerator;
 import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerIlpOverHttpTopology;
 import org.interledger.connector.it.topology.Topology;
 import org.interledger.core.InterledgerAddress;
@@ -22,9 +21,7 @@ import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.stream.Denomination;
 
-import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.common.primitives.UnsignedLong;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -39,9 +36,6 @@ import org.testcontainers.containers.Network;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -59,9 +53,6 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
       .assetScale((short) 9)
       .build();
 
-  private static final String TOPIC_NAME = "ilp-fulfillment-event";
-  private static final String SUBSCRIPTION_NAME = TOPIC_NAME + ".subscription";
-
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorMixedAssetCodeTestIT.class);
   private static final Network network = Network.newNetwork();
   private static Topology topology = TwoConnectorPeerIlpOverHttpTopology.init(
@@ -69,20 +60,15 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
   );
   private static GenericContainer redis = ContainerHelper.redis(network);
   private static GenericContainer postgres = ContainerHelper.postgres(network);
-  private static GenericContainer pubsub = ContainerHelper.pubsub(network);
 
-  private PubSubResourceGenerator pubSubResourceGenerator;
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
-  private Subscriber fulfillmentEventSubscriber;
-  private List<String> pubsubMessages;
 
   @BeforeClass
   public static void startTopology() {
     LOGGER.info("Starting test topology `{}`...", topology.toString());
     redis.start();
     postgres.start();
-    pubsub.start();
     topology.start();
     LOGGER.info("Test topology `{}` started!", topology.toString());
   }
@@ -93,7 +79,6 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
     topology.stop();
     postgres.stop();
     redis.stop();
-    pubsub.stop();
     LOGGER.info("Test topology `{}` stopped!", topology.toString());
   }
 
@@ -103,24 +88,6 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
     // Note Bob's Connector's address is purposefully a child of Alice due to IL-DCP
     bobConnector = this.getILPv4NodeFromGraph(getBobConnectorAddress());
     this.resetBalanceTracking();
-
-    pubSubResourceGenerator = new PubSubResourceGenerator(pubsub.getContainerIpAddress(), pubsub.getFirstMappedPort());
-    pubSubResourceGenerator.getPubSubAdmin().createTopic(TOPIC_NAME);
-    pubSubResourceGenerator.getPubSubAdmin().createSubscription(SUBSCRIPTION_NAME, TOPIC_NAME);
-    pubsubMessages = new ArrayList<>();
-    fulfillmentEventSubscriber = pubSubResourceGenerator.createSubscriber(SUBSCRIPTION_NAME,
-      (pubsubMessage, ackReplyConsumer) -> {
-        pubsubMessages.add(pubsubMessage.getData().toString(Charset.defaultCharset()));
-        ackReplyConsumer.ack();
-      });
-    fulfillmentEventSubscriber.startAsync().awaitRunning(5, TimeUnit.SECONDS);
-  }
-
-  @After
-  public void destroy() throws TimeoutException {
-    fulfillmentEventSubscriber.stopAsync().awaitTerminated(5, TimeUnit.SECONDS);
-    pubSubResourceGenerator.getPubSubAdmin().deleteSubscription(SUBSCRIPTION_NAME);
-    pubSubResourceGenerator.getPubSubAdmin().deleteTopic(TOPIC_NAME);
   }
 
   /**
