@@ -54,6 +54,7 @@ public class AccountSettingsJsonTest {
       "\"linkType\":\"LOOPBACK\"," +
       "\"ilpAddressSegment\":\"bob\"," +
       "\"connectionInitiator\":true," +
+      "\"deleted\":false," +
       "\"internal\":false," +
       "\"sendRoutes\":false," +
       "\"receiveRoutes\":false," +
@@ -120,6 +121,7 @@ public class AccountSettingsJsonTest {
       "\"linkType\":\"LOOPBACK\"," +
       "\"ilpAddressSegment\":\"foo\"," +
       "\"connectionInitiator\":true," +
+      "\"deleted\":false," +
       "\"internal\":true," +
       "\"sendRoutes\":true," +
       "\"receiveRoutes\":true," +

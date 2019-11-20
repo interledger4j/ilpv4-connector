@@ -49,7 +49,8 @@ public class AccountSettingsEntityConverter implements Converter<AccountSettings
       .ilpAddressSegment(accountSettingsEntity.getIlpAddressSegment())
       .isSendRoutes(accountSettingsEntity.isSendRoutes())
       .isReceiveRoutes(accountSettingsEntity.isReceiveRoutes())
-      .putAllCustomSettings(accountSettingsEntity.getCustomSettings());
+      .putAllCustomSettings(accountSettingsEntity.getCustomSettings())
+      .isDeleted(accountSettingsEntity.isDeleted());
 
     accountSettingsEntity.getMaximumPacketAmount()
       .ifPresent(maxPacketAmount -> builder.maximumPacketAmount(UnsignedLong.valueOf(maxPacketAmount)));

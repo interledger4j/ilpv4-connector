@@ -81,6 +81,12 @@ public interface AccountSettings {
   }
 
   /**
+   * Tracks if this record was flagged as deleted as we only do soft deletes of accounts
+   * @return true if the record was deleted
+   */
+  default boolean isDeleted() { return false; }
+
+  /**
    * The segment that will be appended to the connector's ILP address to form this account's ILP address. Only
    * applicable to accounts with relation of {@link AccountRelationship#CHILD}. By default, this will be the identifier
    * of the account.
@@ -217,7 +223,7 @@ public interface AccountSettings {
   @JsonSerialize(as = ImmutableAccountSettings.class)
   @JsonDeserialize(as = ImmutableAccountSettings.class)
   @JsonPropertyOrder( {"accountId", "createdAt", "modifiedAt", "description", "accountRelationship", "assetCode",
-    "assetScale", "maximumPacketAmount", "linkType", "ilpAddressSegment", "connectionInitiator",
+    "assetScale", "maximumPacketAmount", "linkType", "ilpAddressSegment", "connectionInitiator", "deleted",
     "internal", "sendRoutes", "receiveRoutes", "balanceSettings", "rateLimitSettings",
     "settlementEngineDetails", "customSettings"})
   abstract class AbstractAccountSettings implements AccountSettings {
@@ -259,6 +265,11 @@ public interface AccountSettings {
     public boolean isConnectionInitiator() {
       return true;
     }
+
+    @Override
+    @Value.Default
+    @JsonProperty("deleted")
+    public boolean isDeleted() { return false; }
 
     @Value.Default
     @Override

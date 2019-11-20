@@ -56,6 +56,9 @@ public class AccountSettingsEntity extends AbstractEntity {
   @Column(name = "CONNECTION_INITIATOR")
   private boolean connectionInitiator;
 
+  @Column(name = "DELETED")
+  private boolean deleted;
+
   @Column(name = "ILP_ADDR_SEGMENT")
   private String ilpAddressSegment;
 
@@ -108,6 +111,7 @@ public class AccountSettingsEntity extends AbstractEntity {
     this.description = accountSettings.description();
     this.internal = accountSettings.isInternal();
     this.connectionInitiator = accountSettings.isConnectionInitiator();
+    this.deleted = accountSettings.isDeleted();
     this.ilpAddressSegment = accountSettings.ilpAddressSegment();
     this.accountRelationship = accountSettings.accountRelationship();
     this.linkType = accountSettings.linkType();
@@ -154,6 +158,14 @@ public class AccountSettingsEntity extends AbstractEntity {
 
   public void setConnectionInitiator(boolean connectionInitiator) {
     this.connectionInitiator = connectionInitiator;
+  }
+
+  public boolean isDeleted() {
+    return deleted;
+  }
+
+  public void setDeleted(boolean deleted) {
+    this.deleted = deleted;
   }
 
   public String getIlpAddressSegment() {
@@ -293,6 +305,7 @@ public class AccountSettingsEntity extends AbstractEntity {
   public int hashCode() {
     return Objects.hash(getAccountId());
   }
+
 }
 
 

@@ -34,6 +34,10 @@
         <constraints nullable="false"/>
       </column>
 
+      <column name="DELETED" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+
       <!-- Purposefully smaller than 1024 to allow for long values with a long prefix -->
       <column name="ILP_ADDR_SEGMENT" type="VARCHAR(512)">
         <constraints nullable="true"/>
