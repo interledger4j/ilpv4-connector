@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -239,5 +240,18 @@ public class DefaultAccountManager implements AccountManager {
     );
 
     return conversionService.convert(updatedAccountSettings, AccountSettings.class);
+  }
+
+  @Override
+  public void deleteAccountById(AccountId accountId) {
+    Optional<AccountSettingsEntity> account = accountSettingsRepository.findByAccountId(accountId);
+    if (account.isPresent()) {
+      AccountSettingsEntity accountSettings = account.get();
+      accountSettings.setDeleted(true);
+      accountSettingsRepository.save(accountSettings);
+    }
+    else  {
+      throw new AccountNotFoundProblem(accountId);
+    }
   }
 }

@@ -48,4 +48,10 @@ public interface AccountManager {
    */
   AccountSettings initializeParentAccountSettingsViaIlDcp(AccountId primaryParentAccountId);
 
+  /**
+   * Marks an account as deleted by its account id
+   * @param accountId the {@link AccountId} of the account to be marked deleted
+   */
+  void deleteAccountById(AccountId accountId);
+
 }
