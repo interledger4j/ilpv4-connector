@@ -3,6 +3,8 @@ package org.interledger.connector.links;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.core.InterledgerPreparePacket;
 
+import java.math.BigDecimal;
+
 /**
  * Determines how to link one account to another for purposes of routing.
  */
@@ -24,4 +26,15 @@ public interface NextHopPacketMapper {
     final AccountSettings sourceAccountSettings, final InterledgerPreparePacket incomingPreparePacket
   ) throws RuntimeException;
 
+  /**
+   * FIXME Only exists for shadow net testing; remove after
+   * @param sourceAccountSettings
+   * @param destinationAccountSettings
+   * @param sourcePacket
+   * @return
+   */
+  @Deprecated
+  BigDecimal determineExchangeRate(final AccountSettings sourceAccountSettings,
+                                   final AccountSettings destinationAccountSettings,
+                                   final InterledgerPreparePacket sourcePacket);
 }

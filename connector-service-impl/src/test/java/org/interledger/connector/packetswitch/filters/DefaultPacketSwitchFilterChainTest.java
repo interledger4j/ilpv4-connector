@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static org.interledger.link.PingLoopbackLink.PING_PROTOCOL_CONDITION;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -34,6 +35,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -141,6 +143,7 @@ public class DefaultPacketSwitchFilterChainTest {
     when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_SETTINGS), eq(PREPARE_PACKET)))
         .thenReturn(nextHopInfo);
     when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_ID)).thenReturn(outgoingLink);
+    when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
 
     filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET).handle(
         fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LoopbackLink.LOOPBACK_FULFILLMENT),
@@ -150,6 +153,7 @@ public class DefaultPacketSwitchFilterChainTest {
     verify(linkFiltersMock).size();
     verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_ID);
     verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET);
+    verify(nextHopPacketMapperMock).determineExchangeRate(any(), any(), any());
 
     assertThat(this.packetSwitchFilters.size()).isEqualTo(0);
     verifyNoMoreInteractions(nextHopPacketMapperMock);
@@ -175,6 +179,7 @@ public class DefaultPacketSwitchFilterChainTest {
         .build();
     when(nextHopPacketMapperMock.getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET)).thenReturn(nextHopInfo);
     when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_ID)).thenReturn(outgoingLink);
+    when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
 
     filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET).handle(
         fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LoopbackLink.LOOPBACK_FULFILLMENT),
@@ -185,6 +190,7 @@ public class DefaultPacketSwitchFilterChainTest {
     verify(linkFiltersMock).size();
     verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_ID);
     verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET);
+    verify(nextHopPacketMapperMock).determineExchangeRate(any(), any(), any());
 
     verifyNoMoreInteractions(nextHopPacketMapperMock);
     verifyNoMoreInteractions(linkFiltersMock);
@@ -215,6 +221,7 @@ public class DefaultPacketSwitchFilterChainTest {
     when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_SETTINGS), eq(pingPreparePacket)))
         .thenReturn(nextHopInfo);
     when(linkManagerMock.getPingLink()).thenReturn(outgoingLink);
+    when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
 
     filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket).handle(
         fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT),
@@ -224,6 +231,7 @@ public class DefaultPacketSwitchFilterChainTest {
     verify(linkFiltersMock).size();
     verify(linkManagerMock).getPingLink();
     verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket);
+    verify(nextHopPacketMapperMock).determineExchangeRate(any(), any(), any());
 
     assertThat(this.packetSwitchFilters.size()).isEqualTo(0);
     verifyNoMoreInteractions(nextHopPacketMapperMock);

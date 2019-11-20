@@ -11,7 +11,6 @@ import org.interledger.connector.links.filters.DefaultLinkFilterChain;
 import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.PaymentRouter;
-import org.interledger.core.InterledgerFulfillment;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.link.Link;
@@ -22,9 +21,9 @@ import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * A default implementation of {@link PacketSwitchFilterChain}.
@@ -130,12 +129,15 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
       InterledgerResponsePacket response = new DefaultLinkFilterChain(linkFilters, link)
         .doFilter(nextHopAccountSettings, nextHopInfo.nextHopPacket());
 
+      BigDecimal fxRate = nextHopPacketMapper.determineExchangeRate(sourceAccountSettings, nextHopAccountSettings,
+        preparePacket);
+
       try {
         response.handle(interledgerFulfillPacket ->
           eventBus.post(PacketFulfillmentEvent.builder()
             .accountSettings(sourceAccountSettings)
             .destinationAccount(nextHopAccountSettings)
-            .exchangeRate(nextHopInfo.exchangeRate())
+            .exchangeRate(fxRate)
             .incomingPreparePacket(preparePacket)
             .outgoingPreparePacket(nextHopInfo.nextHopPacket())
             .fulfillment(interledgerFulfillPacket.getFulfillment())

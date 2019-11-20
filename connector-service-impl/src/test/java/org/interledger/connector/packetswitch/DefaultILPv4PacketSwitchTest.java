@@ -43,6 +43,7 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -193,6 +194,7 @@ public class DefaultILPv4PacketSwitchTest {
     when(nextHopPacketMapperMock.getNextHopPacket(eq(incomingAccountSettings), eq(PREPARE_PACKET)))
       .thenReturn(nextHopInfo);
     when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_ID)).thenReturn(outgoingLink);
+    when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
 
     // Do the send numReps times to prove that the cache is working...
     final int numReps = 5;
@@ -208,6 +210,7 @@ public class DefaultILPv4PacketSwitchTest {
     verify(linkManagerMock, times(numReps)).getOrCreateLink(OUTGOING_ACCOUNT_ID);
     verify(nextHopPacketMapperMock, times(numReps)).getNextHopPacket(incomingAccountSettings, PREPARE_PACKET);
     verify(accountSettingsLoadingCacheMock, times(10)).getAccount(any());
+    verify(nextHopPacketMapperMock, times(numReps)).determineExchangeRate(any(), any(), any());
 
     verifyNoInteractions(connectorExceptionHandlerMock);
     verifyNoInteractions(packetRejectorMock);
@@ -248,6 +251,8 @@ public class DefaultILPv4PacketSwitchTest {
         .thenReturn(nextHopInfo);
       when(linkManagerMock.getOrCreateLink(outgoingAccountID)).thenReturn(outgoingLink);
 
+      when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
+
       packetSwitch.switchPacket(incomingAccountID, PREPARE_PACKET).handle(
         fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LoopbackLink.LOOPBACK_FULFILLMENT),
         rejectPacket -> fail("Should have fulfilled but rejected!")
@@ -258,6 +263,7 @@ public class DefaultILPv4PacketSwitchTest {
       verify(nextHopPacketMapperMock).getNextHopPacket(incomingAccountSettings, PREPARE_PACKET);
       verify(accountSettingsLoadingCacheMock, times(2)).getAccount(incomingAccountID);
       verify(accountSettingsLoadingCacheMock, times(2)).getAccount(outgoingAccountID);
+      verify(nextHopPacketMapperMock).determineExchangeRate(eq(incomingAccountSettings), any(), eq(PREPARE_PACKET));
     }
 
     verify(packetSwitchFiltersMock, times(numReps)).size();
