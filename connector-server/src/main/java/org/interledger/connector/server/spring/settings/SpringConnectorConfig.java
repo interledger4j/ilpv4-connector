@@ -106,6 +106,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -551,6 +552,11 @@ public class SpringConnectorConfig {
   @Bean
   protected ConnectorKeys connectorKeys(Supplier<ConnectorSettings> connectorSettingsSupplier) {
     return connectorSettingsSupplier.get().keys();
+  }
+
+  @Bean
+  protected Clock clock() {
+    return Clock.systemDefaultZone();
   }
 
 }

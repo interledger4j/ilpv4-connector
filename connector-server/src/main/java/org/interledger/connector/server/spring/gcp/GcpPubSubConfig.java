@@ -15,6 +15,7 @@ import org.springframework.cloud.gcp.pubsub.core.PubSubTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Clock;
 import java.util.function.Supplier;
 import javax.annotation.PostConstruct;
 
@@ -38,11 +39,13 @@ public class GcpPubSubConfig {
                                                    @Value("${interledger.connector.pubsub.topics.fulfillment-event}")
                                                      String fulfillmentEventTopicName,
                                                    ObjectMapper objectMapper,
-                                                   Supplier<ConnectorSettings> connectorSettingsSupplier) {
+                                                   Supplier<ConnectorSettings> connectorSettingsSupplier,
+                                                   Clock clock) {
     return new DefaultFulfillmentPublisher(template,
       fulfillmentEventTopicName,
       connectorSettingsSupplier.get().operatorAddress(),
-      objectMapper);
+      objectMapper,
+      clock);
   }
 
   @Subscribe

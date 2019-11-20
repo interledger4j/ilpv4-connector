@@ -9,9 +9,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gcp.pubsub.core.PubSubTemplate;
 
-import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Instant;
+import javax.annotation.PreDestroy;
 
+/**
+ * Default implementation of {@link FulfillmentPublisher} that publishes {@link PacketFulfillmentEvent}s to the
+ * event bus
+ */
 public class DefaultFulfillmentPublisher implements FulfillmentPublisher {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -20,15 +25,19 @@ public class DefaultFulfillmentPublisher implements FulfillmentPublisher {
   private final String topicName;
   private final InterledgerAddress connectorAddress;
   private final ObjectMapper mapper;
+  private final Clock clock;
 
-  public DefaultFulfillmentPublisher(PubSubTemplate template, String topicName, InterledgerAddress connectorAddress,
-                                     ObjectMapper mapper) {
+  public DefaultFulfillmentPublisher(PubSubTemplate template,
+                                     String topicName,
+                                     InterledgerAddress connectorAddress,
+                                     ObjectMapper mapper,
+                                     Clock clock) {
     this.template = template;
     this.topicName = topicName;
     this.connectorAddress = connectorAddress;
     this.mapper = mapper;
+    this.clock = clock;
   }
-
 
   @Override
   public void publish(PacketFulfillmentEvent event) {
@@ -37,16 +46,10 @@ public class DefaultFulfillmentPublisher implements FulfillmentPublisher {
       GcpFulfillmentEvent gcpFulfillmentEvent = map(event);
       String payload = mapper.writeValueAsString(gcpFulfillmentEvent);
       template.publish(topicName, payload);
-      try {
-        Thread.sleep(1000); // FIXME
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
     } catch (JsonProcessingException e) {
       logger.warn("Could not serialize event ", e);
     }
   }
-
 
   private GcpFulfillmentEvent map(PacketFulfillmentEvent event) {
     return GcpFulfillmentEvent.builder()
@@ -60,8 +63,8 @@ public class DefaultFulfillmentPublisher implements FulfillmentPublisher {
       .nextHopAmount(event.outgoingPreparePacket().getAmount())
       .prevHopAssetScale(event.accountSettings().get().assetScale())
       .nextHopAssetScale(event.destinationAccount().assetScale())
-      .exchangeRate(BigDecimal.ONE) // FIXME how to fx?
-      .timestamp(Instant.now())
+      .exchangeRate(event.exchangeRate())
+      .timestamp(Instant.now(clock))
       .fulfillment(event.fulfillment().getCondition())
       .build();
   }

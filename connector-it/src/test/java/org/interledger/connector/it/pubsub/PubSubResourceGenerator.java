@@ -24,6 +24,10 @@ import org.springframework.cloud.gcp.pubsub.PubSubAdmin;
 
 import java.io.IOException;
 
+/**
+ * For testing purposes, provides methods to generate pubsub topics and subscriptions on pubsub emulator and
+ * other pubsub operations.
+ */
 public class PubSubResourceGenerator {
 
   private final TransportChannelProvider channelProvider;
@@ -33,9 +37,16 @@ public class PubSubResourceGenerator {
   private String projectId;
   private PubSubAdmin pubSubAdmin;
 
-  public PubSubResourceGenerator(String emulatorHost) throws IOException {
+
+  /**
+   * Creates instance that is configured to talk to pubsub emulator on a given host and port
+   * @param emulatorHost hostname for the emulator (e.g. localhost or 10.1.2.3)
+   * @param emulatorPort port that emulator is listening on
+   * @throws IOException
+   */
+  public PubSubResourceGenerator(String emulatorHost, int emulatorPort) throws IOException {
     this.projectId = "integration-test";
-    ManagedChannel channel = ManagedChannelBuilder.forTarget(emulatorHost + ":38085").usePlaintext().build();
+    ManagedChannel channel = ManagedChannelBuilder.forTarget(emulatorHost + ":" + emulatorPort).usePlaintext().build();
     channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel));
     credentialsProvider = NoCredentialsProvider.create();
     topicAdminClient = topicAdminClient();
@@ -45,14 +56,20 @@ public class PubSubResourceGenerator {
       subscriptionAdminClient());
   }
 
-  public Subscription createSubscription(String topicName, String subscriptionName) {
-    return pubSubAdmin.createSubscription(subscriptionName, topicName);
+  /**
+   * Creates a {@link PubSubAdmin} that is configured for pubsub emulator.
+   * @return admin
+   */
+  public PubSubAdmin getPubSubAdmin() {
+    return pubSubAdmin;
   }
 
-  public Topic createTopic(String topicName) {
-    return pubSubAdmin.createTopic(topicName);
-  }
-
+  /**
+   * Creates a {@link Publisher} that can publish to the given topic on pubsub emulator
+   * @param topicName topic
+   * @return
+   * @throws IOException
+   */
   public Publisher createPublisher(String topicName) throws IOException {
     return Publisher.newBuilder(ProjectTopicName.of(projectId, topicName))
       .setChannelProvider(channelProvider)
@@ -60,6 +77,12 @@ public class PubSubResourceGenerator {
       .build();
   }
 
+  /**
+   * Creates a {@link Subscriber} that can subscribe to the given subscriptionName on pubsub emulator
+   * @param subscriptionName name
+   * @param receiver callback to handle received messages
+   * @return
+   */
   public Subscriber createSubscriber(String subscriptionName, MessageReceiver receiver) {
     return Subscriber.newBuilder(ProjectSubscriptionName.of(projectId, subscriptionName), receiver)
       .setChannelProvider(channelProvider)

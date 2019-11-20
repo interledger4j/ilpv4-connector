@@ -4,9 +4,14 @@ import org.interledger.connector.jackson.modules.AccountIdModule;
 import org.interledger.connector.jackson.modules.HttpUrlModule;
 import org.interledger.connector.jackson.modules.InterledgerAddressPrefixModule;
 import org.interledger.connector.jackson.modules.SettlementAccountIdModule;
+import org.interledger.quilt.jackson.InterledgerModule;
+import org.interledger.quilt.jackson.address.InterledgerAddressModule;
+import org.interledger.quilt.jackson.conditions.Encoding;
 import org.interledger.quilt.jackson.link.LinkIdModule;
 import org.interledger.quilt.jackson.link.LinkTypeModule;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,6 +42,8 @@ public class ObjectMapperFactory {
       .registerModule(new GuavaModule())
       .registerModule(new AccountIdModule())
       .registerModule(new InterledgerAddressPrefixModule())
+      .registerModule(new InterledgerAddressModule())
+      .registerModule(new InterledgerModule(Encoding.BASE64))
       .registerModule(new SettlementAccountIdModule())
       .registerModule(new LinkIdModule())
       .registerModule(new LinkTypeModule())
@@ -48,7 +55,8 @@ public class ObjectMapperFactory {
       // we do.
       .configure(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS, true)
       .configure(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN, true)
-      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+      .setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
   }
 
   /**

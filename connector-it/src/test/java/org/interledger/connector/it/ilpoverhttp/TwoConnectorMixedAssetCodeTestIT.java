@@ -34,9 +34,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cloud.gcp.core.GcpProjectIdProvider;
-import org.springframework.cloud.gcp.pubsub.PubSubAdmin;
-import org.springframework.cloud.gcp.pubsub.core.PubSubTemplate;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 
@@ -62,6 +59,9 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
       .assetScale((short) 9)
       .build();
 
+  private static final String TOPIC_NAME = "ilp-fulfillment-event";
+  private static final String SUBSCRIPTION_NAME = TOPIC_NAME + ".subscription";
+
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorMixedAssetCodeTestIT.class);
   private static final Network network = Network.newNetwork();
   private static Topology topology = TwoConnectorPeerIlpOverHttpTopology.init(
@@ -71,9 +71,9 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
   private static GenericContainer postgres = ContainerHelper.postgres(network);
   private static GenericContainer pubsub = ContainerHelper.pubsub(network);
 
+  private PubSubResourceGenerator pubSubResourceGenerator;
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
-  private PubSubResourceGenerator pubSubResourceGenerator;
   private Subscriber fulfillmentEventSubscriber;
   private List<String> pubsubMessages;
 
@@ -104,13 +104,11 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
     bobConnector = this.getILPv4NodeFromGraph(getBobConnectorAddress());
     this.resetBalanceTracking();
 
-    pubSubResourceGenerator = new PubSubResourceGenerator(pubsub.getContainerIpAddress());
-    String topicName = "ilp-fulfillment-event";
-    String subscriptionName = topicName + ".subscription";
-    pubSubResourceGenerator.createTopic(topicName);
-    pubSubResourceGenerator.createSubscription(topicName, subscriptionName);
+    pubSubResourceGenerator = new PubSubResourceGenerator(pubsub.getContainerIpAddress(), pubsub.getFirstMappedPort());
+    pubSubResourceGenerator.getPubSubAdmin().createTopic(TOPIC_NAME);
+    pubSubResourceGenerator.getPubSubAdmin().createSubscription(SUBSCRIPTION_NAME, TOPIC_NAME);
     pubsubMessages = new ArrayList<>();
-    fulfillmentEventSubscriber = pubSubResourceGenerator.createSubscriber(subscriptionName,
+    fulfillmentEventSubscriber = pubSubResourceGenerator.createSubscriber(SUBSCRIPTION_NAME,
       (pubsubMessage, ackReplyConsumer) -> {
         pubsubMessages.add(pubsubMessage.getData().toString(Charset.defaultCharset()));
         ackReplyConsumer.ack();
@@ -121,6 +119,8 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
   @After
   public void destroy() throws TimeoutException {
     fulfillmentEventSubscriber.stopAsync().awaitTerminated(5, TimeUnit.SECONDS);
+    pubSubResourceGenerator.getPubSubAdmin().deleteSubscription(SUBSCRIPTION_NAME);
+    pubSubResourceGenerator.getPubSubAdmin().deleteTopic(TOPIC_NAME);
   }
 
   /**
@@ -157,6 +157,8 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
 
     assertThat(response).isInstanceOf(InterledgerRejectPacket.class)
         .extracting("code").isEqualTo(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE);
+
+    assertThat(pubsubMessages).isEmpty();
   }
 
   @Override
