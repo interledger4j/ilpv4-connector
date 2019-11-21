@@ -141,7 +141,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
             .incomingPreparePacket(preparePacket)
             .outgoingPreparePacket(nextHopInfo.nextHopPacket())
             .fulfillment(interledgerFulfillPacket.getFulfillment())
-            .message("response packet for " + preparePacket.getExecutionCondition()) // FIXME what should this be?
+            .message("response packet for " + preparePacket.getExecutionCondition())
             .build()
           ), (rejectPacket) -> {});
       }
