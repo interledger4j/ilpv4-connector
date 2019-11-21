@@ -158,4 +158,93 @@
 
     </createTable>
   </changeSet>
+
+  <changeSet id="deleted_account_settings" author="isimpson">
+    <createTable tableName="DELETED_ACCOUNT_SETTINGS">
+      <column autoIncrement="true" name="ID" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="ACCOUNT_ID" type="VARCHAR(64)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="CREATED_DTTM" type="DATETIME">
+        <constraints nullable="false"/>
+      </column>
+      <column name="MODIFIED_DTTM" type="DATETIME">
+        <constraints nullable="false"/>
+      </column>
+      <column name="VERSION" type="SMALLINT">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="DESCRIPTION" type="VARCHAR(255)">
+        <constraints nullable="true"/>
+      </column>
+
+      <column name="INTERNAL" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="CONNECTION_INITIATOR" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+
+      <!-- Purposefully smaller than 1024 to allow for long values with a long prefix -->
+      <column name="ILP_ADDR_SEGMENT" type="VARCHAR(512)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="ACCOUNT_RELATIONSHIP" type="SMALLINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="LINK_TYPE" type="VARCHAR(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="ASSET_CODE" type="VARCHAR(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="ASSET_SCALE" type="SMALLINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="SEND_ROUTES" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="RECEIVE_ROUTES" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="MAX_PACKET_AMT" type="BIGINT">
+        <constraints nullable="true"/>
+      </column>
+      <column name="CUSTOM_SETTINGS" type="VARCHAR(8196)">
+        <constraints nullable="true"/>
+      </column>
+
+      <!-- AccountBalanceSettingsEntity-->
+      <column name="MIN_BALANCE" type="BIGINT">
+        <constraints nullable="true"/>
+      </column>
+      <column name="SETTLE_THRESHOLD" type="BIGINT">
+        <constraints nullable="true"/>
+      </column>
+      <column name="SETTLE_TO" type="BIGINT">
+        <constraints nullable="true"/>
+      </column>
+
+      <!-- AccountRateLimitSettingsEntity-->
+      <column name="MAX_PACKETS_PER_SEC" type="BIGINT">
+        <constraints nullable="true"/>
+      </column>
+
+      <!-- SettlementEngineDetails-->
+      <column name="SE_ACCOUNT_ID" type="VARCHAR(255)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="SE_BASE_URL" type="VARCHAR(2048)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="SE_CUSTOM_SETTINGS" type="VARCHAR(8196)">
+        <constraints nullable="true"/>
+      </column>
+
+    </createTable>
+  </changeSet>
 </databaseChangeLog>

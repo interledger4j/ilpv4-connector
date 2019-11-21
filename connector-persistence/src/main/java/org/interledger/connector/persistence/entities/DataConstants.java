@@ -4,6 +4,7 @@ public interface DataConstants {
 
   interface TableNames {
     String ACCOUNT_SETTINGS = "ACCOUNT_SETTINGS";
+    String DELETED_ACCOUNT_SETTINGS = "DELETED_ACCOUNT_SETTINGS";
     String FX_RATE_OVERRIDES = "FX_RATE_OVERRIDES";
     String STATIC_ROUTES = "STATIC_ROUTES";
   }
@@ -23,6 +24,9 @@ public interface DataConstants {
   interface IndexNames {
     // ACCOUNT_SETTINGS
     String ACCT_REL_IDX = "ACCT_REL_IDX";
+
+    // DELETED_ACCOUNT_SETTINGS
+    String DELETED_ACCT_REL_IDX = "DELETED_ACCT_REL_IDX";
 
     // FX_RATE_OVERRIDES
     String FX_RATE_OVERRIDES_IDX = "FX_RATE_OVERRIDES_IDX";

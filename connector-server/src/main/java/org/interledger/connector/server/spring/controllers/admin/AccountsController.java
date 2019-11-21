@@ -189,6 +189,16 @@ public class AccountsController {
       .orElseThrow(() -> new AccountNotFoundProblem(accountId));
   }
 
+  @RequestMapping(
+    path = PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID,
+    method = RequestMethod.DELETE,
+    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+  )
+  public ResponseEntity deleteAccountById(@PathVariable(PathConstants.ACCOUNT_ID) final AccountId accountId) {
+    this.accountManager.deleteByAccountId(accountId);
+    return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+  }
+
   private EntityModel<AccountSettings> toEntityModel(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
 
