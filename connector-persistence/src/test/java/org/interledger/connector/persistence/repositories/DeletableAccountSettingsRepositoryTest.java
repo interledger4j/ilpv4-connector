@@ -81,7 +81,7 @@ public class DeletableAccountSettingsRepositoryTest {
     private AccountSettingsEntityConverter accountSettingsConverter;
 
     @Bean
-    ObjectMapper objectMapper() {
+    protected ObjectMapper objectMapper() {
       return new ObjectMapper();
     }
 
