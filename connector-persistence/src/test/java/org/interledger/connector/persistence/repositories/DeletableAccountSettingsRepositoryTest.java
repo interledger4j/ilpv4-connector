@@ -86,7 +86,7 @@ public class DeletableAccountSettingsRepositoryTest {
     }
 
     @Bean
-    ConfigurableConversionService conversionService() {
+    protected ConfigurableConversionService conversionService() {
       ConfigurableConversionService conversionService = new DefaultConversionService();
       conversionService.addConverter(rateLimitSettingsEntityConverter);
       conversionService.addConverter(accountBalanceSettingsEntityConverter);
