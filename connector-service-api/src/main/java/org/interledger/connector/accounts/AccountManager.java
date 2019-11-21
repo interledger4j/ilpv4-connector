@@ -48,4 +48,10 @@ public interface AccountManager {
    */
   AccountSettings initializeParentAccountSettingsViaIlDcp(AccountId primaryParentAccountId);
 
+  /**
+   * Soft delete an account such that it's deleted from the main table but copied to a table recording deleted entries
+   * @param accountId The {@link AccountId} for the account to be soft deleted
+   */
+  void deleteByAccountId(AccountId accountId);
+
 }

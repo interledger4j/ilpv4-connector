@@ -6,8 +6,10 @@ import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.links.LinkSettingsValidator;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.entities.DataConstants;
+import org.interledger.connector.persistence.entities.DeletedAccountSettingsEntity;
 import org.interledger.connector.persistence.entities.SettlementEngineDetailsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.persistence.repositories.DeletedAccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.ModifiableConnectorSettings;
 import org.interledger.connector.settlement.SettlementEngineClient;
@@ -28,8 +30,10 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -41,6 +45,7 @@ public class DefaultAccountManager implements AccountManager {
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final AccountSettingsRepository accountSettingsRepository;
+  private final DeletedAccountSettingsRepository deletedAccountSettingsRepository;
   private final LinkManager linkManager;
   private final ConversionService conversionService;
   private final SettlementEngineClient settlementEngineClient;
@@ -54,11 +59,13 @@ public class DefaultAccountManager implements AccountManager {
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final ConversionService conversionService,
     final AccountSettingsRepository accountSettingsRepository,
+    final DeletedAccountSettingsRepository deletedAccountSettingsRepository,
     final LinkManager linkManager,
     final SettlementEngineClient settlementEngineClient,
     LinkSettingsFactory linkSettingsFactory, LinkSettingsValidator linkSettingsValidator) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
+    this.deletedAccountSettingsRepository = Objects.requireNonNull(deletedAccountSettingsRepository);
     this.linkManager = Objects.requireNonNull(linkManager);
     this.conversionService = Objects.requireNonNull(conversionService);
     this.settlementEngineClient = Objects.requireNonNull(settlementEngineClient);
@@ -239,5 +246,16 @@ public class DefaultAccountManager implements AccountManager {
     );
 
     return conversionService.convert(updatedAccountSettings, AccountSettings.class);
+  }
+
+  @Override
+  @Transactional
+  public void deleteByAccountId(AccountId accountId) {
+    Optional<AccountSettingsEntity> entity = accountSettingsRepository.findByAccountId(accountId);
+    if (!entity.isPresent()) {
+      throw new AccountNotFoundProblem(accountId);
+    }
+    deletedAccountSettingsRepository.save(new DeletedAccountSettingsEntity(entity.get()));
+    accountSettingsRepository.delete(entity.get());
   }
 }

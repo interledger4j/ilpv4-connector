@@ -131,6 +131,45 @@ public class AccountSettingsSpringBootTest {
   }
 
   @Test
+  public void testDelete() {
+    final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
+    AccountSettings settings = AccountSettings.builder()
+      .accountId(accountId)
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(LoopbackLink.LINK_TYPE)
+      .createdAt(Instant.now())
+      .build();
+
+    AccountSettings response = assertPostAccount(settings, HttpStatus.CREATED);
+    assertThat(response).isEqualTo(settings);
+    Optional<ImmutableAccountSettings> retrieved = getAccount(accountId.value());
+    assertThat(retrieved).isNotEmpty().get()
+      .extracting("accountId", "assetCode")
+      .containsExactly(settings.accountId(), settings.assetCode());
+
+    ResponseEntity<String> deleteResponse = deleteAccount(accountId.value());
+    assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+    retrieved = getAccount(accountId.value());
+    assertThat(retrieved).isEmpty();
+  }
+
+  @Test
+  public void testDeleteUnknown404s() {
+    String accountId = UUID.randomUUID().toString();
+    ResponseEntity<String> deleteResponse = deleteAccount(accountId);
+
+    JsonContentAssert assertJson = assertThat(jsonTester.from(deleteResponse.getBody()));
+    assertJson.extractingJsonPathValue("status").isEqualTo(404);
+    assertJson.extractingJsonPathValue("title").isEqualTo("Account Not Found (`" + accountId + "`)");
+    assertJson.extractingJsonPathValue("accountId").isEqualTo(accountId);
+    assertJson.extractingJsonPathValue("type")
+      .isEqualTo("https://errors.interledger.org/accounts/account-not-found");
+  }
+
+  @Test
   public void testFullyPopulatedCreate() {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     final AccountSettings settings = constructFullyPopulatedAccountSettings(accountId);
@@ -310,6 +349,14 @@ public class AccountSettingsSpringBootTest {
     }
     fail("Expected failure");
     return "not reachable";
+  }
+
+  private ResponseEntity<String> deleteAccount(String accountId) {
+    return adminClient.deleteAccount(baseURI, accountId);
+  }
+
+  private Optional<ImmutableAccountSettings> getAccount(String accountId) {
+    return adminClient.findAccount(baseURI, accountId);
   }
 
   private ImmutableAccountSettings constructFullyPopulatedAccountSettings(final AccountId accountId) {
