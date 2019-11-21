@@ -54,6 +54,7 @@ import org.interledger.connector.packetswitch.filters.ValidateFulfillmentPacketF
 import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.persistence.repositories.DeletedAccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
 import org.interledger.connector.routing.ChildAccountPaymentRouter;
@@ -143,6 +144,9 @@ public class SpringConnectorConfig {
   @Autowired
   @Lazy
   private ExternalRoutingService externalRoutingService;
+
+  @Autowired
+  private DeletedAccountSettingsRepository deletedAccountSettingsRepository;
 
   /**
    * All internal Connector events propagate locally in this JVM using this EventBus.
@@ -259,7 +263,8 @@ public class SpringConnectorConfig {
     LinkSettingsValidator linkSettingsValidator
   ) {
     return new DefaultAccountManager(
-      connectorSettingsSupplier, conversionService, accountSettingsRepository, linkManager, settlementEngineClient,
+      connectorSettingsSupplier, conversionService, accountSettingsRepository, deletedAccountSettingsRepository,
+      linkManager, settlementEngineClient,
       linkSettingsFactory,
       linkSettingsValidator);
   }
