@@ -23,7 +23,6 @@ redis:
   host: localhost
   port: 36379
 
-# FIXME remove
 interledger:
   connector:
     pubsub:
