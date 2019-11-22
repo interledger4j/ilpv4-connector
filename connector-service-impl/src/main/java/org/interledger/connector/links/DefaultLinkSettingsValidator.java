@@ -44,7 +44,7 @@ public class DefaultLinkSettingsValidator implements LinkSettingsValidator {
       validate(getOrCreateEncryptedSecret(linkSettings.incomingHttpLinkSettings().encryptedTokenSharedSecret()));
 
     EncryptedSecret outgoingSecret =
-      validate(getOrCreateEncryptedSecret(linkSettings.incomingHttpLinkSettings().encryptedTokenSharedSecret()));
+      validate(getOrCreateEncryptedSecret(linkSettings.outgoingHttpLinkSettings().encryptedTokenSharedSecret()));
 
     IncomingLinkSettings incomingLinkSettings =
       IncomingLinkSettings.builder().from(linkSettings.incomingHttpLinkSettings())

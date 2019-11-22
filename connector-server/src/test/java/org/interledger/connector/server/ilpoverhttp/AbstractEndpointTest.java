@@ -54,18 +54,7 @@ public abstract class AbstractEndpointTest {
 
   protected AccountSettings createAccount(AccountId accountId, String sharedSecret) {
     // Add the Bob Account to the Connector.
-    final Map<String, Object> customSettings = Maps.newHashMap();
-    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE.name());
-    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, "https://bob.example.com/");
-    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
-    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, sharedSecret);
-
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE.name());
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_AUDIENCE, "https://bob.example.com/");
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, "connie");
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, sharedSecret);
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://bob.example.com");
+    final Map<String, Object> customSettings = customSettings(sharedSecret);
 
     final AccountSettings accountSettings = AccountSettings.builder()
       .accountId(accountId)
@@ -81,6 +70,28 @@ public abstract class AbstractEndpointTest {
     return result.getBody();
   }
 
+  protected AccountSettings updateSharedSecret(AccountSettings settings, String newSharedSecret) {
+    AccountSettings toUpdate = AccountSettings.builder().from(settings)
+      .customSettings(customSettings(newSharedSecret))
+      .build();
+    return adminClient.updateAccount(baseURI(), settings.accountId().value(), toUpdate);
+  }
+
+  private Map<String, Object> customSettings(String sharedSecret) {
+    final Map<String, Object> customSettings = Maps.newHashMap();
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE.name());
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, "https://bob.example.com/");
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, sharedSecret);
+
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE.name());
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_AUDIENCE, "https://bob.example.com/");
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, "connie");
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, sharedSecret);
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://bob.example.com");
+    return customSettings;
+  }
 
   // wrapper method with "assert" in the name to appease coday
   protected void assertLink(IlpOverHttpLink simpleBearerLink) {
