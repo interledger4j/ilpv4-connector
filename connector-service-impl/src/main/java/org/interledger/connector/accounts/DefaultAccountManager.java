@@ -4,6 +4,8 @@ import org.interledger.codecs.ildcp.IldcpUtils;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.links.LinkSettingsValidator;
+import org.interledger.connector.persistence.entities.AccountBalanceSettingsEntity;
+import org.interledger.connector.persistence.entities.AccountRateLimitSettingsEntity;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.entities.DataConstants;
 import org.interledger.connector.persistence.entities.DeletedAccountSettingsEntity;
@@ -25,6 +27,7 @@ import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
 import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -32,9 +35,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * The default {@link AccountManager}.
@@ -74,13 +80,22 @@ public class DefaultAccountManager implements AccountManager {
   }
 
   @Override
-  public AccountSettingsRepository getAccountSettingsRepository() {
-    return accountSettingsRepository;
+  public LinkManager getLinkManager() {
+    return linkManager;
   }
 
   @Override
-  public LinkManager getLinkManager() {
-    return linkManager;
+  public Optional<AccountSettings> findAccountById(AccountId accountId) {
+    return accountSettingsRepository.findByAccountId(accountId)
+      .map(entity -> this.conversionService.convert(entity, AccountSettings.class));
+  }
+
+  @Override
+  public List<AccountSettings> getAccounts() {
+    return StreamSupport.stream(accountSettingsRepository.findAll().spliterator(), false)
+      .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
+      .map(entity -> this.conversionService.convert(entity, AccountSettings.class))
+      .collect(Collectors.toList());
   }
 
   @Override
@@ -140,7 +155,41 @@ public class DefaultAccountManager implements AccountManager {
     return returnableAccountSettings;
   }
 
-  private AccountSettings validateLinkSettings(AccountSettings accountSettings) {
+  @Override
+  public AccountSettings updateAccount(AccountId accountId, AccountSettings accountSettings) {
+    AccountSettings updatedSettings = validateLinkSettings(accountSettings);
+    return accountSettingsRepository.findByAccountId(accountId)
+      .map(entity -> {
+
+        // Ignore update accountId
+
+        entity.setAssetCode(updatedSettings.assetCode());
+        entity.setAssetScale(updatedSettings.assetScale());
+        entity.setAccountRelationship(updatedSettings.accountRelationship());
+        entity.setBalanceSettings(
+          new AccountBalanceSettingsEntity(updatedSettings.balanceSettings())
+        );
+        entity.setConnectionInitiator(updatedSettings.isConnectionInitiator());
+        entity.setDescription(updatedSettings.description());
+        entity.setCustomSettings(updatedSettings.customSettings());
+        entity.setIlpAddressSegment(updatedSettings.ilpAddressSegment());
+        entity.setInternal(updatedSettings.isInternal());
+        entity.setLinkType(updatedSettings.linkType());
+        entity.setMaximumPacketAmount(updatedSettings.maximumPacketAmount().map(UnsignedLong::bigIntegerValue));
+        entity.setRateLimitSettings(
+          new AccountRateLimitSettingsEntity(updatedSettings.rateLimitSettings())
+        );
+        entity.setReceiveRoutes(updatedSettings.isReceiveRoutes());
+        entity.setSendRoutes(updatedSettings.isSendRoutes());
+
+        return accountSettingsRepository.save(entity);
+      })
+      .map(entity -> this.conversionService.convert(entity, AccountSettings.class))
+      .orElseThrow(() -> new AccountNotFoundProblem(accountId));
+  }
+
+  @Override
+  public AccountSettings validateLinkSettings(AccountSettings accountSettings) {
     try {
       if (accountSettings.linkType().equals(IlpOverHttpLink.LINK_TYPE)) {
         IlpOverHttpLinkSettings ilpOverHttpLinkSettings =
@@ -171,7 +220,7 @@ public class DefaultAccountManager implements AccountManager {
         ConstraintViolationException cause = (ConstraintViolationException) e.getCause();
         if (cause.getConstraintName().contains(DataConstants.ConstraintNames.ACCOUNT_SETTINGS_SETTLEMENT_ENGINE)) {
           throw new AccountSettlementEngineAlreadyExistsProblem(accountSettingsEntity.getAccountId(),
-              accountSettingsEntity.getSettlementEngineDetailsEntity().getSettlementEngineAccountId());
+            accountSettingsEntity.getSettlementEngineDetailsEntity().getSettlementEngineAccountId());
         }
       }
       throw e;
@@ -193,7 +242,7 @@ public class DefaultAccountManager implements AccountManager {
     // It's fine to preemptively load from the data-store here because these settings will naturally be updated later
     // in this method.
     final AccountSettingsEntity parentAccountSettingsEntity =
-      getAccountSettingsRepository().safeFindByAccountId(accountId);
+      accountSettingsRepository.safeFindByAccountId(accountId);
 
     final Link<?> link = this.getLinkManager().getOrCreateLink(
       conversionService.convert(parentAccountSettingsEntity, AccountSettings.class)
@@ -239,7 +288,7 @@ public class DefaultAccountManager implements AccountManager {
 
     // Modify Account Settings by removing and re-creating the parent account.
     final AccountSettingsEntity updatedAccountSettings =
-      getAccountSettingsRepository().save(parentAccountSettingsEntity);
+      accountSettingsRepository.save(parentAccountSettingsEntity);
 
     logger.info(
       "IL-DCP Succeeded! Operator Address: `{}`", connectorSettingsSupplier.get().operatorAddress()

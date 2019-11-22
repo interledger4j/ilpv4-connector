@@ -8,12 +8,9 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.persistence.entities.AccountBalanceSettingsEntity;
-import org.interledger.connector.persistence.entities.AccountRateLimitSettingsEntity;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.connector.server.spring.settings.Redactor;
 
-import com.google.common.primitives.UnsignedLong;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
@@ -35,7 +32,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 /**
  * Allows an admin to operate on Accounts in this Connector.
@@ -100,12 +96,11 @@ public class AccountsController {
   public HttpEntity<PagedModel<EntityModel<AccountSettings>>> getAccounts() {
 
     // TODO: Add paging per https://github.com/sappenin/java-ilpv4-connector/issues/404
-    final List<EntityModel<AccountSettings>> accountSettingsResources =
-      StreamSupport.stream(this.accountManager.getAccountSettingsRepository().findAll().spliterator(), false)
-        .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
-        .map(redactor::redact)
-        .map(this::toEntityModel)
-        .collect(Collectors.toList());
+    final List<EntityModel<AccountSettings>> accountSettingsResources = accountManager.getAccounts()
+      .stream()
+      .map(redactor::redact)
+      .map(this::toEntityModel)
+      .collect(Collectors.toList());
 
     PagedModel<EntityModel<AccountSettings>> pagedCollectionModel = new PagedModel(
       accountSettingsResources,
@@ -131,8 +126,7 @@ public class AccountsController {
   public EntityModel<AccountSettings> getAccount(
     @PathVariable(PathConstants.ACCOUNT_ID) final AccountId accountId
   ) {
-    return accountManager.getAccountSettingsRepository().findByAccountId(accountId)
-      .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
+    return accountManager.findAccountById(accountId)
       .map(redactor::redact)
       .map(this::toEntityModel)
       .orElseThrow(() -> new AccountNotFoundProblem(accountId));
@@ -156,37 +150,7 @@ public class AccountsController {
     @PathVariable(PathConstants.ACCOUNT_ID) final AccountId accountId,
     @RequestBody final AccountSettings.AbstractAccountSettings accountSettings
   ) {
-
-    return accountManager.getAccountSettingsRepository().findByAccountId(accountId)
-      .map(entity -> {
-
-        // Ignore update accountId
-
-        entity.setAssetCode(accountSettings.assetCode());
-        entity.setAssetScale(accountSettings.assetScale());
-        entity.setAccountRelationship(accountSettings.accountRelationship());
-        entity.setBalanceSettings(
-          new AccountBalanceSettingsEntity(accountSettings.balanceSettings())
-        );
-        entity.setConnectionInitiator(accountSettings.isConnectionInitiator());
-        entity.setDescription(accountSettings.description());
-        entity.setCustomSettings(accountSettings.customSettings());
-        entity.setIlpAddressSegment(accountSettings.ilpAddressSegment());
-        entity.setInternal(accountSettings.isInternal());
-        entity.setLinkType(accountSettings.linkType());
-        entity.setMaximumPacketAmount(accountSettings.maximumPacketAmount().map(UnsignedLong::bigIntegerValue));
-        entity.setRateLimitSettings(
-          new AccountRateLimitSettingsEntity(accountSettings.rateLimitSettings())
-        );
-        entity.setReceiveRoutes(accountSettings.isReceiveRoutes());
-        entity.setSendRoutes(accountSettings.isSendRoutes());
-
-        return accountManager.getAccountSettingsRepository().save(entity);
-      })
-      .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
-      .map(redactor::redact)
-      .map(this::toEntityModel)
-      .orElseThrow(() -> new AccountNotFoundProblem(accountId));
+    return toEntityModel(redactor.redact(accountManager.updateAccount(accountId, accountSettings)));
   }
 
   @RequestMapping(

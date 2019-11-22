@@ -3,6 +3,9 @@ package org.interledger.connector.accounts;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 
+import java.util.List;
+import java.util.Optional;
+
 /**
  * <p>This manager provider higher-order logic surrouding accounts in a Connector. Generally, internal Connector
  * services will utilize an instance of {@link AccountSettingsRepository} directly for normal access to Account
@@ -12,19 +15,24 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 public interface AccountManager {
 
   /**
-   * Accessor for the Account Settings repository that stores all account settings for this connector, and enables
-   * access.
-   *
-   * @return The {@link AccountSettingsRepository}.
-   */
-  AccountSettingsRepository getAccountSettingsRepository();
-
-  /**
    * Accessor for the Link Manager operated by this Connector.
    *
    * @return The {@link LinkManager}.
    */
   LinkManager getLinkManager();
+
+  /**
+   * Find account by account id
+   * @param accountId lookup id
+   * @return account or empty if not found
+   */
+  Optional<AccountSettings> findAccountById(AccountId accountId);
+
+  /**
+   * Fetch all accounts from persistent store
+   * @return accounts
+   */
+  List<AccountSettings> getAccounts();
 
   /**
    * Create a new account in this connector by storing all account details into the persistent store. This method should
@@ -36,6 +44,15 @@ public interface AccountManager {
    * @throws AccountAlreadyExistsProblem if account already exists for account id
    */
   AccountSettings createAccount(AccountSettings accountSettings) throws AccountAlreadyExistsProblem;
+
+  AccountSettings updateAccount(AccountId accountId, AccountSettings accountSettings);
+
+  /**
+   * Validates link settings on account
+   * @param accountSettings settings to va
+   * @return
+   */
+  AccountSettings validateLinkSettings(AccountSettings accountSettings);
 
   /**
    * Helper method to initialize the parent account using IL-DCP. If this Connector is starting in `child` mode, it will
