@@ -222,6 +222,34 @@ paths:
       operationId: updateAccount
       summary: Update Account
       description: Update a Connector account.
+    delete:
+      tags:
+        - Accounts
+      parameters:
+        - name: account_id
+          schema:
+            type: string
+          in: path
+          required: true
+      responses:
+        '204':
+          description: Account was deleted successfully; no response body returned
+        '404':
+          content:
+            application/json:
+              examples:
+                Account not found.:
+                  value:
+                    accountId: foo
+                    type: 'https://errors.interledger.org/accounts/account-not-found'
+                    title: Account Not Found (`foo`)
+                    status: 404
+          description: Account not found
+      security:
+        - BASIC: []
+      operationId: deleteAccount
+      summary: Delete Account
+      description: Delete a Connector account.
   /routes:
     get:
       tags:
