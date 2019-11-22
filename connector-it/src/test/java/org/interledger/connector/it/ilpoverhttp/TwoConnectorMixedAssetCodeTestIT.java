@@ -1,6 +1,7 @@
 package org.interledger.connector.it.ilpoverhttp;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
@@ -33,7 +34,10 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Category(IlpOverHttp.class)
@@ -79,7 +83,7 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
   }
 
   @Before
-  public void setUp() {
+  public void setUp() throws IOException, TimeoutException {
     aliceConnector = this.getILPv4NodeFromGraph(getAliceConnectorAddress());
     // Note Bob's Connector's address is purposefully a child of Alice due to IL-DCP
     bobConnector = this.getILPv4NodeFromGraph(getBobConnectorAddress());
@@ -104,6 +108,10 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
     // to the ping account on Bob.
     assertThat(bobConnector.getBalanceTracker().balance(ALICE_ACCOUNT).netBalance()).isEqualTo(bobBalance.negate());
     assertThat(bobConnector.getBalanceTracker().balance(PING_ACCOUNT_ID).netBalance()).isEqualTo(bobBalance);
+
+    await().atMost(5, TimeUnit.SECONDS).until(() -> pubsubMessages.size() >= 2);
+
+    assertThat(pubsubMessages).hasSize(2);
   }
 
   /**
@@ -116,6 +124,8 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
 
     assertThat(response).isInstanceOf(InterledgerRejectPacket.class)
         .extracting("code").isEqualTo(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE);
+
+    assertThat(pubsubMessages).isEmpty();
   }
 
   @Override

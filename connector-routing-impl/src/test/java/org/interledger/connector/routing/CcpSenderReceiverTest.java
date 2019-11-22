@@ -467,7 +467,7 @@ public class CcpSenderReceiverTest {
     public InterledgerResponsePacket sendPacket(InterledgerPreparePacket preparePacket)
       throws InterledgerProtocolException {
       // For simulation purposes, we simply reach through into the other connector directly and place the
-      // preparePacket into it.
+      // outgoingPreparePacket into it.
       return this.remoteConnector.getLink().getLinkHandler().get().handleIncomingPacket(preparePacket);
     }
 

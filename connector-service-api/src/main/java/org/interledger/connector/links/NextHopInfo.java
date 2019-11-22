@@ -1,9 +1,10 @@
 package org.interledger.connector.links;
 
-import org.immutables.value.Value;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerPreparePacket;
+
+import org.immutables.value.Value;
 
 /**
  * A container that holds the next-hop packet (with a final destination) as well as the address of the next-hop account

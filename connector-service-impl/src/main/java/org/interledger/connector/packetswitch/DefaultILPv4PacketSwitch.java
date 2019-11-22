@@ -17,6 +17,7 @@ import org.interledger.link.LinkId;
 import org.interledger.link.PacketRejector;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,35 +42,36 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   private final AccountSettingsLoadingCache accountSettingsLoadingCache;
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
+  private final EventBus eventBus;
 
   /**
    * For testing purposes.
    */
   @VisibleForTesting
   protected DefaultILPv4PacketSwitch(
-      final List<PacketSwitchFilter> packetSwitchFilters,
-      final List<LinkFilter> linkFilters,
-      final LinkManager linkManager,
-      final NextHopPacketMapper nextHopPacketMapper,
-      final ConnectorExceptionHandler connectorExceptionHandler,
-      final AccountSettingsRepository accountSettingsRepository,
-      final PacketRejector packetRejector
-  ) {
+    final List<PacketSwitchFilter> packetSwitchFilters,
+    final List<LinkFilter> linkFilters,
+    final LinkManager linkManager,
+    final NextHopPacketMapper nextHopPacketMapper,
+    final ConnectorExceptionHandler connectorExceptionHandler,
+    final AccountSettingsRepository accountSettingsRepository,
+    final PacketRejector packetRejector,
+    EventBus eventBus) {
     this(
-        packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler, packetRejector,
-        new AccountSettingsLoadingCache(accountSettingsRepository)
-    );
+      packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler, packetRejector,
+      new AccountSettingsLoadingCache(accountSettingsRepository),
+      eventBus);
   }
 
   public DefaultILPv4PacketSwitch(
-      final List<PacketSwitchFilter> packetSwitchFilters,
-      final List<LinkFilter> linkFilters,
-      final LinkManager linkManager,
-      final NextHopPacketMapper nextHopPacketMapper,
-      final ConnectorExceptionHandler connectorExceptionHandler,
-      final PacketRejector packetRejector,
-      final AccountSettingsLoadingCache accountSettingsLoadingCache
-  ) {
+    final List<PacketSwitchFilter> packetSwitchFilters,
+    final List<LinkFilter> linkFilters,
+    final LinkManager linkManager,
+    final NextHopPacketMapper nextHopPacketMapper,
+    final ConnectorExceptionHandler connectorExceptionHandler,
+    final PacketRejector packetRejector,
+    final AccountSettingsLoadingCache accountSettingsLoadingCache,
+    EventBus eventBus) {
     this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
     this.linkFilters = Objects.requireNonNull(linkFilters);
     this.linkManager = Objects.requireNonNull(linkManager);
@@ -77,6 +79,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     this.connectorExceptionHandler = Objects.requireNonNull(connectorExceptionHandler);
     this.packetRejector = Objects.requireNonNull(packetRejector);
     this.accountSettingsLoadingCache = Objects.requireNonNull(accountSettingsLoadingCache);
+    this.eventBus = eventBus;
   }
 
   /**
@@ -87,11 +90,10 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
    * @param sourceAccountId             An {@link AccountId} for the account that received the {@code
    *                                    incomingSourcePreparePacket}.
    * @param incomingSourcePreparePacket The packet received from the inbound/source account.
-   *
    * @return An {@link InterledgerResponsePacket} as received from the outbound link.
    */
   public final InterledgerResponsePacket switchPacket(
-      final AccountId sourceAccountId, final InterledgerPreparePacket incomingSourcePreparePacket
+    final AccountId sourceAccountId, final InterledgerPreparePacket incomingSourcePreparePacket
   ) {
     Objects.requireNonNull(sourceAccountId);
     Objects.requireNonNull(incomingSourcePreparePacket);
@@ -99,31 +101,31 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     // The value stored in the Cache is the AccountSettings converted from the entity so we don't have to convert
     // on every ILPv4 packet switch.
     return this.accountSettingsLoadingCache.getAccount(sourceAccountId)
-        .map(accountSettings -> {
-          try {
-            return new DefaultPacketSwitchFilterChain(
-                packetSwitchFilters,
-                linkFilters,
-                linkManager,
-                nextHopPacketMapper,
-                accountSettingsLoadingCache // Necessary to load the 'next-hop' account.
-            ).doFilter(accountSettings, incomingSourcePreparePacket);
+      .map(accountSettings -> {
+        try {
+          return new DefaultPacketSwitchFilterChain(
+            packetSwitchFilters,
+            linkFilters,
+            linkManager,
+            nextHopPacketMapper,
+            accountSettingsLoadingCache, // Necessary to load the 'next-hop' account.
+            eventBus).doFilter(accountSettings, incomingSourcePreparePacket);
 
-          } catch (Exception e) {
-            logger.info("Rejecting packet. Reason: " + e.getMessage());
-            // Any rejections should be caught here, and returned as such....
-            return this.connectorExceptionHandler.handleException(sourceAccountId, incomingSourcePreparePacket, e);
-          }
-        })
-        .orElseThrow(() -> {
-          // REJECT due to no account...
-          return new InterledgerProtocolException(
-              packetRejector.reject(
-                  LinkId.of(sourceAccountId.value()),
-                  incomingSourcePreparePacket,
-                  InterledgerErrorCode.T00_INTERNAL_ERROR,
-                  String.format("No Account found: `%s`", sourceAccountId))
-          );
-        });
+        } catch (Exception e) {
+          logger.info("Rejecting packet. Reason: " + e.getMessage());
+          // Any rejections should be caught here, and returned as such....
+          return this.connectorExceptionHandler.handleException(sourceAccountId, incomingSourcePreparePacket, e);
+        }
+      })
+      .orElseThrow(() -> {
+        // REJECT due to no account...
+        return new InterledgerProtocolException(
+          packetRejector.reject(
+            LinkId.of(sourceAccountId.value()),
+            incomingSourcePreparePacket,
+            InterledgerErrorCode.T00_INTERNAL_ERROR,
+            String.format("No Account found: `%s`", sourceAccountId))
+        );
+      });
   }
 }

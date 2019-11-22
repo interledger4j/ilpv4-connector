@@ -1,7 +1,7 @@
 # These setting MUST be overridden in order for the docker-based Postgres and Redis ITs to work properly.
 spring:
   profiles:
-    include: migrate
+    include: migrate, gcp-pubsub, management
   datasource:
     url: jdbc:postgresql://localhost:35432/connector
     username: connector
@@ -13,6 +13,18 @@ spring:
         show_sql: true
         use_sql_comments: true
         format_sql: true
+  cloud:
+    gcp:
+      pubsub:
+        emulator-host: localhost:38085
+        project-id: integration-test
+
 redis:
   host: localhost
   port: 36379
+
+interledger:
+  connector:
+    pubsub:
+      topics:
+        fulfillment-event: ilp-fulfillment-event

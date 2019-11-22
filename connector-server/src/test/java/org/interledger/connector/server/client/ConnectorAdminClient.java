@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -35,6 +36,10 @@ public interface ConnectorAdminClient {
 
   @PostMapping(value = "/accounts", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
   ResponseEntity<ImmutableAccountSettings> createAccount(URI baseURL, @RequestBody AccountSettings accountSettings);
+
+  @PutMapping(value = "/accounts/{id}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+  ImmutableAccountSettings updateAccount(URI baseURL, @RequestParam("id") String accountId,
+                                         @RequestBody AccountSettings accountSettings);
 
   @GetMapping(value = "/accounts/{id}", produces = APPLICATION_JSON_VALUE)
   Optional<ImmutableAccountSettings> findAccount(URI baseURL, @RequestParam("id") String accountId);

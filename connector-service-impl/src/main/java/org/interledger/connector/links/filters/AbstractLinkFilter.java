@@ -39,10 +39,10 @@ public abstract class AbstractLinkFilter implements LinkFilter {
    * @param preparePacket The outgoing {@link InterledgerPreparePacket} that should be sent to the Link (this is the
    *                      packet adjusted by the packet-switch containing the proper units and expiry for the outbound
    *                      Link associated to this filter).
-   * @param errorCode     An {@link InterledgerErrorCode} describing why {@code preparePacket} was rejected.
-   * @param errorMessage  A {@link String} providing custom details for why {@code preparePacket} was rejected.
+   * @param errorCode     An {@link InterledgerErrorCode} describing why {@code outgoingPreparePacket} was rejected.
+   * @param errorMessage  A {@link String} providing custom details for why {@code outgoingPreparePacket} was rejected.
    *
-   * @return An {@link InterledgerRejectPacket} with information about why {@code preparePacket} was reject.
+   * @return An {@link InterledgerRejectPacket} with information about why {@code outgoingPreparePacket} was reject.
    */
   protected InterledgerRejectPacket reject(
       final AccountId accountId, final InterledgerPreparePacket preparePacket,
