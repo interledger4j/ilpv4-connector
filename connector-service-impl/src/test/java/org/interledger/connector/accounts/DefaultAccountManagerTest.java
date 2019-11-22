@@ -1,5 +1,7 @@
 package org.interledger.connector.accounts;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -16,7 +18,12 @@ import org.interledger.connector.persistence.repositories.DeletedAccountSettings
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.link.LinkType;
+import org.interledger.link.http.IlpOverHttpLink;
+import org.interledger.link.http.IlpOverHttpLinkSettings;
+import org.interledger.link.http.IncomingLinkSettings;
+import org.interledger.link.http.OutgoingLinkSettings;
 
+import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -113,6 +120,53 @@ public class DefaultAccountManagerTest {
     when(accountSettingsRepository.findByAccountId(accountId)).thenReturn(Optional.empty());
     expectedException.expect(AccountNotFoundProblem.class);
     accountManager.deleteByAccountId(accountId);
+  }
+
+  @Test
+  public void updateAccount() {
+    AccountId accountId = AccountId.of("lloyd");
+    LinkType linkType = IlpOverHttpLink.LINK_TYPE;
+
+    IlpOverHttpLinkSettings unvalidatedSettings = IlpOverHttpLinkSettings.builder()
+      .incomingHttpLinkSettings(mock(IncomingLinkSettings.class))
+      .outgoingHttpLinkSettings(mock(OutgoingLinkSettings.class))
+      .customSettings(ImmutableMap.of("foo", "bar"))
+      .build();
+
+    IlpOverHttpLinkSettings validatedSettings = IlpOverHttpLinkSettings.builder()
+      .incomingHttpLinkSettings(mock(IncomingLinkSettings.class))
+      .outgoingHttpLinkSettings(mock(OutgoingLinkSettings.class))
+      .customSettings(ImmutableMap.of("fizz", "buzz"))
+      .build();
+
+    final AccountSettings accountSettings = AccountSettings.builder()
+      .accountId(accountId)
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(linkType)
+      .accountRelationship(AccountRelationship.PEER)
+      .customSettings(unvalidatedSettings.getCustomSettings())
+      .build();
+    AccountSettingsEntity account = new AccountSettingsEntity(accountSettings);
+
+    final AccountSettings expectedUpdatedSettings = AccountSettings.builder()
+      .from(accountSettings)
+      .customSettings(validatedSettings.getCustomSettings())
+      .build();
+    AccountSettingsEntity expectedEntityToUpdate = new AccountSettingsEntity(expectedUpdatedSettings);
+
+    when(accountSettingsRepository.findByAccountId(accountId)).thenReturn(Optional.of(account));
+    when(accountSettingsRepository.save(
+      argThat((arg) -> arg.getCustomSettings().equals(validatedSettings.getCustomSettings()))))
+      .thenReturn(expectedEntityToUpdate);
+    when(linkSettingsValidator.validateSettings(unvalidatedSettings)).thenReturn(validatedSettings);
+    when(linkSettingsFactory.constructTyped(accountSettings)).thenReturn(unvalidatedSettings);
+    when(conversionService.convert(expectedEntityToUpdate, AccountSettings.class)).thenReturn(expectedUpdatedSettings);
+    AccountSettings updated = accountManager.updateAccount(accountId, accountSettings);
+
+    assertThat(updated).isEqualTo(expectedUpdatedSettings);
+    verify(accountSettingsRepository, times(1)).findByAccountId(accountId);
+    verify(accountSettingsRepository, times(1)).save(expectedEntityToUpdate);
   }
 
 }
