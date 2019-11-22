@@ -18,6 +18,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
@@ -210,6 +211,31 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       return UnsignedLong.valueOf(
         javaMoneyUtils.toInterledgerAmount(sourceAmount.with(destCurrencyConversion), destinationScale));
     }
+  }
+
+  /**
+   * FIXME this can be removed after we stop operating in shadow mode
+   * @param sourceAccountSettings
+   * @param destinationAccountSettings
+   * @param sourcePacket
+   * @return
+   */
+  public BigDecimal determineExchangeRate(final AccountSettings sourceAccountSettings,
+                                             final AccountSettings destinationAccountSettings,
+                                             final InterledgerPreparePacket sourcePacket) {
+    if (!this.addressUtils.isExternalForwardingAllowed(sourcePacket.getDestination())) {
+      return BigDecimal.ZERO;
+    }
+
+    final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.assetCode());
+    final int sourceScale = sourceAccountSettings.assetScale();
+    final MonetaryAmount sourceAmount =
+      javaMoneyUtils.toMonetaryAmount(sourceCurrencyUnit, sourcePacket.getAmount().bigIntegerValue(), sourceScale);
+
+    final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAccountSettings.assetCode());
+    final CurrencyConversion destCurrencyConversion = currencyConverter.apply(destinationCurrencyUnit);
+
+    return destCurrencyConversion.getExchangeRate(sourceAmount).getFactor().numberValue(BigDecimal.class);
   }
 
   @VisibleForTesting

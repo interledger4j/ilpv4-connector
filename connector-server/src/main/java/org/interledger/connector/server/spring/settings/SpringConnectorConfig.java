@@ -66,6 +66,7 @@ import org.interledger.connector.routing.InMemoryForwardingRoutingTable;
 import org.interledger.connector.routing.RouteBroadcaster;
 import org.interledger.connector.routing.RouteUpdate;
 import org.interledger.connector.routing.StaticRoutesManager;
+import org.interledger.connector.server.spring.gcp.GcpPubSubConfig;
 import org.interledger.connector.server.spring.settings.crypto.CryptoConfig;
 import org.interledger.connector.server.spring.settings.javamoney.JavaMoneyConfig;
 import org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration;
@@ -106,6 +107,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -129,7 +131,8 @@ import java.util.function.Supplier;
   CaffeineCacheConfig.class,
   RedisConfig.class, SettlementConfig.class, BalanceTrackerConfig.class,
   MetricsConfiguration.class,
-  SpringConnectorWebMvc.class
+  SpringConnectorWebMvc.class,
+  GcpPubSubConfig.class
 })
 public class SpringConnectorConfig {
 
@@ -324,18 +327,18 @@ public class SpringConnectorConfig {
 
   @Bean
   ExternalRoutingService externalRoutingService(
-      final EventBus eventBus,
-      final Supplier<ConnectorSettings> connectorSettingsSupplier,
-      final Decryptor decryptor,
-      final AccountSettingsRepository accountSettingsRepository,
-      final StaticRoutesRepository staticRoutesRepository,
-      final ChildAccountPaymentRouter childAccountPaymentRouter,
-      final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
-      final RouteBroadcaster routeBroadcaster
+    final EventBus eventBus,
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final Decryptor decryptor,
+    final AccountSettingsRepository accountSettingsRepository,
+    final StaticRoutesRepository staticRoutesRepository,
+    final ChildAccountPaymentRouter childAccountPaymentRouter,
+    final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
+    final RouteBroadcaster routeBroadcaster
   ) {
     return new InMemoryExternalRoutingService(
-        eventBus, connectorSettingsSupplier, decryptor, accountSettingsRepository, staticRoutesRepository,
-        childAccountPaymentRouter, outgoingRoutingTable, routeBroadcaster
+      eventBus, connectorSettingsSupplier, decryptor, accountSettingsRepository, staticRoutesRepository,
+      childAccountPaymentRouter, outgoingRoutingTable, routeBroadcaster
     );
   }
 
@@ -505,12 +508,13 @@ public class SpringConnectorConfig {
     NextHopPacketMapper nextHopPacketMapper,
     ConnectorExceptionHandler connectorExceptionHandler,
     PacketRejector packetRejector,
-    AccountSettingsLoadingCache accountSettingsLoadingCache
+    AccountSettingsLoadingCache accountSettingsLoadingCache,
+    EventBus eventBus
   ) {
     return new DefaultILPv4PacketSwitch(
       packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler,
-      packetRejector, accountSettingsLoadingCache
-    );
+      packetRejector, accountSettingsLoadingCache,
+      eventBus);
   }
 
   @Bean
@@ -553,6 +557,11 @@ public class SpringConnectorConfig {
   @Bean
   protected ConnectorKeys connectorKeys(Supplier<ConnectorSettings> connectorSettingsSupplier) {
     return connectorSettingsSupplier.get().keys();
+  }
+
+  @Bean
+  protected Clock clock() {
+    return Clock.systemDefaultZone();
   }
 
 }

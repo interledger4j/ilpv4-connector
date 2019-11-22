@@ -1,0 +1,17 @@
+interledger:
+  connector:
+    pubsub:
+      topics:
+        fulfillment-event: ilp-fulfillment-event
+
+
+spring:
+  cloud:
+    gcp:
+      pubsub:
+        enabled: true
+        ## must set project-id and credentials
+#        project-id: your-project-id
+#        credentials:
+#          encoded-key: your-base64-encoded-service-account-key-json
+
