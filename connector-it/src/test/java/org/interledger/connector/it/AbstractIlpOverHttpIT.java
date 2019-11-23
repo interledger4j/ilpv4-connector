@@ -6,16 +6,16 @@ import static org.interledger.connector.config.BalanceTrackerConfig.BALANCE_TRAC
 import static org.interledger.connector.core.ConfigConstants.ADMIN_PASSWORD;
 import static org.interledger.connector.core.ConfigConstants.DOT;
 import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__GLOBAL_ROUTING_SETTINGS__ROUTING_SECRET;
-import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__ENABLED;
-import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__FILENAME;
-import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__PASSWORD;
-import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__SECRET0_ALIAS;
-import static org.interledger.connector.core.ConfigConstants.INTERLEDGER__CONNECTOR__KEYSTORE__JKS__SECRET0_PASSWORD;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB;
 import static org.interledger.connector.it.topologies.AbstractTopology.PAUL;
 import static org.interledger.connector.it.topologies.AbstractTopology.PETER;
 import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
+import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_ENABLED;
+import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_FILENAME;
+import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_PASSWORD;
+import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS;
+import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD;
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.accounts.AccountId;
@@ -92,12 +92,12 @@ public abstract class AbstractIlpOverHttpIT {
 
     // Configure JKS Properly for test purposes
     // For dev/test purposes this is fine, but not for real use-cases. Use KMS instead.
-    System.setProperty(INTERLEDGER__CONNECTOR__KEYSTORE__JKS__ENABLED, "true");
-    System.setProperty(INTERLEDGER__CONNECTOR__KEYSTORE__JKS__FILENAME, "crypto/crypto.p12");
-    System.setProperty(INTERLEDGER__CONNECTOR__KEYSTORE__JKS__PASSWORD, "password");
+    System.setProperty(INTERLEDGER_CONNECTOR_KEYSTORE_JKS_ENABLED, "true");
+    System.setProperty(INTERLEDGER_CONNECTOR_KEYSTORE_JKS_FILENAME, "crypto/crypto.p12");
+    System.setProperty(INTERLEDGER_CONNECTOR_KEYSTORE_JKS_PASSWORD, "password");
     // For dev/test purposes this is fine, but not for real use-cases. Encrypt this value instead.
-    System.setProperty(INTERLEDGER__CONNECTOR__KEYSTORE__JKS__SECRET0_ALIAS, "secret0");
-    System.setProperty(INTERLEDGER__CONNECTOR__KEYSTORE__JKS__SECRET0_PASSWORD, "password");
+    System.setProperty(INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS, "secret0");
+    System.setProperty(INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD, "password");
     //A simulated routing secret, which is a seed used for generating routing table auth values. Represents the
     // plaintext value of `shh`, encrypted.
     System.setProperty(INTERLEDGER__CONNECTOR__GLOBAL_ROUTING_SETTINGS__ROUTING_SECRET,
