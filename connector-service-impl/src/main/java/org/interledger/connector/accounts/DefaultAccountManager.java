@@ -312,9 +312,14 @@ public class DefaultAccountManager implements AccountManager {
   }
 
   private void validateAccountIdFormat(AccountId accountId) {
-    Preconditions.checkArgument(!accountId.value().contains(":"), "Account id cannot contain a colon");
-    Preconditions.checkArgument(CharMatcher.ascii().matchesAllOf(accountId.value()),
-      "Account id must be ascii");
+    try {
+      Preconditions.checkArgument(!accountId.value().contains(":"), "Account id cannot contain a colon");
+      Preconditions.checkArgument(CharMatcher.ascii().matchesAllOf(accountId.value()),
+        "Account id must be ascii");
+    }
+    catch (IllegalArgumentException e) {
+      throw new InvalidAccountSettingsProblem(e.getMessage(), accountId);
+    }
   }
 
 }

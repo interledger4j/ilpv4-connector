@@ -170,9 +170,9 @@ public class JwtHs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
    * Validate the "test connection" method in the IL-DCP requestor created with an base64 encoded secret.
    */
   @Test
-  public void ildcpTestConnectionWithBase64Secret() {
+  public void ildcpTestConnectionWithPlainTextSecret() {
     AccountId accountId = AccountId.of("lisa");
-    createAccount(accountId, BASE64_SHH);
+    createAccount(accountId, "shh");
     IlpOverHttpLink link = ilpOverHttpLink(accountId);
     assertLink(link);
   }

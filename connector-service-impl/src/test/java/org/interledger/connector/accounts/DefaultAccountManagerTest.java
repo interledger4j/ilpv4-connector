@@ -137,7 +137,7 @@ public class DefaultAccountManagerTest {
       .accountRelationship(AccountRelationship.PEER)
       .build();
 
-    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expect(InvalidAccountSettingsProblem.class);
     expectedException.expectMessage("Account id cannot contain a colon");
     accountManager.createAccount(accountSettings);
   }
@@ -156,7 +156,7 @@ public class DefaultAccountManagerTest {
       .accountRelationship(AccountRelationship.PEER)
       .build();
 
-    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expect(InvalidAccountSettingsProblem.class);
     expectedException.expectMessage("Account id must be ascii");
     accountManager.createAccount(accountSettings);
   }

@@ -305,6 +305,21 @@ public class AccountSettingsSpringBootTest {
     assertPostAccountFailure(settings, HttpStatus.BAD_REQUEST);
   }
 
+  @Test
+  public void createWithColonInAccountIdFails() {
+    final AccountId accountId = AccountId.of("pepe:silvia");
+    AccountSettings settings = AccountSettings.builder()
+      .accountId(accountId)
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(LoopbackLink.LINK_TYPE)
+      .createdAt(Instant.now())
+      .build();
+
+    assertPostAccountFailure(settings, HttpStatus.BAD_REQUEST);
+  }
+
   /**
    * Verify API ignores unknown properties
    */

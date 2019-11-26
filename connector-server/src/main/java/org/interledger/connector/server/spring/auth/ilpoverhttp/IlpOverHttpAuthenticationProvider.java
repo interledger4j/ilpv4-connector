@@ -27,7 +27,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 
-import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -221,11 +220,11 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
 
   private static Optional<SimpleCredentials> getSimpleCredentials(byte[] token) {
     String tokenString = new String(token);
-    int tokenIndex = tokenString.lastIndexOf(":");
+    int tokenIndex = tokenString.indexOf(":");
     if (tokenIndex > 0) {
       return Optional.of(SimpleCredentials.builder()
           .principal(AccountId.of(tokenString.substring(0, tokenIndex).trim()))
-          .authToken(Base64.getDecoder().decode(tokenString.substring(tokenIndex+1).trim()))
+          .authToken(tokenString.substring(tokenIndex+1).trim().getBytes())
           .build());
     }
     return Optional.empty();

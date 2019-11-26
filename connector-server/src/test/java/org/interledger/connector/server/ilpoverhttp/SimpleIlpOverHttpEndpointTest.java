@@ -45,11 +45,6 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
 
   private static final String BAD_SECRET = Base64.getEncoder().encodeToString("pfft".getBytes());
 
-  private static final String ENCRYPTED_OH_HI =
-    "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADJ6Y6dG3Jp_PoeamK7Q4F5b-yuihjvEGejjIbYs68JLzHttuDCds";
-
-  private static final String BASE64_OH_HI = Base64.getEncoder().encodeToString("oh hi mark".getBytes());
-
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
 
@@ -70,33 +65,30 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
   public void ildcpTestConnectionWithEncryptedSecret() {
     String accountId = "bob_ross";
     createAccount(AccountId.of(accountId), ENCRYPTED_SHH);
-    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" + BASE64_SHH);
+    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":shh");
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     assertLink(simpleBearerLink);
-  }
-
-  @Test
-  public void ildcpTestConnectionFailsWithColonInAccountId() {
-    String accountId = "bob:ross";
-    expectedException.expect(IllegalArgumentException.class);
-    expectedException.expectMessage("Account id cannot contain a colon");
-    createAccount(AccountId.of(accountId), ENCRYPTED_SHH);
   }
 
   /**
    * Validate the "test connection" method in the IL-DCP requestor created with an base64 encoded secret.
    */
   @Test
-  public void ildcpTestConnectionWithBase64Secret() {
+  public void ildcpTestConnectionWithPlainTextSecret() {
     String accountId = "bob_marley";
-    AccountSettings settings = createAccount(AccountId.of(accountId), BASE64_SHH);
-    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" + BASE64_SHH);
+    String shh = "shh";
+    AccountSettings settings = createAccount(AccountId.of(accountId), shh);
+    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" + shh);
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     assertLink(simpleBearerLink);
 
-    updateSharedSecret(settings, BASE64_OH_HI);
+    String encrypted_oh_hi =
+      "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADJ6Y6dG3Jp_PoeamK7Q4F5b-yuihjvEGejjIbYs68JLzHttuDCds";
+    String plain_text_oh_hi = "oh hi mark";
+
+    updateSharedSecret(settings, plain_text_oh_hi);
     // send payment with new credentials
-    final IlpOverHttpLink anotherBearerLink = simpleBearerLink(ENCRYPTED_OH_HI, accountId + ":" + BASE64_OH_HI);
+    final IlpOverHttpLink anotherBearerLink = simpleBearerLink(encrypted_oh_hi, accountId + ":" + plain_text_oh_hi);
     anotherBearerLink.setLinkId(LinkId.of(accountId));
     assertLink(anotherBearerLink);
   }
@@ -107,7 +99,7 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
   @Test
   public void incorrectTokenCredentials() {
     String accountId = "alice_cooper";
-    createAccount(AccountId.of(accountId), BASE64_SHH);
+    createAccount(AccountId.of(accountId), "shh");
     final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" + BAD_SECRET);
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     expectedException.expect(LinkException.class);
