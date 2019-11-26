@@ -8,6 +8,8 @@ import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
 
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 
@@ -73,6 +75,7 @@ public class DefaultLinkSettingsValidator implements LinkSettingsValidator {
     if (Strings.isNullOrEmpty(sharedSecret)) {
       throw new IllegalArgumentException("sharedSecret cannot be empty");
     }
+    validateSharedSecretIsAscii(sharedSecret);
     if (sharedSecret.startsWith("enc:")) {
       return EncryptedSecret.fromEncodedValue(sharedSecret);
     } else {
@@ -93,6 +96,11 @@ public class DefaultLinkSettingsValidator implements LinkSettingsValidator {
       }
       return encryptedSecret;
     });
+  }
+
+  private void validateSharedSecretIsAscii(String sharedSecret) {
+    Preconditions.checkArgument(CharMatcher.ascii().matchesAllOf(sharedSecret),
+      "Shared secret must be ascii");
   }
 
 }

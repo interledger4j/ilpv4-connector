@@ -164,6 +164,15 @@ public class DefaultLinkSettingsValidatorTest {
     validator.validateSettings(linkSettings);
   }
 
+  @Test
+  public void sharedSecretFailsWhenNotAscii() {
+    String zalgoIsTonyThePonyHeComes = "ZA̡͊͠͝LGΌ ISͮ̂҉̯͈͕̹̘̱ TO͇̹̺ͅƝ̴ȳ̳ TH̘Ë͖́̉ ͠P̯͍̭O̚N̐Y̡ H̸̡̪̯ͨ͊̽̅̾̎Ȩ̬̩̾͛ͪ̈́̀́͘ ̶̧̨̱̹̭̯ͧ̾ͬC̷̙̲̝͖ͭ̏ͥͮ͟Oͮ͏̮̪̝͍M̲̖͊̒ͪͩͬ̚̚͜Ȇ̴̟̟͙̞ͩ͌͝S̨̥̫͎̭ͯ̿̔̀ͅ";
+    final IlpOverHttpLinkSettings linkSettings = newSettings(zalgoIsTonyThePonyHeComes, zalgoIsTonyThePonyHeComes);
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("Shared secret must be ascii");
+    validator.validateSettings(linkSettings);
+  }
+
   private IlpOverHttpLinkSettings newSettings(EncryptedSecret incomingSecret, EncryptedSecret outgoingSecret) {
     return newSettings(incomingSecret.encodedValue(), outgoingSecret.encodedValue());
   }
