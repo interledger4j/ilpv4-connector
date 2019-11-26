@@ -68,11 +68,19 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
    */
   @Test
   public void ildcpTestConnectionWithEncryptedSecret() {
-    String accountId = "bob:ross";
+    String accountId = "bob_ross";
     createAccount(AccountId.of(accountId), ENCRYPTED_SHH);
     final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" + BASE64_SHH);
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     assertLink(simpleBearerLink);
+  }
+
+  @Test
+  public void ildcpTestConnectionFailsWithColonInAccountId() {
+    String accountId = "bob:ross";
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("Account id cannot contain a colon");
+    createAccount(AccountId.of(accountId), ENCRYPTED_SHH);
   }
 
   /**
@@ -80,7 +88,7 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
    */
   @Test
   public void ildcpTestConnectionWithBase64Secret() {
-    String accountId = "bob:marley";
+    String accountId = "bob_marley";
     AccountSettings settings = createAccount(AccountId.of(accountId), BASE64_SHH);
     final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" + BASE64_SHH);
     simpleBearerLink.setLinkId(LinkId.of(accountId));
@@ -98,7 +106,7 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
    */
   @Test
   public void incorrectTokenCredentials() {
-    String accountId = "alice:cooper";
+    String accountId = "alice_cooper";
     createAccount(AccountId.of(accountId), BASE64_SHH);
     final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" + BAD_SECRET);
     simpleBearerLink.setLinkId(LinkId.of(accountId));

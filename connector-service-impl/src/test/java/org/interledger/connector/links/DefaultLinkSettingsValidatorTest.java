@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
-import static org.springframework.util.Base64Utils.decode;
 
 import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -69,9 +68,9 @@ public class DefaultLinkSettingsValidatorTest {
     when(decryptor.withDecrypted(eq(ENCRYPTED_OUTGOING_SECRET), any()))
       .thenAnswer((args) -> args.getArgument(1, Function.class).apply(OUTGOING_BASE_64.getBytes()));
 
-    when(mockConnectorEncryptionService.encryptWithAccountSettingsKey(decode(INCOMING_BASE_64.getBytes())))
+    when(mockConnectorEncryptionService.encryptWithAccountSettingsKey(INCOMING_BASE_64.getBytes()))
       .thenReturn(ENCRYPTED_INCOMING_SECRET);
-    when(mockConnectorEncryptionService.encryptWithAccountSettingsKey(decode(OUTGOING_BASE_64.getBytes())))
+    when(mockConnectorEncryptionService.encryptWithAccountSettingsKey(OUTGOING_BASE_64.getBytes()))
       .thenReturn(ENCRYPTED_OUTGOING_SECRET);
 
     validator = new DefaultLinkSettingsValidator(mockConnectorEncryptionService, () -> connectorSettings);

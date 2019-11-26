@@ -13,8 +13,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -79,13 +77,7 @@ public class DefaultLinkSettingsValidator implements LinkSettingsValidator {
     if (sharedSecret.startsWith("enc:")) {
       return EncryptedSecret.fromEncodedValue(sharedSecret);
     } else {
-      byte[] secretBytes = null;
-      try {
-        secretBytes = Base64.getDecoder().decode(sharedSecret);
-        return encryptionService.encryptWithAccountSettingsKey(secretBytes);
-      } finally {
-        Arrays.fill(secretBytes, (byte) 0);
-      }
+      return encryptionService.encryptWithAccountSettingsKey(sharedSecret.getBytes());
     }
   }
 
