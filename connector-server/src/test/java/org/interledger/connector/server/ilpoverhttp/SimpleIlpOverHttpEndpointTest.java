@@ -4,6 +4,7 @@ import static org.interledger.connector.server.spring.settings.link.IlpOverHttpC
 
 import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.link.LinkId;
@@ -44,6 +45,11 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
 
   private static final String BAD_SECRET = Base64.getEncoder().encodeToString("pfft".getBytes());
 
+  private static final String ENCRYPTED_OH_HI =
+    "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADJ6Y6dG3Jp_PoeamK7Q4F5b-yuihjvEGejjIbYs68JLzHttuDCds";
+
+  private static final String BASE64_OH_HI = Base64.getEncoder().encodeToString("oh hi mark".getBytes());
+
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
 
@@ -75,10 +81,16 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
   @Test
   public void ildcpTestConnectionWithBase64Secret() {
     String accountId = "bob:marley";
-    createAccount(AccountId.of(accountId), BASE64_SHH);
+    AccountSettings settings = createAccount(AccountId.of(accountId), BASE64_SHH);
     final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" + BASE64_SHH);
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     assertLink(simpleBearerLink);
+
+    updateSharedSecret(settings, BASE64_OH_HI);
+    // send payment with new credentials
+    final IlpOverHttpLink anotherBearerLink = simpleBearerLink(ENCRYPTED_OH_HI, accountId + ":" + BASE64_OH_HI);
+    anotherBearerLink.setLinkId(LinkId.of(accountId));
+    assertLink(anotherBearerLink);
   }
 
   /**
