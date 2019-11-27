@@ -18,7 +18,6 @@ import org.interledger.connector.persistence.repositories.DeletedAccountSettings
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.link.LinkType;
-import org.interledger.link.LoopbackLink;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
@@ -121,44 +120,6 @@ public class DefaultAccountManagerTest {
     when(accountSettingsRepository.findByAccountId(accountId)).thenReturn(Optional.empty());
     expectedException.expect(AccountNotFoundProblem.class);
     accountManager.deleteByAccountId(accountId);
-  }
-
-  @Test
-  public void createAccountFailsWithColonInAccountId() {
-    AccountId accountId = AccountId.of("lloyd:harry");
-    LinkType linkType = LoopbackLink.LINK_TYPE;
-
-
-    final AccountSettings accountSettings = AccountSettings.builder()
-      .accountId(accountId)
-      .assetCode("XRP")
-      .assetScale(9)
-      .linkType(linkType)
-      .accountRelationship(AccountRelationship.PEER)
-      .build();
-
-    expectedException.expect(InvalidAccountSettingsProblem.class);
-    expectedException.expectMessage("Account id cannot contain a colon");
-    accountManager.createAccount(accountSettings);
-  }
-
-  @Test
-  public void createAccountFailsWithNonAsciiInAccountId() {
-    AccountId accountId = AccountId.of("ZA̡͊͠͝LGΌ̥̫͎̭ͯ̿̔̀ͅ");
-    LinkType linkType = LoopbackLink.LINK_TYPE;
-
-
-    final AccountSettings accountSettings = AccountSettings.builder()
-      .accountId(accountId)
-      .assetCode("XRP")
-      .assetScale(9)
-      .linkType(linkType)
-      .accountRelationship(AccountRelationship.PEER)
-      .build();
-
-    expectedException.expect(InvalidAccountSettingsProblem.class);
-    expectedException.expectMessage("Account id must be ascii");
-    accountManager.createAccount(accountSettings);
   }
 
   @Test
