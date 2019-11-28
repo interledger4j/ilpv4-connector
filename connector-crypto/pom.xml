@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.interledger.connector</groupId>
     <artifactId>connector-parent</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -15,6 +15,12 @@
   <description>
     Encryption, decryption, signing and verification services using various underlying key-stores.
   </description>
+
+  <scm>
+    <connection>scm:git:git://github.com/sappenin/java-ilp-connector.git</connection>
+    <url>scm:git:git@github.com:sappenin/java-ilpv4-connector.git</url>
+    <developerConnection>scm:git:git@github.com:sappenin/java-ilpv4-connector.git</developerConnection>
+  </scm>
 
   <dependencies>
     <dependency>
@@ -61,5 +67,16 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh-snapshots-interledger</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh-snapshots-interledger</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+    </repository>
+  </distributionManagement>
 
 </project>

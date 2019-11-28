@@ -12,11 +12,17 @@
 
   <groupId>org.interledger.connector</groupId>
   <artifactId>connector-parent</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.1.0</version>
   <packaging>pom</packaging>
 
   <name>Connector :: Parent</name>
   <description>The parent pom for this Connector.</description>
+
+  <scm>
+    <connection>scm:git:git://github.com/sappenin/java-ilp-connector.git</connection>
+    <url>scm:git:git@github.com:sappenin/java-ilpv4-connector.git</url>
+    <developerConnection>scm:git:git@github.com:sappenin/java-ilpv4-connector.git</developerConnection>
+  </scm>
 
   <properties>
     <!-- By default, we run in prod mode, unless a different profile is specified. -->
@@ -65,6 +71,31 @@
     <module>connector-it</module>
     <module>connector-fxrates</module>
   </modules>
+
+  <profiles>
+    <!-- Signing profile for signed distributions -->
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
   <dependencyManagement>
     <dependencies>
@@ -516,6 +547,19 @@
             </execution>
           </executions>
         </plugin>
+
+        <plugin>
+          <groupId>org.sonatype.plugins</groupId>
+          <artifactId>nexus-staging-maven-plugin</artifactId>
+          <version>1.6.8</version>
+          <extensions>true</extensions>
+          <configuration>
+            <serverId>ossrh-snapshots-interledger</serverId>
+            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+          </configuration>
+        </plugin>
+
       </plugins>
     </pluginManagement>
     <plugins>
@@ -556,6 +600,18 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.5.3</version>
+        <configuration>
+          <autoVersionSubmodules>true</autoVersionSubmodules>
+          <useReleaseProfile>false</useReleaseProfile>
+          <releaseProfiles>release</releaseProfiles>
+          <goals>deploy</goals>
+        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -633,6 +689,10 @@
       <id>ossrh-snapshots-interledger</id>
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
+    <repository>
+      <id>ossrh-snapshots-interledger</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+    </repository>
   </distributionManagement>
 
 </project>
