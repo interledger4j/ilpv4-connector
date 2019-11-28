@@ -12,7 +12,7 @@
 
   <groupId>org.interledger.connector</groupId>
   <artifactId>connector-crypto-cli</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>0.1.0-SNAPSHOT</version>
 
   <name>Connector :: Crypto :: CLI</name>
   <description>A CLI for crypto using using various keystore backends.</description>
@@ -132,6 +132,17 @@
             </dependency>
           </dependencies>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.5.3</version>
+          <configuration>
+            <autoVersionSubmodules>true</autoVersionSubmodules>
+            <useReleaseProfile>false</useReleaseProfile>
+            <releaseProfiles>release</releaseProfiles>
+            <goals>deploy</goals>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
@@ -183,7 +194,7 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>connector-crypto</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -224,4 +235,15 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh-snapshots-interledger</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh-snapshots-interledger</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+    </repository>
+  </distributionManagement>
 </project>
