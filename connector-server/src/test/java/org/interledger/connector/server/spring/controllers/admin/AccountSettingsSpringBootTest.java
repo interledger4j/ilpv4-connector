@@ -305,6 +305,44 @@ public class AccountSettingsSpringBootTest {
     assertPostAccountFailure(settings, HttpStatus.BAD_REQUEST);
   }
 
+  @Test
+  public void createWithColonInAccountIdFails() {
+    // write out actual json since otherwise account id validation fails
+    String json = "{" +
+      "\"accountId\":\"pepe:silvia\"," +
+      "\"createdAt\":\"+1000000000-12-31T23:59:59.999999999Z\"," +
+      "\"modifiedAt\":\"+1000000000-12-31T23:59:59.999999999Z\"," +
+      "\"description\":\"\"," +
+      "\"accountRelationship\":\"PEER\"," +
+      "\"assetCode\":\"USD\"," +
+      "\"assetScale\":\"2\"," +
+      "\"maximumPacketAmount\":null," +
+      "\"linkType\":\"LOOPBACK\"," +
+      "\"ilpAddressSegment\":\"bob\"," +
+      "\"connectionInitiator\":true," +
+      "\"internal\":false," +
+      "\"sendRoutes\":false," +
+      "\"receiveRoutes\":false," +
+      "\"balanceSettings\":{" +
+      "\"minBalance\":null," +
+      "\"settleThreshold\":null," +
+      "\"settleTo\":\"0\"" +
+      "}," +
+      "\"rateLimitSettings\":{" +
+      "\"maxPacketsPerSecond\":null" +
+      "}," +
+      "\"settlementEngineDetails\":null," +
+      "\"customSettings\":{}" +
+    "}";
+
+    try {
+      adminClient.createAccount(baseURI, json);
+      fail("Expected failure");
+    } catch (FeignException e) {
+      assertThat(e.status()).isEqualTo(400);
+    }
+  }
+
   /**
    * Verify API ignores unknown properties
    */

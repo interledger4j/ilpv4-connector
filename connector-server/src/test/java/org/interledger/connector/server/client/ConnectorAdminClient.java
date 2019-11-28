@@ -37,6 +37,9 @@ public interface ConnectorAdminClient {
   @PostMapping(value = "/accounts", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
   ResponseEntity<ImmutableAccountSettings> createAccount(URI baseURL, @RequestBody AccountSettings accountSettings);
 
+  @PostMapping(value = "/accounts", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+  ResponseEntity<ImmutableAccountSettings> createAccount(URI baseURL, @RequestBody String accountSettingsAsJson);
+
   @PutMapping(value = "/accounts/{id}", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
   ImmutableAccountSettings updateAccount(URI baseURL, @RequestParam("id") String accountId,
                                          @RequestBody AccountSettings accountSettings);
