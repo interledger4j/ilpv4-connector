@@ -27,6 +27,8 @@ import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
 import org.hibernate.exception.ConstraintViolationException;
@@ -101,6 +103,7 @@ public class DefaultAccountManager implements AccountManager {
   @Override
   public AccountSettings createAccount(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
+    validateAccountIdFormat(accountSettings.accountId());
 
     if (accountSettingsRepository.findByAccountId(accountSettings.accountId()).isPresent()) {
       throw new AccountAlreadyExistsProblem(accountSettings.accountId());
@@ -307,4 +310,16 @@ public class DefaultAccountManager implements AccountManager {
     deletedAccountSettingsRepository.save(new DeletedAccountSettingsEntity(entity.get()));
     accountSettingsRepository.delete(entity.get());
   }
+
+  private void validateAccountIdFormat(AccountId accountId) {
+    try {
+      Preconditions.checkArgument(!accountId.value().contains(":"), "Account id cannot contain a colon");
+      Preconditions.checkArgument(CharMatcher.ascii().matchesAllOf(accountId.value()),
+        "Account id must be ascii");
+    }
+    catch (IllegalArgumentException e) {
+      throw new InvalidAccountSettingsProblem(e.getMessage(), accountId);
+    }
+  }
+
 }

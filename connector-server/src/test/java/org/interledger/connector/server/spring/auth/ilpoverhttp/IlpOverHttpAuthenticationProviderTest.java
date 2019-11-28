@@ -35,7 +35,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.Base64;
 import java.util.Optional;
 
 @RunWith(SpringRunner.class)
@@ -45,7 +44,7 @@ import java.util.Optional;
 @ActiveProfiles("connector-unit-test")
 public class IlpOverHttpAuthenticationProviderTest {
 
-  private static final String SECRET = Base64.getEncoder().encodeToString("shh".getBytes());
+  private static final String SECRET = "shh";
   private static final String ENCRYPTED_SHH
     = "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=";
 

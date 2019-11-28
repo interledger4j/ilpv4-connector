@@ -1,11 +1,13 @@
 package org.interledger.connector.accounts;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.common.base.Preconditions;
-import org.immutables.value.Value;
 import org.interledger.connector.core.immutables.Wrapped;
 import org.interledger.connector.core.immutables.Wrapper;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Preconditions;
+import org.immutables.value.Value;
 
 import java.io.Serializable;
 
@@ -35,6 +37,20 @@ public class Ids {
       );
       return this;
     }
+
+    @Value.Check
+    public _AccountId enforceNoColons() {
+      Preconditions.checkArgument(!this.value().contains(":"), "Account id cannot contain a colon");
+      return this;
+    }
+
+    @Value.Check
+    public _AccountId enforceAscii() {
+      Preconditions.checkArgument(CharMatcher.ascii().matchesAllOf(this.value()),
+        "Account id must be ascii");
+      return this;
+    }
+
   }
 
   /**
@@ -58,6 +74,7 @@ public class Ids {
       );
       return this;
     }
+
   }
 
 }
