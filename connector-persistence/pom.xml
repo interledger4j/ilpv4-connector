@@ -56,7 +56,7 @@
   </build>
 
   <properties>
-    <org.postgresql.postgresql.version>42.2.8</org.postgresql.postgresql.version>
+    <org.postgresql.postgresql.version>42.2.9</org.postgresql.postgresql.version>
   </properties>
 
   <dependencies>
