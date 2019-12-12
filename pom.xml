@@ -337,7 +337,7 @@
         <groupId>org.awaitility</groupId>
         <artifactId>awaitility</artifactId>
         <scope>test</scope>
-        <version>3.1.6</version>
+        <version>4.0.1</version>
       </dependency>
       <dependency>
         <groupId>org.zalando</groupId>
