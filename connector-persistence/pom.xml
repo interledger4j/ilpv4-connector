@@ -19,7 +19,7 @@
         <plugin>
           <groupId>org.liquibase</groupId>
           <artifactId>liquibase-maven-plugin</artifactId>
-          <version>3.8.3</version>
+          <version>3.8.4</version>
           <dependencies>
             <dependency>
               <groupId>org.postgresql</groupId>
