@@ -26,6 +26,13 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <argLine>-Xmx1024m</argLine>
     <spring-shell.version>2.0.1.RELEASE</spring-shell.version>
+
+    <!-- org.jacoco:jacoco-maven-plugin -->
+    <jacoco.propertyName>argLine</jacoco.propertyName>
+
+    <!-- org.apache.maven.plugins:maven-checkstyle-plugin -->
+    <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
+    <checkstyle.violationSeverity>error</checkstyle.violationSeverity>
   </properties>
 
   <build>
@@ -44,19 +51,6 @@
           <!-- do not enable it, this will create a non standard jar and cause autoconfig to fail -->
           <executable>false</executable>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-        <version>3.2.1</version>
-        <executions>
-          <execution>
-            <id>attach-sources</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -89,6 +83,16 @@
             </manifest>
           </archive>
         </configuration>
+      </plugin>
+
+      <!-- org.apache.maven.plugins:maven-source-plugin -->
+      <plugin>
+        <artifactId>maven-source-plugin</artifactId>
+      </plugin>
+
+      <!-- org.apache.maven.plugins:maven-javadoc-plugin -->
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
       </plugin>
       <!-- org.sonatype.plugins:nexus-staging-maven-plugin -->
       <plugin>
@@ -159,9 +163,114 @@
             <autoReleaseAfterClose>true</autoReleaseAfterClose>
           </configuration>
         </plugin>
+
+        <!-- org.jacoco:jacoc-maven-plugin -->
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <version>0.8.4</version>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <executions>
+            <execution>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>report</id>
+              <phase>test</phase>
+              <goals>
+                <goal>report</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>pre-integration-test</id>
+              <phase>pre-integration-test</phase>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+              <configuration>
+                <destFile>${project.build.directory}/jacoco-it.exec</destFile>
+                <propertyName>failsafe.argLine</propertyName>
+              </configuration>
+            </execution>
+            <execution>
+              <id>integration test report</id>
+              <phase>post-integration-test</phase>
+              <goals>
+                <goal>report</goal>
+              </goals>
+              <configuration>
+                <dataFile>${project.build.directory}/jacoco-it.exec</dataFile>
+                <outputDirectory>${project.reporting.outputDirectory}/jacoco-it</outputDirectory>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!-- org.apache.maven.plugins:maven-source-plugin -->
+        <plugin>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>3.2.1</version>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <goals>
+                <goal>jar-no-fork</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!-- org.apache.maven.plugins:maven-javadoc-plugin -->
+        <plugin>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>3.1.0</version>
+          <configuration>
+            <excludes>
+              <exclude>**/generated-sources/**/*</exclude>
+            </excludes>
+            <source>8</source>
+            <doclint>none</doclint>
+          </configuration>
+          <executions>
+            <execution>
+              <id>attach-javadocs</id>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
+
       </plugins>
     </pluginManagement>
   </build>
+
+  <profiles>
+    <!-- Signing profile for signed distributions -->
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
   <dependencies>
     <dependency>
@@ -251,6 +360,54 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+
+  <reporting>
+    <plugins>
+
+      <!-- org.jacoco:jacoc-maven-plugin -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <inherited>false</inherited>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>report</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+
+      <!-- org.apache.maven.plugins:maven-checkstyle-plugin -->
+      <plugin>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <configuration>
+          <encoding>UTF-8</encoding>
+          <consoleOutput>true</consoleOutput>
+          <linkXRef>false</linkXRef>
+          <excludes>**/generated-sources/**/*,**/generated-test-sources/**/*</excludes>
+        </configuration>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>checkstyle</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+
+      <!-- org.apache.maven.plugins:maven-javadoc-plugin -->
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/generated-sources/**/*,**/generated-test-sources/**/*</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </reporting>
 
   <distributionManagement>
     <snapshotRepository>
