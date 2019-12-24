@@ -32,7 +32,7 @@
     <problem.version>0.23.0</problem.version>
     <problem-spring-web.version>0.25.2</problem-spring-web.version>
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
-    <spring-cloud.version>Hoxton.RELEASE</spring-cloud.version>
+    <spring-cloud.version>Hoxton.SR1</spring-cloud.version>
     <resilience4j.version>1.2.0</resilience4j.version>
     <moneta.version>1.3</moneta.version>
     <prometheus.version>0.8.0</prometheus.version>
@@ -325,7 +325,7 @@
       <dependency>
         <groupId>org.liquibase</groupId>
         <artifactId>liquibase-core</artifactId>
-        <version>3.8.3</version>
+        <version>3.8.4</version>
       </dependency>
       <dependency>
         <groupId>org.mockito</groupId>
@@ -505,6 +505,41 @@
           </executions>
         </plugin>
 
+        <!-- org.apache.maven.plugins:maven-source-plugin -->
+        <plugin>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>3.2.1</version>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <goals>
+                <goal>jar-no-fork</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!-- org.apache.maven.plugins:maven-javadoc-plugin -->
+        <plugin>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>3.1.1</version>
+          <configuration>
+            <excludes>
+              <exclude>**/generated-sources/**/*,**/generated-test-sources/**/*</exclude>
+            </excludes>
+            <source>8</source>
+            <doclint>none</doclint>
+          </configuration>
+          <executions>
+            <execution>
+              <id>attach-javadocs</id>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
         <!-- org.jacoco:jacoc-maven-plugin -->
         <plugin>
           <groupId>org.jacoco</groupId>
@@ -612,6 +647,16 @@
           <releaseProfiles>release</releaseProfiles>
           <goals>deploy</goals>
         </configuration>
+      </plugin>
+
+      <!-- org.apache.maven.plugins:maven-source-plugin -->
+      <plugin>
+        <artifactId>maven-source-plugin</artifactId>
+      </plugin>
+
+      <!-- org.apache.maven.plugins:maven-javadoc-plugin -->
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
       </plugin>
 
     </plugins>
