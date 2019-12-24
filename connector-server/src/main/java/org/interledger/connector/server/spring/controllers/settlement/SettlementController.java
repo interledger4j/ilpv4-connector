@@ -64,8 +64,8 @@ public class SettlementController {
    * <p>Note that the settlement engine MAY accrue incoming settlement acknowledgements without immediately informing
    * this Connector.</p>
    *
-   * <p>Caching Note: By setting {@link Cacheable#sync()} to true, this ensures that only one request will be able
-   * to populate the cache, thus maintaing our idempotence requirements.</p>
+   * <p>Caching Note: By setting `Cacheable.sync` to true, this ensures that only one request will be able
+   * to populate the cache, thus maintaining our idempotence requirements.</p>
    *
    * @param idempotencyKeyString      The idempotence identifier defined in the SE RFC (typed as a {@link String}, but
    *                                  should always be a Type4 UUID).
