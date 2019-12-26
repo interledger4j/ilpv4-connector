@@ -6,7 +6,6 @@ import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings;
 import org.interledger.connector.server.client.ConnectorAdminClient;
 import org.interledger.link.http.IlpOverHttpLink;
-import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
 
@@ -49,10 +48,7 @@ public abstract class AbstractEndpointTest {
     }
   }
 
-  protected AccountSettings createAccount(AccountId accountId, String sharedSecret) {
-    // Add the Bob Account to the Connector.
-    final Map<String, Object> customSettings = customSettings(sharedSecret);
-
+  protected AccountSettings createAccount(AccountId accountId, Map<String, Object> customSettings) {
     final AccountSettings accountSettings = AccountSettings.builder()
       .accountId(accountId)
       .description("HTTP account for Bob using a simple shared-secret")
@@ -67,23 +63,39 @@ public abstract class AbstractEndpointTest {
     return result.getBody();
   }
 
-  protected AccountSettings updateSharedSecret(AccountSettings settings, String newSharedSecret) {
+  protected AccountSettings updateJwtSharedSecret(AccountSettings settings, String newSharedSecret) {
     AccountSettings toUpdate = AccountSettings.builder().from(settings)
-      .customSettings(customSettings(newSharedSecret))
+      .customSettings(customSettingsJwtHs256(newSharedSecret))
       .build();
     return adminClient.updateAccount(baseURI(), settings.accountId().value(), toUpdate);
   }
 
-  private Map<String, Object> customSettings(String sharedSecret) {
-    final Map<String, Object> customSettings = Maps.newHashMap();
-    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE.name());
-    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, "https://bob.example.com/");
-    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
-    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, sharedSecret);
+  protected AccountSettings updateSimpleAuthToken(AccountSettings settings, String newSharedSecret) {
+    AccountSettings toUpdate = AccountSettings.builder().from(settings)
+      .customSettings(customSettingsSimple(newSharedSecret))
+      .build();
+    return adminClient.updateAccount(baseURI(), settings.accountId().value(), toUpdate);
+  }
 
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE.name());
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_AUDIENCE, "https://bob.example.com/");
+
+  protected Map<String, Object> customSettingsSimple(String authToken) {
+    final Map<String, Object> customSettings = Maps.newHashMap();
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, "SIMPLE");
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN, authToken);
+
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, "SIMPLE");
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SIMPLE_AUTH_TOKEN, authToken);
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://bob.example.com");
+    return customSettings;
+  }
+
+  protected Map<String, Object> customSettingsJwtHs256(String sharedSecret) {
+    final Map<String, Object> customSettings = Maps.newHashMap();
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, "JWT_HS_256");
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, sharedSecret);
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_SUBJECT, "connie");
+
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, "JWT_HS_256");
     customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, "connie");
     customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, sharedSecret);
     customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://bob.example.com");

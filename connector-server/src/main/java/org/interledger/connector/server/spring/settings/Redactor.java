@@ -15,7 +15,9 @@ public class Redactor {
   public static final String REDACTED = "[**REDACTED**]";
   private final Set<String> redactedSettings = Sets.newHashSet(
     IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET,
-    OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET
+    IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN,
+    OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET,
+    OutgoingLinkSettings.HTTP_OUTGOING_SIMPLE_AUTH_TOKEN
   );
 
   public AccountSettings redact(AccountSettings settings) {

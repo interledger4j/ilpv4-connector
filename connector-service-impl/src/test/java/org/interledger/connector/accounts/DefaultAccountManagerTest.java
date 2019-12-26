@@ -128,14 +128,14 @@ public class DefaultAccountManagerTest {
     LinkType linkType = IlpOverHttpLink.LINK_TYPE;
 
     IlpOverHttpLinkSettings unvalidatedSettings = IlpOverHttpLinkSettings.builder()
-      .incomingHttpLinkSettings(mock(IncomingLinkSettings.class))
-      .outgoingHttpLinkSettings(mock(OutgoingLinkSettings.class))
+      .incomingLinkSettings(mock(IncomingLinkSettings.class))
+      .outgoingLinkSettings(mock(OutgoingLinkSettings.class))
       .customSettings(ImmutableMap.of("foo", "bar"))
       .build();
 
     IlpOverHttpLinkSettings validatedSettings = IlpOverHttpLinkSettings.builder()
-      .incomingHttpLinkSettings(mock(IncomingLinkSettings.class))
-      .outgoingHttpLinkSettings(mock(OutgoingLinkSettings.class))
+      .incomingLinkSettings(mock(IncomingLinkSettings.class))
+      .outgoingLinkSettings(mock(OutgoingLinkSettings.class))
       .customSettings(ImmutableMap.of("fizz", "buzz"))
       .build();
 

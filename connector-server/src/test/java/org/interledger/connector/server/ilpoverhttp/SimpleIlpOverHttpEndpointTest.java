@@ -13,6 +13,7 @@ import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
+import org.interledger.link.http.SimpleAuthSettings;
 import org.interledger.link.http.auth.SimpleBearerTokenSupplier;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -64,7 +65,7 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
   @Test
   public void ildcpTestConnectionWithEncryptedSecret() {
     String accountId = "bob_ross";
-    createAccount(AccountId.of(accountId), ENCRYPTED_SHH);
+    createAccount(AccountId.of(accountId), customSettingsSimple(ENCRYPTED_SHH));
     final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":shh");
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     assertLink(simpleBearerLink);
@@ -77,7 +78,7 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
   public void ildcpTestConnectionWithPlainTextSecret() {
     String accountId = "bob_marley";
     String shh = "shh";
-    AccountSettings settings = createAccount(AccountId.of(accountId), shh);
+    AccountSettings settings = createAccount(AccountId.of(accountId), customSettingsSimple(shh));
     final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" + shh);
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     assertLink(simpleBearerLink);
@@ -86,7 +87,7 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
       "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADJ6Y6dG3Jp_PoeamK7Q4F5b-yuihjvEGejjIbYs68JLzHttuDCds";
     String plain_text_oh_hi = "oh hi mark";
 
-    updateSharedSecret(settings, plain_text_oh_hi);
+    updateSimpleAuthToken(settings, plain_text_oh_hi);
     // send payment with new credentials
     final IlpOverHttpLink anotherBearerLink = simpleBearerLink(encrypted_oh_hi, accountId + ":" + plain_text_oh_hi);
     anotherBearerLink.setLinkId(LinkId.of(accountId));
@@ -99,7 +100,7 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
   @Test
   public void incorrectTokenCredentials() {
     String accountId = "alice_cooper";
-    createAccount(AccountId.of(accountId), "shh");
+    createAccount(AccountId.of(accountId), customSettingsSimple("shh"));
     final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId + ":" + BAD_SECRET);
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     expectedException.expect(LinkException.class);
@@ -111,24 +112,19 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
 
     final OutgoingLinkSettings outgoingLinkSettings = OutgoingLinkSettings.builder()
       .authType(IlpOverHttpLinkSettings.AuthType.SIMPLE)
-      .tokenSubject("bob")
-      .tokenIssuer(HttpUrl.parse("https://bob.example.com/"))
-      .tokenAudience(HttpUrl.parse("https://n-a.example.com"))
       .url(HttpUrl.parse(template.getRootUri() + "/ilp"))
       // The is the encrypted variant of `shh`
-      .encryptedTokenSharedSecret(sharedSecret)
+      .simpleAuthSettings(SimpleAuthSettings.forAuthToken(sharedSecret))
       .build();
 
     final IncomingLinkSettings incomingLinkSettings = IncomingLinkSettings.builder()
-      .encryptedTokenSharedSecret(sharedSecret)
       .authType(IlpOverHttpLinkSettings.AuthType.SIMPLE)
-      .tokenIssuer(outgoingLinkSettings.tokenIssuer())
-      .tokenAudience(outgoingLinkSettings.tokenAudience())
+      .simpleAuthSettings(SimpleAuthSettings.forAuthToken(sharedSecret))
       .build();
 
     final IlpOverHttpLinkSettings linkSettings = IlpOverHttpLinkSettings.builder()
-      .incomingHttpLinkSettings(incomingLinkSettings)
-      .outgoingHttpLinkSettings(outgoingLinkSettings)
+      .incomingLinkSettings(incomingLinkSettings)
+      .outgoingLinkSettings(outgoingLinkSettings)
       .build();
 
     return new IlpOverHttpLink(

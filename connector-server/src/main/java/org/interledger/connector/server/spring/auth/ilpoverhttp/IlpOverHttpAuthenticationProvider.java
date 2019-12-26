@@ -10,14 +10,13 @@ import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
-import org.interledger.link.http.SharedSecretTokenSettings;
+import org.interledger.link.http.JwtAuthSettings;
 
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.spring.security.api.authentication.PreAuthenticatedAuthenticationJsonWebToken;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalListener;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.hash.HashCode;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.slf4j.Logger;
@@ -137,27 +136,6 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     return BearerAuthentication.class.isAssignableFrom(authentication);
   }
 
-  /**
-   * Decrypts the shared-secret from {@link SharedSecretTokenSettings#encryptedTokenSharedSecret()} and returns it as a
-   * byte-array.
-   *
-   * @param authPrincipal             An {@link AccountId} to decrypt a shared secret for.
-   * @param sharedSecretTokenSettings A {@link SharedSecretTokenSettings} to use while decrypting a shared secret.
-   * @return The actual underlying shared-secret.
-   */
-  @VisibleForTesting
-  protected final EncryptedSecret getIncomingSecret(
-      final AccountId authPrincipal, final SharedSecretTokenSettings sharedSecretTokenSettings
-  ) {
-    Objects.requireNonNull(authPrincipal);
-    Objects.requireNonNull(sharedSecretTokenSettings);
-
-    return Optional.of(sharedSecretTokenSettings)
-        .map(SharedSecretTokenSettings::encryptedTokenSharedSecret)
-        .map(EncryptedSecret::fromEncodedValue)
-        .orElseThrow(() -> new BadCredentialsException(String.format("No account found for `%s`", authPrincipal)));
-  }
-
   private AuthenticationDecision authenticateAsJwt(BearerAuthentication pendingAuth) {
     try {
 
@@ -167,7 +145,16 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
         throw new JWTDecodeException("jwt decoded to null. Value: " + new String(pendingAuth.getBearerToken()));
       }
       AccountId accountId = AccountId.of(jwt.getPrincipal().toString());
-      EncryptedSecret encryptedSecret = getIncomingSecret(accountId);
+      EncryptedSecret encryptedSecret = getIncomingLinkSettings(accountId)
+        .map(settings -> settings.jwtAuthSettings())
+        .orElseThrow(() ->
+          new IllegalStateException("No jwt auth settings for account id " + accountId.value()))
+        .map(JwtAuthSettings::encryptedTokenSharedSecret)
+        .orElseThrow(() ->
+          new IllegalStateException("No shared secret found for jwt auth settings for account id " + accountId.value()))
+        .map(secret -> EncryptedSecret.fromEncodedValue(secret))
+        .orElseThrow(() ->
+          new IllegalStateException("No incoming settings for account id " + accountId.value()));
 
       return decryptor.withDecrypted(encryptedSecret, decryptedSecret -> {
         Authentication authResult = new JwtHs256AuthenticationProvider(decryptedSecret)
@@ -192,12 +179,19 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       SimpleCredentials simpleCredentials = getSimpleCredentials(authentication.getBearerToken())
           .orElseThrow(() -> new BadCredentialsException("invalid simple auth credentials"));
 
-      EncryptedSecret encryptedSecret = getIncomingSecret(simpleCredentials.getPrincipal());
+      AccountId accountId = simpleCredentials.getPrincipal();
+      EncryptedSecret encryptedSecret = getIncomingLinkSettings(accountId)
+        .map(settings -> settings.simpleAuthSettings())
+        .orElseThrow(() ->
+          new IllegalStateException("No simple auth settings for account id " + accountId.value()))
+        .map(settings -> EncryptedSecret.fromEncodedValue(settings.authToken()))
+        .orElseThrow(() ->
+          new IllegalStateException("No incoming settings for account id " + accountId.value()));
 
       boolean isAuthenticated = decryptor.isEqualDecrypted(encryptedSecret, simpleCredentials.getAuthToken());
 
       return AuthenticationDecision.builder()
-          .principal(simpleCredentials.getPrincipal())
+          .principal(accountId)
           .credentialHmac(authentication.hmacSha256())
           .isAuthenticated(isAuthenticated)
           .build();
@@ -207,15 +201,14 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     return notAuthenticated();
   }
 
-  private EncryptedSecret getIncomingSecret(AccountId accountId) {
+  private Optional<IncomingLinkSettings> getIncomingLinkSettings(AccountId accountId) {
     final AccountSettings accountSettings =
         accountSettingsRepository.findByAccountIdWithConversion(accountId)
             .orElseThrow(() -> new AccountNotFoundProblem(accountId));
     final IlpOverHttpLinkSettings ilpOverHttpLinkSettings =
         Objects.requireNonNull(linkSettingsFactory).constructTyped(accountSettings);
 
-    final IncomingLinkSettings incomingLinkSettings = ilpOverHttpLinkSettings.incomingHttpLinkSettings();
-    return getIncomingSecret(accountId, incomingLinkSettings);
+    return ilpOverHttpLinkSettings.incomingLinkSettings();
   }
 
   private static Optional<SimpleCredentials> getSimpleCredentials(byte[] token) {
