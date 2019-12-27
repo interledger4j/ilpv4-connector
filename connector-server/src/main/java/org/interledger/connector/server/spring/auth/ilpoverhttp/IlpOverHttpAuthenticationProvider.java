@@ -11,14 +11,20 @@ import org.interledger.crypto.EncryptedSecret;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.JwtAuthSettings;
+import org.interledger.link.http.SimpleAuthSettings;
 
+import com.auth0.jwk.JwkProvider;
+import com.auth0.jwk.UrlJwkProvider;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.spring.security.api.authentication.PreAuthenticatedAuthenticationJsonWebToken;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.RemovalListener;
+import com.google.common.collect.Sets;
 import com.google.common.hash.HashCode;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
+import okhttp3.HttpUrl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -28,6 +34,7 @@ import org.springframework.security.core.AuthenticationException;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -62,7 +69,9 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
   private final Cache<HashCode, AuthenticationDecision> authenticationDecisions;
   private AccountSettingsRepository accountSettingsRepository;
   private LinkSettingsFactory linkSettingsFactory;
-
+  private Set<IlpOverHttpLinkSettings.AuthType> supportedJwtAuthTypes =
+    Sets.newHashSet(IlpOverHttpLinkSettings.AuthType.JWT_HS_256, IlpOverHttpLinkSettings.AuthType.JWT_RS_256);
+  private final LoadingCache<HttpUrl, JwkProvider> jwkProviderCache;
 
   public IlpOverHttpAuthenticationProvider(
       final Supplier<ConnectorSettings> connectorSettingsSupplier,
@@ -75,6 +84,11 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     this.linkSettingsFactory = linkSettingsFactory;
     Objects.requireNonNull(connectorSettingsSupplier);
     this.decryptor = Objects.requireNonNull(decryptor);
+
+    jwkProviderCache = Caffeine.newBuilder()
+      .recordStats()
+      .maximumSize(100)
+      .build((httpUrl) -> new UrlJwkProvider(httpUrl.url()));
 
     authenticationDecisions = Caffeine.newBuilder()
         .recordStats() // Publish stats to prometheus
@@ -145,33 +159,91 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
         throw new JWTDecodeException("jwt decoded to null. Value: " + new String(pendingAuth.getBearerToken()));
       }
       AccountId accountId = AccountId.of(jwt.getPrincipal().toString());
-      EncryptedSecret encryptedSecret = getIncomingLinkSettings(accountId)
-        .map(settings -> settings.jwtAuthSettings())
-        .orElseThrow(() ->
-          new IllegalStateException("No jwt auth settings for account id " + accountId.value()))
-        .map(JwtAuthSettings::encryptedTokenSharedSecret)
-        .orElseThrow(() ->
-          new IllegalStateException("No shared secret found for jwt auth settings for account id " + accountId.value()))
-        .map(secret -> EncryptedSecret.fromEncodedValue(secret))
-        .orElseThrow(() ->
-          new IllegalStateException("No incoming settings for account id " + accountId.value()));
 
-      return decryptor.withDecrypted(encryptedSecret, decryptedSecret -> {
-        Authentication authResult = new JwtHs256AuthenticationProvider(decryptedSecret)
-            .authenticate(jwt);
+      IncomingLinkSettings incomingLinkSettings = getIncomingLinkSettings(accountId)
+        .orElseThrow(() ->
+          missingJwtAuthSetting(accountId, "incoming settings"));
 
-        logger.debug("authenticationProvider returned with an AuthResult: {}", authResult.isAuthenticated());
+      if (!supportedJwtAuthTypes.contains(incomingLinkSettings.authType())) {
+        throw new IllegalStateException("JWT authentication not supported for auth type for incoming link with type "
+          + incomingLinkSettings.authType());
+      }
 
-        return AuthenticationDecision.builder()
-            .principal(accountId)
-            .isAuthenticated(authResult.isAuthenticated())
-            .credentialHmac(pendingAuth.hmacSha256())
-            .build();
-      });
+      JwtAuthSettings jwtAuthSettings = incomingLinkSettings.jwtAuthSettings()
+        .orElseThrow(() ->
+          missingJwtAuthSetting(accountId, "jwtAuthSettings"));
+
+      switch (incomingLinkSettings.authType()) {
+        case JWT_HS_256: {
+          return authenticateWithJwtHs256(pendingAuth, jwt, accountId, jwtAuthSettings);
+        }
+        case JWT_RS_256: {
+          return authenticateWithJwtRs256(pendingAuth, jwt, accountId, jwtAuthSettings);
+        }
+      }
     } catch (AccountNotFoundProblem | JWTDecodeException e) { // All other exceptions should be thrown!
       logger.debug(e.getMessage(), e);
     }
     return notAuthenticated();
+  }
+
+  private AuthenticationDecision authenticateWithJwtRs256(BearerAuthentication pendingAuth,
+                                                          PreAuthenticatedAuthenticationJsonWebToken jwt,
+                                                          AccountId accountId,
+                                                          JwtAuthSettings jwtAuthSettings) {
+    HttpUrl issuer = jwtAuthSettings.tokenIssuer()
+      .orElseThrow(() -> missingJwtAuthSetting(accountId, "jwtAuthSettings.tokenIssuer"));
+
+    HttpUrl jksUrl = new HttpUrl.Builder()
+      .scheme(issuer.scheme())
+      .host(issuer.host())
+      .addPathSegment(".well-known")
+      .addPathSegment("jwks.json")
+      .build();
+
+    JwtRs256Configuration configuration = JwtRs256Configuration.builder()
+      .audience(jwtAuthSettings.tokenAudience()
+        .orElseThrow(() -> missingJwtAuthSetting(accountId, "jwtAuthSettings.tokenAudience")))
+      .issuer(issuer)
+      .subject(jwtAuthSettings.tokenSubject())
+      .keyProvider(new JwkRsaPublicKeyProvider(jwkProviderCache.get(jksUrl))) // FIXME does this cache the JKS keys?
+      .build();
+
+    Authentication authResult = new JwtRs256AuthenticationProvider(configuration)
+      .authenticate(jwt);
+
+    return AuthenticationDecision.builder()
+      .principal(accountId)
+      .isAuthenticated(authResult.isAuthenticated())
+      .credentialHmac(pendingAuth.hmacSha256())
+      .build();
+  }
+
+  private AuthenticationDecision authenticateWithJwtHs256(BearerAuthentication pendingAuth,
+                                                          PreAuthenticatedAuthenticationJsonWebToken jwt,
+                                                          AccountId accountId,
+                                                          JwtAuthSettings jwtAuthSettings) {
+    EncryptedSecret encryptedSecret = jwtAuthSettings.encryptedTokenSharedSecret()
+      .map(secret -> EncryptedSecret.fromEncodedValue(secret))
+      .orElseThrow(() ->
+        missingJwtAuthSetting(accountId, "jwtAuthSettings.encryptedTokenSharedSecret"));
+
+    return decryptor.withDecrypted(encryptedSecret, decryptedSecret -> {
+      Authentication authResult = new JwtHs256AuthenticationProvider(decryptedSecret)
+        .authenticate(jwt);
+
+      logger.debug("authenticationProvider returned with an AuthResult: {}", authResult.isAuthenticated());
+
+      return AuthenticationDecision.builder()
+        .principal(accountId)
+        .isAuthenticated(authResult.isAuthenticated())
+        .credentialHmac(pendingAuth.hmacSha256())
+        .build();
+    });
+  }
+
+  private IllegalStateException missingJwtAuthSetting(AccountId accountId, String property) {
+    return new IllegalStateException("Missing " + property + " for account id " + accountId.value());
   }
 
   private AuthenticationDecision authenticateAsSimple(BearerAuthentication authentication) {
@@ -180,13 +252,20 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
           .orElseThrow(() -> new BadCredentialsException("invalid simple auth credentials"));
 
       AccountId accountId = simpleCredentials.getPrincipal();
-      EncryptedSecret encryptedSecret = getIncomingLinkSettings(accountId)
-        .map(settings -> settings.simpleAuthSettings())
+
+      IncomingLinkSettings incomingLinkSettings = getIncomingLinkSettings(accountId)
         .orElseThrow(() ->
-          new IllegalStateException("No simple auth settings for account id " + accountId.value()))
-        .map(settings -> EncryptedSecret.fromEncodedValue(settings.authToken()))
+          new BadCredentialsException("No incoming settings for account id " + accountId.value()));
+
+      if (!incomingLinkSettings.authType().equals(IlpOverHttpLinkSettings.AuthType.SIMPLE)) {
+        throw new BadCredentialsException("SIMPLE auth not configured for account id " + accountId.value());
+      }
+
+      SimpleAuthSettings simpleAuthSettings = incomingLinkSettings.simpleAuthSettings()
         .orElseThrow(() ->
-          new IllegalStateException("No incoming settings for account id " + accountId.value()));
+          new BadCredentialsException("No simple auth settings for account id " + accountId.value()));
+
+      EncryptedSecret encryptedSecret = EncryptedSecret.fromEncodedValue(simpleAuthSettings.authToken());
 
       boolean isAuthenticated = decryptor.isEqualDecrypted(encryptedSecret, simpleCredentials.getAuthToken());
 

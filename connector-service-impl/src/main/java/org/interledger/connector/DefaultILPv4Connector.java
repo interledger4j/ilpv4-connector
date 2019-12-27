@@ -7,14 +7,15 @@ import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
-import org.interledger.connector.routing.StaticRoutesManager;
 import org.interledger.connector.routing.ExternalRoutingService;
+import org.interledger.connector.routing.StaticRoutesManager;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.link.Link;
 import org.interledger.link.LinkFactoryProvider;
 import org.interledger.link.StatefulLink;
 import org.interledger.link.events.LinkConnectedEvent;
+import org.interledger.link.http.OutgoingLinkSettings;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
@@ -246,6 +247,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     // Connect any Links for accounts that are the connection initiator. Links that require an incoming and outgoing
     // connection will emit a LinkConnectedEvent when the incoming connection is connected.
     this.accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrueWithConversion().stream()
+      .filter(accountSettings -> accountSettings.customSettings().containsKey(OutgoingLinkSettings.HTTP_OUTGOING_URL))
       .map(linkManager::getOrCreateLink)
       .filter(link -> link instanceof StatefulLink)
       .map(link -> (StatefulLink) link)
