@@ -13,6 +13,7 @@ import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.JwtAuthSettings;
 import org.interledger.link.http.SimpleAuthSettings;
 
+import com.auth0.jwk.GuavaCachedJwkProvider;
 import com.auth0.jwk.JwkProvider;
 import com.auth0.jwk.UrlJwkProvider;
 import com.auth0.jwt.exceptions.JWTDecodeException;
@@ -88,7 +89,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     jwkProviderCache = Caffeine.newBuilder()
       .recordStats()
       .maximumSize(100)
-      .build((httpUrl) -> new UrlJwkProvider(httpUrl.url()));
+      .build((httpUrl) -> new GuavaCachedJwkProvider(new UrlJwkProvider(httpUrl.url())));
 
     authenticationDecisions = Caffeine.newBuilder()
         .recordStats() // Publish stats to prometheus
@@ -197,6 +198,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     HttpUrl jksUrl = new HttpUrl.Builder()
       .scheme(issuer.scheme())
       .host(issuer.host())
+      .port(issuer.port())
       .addPathSegment(".well-known")
       .addPathSegment("jwks.json")
       .build();
@@ -206,7 +208,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
         .orElseThrow(() -> missingJwtAuthSetting(accountId, "jwtAuthSettings.tokenAudience")))
       .issuer(issuer)
       .subject(jwtAuthSettings.tokenSubject())
-      .keyProvider(new JwkRsaPublicKeyProvider(jwkProviderCache.get(jksUrl))) // FIXME does this cache the JKS keys?
+      .keyProvider(new JwkRsaPublicKeyProvider(jwkProviderCache.get(jksUrl)))
       .build();
 
     Authentication authResult = new JwtRs256AuthenticationProvider(configuration)

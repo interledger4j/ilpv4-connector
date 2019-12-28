@@ -7,6 +7,7 @@ import org.interledger.connector.accounts.ImmutableAccountSettings;
 import org.interledger.connector.server.client.ConnectorAdminClient;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IncomingLinkSettings;
+import org.interledger.link.http.JwtAuthSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
 
 import com.google.common.collect.Maps;
@@ -99,6 +100,15 @@ public abstract class AbstractEndpointTest {
     customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, "connie");
     customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, sharedSecret);
     customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://bob.example.com");
+    return customSettings;
+  }
+
+  protected Map<String, Object> customSettingsJwtRs256(JwtAuthSettings jwtAuthSettings) {
+    final Map<String, Object> customSettings = Maps.newHashMap();
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, "JWT_RS_256");
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_SUBJECT, jwtAuthSettings.tokenSubject());
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, jwtAuthSettings.tokenIssuer().get().toString());
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, jwtAuthSettings.tokenAudience().get());
     return customSettings;
   }
 
