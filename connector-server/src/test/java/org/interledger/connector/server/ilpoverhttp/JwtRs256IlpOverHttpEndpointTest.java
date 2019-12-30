@@ -70,7 +70,9 @@ import java.util.Map;
 @ActiveProfiles( {"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 public class JwtRs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
 
-  public static final String WELL_KNOWN_JWKS_JSON = "/.well-known/jwks.json";
+  private static final String WELL_KNOWN_JWKS_JSON = "/.well-known/jwks.json";
+  private static final String HUGH = "hugh";
+  private static final String VIC = "vic";
 
   @Rule
   public WireMockRule wireMockRule = new WireMockRule(0);
@@ -104,22 +106,18 @@ public class JwtRs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
 
     configureJwksEndpoint();
 
-    ////////////////
-    // Add the Alice Account to the Connector.
-    ////////////////
-
-    if (!adminClient.findAccount(baseURI(), ALICE).isPresent()) {
+    if (!adminClient.findAccount(baseURI(), VIC).isPresent()) {
       final Map<String, Object> customSettings = Maps.newHashMap();
       customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, "JWT_RS_256 ");
       customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH);
       customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, "JWT_RS_256 ");
-      customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, CONNIE);
+      customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, VIC);
       customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH);
-      customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://alice.example.com");
+      customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://vic.example.com");
 
       final AccountSettings accountSettings = AccountSettings.builder()
-        .accountId(AccountId.of("alice"))
-        .description("Loopback account for Alice using a simple shared-secret")
+        .accountId(AccountId.of(VIC))
+        .description("Loopback account for Alice using a JWT_RS_256")
         .accountRelationship(AccountRelationship.PEER)
         .linkType(LoopbackLink.LINK_TYPE)
         .customSettings(customSettings)
@@ -129,20 +127,20 @@ public class JwtRs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
       adminClient.createAccount(baseURI(), accountSettings);
     }
 
-    if (!externalRoutingService.findBestNexHop(InterledgerAddress.of("test.connie.alice")).isPresent()) {
+    if (!externalRoutingService.findBestNexHop(InterledgerAddress.of("test.connie.vic")).isPresent()) {
       externalRoutingService.createStaticRoute(
           StaticRoute.builder()
-              .nextHopAccountId(AccountId.of("alice"))
-              .routePrefix(InterledgerAddressPrefix.of("test.connie.alice"))
+              .nextHopAccountId(AccountId.of("vic"))
+              .routePrefix(InterledgerAddressPrefix.of("test.connie.vic"))
               .build()
       );
     }
 
-    if (!externalRoutingService.findBestNexHop(InterledgerAddress.of("test.connie.bob")).isPresent()) {
+    if (!externalRoutingService.findBestNexHop(InterledgerAddress.of("test.connie.hugh")).isPresent()) {
       externalRoutingService.createStaticRoute(
           StaticRoute.builder()
-              .nextHopAccountId(AccountId.of("bob"))
-              .routePrefix(InterledgerAddressPrefix.of("test.connie.bob"))
+              .nextHopAccountId(AccountId.of("hugh"))
+              .routePrefix(InterledgerAddressPrefix.of("test.connie.hugh"))
               .build()
       );
     }
@@ -157,26 +155,26 @@ public class JwtRs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
   }
 
   /**
-   * Validate that Bob can send a packet to `alice` and get a fulfillment back. Since `alice` is operating a loopback
+   * Validate that Vic can send a packet to `hugh` and get a fulfillment back. Since `hugh` is operating a loopback
    * account, we always expect the {@link LoopbackLink#LOOPBACK_FULFILLMENT} to be returned, so we must make sure that
    * the prepare packets use the correct corresponding condition derived from that fulfillment.
    */
   @Test
-  public void bobPaysAliceUsingIlpOverHttp() {
+  public void hughPaysVicUsingIlpOverHttp() {
     ImmutableJwtAuthSettings authSettings = JwtAuthSettings.builder()
-      .tokenSubject("bob")
+      .tokenSubject(HUGH)
       .tokenAudience("foo")
       .tokenIssuer(HttpUrl.parse(wireMockRule.baseUrl()))
       .build();
-    createAccount(AccountId.of(BOB), customSettingsJwtRs256(
+    createAccount(AccountId.of(HUGH), customSettingsJwtRs256(
       authSettings
     ));
     String jwt = jwtServer.createJwt(authSettings, Instant.now().plusSeconds(30));
-    final IlpOverHttpLink ilpOverHttpLink = ilpOverHttpLink(AccountId.of(BOB), authSettings, jwt);
+    final IlpOverHttpLink ilpOverHttpLink = ilpOverHttpLink(AccountId.of(HUGH), authSettings, jwt);
 
     ilpOverHttpLink.sendPacket(
       InterledgerPreparePacket.builder()
-        .destination(InterledgerAddress.of("test.connie.alice"))
+        .destination(InterledgerAddress.of("test.connie.vic"))
         .amount(UnsignedLong.ONE)
         .expiresAt(Instant.now().plus(5, ChronoUnit.MINUTES))
         .executionCondition(LOOPBACK_FULFILLMENT.getCondition())

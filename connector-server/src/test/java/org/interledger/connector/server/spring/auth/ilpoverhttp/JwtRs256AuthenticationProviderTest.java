@@ -99,12 +99,63 @@ public class JwtRs256AuthenticationProviderTest {
   }
 
   @Test
-  public void authenticateFailsOnExpiredJwt() throws JsonProcessingException {
+  public void authenticateFailsOnExpiredJwt() {
     HttpUrl issuer = HttpUrl.parse(wireMockRule.baseUrl());
     JwtAuthSettings jwtAuthSettings = defaultAuthSettings(issuer);
     String expiredJwt = jwtServer.createJwt(jwtAuthSettings, Instant.now().minusSeconds(10));
 
     JwtRs256Configuration configuration = defaultJwtRs256Config(jwtAuthSettings);
+    PreAuthenticatedAuthenticationJsonWebToken jwtAuth =
+      PreAuthenticatedAuthenticationJsonWebToken.usingToken(expiredJwt);
+
+    expectedException.expect(BadCredentialsException.class);
+    new JwtRs256AuthenticationProvider(configuration).authenticate(jwtAuth);
+  }
+
+  @Test
+  public void authenticateFailsOnMismatchedSubject() {
+    HttpUrl issuer = HttpUrl.parse(wireMockRule.baseUrl());
+    JwtAuthSettings jwtAuthSettings = defaultAuthSettings(issuer);
+    String expiredJwt = jwtServer.createJwt(jwtAuthSettings, Instant.now().plusSeconds(10));
+
+    JwtAuthSettings differentSubject = JwtAuthSettings.builder().from(jwtAuthSettings)
+      .tokenSubject("different")
+      .build();
+    JwtRs256Configuration configuration = defaultJwtRs256Config(differentSubject);
+    PreAuthenticatedAuthenticationJsonWebToken jwtAuth =
+      PreAuthenticatedAuthenticationJsonWebToken.usingToken(expiredJwt);
+
+    expectedException.expect(BadCredentialsException.class);
+    new JwtRs256AuthenticationProvider(configuration).authenticate(jwtAuth);
+  }
+
+  @Test
+  public void authenticateFailsOnMismatchedAudience() {
+    HttpUrl issuer = HttpUrl.parse(wireMockRule.baseUrl());
+    JwtAuthSettings jwtAuthSettings = defaultAuthSettings(issuer);
+    String expiredJwt = jwtServer.createJwt(jwtAuthSettings, Instant.now().plusSeconds(10));
+
+    JwtAuthSettings differentAudience = JwtAuthSettings.builder().from(jwtAuthSettings)
+      .tokenAudience("different")
+      .build();
+    JwtRs256Configuration configuration = defaultJwtRs256Config(differentAudience);
+    PreAuthenticatedAuthenticationJsonWebToken jwtAuth =
+      PreAuthenticatedAuthenticationJsonWebToken.usingToken(expiredJwt);
+
+    expectedException.expect(BadCredentialsException.class);
+    new JwtRs256AuthenticationProvider(configuration).authenticate(jwtAuth);
+  }
+
+  @Test
+  public void authenticateFailsOnMismatchedIssuer() {
+    HttpUrl issuer = HttpUrl.parse(wireMockRule.baseUrl());
+    JwtAuthSettings jwtAuthSettings = defaultAuthSettings(issuer);
+    String expiredJwt = jwtServer.createJwt(jwtAuthSettings, Instant.now().plusSeconds(10));
+
+    JwtAuthSettings differentIssuer = JwtAuthSettings.builder().from(jwtAuthSettings)
+      .tokenIssuer(HttpUrl.parse("http://different.com"))
+      .build();
+    JwtRs256Configuration configuration = defaultJwtRs256Config(differentIssuer);
     PreAuthenticatedAuthenticationJsonWebToken jwtAuth =
       PreAuthenticatedAuthenticationJsonWebToken.usingToken(expiredJwt);
 
