@@ -192,7 +192,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
 
       // Incoming
       .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
-      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_SUBJECT, ALICE)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_SUBJECT, BOB)
       //.putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, BOB_TOKEN_ISSUER)
       //.putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, ALICE)
       .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
@@ -271,7 +271,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
 
       // Incoming
       .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
-      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_SUBJECT, BOB)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_SUBJECT, ALICE)
       //.putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, ALICE_TOKEN_ISSUER)
       //.putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, BOB)
       .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
