@@ -80,7 +80,7 @@ public abstract class AbstractTopology {
       .build();
   }
 
-  protected static Object createOutgoingLinkUrl(int port, AccountId accountId) {
+  protected static String createOutgoingLinkUrl(int port, AccountId accountId) {
     return "http://localhost:" + port + PathConstants.SLASH_ACCOUNTS + "/" + accountId.toString() + "/ilp";
   }
 

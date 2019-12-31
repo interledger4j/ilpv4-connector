@@ -90,7 +90,7 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
 
           // Add Paul's account on Alice (Paul is used for sending pings)
           final AccountSettings paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice(
-            paulAtAliceDenomination);
+            paulAtAliceDenomination, alicePort);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(paulAccountSettingsAtAlice);
 
           // Add Alice's account on Bob...
@@ -185,7 +185,7 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
    * An AccountSettings object that represents Paul's account at Alice. Since this account is only used to send, it does
    * not require any incoming connection settings.
    */
-  private static AccountSettings constructPaulAccountSettingsOnAlice(final Denomination denomination) {
+  private static AccountSettings constructPaulAccountSettingsOnAlice(final Denomination denomination, int alicePort) {
     return AccountSettings.builder()
       .accountId(PAUL_ACCOUNT)
       .description("ILP-over-HTTP sender account for Paul")
@@ -199,12 +199,12 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
       .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_SUBJECT, PAUL)
       .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
 
-      // Outgoing (dummy values since these are unused because the account never receives in this topology)
+      // Outgoing settings needed by testPing
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, PAUL)
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
       .putCustomSettings(
-        OutgoingLinkSettings.HTTP_OUTGOING_URL, createOutgoingLinkUrl(8080, PAUL_ACCOUNT)
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, createOutgoingLinkUrl(alicePort, PAUL_ACCOUNT)
       )
 
       .build();

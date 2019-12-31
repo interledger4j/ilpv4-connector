@@ -85,7 +85,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
           aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
 
           // Add Paul's account on Alice (Paul is used for sending pings)
-          final AccountSettings paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice();
+          final AccountSettings paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice(alicePort);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(paulAccountSettingsAtAlice);
 
           // Add Bob's account on Alice...
@@ -99,8 +99,8 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
           bobServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
 
           // Add Peter's account on Bob (Peter is used for sending pings)
-          final AccountSettings peterAccountSettingsAtAlice = constructPeterAccountSettingsOnBob();
-          bobServerNode.getILPv4Connector().getAccountManager().createAccount(peterAccountSettingsAtAlice);
+          final AccountSettings peterAccountSettingsAtBob = constructPeterAccountSettingsOnBob(bobPort);
+          bobServerNode.getILPv4Connector().getAccountManager().createAccount(peterAccountSettingsAtBob);
 
           // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
           // NOTE: The Connector configures a Ping Account properly but this Topology deletes all accounts above
@@ -323,8 +323,9 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
   /**
    * An AccountSettings object that represents Paul's account at Alice. Since this account is only used to send, it does
    * not require any incoming connection settings.
+   * @param alicePort
    */
-  private static AccountSettings constructPaulAccountSettingsOnAlice() {
+  private static AccountSettings constructPaulAccountSettingsOnAlice(int alicePort) {
     return AccountSettings.builder()
       .accountId(PAUL_ACCOUNT)
       .description("ILP-over-HTTP sender account for Paul")
@@ -338,12 +339,12 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
       .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_SUBJECT, PAUL)
       .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
 
-      // Outgoing (dummy values since these are unused because the account never receives in this topology)
+      // Outgoing settings needed by testPing
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, PAUL)
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
       .putCustomSettings(
-        OutgoingLinkSettings.HTTP_OUTGOING_URL, createOutgoingLinkUrl(8080, PAUL_ACCOUNT)
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, createOutgoingLinkUrl(alicePort, PAUL_ACCOUNT)
       )
 
       .build();
@@ -353,7 +354,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
    * An AccountSettings object that represents Paul's account at Alice. Since this account is only used to send, it does
    * not require any incoming connection settings.
    */
-  private static AccountSettings constructPeterAccountSettingsOnBob() {
+  private static AccountSettings constructPeterAccountSettingsOnBob(int bobPort) {
     return AccountSettings.builder()
       .accountId(PETER_ACCOUNT)
       .description("ILP-over-HTTP sender account for Peter")
@@ -367,12 +368,12 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
       .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_SUBJECT, PETER)
       .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
 
-      // Outgoing (dummy values since these are unused because the account never receives in this topology)
+      // Outgoing settings needed by testPing
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, PETER)
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
       .putCustomSettings(
-        OutgoingLinkSettings.HTTP_OUTGOING_URL, createOutgoingLinkUrl(8080, PETER_ACCOUNT)
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, createOutgoingLinkUrl(bobPort, PETER_ACCOUNT)
       )
 
       .build();
