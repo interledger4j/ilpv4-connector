@@ -75,11 +75,11 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
   private final LoadingCache<HttpUrl, JwkProvider> jwkProviderCache;
 
   public IlpOverHttpAuthenticationProvider(
-      final Supplier<ConnectorSettings> connectorSettingsSupplier,
-      final Decryptor decryptor,
-      final AccountSettingsRepository accountSettingsRepository,
-      final LinkSettingsFactory linkSettingsFactory,
-      final CacheMetricsCollector cacheMetrics
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final Decryptor decryptor,
+    final AccountSettingsRepository accountSettingsRepository,
+    final LinkSettingsFactory linkSettingsFactory,
+    final CacheMetricsCollector cacheMetrics
   ) {
     this.accountSettingsRepository = accountSettingsRepository;
     this.linkSettingsFactory = linkSettingsFactory;
@@ -92,22 +92,22 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       .build((httpUrl) -> new GuavaCachedJwkProvider(new UrlJwkProvider(httpUrl.url())));
 
     authenticationDecisions = Caffeine.newBuilder()
-        .recordStats() // Publish stats to prometheus
-        .maximumSize(5000)
-        // Expire after this duration, which will correspond to the last incoming request from the peer.
-        // TODO: This value should be configurable and match the server-global token expiry.
-        .expireAfterAccess(30, TimeUnit.MINUTES)
-        .removalListener((RemovalListener<HashCode, AuthenticationDecision>)
-            (authenticationRequest, authenticationDecision, cause) ->
-                logger.debug("Removing IlpOverHttp AuthenticationDecision from Cache for Principal: {}",
-                    authenticationDecision.getPrincipal()))
-        .build();
+      .recordStats() // Publish stats to prometheus
+      .maximumSize(5000)
+      // Expire after this duration, which will correspond to the last incoming request from the peer.
+      // TODO: This value should be configurable and match the server-global token expiry.
+      .expireAfterAccess(30, TimeUnit.MINUTES)
+      .removalListener((RemovalListener<HashCode, AuthenticationDecision>)
+        (authenticationRequest, authenticationDecision, cause) ->
+          logger.debug("Removing IlpOverHttp AuthenticationDecision from Cache for Principal: {}",
+            authenticationDecision.getPrincipal()))
+      .build();
     Objects.requireNonNull(cacheMetrics).addCache(AUTH_DECISIONS_CACHE_NAME, authenticationDecisions);
   }
 
   @Override
   public Authentication authenticate(Authentication authentication)
-      throws AuthenticationException {
+    throws AuthenticationException {
     try {
       if (authentication instanceof BearerAuthentication) {
         AuthenticationDecision result = authenticateBearer((BearerAuthentication) authentication);
@@ -120,6 +120,8 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
         logger.debug("Unsupported authentication type: " + authentication.getClass());
         return null;
       }
+    } catch (AccountNotFoundProblem e) {
+      throw new BadCredentialsException("Account not found for principal: " + authentication.getPrincipal());
     } catch (BadCredentialsException e) {
       throw e;
     } catch (Exception e) {
@@ -135,15 +137,23 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     // Cache this result and return it if an exception was encountered. Note that the authenticationRequest
     // always returns false for isAuthenticated, which is what we want here.
     return AuthenticationDecision.builder()
-        .credentialHmac(HashCode.fromBytes(new byte[32]))
-        .isAuthenticated(false)
-        .build();
+      .credentialHmac(HashCode.fromBytes(new byte[32]))
+      .isAuthenticated(false)
+      .build();
   }
 
   private AuthenticationDecision authenticateBearer(BearerAuthentication bearerAuth) {
-    return authenticationDecisions.get(bearerAuth.hmacSha256(), (request) ->
-        isSimple(bearerAuth.getBearerToken()) ? authenticateAsSimple(bearerAuth) :
-        authenticateAsJwt(bearerAuth));
+    return authenticationDecisions.get(bearerAuth.hmacSha256(), (request) -> {
+      AccountId accountId = bearerAuth.getAccountId();
+      IncomingLinkSettings incomingLinkSettings = getIncomingLinkSettings(accountId)
+        .orElseThrow(() -> new IllegalArgumentException("no incoming settings for " + accountId));
+
+      if (incomingLinkSettings.authType().equals(IlpOverHttpLinkSettings.AuthType.SIMPLE)) {
+        return authenticateAsSimple(bearerAuth, accountId, incomingLinkSettings);
+      } else {
+        return authenticateAsJwt(bearerAuth, accountId, incomingLinkSettings);
+      }
+    });
   }
 
   @Override
@@ -151,19 +161,17 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     return BearerAuthentication.class.isAssignableFrom(authentication);
   }
 
-  private AuthenticationDecision authenticateAsJwt(BearerAuthentication pendingAuth) {
+  private AuthenticationDecision authenticateAsJwt(BearerAuthentication pendingAuth,
+                                                   AccountId accountId,
+                                                   IncomingLinkSettings incomingLinkSettings) {
     try {
 
       PreAuthenticatedAuthenticationJsonWebToken jwt =
-          PreAuthenticatedAuthenticationJsonWebToken.usingToken(new String(pendingAuth.getBearerToken()));
+        PreAuthenticatedAuthenticationJsonWebToken.usingToken(new String(pendingAuth.getBearerToken()));
+
       if (jwt == null) {
         throw new JWTDecodeException("jwt decoded to null. Value: " + new String(pendingAuth.getBearerToken()));
       }
-      AccountId accountId = AccountId.of(jwt.getPrincipal().toString());
-
-      IncomingLinkSettings incomingLinkSettings = getIncomingLinkSettings(accountId)
-        .orElseThrow(() ->
-          missingJwtAuthSetting(accountId, "incoming settings"));
 
       if (!supportedJwtAuthTypes.contains(incomingLinkSettings.authType())) {
         throw new IllegalStateException("JWT authentication not supported for auth type for incoming link with type "
@@ -231,7 +239,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
         missingJwtAuthSetting(accountId, "jwtAuthSettings.encryptedTokenSharedSecret"));
 
     return decryptor.withDecrypted(encryptedSecret, decryptedSecret -> {
-      Authentication authResult = new JwtHs256AuthenticationProvider(decryptedSecret)
+      Authentication authResult = new JwtHs256AuthenticationProvider(jwtAuthSettings.tokenSubject(), decryptedSecret)
         .authenticate(jwt);
 
       logger.debug("authenticationProvider returned with an AuthResult: {}", authResult.isAuthenticated());
@@ -248,16 +256,12 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     return new IllegalStateException("Missing " + property + " for account id " + accountId.value());
   }
 
-  private AuthenticationDecision authenticateAsSimple(BearerAuthentication authentication) {
+  private AuthenticationDecision authenticateAsSimple(BearerAuthentication authentication,
+                                                      AccountId accountId,
+                                                      IncomingLinkSettings incomingLinkSettings) {
     try {
-      SimpleCredentials simpleCredentials = getSimpleCredentials(authentication.getBearerToken())
-          .orElseThrow(() -> new BadCredentialsException("invalid simple auth credentials"));
-
-      AccountId accountId = simpleCredentials.getPrincipal();
-
-      IncomingLinkSettings incomingLinkSettings = getIncomingLinkSettings(accountId)
-        .orElseThrow(() ->
-          new BadCredentialsException("No incoming settings for account id " + accountId.value()));
+      SimpleCredentials simpleCredentials =
+        getSimpleCredentials(authentication.getAccountId(), authentication.getBearerToken());
 
       if (!incomingLinkSettings.authType().equals(IlpOverHttpLinkSettings.AuthType.SIMPLE)) {
         throw new BadCredentialsException("SIMPLE auth not configured for account id " + accountId.value());
@@ -272,10 +276,10 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       boolean isAuthenticated = decryptor.isEqualDecrypted(encryptedSecret, simpleCredentials.getAuthToken());
 
       return AuthenticationDecision.builder()
-          .principal(accountId)
-          .credentialHmac(authentication.hmacSha256())
-          .isAuthenticated(isAuthenticated)
-          .build();
+        .principal(accountId)
+        .credentialHmac(authentication.hmacSha256())
+        .isAuthenticated(isAuthenticated)
+        .build();
     } catch (AccountNotFoundProblem e) { // All other exceptions should be thrown!
       logger.debug(e.getMessage(), e);
     }
@@ -284,29 +288,19 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
 
   private Optional<IncomingLinkSettings> getIncomingLinkSettings(AccountId accountId) {
     final AccountSettings accountSettings =
-        accountSettingsRepository.findByAccountIdWithConversion(accountId)
-            .orElseThrow(() -> new AccountNotFoundProblem(accountId));
+      accountSettingsRepository.findByAccountIdWithConversion(accountId)
+        .orElseThrow(() -> new AccountNotFoundProblem(accountId));
     final IlpOverHttpLinkSettings ilpOverHttpLinkSettings =
-        Objects.requireNonNull(linkSettingsFactory).constructTyped(accountSettings);
+      Objects.requireNonNull(linkSettingsFactory).constructTyped(accountSettings);
 
     return ilpOverHttpLinkSettings.incomingLinkSettings();
   }
 
-  private static Optional<SimpleCredentials> getSimpleCredentials(byte[] token) {
-    String tokenString = new String(token);
-    int tokenIndex = tokenString.indexOf(":");
-    if (tokenIndex > 0) {
-      return Optional.of(SimpleCredentials.builder()
-          .principal(AccountId.of(tokenString.substring(0, tokenIndex).trim()))
-          .authToken(tokenString.substring(tokenIndex+1).trim().getBytes())
-          .build());
-    }
-    return Optional.empty();
+  private static SimpleCredentials getSimpleCredentials(AccountId accountId, byte[] token) {
+    return SimpleCredentials.builder()
+      .principal(accountId)
+      .authToken(token)
+      .build();
   }
-
-  private static boolean isSimple(byte[] token) {
-    return new String(token).indexOf(":") > 0;
-  }
-
 
 }

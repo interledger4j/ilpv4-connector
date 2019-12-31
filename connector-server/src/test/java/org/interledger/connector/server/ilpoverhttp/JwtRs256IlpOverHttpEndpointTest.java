@@ -224,7 +224,7 @@ public class JwtRs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
       .jwtAuthSettings(
         authSettings
       )
-      .url(HttpUrl.parse(template.getRootUri() + "/ilp"))
+      .url(createAccountIlpUrl(template.getRootUri(), accountId))
       .build();
 
     final IlpOverHttpLinkSettings linkSettings = IlpOverHttpLinkSettings.builder()

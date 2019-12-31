@@ -31,27 +31,22 @@ public class JwtHs256AuthenticationProvider implements AuthenticationProvider {
   // TODO: Remove these once https://github.com/interledger/rfcs/pull/531 is closed.
   private final Optional<String> issuer;
   private final Optional<String>  audience;
+  private final String subject;
 
   private long leeway = 0L;
   private byte[] decryptedSharedSecret;
 
-  public JwtHs256AuthenticationProvider(byte[] decryptedSharedSecret) {
+  public JwtHs256AuthenticationProvider(String subject, byte[] decryptedSharedSecret) {
+    this.subject = subject;
     this.decryptedSharedSecret = decryptedSharedSecret;
     this.issuer = Optional.empty();
     this.audience = Optional.empty();
   }
 
-  public JwtHs256AuthenticationProvider(byte[] decryptedSharedSecret,
-                                        String issuer,
-                                        String audience) {
-    this.decryptedSharedSecret = decryptedSharedSecret;
-    this.issuer = Optional.of(issuer);
-    this.audience = Optional.of(audience);
-  }
-
   private static JWTVerifier providerForHS256(JwtHs256AuthenticationProvider provider) {
     Verification verifier = JWT.require(Algorithm.HMAC256(provider.decryptedSharedSecret))
         .acceptLeeway(provider.leeway);
+    verifier.withSubject(provider.subject);
     provider.issuer.ifPresent(verifier::withIssuer);
     provider.audience.ifPresent(verifier::withAudience);
     return verifier.build();

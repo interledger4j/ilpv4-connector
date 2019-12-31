@@ -6,6 +6,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.core.ConfigConstants;
+import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.link.PingLoopbackLink;
 
@@ -77,6 +78,10 @@ public abstract class AbstractTopology {
       .description("A receiver-like child account for collecting all Ping protocol revenues.")
       .linkType(PingLoopbackLink.LINK_TYPE)
       .build();
+  }
+
+  protected static Object createOutgoingLinkUrl(int port, AccountId accountId) {
+    return "http://localhost:" + port + PathConstants.SLASH_ACCOUNTS + "/" + accountId.toString() + "/ilp";
   }
 
   /**

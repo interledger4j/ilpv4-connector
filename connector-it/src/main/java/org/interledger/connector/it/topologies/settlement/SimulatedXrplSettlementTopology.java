@@ -9,7 +9,6 @@ import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.it.topology.nodes.ConnectorServerNode;
 import org.interledger.connector.routing.StaticRoute;
 import org.interledger.connector.server.ConnectorServer;
-import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.EnabledProtocolSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
@@ -205,7 +204,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_EXPIRY, EXPIRY_2MIN)
       .putCustomSettings(
-        OutgoingLinkSettings.HTTP_OUTGOING_URL, "http://localhost:" + bobPort + IlpHttpController.ILP_PATH
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, createOutgoingLinkUrl(bobPort, ALICE_ACCOUNT)
       )
 
       .build();
@@ -284,7 +283,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_EXPIRY, EXPIRY_2MIN)
       .putCustomSettings(
-        OutgoingLinkSettings.HTTP_OUTGOING_URL, "http://localhost:" + alicePort + IlpHttpController.ILP_PATH
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, createOutgoingLinkUrl(alicePort, BOB_ACCOUNT)
       )
 
       .build();
@@ -344,7 +343,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, PAUL)
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
       .putCustomSettings(
-        OutgoingLinkSettings.HTTP_OUTGOING_URL, ALICE_HTTP_BASE_URL + IlpHttpController.ILP_PATH
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, createOutgoingLinkUrl(8080, PAUL_ACCOUNT)
       )
 
       .build();
@@ -373,7 +372,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, PETER)
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
       .putCustomSettings(
-        OutgoingLinkSettings.HTTP_OUTGOING_URL, BOB_HTTP_BASE_URL + IlpHttpController.ILP_PATH
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, createOutgoingLinkUrl(8080, PETER_ACCOUNT)
       )
 
       .build();

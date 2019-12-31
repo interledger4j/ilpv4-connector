@@ -11,6 +11,7 @@ import org.interledger.link.http.JwtAuthSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
 
 import com.google.common.collect.Maps;
+import okhttp3.HttpUrl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.cloud.openfeign.EnableFeignClients;
@@ -64,13 +65,6 @@ public abstract class AbstractEndpointTest {
     return result.getBody();
   }
 
-  protected AccountSettings updateJwtSharedSecret(AccountSettings settings, String newSharedSecret) {
-    AccountSettings toUpdate = AccountSettings.builder().from(settings)
-      .customSettings(customSettingsJwtHs256(newSharedSecret))
-      .build();
-    return adminClient.updateAccount(baseURI(), settings.accountId().value(), toUpdate);
-  }
-
   protected AccountSettings updateSimpleAuthToken(AccountSettings settings, String newSharedSecret) {
     AccountSettings toUpdate = AccountSettings.builder().from(settings)
       .customSettings(customSettingsSimple(newSharedSecret))
@@ -90,11 +84,11 @@ public abstract class AbstractEndpointTest {
     return customSettings;
   }
 
-  protected Map<String, Object> customSettingsJwtHs256(String sharedSecret) {
+  protected Map<String, Object> customSettingsJwtHs256(String sharedSecret, String subject) {
     final Map<String, Object> customSettings = Maps.newHashMap();
     customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, "JWT_HS_256");
     customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, sharedSecret);
-    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_SUBJECT, "connie");
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_SUBJECT, subject);
 
     customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, "JWT_HS_256");
     customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, "connie");
@@ -118,4 +112,7 @@ public abstract class AbstractEndpointTest {
   }
 
 
+  protected HttpUrl createAccountIlpUrl(String rootUri, AccountId accountId) {
+    return HttpUrl.parse(rootUri + "/accounts/" + accountId + "/ilp");
+  }
 }
