@@ -1,8 +1,11 @@
 package org.interledger.connector.config;
 
+import org.interledger.connector.balances.AccountBalanceService;
 import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.balances.InMemoryBalanceTracker;
 import org.interledger.connector.balances.RedisBalanceTracker;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -114,6 +117,12 @@ public class BalanceTrackerConfig {
     script.setLocation(new ClassPathResource("META-INF/scripts/updateBalanceForIncomingSettlement.lua"));
     script.setResultType(Long.class);
     return script;
+  }
+
+  @Bean
+  protected AccountBalanceService accountBalanceService(BalanceTracker balanceTracker,
+                                                        AccountSettingsRepository accountSettingsRepository) {
+    return new AccountBalanceService(balanceTracker, accountSettingsRepository);
   }
 
 }
