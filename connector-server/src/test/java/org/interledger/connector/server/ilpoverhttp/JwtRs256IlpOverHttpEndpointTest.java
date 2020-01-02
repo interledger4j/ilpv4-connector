@@ -27,8 +27,6 @@ import org.interledger.crypto.Decryptor;
 import org.interledger.link.LinkId;
 import org.interledger.link.LoopbackLink;
 import org.interledger.link.http.IlpOverHttpLink;
-import org.interledger.link.http.IlpOverHttpLinkSettings;
-import org.interledger.link.http.IlpOverHttpLinkSettings.AuthType;
 import org.interledger.link.http.ImmutableJwtAuthSettings;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.JwtAuthSettings;
@@ -218,22 +216,9 @@ public class JwtRs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
    * Construct a new HTTP HTTP Client for the `bob` account
    */
   private IlpOverHttpLink ilpOverHttpLink(AccountId accountId, JwtAuthSettings authSettings, String jwt) {
-
-    final OutgoingLinkSettings outgoingLinkSettings = OutgoingLinkSettings.builder()
-      .authType(AuthType.JWT_RS_256)
-      .jwtAuthSettings(
-        authSettings
-      )
-      .url(HttpUrl.parse(template.getRootUri() + "/ilp"))
-      .build();
-
-    final IlpOverHttpLinkSettings linkSettings = IlpOverHttpLinkSettings.builder()
-      .outgoingLinkSettings(outgoingLinkSettings)
-      .build();
-
     IlpOverHttpLink link = new IlpOverHttpLink(
       () -> InterledgerAddress.of("test." + accountId.value()),
-      linkSettings,
+      HttpUrl.parse(template.getRootUri() + "/ilp"),
       okHttpClient,
       objectMapper,
       InterledgerCodecContextFactory.oer(),
