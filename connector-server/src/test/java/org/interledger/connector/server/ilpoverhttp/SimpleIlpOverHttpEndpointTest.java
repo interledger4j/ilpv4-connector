@@ -10,10 +10,6 @@ import org.interledger.core.InterledgerAddress;
 import org.interledger.link.LinkId;
 import org.interledger.link.exceptions.LinkException;
 import org.interledger.link.http.IlpOverHttpLink;
-import org.interledger.link.http.IlpOverHttpLinkSettings;
-import org.interledger.link.http.IncomingLinkSettings;
-import org.interledger.link.http.OutgoingLinkSettings;
-import org.interledger.link.http.SimpleAuthSettings;
 import org.interledger.link.http.auth.SimpleBearerTokenSupplier;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -108,27 +104,9 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
   }
 
   private IlpOverHttpLink simpleBearerLink(String sharedSecret, String accountId, String bearerToken) {
-
-    final OutgoingLinkSettings outgoingLinkSettings = OutgoingLinkSettings.builder()
-      .authType(IlpOverHttpLinkSettings.AuthType.SIMPLE)
-      .url(createAccountIlpUrl(template.getRootUri(), AccountId.of(accountId)))
-      // The is the encrypted variant of `shh`
-      .simpleAuthSettings(SimpleAuthSettings.forAuthToken(sharedSecret))
-      .build();
-
-    final IncomingLinkSettings incomingLinkSettings = IncomingLinkSettings.builder()
-      .authType(IlpOverHttpLinkSettings.AuthType.SIMPLE)
-      .simpleAuthSettings(SimpleAuthSettings.forAuthToken(sharedSecret))
-      .build();
-
-    final IlpOverHttpLinkSettings linkSettings = IlpOverHttpLinkSettings.builder()
-      .incomingLinkSettings(incomingLinkSettings)
-      .outgoingLinkSettings(outgoingLinkSettings)
-      .build();
-
     return new IlpOverHttpLink(
       () -> InterledgerAddress.of("test.bob"),
-      linkSettings,
+      createAccountIlpUrl(template.getRootUri(), AccountId.of(accountId)),
       okHttpClient,
       objectMapper,
       InterledgerCodecContextFactory.oer(),

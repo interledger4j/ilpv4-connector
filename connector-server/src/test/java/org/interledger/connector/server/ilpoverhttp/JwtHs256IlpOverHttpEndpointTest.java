@@ -20,7 +20,6 @@ import org.interledger.link.LinkId;
 import org.interledger.link.LoopbackLink;
 import org.interledger.link.exceptions.LinkException;
 import org.interledger.link.http.IlpOverHttpLink;
-import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IlpOverHttpLinkSettings.AuthType;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.JwtAuthSettings;
@@ -195,17 +194,6 @@ public class JwtHs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
    * Construct a new HTTP HTTP Client for the `bob` account
    */
   private IlpOverHttpLink ilpOverHttpLink(AccountId accountId, String jwtSubject) {
-
-    final IncomingLinkSettings incomingLinkSettings = IncomingLinkSettings.builder()
-      .authType(AuthType.JWT_HS_256)
-      .jwtAuthSettings(
-        JwtAuthSettings.builder()
-          .encryptedTokenSharedSecret(ENCRYPTED_SHH)
-          .tokenSubject("bob")
-          .build()
-      )
-      .build();
-
     final OutgoingLinkSettings outgoingLinkSettings = OutgoingLinkSettings.builder()
       .authType(AuthType.JWT_HS_256)
       .jwtAuthSettings(
@@ -217,14 +205,9 @@ public class JwtHs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
       .url(createAccountIlpUrl(template.getRootUri(), accountId))
       .build();
 
-    final IlpOverHttpLinkSettings linkSettings = IlpOverHttpLinkSettings.builder()
-      .incomingLinkSettings(incomingLinkSettings)
-      .outgoingLinkSettings(outgoingLinkSettings)
-      .build();
-
     IlpOverHttpLink link = new IlpOverHttpLink(
       () -> InterledgerAddress.of("test." + accountId.value()),
-      linkSettings,
+      createAccountIlpUrl(template.getRootUri(), accountId),
       okHttpClient,
       objectMapper,
       InterledgerCodecContextFactory.oer(),
