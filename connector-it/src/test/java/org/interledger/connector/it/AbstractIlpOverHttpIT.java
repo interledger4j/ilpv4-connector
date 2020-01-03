@@ -39,6 +39,7 @@ import org.interledger.link.Link;
 import org.interledger.link.PingLoopbackLink;
 import org.interledger.link.exceptions.LinkException;
 import org.interledger.link.http.IlpOverHttpLink;
+import org.interledger.link.http.IlpOverHttpLinkSettings;
 
 import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.common.primitives.UnsignedLong;
@@ -233,6 +234,12 @@ public abstract class AbstractIlpOverHttpIT {
 
   protected AccountSettings getAccountSettings(InterledgerAddress interledgerAddress, AccountId accountId) {
     return ((ConnectorServerNode) getNode(interledgerAddress)).getAccountSettings(accountId);
+  }
+
+  protected IlpOverHttpLinkSettings getLinkSettings(InterledgerAddress interledgerAddress, AccountId accountId) {
+    return IlpOverHttpLinkSettings.fromCustomSettings(
+      getAccountSettings(interledgerAddress, accountId).customSettings())
+      .build();
   }
 
   /**

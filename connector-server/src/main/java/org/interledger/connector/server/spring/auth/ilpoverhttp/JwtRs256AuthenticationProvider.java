@@ -10,12 +10,9 @@ import com.auth0.spring.security.api.authentication.JwtAuthentication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-
-import java.util.Optional;
 
 /**
  * An extension of the Auth0 {@link AuthenticationProvider} that implements the `JWT_HS_256` Authentication profile
@@ -24,32 +21,16 @@ import java.util.Optional;
  *
  * @see "https://github.com/interledger/rfcs/blob/master/0035-ilp-over-http/0035-ilp-over-http.md"
  */
-public class JwtHs256AuthenticationProvider implements AuthenticationProvider {
+public class JwtRs256AuthenticationProvider implements AuthenticationProvider {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  // TODO: Remove these once https://github.com/interledger/rfcs/pull/531 is closed.
-  private final Optional<String> issuer;
-  private final Optional<String>  audience;
-  private final String subject;
+  private final JwtRs256Configuration configuration;
 
   private long leeway = 0L;
-  private byte[] decryptedSharedSecret;
 
-  public JwtHs256AuthenticationProvider(String subject, byte[] decryptedSharedSecret) {
-    this.subject = subject;
-    this.decryptedSharedSecret = decryptedSharedSecret;
-    this.issuer = Optional.empty();
-    this.audience = Optional.empty();
-  }
-
-  private static JWTVerifier providerForHS256(JwtHs256AuthenticationProvider provider) {
-    Verification verifier = JWT.require(Algorithm.HMAC256(provider.decryptedSharedSecret))
-        .acceptLeeway(provider.leeway);
-    verifier.withSubject(provider.subject);
-    provider.issuer.ifPresent(verifier::withIssuer);
-    provider.audience.ifPresent(verifier::withAudience);
-    return verifier.build();
+  public JwtRs256AuthenticationProvider(JwtRs256Configuration configuration) {
+    this.configuration = configuration;
   }
 
   public boolean supports(Class<?> authentication) {
@@ -63,7 +44,7 @@ public class JwtHs256AuthenticationProvider implements AuthenticationProvider {
     } else {
       final JwtAuthentication jwt = (JwtAuthentication) authentication;
       try {
-        final Authentication jwtAuth = jwt.verify(this.jwtVerifier());
+        final Authentication jwtAuth = jwt.verify(this.newJWTVerifier());
         logger.debug("Authenticated jwt with scopes {}", jwtAuth.getAuthorities());
         return jwtAuth;
       } catch (JWTVerificationException var4) {
@@ -72,12 +53,13 @@ public class JwtHs256AuthenticationProvider implements AuthenticationProvider {
     }
   }
 
-  private JWTVerifier jwtVerifier() throws AuthenticationException {
-    if (decryptedSharedSecret != null) {
-      return providerForHS256(this);
-    } else {
-      throw new AuthenticationServiceException("Missing shared-secret!");
-    }
+  private JWTVerifier newJWTVerifier() {
+    Verification verifier = JWT.require(Algorithm.RSA256(configuration.keyProvider()))
+      .acceptLeeway(leeway)
+      .withSubject(configuration.subject())
+      .withIssuer(configuration.issuer().toString())
+      .withAudience(configuration.audience());
+    return verifier.build();
   }
 
 }

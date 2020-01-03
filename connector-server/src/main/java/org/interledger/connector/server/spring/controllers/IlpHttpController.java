@@ -12,7 +12,7 @@ import org.interledger.core.InterledgerResponsePacket;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -29,8 +29,6 @@ import java.util.Objects;
 @RestController
 @ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = ILP_OVER_HTTP_ENABLED, havingValue = "true")
 public class IlpHttpController {
-
-  public static final String ILP_PATH = "/ilp";
 
   private final IlpOverHttpAccountIdResolver accountIdResolver;
   private final ILPv4PacketSwitch ilPv4PacketSwitch;
@@ -53,16 +51,15 @@ public class IlpHttpController {
    *     to the original sender with an appropriate Final or Temporary error code.
    */
   @RequestMapping(
-      value = ILP_PATH, method = {RequestMethod.POST},
+      value = PathConstants.SLASH_ACCOUNTS_ILP_PATH, method = {RequestMethod.POST},
       produces = {MediaType.APPLICATION_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE},
       consumes = {MediaType.APPLICATION_OCTET_STREAM_VALUE}
   )
   public InterledgerResponsePacket sendData(
-      Authentication authentication, @RequestBody final InterledgerPreparePacket preparePacket
+      @PathVariable(PathConstants.ACCOUNT_ID) String accountId,
+      @RequestBody final InterledgerPreparePacket preparePacket
   ) {
-    final AccountId accountId = this.accountIdResolver.resolveAccountId(authentication);
-
-    return this.ilPv4PacketSwitch.switchPacket(accountId, preparePacket);
+    return this.ilPv4PacketSwitch.switchPacket(AccountId.of(accountId), preparePacket);
   }
 
 }

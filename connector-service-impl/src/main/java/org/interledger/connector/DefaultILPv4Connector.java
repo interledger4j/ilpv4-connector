@@ -7,14 +7,15 @@ import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
-import org.interledger.connector.routing.StaticRoutesManager;
 import org.interledger.connector.routing.ExternalRoutingService;
+import org.interledger.connector.routing.StaticRoutesManager;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.link.Link;
 import org.interledger.link.LinkFactoryProvider;
 import org.interledger.link.StatefulLink;
 import org.interledger.link.events.LinkConnectedEvent;
+import org.interledger.link.http.OutgoingLinkSettings;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
@@ -24,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
@@ -240,13 +242,25 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   }
 
   /**
-   * Configure any Accounts that are the Link connection initiator.
+   * Configure any Accounts that are the Link connection initiator (i.e. outgoing links).
    */
   private void configureAccounts() {
     // Connect any Links for accounts that are the connection initiator. Links that require an incoming and outgoing
     // connection will emit a LinkConnectedEvent when the incoming connection is connected.
     this.accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrueWithConversion().stream()
-      .map(linkManager::getOrCreateLink)
+      .filter(accountSettings ->
+        accountSettings.customSettings().containsKey(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE))
+      .flatMap(account -> {
+        // wrap getOrCreateLink in a try/catch so that a bad account doesn't prevent the connector from starting
+        // instead, it will be logged and skipped
+        try {
+          return Stream.of(linkManager.getOrCreateLink(account));
+        }
+        catch (Exception e) {
+          logger.warn("Could not configure link for account " + account.accountId(), e);
+          return Stream.empty();
+        }
+      })
       .filter(link -> link instanceof StatefulLink)
       .map(link -> (StatefulLink) link)
       .forEach(StatefulLink::connect);

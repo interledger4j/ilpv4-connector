@@ -8,7 +8,6 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.server.spring.auth.ilpoverhttp.AuthConstants;
 import org.interledger.connector.server.spring.auth.ilpoverhttp.BearerTokenSecurityContextRepository;
 import org.interledger.connector.server.spring.auth.ilpoverhttp.IlpOverHttpAuthenticationProvider;
-import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.crypto.ByteArrayUtils;
@@ -154,8 +153,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       //////
       // ILP-over-HTTP
       //////
-      .antMatchers(HttpMethod.HEAD, IlpHttpController.ILP_PATH).authenticated()
-      .antMatchers(HttpMethod.POST, IlpHttpController.ILP_PATH).authenticated()
+      .antMatchers(HttpMethod.HEAD, PathConstants.SLASH_ACCOUNTS_ILP_PATH).authenticated()
+      .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS_ILP_PATH).authenticated()
       //.antMatchers(HttpMethod.GET, HealthController.SLASH_HEALTH).permitAll() // permitAll if hidden by LB.
       .antMatchers(HttpMethod.GET, METRICS_ENDPOINT_URL_PATH).permitAll() // permitAll if hidden by LB.
     ;

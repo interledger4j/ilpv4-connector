@@ -17,6 +17,7 @@ import org.interledger.link.PingLoopbackLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
+import org.interledger.link.http.SimpleAuthSettings;
 
 import okhttp3.HttpUrl;
 import org.junit.Before;
@@ -25,7 +26,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 
-import java.time.Duration;
 import java.util.function.Function;
 
 public class DefaultLinkSettingsValidatorTest {
@@ -88,44 +88,28 @@ public class DefaultLinkSettingsValidatorTest {
   public void validateIlpOverHttpLinkSettingsFromBase64() {
     final IlpOverHttpLinkSettings linkSettings = newSettings(INCOMING_BASE_64, OUTGOING_BASE_64);
 
-    IlpOverHttpLinkSettings expected = IlpOverHttpLinkSettings.builder().from(linkSettings)
-      .incomingHttpLinkSettings(IncomingLinkSettings.builder()
-        .from(linkSettings.incomingHttpLinkSettings())
-        .encryptedTokenSharedSecret(ENCRYPTED_INCOMING_SECRET.encodedValue())
-        .build())
-      .outgoingHttpLinkSettings(OutgoingLinkSettings.builder()
-        .from(linkSettings.outgoingHttpLinkSettings())
-        .encryptedTokenSharedSecret(ENCRYPTED_OUTGOING_SECRET.encodedValue())
-        .build())
-      .build();
+    IlpOverHttpLinkSettings expected =
+      newSettings(ENCRYPTED_INCOMING_SECRET.encodedValue(), ENCRYPTED_OUTGOING_SECRET.encodedValue());
 
-    assertThat(validator.validateSettings(linkSettings).incomingHttpLinkSettings())
-      .isEqualTo(expected.incomingHttpLinkSettings());
+    assertThat(validator.validateSettings(linkSettings).incomingLinkSettings())
+      .isEqualTo(expected.incomingLinkSettings());
 
-    assertThat(validator.validateSettings(linkSettings).outgoingHttpLinkSettings())
-      .isEqualTo(expected.outgoingHttpLinkSettings());
+    assertThat(validator.validateSettings(linkSettings).outgoingLinkSettings())
+      .isEqualTo(expected.outgoingLinkSettings());
   }
 
   @Test
   public void ilpOverHttpLinkSettingsFromEncryptedSecret() {
     final IlpOverHttpLinkSettings linkSettings = newSettings(ENCRYPTED_INCOMING_SECRET, ENCRYPTED_OUTGOING_SECRET);
 
-    IlpOverHttpLinkSettings expected = IlpOverHttpLinkSettings.builder().from(linkSettings)
-      .incomingHttpLinkSettings(IncomingLinkSettings.builder()
-        .from(linkSettings.incomingHttpLinkSettings())
-        .encryptedTokenSharedSecret(ENCRYPTED_INCOMING_SECRET.encodedValue())
-        .build())
-      .outgoingHttpLinkSettings(OutgoingLinkSettings.builder()
-        .from(linkSettings.outgoingHttpLinkSettings())
-        .encryptedTokenSharedSecret(ENCRYPTED_OUTGOING_SECRET.encodedValue())
-        .build())
-      .build();
+    IlpOverHttpLinkSettings expected =
+      newSettings(ENCRYPTED_INCOMING_SECRET.encodedValue(), ENCRYPTED_OUTGOING_SECRET.encodedValue());
 
-    assertThat(validator.validateSettings(linkSettings).incomingHttpLinkSettings())
-      .isEqualTo(expected.incomingHttpLinkSettings());
+    assertThat(validator.validateSettings(linkSettings).incomingLinkSettings())
+      .isEqualTo(expected.incomingLinkSettings());
 
-    assertThat(validator.validateSettings(linkSettings).outgoingHttpLinkSettings())
-      .isEqualTo(expected.outgoingHttpLinkSettings());
+    assertThat(validator.validateSettings(linkSettings).outgoingLinkSettings())
+      .isEqualTo(expected.outgoingLinkSettings());
   }
 
   @Test
@@ -178,25 +162,19 @@ public class DefaultLinkSettingsValidatorTest {
 
   private IlpOverHttpLinkSettings newSettings(String incomingSecret, String outgoingSecret) {
     final IncomingLinkSettings incomingLinkSettings = IncomingLinkSettings.builder()
-      .encryptedTokenSharedSecret(incomingSecret)
       .authType(IlpOverHttpLinkSettings.AuthType.SIMPLE)
-      .tokenIssuer(HttpUrl.parse("https://bob.example.com/"))
-      .tokenAudience(HttpUrl.parse("https://connie.example.com/"))
+      .simpleAuthSettings(SimpleAuthSettings.forAuthToken(incomingSecret))
       .build();
 
     final OutgoingLinkSettings outgoingLinkSettings = OutgoingLinkSettings.builder()
       .authType(IlpOverHttpLinkSettings.AuthType.SIMPLE)
-      .tokenSubject("bob")
-      .tokenIssuer(HttpUrl.parse("https://bob.example.com/"))
-      .tokenAudience(HttpUrl.parse("https://connie.example.com/"))
+      .simpleAuthSettings(SimpleAuthSettings.forAuthToken(outgoingSecret))
       .url(HttpUrl.parse("http://alice.example.com"))
-      .tokenExpiry(Duration.ofMinutes(5))
-      .encryptedTokenSharedSecret(outgoingSecret)
       .build();
 
     return IlpOverHttpLinkSettings.builder()
-      .incomingHttpLinkSettings(incomingLinkSettings)
-      .outgoingHttpLinkSettings(outgoingLinkSettings)
+      .incomingLinkSettings(incomingLinkSettings)
+      .outgoingLinkSettings(outgoingLinkSettings)
       .build();
   }
 
