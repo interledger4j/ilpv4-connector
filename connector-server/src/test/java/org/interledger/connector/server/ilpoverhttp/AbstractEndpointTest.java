@@ -3,24 +3,24 @@ package org.interledger.connector.server.ilpoverhttp;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.accounts.ImmutableAccountSettings;
-import org.interledger.connector.server.client.ConnectorAdminClient;
+import org.interledger.connector.server.client.ConnectorAdminTestClient;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.JwtAuthSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
 
 import com.google.common.collect.Maps;
-import org.springframework.beans.factory.annotation.Autowired;
+import feign.RequestInterceptor;
+import feign.auth.BasicAuthRequestInterceptor;
+import okhttp3.HttpUrl;
+import org.junit.Before;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.cloud.openfeign.EnableFeignClients;
-import org.springframework.http.ResponseEntity;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 
-@EnableFeignClients(clients = ConnectorAdminClient.class)
 public abstract class AbstractEndpointTest {
 
   protected static final String ENCRYPTED_SHH
@@ -30,15 +30,25 @@ public abstract class AbstractEndpointTest {
   protected static final String BOB = "bob";
   protected static final String CONNIE = "connie";
 
-  @Autowired
-  protected ConnectorAdminClient adminClient;
+  protected ConnectorAdminTestClient adminApiTestClient;
+
+  @Value("${interledger.connector.adminPassword}")
+  private String adminPassword;
 
   @LocalServerPort
   private int localServerPort;
 
+  @Before
+  public final void setUpAbstractEndpointTest() {
+    final HttpUrl baseHttpUrl = HttpUrl.parse("http://localhost:" + localServerPort);
+    final RequestInterceptor basicAuthRequestInterceptor = new BasicAuthRequestInterceptor("admin", adminPassword);
+    adminApiTestClient = ConnectorAdminTestClient.construct(baseHttpUrl, basicAuthRequestInterceptor);
+  }
+
   /**
-   * To test the local connector using Feign, the baseURI has to be provide
-   * after injection so that the random local server port is known
+   * To test the local connector using Feign, the baseURI has to be provide after injection so that the random local
+   * server port is known
+   *
    * @return base uri for the local connector
    */
   protected URI baseURI() {
@@ -60,15 +70,14 @@ public abstract class AbstractEndpointTest {
       .assetCode("XRP")
       .build();
 
-    ResponseEntity<ImmutableAccountSettings> result = adminClient.createAccount(baseURI(), accountSettings);
-    return result.getBody();
+    return adminApiTestClient.createAccount(accountSettings);
   }
 
   protected AccountSettings updateJwtSharedSecret(AccountSettings settings, String newSharedSecret) {
     AccountSettings toUpdate = AccountSettings.builder().from(settings)
       .customSettings(customSettingsJwtHs256(newSharedSecret))
       .build();
-    return adminClient.updateAccount(baseURI(), settings.accountId().value(), toUpdate);
+    return adminApiTestClient.updateAccount(settings.accountId().value(), toUpdate);
   }
 
   protected AccountSettings updateSimpleAuthToken(AccountSettings settings, String newSharedSecret) {
