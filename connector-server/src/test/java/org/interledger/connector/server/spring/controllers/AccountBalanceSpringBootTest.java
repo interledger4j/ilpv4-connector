@@ -6,7 +6,6 @@ import static org.mockito.Mockito.when;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.accounts.ImmutableAccountSettings;
 import org.interledger.connector.balances.AccountBalance;
 import org.interledger.connector.balances.AccountBalanceResponse;
 import org.interledger.connector.balances.AccountBalanceService;
@@ -21,7 +20,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -99,8 +97,7 @@ public class AccountBalanceSpringBootTest extends AbstractEndpointTest {
       .assetCode("XRP")
       .build();
 
-    ResponseEntity<ImmutableAccountSettings> result = adminClient.createAccount(baseURI(), accountSettings);
-    return result.getBody();
+    return adminApiTestClient.createAccount(accountSettings);
   }
 
 }
