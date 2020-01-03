@@ -22,6 +22,7 @@ import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.connector.server.JwksServer;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.crypto.Decryptor;
 import org.interledger.link.LinkId;
@@ -55,6 +56,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Ensures that the API endpoints for ILP-over-HTTP (i.e., `/ilp`) return the correct values for various test scenarios
@@ -168,8 +170,9 @@ public class JwtRs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
       authSettings
     ));
     String jwt = jwtServer.createJwt(authSettings, Instant.now().plusSeconds(30));
-    final IlpOverHttpLink ilpOverHttpLink = ilpOverHttpLink(AccountId.of(HUGH), authSettings, jwt);
+    final IlpOverHttpLink ilpOverHttpLink = ilpOverHttpLink(AccountId.of(HUGH), jwt);
 
+    AtomicReference<InterledgerFulfillPacket> fulfillPacketRef = new AtomicReference<>();
     ilpOverHttpLink.sendPacket(
       InterledgerPreparePacket.builder()
         .destination(InterledgerAddress.of("test.connie.vic"))
@@ -178,11 +181,11 @@ public class JwtRs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
         .executionCondition(LOOPBACK_FULFILLMENT.getCondition())
         .build()
     ).handle(
-      fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LOOPBACK_FULFILLMENT),
+      fulfillPacket -> fulfillPacketRef.set(fulfillPacket),
       rejectPacket -> fail("Packet rejected but should not have!")
     );
 
-
+    assertThat(fulfillPacketRef.get().getFulfillment()).isEqualTo(LOOPBACK_FULFILLMENT);
   }
 
   /**
@@ -201,7 +204,7 @@ public class JwtRs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
     ));
     for (int i = 0; i < 2; i++) {
       String jwt = jwtServer.createJwt(authSettings, Instant.now().plusSeconds(30));
-      final IlpOverHttpLink ilpOverHttpLink = ilpOverHttpLink(AccountId.of(accountId), authSettings, jwt);
+      final IlpOverHttpLink ilpOverHttpLink = ilpOverHttpLink(AccountId.of(accountId), jwt);
       ilpOverHttpLink.testConnection();
     }
 
@@ -215,7 +218,7 @@ public class JwtRs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
   /**
    * Construct a new HTTP HTTP Client for the `bob` account
    */
-  private IlpOverHttpLink ilpOverHttpLink(AccountId accountId, JwtAuthSettings authSettings, String jwt) {
+  private IlpOverHttpLink ilpOverHttpLink(AccountId accountId, String jwt) {
     IlpOverHttpLink link = new IlpOverHttpLink(
       () -> InterledgerAddress.of("test." + accountId.value()),
       createAccountIlpUrl(template.getRootUri(), accountId),
