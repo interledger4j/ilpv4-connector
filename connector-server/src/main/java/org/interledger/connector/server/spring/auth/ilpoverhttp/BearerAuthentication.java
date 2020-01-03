@@ -1,5 +1,7 @@
 package org.interledger.connector.server.spring.auth.ilpoverhttp;
 
+import org.interledger.connector.accounts.AccountId;
+
 import com.google.common.collect.Lists;
 import com.google.common.hash.HashCode;
 import org.immutables.value.Value;
@@ -8,7 +10,6 @@ import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
 import java.util.Optional;
-
 import javax.annotation.Nullable;
 
 /**
@@ -22,9 +23,11 @@ public interface BearerAuthentication extends Authentication {
   }
 
   @Override
-  @Nullable
-  default Object getPrincipal() {
-    return null;
+  Object getPrincipal();
+
+  @Value.Derived
+  default AccountId getAccountId() {
+    return AccountId.of(getPrincipal().toString());
   }
 
   @Override
