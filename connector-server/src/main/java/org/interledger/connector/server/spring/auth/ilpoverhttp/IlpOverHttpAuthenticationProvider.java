@@ -17,6 +17,7 @@ import com.auth0.jwk.GuavaCachedJwkProvider;
 import com.auth0.jwk.JwkProvider;
 import com.auth0.jwk.UrlJwkProvider;
 import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.spring.security.api.JwtAuthenticationProvider;
 import com.auth0.spring.security.api.authentication.PreAuthenticatedAuthenticationJsonWebToken;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -229,16 +230,16 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       .addPathSegment("jwks.json")
       .build();
 
-    JwtRs256Configuration configuration = JwtRs256Configuration.builder()
-      .audience(jwtAuthSettings.tokenAudience()
+    Authentication authResult = new JwtAuthenticationProvider(jwkProviderCache.get(jksUrl),
+      issuer.toString(),
+      jwtAuthSettings.tokenAudience()
         .orElseThrow(() -> missingJwtAuthSetting(accountId, "jwtAuthSettings.tokenAudience")))
-      .issuer(issuer)
-      .subject(jwtAuthSettings.tokenSubject())
-      .keyProvider(new JwkRsaPublicKeyProvider(jwkProviderCache.get(jksUrl)))
-      .build();
-
-    Authentication authResult = new JwtRs256AuthenticationProvider(configuration)
       .authenticate(jwt);
+
+    if (!jwt.getPrincipal().equals(jwtAuthSettings.tokenSubject())) {
+      throw new BadCredentialsException("jwt subject " + jwt.getPrincipal()
+        + " does not match expected " + jwtAuthSettings.tokenSubject());
+    }
 
     return AuthenticationDecision.builder()
       .principal(accountId)

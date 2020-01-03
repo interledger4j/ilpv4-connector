@@ -61,7 +61,7 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
   public void ildcpTestConnectionWithEncryptedSecret() {
     String accountId = "bob_ross";
     createAccount(AccountId.of(accountId), customSettingsSimple(ENCRYPTED_SHH));
-    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId, "shh");
+    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(accountId, "shh");
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     assertLink(simpleBearerLink);
   }
@@ -74,7 +74,7 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
     String accountId = "bob_marley";
     String shh = "shh";
     AccountSettings settings = createAccount(AccountId.of(accountId), customSettingsSimple(shh));
-    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId, shh);
+    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(accountId, shh);
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     assertLink(simpleBearerLink);
 
@@ -84,7 +84,7 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
 
     updateSimpleAuthToken(settings, plain_text_oh_hi);
     // send payment with new credentials
-    final IlpOverHttpLink anotherBearerLink = simpleBearerLink(encrypted_oh_hi, accountId, plain_text_oh_hi);
+    final IlpOverHttpLink anotherBearerLink = simpleBearerLink(accountId, plain_text_oh_hi);
     anotherBearerLink.setLinkId(LinkId.of(accountId));
     assertLink(anotherBearerLink);
   }
@@ -96,14 +96,14 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
   public void incorrectTokenCredentials() {
     String accountId = "alice_cooper";
     createAccount(AccountId.of(accountId), customSettingsSimple("shh"));
-    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(ENCRYPTED_SHH, accountId, BAD_SECRET);
+    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(accountId, BAD_SECRET);
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     expectedException.expect(LinkException.class);
     expectedException.expectMessage("Unauthorized");
     assertLink(simpleBearerLink);
   }
 
-  private IlpOverHttpLink simpleBearerLink(String sharedSecret, String accountId, String bearerToken) {
+  private IlpOverHttpLink simpleBearerLink(String accountId, String bearerToken) {
     return new IlpOverHttpLink(
       () -> InterledgerAddress.of("test.bob"),
       createAccountIlpUrl(template.getRootUri(), AccountId.of(accountId)),
