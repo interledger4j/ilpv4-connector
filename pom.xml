@@ -27,12 +27,13 @@
   <properties>
     <!-- By default, we run in prod mode, unless a different profile is specified. -->
     <activeProfile>prod</activeProfile>
+    <feign.version>10.7.0</feign.version>
     <java.version>1.8</java.version>
     <ilp.version>HEAD-SNAPSHOT</ilp.version>
     <problem.version>0.23.0</problem.version>
     <problem-spring-web.version>0.25.2</problem-spring-web.version>
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
-    <spring-cloud.version>Hoxton.SR1</spring-cloud.version>
+    <spring-cloud.version>Hoxton.RELEASE</spring-cloud.version>
     <resilience4j.version>1.2.0</resilience4j.version>
     <moneta.version>1.3</moneta.version>
     <prometheus.version>0.8.0</prometheus.version>
@@ -70,6 +71,7 @@
     <module>connector-server</module>
     <module>connector-it</module>
     <module>connector-fxrates</module>
+    <module>connector-admin-client</module>
   </modules>
 
   <profiles>
@@ -114,6 +116,11 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>connector-accounts</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>connector-admin-client</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -220,17 +227,27 @@
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
-        <version>28.1-jre</version>
+        <version>28.2-jre</version>
       </dependency>
       <dependency>
         <groupId>com.squareup.okhttp3</groupId>
         <artifactId>okhttp</artifactId>
-        <version>4.2.2</version>
+        <version>4.3.0</version>
       </dependency>
       <dependency>
         <groupId>io.github.resilience4j</groupId>
         <artifactId>resilience4j-circuitbreaker</artifactId>
         <version>${resilience4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.openfeign</groupId>
+        <artifactId>feign-core</artifactId>
+        <version>${feign.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.openfeign</groupId>
+        <artifactId>feign-jackson</artifactId>
+        <version>${feign.version}</version>
       </dependency>
       <dependency>
         <groupId>io.prometheus</groupId>
@@ -450,7 +467,6 @@
                   <ignoredDependency>org.springframework.hateoas</ignoredDependency>
                   <ignoredDependency>org.springframework.security</ignoredDependency>
                   <ignoredDependency>org.springframework.data</ignoredDependency>
-                  <ignoredDependency>org.springframework.cloud:spring-cloud-starter-openfeign</ignoredDependency>
                   <ignoredDependency>org.springframework.cloud:spring-cloud-gcp-starter-pubsub</ignoredDependency>
 
                   <ignoredDependency>redis.clients:jedis:jar</ignoredDependency>
@@ -657,6 +673,12 @@
       <!-- org.apache.maven.plugins:maven-javadoc-plugin -->
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+
+      <!-- org.sonatype.plugins:nexus-staging-maven-plugin -->
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
       </plugin>
 
     </plugins>

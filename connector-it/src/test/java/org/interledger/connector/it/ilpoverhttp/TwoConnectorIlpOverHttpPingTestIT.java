@@ -115,12 +115,12 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
     final ILPv4Connector connector = getILPv4NodeFromGraph(getAliceConnectorAddress());
     assertThat(connector.getConnectorSettings().operatorAddress()).isEqualTo(getAliceConnectorAddress());
 
-    final IlpOverHttpLink ilpOverHttpLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), BOB_ACCOUNT);
-    assertThat(ilpOverHttpLink.getLinkSettings().outgoingLinkSettings().get().jwtAuthSettings().get().tokenSubject())
+    final IlpOverHttpLinkSettings ilpOverHttpLinkSettings = getLinkSettings(getAliceConnectorAddress(), BOB_ACCOUNT);
+    assertThat(ilpOverHttpLinkSettings.outgoingLinkSettings().get().jwtAuthSettings().get().tokenSubject())
       .isEqualTo(ALICE);
-    assertThat(ilpOverHttpLink.getLinkSettings().outgoingLinkSettings().get().authType())
+    assertThat(ilpOverHttpLinkSettings.outgoingLinkSettings().get().authType())
       .isEqualTo(IlpOverHttpLinkSettings.AuthType.JWT_HS_256);
-    assertThat(ilpOverHttpLink.getLinkSettings().incomingLinkSettings().get().authType())
+    assertThat(ilpOverHttpLinkSettings.incomingLinkSettings().get().authType())
       .isEqualTo(IlpOverHttpLinkSettings.AuthType.JWT_HS_256);
   }
 
@@ -129,12 +129,12 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
     final ILPv4Connector connector = getILPv4NodeFromGraph(getBobConnectorAddress());
     assertThat(connector.getConnectorSettings().operatorAddress()).isEqualTo(getBobConnectorAddress());
 
-    final IlpOverHttpLink ilpOverHttpLink = getIlpOverHttpLinkFromGraph(getBobConnectorAddress(), ALICE_ACCOUNT);
-    assertThat(ilpOverHttpLink.getLinkSettings().outgoingLinkSettings().get().jwtAuthSettings().get().tokenSubject())
+    final IlpOverHttpLinkSettings ilpOverHttpLinkSettings = getLinkSettings(getBobConnectorAddress(), ALICE_ACCOUNT);
+    assertThat(ilpOverHttpLinkSettings.outgoingLinkSettings().get().jwtAuthSettings().get().tokenSubject())
       .isEqualTo(BOB);
-    assertThat(ilpOverHttpLink.getLinkSettings().outgoingLinkSettings().get().authType())
+    assertThat(ilpOverHttpLinkSettings.outgoingLinkSettings().get().authType())
       .isEqualTo(IlpOverHttpLinkSettings.AuthType.JWT_HS_256);
-    assertThat(ilpOverHttpLink.getLinkSettings().incomingLinkSettings().get().authType())
+    assertThat(ilpOverHttpLinkSettings.incomingLinkSettings().get().authType())
       .isEqualTo(IlpOverHttpLinkSettings.AuthType.JWT_HS_256);
   }
 

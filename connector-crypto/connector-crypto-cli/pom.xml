@@ -94,6 +94,11 @@
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
       </plugin>
+      <!-- org.sonatype.plugins:nexus-staging-maven-plugin -->
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+      </plugin>
     </plugins>
     <pluginManagement>
       <plugins>
@@ -145,6 +150,17 @@
             <useReleaseProfile>false</useReleaseProfile>
             <releaseProfiles>release</releaseProfiles>
             <goals>deploy</goals>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.sonatype.plugins</groupId>
+          <artifactId>nexus-staging-maven-plugin</artifactId>
+          <version>1.6.8</version>
+          <extensions>true</extensions>
+          <configuration>
+            <serverId>ossrh-snapshots-interledger</serverId>
+            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+            <autoReleaseAfterClose>true</autoReleaseAfterClose>
           </configuration>
         </plugin>
 
@@ -308,7 +324,7 @@
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
-        <version>28.1-jre</version>
+        <version>28.2-jre</version>
       </dependency>
       <dependency>
         <groupId>org.jline</groupId>

@@ -205,6 +205,8 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
         case JWT_RS_256: {
           return authenticateWithJwtRs256(pendingAuth, jwt, accountId, jwtAuthSettings);
         }
+        default:
+          throw new IllegalArgumentException(incomingLinkSettings.authType() + " not supported");
       }
     } catch (AccountNotFoundProblem | JWTDecodeException e) { // All other exceptions should be thrown!
       logger.debug(e.getMessage(), e);
