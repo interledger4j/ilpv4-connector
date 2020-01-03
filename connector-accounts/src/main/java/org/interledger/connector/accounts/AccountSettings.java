@@ -20,6 +20,12 @@ import java.util.Optional;
  * Tracks settings for a given Connector <tt>account</tt>, which is a mechanism for tracking fungible asset value
  * between two Interledger nodes, using a single asset-type.
  */
+@JsonSerialize(as = ImmutableAccountSettings.class)
+@JsonDeserialize(as = ImmutableAccountSettings.class)
+@JsonPropertyOrder( {"accountId", "createdAt", "modifiedAt", "description", "accountRelationship", "assetCode",
+  "assetScale", "maximumPacketAmount", "linkType", "ilpAddressSegment", "connectionInitiator",
+  "internal", "sendRoutes", "receiveRoutes", "balanceSettings", "rateLimitSettings",
+  "settlementEngineDetails", "customSettings"})
 public interface AccountSettings {
 
   static ImmutableAccountSettings.Builder builder() {
