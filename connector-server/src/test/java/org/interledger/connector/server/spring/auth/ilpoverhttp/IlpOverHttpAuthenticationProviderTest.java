@@ -19,6 +19,7 @@ import org.interledger.crypto.EncryptionService;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IlpOverHttpLinkSettings.AuthType;
+import org.interledger.link.http.IncomingLinkSettings;
 
 import com.google.common.hash.HashCode;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
@@ -53,11 +54,6 @@ public class IlpOverHttpAuthenticationProviderTest {
 
   private static final String SIMPLE_TOKEN = "bob:" + SECRET;
 
-  public static final String ILP_OVER_HTTP_INCOMING =
-    IlpOverHttpLinkSettings.ILP_OVER_HTTP + "." + IlpOverHttpLinkSettings.INCOMING + ".";
-  public static final String ILP_OVER_HTTP_OUTGOING =
-    IlpOverHttpLinkSettings.ILP_OVER_HTTP + "." + IlpOverHttpLinkSettings.OUTGOING + ".";
-
   public static final AccountId ACCOUNT_ID = AccountId.of("bob");
 
   private IlpOverHttpAuthenticationProvider ilpOverHttpAuthenticationProvider;
@@ -87,8 +83,7 @@ public class IlpOverHttpAuthenticationProviderTest {
 
   @Test
   public void authenticateSimpleWithValidToken() {
-    mockAccountSettings()
-      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString());
+    mockAccountSettings(AuthType.SIMPLE);
     Authentication result = ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
       .isAuthenticated(false)
       .bearerToken(SIMPLE_TOKEN.getBytes())
@@ -102,8 +97,7 @@ public class IlpOverHttpAuthenticationProviderTest {
 
   @Test
   public void authenticateSimpleWithInvalidSecret() {
-    mockAccountSettings()
-      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString());
+    mockAccountSettings(AuthType.SIMPLE);
     expectedException.expect(BadCredentialsException.class);
     expectedException.expectMessage("Authentication failed for principal: bob");
     ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
@@ -116,8 +110,7 @@ public class IlpOverHttpAuthenticationProviderTest {
 
   @Test
   public void authenticateSimpleWithInvalidPrincipal() {
-    mockAccountSettings()
-      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString());
+    mockAccountSettings(AuthType.SIMPLE);
     expectedException.expect(BadCredentialsException.class);
     expectedException.expectMessage("Authentication failed for principal");
     ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
@@ -129,8 +122,7 @@ public class IlpOverHttpAuthenticationProviderTest {
 
   @Test
   public void authenticateJwtWithValidToken() {
-    mockAccountSettings()
-      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.JWT_HS_256.toString());
+    mockAccountSettings(AuthType.JWT_HS_256);
     Authentication result = ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
       .isAuthenticated(false)
       .bearerToken(JWT_TOKEN.getBytes())
@@ -144,9 +136,7 @@ public class IlpOverHttpAuthenticationProviderTest {
 
   @Test
   public void authenticateJwtWithInvalidToken() {
-    mockAccountSettings()
-      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.JWT_HS_256.toString());
-
+    mockAccountSettings(AuthType.JWT_HS_256);
     expectedException.expect(BadCredentialsException.class);
     expectedException.expectMessage("Authentication failed for principal");
     ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
@@ -159,9 +149,7 @@ public class IlpOverHttpAuthenticationProviderTest {
 
   @Test
   public void authenticateInternalServerError() {
-    mockAccountSettings()
-      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.JWT_HS_256.toString());
-
+    mockAccountSettings(AuthType.JWT_HS_256);
     when(accountSettingsRepository.findByAccountIdWithConversion(any())).thenThrow(
       new RuntimeException("Something bad happened on the server")
     );
@@ -176,20 +164,21 @@ public class IlpOverHttpAuthenticationProviderTest {
     );
   }
 
-  private ImmutableAccountSettings.Builder mockAccountSettings() {
+  private ImmutableAccountSettings.Builder mockAccountSettings(IlpOverHttpLinkSettings.AuthType authType) {
     ImmutableAccountSettings.Builder builder = AccountSettings.builder()
       .accountRelationship(AccountRelationship.CHILD)
       .assetCode("XRP")
       .assetScale(9)
       .accountId(ACCOUNT_ID)
-      .linkType(IlpOverHttpLink.LINK_TYPE)
-      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.URL, "http://test.com")
-      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.SHARED_SECRET, ENCRYPTED_SHH)
-      .putCustomSettings(ILP_OVER_HTTP_INCOMING + IlpOverHttpLinkSettings.TOKEN_SUBJECT, ACCOUNT_ID.value())
-      .putCustomSettings(ILP_OVER_HTTP_OUTGOING + IlpOverHttpLinkSettings.SHARED_SECRET, ENCRYPTED_SHH)
-      .putCustomSettings(ILP_OVER_HTTP_OUTGOING + IlpOverHttpLinkSettings.URL, "http://test.com")
-      .putCustomSettings(ILP_OVER_HTTP_OUTGOING + IlpOverHttpLinkSettings.AUTH_TYPE, AuthType.SIMPLE.toString())
-      .putCustomSettings(ILP_OVER_HTTP_OUTGOING + IlpOverHttpLinkSettings.TOKEN_SUBJECT, ACCOUNT_ID.value());
+      .linkType(IlpOverHttpLink.LINK_TYPE);
+
+    builder.putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, authType.toString());
+    if (authType == AuthType.SIMPLE) {
+      builder.putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN, ENCRYPTED_SHH);
+    } else {
+      builder.putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
+        .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_SUBJECT, ACCOUNT_ID.value());
+    }
 
     when(accountSettingsRepository.findByAccountIdWithConversion(ACCOUNT_ID))
       .thenAnswer(($) -> Optional.of(builder.build()));

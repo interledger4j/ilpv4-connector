@@ -259,16 +259,11 @@ public class AccountSettingsSpringBootTest {
   public void testCreateAndAuthAccountWithSimple() throws IOException {
     Map<String, Object> customSettings = com.google.common.collect.Maps.newHashMap();
     customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE.name());
-    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, "https://bob.example.com/");
-    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
-    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, INCOMING_SECRET);
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN, INCOMING_SECRET);
 
     customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE.name());
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_AUDIENCE, "https://bob.example.com/");
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, "connie");
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, OUTGOING_SECRET);
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://bob.example.com");
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SIMPLE_AUTH_TOKEN, OUTGOING_SECRET);
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "http://iheartinterledger.com");
 
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     AccountSettings settings = AccountSettings.builder()
@@ -282,9 +277,9 @@ public class AccountSettingsSpringBootTest {
       .build();
 
     AccountSettings created = assertPostAccountCreated(settings);
-    assertThat(created.customSettings().get(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET))
+    assertThat(created.customSettings().get(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN))
       .isEqualTo(Redactor.REDACTED);
-    assertThat(created.customSettings().get(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET))
+    assertThat(created.customSettings().get(OutgoingLinkSettings.HTTP_OUTGOING_SIMPLE_AUTH_TOKEN))
       .isEqualTo(Redactor.REDACTED);
   }
 
@@ -294,15 +289,10 @@ public class AccountSettingsSpringBootTest {
 
     Map<String, Object> customSettings = com.google.common.collect.Maps.newHashMap();
     customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE.name());
-    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, "https://bob.example.com/");
-    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, "https://connie.example.com/");
-    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, badEncodedSecret);
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN, badEncodedSecret);
 
     customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE.name());
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_ISSUER, "https://connie.example.com/");
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_AUDIENCE, "https://bob.example.com/");
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, "connie");
-    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, OUTGOING_SECRET);
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SIMPLE_AUTH_TOKEN, OUTGOING_SECRET);
     customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://bob.example.com");
 
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());

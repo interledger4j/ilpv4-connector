@@ -6,7 +6,9 @@ import org.interledger.crypto.EncryptedSecret;
 import org.interledger.link.LinkSettings;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
+import org.interledger.link.http.JwtAuthSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
+import org.interledger.link.http.SimpleAuthSettings;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Preconditions;
@@ -14,6 +16,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -40,34 +43,46 @@ public class DefaultLinkSettingsValidator implements LinkSettingsValidator {
   }
 
   private IlpOverHttpLinkSettings validateIlpLinkSettings(IlpOverHttpLinkSettings linkSettings) {
-    EncryptedSecret incomingSecret =
-      validate(getOrCreateEncryptedSecret(linkSettings.incomingHttpLinkSettings().encryptedTokenSharedSecret()));
+    Optional<IncomingLinkSettings> incomingLinkSettings = linkSettings.incomingLinkSettings()
+        .map(originalIncoming ->
+            IncomingLinkSettings.builder().from(originalIncoming)
+              .simpleAuthSettings(validateSimpleAuthSettings(originalIncoming.simpleAuthSettings()))
+              .jwtAuthSettings(validateJwtAuthSettings(originalIncoming.jwtAuthSettings()))
+              .build());
 
-    EncryptedSecret outgoingSecret =
-      validate(getOrCreateEncryptedSecret(linkSettings.outgoingHttpLinkSettings().encryptedTokenSharedSecret()));
-
-    IncomingLinkSettings incomingLinkSettings =
-      IncomingLinkSettings.builder().from(linkSettings.incomingHttpLinkSettings())
-        .encryptedTokenSharedSecret(incomingSecret.encodedValue())
-        .build();
-
-    OutgoingLinkSettings outgoingLinkSettings =
-      OutgoingLinkSettings.builder().from(linkSettings.outgoingHttpLinkSettings())
-        .encryptedTokenSharedSecret(outgoingSecret.encodedValue())
-        .build();
+    Optional<OutgoingLinkSettings> outgoingLinkSettings = linkSettings.outgoingLinkSettings()
+      .map(originalOutgoing ->
+        OutgoingLinkSettings.builder().from(originalOutgoing)
+          .simpleAuthSettings(validateSimpleAuthSettings(originalOutgoing.simpleAuthSettings()))
+          .jwtAuthSettings(validateJwtAuthSettings(originalOutgoing.jwtAuthSettings()))
+          .build());
 
     Map<String, Object> newCustomSettings = Maps.newHashMap(linkSettings.getCustomSettings());
-    newCustomSettings.put(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET,
-      incomingLinkSettings.encryptedTokenSharedSecret());
-    newCustomSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET,
-      outgoingLinkSettings.encryptedTokenSharedSecret());
+    incomingLinkSettings.ifPresent(settings -> newCustomSettings.putAll(settings.toCustomSettingsMap()));
+    outgoingLinkSettings.ifPresent(settings -> newCustomSettings.putAll(settings.toCustomSettingsMap()));
 
     return IlpOverHttpLinkSettings.builder().from(linkSettings)
-      .incomingHttpLinkSettings(incomingLinkSettings)
-      .outgoingHttpLinkSettings(outgoingLinkSettings)
+      .incomingLinkSettings(incomingLinkSettings)
+      .outgoingLinkSettings(outgoingLinkSettings)
       .customSettings(newCustomSettings)
       .build();
   }
+
+  private Optional<SimpleAuthSettings> validateSimpleAuthSettings(Optional<SimpleAuthSettings> maybeSettings) {
+    return maybeSettings.map(settings ->
+        SimpleAuthSettings.forAuthToken(validate(getOrCreateEncryptedSecret(settings.authToken())).encodedValue()));
+  }
+
+  private Optional<JwtAuthSettings> validateJwtAuthSettings(Optional<JwtAuthSettings> maybeSettings) {
+    return maybeSettings.map(settings ->
+      JwtAuthSettings.builder().from(settings)
+        .encryptedTokenSharedSecret(settings.encryptedTokenSharedSecret()
+          .map(secret -> validate(getOrCreateEncryptedSecret(secret)).encodedValue())
+        )
+      .build()
+    );
+  }
+
 
   private EncryptedSecret getOrCreateEncryptedSecret(String sharedSecret) {
     if (Strings.isNullOrEmpty(sharedSecret)) {

@@ -205,8 +205,7 @@ public class DefaultAccountManager implements AccountManager {
       }
       return accountSettings;
     } catch (IllegalArgumentException e) {
-      throw new InvalidAccountSettingsProblem("Bad shared secret: " + e.getMessage()
-        , accountSettings.accountId());
+      throw new InvalidAccountSettingsProblem(e.getMessage(), accountSettings.accountId());
     }
   }
 
