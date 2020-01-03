@@ -27,6 +27,7 @@
   <properties>
     <!-- By default, we run in prod mode, unless a different profile is specified. -->
     <activeProfile>prod</activeProfile>
+    <feign.version>10.7.0</feign.version>
     <java.version>1.8</java.version>
     <ilp.version>1.0.2</ilp.version>
     <problem.version>0.23.0</problem.version>
@@ -70,6 +71,7 @@
     <module>connector-server</module>
     <module>connector-it</module>
     <module>connector-fxrates</module>
+    <module>connector-admin-client</module>
   </modules>
 
   <profiles>
@@ -114,6 +116,11 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>connector-accounts</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>connector-admin-client</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -231,6 +238,16 @@
         <groupId>io.github.resilience4j</groupId>
         <artifactId>resilience4j-circuitbreaker</artifactId>
         <version>${resilience4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.openfeign</groupId>
+        <artifactId>feign-core</artifactId>
+        <version>${feign.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.openfeign</groupId>
+        <artifactId>feign-jackson</artifactId>
+        <version>${feign.version}</version>
       </dependency>
       <dependency>
         <groupId>io.prometheus</groupId>
@@ -450,7 +467,6 @@
                   <ignoredDependency>org.springframework.hateoas</ignoredDependency>
                   <ignoredDependency>org.springframework.security</ignoredDependency>
                   <ignoredDependency>org.springframework.data</ignoredDependency>
-                  <ignoredDependency>org.springframework.cloud:spring-cloud-starter-openfeign</ignoredDependency>
                   <ignoredDependency>org.springframework.cloud:spring-cloud-gcp-starter-pubsub</ignoredDependency>
 
                   <ignoredDependency>redis.clients:jedis:jar</ignoredDependency>
@@ -725,6 +741,16 @@
       </snapshots>
       <releases>
         <enabled>true</enabled>
+      </releases>
+    </repository>
+    <repository>
+      <id>ilp-snapshots</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <releases>
+        <enabled>false</enabled>
       </releases>
     </repository>
   </repositories>

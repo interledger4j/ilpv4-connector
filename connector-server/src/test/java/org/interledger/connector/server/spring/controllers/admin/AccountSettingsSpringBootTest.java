@@ -15,8 +15,9 @@ import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings;
 import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.accounts.SettlementEngineDetails;
+import org.interledger.connector.jackson.ObjectMapperFactory;
 import org.interledger.connector.server.ConnectorServerConfig;
-import org.interledger.connector.server.client.ConnectorAdminClient;
+import org.interledger.connector.server.client.ConnectorAdminTestClient;
 import org.interledger.connector.server.spring.settings.Redactor;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.SettlementEngineClientException;
@@ -30,6 +31,10 @@ import org.interledger.link.http.OutgoingLinkSettings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.UnsignedLong;
 import feign.FeignException;
+import feign.RequestInterceptor;
+import feign.Response;
+import feign.auth.BasicAuthRequestInterceptor;
+import feign.jackson.JacksonDecoder;
 import okhttp3.HttpUrl;
 import org.assertj.core.util.Maps;
 import org.junit.Before;
@@ -38,13 +43,13 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.json.BasicJsonTester;
 import org.springframework.boot.test.json.JsonContentAssert;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -55,8 +60,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
@@ -72,7 +75,6 @@ import java.util.UUID;
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   classes = {ConnectorServerConfig.class}
 )
-@EnableFeignClients(clients = ConnectorAdminClient.class)
 @ActiveProfiles( {"test", "jks"})
 public class AccountSettingsSpringBootTest {
 
@@ -91,8 +93,10 @@ public class AccountSettingsSpringBootTest {
   @Autowired
   private TestRestTemplate restTemplate;
 
-  @Autowired
-  private ConnectorAdminClient adminClient;
+  @Value("${interledger.connector.adminPassword}")
+  private String adminPassword;
+
+  private ConnectorAdminTestClient adminApiTestClient;
 
   private BasicJsonTester jsonTester = new BasicJsonTester(getClass());
 
@@ -101,11 +105,13 @@ public class AccountSettingsSpringBootTest {
   @LocalServerPort
   private int localServerPort;
 
-  private URI baseURI;
-
   @Before
-  public void setUp() throws URISyntaxException {
-    baseURI = new URI("http://localhost:" + localServerPort);
+  public void setUp() {
+
+    final HttpUrl baseHttpUrl = HttpUrl.parse("http://localhost:" + localServerPort);
+    final RequestInterceptor basicAuthRequestInterceptor = new BasicAuthRequestInterceptor("admin", adminPassword);
+    adminApiTestClient = ConnectorAdminTestClient.construct(baseHttpUrl, basicAuthRequestInterceptor);
+
     mockSettlementEngineAccountId = SettlementEngineAccountId.of(UUID.randomUUID().toString());
     when(settlementEngineClientMock.createSettlementAccount(any(), any(), any()))
       .thenReturn(CreateSettlementAccountResponse.builder()
@@ -115,7 +121,7 @@ public class AccountSettingsSpringBootTest {
   }
 
   @Test
-  public void testMinimalCreate() {
+  public void testMinimalCreate() throws IOException {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     AccountSettings settings = AccountSettings.builder()
       .accountId(accountId)
@@ -126,12 +132,12 @@ public class AccountSettingsSpringBootTest {
       .createdAt(Instant.now())
       .build();
 
-    AccountSettings response = assertPostAccount(settings, HttpStatus.CREATED);
+    AccountSettings response = assertPostAccountCreated(settings);
     assertThat(response).isEqualTo(settings);
   }
 
   @Test
-  public void testDelete() {
+  public void testDelete() throws IOException {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     AccountSettings settings = AccountSettings.builder()
       .accountId(accountId)
@@ -142,15 +148,15 @@ public class AccountSettingsSpringBootTest {
       .createdAt(Instant.now())
       .build();
 
-    AccountSettings response = assertPostAccount(settings, HttpStatus.CREATED);
+    AccountSettings response = assertPostAccountCreated(settings);
     assertThat(response).isEqualTo(settings);
-    Optional<ImmutableAccountSettings> retrieved = getAccount(accountId.value());
+    Optional<AccountSettings> retrieved = getAccount(accountId.value());
     assertThat(retrieved).isNotEmpty().get()
       .extracting("accountId", "assetCode")
       .containsExactly(settings.accountId(), settings.assetCode());
 
-    ResponseEntity<String> deleteResponse = deleteAccount(accountId.value());
-    assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+    final Response deleteResponse = adminApiTestClient.deleteAccountAsResponse(accountId.value());
+    assertThat(deleteResponse.status()).isEqualTo(HttpStatus.NO_CONTENT.value());
 
     retrieved = getAccount(accountId.value());
     assertThat(retrieved).isEmpty();
@@ -159,22 +165,30 @@ public class AccountSettingsSpringBootTest {
   @Test
   public void testDeleteUnknown404s() {
     String accountId = UUID.randomUUID().toString();
-    ResponseEntity<String> deleteResponse = deleteAccount(accountId);
+    adminApiTestClient.deleteAccountAsResponse(accountId);
 
-    JsonContentAssert assertJson = assertThat(jsonTester.from(deleteResponse.getBody()));
-    assertJson.extractingJsonPathValue("status").isEqualTo(404);
-    assertJson.extractingJsonPathValue("title").isEqualTo("Account Not Found (`" + accountId + "`)");
-    assertJson.extractingJsonPathValue("accountId").isEqualTo(accountId);
-    assertJson.extractingJsonPathValue("type")
-      .isEqualTo("https://errors.interledger.org/accounts/account-not-found");
+    try {
+      adminApiTestClient.deleteAccount(accountId);
+      fail("Expected failure");
+    } catch (FeignException e) {
+      assertThat(e.status()).isEqualTo(404);
+
+      JsonContentAssert assertJson = assertThat(jsonTester.from(e.content()));
+      assertJson.extractingJsonPathValue("status").isEqualTo(404);
+      assertJson.extractingJsonPathValue("title").isEqualTo("Account Not Found (`" + accountId + "`)");
+      assertJson.extractingJsonPathValue("accountId").isEqualTo(accountId);
+      assertJson.extractingJsonPathValue("type")
+        .isEqualTo("https://errors.interledger.org/accounts/account-not-found");
+
+    }
   }
 
   @Test
-  public void testFullyPopulatedCreate() {
+  public void testFullyPopulatedCreate() throws IOException {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     final AccountSettings settings = constructFullyPopulatedAccountSettings(accountId);
 
-    AccountSettings response = assertPostAccount(settings, HttpStatus.CREATED);
+    AccountSettings response = assertPostAccountCreated(settings);
     assertThat(response).isEqualTo(settings);
   }
 
@@ -183,7 +197,7 @@ public class AccountSettingsSpringBootTest {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     final AccountSettings accountSettings = constructFullyPopulatedAccountSettings(accountId);
 
-    AccountSettings response = assertPostAccount(accountSettings, HttpStatus.CREATED);
+    AccountSettings response = assertPostAccountCreated(accountSettings);
     assertThat(response).isEqualTo(accountSettings);
 
     // Same account details with different accountId but same SettlementAccountId
@@ -216,7 +230,7 @@ public class AccountSettingsSpringBootTest {
   }
 
   @Test
-  public void testCreateExistingIdReturns409() {
+  public void testCreateExistingIdReturns409() throws IOException {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     AccountSettings settings = AccountSettings.builder()
       .accountId(accountId)
@@ -228,7 +242,7 @@ public class AccountSettingsSpringBootTest {
       .customSettings(Maps.newHashMap("custom", "value"))
       .build();
 
-    AccountSettings createResponse = assertPostAccount(settings, HttpStatus.CREATED);
+    AccountSettings createResponse = assertPostAccountCreated(settings);
     assertThat(createResponse).isEqualTo(settings);
 
     // already exists
@@ -242,7 +256,7 @@ public class AccountSettingsSpringBootTest {
   }
 
   @Test
-  public void testCreateAndAuthAccountWithSimple() {
+  public void testCreateAndAuthAccountWithSimple() throws IOException {
     Map<String, Object> customSettings = com.google.common.collect.Maps.newHashMap();
     customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE.name());
     customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, "https://bob.example.com/");
@@ -267,7 +281,7 @@ public class AccountSettingsSpringBootTest {
       .customSettings(customSettings)
       .build();
 
-    AccountSettings created = assertPostAccount(settings, HttpStatus.CREATED);
+    AccountSettings created = assertPostAccountCreated(settings);
     assertThat(created.customSettings().get(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET))
       .isEqualTo(Redactor.REDACTED);
     assertThat(created.customSettings().get(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET))
@@ -333,10 +347,10 @@ public class AccountSettingsSpringBootTest {
       "}," +
       "\"settlementEngineDetails\":null," +
       "\"customSettings\":{}" +
-    "}";
+      "}";
 
     try {
-      adminClient.createAccount(baseURI, json);
+      adminApiTestClient.createAccountUsingJson(json);
       fail("Expected failure");
     } catch (FeignException e) {
       assertThat(e.status()).isEqualTo(400);
@@ -372,15 +386,17 @@ public class AccountSettingsSpringBootTest {
   // Private Helpers
   //////////////////
 
-  private AccountSettings assertPostAccount(AccountSettings settings, HttpStatus expectedStatus) {
-    ResponseEntity<ImmutableAccountSettings> response = adminClient.createAccount(baseURI, settings);
-    assertThat(response.getStatusCode()).isEqualTo(expectedStatus);
-    return response.getBody();
+  private AccountSettings assertPostAccountCreated(AccountSettings settings) throws IOException {
+    Response response = adminApiTestClient.createAccountAsResponse(settings);
+    assertThat(response.status()).isEqualTo(201);
+    final Object decodedObject = new JacksonDecoder(ObjectMapperFactory.create())
+      .decode(response, ImmutableAccountSettings.class);
+    return (AccountSettings) decodedObject;
   }
 
   private String assertPostAccountFailure(AccountSettings settings, HttpStatus expectedStatus) {
     try {
-      adminClient.createAccount(baseURI, settings);
+      adminApiTestClient.createAccount(settings);
     } catch (FeignException e) {
       assertThat(e.status()).isEqualTo(expectedStatus.value());
       return e.contentUTF8();
@@ -389,15 +405,11 @@ public class AccountSettingsSpringBootTest {
     return "not reachable";
   }
 
-  private ResponseEntity<String> deleteAccount(String accountId) {
-    return adminClient.deleteAccount(baseURI, accountId);
+  private Optional<AccountSettings> getAccount(String accountId) {
+    return adminApiTestClient.findAccount(accountId);
   }
 
-  private Optional<ImmutableAccountSettings> getAccount(String accountId) {
-    return adminClient.findAccount(baseURI, accountId);
-  }
-
-  private ImmutableAccountSettings constructFullyPopulatedAccountSettings(final AccountId accountId) {
+  private AccountSettings constructFullyPopulatedAccountSettings(final AccountId accountId) {
     Objects.requireNonNull(accountId);
 
     return AccountSettings.builder()

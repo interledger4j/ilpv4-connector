@@ -84,7 +84,7 @@ public class JwtHs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
     // Add the Alice Account to the Connector.
     ////////////////
 
-    if (!adminClient.findAccount(baseURI(), ALICE).isPresent()) {
+    if (!adminApiTestClient.findAccount(ALICE).isPresent()) {
       final Map<String, Object> customSettings = Maps.newHashMap();
       customSettings
         .put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256.name());
@@ -109,24 +109,24 @@ public class JwtHs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
         .assetScale(2)
         .assetCode("XRP")
         .build();
-      adminClient.createAccount(baseURI(), accountSettings);
+      adminApiTestClient.createAccount(accountSettings);
     }
 
     if (!externalRoutingService.findBestNexHop(InterledgerAddress.of("test.connie.alice")).isPresent()) {
       externalRoutingService.createStaticRoute(
-          StaticRoute.builder()
-              .nextHopAccountId(AccountId.of("alice"))
-              .routePrefix(InterledgerAddressPrefix.of("test.connie.alice"))
-              .build()
+        StaticRoute.builder()
+          .nextHopAccountId(AccountId.of("alice"))
+          .routePrefix(InterledgerAddressPrefix.of("test.connie.alice"))
+          .build()
       );
     }
 
     if (!externalRoutingService.findBestNexHop(InterledgerAddress.of("test.connie.bob")).isPresent()) {
       externalRoutingService.createStaticRoute(
-          StaticRoute.builder()
-              .nextHopAccountId(AccountId.of("bob"))
-              .routePrefix(InterledgerAddressPrefix.of("test.connie.bob"))
-              .build()
+        StaticRoute.builder()
+          .nextHopAccountId(AccountId.of("bob"))
+          .routePrefix(InterledgerAddressPrefix.of("test.connie.bob"))
+          .build()
       );
     }
   }
