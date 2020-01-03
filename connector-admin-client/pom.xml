@@ -19,15 +19,19 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>connector-accounts</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>connector-jackson</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
     </dependency>
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>okhttp</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.interledger.connector</groupId>
-      <artifactId>connector-accounts</artifactId>
     </dependency>
     <dependency>
       <groupId>io.github.openfeign</groupId>
@@ -38,9 +42,11 @@
       <artifactId>feign-jackson</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
     </dependency>
+
     <dependency>
       <groupId>org.zalando</groupId>
       <artifactId>problem</artifactId>
