@@ -52,8 +52,6 @@ public class IlpOverHttpAuthenticationProviderTest {
   private static final String JWT_TOKEN =
     "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJib2IifQ.E773YFqatHhCSBQKp8kkqpdqFpFf5DkRxdDR35pd67M";
 
-  private static final String SIMPLE_TOKEN = "bob:" + SECRET;
-
   public static final AccountId ACCOUNT_ID = AccountId.of("bob");
 
   private IlpOverHttpAuthenticationProvider ilpOverHttpAuthenticationProvider;
@@ -86,7 +84,8 @@ public class IlpOverHttpAuthenticationProviderTest {
     mockAccountSettings(AuthType.SIMPLE);
     Authentication result = ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
       .isAuthenticated(false)
-      .bearerToken(SIMPLE_TOKEN.getBytes())
+      .principal(ACCOUNT_ID.toString())
+      .bearerToken(SECRET.getBytes())
       .hmacSha256(HashCode.fromString("1234"))
       .build()
     );
@@ -101,8 +100,9 @@ public class IlpOverHttpAuthenticationProviderTest {
     expectedException.expect(BadCredentialsException.class);
     expectedException.expectMessage("Authentication failed for principal: bob");
     ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
+      .principal("bob")
       .isAuthenticated(false)
-      .bearerToken("bob:badtoken".getBytes())
+      .bearerToken("badtoken".getBytes())
       .hmacSha256(HashCode.fromString("1234"))
       .build()
     );
@@ -110,12 +110,14 @@ public class IlpOverHttpAuthenticationProviderTest {
 
   @Test
   public void authenticateSimpleWithInvalidPrincipal() {
+    String principal = "bad_principal";
     mockAccountSettings(AuthType.SIMPLE);
     expectedException.expect(BadCredentialsException.class);
-    expectedException.expectMessage("Authentication failed for principal");
+    expectedException.expectMessage("Account not found for principal: " + principal);
     ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
       .isAuthenticated(false)
-      .bearerToken(("foo:" + SECRET).getBytes())
+      .principal(principal)
+      .bearerToken(SECRET.getBytes())
       .hmacSha256(HashCode.fromString("1234"))
       .build());
   }
@@ -125,6 +127,7 @@ public class IlpOverHttpAuthenticationProviderTest {
     mockAccountSettings(AuthType.JWT_HS_256);
     Authentication result = ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
       .isAuthenticated(false)
+      .principal(ACCOUNT_ID.toString())
       .bearerToken(JWT_TOKEN.getBytes())
       .hmacSha256(HashCode.fromString("1234"))
       .build()
@@ -141,6 +144,7 @@ public class IlpOverHttpAuthenticationProviderTest {
     expectedException.expectMessage("Authentication failed for principal");
     ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
       .isAuthenticated(false)
+      .principal(ACCOUNT_ID.toString())
       .bearerToken("not a jwt".getBytes())
       .hmacSha256(HashCode.fromString("1234"))
       .build()
@@ -158,6 +162,7 @@ public class IlpOverHttpAuthenticationProviderTest {
     expectedException.expectMessage("Unable to validate token due to system error");
     ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
       .isAuthenticated(false)
+      .principal(ACCOUNT_ID.toString())
       .bearerToken(JWT_TOKEN.getBytes())
       .hmacSha256(HashCode.fromString("1234"))
       .build()

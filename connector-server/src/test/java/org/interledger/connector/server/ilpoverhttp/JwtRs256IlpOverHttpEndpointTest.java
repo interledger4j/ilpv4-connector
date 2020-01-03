@@ -24,6 +24,7 @@ import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.crypto.Decryptor;
 import org.interledger.link.LinkId;
 import org.interledger.link.LoopbackLink;
@@ -188,6 +189,44 @@ public class JwtRs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
     assertThat(fulfillPacketRef.get().getFulfillment()).isEqualTo(LOOPBACK_FULFILLMENT);
   }
 
+  @Test
+  public void cannotPayUsingSomeoneUsingOtherPersonsJWT() {
+    String kylo = "kylo";
+    ImmutableJwtAuthSettings kyloSettings = JwtAuthSettings.builder()
+      .tokenSubject(kylo)
+      .tokenAudience("foo")
+      .tokenIssuer(HttpUrl.parse(wireMockRule.baseUrl()))
+      .build();
+
+    ImmutableJwtAuthSettings reySettings = JwtAuthSettings.builder()
+      .tokenSubject("rey")
+      .tokenAudience("foo")
+      .tokenIssuer(HttpUrl.parse(wireMockRule.baseUrl()))
+      .build();
+
+
+    createAccount(AccountId.of(kylo), customSettingsJwtRs256(
+      kyloSettings
+    ));
+    String reyJwt = jwtServer.createJwt(reySettings, Instant.now().plusSeconds(30));
+    final IlpOverHttpLink ilpOverHttpLink = ilpOverHttpLink(AccountId.of(kylo), reyJwt);
+
+    AtomicReference<InterledgerRejectPacket> rejectPacketRef = new AtomicReference<>();
+    ilpOverHttpLink.sendPacket(
+      InterledgerPreparePacket.builder()
+        .destination(InterledgerAddress.of("test.connie.kylo"))
+        .amount(UnsignedLong.ONE)
+        .expiresAt(Instant.now().plus(5, ChronoUnit.MINUTES))
+        .executionCondition(LOOPBACK_FULFILLMENT.getCondition())
+        .build()
+    ).handle(
+      fulfillPacket -> fail("Packet fulfilled but should not have!"),
+      rejectPacket -> rejectPacketRef.set(rejectPacket)
+    );
+
+    assertThat(rejectPacketRef.get().getMessage()).contains("Unauthorized");
+  }
+
   /**
    * Verify that JWKS endpoint is only called once the first time a JWT is verified
    */
@@ -221,7 +260,7 @@ public class JwtRs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
   private IlpOverHttpLink ilpOverHttpLink(AccountId accountId, String jwt) {
     IlpOverHttpLink link = new IlpOverHttpLink(
       () -> InterledgerAddress.of("test." + accountId.value()),
-      HttpUrl.parse(template.getRootUri() + "/ilp"),
+      createAccountIlpUrl(template.getRootUri(), accountId),
       okHttpClient,
       objectMapper,
       InterledgerCodecContextFactory.oer(),

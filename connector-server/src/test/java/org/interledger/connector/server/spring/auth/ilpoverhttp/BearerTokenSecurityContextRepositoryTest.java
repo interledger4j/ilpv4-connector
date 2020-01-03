@@ -31,26 +31,41 @@ public class BearerTokenSecurityContextRepositoryTest {
   }
 
   @Test
-  public void loadContextWithAuthToken() {
-    String token = "foo:bar";
-    HashCode expectedHmac = HashCode.fromString("00b85ca599428944cc41dfebdfcd57a3c635c2e8496ae0deee1717c33c30406e");
+  public void loadContextWithAuthTokenInIlpUrl() {
+    mockRequestPath("/accounts/foo");
+    verifyBearerAuth();
+  }
 
+  @Test
+  public void loadContextWithAuthTokenInAccountsUrl() {
+    mockRequestPath("/accounts/foo/ilp");
+    verifyBearerAuth();
+  }
+
+  @Test
+  public void loadContextWithAuthTokenInSubAccountsUrl() {
+    mockRequestPath("/connectors/123/accounts/foo/ilp");
+    verifyBearerAuth();
+  }
+
+  @Test
+  public void loadContextNoAccountIdInUrl() {
+    String token = "foo:bar";
+    mockRequestPath("/routes/foo/ilp");
     when(mockRequest.getHeader("Authorization")).thenReturn("Bearer " + token);
-    SecurityContext securityContext = repository.loadContext(holder);
-    BearerAuthentication result = (BearerAuthentication) securityContext.getAuthentication();
-    assertThat(result.hmacSha256()).isEqualTo(expectedHmac);
-    assertThat(result.getBearerToken()).isEqualTo(token.getBytes());
-    assertThat(result.isAuthenticated()).isFalse();
+    assertThat(repository.containsContext(mockRequest)).isFalse();
   }
 
   @Test
   public void loadContextNoAuthHeader() {
+    mockRequestPath("/accounts/foo/ilp");
     SecurityContext securityContext = repository.loadContext(holder);
     assertThat(securityContext.getAuthentication()).isNull();
   }
 
   @Test
-  public void loadContextNotBearer() {
+  public void loadContextNoBearer() {
+    mockRequestPath("/accounts/foo/ilp");
     when(mockRequest.getHeader("Authorization")).thenReturn("not bearer token");
     SecurityContext securityContext = repository.loadContext(holder);
     assertThat(securityContext.getAuthentication()).isNull();
@@ -58,14 +73,35 @@ public class BearerTokenSecurityContextRepositoryTest {
 
   @Test
   public void containsContext() {
+    mockRequestPath("/accounts/foo/ilp");
     when(mockRequest.getHeader("Authorization")).thenReturn("Bearer token");
     assertThat(repository.containsContext(mockRequest)).isTrue();
   }
 
   @Test
   public void doesntContainContext() {
+    mockRequestPath("/accounts/foo/ilp");
     when(mockRequest.getHeader("Authorization")).thenReturn("not bearer token");
     assertThat(repository.containsContext(mockRequest)).isFalse();
+  }
+
+  private void verifyBearerAuth() {
+    String token = "foo:bar";
+    HashCode expectedHmac = HashCode.fromString("00b85ca599428944cc41dfebdfcd57a3c635c2e8496ae0deee1717c33c30406e");
+    when(mockRequest.getHeader("Authorization")).thenReturn("Bearer " + token);
+    SecurityContext securityContext = repository.loadContext(holder);
+    BearerAuthentication result = (BearerAuthentication) securityContext.getAuthentication();
+    assertThat(result).isNotNull();
+    assertThat(result.hmacSha256()).isEqualTo(expectedHmac);
+    assertThat(result.getBearerToken()).isEqualTo(token.getBytes());
+    assertThat(result.isAuthenticated()).isFalse();
+    assertThat(result.getPrincipal()).isEqualTo("foo");
+  }
+
+  private void mockRequestPath(String path) {
+    when(mockRequest.getPathInfo()).thenReturn(path);
+    when(mockRequest.getServletPath()).thenReturn("");
+    when(mockRequest.getContextPath()).thenReturn("");
   }
 
 }

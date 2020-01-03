@@ -18,6 +18,7 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.crypto.Decryptor;
 import org.interledger.link.LinkId;
 import org.interledger.link.LoopbackLink;
+import org.interledger.link.exceptions.LinkException;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings.AuthType;
 import org.interledger.link.http.IncomingLinkSettings;
@@ -28,10 +29,11 @@ import org.interledger.link.http.auth.JwtHs256BearerTokenSupplier;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.google.common.primitives.UnsignedLong;
-import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -56,6 +58,9 @@ import java.util.Map;
 )
 @ActiveProfiles( {"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 public class JwtHs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
+
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
 
   @LocalServerPort
   int randomServerPort;
@@ -130,8 +135,8 @@ public class JwtHs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
    */
   @Test
   public void bobPaysAliceUsingIlpOverHttp() {
-    createAccount(AccountId.of(BOB), customSettingsJwtHs256(ENCRYPTED_SHH));
-    final IlpOverHttpLink ilpOverHttpLink = ilpOverHttpLink(AccountId.of(BOB));
+    createAccount(AccountId.of(BOB), customSettingsJwtHs256(ENCRYPTED_SHH, BOB));
+    final IlpOverHttpLink ilpOverHttpLink = ilpOverHttpLink(AccountId.of(BOB), BOB);
 
     ilpOverHttpLink.sendPacket(
       InterledgerPreparePacket.builder()
@@ -153,8 +158,8 @@ public class JwtHs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
   @Test
   public void ildcpTestConnectionWithEncryptedSecret() {
     AccountId accountId = AccountId.of("mark");
-    createAccount(accountId, customSettingsJwtHs256(ENCRYPTED_SHH));
-    IlpOverHttpLink link = ilpOverHttpLink(accountId);
+    createAccount(accountId, customSettingsJwtHs256(ENCRYPTED_SHH, accountId.value()));
+    IlpOverHttpLink link = ilpOverHttpLink(accountId, accountId.value());
     assertLink(link);
   }
 
@@ -164,8 +169,20 @@ public class JwtHs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
   @Test
   public void ildcpTestConnectionWithPlainTextSecret() {
     AccountId accountId = AccountId.of("lisa");
-    createAccount(accountId, customSettingsJwtHs256("shh"));
-    IlpOverHttpLink link = ilpOverHttpLink(accountId);
+    createAccount(accountId, customSettingsJwtHs256("shh", accountId.value()));
+    IlpOverHttpLink link = ilpOverHttpLink(accountId, accountId.value());
+    assertLink(link);
+  }
+
+  /**
+   * Validate the request fails if the provided JWT subject does not match the account settings incoming.jwt.token_subject
+   */
+  @Test
+  public void failsIfSubjectDoesNotMatch() {
+    AccountId accountId = AccountId.of("bart");
+    createAccount(accountId, customSettingsJwtHs256("shh", accountId.value()));
+    IlpOverHttpLink link = ilpOverHttpLink(accountId, "hacker");
+    expectedException.expect(LinkException.class);
     assertLink(link);
   }
 
@@ -176,21 +193,21 @@ public class JwtHs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
   /**
    * Construct a new HTTP HTTP Client for the `bob` account
    */
-  private IlpOverHttpLink ilpOverHttpLink(AccountId accountId) {
+  private IlpOverHttpLink ilpOverHttpLink(AccountId accountId, String jwtSubject) {
     final OutgoingLinkSettings outgoingLinkSettings = OutgoingLinkSettings.builder()
       .authType(AuthType.JWT_HS_256)
       .jwtAuthSettings(
         JwtAuthSettings.builder()
-          .tokenSubject(BOB)
+          .tokenSubject(jwtSubject)
           .encryptedTokenSharedSecret(ENCRYPTED_SHH)
           .build()
       )
-      .url(HttpUrl.parse(template.getRootUri() + "/ilp"))
+      .url(createAccountIlpUrl(template.getRootUri(), accountId))
       .build();
 
     IlpOverHttpLink link = new IlpOverHttpLink(
       () -> InterledgerAddress.of("test." + accountId.value()),
-      HttpUrl.parse(template.getRootUri() + "/ilp"),
+      createAccountIlpUrl(template.getRootUri(), accountId),
       okHttpClient,
       objectMapper,
       InterledgerCodecContextFactory.oer(),
