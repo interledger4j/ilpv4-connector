@@ -123,7 +123,7 @@ public class AccountSettingsSpringBootTest {
   @Test
   public void testMinimalCreate() throws IOException {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-    ImmutableAccountSettings settings = AccountSettings.builder()
+    AccountSettings settings = AccountSettings.builder()
       .accountId(accountId)
       .accountRelationship(AccountRelationship.CHILD)
       .assetCode("FUD")
@@ -186,7 +186,7 @@ public class AccountSettingsSpringBootTest {
   @Test
   public void testFullyPopulatedCreate() throws IOException {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-    final ImmutableAccountSettings settings = constructFullyPopulatedAccountSettings(accountId);
+    final AccountSettings settings = constructFullyPopulatedAccountSettings(accountId);
 
     AccountSettings response = assertPostAccountCreated(settings);
     assertThat(response).isEqualTo(settings);
@@ -195,13 +195,13 @@ public class AccountSettingsSpringBootTest {
   @Test
   public void testFullyPopulatedCreateWithDuplicateSEAccountId() throws IOException {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-    final ImmutableAccountSettings accountSettings = constructFullyPopulatedAccountSettings(accountId);
+    final AccountSettings accountSettings = constructFullyPopulatedAccountSettings(accountId);
 
     AccountSettings response = assertPostAccountCreated(accountSettings);
     assertThat(response).isEqualTo(accountSettings);
 
     // Same account details with different accountId but same SettlementAccountId
-    final ImmutableAccountSettings newAccountSettingsWithDupSE = AccountSettings.builder().from(accountSettings)
+    final AccountSettings newAccountSettingsWithDupSE = AccountSettings.builder().from(accountSettings)
       .accountId(AccountId.of(UUID.randomUUID().toString())).build();
 
     String rawResponse = assertPostAccountFailure(newAccountSettingsWithDupSE, HttpStatus.CONFLICT);
@@ -220,7 +220,7 @@ public class AccountSettingsSpringBootTest {
       "Unable to create account in settlement engine.", accountId, Optional.empty())
     ).when(settlementEngineClientMock).createSettlementAccount(any(), any(), any());
 
-    final ImmutableAccountSettings settings = constructFullyPopulatedAccountSettings(accountId);
+    final AccountSettings settings = constructFullyPopulatedAccountSettings(accountId);
 
     String response = assertPostAccountFailure(settings, HttpStatus.INTERNAL_SERVER_ERROR);
     JsonContentAssert assertJson = assertThat(jsonTester.from(response));
@@ -232,7 +232,7 @@ public class AccountSettingsSpringBootTest {
   @Test
   public void testCreateExistingIdReturns409() throws IOException {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-    ImmutableAccountSettings settings = AccountSettings.builder()
+    AccountSettings settings = AccountSettings.builder()
       .accountId(accountId)
       .accountRelationship(AccountRelationship.CHILD)
       .assetCode("FUD")
@@ -271,7 +271,7 @@ public class AccountSettingsSpringBootTest {
     customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://bob.example.com");
 
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-    ImmutableAccountSettings settings = AccountSettings.builder()
+    AccountSettings settings = AccountSettings.builder()
       .accountId(accountId)
       .accountRelationship(AccountRelationship.CHILD)
       .assetCode("FUD")
@@ -306,7 +306,7 @@ public class AccountSettingsSpringBootTest {
     customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://bob.example.com");
 
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-    ImmutableAccountSettings settings = AccountSettings.builder()
+    AccountSettings settings = AccountSettings.builder()
       .accountId(accountId)
       .accountRelationship(AccountRelationship.CHILD)
       .assetCode("FUD")
@@ -394,7 +394,7 @@ public class AccountSettingsSpringBootTest {
     return (AccountSettings) decodedObject;
   }
 
-  private String assertPostAccountFailure(ImmutableAccountSettings settings, HttpStatus expectedStatus) {
+  private String assertPostAccountFailure(AccountSettings settings, HttpStatus expectedStatus) {
     try {
       adminApiTestClient.createAccount(settings);
     } catch (FeignException e) {
@@ -409,7 +409,7 @@ public class AccountSettingsSpringBootTest {
     return adminApiTestClient.findAccount(accountId);
   }
 
-  private ImmutableAccountSettings constructFullyPopulatedAccountSettings(final AccountId accountId) {
+  private AccountSettings constructFullyPopulatedAccountSettings(final AccountId accountId) {
     Objects.requireNonNull(accountId);
 
     return AccountSettings.builder()
