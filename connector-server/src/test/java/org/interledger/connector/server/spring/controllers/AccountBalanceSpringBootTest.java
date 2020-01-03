@@ -78,7 +78,7 @@ public class AccountBalanceSpringBootTest extends AbstractEndpointTest {
     createAccount(rex, customSettingsSimple("differentpassword"));
 
     expectedException.expect(FeignException.Unauthorized.class);
-    AccountBalanceResponse response = userClient.getBalance(baseURI(), bearer(password), rex.value());
+    userClient.getBalance(baseURI(), bearer(password), rex.value());
   }
 
   private String bearer(String password) {

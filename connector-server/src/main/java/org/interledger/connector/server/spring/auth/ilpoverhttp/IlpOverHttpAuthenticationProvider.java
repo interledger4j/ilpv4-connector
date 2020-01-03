@@ -63,21 +63,6 @@ import java.util.function.Supplier;
 @SuppressWarnings("UnstableApiUsage")
 public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider {
 
-  @Value.Immutable
-  interface DecisionsCacheKey {
-
-    static DecisionsCacheKey newKey(AccountId accountId, HashCode tokenHash) {
-      return ImmutableDecisionsCacheKey.builder()
-        .accountId(accountId)
-        .tokenHash(tokenHash)
-        .build();
-    }
-
-    AccountId accountId();
-    HashCode tokenHash();
-
-  }
-
   private static final String AUTH_DECISIONS_CACHE_NAME = "ilpOverHttpAuthenticationDecisionsCache";
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -320,6 +305,21 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       .principal(accountId)
       .authToken(token)
       .build();
+  }
+
+  @Value.Immutable
+  interface DecisionsCacheKey {
+
+    static DecisionsCacheKey newKey(AccountId accountId, HashCode tokenHash) {
+      return ImmutableDecisionsCacheKey.builder()
+        .accountId(accountId)
+        .tokenHash(tokenHash)
+        .build();
+    }
+
+    AccountId accountId();
+    HashCode tokenHash();
+
   }
 
 }
