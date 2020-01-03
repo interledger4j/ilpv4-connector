@@ -106,7 +106,7 @@ public class JwtRs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
 
     configureJwksEndpoint();
 
-    if (!adminClient.findAccount(baseURI(), VIC).isPresent()) {
+    if (!adminApiTestClient.findAccount(VIC).isPresent()) {
       final Map<String, Object> customSettings = Maps.newHashMap();
       customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, "JWT_RS_256 ");
       customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH);
@@ -124,7 +124,7 @@ public class JwtRs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
         .assetScale(2)
         .assetCode("XRP")
         .build();
-      adminClient.createAccount(baseURI(), accountSettings);
+      adminApiTestClient.createAccount(accountSettings);
     }
 
     if (!externalRoutingService.findBestNexHop(InterledgerAddress.of("test.connie.vic")).isPresent()) {

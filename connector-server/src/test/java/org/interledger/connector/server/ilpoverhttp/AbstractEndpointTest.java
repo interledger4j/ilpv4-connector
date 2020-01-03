@@ -84,7 +84,7 @@ public abstract class AbstractEndpointTest {
     AccountSettings toUpdate = AccountSettings.builder().from(settings)
       .customSettings(customSettingsSimple(newSharedSecret))
       .build();
-    return adminClient.updateAccount(baseURI(), settings.accountId().value(), toUpdate);
+    return adminApiTestClient.updateAccount(settings.accountId().value(), toUpdate);
   }
 
 
