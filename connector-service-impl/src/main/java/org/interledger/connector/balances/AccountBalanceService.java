@@ -3,7 +3,6 @@ package org.interledger.connector.balances;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.stream.Denomination;
 
 /**
  * Services requests related to the Account Balance API
@@ -31,11 +30,8 @@ public class AccountBalanceService {
       .map(settings ->
         AccountBalanceResponse.builder()
           .accountBalance(balanceTracker.balance(accountId))
-          .denomination(Denomination.builder()
-            .assetCode(settings.assetCode())
-            .assetScale((short) settings.assetScale())
-            .build()
-          )
+          .assetCode(settings.assetCode())
+          .assetScale((short) settings.assetScale())
           .build()
       ).orElseThrow(() -> new AccountNotFoundProblem(accountId));
   }

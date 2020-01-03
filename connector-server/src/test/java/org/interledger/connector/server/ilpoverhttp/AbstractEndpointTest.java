@@ -5,6 +5,7 @@ import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings;
 import org.interledger.connector.server.client.ConnectorAdminClient;
+import org.interledger.connector.server.client.ConnectorUserClient;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.JwtAuthSettings;
@@ -21,7 +22,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 
-@EnableFeignClients(clients = ConnectorAdminClient.class)
+@EnableFeignClients(clients = { ConnectorAdminClient.class, ConnectorUserClient.class })
 public abstract class AbstractEndpointTest {
 
   protected static final String ENCRYPTED_SHH
@@ -33,6 +34,9 @@ public abstract class AbstractEndpointTest {
 
   @Autowired
   protected ConnectorAdminClient adminClient;
+
+  @Autowired
+  protected ConnectorUserClient userClient;
 
   @LocalServerPort
   private int localServerPort;
