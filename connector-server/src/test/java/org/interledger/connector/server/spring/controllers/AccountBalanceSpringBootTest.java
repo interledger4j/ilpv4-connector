@@ -8,7 +8,7 @@ import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.balances.AccountBalance;
 import org.interledger.connector.balances.AccountBalanceResponse;
-import org.interledger.connector.balances.AccountBalanceService;
+import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.connector.server.ilpoverhttp.AbstractEndpointTest;
 import org.interledger.link.http.IlpOverHttpLink;
@@ -37,18 +37,20 @@ public class AccountBalanceSpringBootTest extends AbstractEndpointTest {
   public ExpectedException expectedException = ExpectedException.none();
 
   @MockBean
-  private AccountBalanceService accountBalanceService;
+  private BalanceTracker balanceTracker;
 
   @Test
   public void getBalanceRequiresAuthentication() {
-    AccountId accountId = AccountId.of("john");
+    AccountId accountId = AccountId.of("napoleon");
     expectedException.expect(FeignException.Unauthorized.class);
     userClient.getBalance(baseURI(), "", accountId.value());
   }
 
   @Test
   public void getBalance() {
-    AccountId accountId = AccountId.of("john");
+    AccountId accountId = AccountId.of("kip");
+    String password = "password";
+    AccountSettings settings = createAccount(accountId, customSettingsSimple(password));
     AccountBalance balance = AccountBalance.builder()
       .accountId(accountId)
       .clearingBalance(1)
@@ -57,14 +59,11 @@ public class AccountBalanceSpringBootTest extends AbstractEndpointTest {
 
     AccountBalanceResponse expected = AccountBalanceResponse.builder()
       .accountBalance(balance)
-      .assetScale((short) 9)
-      .assetCode("XRP")
+      .assetScale(settings.assetScale())
+      .assetCode(settings.assetCode())
       .build();
 
-    String password = "password";
-    createAccount(accountId, customSettingsSimple(password));
-
-    when(accountBalanceService.getAccountBalance(accountId)).thenReturn(expected);
+    when(balanceTracker.balance(accountId)).thenReturn(balance);
 
     AccountBalanceResponse response = userClient.getBalance(baseURI(), bearer(password), accountId.value());
     assertThat(response).isEqualTo(expected);
@@ -72,14 +71,14 @@ public class AccountBalanceSpringBootTest extends AbstractEndpointTest {
 
   @Test
   public void cantGetBalanceForDifferentUser() {
-    AccountId jill = AccountId.of("jill");
-    AccountId jane = AccountId.of("jane");
+    AccountId pedro = AccountId.of("pedro");
+    AccountId rex = AccountId.of("rex");
     String password = "password";
-    createAccount(jill, customSettingsSimple(password));
-    createAccount(jane, customSettingsSimple("differentpassword"));
+    createAccount(pedro, customSettingsSimple(password));
+    createAccount(rex, customSettingsSimple("differentpassword"));
 
     expectedException.expect(FeignException.Unauthorized.class);
-    AccountBalanceResponse response = userClient.getBalance(baseURI(), bearer(password), jane.value());
+    AccountBalanceResponse response = userClient.getBalance(baseURI(), bearer(password), rex.value());
   }
 
   private String bearer(String password) {
@@ -89,7 +88,7 @@ public class AccountBalanceSpringBootTest extends AbstractEndpointTest {
   protected AccountSettings createAccount(AccountId accountId, Map<String, Object> customSettings) {
     final AccountSettings accountSettings = AccountSettings.builder()
       .accountId(accountId)
-      .description("HTTP account for Bob using a simple shared-secret")
+      .description("unit test account")
       .accountRelationship(AccountRelationship.PEER)
       .linkType(IlpOverHttpLink.LINK_TYPE)
       .customSettings(customSettings)
