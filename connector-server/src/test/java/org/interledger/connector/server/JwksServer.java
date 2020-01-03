@@ -48,7 +48,7 @@ public class JwksServer {
         .map($ -> kpg.generateKeyPair())
         .collect(Collectors.toList());
     } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException(e);
+      throw new IllegalArgumentException(e);
     }
   }
 
