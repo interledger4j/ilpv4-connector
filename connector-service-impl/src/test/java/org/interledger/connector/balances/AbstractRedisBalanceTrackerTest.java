@@ -1,11 +1,17 @@
 package org.interledger.connector.balances;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.interledger.connector.balances.RedisBalanceTracker.CLEARING_BALANCE;
+import static org.interledger.connector.balances.RedisBalanceTracker.PREPAID_AMOUNT;
+import static org.mockito.Mockito.mock;
+
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.crypto.Decryptor;
 import org.interledger.connector.config.BalanceTrackerConfig;
 import org.interledger.connector.config.RedisConfig;
 import org.interledger.connector.jackson.ObjectMapperFactory;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.crypto.Decryptor;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.slf4j.Logger;
@@ -20,9 +26,6 @@ import redis.embedded.RedisServerBuilder;
 
 import java.util.Objects;
 import java.util.Optional;
-
-import static org.interledger.connector.balances.RedisBalanceTracker.CLEARING_BALANCE;
-import static org.interledger.connector.balances.RedisBalanceTracker.PREPAID_AMOUNT;
 
 /**
  * Unit tests for {@link RedisBalanceTracker} that validates the script and clearingBalance-change functionality for
@@ -129,6 +132,13 @@ public abstract class AbstractRedisBalanceTrackerTest {
     @Bean
     ObjectMapper objectMapper() {
       return ObjectMapperFactory.create();
+    }
+
+    @Bean
+    AccountSettingsRepository accountSettingsRepository() {
+      // bean not used by subclasses of this test class so just provide a mock to appease Spring
+      // rather than import ConnectorPersistenceConfig which has a bunch of stuff we don't need
+      return mock(AccountSettingsRepository.class);
     }
   }
 }

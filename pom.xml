@@ -467,6 +467,7 @@
                   <ignoredDependency>org.springframework.hateoas</ignoredDependency>
                   <ignoredDependency>org.springframework.security</ignoredDependency>
                   <ignoredDependency>org.springframework.data</ignoredDependency>
+                  <ignoredDependency>org.springframework.cloud:spring-cloud-starter-openfeign</ignoredDependency>
                   <ignoredDependency>org.springframework.cloud:spring-cloud-gcp-starter-pubsub</ignoredDependency>
 
                   <ignoredDependency>redis.clients:jedis:jar</ignoredDependency>
