@@ -3,6 +3,7 @@ package org.interledger.connector.server.ilpoverhttp;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.server.client.ConnectorUserClient;
 import org.interledger.connector.server.client.ConnectorAdminTestClient;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IncomingLinkSettings;
@@ -13,14 +14,17 @@ import com.google.common.collect.Maps;
 import feign.RequestInterceptor;
 import feign.auth.BasicAuthRequestInterceptor;
 import okhttp3.HttpUrl;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.junit.Before;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 
+@EnableFeignClients(clients = { ConnectorUserClient.class })
 public abstract class AbstractEndpointTest {
 
   protected static final String ENCRYPTED_SHH
@@ -34,6 +38,9 @@ public abstract class AbstractEndpointTest {
 
   @Value("${interledger.connector.adminPassword}")
   private String adminPassword;
+
+  @Autowired
+  protected ConnectorUserClient userClient;
 
   @LocalServerPort
   private int localServerPort;
