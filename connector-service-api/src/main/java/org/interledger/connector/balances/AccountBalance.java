@@ -1,11 +1,16 @@
 package org.interledger.connector.balances;
 
-import org.immutables.value.Value;
 import org.interledger.connector.accounts.AccountId;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.immutables.value.Value;
 
 import java.math.BigInteger;
 
 @Value.Immutable
+@JsonSerialize(as = ImmutableAccountBalance.class)
+@JsonDeserialize(as = ImmutableAccountBalance.class)
 public interface AccountBalance {
 
   static ImmutableAccountBalance.Builder builder() {

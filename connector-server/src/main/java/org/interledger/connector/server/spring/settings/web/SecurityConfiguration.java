@@ -155,6 +155,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       //////
       .antMatchers(HttpMethod.HEAD, PathConstants.SLASH_ACCOUNTS_ILP_PATH).authenticated()
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS_ILP_PATH).authenticated()
+      .antMatchers(HttpMethod.GET, PathConstants.SLASH_ACCOUNTS_BALANCE_PATH).authenticated()
       //.antMatchers(HttpMethod.GET, HealthController.SLASH_HEALTH).permitAll() // permitAll if hidden by LB.
       .antMatchers(HttpMethod.GET, METRICS_ENDPOINT_URL_PATH).permitAll() // permitAll if hidden by LB.
     ;

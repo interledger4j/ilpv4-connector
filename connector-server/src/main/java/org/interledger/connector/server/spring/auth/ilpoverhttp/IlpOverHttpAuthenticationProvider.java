@@ -27,6 +27,7 @@ import com.google.common.collect.Sets;
 import com.google.common.hash.HashCode;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import okhttp3.HttpUrl;
+import org.immutables.value.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -68,7 +69,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
   private final Decryptor decryptor;
 
   // See Javadoc above for how this is used.
-  private final Cache<HashCode, AuthenticationDecision> authenticationDecisions;
+  private final Cache<DecisionsCacheKey, AuthenticationDecision> authenticationDecisions;
   private AccountSettingsRepository accountSettingsRepository;
   private LinkSettingsFactory linkSettingsFactory;
   private Set<IlpOverHttpLinkSettings.AuthType> supportedJwtAuthTypes =
@@ -98,7 +99,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       // Expire after this duration, which will correspond to the last incoming request from the peer.
       // TODO: This value should be configurable and match the server-global token expiry.
       .expireAfterAccess(30, TimeUnit.MINUTES)
-      .removalListener((RemovalListener<HashCode, AuthenticationDecision>)
+      .removalListener((RemovalListener<DecisionsCacheKey, AuthenticationDecision>)
         (authenticationRequest, authenticationDecision, cause) ->
           logger.debug("Removing IlpOverHttp AuthenticationDecision from Cache for Principal: {}",
             authenticationDecision.getPrincipal()))
@@ -144,8 +145,8 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
   }
 
   private AuthenticationDecision authenticateBearer(BearerAuthentication bearerAuth) {
-    return authenticationDecisions.get(bearerAuth.hmacSha256(), (request) -> {
-      AccountId accountId = bearerAuth.getAccountId();
+    AccountId accountId = bearerAuth.getAccountId();
+    return authenticationDecisions.get(DecisionsCacheKey.newKey(accountId, bearerAuth.hmacSha256()), (request) -> {
       IncomingLinkSettings incomingLinkSettings = getIncomingLinkSettings(accountId)
         .orElseThrow(() -> new IllegalArgumentException("no incoming settings for " + accountId));
 
@@ -304,6 +305,21 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       .principal(accountId)
       .authToken(token)
       .build();
+  }
+
+  @Value.Immutable
+  interface DecisionsCacheKey {
+
+    static DecisionsCacheKey newKey(AccountId accountId, HashCode tokenHash) {
+      return ImmutableDecisionsCacheKey.builder()
+        .accountId(accountId)
+        .tokenHash(tokenHash)
+        .build();
+    }
+
+    AccountId accountId();
+    HashCode tokenHash();
+
   }
 
 }
