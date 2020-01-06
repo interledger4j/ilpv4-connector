@@ -29,7 +29,7 @@
     <activeProfile>prod</activeProfile>
     <feign.version>10.7.0</feign.version>
     <java.version>1.8</java.version>
-    <ilp.version>HEAD-SNAPSHOT</ilp.version>
+    <ilp.version>1.0.2</ilp.version>
     <problem.version>0.23.0</problem.version>
     <problem-spring-web.version>0.25.2</problem-spring-web.version>
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
