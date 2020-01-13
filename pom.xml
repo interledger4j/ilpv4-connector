@@ -27,7 +27,7 @@
   <properties>
     <!-- By default, we run in prod mode, unless a different profile is specified. -->
     <activeProfile>prod</activeProfile>
-    <feign.version>10.7.0</feign.version>
+    <feign.version>10.7.2</feign.version>
     <java.version>1.8</java.version>
     <ilp.version>1.0.3</ilp.version>
     <problem.version>0.23.0</problem.version>
