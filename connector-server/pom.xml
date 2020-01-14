@@ -395,6 +395,7 @@
                   <jvmFlag>-Xverify:none</jvmFlag>
                   <jvmFlag>-XX:TieredStopAtLevel=1</jvmFlag>
                   <jvmFlag>-Dspring.profiles.default=dev</jvmFlag>
+                  <jvmFlag>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</jvmFlag>
                 </jvmFlags>
               </container>
             </configuration>
