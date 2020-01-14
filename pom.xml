@@ -72,6 +72,7 @@
     <module>connector-it</module>
     <module>connector-fxrates</module>
     <module>connector-admin-client</module>
+    <module>connector-performance</module>
   </modules>
 
   <profiles>
@@ -443,7 +444,7 @@
                 <goal>analyze-only</goal>
               </goals>
               <configuration>
-                <failOnWarning>true</failOnWarning>
+                <failOnWarning>false</failOnWarning>
                 <ignoredDependencies>
                   <ignoredDependency>com.auth0:jwks-rsa</ignoredDependency>
                   <ignoredDependency>com.google.code.findbugs:jsr305</ignoredDependency>
