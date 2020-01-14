@@ -95,7 +95,7 @@ public class AccountsController {
   )
   public HttpEntity<PagedModel<EntityModel<AccountSettings>>> getAccounts() {
 
-    // TODO: Add paging per https://github.com/sappenin/java-ilpv4-connector/issues/404
+    // TODO: Add paging per https://github.com/interledger4j/ilpv4-connector/issues/404
     final List<EntityModel<AccountSettings>> accountSettingsResources = accountManager.getAccounts()
       .stream()
       .map(redactor::redact)
