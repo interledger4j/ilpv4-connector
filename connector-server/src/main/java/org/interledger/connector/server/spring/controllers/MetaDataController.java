@@ -6,12 +6,7 @@ import org.interledger.connector.server.spring.controllers.model.ConnectorSettin
 import org.interledger.connector.settings.ConnectorSettings;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnResource;
 import org.springframework.boot.info.BuildProperties;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,10 +24,10 @@ import java.util.function.Supplier;
 @RestController
 public class MetaDataController {
 
-  Supplier<ConnectorSettings> connectorSettingsSupplier;
+  private Supplier<ConnectorSettings> connectorSettingsSupplier;
 
   @Autowired
-  BuildProperties buildProperties;
+  private BuildProperties buildProperties;
 
   public MetaDataController(Supplier<ConnectorSettings> connectorSettingsSupplier) {
     this.connectorSettingsSupplier = connectorSettingsSupplier;

@@ -26,7 +26,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @ActiveProfiles("test")
 public class MetaDataControllerTest {
 
-  Logger logger = LoggerFactory.getLogger(this.getClass());
+  private Logger logger = LoggerFactory.getLogger(this.getClass());
 
   @Autowired
   private TestRestTemplate restTemplate;
@@ -34,7 +34,7 @@ public class MetaDataControllerTest {
   private BasicJsonTester jsonTester = new BasicJsonTester(getClass());
 
   @Value("${interledger.connector.nodeIlpAddress}")
-  String testConnectorAddress;
+  private String testConnectorAddress;
 
   @Test
   public void getConnectorMetaData() {
