@@ -198,7 +198,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       return sourcePacket.getAmount();
     } else {
       // TODO: Consider a cache here for the source/dest conversion or perhaps an injected instance of
-      //  ExchangeRateProvider here (See https://github.com/sappenin/java-ilpv4-connector/issues/223)
+      //  ExchangeRateProvider here (See https://github.com/interledger4j/ilpv4-connector/issues/223)
       final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.assetCode());
       final int sourceScale = sourceAccountSettings.assetScale();
       final MonetaryAmount sourceAmount =
