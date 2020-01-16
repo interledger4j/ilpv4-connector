@@ -2,6 +2,7 @@ package org.interledger.connector.client;
 
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.jackson.ObjectMapperFactory;
+import org.interledger.connector.routing.StaticRoute;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Feign;
@@ -28,6 +29,7 @@ public interface ConnectorAdminClient {
   String CONTENT_TYPE = "Content-Type:";
 
   String ID = "id";
+  String PREFIX = "prefix";
   String APPLICATION_JSON = "application/json";
 
   /**
@@ -102,4 +104,11 @@ public interface ConnectorAdminClient {
     CONTENT_TYPE + APPLICATION_JSON
   })
   Response deleteAccountAsResponse(@Param(ID) String accountId) throws ThrowableProblem;
+
+  @RequestLine("PUT /routes/static/{prefix}")
+  @Headers( {
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON
+  })
+  StaticRoute createStaticRoute(@Param(PREFIX) String prefix, StaticRoute route) throws ThrowableProblem;
 }
