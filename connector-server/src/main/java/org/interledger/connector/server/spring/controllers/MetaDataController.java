@@ -6,6 +6,7 @@ import org.interledger.connector.server.spring.controllers.model.ConnectorSettin
 import org.interledger.connector.settings.ConnectorSettings;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnResource;
@@ -30,11 +31,7 @@ public class MetaDataController {
 
   Supplier<ConnectorSettings> connectorSettingsSupplier;
 
-  /**
-   * Autoconfigured from maven build.  Has to not be required and checked for null,
-   * otherwise WebMvcTests in our suite will fail when they can't autowire this bean
-   */
-  @Autowired(required = false)
+  @Autowired
   BuildProperties buildProperties;
 
   public MetaDataController(Supplier<ConnectorSettings> connectorSettingsSupplier) {
@@ -49,7 +46,7 @@ public class MetaDataController {
   public ResponseEntity<ConnectorSettingsResponse> getConnectorMetaData() {
     return new ResponseEntity<>(ConnectorSettingsResponse.builder()
       .operatorAddress(this.connectorSettingsSupplier.get().operatorAddress())
-      .version(this.buildProperties == null ? "unknown" : this.buildProperties.getVersion())
+      .version(this.buildProperties.getVersion())
       .build(), HttpStatus.OK);
   }
 }
