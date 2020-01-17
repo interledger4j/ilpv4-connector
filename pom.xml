@@ -357,6 +357,11 @@
         <version>4.0.2</version>
       </dependency>
       <dependency>
+        <groupId>org.reflections</groupId>
+        <artifactId>reflections</artifactId>
+        <version>0.9.11</version>
+      </dependency>
+      <dependency>
         <groupId>org.zalando</groupId>
         <artifactId>jackson-datatype-problem</artifactId>
         <version>${problem.version}</version>
