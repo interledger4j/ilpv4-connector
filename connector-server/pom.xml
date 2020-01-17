@@ -50,18 +50,13 @@
           <execution>
             <!-- disabled by default. enabled by docker profiles -->
             <phase>none</phase>
-            <goals>
-              <goal>build</goal>
-            </goals>
           </execution>
         </executions>
+        <!-- common configuration used by the 2 executions in the docker profile -->
         <configuration>
           <from>
             <image>adoptopenjdk/openjdk11:alpine-jre</image>
           </from>
-          <to>
-            <image>${container.image}:${container.version}</image>
-          </to>
           <container>
             <ports>
               <port>8080</port>
@@ -369,6 +364,7 @@
 
   <profiles>
     <profile>
+      <!-- this profile builds 2 docker images, 1 with newrelic agent and 1 without any agent configured -->
       <id>docker</id>
       <!-- ship liquibase with docker image build -->
       <dependencies>
@@ -377,31 +373,97 @@
           <artifactId>liquibase-core</artifactId>
           <scope>runtime</scope>
         </dependency>
+        <dependency>
+          <groupId>com.newrelic.agent.java</groupId>
+          <artifactId>newrelic-java</artifactId>
+          <version>5.9.0</version>
+          <scope>provided</scope>
+          <type>zip</type>
+        </dependency>
       </dependencies>
       <build>
         <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <version>3.1.1</version>
+            <executions>
+              <execution>
+                <id>unpack-newrelic</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>unpack-dependencies</goal>
+                </goals>
+                <configuration>
+                  <includeGroupIds>com.newrelic.agent.java</includeGroupIds>
+                  <includeArtifactIds>newrelic-java</includeArtifactIds>
+                  <!-- you can optionally exclude files -->
+                  <!-- <excludes>**/newrelic.yml</excludes> -->
+                  <overWriteReleases>false</overWriteReleases>
+                  <overWriteSnapshots>false</overWriteSnapshots>
+                  <overWriteIfNewer>true</overWriteIfNewer>
+                  <outputDirectory>${project.build.directory}/classes</outputDirectory>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <groupId>com.google.cloud.tools</groupId>
             <artifactId>jib-maven-plugin</artifactId>
             <executions>
               <execution>
+                <id>docker</id>
+                <!-- pinning to prepare-package so that it runs before the 2 new relic-specific plugin exections -->
+                <phase>prepare-package</phase>
+                <goals>
+                  <goal>build</goal>
+                </goals>
+                <configuration>
+                  <to>
+                    <image>${container.image}:${container.version}</image>
+                  </to>
+                  <container>
+                    <jvmFlags>
+                      <jvmFlag>-server</jvmFlag>
+                      <jvmFlag>-Xverify:none</jvmFlag>
+                      <jvmFlag>-XX:TieredStopAtLevel=1</jvmFlag>
+                      <jvmFlag>-Dspring.profiles.default=dev</jvmFlag>
+                      <jvmFlag>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</jvmFlag>
+                    </jvmFlags>
+                  </container>
+                </configuration>
+              </execution>
+              <execution>
+                <!--      connector + newrelic agent-->
+                <!--      Following ENV variables must be set in the docker container: -->
+                <!--      NEW_RELIC_LICENSE_KEY-->
+                <!--      NEW_RELIC_APP_NAME-->
+                <id>dockerNewRelic</id>
                 <phase>package</phase>
+                <goals>
+                  <goal>build</goal>
+                </goals>
+                <configuration>
+                  <to>
+                    <image>${container.image}:${container.version}-newrelic</image>
+                  </to>
+                  <container>
+                    <jvmFlags>
+                      <jvmFlag>-server</jvmFlag>
+                      <jvmFlag>-Xverify:none</jvmFlag>
+                      <jvmFlag>-XX:TieredStopAtLevel=1</jvmFlag>
+                      <jvmFlag>-Dspring.profiles.default=dev</jvmFlag>
+                      <jvmFlag>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</jvmFlag>
+                      <jvmFlag>-javaagent:/app/resources/newrelic/newrelic.jar</jvmFlag>
+                    </jvmFlags>
+                  </container>
+                </configuration>
               </execution>
             </executions>
-            <configuration>
-              <container>
-                <jvmFlags>
-                  <jvmFlag>-server</jvmFlag>
-                  <jvmFlag>-Xverify:none</jvmFlag>
-                  <jvmFlag>-XX:TieredStopAtLevel=1</jvmFlag>
-                  <jvmFlag>-Dspring.profiles.default=dev</jvmFlag>
-                  <jvmFlag>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</jvmFlag>
-                </jvmFlags>
-              </container>
-            </configuration>
           </plugin>
         </plugins>
       </build>
     </profile>
+
   </profiles>
 </project>
