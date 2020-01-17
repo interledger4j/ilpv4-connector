@@ -1,10 +1,15 @@
 package org.interledger.connector.server;
 
 import org.interledger.connector.server.spring.settings.SpringConnectorConfig;
+import org.interledger.connector.server.spring.settings.web.FixContentTypeFilter;
+
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+
+import javax.servlet.Filter;
 
 /**
  * Initial Config for an ILP Connector Server.
@@ -29,6 +34,11 @@ public class ConnectorServerConfig {
    */
   public int getPort() {
     return server.getWebServer().getPort();
+  }
+
+  @Bean
+  public Filter filter() {
+    return new FixContentTypeFilter();
   }
 
 }
