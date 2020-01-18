@@ -30,6 +30,5 @@ public interface ConnectorSettingsResponse {
 
   @Value.Default
   default String version() {
-    return "0.2.0";
   }
 }
