@@ -100,7 +100,7 @@ public class CaffeineCacheConfig {
     final Cache<ConversionQuery, ExchangeRate> fxCache = Caffeine.newBuilder()
         .recordStats() // Publish stats to prometheus
         // TODO: Make this configurable in order to support more frequent FX rate lookups.
-        // See https://github.com/sappenin/java-ilpv4-connector/issues/401
+        // See https://github.com/interledger4j/java-ilpv4-connector/issues/401
         .expireAfterAccess(30, TimeUnit.SECONDS)
         .build(); // No default loading function.
 

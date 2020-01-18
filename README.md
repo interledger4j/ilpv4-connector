@@ -15,13 +15,13 @@
 [docker-image]: https://img.shields.io/docker/pulls/interledger4j/java-ilpv4-connector.svg?maxAge=2592000
 [docker-url]: https://hub.docker.com/r/interledger4j/java-ilpv4-connector/
 [license-image]: https://img.shields.io/github/license/sappenin/java-ilp-connector.svg
-[license-url]: https://github.com/sappenin/java-ilp-connector/blob/master/LICENSE
+[license-url]: https://github.com/interledger4j/java-ilp-connector/blob/master/LICENSE
 [codecov-image]: https://codecov.io/gh/sappenin/java-ilpv4-connector/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/sappenin/java-ilpv4-connector
 [codacy-image]: https://api.codacy.com/project/badge/Grade/1babca6909634800820939c75b20d361
 [codacy-url]: https://www.codacy.com/manual/xpring/java-ilpv4-connector?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=sappenin/java-ilpv4-connector&amp;utm_campaign=Badge_Grade
 [github-issues-image]: https://img.shields.io/github/issues/sappenin/java-ilpv4-connector.svg
-[github-issues-url]: https://github.com/sappenin/java-ilpv4-connector/issues
+[github-issues-url]: https://github.com/interledger4j/java-ilpv4-connector/issues
 
 
 A Java implementation of an Interledger v4 Connector.

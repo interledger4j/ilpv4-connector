@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
 import javax.money.CurrencyUnit;
 import javax.money.Monetary;
 import javax.money.MonetaryAmount;
@@ -194,11 +195,13 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
      * we would have to do additional load testing on those VMs to get a better idea of how big of a deviation we see.
      */
 
+    // TODO: Remove this check. We should always to currency conversion, even if we're forwarding internally
+    //  (internal accounts should probably use a standard currency, like USD).
     if (!this.addressUtils.isExternalForwardingAllowed(sourcePacket.getDestination())) {
       return sourcePacket.getAmount();
     } else {
       // TODO: Consider a cache here for the source/dest conversion or perhaps an injected instance of
-      //  ExchangeRateProvider here (See https://github.com/sappenin/java-ilpv4-connector/issues/223)
+      //  ExchangeRateProvider here (See https://github.com/interledger4j/java-ilpv4-connector/issues/223)
       final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.assetCode());
       final int sourceScale = sourceAccountSettings.assetScale();
       final MonetaryAmount sourceAmount =
@@ -214,15 +217,30 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
   }
 
   /**
-   * FIXME this can be removed after we stop operating in shadow mode
+   * NOTE: This method only exists in order to get FX info into PubSub + BigQuery. See deprecation note below for more
+   * details.
+   *
    * @param sourceAccountSettings
    * @param destinationAccountSettings
    * @param sourcePacket
+   *
    * @return
+   *
+   * @deprecated This only exists to faciliate getting FX information into BigQuery. However, this method should be
+   *   removed once https://github.com/interledger4j/ilpv4-connector/issues/529 is fixed (see that issue for more
+   *   details).
    */
-  public BigDecimal determineExchangeRate(final AccountSettings sourceAccountSettings,
-                                             final AccountSettings destinationAccountSettings,
-                                             final InterledgerPreparePacket sourcePacket) {
+  @Deprecated
+  public BigDecimal determineExchangeRate(
+    final AccountSettings sourceAccountSettings,
+    final AccountSettings destinationAccountSettings,
+    final InterledgerPreparePacket sourcePacket
+  ) {
+    Objects.requireNonNull(sourceAccountSettings);
+    Objects.requireNonNull(destinationAccountSettings);
+    Objects.requireNonNull(sourcePacket);
+
+    // TODO: Remove!
     if (!this.addressUtils.isExternalForwardingAllowed(sourcePacket.getDestination())) {
       return BigDecimal.ZERO;
     }

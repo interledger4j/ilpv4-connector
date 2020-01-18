@@ -175,7 +175,7 @@ public class TwoConnectorXrpSettlementIT extends AbstractIlpOverHttpIT {
     // This amount is ZERO because the onFulfill script will preemptively reduce this account by the settlement amount.
     // In this test, the settle threshold is 1000, and settle_to is 0, so the new balance will be 0 because we expect
     // a settlement payment to be made (note that on an exception, this amount should go back up).
-    // TODO: See https://github.com/sappenin/java-ilpv4-connector/issues/216 for tracking
+    // TODO: See https://github.com/interledger4j/java-ilpv4-connector/issues/216 for tracking
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO);
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, THOUSAND.negate());
     assertAccountBalance(bobConnector, PING_ACCOUNT_ID, THOUSAND);

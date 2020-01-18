@@ -62,8 +62,9 @@ public interface AccountSettings {
   /**
    * Determines if this account is <tt>internal</tt> or <tt>external</tt>. Internal accounts are allowed to process
    * packets in the `self` and `private` prefixes, but packets from an internal account MUST not be forwarded to an
-   * external address. External account are not allowed to route packets to an internal account, but are allowed to have
-   * packets forwarded to other external accounts.
+   * external address. Likewise, external account are not allowed to be the source of packets that get forwarded to
+   * an internal account, but external accounts are allowed to be the source of packets that get forwarded to other
+   * external accounts. For more details on these rules, see `InterledgerAddressUtils`.
    *
    * @return {@code true} if this account is <tt>internal</tt>; {@code false} otherwise.
    */
@@ -168,7 +169,7 @@ public interface AccountSettings {
    */
   boolean isReceiveRoutes();
 
-  // TODO: `throughput`, `ratelimit`, `deduplicate`, etc.
+  // TODO: `throughput`, `ratelimit`, etc.
   // See https://github.com/interledgerjs/ilp-connector#accounts
 
   /**

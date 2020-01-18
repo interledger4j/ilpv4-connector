@@ -173,7 +173,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       /////////////
       // Settlement
       /////////////
-      // TODO: See https://github.com/sappenin/java-ilpv4-connector/issues/226
+      // TODO: See https://github.com/interledger4j/java-ilpv4-connector/issues/226
       // Once that's addressed, then these should be secured.
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID + PathConstants.SLASH_SETTLEMENTS).permitAll()
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID + PathConstants.SLASH_MESSAGES).permitAll()

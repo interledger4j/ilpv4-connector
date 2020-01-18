@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * <p>Defines the type of relationship between two ILP nodes for a given account, from the perspective of the Node
  * operating the link. For example, if a node is operating a link of type {@link AccountRelationship#CHILD}, then we
- * consider the remote link to be the child of the operating node (i.e., this link is my "child").</p>
+ * consider the remote link to be the child of the operating node.</p>
  *
  * <p>Each link will have one of three relationship-types that reflect how the link is related to the peer
  * on the other side of the link. These types include <tt>peer</tt>, <tt>parent</tt> or <tt>child</tt>.</p>
@@ -19,8 +19,9 @@ import java.util.Objects;
  * <p>A node MUST only have one link of type parent or, if it has multiple, only one configured to use the IL-DCP
  * protocol upon establishing the link, to request an address from the parent.</p>
  *
- * <p>A node that has links of type child must host an IL-DCP service to allow the nodes on those links to request
- * addresses. Generally these will be sub-addresses of the node's own address however this is not a requirement.</p>
+ * <p>A node that has links of type {@link AccountRelationship#CHILD} must host an IL-DCP service to allow the nodes on
+ * those links to request addresses. Generally these will be sub-addresses of the node's own address however this is not
+ * a requirement.</p>
  */
 public enum AccountRelationship {
 

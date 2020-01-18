@@ -216,7 +216,7 @@ public class DefaultSettlementService implements SettlementService {
     //  this call fails, we need to be sure to reset it. For now, we block the ILP flow, but in production this
     //  probably needs to be separated into a different thread so the ILP layer doesn't timeout accidentally.
 
-    // TODO: https://github.com/sappenin/java-ilpv4-connector/issues/216
+    // TODO: https://github.com/interledger4j/java-ilpv4-connector/issues/216
     // This request should be async, and likely scheduled for retry in a queue, just in-case the connector crashes
     // while this is being processed.
     return accountSettings.settlementEngineDetails()
