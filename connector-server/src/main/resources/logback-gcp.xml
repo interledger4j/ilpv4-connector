@@ -1,0 +1,13 @@
+<!-- For connectors running on GCP. Uses format that is friendly for Stack Driver to consume -->
+<configuration>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+      <layout class="org.interledger.connector.server.spring.gcp.GCPCloudLoggingJSONLayout">
+        <pattern>%-4relative [%thread] %-5level %logger{35} - %msg</pattern>
+      </layout>
+    </encoder>
+  </appender>
+  <root level="INFO">
+    <appender-ref ref="STDOUT"/>
+  </root>
+</configuration>
