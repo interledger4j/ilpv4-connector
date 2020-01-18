@@ -193,7 +193,6 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
      * 2.6 GHz Intel Core i7. It's more than likely that this performance will be lower on virtual machines, but
      * we would have to do additional load testing on those VMs to get a better idea of how big of a deviation we see.
      */
-
     final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.assetCode());
     final int sourceScale = sourceAccountSettings.assetScale();
     final MonetaryAmount sourceAmount =
