@@ -28,7 +28,6 @@ public interface ConnectorSettingsResponse {
     return Link.SELF;
   }
 
-  @Value.Default
   default String version() {
   }
 }
