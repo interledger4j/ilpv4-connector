@@ -28,6 +28,5 @@ public interface ConnectorSettingsResponse {
     return Link.SELF;
   }
 
-String version() {
-  }
+  String version();
 }
