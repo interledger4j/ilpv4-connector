@@ -19,7 +19,6 @@ import java.util.function.Supplier;
 /**
  * A RESTful controller for returning meta-data about the currently running Connector runtime.
  *
- * @see "https://github.com/interledger/rfcs/blob/master/0035-ilp-over-http/0035-ilp-over-http.md"
  */
 @RestController
 public class MetaDataController {
