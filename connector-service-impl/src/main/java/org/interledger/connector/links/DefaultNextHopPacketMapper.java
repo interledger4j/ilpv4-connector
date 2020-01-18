@@ -75,7 +75,6 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     this.currencyConverter = currencyConverter;
   }
 
-
   /**
    * Construct the <tt>next-hop</tt> ILP prepare packet, meaning a new packet with potentially new pricing, destination,
    * and expiry characteristics. This method also includes the proper "next hop" account that the new packet should be
@@ -155,14 +154,14 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
   }
 
   /**
-   * Given a source account, determine the exchange-rate and new amount that should be returned in order to create the
-   * next packet in the chain for the destination account.
+   * Given a source account, determine the exchange-rate and new amount that should be used in order to forward the
+   * packet to the indicated destination account.
    *
-   * @param sourceAccountSettings
-   * @param destinationAccountSettings
-   * @param sourcePacket
+   * @param sourceAccountSettings      The {@link AccountSettings} that sourced the prepare packet.
+   * @param destinationAccountSettings The {@link AccountSettings} for the destination account.
+   * @param sourcePacket               The {@link InterledgerPreparePacket} being routed.
    *
-   * @return A BigInteger is the correct units for the source account.
+   * @return An {@link UnsignedLong} in the correct units for the destination account.
    */
   @VisibleForTesting
   protected UnsignedLong determineNextAmount(
@@ -195,25 +194,17 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
      * we would have to do additional load testing on those VMs to get a better idea of how big of a deviation we see.
      */
 
-    // TODO: Remove this check. We should always to currency conversion, even if we're forwarding internally
-    //  (internal accounts should probably use a standard currency, like USD).
-    if (!this.addressUtils.isExternalForwardingAllowed(sourcePacket.getDestination())) {
-      return sourcePacket.getAmount();
-    } else {
-      // TODO: Consider a cache here for the source/dest conversion or perhaps an injected instance of
-      //  ExchangeRateProvider here (See https://github.com/interledger4j/java-ilpv4-connector/issues/223)
-      final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.assetCode());
-      final int sourceScale = sourceAccountSettings.assetScale();
-      final MonetaryAmount sourceAmount =
-        javaMoneyUtils.toMonetaryAmount(sourceCurrencyUnit, sourcePacket.getAmount().bigIntegerValue(), sourceScale);
+    final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.assetCode());
+    final int sourceScale = sourceAccountSettings.assetScale();
+    final MonetaryAmount sourceAmount =
+      javaMoneyUtils.toMonetaryAmount(sourceCurrencyUnit, sourcePacket.getAmount().bigIntegerValue(), sourceScale);
 
-      final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAccountSettings.assetCode());
-      final int destinationScale = destinationAccountSettings.assetScale();
-      final CurrencyConversion destCurrencyConversion = currencyConverter.apply(destinationCurrencyUnit);
+    final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAccountSettings.assetCode());
+    final int destinationScale = destinationAccountSettings.assetScale();
+    final CurrencyConversion destCurrencyConversion = currencyConverter.apply(destinationCurrencyUnit);
 
-      return UnsignedLong.valueOf(
-        javaMoneyUtils.toInterledgerAmount(sourceAmount.with(destCurrencyConversion), destinationScale));
-    }
+    return UnsignedLong.valueOf(
+      javaMoneyUtils.toInterledgerAmount(sourceAmount.with(destCurrencyConversion), destinationScale));
   }
 
   /**
@@ -239,11 +230,6 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     Objects.requireNonNull(sourceAccountSettings);
     Objects.requireNonNull(destinationAccountSettings);
     Objects.requireNonNull(sourcePacket);
-
-    // TODO: Remove!
-    if (!this.addressUtils.isExternalForwardingAllowed(sourcePacket.getDestination())) {
-      return BigDecimal.ZERO;
-    }
 
     final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.assetCode());
     final int sourceScale = sourceAccountSettings.assetScale();

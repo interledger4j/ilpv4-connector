@@ -62,8 +62,8 @@ public interface AccountSettings {
   /**
    * Determines if this account is <tt>internal</tt> or <tt>external</tt>. Internal accounts are allowed to process
    * packets in the `self` and `private` prefixes, but packets from an internal account MUST not be forwarded to an
-   * external address. Likewise, external account are not allowed to be the source of packets that get forwarded to
-   * an internal account, but external accounts are allowed to be the source of packets that get forwarded to other
+   * external address. Likewise, external account are not allowed to be the source of packets that get forwarded to an
+   * internal account, but external accounts are allowed to be the source of packets that get forwarded to other
    * external accounts. For more details on these rules, see `InterledgerAddressUtils`.
    *
    * @return {@code true} if this account is <tt>internal</tt>; {@code false} otherwise.
@@ -158,16 +158,22 @@ public interface AccountSettings {
   AccountRateLimitSettings rateLimitSettings();
 
   /**
-   * Whether this account should receive and process route broadcasts from this peer. Defaults to `false` for {@link
-   * AccountRelationship#CHILD} and `true` otherwise.
+   * Indicates whether this account should send route broadcasts to this peer on the other side of this * account.
+   * Defaults to `true` for accounts of type {@link AccountRelationship#CHILD} or {@link AccountRelationship#PEER} and
+   * `false` otherwise.
    */
-  boolean isSendRoutes();
+  default boolean isSendRoutes() {
+    return this.isPeerAccount() || this.isChildAccount();
+  }
 
   /**
-   * Whether this account should broadcast routes to this peer. Defaults to `false` for {@link
-   * AccountRelationship#CHILD} and `true` otherwise.
+   * Indicates whether this account should receive/accept route broadcasts from the peer on the other side of this
+   * account. Defaults to `true` for accounts of type {@link AccountRelationship#PARENT} or {@link
+   * AccountRelationship#PEER} and `false` otherwise.
    */
-  boolean isReceiveRoutes();
+  default boolean isReceiveRoutes() {
+    return this.isPeerAccount() || this.isParentAccount();
+  }
 
   // TODO: `throughput`, `ratelimit`, etc.
   // See https://github.com/interledgerjs/ilp-connector#accounts
@@ -277,14 +283,14 @@ public interface AccountSettings {
     @Override
     @JsonProperty("sendRoutes")
     public boolean isSendRoutes() {
-      return false;
+      return this.isPeerAccount() || this.isChildAccount();
     }
 
     @Value.Default
     @Override
     @JsonProperty("receiveRoutes")
     public boolean isReceiveRoutes() {
-      return false;
+      return this.isPeerAccount() || this.isParentAccount();
     }
 
     @Value.Default
