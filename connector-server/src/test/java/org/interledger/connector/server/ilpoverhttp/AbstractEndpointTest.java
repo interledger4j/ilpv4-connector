@@ -3,8 +3,8 @@ package org.interledger.connector.server.ilpoverhttp;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.server.client.ConnectorUserClient;
 import org.interledger.connector.server.client.ConnectorAdminTestClient;
+import org.interledger.connector.server.client.ConnectorUserClient;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.JwtAuthSettings;
@@ -14,8 +14,8 @@ import com.google.common.collect.Maps;
 import feign.RequestInterceptor;
 import feign.auth.BasicAuthRequestInterceptor;
 import okhttp3.HttpUrl;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.junit.Before;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.cloud.openfeign.EnableFeignClients;
@@ -24,7 +24,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 
-@EnableFeignClients(clients = { ConnectorUserClient.class })
+@EnableFeignClients(clients = {ConnectorUserClient.class})
 public abstract class AbstractEndpointTest {
 
   protected static final String ENCRYPTED_SHH
@@ -35,13 +35,10 @@ public abstract class AbstractEndpointTest {
   protected static final String CONNIE = "connie";
 
   protected ConnectorAdminTestClient adminApiTestClient;
-
-  @Value("${interledger.connector.adminPassword}")
-  private String adminPassword;
-
   @Autowired
   protected ConnectorUserClient userClient;
-
+  @Value("${interledger.connector.adminPassword}")
+  private String adminPassword;
   @LocalServerPort
   private int localServerPort;
 
@@ -118,6 +115,11 @@ public abstract class AbstractEndpointTest {
     customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_SUBJECT, jwtAuthSettings.tokenSubject());
     customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_ISSUER, jwtAuthSettings.tokenIssuer().get().toString());
     customSettings.put(IncomingLinkSettings.HTTP_INCOMING_TOKEN_AUDIENCE, jwtAuthSettings.tokenAudience().get());
+
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, "SIMPLE");
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SIMPLE_AUTH_TOKEN, jwtAuthSettings.tokenSubject());
+    customSettings
+      .put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://" + jwtAuthSettings.tokenSubject() + ".example.com");
     return customSettings;
   }
 
