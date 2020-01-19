@@ -71,14 +71,14 @@ public interface AccountSettings {
   boolean isInternal();
 
   /**
-   * Determines if connections for this Account are initiated by this Connector, or if the connections are initiated by
-   * the counterparty.
+   * <p>Determines if connections for this Account are initiated by this Connector, or if the connections are
+   * initiated by the counterparty.</p>
    *
    * <p>For some Link types, such as BTP, a node can be either operate the Websocket client or server. In cases where
    * the Connector is the Websocket client, this value will be {@code true}. Conversely, if the Connector is operating
    * the Websocket server for an Account, then this value will be {@code false}.</p>
    *
-   * <p>For other Link types, such as Ilp-over-Http, the Connector will operate both a client _and_ a server, so
+   * <p>For other Link types, such as ILP-over-HTTP, the Connector will operate both a client _and_ a server, so
    * this value will always be {@code true}.</p>
    *
    * @return {@code true} if this Connector is the connection initiator for this {@link Link}; {@code false} otherwise.
