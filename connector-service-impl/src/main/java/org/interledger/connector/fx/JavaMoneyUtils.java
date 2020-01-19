@@ -1,12 +1,16 @@
 package org.interledger.connector.fx;
 
 import org.interledger.core.InterledgerPreparePacket;
+
 import org.javamoney.moneta.Money;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import javax.money.CurrencyUnit;
 import javax.money.MonetaryAmount;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 /**
  * Interledger amounts are integers, but most currencies are typically represented as fractional units, e.g. cents. This
@@ -14,6 +18,8 @@ import java.math.BigInteger;
  * primitives.
  */
 public class JavaMoneyUtils {
+
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   /**
    * Take an amount (typically sourced from an {@link InterledgerPreparePacket}) and convert it to a proper {@link
@@ -25,16 +31,21 @@ public class JavaMoneyUtils {
    *                    <tt>1*10^(-currencyScale)</tt>. For example, 10000 dollar-cents (assetScale is 2) would be
    *                    translated into dollars via the following equation: `10000 * (10^(-2))`, or `100.00`.
    *
-   * @return
+   * @return A {@link MonetaryAmount} representing the money corresponding to the supplied inputs.
    */
   public MonetaryAmount toMonetaryAmount(
     final CurrencyUnit currencyUnit, final BigInteger assetAmount, final int assetScale
   ) {
     // 12345 units in USD is $123.45
 
-    // BigDecimal.valueOf performs scaling automatically...
-    final BigDecimal scaledAmount = BigDecimal.valueOf(assetAmount.longValue(), assetScale);
-    return Money.of(scaledAmount, currencyUnit);
+    try {
+      // BigDecimal.valueOf performs scaling automatically...
+      final BigDecimal scaledAmount = BigDecimal.valueOf(assetAmount.longValue(), assetScale);
+      return Money.of(scaledAmount, currencyUnit);
+    } catch (Exception e) {
+      logger.error(e.getMessage(), e);
+      throw e;
+    }
   }
 
   /**
@@ -48,13 +59,20 @@ public class JavaMoneyUtils {
    *                       <tt>1*10^(-currencyScale)</tt>. For example, 10000 dollar-cents (assetScale is 2) would be
    *                       translated into dollars via the following equation: `10000 * (10^(-2))`, or `100.00`.
    *
-   * @return
+   * @return A {@link BigInteger} representing the ILP amount of teh supplied inputs. inputs.
    */
   public BigInteger toInterledgerAmount(MonetaryAmount monetaryAmount, int assetScale) {
     // 123.45 --> 12345 if scale is 2
 
-    return monetaryAmount.scaleByPowerOfTen(assetScale).getNumber().numberValue(BigDecimal.class)
-      // Throw an exception if any precision is lost.
-      .toBigIntegerExact();
+    try {
+      return monetaryAmount.scaleByPowerOfTen(assetScale).getNumber().numberValue(BigDecimal.class)
+        // This always rounds down so the Connector never loses money. E.g., if the monetary amount is 0.009, and is
+        // being converted to cents, then this should not convert into 0.01, because this suble rounding error would
+        // accrue over time as real money. Instead, 0.009 should convert to 0.00, which is what the unit tests validate.
+        .toBigInteger();
+    } catch (Exception e) {
+      logger.error(e.getMessage(), e);
+      throw e;
+    }
   }
 }

@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+
 import javax.money.CurrencyUnit;
 import javax.money.Monetary;
 
@@ -33,7 +34,9 @@ public class JavaMoneyUtilsTest {
     final int assetScale = 2;
 
     BigDecimal cents = BigDecimal.valueOf(0.1);
-    assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents.toBigInteger(), assetScale).getNumber().intValueExact()).isEqualTo(0);
+    assertThat(
+      javaMoneyUtils.toMonetaryAmount(currencyUSD, cents.toBigInteger(), assetScale).getNumber().intValueExact())
+      .isEqualTo(0);
   }
 
   @Test
@@ -41,7 +44,11 @@ public class JavaMoneyUtilsTest {
     final CurrencyUnit currencyUSD = Monetary.getCurrency("USD");
     final int assetScale = 0;
 
-    BigInteger cents = BigInteger.valueOf(1);
+    BigInteger cents = BigInteger.ZERO;
+    assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0"));
+
+    cents = BigInteger.ONE;
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
       .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("1"));
 
@@ -56,7 +63,6 @@ public class JavaMoneyUtilsTest {
     cents = BigInteger.valueOf(1999);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
       .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("1999"));
-
   }
 
   @Test
@@ -64,7 +70,11 @@ public class JavaMoneyUtilsTest {
     final CurrencyUnit currencyUSD = Monetary.getCurrency("USD");
     final int assetScale = 2;
 
-    BigInteger cents = BigInteger.valueOf(1);
+    BigInteger cents = BigInteger.ZERO;
+    assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0"));
+
+    cents = BigInteger.ONE;
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
       .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.01"));
 
@@ -87,7 +97,11 @@ public class JavaMoneyUtilsTest {
     final CurrencyUnit currencyUSD = Monetary.getCurrency("USD");
     final int assetScale = 9;
 
-    BigInteger cents = BigInteger.valueOf(1);
+    BigInteger cents = BigInteger.ZERO;
+    assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0"));
+
+    cents = BigInteger.ONE;
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyUSD, cents, assetScale)
       .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.000000001"));
 
@@ -110,7 +124,11 @@ public class JavaMoneyUtilsTest {
     final CurrencyUnit currencyXRP = Monetary.getCurrency("XRP");
     final int assetScale = 6;
 
-    BigInteger cents = BigInteger.valueOf(1);
+    BigInteger cents = BigInteger.ZERO;
+    assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, cents, assetScale)
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0"));
+
+    cents = BigInteger.ONE;
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, cents, assetScale)
       .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.000001"));
 
@@ -133,7 +151,11 @@ public class JavaMoneyUtilsTest {
     final CurrencyUnit currencyXRP = Monetary.getCurrency("XRP");
     final int assetScale = 0;
 
-    BigInteger cents = BigInteger.valueOf(1);
+    BigInteger cents = BigInteger.ZERO;
+    assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, cents, assetScale)
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0"));
+
+    cents = BigInteger.ONE;
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, cents, assetScale)
       .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("1"));
 
@@ -155,29 +177,16 @@ public class JavaMoneyUtilsTest {
   // toMonetaryAmount
   ///////////////////
 
-  @Test(expected = ArithmeticException.class)
-  public void toInterledgerInvalidUnits() {
-    final CurrencyUnit currencyUSD = Monetary.getCurrency("USD");
-    final int assetScale = 2;
-
-    try {
-      javaMoneyUtils.toInterledgerAmount(
-        Money.of(new BigDecimal("0.001"), currencyUSD),
-        assetScale
-      );
-    } catch (ArithmeticException e) {
-      assertThat(e.getMessage()).isEqualTo("Rounding necessary");
-      throw e;
-    }
-  }
-
   @Test
   public void toInterledgerAmountUSDToUSD() {
     final CurrencyUnit currencyUSD = Monetary.getCurrency("USD");
     final int assetScale = 0;
 
-    Money money = Money.of(BigInteger.valueOf(1), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1L));
+    Money money = Money.of(BigInteger.ZERO, currencyUSD);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ZERO);
+
+    money = Money.of(BigInteger.ONE, currencyUSD);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ONE);
 
     money = Money.of(BigInteger.valueOf(100), currencyUSD);
     assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(100L));
@@ -193,12 +202,29 @@ public class JavaMoneyUtilsTest {
   }
 
   @Test
-  public void toInterledgerCentsToUSD() {
+  public void toInterledgerAmountCentsToUSD() {
     final CurrencyUnit currencyUSD = Monetary.getCurrency("USD");
     final int assetScale = 2;
 
-    Money money = Money.of(new BigDecimal("0.01"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1L));
+    // There was an error where 1 drop was being sent to the ping account, which translated the value in
+    // `toInterledgerAmount` into cents. The amount in cents was `0.00000027214`, but when translated into cents, this
+    // produced an ArithmaticException because the code was using .toBigIntegerExact in an effort to catch rounding
+    // errors. However, that code has been changed to instead always round down in instances of precision loss so
+    // that rounding errors don't accrue into some large value.
+    Money money = Money.of(new BigDecimal("0.0"), currencyUSD);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ZERO);
+
+    money = Money.of(new BigDecimal("0.00000027214"), currencyUSD);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ZERO);
+
+    money = Money.of(new BigDecimal("0.001"), currencyUSD);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ZERO);
+
+    money = Money.of(new BigDecimal("0.009"), currencyUSD);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ZERO);
+
+    money = Money.of(new BigDecimal("0.01"), currencyUSD);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ONE);
 
     money = Money.of(new BigDecimal("1.00"), currencyUSD);
     assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(100L));
@@ -218,8 +244,14 @@ public class JavaMoneyUtilsTest {
     final CurrencyUnit currencyUSD = Monetary.getCurrency("USD");
     final int assetScale = 9;
 
-    Money money = Money.of(new BigDecimal("0.000000001"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1L));
+    Money money = Money.of(new BigDecimal("0.000000000"), currencyUSD);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ZERO);
+
+    money = Money.of(new BigDecimal("0.00000000099"), currencyUSD);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ZERO);
+
+    money = Money.of(new BigDecimal("0.000000001"), currencyUSD);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ONE);
 
     money = Money.of(new BigDecimal("0.0000001"), currencyUSD);
     assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(100L));
@@ -240,8 +272,17 @@ public class JavaMoneyUtilsTest {
     final CurrencyUnit currencyUSD = Monetary.getCurrency("XRP");
     final int assetScale = 6;
 
-    Money money = Money.of(new BigDecimal("0.000001"), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1L));
+    Money money = Money.of(new BigDecimal("0.00000000"), currencyUSD);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ZERO);
+
+    money = Money.of(new BigDecimal("0.000000001"), currencyUSD);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ZERO);
+
+    money = Money.of(new BigDecimal("0.00000001"), currencyUSD);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ZERO);
+
+    money = Money.of(new BigDecimal("0.000001"), currencyUSD);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ONE);
 
     money = Money.of(new BigDecimal("0.0001"), currencyUSD);
     assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(100L));
@@ -262,8 +303,8 @@ public class JavaMoneyUtilsTest {
     final CurrencyUnit currencyUSD = Monetary.getCurrency("XRP");
     final int assetScale = 0;
 
-    Money money = Money.of(BigInteger.valueOf(1), currencyUSD);
-    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1L));
+    Money money = Money.of(BigInteger.ONE, currencyUSD);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ONE);
 
     money = Money.of(BigInteger.valueOf(100), currencyUSD);
     assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(100L));
