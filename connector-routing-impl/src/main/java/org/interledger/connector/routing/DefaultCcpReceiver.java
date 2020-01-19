@@ -221,44 +221,41 @@ public class DefaultCcpReceiver implements CcpReceiver {
           );
         });
 
+    } catch (InterledgerProtocolException e) {
+      final InterledgerRejectPacket rejectPacket = e.getInterledgerRejectPacket();
+      logger.warn("Route control message was rejected by peer=%s. rejectPacket={}", rejectPacket);
+      return rejectPacket;
+    } catch (LinkException e) {
+      final InterledgerRejectPacket rejectPacket = InterledgerRejectPacket.builder()
+        .code(InterledgerErrorCode.T01_PEER_UNREACHABLE)
+        .message(String.format("Route control message could not be sent to peer=%s.", peerAccountId))
+        .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
+        .build();
+      logger.error(String.format(
+        "Route control message could not be sent to peer=%s. Rejecting with rejectPacket=%s",
+        peerAccountId, rejectPacket
+        ),
+        e // Exception is here so it gets logged properly.
+      );
+      return rejectPacket;
     } catch (Exception e) {
-      if (e instanceof InterledgerProtocolException) {
-        final InterledgerRejectPacket rejectPacket =
-          ((InterledgerProtocolException) e).getInterledgerRejectPacket();
-        logger.warn("Route control message was rejected by peer=%s. rejectPacket={}", rejectPacket);
-        return rejectPacket;
-      } else if (e instanceof LinkException) {
-        final InterledgerRejectPacket rejectPacket = InterledgerRejectPacket.builder()
-          .code(InterledgerErrorCode.T01_PEER_UNREACHABLE)
-          .message(String.format("Route control message could not be sent to peer=%s.", peerAccountId))
-          .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
-          .build();
-        logger.error(String.format(
-          "Route control message could not be sent to peer=%s. Rejecting with rejectPacket=%s",
-          peerAccountId, rejectPacket
-          ),
-          e // Exception is here so it gets logged properly.
-        );
-        return rejectPacket;
-      } else {
-        final InterledgerRejectPacket rejectPacket = InterledgerRejectPacket.builder()
-          .code(InterledgerErrorCode.F99_APPLICATION_ERROR)
-          .message(
-            String.format("Route control message could not be sent to peer=%s due to unknown error. error=%s",
-              this.peerAccountId,
-              e.getMessage()
-            )
+      final InterledgerRejectPacket rejectPacket = InterledgerRejectPacket.builder()
+        .code(InterledgerErrorCode.F99_APPLICATION_ERROR)
+        .message(
+          String.format("Route control message could not be sent to peer=%s due to unknown error. error=%s",
+            this.peerAccountId,
+            e.getMessage()
           )
-          .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
-          .build();
-        logger.error(String.format(
-          "Route control message could not be sent to peer=%s due to unknown error. Rejecting with rejectPacket=%s",
-          peerAccountId, rejectPacket
-          ),
-          e // Exception is here so it gets logged properly.
-        );
-        return rejectPacket;
-      }
+        )
+        .triggeredBy(connectorSettingsSupplier.get().operatorAddress())
+        .build();
+      logger.error(String.format(
+        "Route control message could not be sent to peer=%s due to unknown error. Rejecting with rejectPacket=%s",
+        peerAccountId, rejectPacket
+        ),
+        e // Exception is here so it gets logged properly.
+      );
+      return rejectPacket;
     }
   }
 
