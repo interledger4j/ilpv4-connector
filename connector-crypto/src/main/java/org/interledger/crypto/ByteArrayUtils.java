@@ -10,11 +10,14 @@ public class ByteArrayUtils {
   private static final SecureRandom secureRandom = new SecureRandom();
 
   /**
-   * Checks if the byte arrays are equal using a constant-time algorithm to prevent timing based attacks
-   * {@see https://codahale.com/a-lesson-in-timing-attacks/}
+   * Checks if the byte arrays are equal using a constant-time algorithm to prevent timing based attacks.
+   *
    * @param val1 first value to compare
    * @param val2 second value to compare
+   *
    * @return true if val1 equals val2
+   *
+   * @see "https://codahale.com/a-lesson-in-timing-attacks"
    */
   public static boolean isEqualUsingConstantTime(byte[] val1, byte[] val2) {
     if (val1.length != val2.length) {
