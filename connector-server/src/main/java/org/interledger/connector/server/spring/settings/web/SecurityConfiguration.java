@@ -167,7 +167,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .httpBasic()
       .and()
       .authorizeRequests()
-
+      .antMatchers(HttpMethod.GET, PathConstants.SLASH).permitAll()
       // @formatter:off
 
       /////////////
