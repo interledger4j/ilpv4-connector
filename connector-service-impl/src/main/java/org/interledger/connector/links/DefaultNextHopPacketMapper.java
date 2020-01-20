@@ -141,6 +141,19 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       sourceAccountSettings, destinationAccountSettings, sourcePacket
     );
 
+    // This warning is added to alert the Connector operator if a particular path is accruing value on the inbound
+    // link but mapping to 0 on the outbound link. This typically occurs if the precision on the inbound link is
+    // higher than the precision of the outbound link. For example, a packet with 99 units coming into the Connector
+    // on an inbound USD link with a scale of 2 (e.g., 99 cents) might map to a USD link with a scale of 0 (i.e., 1
+    // unit equals 1 US Dollar). This will translate into a value of 0 on the outbound linke because of the way the
+    // Connector implements rouding. If this happens enough, the incoming link will continue to spend money that
+    // will show up in the outbound Link. Generally, this will result in a rejection from the outbound link, but
+    // just in case we want the Connector operator to be able to detect this condition.
+    if (UnsignedLong.ZERO.equals(nextAmount)) {
+      logger.warn("While packet-switching, the source packet amount translated into a zero-value destination amount. "
+        + "sourcePacket={} nextHopRoute={}", sourcePacket, nextHopRoute);
+    }
+
     return NextHopInfo.builder()
       .nextHopAccountId(nextHopRoute.nextHopAccountId())
       .nextHopPacket(
