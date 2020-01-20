@@ -158,9 +158,11 @@ public interface AccountSettings {
   AccountRateLimitSettings rateLimitSettings();
 
   /**
-   * Indicates whether this account should send route broadcasts to this peer on the other side of this * account.
-   * Defaults to `true` for accounts of type {@link AccountRelationship#CHILD} or {@link AccountRelationship#PEER} and
-   * `false` otherwise.
+   * Indicates whether this account should send route broadcasts to the peer on the other side of this account. Defaults
+   * to `true` for accounts of type {@link AccountRelationship#CHILD} or {@link AccountRelationship#PEER} and `false`
+   * otherwise.
+   *
+   * @return {code true} if this account should send routes to the peer; {@code false} otherwise.
    */
   default boolean isSendRoutes() {
     return this.isPeerAccount() || this.isChildAccount();
@@ -170,6 +172,8 @@ public interface AccountSettings {
    * Indicates whether this account should receive/accept route broadcasts from the peer on the other side of this
    * account. Defaults to `true` for accounts of type {@link AccountRelationship#PARENT} or {@link
    * AccountRelationship#PEER} and `false` otherwise.
+   *
+   * @return {code true} if this account should accept routes from the peer; {@code false} otherwise.
    */
   default boolean isReceiveRoutes() {
     return this.isPeerAccount() || this.isParentAccount();
