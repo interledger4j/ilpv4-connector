@@ -93,7 +93,7 @@ public class DefaultNextHopPacketMapperTest {
     connectorSettings = ModifiableConnectorSettings.create();
     connectorSettings.setMinMessageWindowMillis(MIN_MESSAGE_WINDOW_MILLIS);
     connectorSettings.setMaxHoldTimeMillis(30000);
-    connectorSettings.setOperatorAddress(InterledgerAddress.of("g.safe"));
+    connectorSettings.setOperatorAddress(InterledgerAddress.of("test.safe"));
     mockConversionRate(1);
 
     mockExternalForwardingAllowed(true);
@@ -176,6 +176,93 @@ public class DefaultNextHopPacketMapperTest {
 
     UnsignedLong result = mapper.determineNextAmount(sourceSettings, defaultNextHopSettings().build(), preparePacket);
     assertThat(result).isEqualTo(UnsignedLong.valueOf(200));
+  }
+
+  /**
+   * When determining a "next hop" amount, if any rounding occurs, the Connector MUST ensure that FLOOR rounding is
+   * used. For example, imagine an incoming packet with an amount of 99 that arrives on an account/link with a scale of
+   * 2 (e.g., 99 cents). If this packet gets routed to an account/link with a scale of 0 (e.g., the minimum unit equals
+   * a dollar), then we want to make sure that outgoing account receives 0. If we rounded the other way, then the
+   * outgoing account would receive $1, whereas the Connector would have only collected 99 cents from the incoming
+   * account (if repeated enough times, the Connector would lose money).
+   */
+  @Test
+  public void determineNextAmountAlwaysRoundsDown1() {
+    Instant now = Instant.now(clock);
+    AccountSettings sourceSettings = defaultSenderAccountSettings()
+      .assetCode("USD")
+      .assetScale(2)
+      .build();
+    InterledgerPreparePacket preparePacket = defaultPreparePacket(now)
+      .amount(UnsignedLong.valueOf(99))
+      .build();
+
+    when(mockAccountCache.safeGetAccountId(NEXT_HOP.nextHopAccountId()))
+      .thenReturn(defaultNextHopSettings().build());
+
+    when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.of(NEXT_HOP));
+
+    int conversionRate = 1;
+    mockConversionRate(conversionRate);
+
+    final AccountSettings nextHopAccountSettings = defaultNextHopSettings().assetCode("USD").assetScale(0).build();
+    UnsignedLong result = mapper.determineNextAmount(sourceSettings, nextHopAccountSettings, preparePacket);
+    assertThat(result).isEqualTo(UnsignedLong.ZERO);
+  }
+
+  /**
+   * Same as the above test, Same as the above test, but the source exactly divisibly by the destination units (so no
+   * rounding expected).
+   */
+  @Test
+  public void determineNextAmountAlwaysRoundsDown2() {
+    Instant now = Instant.now(clock);
+    AccountSettings sourceSettings = defaultSenderAccountSettings()
+      .assetCode("USD")
+      .assetScale(2)
+      .build();
+    InterledgerPreparePacket preparePacket = defaultPreparePacket(now)
+      .amount(UnsignedLong.valueOf(100))
+      .build();
+
+    when(mockAccountCache.safeGetAccountId(NEXT_HOP.nextHopAccountId()))
+      .thenReturn(defaultNextHopSettings().build());
+
+    when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.of(NEXT_HOP));
+
+    int conversionRate = 1;
+    mockConversionRate(conversionRate);
+
+    final AccountSettings nextHopAccountSettings = defaultNextHopSettings().assetCode("USD").assetScale(0).build();
+    UnsignedLong result = mapper.determineNextAmount(sourceSettings, nextHopAccountSettings, preparePacket);
+    assertThat(result).isEqualTo(UnsignedLong.valueOf(1L));
+  }
+
+  /**
+   * Same as the above test, but the source is 1 unit more than the dest scale will allow (should round down to 1).
+   */
+  @Test
+  public void determineNextAmountAlwaysRoundsDown3() {
+    Instant now = Instant.now(clock);
+    AccountSettings sourceSettings = defaultSenderAccountSettings()
+      .assetCode("USD")
+      .assetScale(2)
+      .build();
+    InterledgerPreparePacket preparePacket = defaultPreparePacket(now)
+      .amount(UnsignedLong.valueOf(101))
+      .build();
+
+    when(mockAccountCache.safeGetAccountId(NEXT_HOP.nextHopAccountId()))
+      .thenReturn(defaultNextHopSettings().build());
+
+    when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.of(NEXT_HOP));
+
+    int conversionRate = 1;
+    mockConversionRate(conversionRate);
+
+    final AccountSettings nextHopAccountSettings = defaultNextHopSettings().assetCode("USD").assetScale(0).build();
+    UnsignedLong result = mapper.determineNextAmount(sourceSettings, nextHopAccountSettings, preparePacket);
+    assertThat(result).isEqualTo(UnsignedLong.valueOf(1L));
   }
 
   @Test
