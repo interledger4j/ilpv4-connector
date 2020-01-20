@@ -33,7 +33,7 @@ import java.util.function.Supplier;
 /**
  * A default implementation of {@link LinkManager} that stores all connectedLinks in-memory.
  *
- * TODO: Consider making this Manager stateless. See https://github.com/interledger4j/java-ilpv4-connector/issues/290 for
+ * TODO: Consider making this Manager stateless. See https://github.com/interledger4j/ilpv4-connector/issues/290 for
  * more details.
  */
 @SuppressWarnings("UnstableApiUsage")

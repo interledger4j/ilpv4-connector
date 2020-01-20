@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface PaymentRouter<R extends BaseRoute> {
 
   // The unique identifier of the account that collects all incoming ping protocol payments, if any.
-  // TODO: Move to connector-core as part of https://github.com/interledger4j/java-ilpv4-connector/issues/148
+  // TODO: Move to connector-core as part of https://github.com/interledger4j/ilpv4-connector/issues/148
   AccountId PING_ACCOUNT_ID = AccountId.of("__ping_account__");
 
   /**
