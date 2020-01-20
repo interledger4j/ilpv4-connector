@@ -133,7 +133,7 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
       .isEqualTo(bobBalanceAtAlice.negate());
     // Bob's Ping account should be approx the value of `bobBalanceAtAlice`, but in XRP. Since `bobBalanceAtAlice` is
     // denominated in JPY nano-yen, we need to convert it.
-    final UnsignedLong expectedPingBalanceInXRP = this.convertToXRP(bobBalanceAtAlice, "JPY", NANO_YEN_SCALE, "XRP", 9);
+    final UnsignedLong expectedPingBalanceInXRP = this.convert(bobBalanceAtAlice, "JPY", NANO_YEN_SCALE, "XRP", 9);
     assertThat(bobConnector.getBalanceTracker().balance(PING_ACCOUNT_ID).netBalance())
       .isEqualTo(BigInteger.valueOf(expectedPingBalanceInXRP.longValue()));
 
@@ -175,7 +175,13 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
     return BOB_CONNECTOR_ADDRESS;
   }
 
-  private UnsignedLong convertToXRP(
+  /**
+   * Convert a source amount to a destination amount for testing purposes.
+   *
+   * @deprecated Remove this once https://github.com/interledger4j/ilpv4-connector/issues/534 is completed.
+   */
+  @Deprecated
+  private UnsignedLong convert(
     final BigInteger sourceAmount,
     final String sourceAsssetCode, final int sourceScale,
     final String destinationAssetCode, final int destinationScale
