@@ -223,7 +223,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
 
     } catch (InterledgerProtocolException e) {
       final InterledgerRejectPacket rejectPacket = e.getInterledgerRejectPacket();
-      logger.warn("Route control message was rejected by peer=%s. rejectPacket={}", rejectPacket);
+      logger.warn("Route control message was rejected by peer={}. rejectPacket={}", peerAccountId, rejectPacket);
       return rejectPacket;
     } catch (LinkException e) {
       final InterledgerRejectPacket rejectPacket = InterledgerRejectPacket.builder()
