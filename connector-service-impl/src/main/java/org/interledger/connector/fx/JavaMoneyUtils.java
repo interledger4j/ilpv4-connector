@@ -3,8 +3,6 @@ package org.interledger.connector.fx;
 import org.interledger.core.InterledgerPreparePacket;
 
 import org.javamoney.moneta.Money;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
