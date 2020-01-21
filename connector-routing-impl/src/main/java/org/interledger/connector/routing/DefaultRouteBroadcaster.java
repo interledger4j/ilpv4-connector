@@ -80,16 +80,14 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
     Objects.requireNonNull(accountSettings);
 
     final AccountId accountId = accountSettings.accountId();
-    final boolean sendRoutes = this.shouldSendRoutes(accountSettings);
-    final boolean receiveRoutes = this.shouldReceiveRoutes(accountSettings);
+    final boolean sendRoutes = accountSettings.isSendRoutes();
+    final boolean receiveRoutes = accountSettings.isReceiveRoutes();
     if (!sendRoutes && !receiveRoutes) {
       logger.warn("Not sending nor receiving routes for peer. accountId={}", accountId);
       return Optional.empty();
     } else {
 
       final RoutableAccount routableAccountForPeer = Optional.ofNullable(this.ccpEnabledAccounts.get(accountId))
-        // Only add a broadcaster if receiveRoutes is enabled.
-        //.filter(existingPeer -> receiveRoutes)
         .map(existingPeer -> {
           // Every time we reconnect, we'll send a new route control message to make sure they are still sending us
           // routes, but only as long as receiving is enabled.
@@ -133,40 +131,6 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
   @Override
   public Stream<RoutableAccount> getAllCcpEnabledAccounts() {
     return this.ccpEnabledAccounts.values().stream();
-  }
-
-  /**
-   * Determines if the link configured for the accountSettings in {@code accountSettings} should send routes to the
-   * remote peer accountSettings.
-   *
-   * @param accountSettings An instance of {@link AccountSettings} for a remote peer accountSettings.
-   *
-   * @return {@code true} if the link is configured to send routes, {@code false} otherwise.
-   */
-  private boolean shouldSendRoutes(final AccountSettings accountSettings) {
-    Objects.requireNonNull(accountSettings);
-    if (accountSettings.isChildAccount()) {
-      return SHOULD_NOT_SEND_ROUTES;
-    } else {
-      return accountSettings.isSendRoutes();
-    }
-  }
-
-  /**
-   * Determines if the link configured for the accountSettings in {@code accountSettings} should receive routes from the
-   * remote peer accountSettings.
-   *
-   * @param accountSettings An instance of {@link AccountSettings} for a remote peer accountSettings.
-   *
-   * @return {@code true} if the link is configured to receive routes, {@code false} otherwise.
-   */
-  private boolean shouldReceiveRoutes(final AccountSettings accountSettings) {
-    Objects.requireNonNull(accountSettings);
-    if (accountSettings.isChildAccount()) {
-      return SHOULD_NOT_RECEIVE_ROUTES;
-    } else {
-      return accountSettings.isReceiveRoutes();
-    }
   }
 
   private CcpSender constructCcpSender(final AccountId peerAccountId, final Link link) {
