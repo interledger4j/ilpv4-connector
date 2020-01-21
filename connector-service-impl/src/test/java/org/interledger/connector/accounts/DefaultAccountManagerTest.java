@@ -17,10 +17,7 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.persistence.repositories.DeletedAccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementEngineClient;
-import org.interledger.link.LinkSettings;
 import org.interledger.link.LinkType;
-import org.interledger.link.LoopbackLink;
-import org.interledger.link.PingLoopbackLink;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
@@ -36,7 +33,6 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.springframework.core.convert.ConversionService;
 
-import java.util.Objects;
 import java.util.Optional;
 
 public class DefaultAccountManagerTest {
