@@ -96,6 +96,24 @@ public class DefaultAccountManagerTest {
   }
 
   @Test
+  public void validateLinkSettingsFailsOnInvalidLinkType() {
+    AccountSettings accountSettings = AccountSettings.builder()
+      .accountId(AccountId.of("UnsupportedLinkTypeGuy"))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("UnsupportedLinkType"))
+      .accountRelationship(AccountRelationship.PEER)
+      .build();
+
+    expectedException.expect(InvalidAccountSettingsProblem.class);
+    expectedException.expectMessage("Unsupported LinkType:");
+
+    when(linkSettingsFactory.constructTyped(accountSettings)).thenThrow(new IllegalArgumentException("Unsupported LinkType: " + accountSettings.linkType()));
+
+    accountManager.validateLinkSettings(accountSettings);
+  }
+
+  @Test
   public void deleteAccount() {
     AccountId accountId = AccountId.of("egg");
     final AccountSettings accountSettings = AccountSettings.builder()

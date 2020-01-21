@@ -23,6 +23,7 @@ import org.interledger.ildcp.IldcpRequest;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
 import org.interledger.link.Link;
+import org.interledger.link.LinkSettings;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 
@@ -194,9 +195,12 @@ public class DefaultAccountManager implements AccountManager {
   @Override
   public AccountSettings validateLinkSettings(AccountSettings accountSettings) {
     try {
+
+      // Calling this for all link types will make sure the link type is supported
+      LinkSettings linkSettings = linkSettingsValidator.validateSettings(linkSettingsFactory.constructTyped(accountSettings));
+
       if (accountSettings.linkType().equals(IlpOverHttpLink.LINK_TYPE)) {
-        IlpOverHttpLinkSettings ilpOverHttpLinkSettings =
-          linkSettingsValidator.validateSettings(linkSettingsFactory.constructTyped(accountSettings));
+        IlpOverHttpLinkSettings ilpOverHttpLinkSettings = (IlpOverHttpLinkSettings) linkSettings;
 
         return AccountSettings.builder()
           .from(accountSettings)
