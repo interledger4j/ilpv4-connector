@@ -22,6 +22,7 @@ import org.interledger.connector.server.spring.settings.Redactor;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.SettlementEngineClientException;
 import org.interledger.connector.settlement.client.CreateSettlementAccountResponse;
+import org.interledger.link.LinkType;
 import org.interledger.link.LoopbackLink;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
@@ -372,6 +373,56 @@ public class AccountSettingsSpringBootTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
   }
 
+  @Test
+  public void testCreateAccountFailsOnInvalidLinkType() {
+    final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
+    final AccountSettings settings = AccountSettings.builder()
+      .accountId(accountId)
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(LinkType.of("foo"))
+      .createdAt(Instant.now())
+      .build();
+
+    String rawResponse = assertPostAccountFailure(settings, HttpStatus.BAD_REQUEST);
+    JsonContentAssert assertJson = assertThat(jsonTester.from(rawResponse));
+    assertJson.extractingJsonPathValue("status").isEqualTo(400);
+    assertJson.extractingJsonPathValue("title").isEqualTo("Invalid Account Settings");
+    assertJson.extractingJsonPathValue("detail").isEqualTo("Unsupported LinkType: LinkType(FOO)");
+  }
+
+  @Test
+  public void testUpdateAccountFailsOnInvalidLinkType() throws IOException {
+    final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
+    final AccountSettings settings = AccountSettings.builder()
+      .accountId(accountId)
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(LoopbackLink.LINK_TYPE)
+      .createdAt(Instant.now())
+      .build();
+
+    AccountSettings response = assertPostAccountCreated(settings);
+    assertThat(response).isEqualTo(settings);
+
+    final AccountSettings updatedSettings = AccountSettings.builder()
+      .accountId(accountId)
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(LinkType.of("foo"))
+      .createdAt(Instant.now())
+      .build();
+
+    String rawResponse = assertPutAccountFailure(updatedSettings, HttpStatus.BAD_REQUEST);
+    JsonContentAssert assertJson = assertThat(jsonTester.from(rawResponse));
+    assertJson.extractingJsonPathValue("status").isEqualTo(400);
+    assertJson.extractingJsonPathValue("title").isEqualTo("Invalid Account Settings");
+    assertJson.extractingJsonPathValue("detail").isEqualTo("Unsupported LinkType: LinkType(FOO)");
+  }
+
   //////////////////
   // Private Helpers
   //////////////////
@@ -387,6 +438,17 @@ public class AccountSettingsSpringBootTest {
   private String assertPostAccountFailure(AccountSettings settings, HttpStatus expectedStatus) {
     try {
       adminApiTestClient.createAccount(settings);
+    } catch (FeignException e) {
+      assertThat(e.status()).isEqualTo(expectedStatus.value());
+      return e.contentUTF8();
+    }
+    fail("Expected failure");
+    return "not reachable";
+  }
+
+  private String assertPutAccountFailure(AccountSettings settings, HttpStatus expectedStatus) {
+    try {
+      adminApiTestClient.updateAccount(settings.accountId().value(), settings);
     } catch (FeignException e) {
       assertThat(e.status()).isEqualTo(expectedStatus.value());
       return e.contentUTF8();
