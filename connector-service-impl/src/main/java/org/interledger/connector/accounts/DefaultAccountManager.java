@@ -22,10 +22,8 @@ import org.interledger.ildcp.IldcpFetcher;
 import org.interledger.ildcp.IldcpRequest;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
-import org.interledger.link.ImmutableLinkSettings;
 import org.interledger.link.Link;
 import org.interledger.link.LinkSettings;
-import org.interledger.link.LinkType;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 
@@ -35,17 +33,14 @@ import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
 import org.hibernate.exception.ConstraintViolationException;
-import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -200,14 +195,12 @@ public class DefaultAccountManager implements AccountManager {
   @Override
   public AccountSettings validateLinkSettings(AccountSettings accountSettings) {
     try {
-      if (!isValidLinkType(accountSettings.linkType())) {
-        String problemMessage = String.format("Invalid Link type. Tried to create account with Link type = %s." +
-          " Available link types: %s", accountSettings.linkType(), getValidLinkTypesAsString());
-        throw new InvalidAccountSettingsProblem(problemMessage, accountSettings.accountId());
-      }
+
+      // Calling this for all link types will make sure the link type is supported
+      LinkSettings linkSettings = linkSettingsValidator.validateSettings(linkSettingsFactory.constructTyped(accountSettings));
+
       if (accountSettings.linkType().equals(IlpOverHttpLink.LINK_TYPE)) {
-        IlpOverHttpLinkSettings ilpOverHttpLinkSettings =
-          linkSettingsValidator.validateSettings(linkSettingsFactory.constructTyped(accountSettings));
+        IlpOverHttpLinkSettings ilpOverHttpLinkSettings = (IlpOverHttpLinkSettings) linkSettings;
 
         return AccountSettings.builder()
           .from(accountSettings)
@@ -218,34 +211,6 @@ public class DefaultAccountManager implements AccountManager {
     } catch (IllegalArgumentException e) {
       throw new InvalidAccountSettingsProblem(e.getMessage(), accountSettings.accountId());
     }
-  }
-
-  private List<LinkType> getValidLinkTypes() {
-    Reflections reflections = new Reflections("org.interledger.link");
-    Set<Class<? extends LinkSettings>> implementedLinkSettings = reflections.getSubTypesOf(LinkSettings.class);
-    implementedLinkTypes = implementedLinkSettings.stream()
-      .map(linkSettings -> {
-        try {
-          return ((ImmutableLinkSettings.Builder) linkSettings.getMethod("getLinkType")
-            .invoke(linkSettings.getMethod("builder").invoke(null)))
-           .build().getLinkType();
-        } catch (IllegalAccessException e) {
-          logger.warn("LinkSettings");
-        } catch (InvocationTargetException e) {
-          e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-          e.printStackTrace();
-        }
-      })
-  }
-
-
-  private String getValidLinkTypesAsString() {
-    return null;
-  }
-
-  private boolean isValidLinkType(LinkType linkType) {
-    return false;
   }
 
   @VisibleForTesting

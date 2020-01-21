@@ -17,7 +17,10 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.persistence.repositories.DeletedAccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementEngineClient;
+import org.interledger.link.LinkSettings;
 import org.interledger.link.LinkType;
+import org.interledger.link.LoopbackLink;
+import org.interledger.link.PingLoopbackLink;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
@@ -33,6 +36,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.springframework.core.convert.ConversionService;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class DefaultAccountManagerTest {
@@ -93,6 +97,24 @@ public class DefaultAccountManagerTest {
     expectedException.expectMessage("Account Settlement Engine Already Exists " +
       "[accountId: `" + mac.value() + "`, settlementEngineId: `" + daveandbusters + "`]");
     accountManager.persistAccountSettingsEntity(entity);
+  }
+
+  @Test
+  public void validateLinkSettingsFailsOnInvalidLinkType() {
+    AccountSettings accountSettings = AccountSettings.builder()
+      .accountId(AccountId.of("UnsupportedLinkTypeGuy"))
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(LinkType.of("UnsupportedLinkType"))
+      .accountRelationship(AccountRelationship.PEER)
+      .build();
+
+    expectedException.expect(InvalidAccountSettingsProblem.class);
+    expectedException.expectMessage("Unsupported LinkType:");
+
+    when(linkSettingsFactory.constructTyped(accountSettings)).thenThrow(new IllegalArgumentException("Unsupported LinkType: " + accountSettings.linkType()));
+
+    accountManager.validateLinkSettings(accountSettings);
   }
 
   @Test
