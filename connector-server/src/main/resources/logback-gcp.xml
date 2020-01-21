@@ -1,4 +1,5 @@
-<!-- For connectors running on GCP. Uses format that is friendly for Stack Driver to consume -->
+<!--For connectors running on GCP. Uses format that is friendly for Stack Driver to consume.-->
+<!--This can be enabled in docker by setting env var LOGGING_CONFIG=/app/resources/logback-gcp.xml-->
 <configuration>
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
