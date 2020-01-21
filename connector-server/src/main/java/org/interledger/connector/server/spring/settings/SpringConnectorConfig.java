@@ -216,7 +216,7 @@ public class SpringConnectorConfig {
   ) {
     return new DefaultLinkSettingsValidator(encryptionService, connectorSettingsSupplier);
   }
-  
+
   @Bean
   LinkConnectionEventEmitter linkEventEmitter(EventBus eventBus) {
     return new EventBusConnectionEventEmitter(eventBus);

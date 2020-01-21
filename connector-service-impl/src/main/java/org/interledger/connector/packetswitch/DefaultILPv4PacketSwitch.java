@@ -112,7 +112,6 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
             eventBus).doFilter(accountSettings, incomingSourcePreparePacket);
 
         } catch (Exception e) {
-          logger.info("Rejecting packet. Reason: " + e.getMessage());
           // Any rejections should be caught here, and returned as such....
           return this.connectorExceptionHandler.handleException(sourceAccountId, incomingSourcePreparePacket, e);
         }

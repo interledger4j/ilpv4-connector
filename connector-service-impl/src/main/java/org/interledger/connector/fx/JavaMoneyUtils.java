@@ -19,8 +19,6 @@ import javax.money.MonetaryAmount;
  */
 public class JavaMoneyUtils {
 
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
   /**
    * Take an amount (typically sourced from an {@link InterledgerPreparePacket}) and convert it to a proper {@link
    * MonetaryAmount} that can work with JavaMoney.
@@ -38,14 +36,9 @@ public class JavaMoneyUtils {
   ) {
     // 12345 units in USD is $123.45
 
-    try {
-      // BigDecimal.valueOf performs scaling automatically...
-      final BigDecimal scaledAmount = BigDecimal.valueOf(assetAmount.longValue(), assetScale);
-      return Money.of(scaledAmount, currencyUnit);
-    } catch (Exception e) {
-      logger.error(e.getMessage(), e);
-      throw e;
-    }
+    // BigDecimal.valueOf performs scaling automatically...
+    final BigDecimal scaledAmount = BigDecimal.valueOf(assetAmount.longValue(), assetScale);
+    return Money.of(scaledAmount, currencyUnit);
   }
 
   /**
@@ -64,15 +57,10 @@ public class JavaMoneyUtils {
   public BigInteger toInterledgerAmount(MonetaryAmount monetaryAmount, int assetScale) {
     // 123.45 --> 12345 if scale is 2
 
-    try {
-      return monetaryAmount.scaleByPowerOfTen(assetScale).getNumber().numberValue(BigDecimal.class)
-        // This always rounds down so the Connector never loses money. E.g., if the monetary amount is 0.009, and is
-        // being converted to cents, then this should not convert into 0.01, because this suble rounding error would
-        // accrue over time as real money. Instead, 0.009 should convert to 0.00, which is what the unit tests validate.
-        .toBigInteger();
-    } catch (Exception e) {
-      logger.error(e.getMessage(), e);
-      throw e;
-    }
+    return monetaryAmount.scaleByPowerOfTen(assetScale).getNumber().numberValue(BigDecimal.class)
+      // This always rounds down so the Connector never loses money. E.g., if the monetary amount is 0.009, and is
+      // being converted to cents, then this should not convert into 0.01, because this suble rounding error would
+      // accrue over time as real money. Instead, 0.009 should convert to 0.00, which is what the unit tests validate.
+      .toBigInteger();
   }
 }
