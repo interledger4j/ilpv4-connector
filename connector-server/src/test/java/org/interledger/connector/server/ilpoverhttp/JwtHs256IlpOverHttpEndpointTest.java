@@ -153,7 +153,7 @@ public class JwtHs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
 
 
   /**
-   * Validate the "test connection" method in the IL-DCP requestor created with an encrypted secret.
+   * Validate the "test connection" method in the IL-DCP requester created with an encrypted secret.
    */
   @Test
   public void ildcpTestConnectionWithEncryptedSecret() {
