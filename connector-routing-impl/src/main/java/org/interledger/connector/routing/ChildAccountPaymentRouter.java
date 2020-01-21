@@ -106,8 +106,7 @@ public class ChildAccountPaymentRouter implements PaymentRouter<Route> {
 
   boolean isChildAccount(final InterledgerAddress interledgerAddress) {
     Objects.requireNonNull(interledgerAddress, "interledgerAddress must not be null!");
-    return interledgerAddress.startsWith(connectorSettingsSupplier.get().operatorAddress()) &&
-      interledgerAddress.getValue().contains(PING_ACCOUNT_ID.value());
+    return interledgerAddress.startsWith(connectorSettingsSupplier.get().operatorAddress());
   }
 
   @Override
