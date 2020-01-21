@@ -211,12 +211,12 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  LinkSettingsValidator linkSettingsValidator(ConnectorEncryptionService encryptionService,
-                                              Supplier<ConnectorSettings> connectorSettingsSupplier) {
+  LinkSettingsValidator linkSettingsValidator(
+    ConnectorEncryptionService encryptionService, Supplier<ConnectorSettings> connectorSettingsSupplier
+  ) {
     return new DefaultLinkSettingsValidator(encryptionService, connectorSettingsSupplier);
   }
-
-
+  
   @Bean
   LinkConnectionEventEmitter linkEventEmitter(EventBus eventBus) {
     return new EventBusConnectionEventEmitter(eventBus);
@@ -308,9 +308,9 @@ public class SpringConnectorConfig {
         .accountId(PING_ACCOUNT_ID)
         .accountRelationship(AccountRelationship.CHILD)
         .assetCode("USD") // TODO: Make this configurable, or else the same as the Connector's base currency.
-        // This is set very high so that it can not lose very small sums of money, which are likely for PINGs.
-        .assetScale(16) // TODO: Make this configurable, or else the same as the Connector's base currency.
-        //.00000027214
+        // This is set very high so that it can not lose very small sums of money, which are likely for PINGs. At
+        // current pricing, this supports XRP pings at a scale of 9 using 1 unit.
+        .assetScale(11) // TODO: Make this configurable, or else the same as the Connector's base currency.
         .description("A receiver-like child account for collecting all Ping protocol revenues.")
         // TODO: In theory we don't need a rate limit for ping requests because they should always contain value.
         //  However, some systems may ping with a 0-value packet. Also, consider the case where 1M accounts each
