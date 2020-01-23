@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.crypto.CryptoKey;
+import org.interledger.crypto.CryptoKeys;
 import org.interledger.link.Link;
 
 import org.junit.Test;
@@ -47,9 +49,9 @@ public class ConnectorSettingsTest {
     assertThat(defaultConnectorSettings.enabledFeatures().isRateLimitingEnabled()).isTrue();
 
     assertThat(defaultConnectorSettings.keys()).isEqualTo(
-      ConnectorKeys.builder()
-        .accountSettings(ConnectorKey.builder().alias("accountSettings").version("1").build())
-        .secret0(ConnectorKey.builder().alias("secret0").version("1").build())
+      CryptoKeys.builder()
+        .accountSettings(CryptoKey.builder().alias("accountSettings").version("1").build())
+        .secret0(CryptoKey.builder().alias("secret0").version("1").build())
         .build()
     );
 

@@ -72,7 +72,7 @@ import org.interledger.connector.server.spring.settings.javamoney.JavaMoneyConfi
 import org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration;
 import org.interledger.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
-import org.interledger.connector.settings.ConnectorKeys;
+import org.interledger.crypto.CryptoKeys;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.SettlementService;
@@ -557,7 +557,7 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  protected ConnectorKeys connectorKeys(Supplier<ConnectorSettings> connectorSettingsSupplier) {
+  protected CryptoKeys connectorKeys(Supplier<ConnectorSettings> connectorSettingsSupplier) {
     return connectorSettingsSupplier.get().keys();
   }
 
