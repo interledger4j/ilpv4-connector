@@ -1,18 +1,29 @@
 package org.interledger.connector.server.ilpoverhttp;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.interledger.connector.server.spring.settings.link.IlpOverHttpConfig.ILP_OVER_HTTP;
+import static org.interledger.connector.server.spring.settings.web.JacksonConfig.PROBLEM;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerCondition;
+import org.interledger.core.InterledgerErrorCode;
+import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerRejectPacket;
+import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.link.LinkId;
 import org.interledger.link.exceptions.LinkException;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.auth.SimpleBearerTokenSupplier;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.primitives.UnsignedLong;
 import okhttp3.OkHttpClient;
 import org.junit.Rule;
 import org.junit.Test;
@@ -21,10 +32,16 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.zalando.problem.Status;
+import org.zalando.problem.StatusType;
+import org.zalando.problem.ThrowableProblem;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 
 /**
@@ -44,12 +61,19 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
 
+  @MockBean
+  private ILPv4PacketSwitch ilpPacketSwitch;
+
   @Autowired
   @Qualifier(ILP_OVER_HTTP)
   private OkHttpClient okHttpClient;
 
   @Autowired
   private ObjectMapper objectMapper;
+
+  @Autowired
+  @Qualifier(PROBLEM)
+  private ObjectMapper problemObjectMapper;
 
   @Autowired
   private TestRestTemplate template;
@@ -61,7 +85,7 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
   public void ildcpTestConnectionWithEncryptedSecret() {
     String accountId = "bob_ross";
     createAccount(AccountId.of(accountId), customSettingsSimple(ENCRYPTED_SHH));
-    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(accountId, "shh");
+    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(accountId, "shh", objectMapper);
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     assertLink(simpleBearerLink);
   }
@@ -74,7 +98,7 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
     String accountId = "bob_marley";
     String shh = "shh";
     AccountSettings settings = createAccount(AccountId.of(accountId), customSettingsSimple(shh));
-    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(accountId, shh);
+    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(accountId, shh, objectMapper);
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     assertLink(simpleBearerLink);
 
@@ -84,7 +108,7 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
 
     updateSimpleAuthToken(settings, plain_text_oh_hi);
     // send payment with new credentials
-    final IlpOverHttpLink anotherBearerLink = simpleBearerLink(accountId, plain_text_oh_hi);
+    final IlpOverHttpLink anotherBearerLink = simpleBearerLink(accountId, plain_text_oh_hi, objectMapper);
     anotherBearerLink.setLinkId(LinkId.of(accountId));
     assertLink(anotherBearerLink);
   }
@@ -96,14 +120,47 @@ public class SimpleIlpOverHttpEndpointTest extends AbstractEndpointTest {
   public void incorrectTokenCredentials() {
     String accountId = "alice_cooper";
     createAccount(AccountId.of(accountId), customSettingsSimple("shh"));
-    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(accountId, BAD_SECRET);
+    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(accountId, BAD_SECRET, objectMapper);
     simpleBearerLink.setLinkId(LinkId.of(accountId));
     expectedException.expect(LinkException.class);
     expectedException.expectMessage("Unauthorized");
     assertLink(simpleBearerLink);
   }
 
-  private IlpOverHttpLink simpleBearerLink(String accountId, String bearerToken) {
+  @Test
+  public void parseThrowableProblemDoesNotLogError() {
+    String accountId = "trouble_maker";
+    createAccount(AccountId.of(accountId), customSettingsSimple("shh"));
+    final IlpOverHttpLink simpleBearerLink = simpleBearerLink(accountId, "shh", problemObjectMapper);
+    simpleBearerLink.setLinkId(LinkId.of(accountId));
+
+    when(ilpPacketSwitch.switchPacket(any(), any())).thenThrow(new ThrowableProblem() {
+
+      @Override
+      public String getTitle() {
+        return "Internal Error";
+      }
+
+      @Override
+      public StatusType getStatus() {
+        return Status.INTERNAL_SERVER_ERROR;
+      }
+    });
+
+    InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
+      .destination(InterledgerAddress.of("test.connie.vic"))
+      .amount(UnsignedLong.ONE)
+      .expiresAt(Instant.now().plus(5, ChronoUnit.MINUTES))
+      .executionCondition(InterledgerCondition.of(new byte[32]))
+      .build();
+
+    InterledgerResponsePacket responsePacket = simpleBearerLink.sendPacket(preparePacket);
+    assertThat(responsePacket).isInstanceOf(InterledgerRejectPacket.class);
+    assertThat(((InterledgerRejectPacket) responsePacket).getCode()).isEqualTo(InterledgerErrorCode.T00_INTERNAL_ERROR);
+    assertThat(((InterledgerRejectPacket) responsePacket).getMessage()).isEqualTo("Internal Error");
+  }
+
+  private IlpOverHttpLink simpleBearerLink(String accountId, String bearerToken, ObjectMapper objectMapper) {
     return new IlpOverHttpLink(
       () -> InterledgerAddress.of("test.bob"),
       createAccountIlpUrl(template.getRootUri(), AccountId.of(accountId)),
