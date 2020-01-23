@@ -1,7 +1,7 @@
 package org.interledger.connector.server.spring.controllers.converters;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.interledger.connector.core.Ilpv4Constants.ALL_ZEROS_FULFILLMENT;
+import static org.interledger.core.InterledgerConstants.ALL_ZEROS_FULFILLMENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;

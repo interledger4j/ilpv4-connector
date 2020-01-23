@@ -16,7 +16,8 @@ import org.interledger.connector.ccp.CcpRouteControlRequest;
 public interface CcpSender {
 
   /**
-   * Handle an instance of {@link CcpRouteControlRequest} coming from a remote peer.
+   * Handle an instance of {@link CcpRouteControlRequest} coming from a remote peer. This handler allows a remote peer
+   * to instruct this sender to start or stop sending routes to the peer.
    *
    * @param routeControlRequest
    */

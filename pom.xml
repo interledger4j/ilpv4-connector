@@ -19,9 +19,9 @@
   <description>The parent pom for this Connector.</description>
 
   <scm>
-    <connection>scm:git:git://github.com/sappenin/java-ilp-connector.git</connection>
-    <url>scm:git:git@github.com:sappenin/java-ilpv4-connector.git</url>
-    <developerConnection>scm:git:git@github.com:sappenin/java-ilpv4-connector.git</developerConnection>
+    <connection>scm:git:git://github.com/interledger4j/ilpv4-connector.git</connection>
+    <url>scm:git:git@github.com:interledger4j/ilpv4-connector.git</url>
+    <developerConnection>scm:git:git@github.com:interledger4j/ilpv4-connector.git</developerConnection>
   </scm>
 
   <properties>

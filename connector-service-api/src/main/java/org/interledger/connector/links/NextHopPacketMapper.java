@@ -22,19 +22,26 @@ public interface NextHopPacketMapper {
    *
    * @return A {@link InterledgerPreparePacket} that can be sent to the next-hop.
    */
-  NextHopInfo getNextHopPacket(
-    final AccountSettings sourceAccountSettings, final InterledgerPreparePacket incomingPreparePacket
-  ) throws RuntimeException;
+  NextHopInfo getNextHopPacket(AccountSettings sourceAccountSettings, InterledgerPreparePacket incomingPreparePacket)
+    throws RuntimeException;
 
   /**
-   * FIXME Only exists for shadow net testing; remove after
+   * NOTE: This method only exists in order to get FX info into PubSub + BigQuery. See deprecation note below for more
+   * details.
+   *
    * @param sourceAccountSettings
    * @param destinationAccountSettings
    * @param sourcePacket
+   *
    * @return
+   *
+   * @deprecated This only exists to faciliate getting FX information into BigQuery. However, this method should be
+   *   removed once https://github.com/interledger4j/ilpv4-connector/issues/529 is fixed (see that issue for more
+   *   details).
    */
   @Deprecated
-  BigDecimal determineExchangeRate(final AccountSettings sourceAccountSettings,
-                                   final AccountSettings destinationAccountSettings,
-                                   final InterledgerPreparePacket sourcePacket);
+  BigDecimal determineExchangeRate(
+    AccountSettings sourceAccountSettings,
+    AccountSettings destinationAccountSettings,
+    InterledgerPreparePacket sourcePacket);
 }

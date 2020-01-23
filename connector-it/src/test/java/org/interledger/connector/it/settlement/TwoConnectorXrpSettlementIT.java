@@ -74,8 +74,8 @@ public class TwoConnectorXrpSettlementIT extends AbstractIlpOverHttpIT {
     settlementAlice.start();
     settlementBob.start();
     topology = SimulatedXrplSettlementTopology.init(
-        settlementAlice.getMappedPort(9000),
-        settlementBob.getMappedPort(9001)
+      settlementAlice.getMappedPort(9000),
+      settlementBob.getMappedPort(9001)
     );
     LOGGER.info("Starting test topology `{}`...", topology.toString());
     topology.start();
@@ -155,14 +155,14 @@ public class TwoConnectorXrpSettlementIT extends AbstractIlpOverHttpIT {
     // Use this latch to wait for the Connector to receive a SettlementEvent...
     final CountDownLatch latch = new CountDownLatch(1);
     final Consumer<IncomingSettlementSucceededEvent> settlementSucceededCallback =
-        new Consumer<IncomingSettlementSucceededEvent>() {
-          @Override
-          @Subscribe
-          public void accept(IncomingSettlementSucceededEvent localSettlementProcessedEvent) {
-            getLogger().info("Alice's Settlement Received by Bob: {}", localSettlementProcessedEvent);
-            latch.countDown();
-          }
-        };
+      new Consumer<IncomingSettlementSucceededEvent>() {
+        @Override
+        @Subscribe
+        public void accept(IncomingSettlementSucceededEvent localSettlementProcessedEvent) {
+          getLogger().info("Alice's Settlement Received by Bob: {}", localSettlementProcessedEvent);
+          latch.countDown();
+        }
+      };
     // Wait for Alice to receive the settlement...
     bobConnector.getEventBus().register(settlementSucceededCallback);
 
@@ -175,7 +175,7 @@ public class TwoConnectorXrpSettlementIT extends AbstractIlpOverHttpIT {
     // This amount is ZERO because the onFulfill script will preemptively reduce this account by the settlement amount.
     // In this test, the settle threshold is 1000, and settle_to is 0, so the new balance will be 0 because we expect
     // a settlement payment to be made (note that on an exception, this amount should go back up).
-    // TODO: See https://github.com/sappenin/java-ilpv4-connector/issues/216 for tracking
+    // TODO: See https://github.com/interledger4j/ilpv4-connector/issues/216 for tracking
     assertAccountBalance(aliceConnector, BOB_ACCOUNT, ZERO);
     assertAccountBalance(bobConnector, ALICE_ACCOUNT, THOUSAND.negate());
     assertAccountBalance(bobConnector, PING_ACCOUNT_ID, THOUSAND);
@@ -225,14 +225,14 @@ public class TwoConnectorXrpSettlementIT extends AbstractIlpOverHttpIT {
     // Use this latch to wait for the Connector to receive a SettlementEvent...
     final CountDownLatch latch = new CountDownLatch(1);
     final Consumer<IncomingSettlementSucceededEvent> settlementSucceededCallback =
-        new Consumer<IncomingSettlementSucceededEvent>() {
-          @Override
-          @Subscribe
-          public void accept(IncomingSettlementSucceededEvent localSettlementProcessedEvent) {
-            getLogger().info("Bob's Settlement Received by Alice: {}", localSettlementProcessedEvent);
-            latch.countDown();
-          }
-        };
+      new Consumer<IncomingSettlementSucceededEvent>() {
+        @Override
+        @Subscribe
+        public void accept(IncomingSettlementSucceededEvent localSettlementProcessedEvent) {
+          getLogger().info("Bob's Settlement Received by Alice: {}", localSettlementProcessedEvent);
+          latch.countDown();
+        }
+      };
     // Wait for Alice to receive the settlement...
     aliceConnector.getEventBus().register(settlementSucceededCallback);
 
@@ -277,14 +277,14 @@ public class TwoConnectorXrpSettlementIT extends AbstractIlpOverHttpIT {
     // Use this latch to wait for the Connector to receive a SettlementEvent...
     final CountDownLatch latch = new CountDownLatch(1);
     final Consumer<IncomingSettlementSucceededEvent> settlementSucceededCallback =
-        new Consumer<IncomingSettlementSucceededEvent>() {
-          @Override
-          @Subscribe
-          public void accept(IncomingSettlementSucceededEvent localSettlementProcessedEvent) {
-            getLogger().info("Alice's Settlement Received by Bob: {}", localSettlementProcessedEvent);
-            latch.countDown();
-          }
-        };
+      new Consumer<IncomingSettlementSucceededEvent>() {
+        @Override
+        @Subscribe
+        public void accept(IncomingSettlementSucceededEvent localSettlementProcessedEvent) {
+          getLogger().info("Alice's Settlement Received by Bob: {}", localSettlementProcessedEvent);
+          latch.countDown();
+        }
+      };
     // Wait for Alice to receive the settlement...
     bobConnector.getEventBus().register(settlementSucceededCallback);
 
@@ -342,32 +342,32 @@ public class TwoConnectorXrpSettlementIT extends AbstractIlpOverHttpIT {
     assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, ZERO);
 
     AccountSettings aliceAccountSettings = getAccountSettings(bobConnector.getConnectorSettings().operatorAddress(),
-        ALICE_ACCOUNT);
+      ALICE_ACCOUNT);
     AccountSettings bobAccountSettings = getAccountSettings(aliceConnector.getConnectorSettings().operatorAddress(),
-        BOB_ACCOUNT);
+      BOB_ACCOUNT);
 
     getLogger().info("Alice settlement account id: {}, Bob settlement account id {}",
-        aliceAccountSettings.settlementEngineDetails().get().settlementEngineAccountId().get().value(),
-        bobAccountSettings.settlementEngineDetails().get().settlementEngineAccountId().get().value());
+      aliceAccountSettings.settlementEngineDetails().get().settlementEngineAccountId().get().value(),
+      bobAccountSettings.settlementEngineDetails().get().settlementEngineAccountId().get().value());
 
     bobConnector.getSettlementService().initiateLocalSettlement(UUID.randomUUID().toString(), aliceAccountSettings,
-        SettlementQuantity.builder()
-            .amount(THOUSAND)
-            .scale(9)
-            .build()
+      SettlementQuantity.builder()
+        .amount(THOUSAND)
+        .scale(9)
+        .build()
     );
 
     // Use this latch to wait for the Connector to receive a SettlementEvent...
     final CountDownLatch latch = new CountDownLatch(1);
     final Consumer<IncomingSettlementSucceededEvent> settlementSucceededCallback =
-        new Consumer<IncomingSettlementSucceededEvent>() {
-          @Override
-          @Subscribe
-          public void accept(IncomingSettlementSucceededEvent localSettlementProcessedEvent) {
-            getLogger().info("Bob's Settlement Received by Alice: {}", localSettlementProcessedEvent);
-            latch.countDown();
-          }
-        };
+      new Consumer<IncomingSettlementSucceededEvent>() {
+        @Override
+        @Subscribe
+        public void accept(IncomingSettlementSucceededEvent localSettlementProcessedEvent) {
+          getLogger().info("Bob's Settlement Received by Alice: {}", localSettlementProcessedEvent);
+          latch.countDown();
+        }
+      };
     // Wait for Alice to receive the settlement...
     aliceConnector.getEventBus().register(settlementSucceededCallback);
 
@@ -383,7 +383,7 @@ public class TwoConnectorXrpSettlementIT extends AbstractIlpOverHttpIT {
     assertAccountBalance(aliceConnector, PING_ACCOUNT_ID, ZERO);
 
     this.testPing(PETER_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(),
-        UnsignedLong.valueOf(NINE_HUNDRED));
+      UnsignedLong.valueOf(NINE_HUNDRED));
 
     getLogger().info("Check balances after ping after (not enough to trigger settlement)");
     assertAccountBalance(bobConnector, PETER_ACCOUNT, NINE_HUNDRED.negate());
@@ -394,20 +394,20 @@ public class TwoConnectorXrpSettlementIT extends AbstractIlpOverHttpIT {
     // Use this latch to wait for the Connector to receive a SettlementEvent...
     final CountDownLatch finalCountdown = new CountDownLatch(1);
     final Consumer<IncomingSettlementSucceededEvent> finalSettlementSucceededCallback =
-        new Consumer<IncomingSettlementSucceededEvent>() {
-          @Override
-          @Subscribe
-          public void accept(IncomingSettlementSucceededEvent localSettlementProcessedEvent) {
-            getLogger().info("Bob's Settlement Received by Alice: {}", localSettlementProcessedEvent);
-            finalCountdown.countDown();
-          }
-        };
+      new Consumer<IncomingSettlementSucceededEvent>() {
+        @Override
+        @Subscribe
+        public void accept(IncomingSettlementSucceededEvent localSettlementProcessedEvent) {
+          getLogger().info("Bob's Settlement Received by Alice: {}", localSettlementProcessedEvent);
+          finalCountdown.countDown();
+        }
+      };
     // Wait for Alice to receive the settlement...
     aliceConnector.getEventBus().register(finalSettlementSucceededCallback);
 
     this
-        .testPing(PETER_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(),
-            UnsignedLong.valueOf(ONE_HUNDRED));
+      .testPing(PETER_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(),
+        UnsignedLong.valueOf(ONE_HUNDRED));
 
     getLogger().info("Waiting up to 20 seconds for Settlement to be processed...");
     finalCountdown.await(20, TimeUnit.SECONDS);
@@ -433,17 +433,17 @@ public class TwoConnectorXrpSettlementIT extends AbstractIlpOverHttpIT {
     // settlement engine is tracking
     for (int i = 0; i < 10; i++) {
       this.testPing(PETER_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(),
-          UnsignedLong.valueOf(eleventyTen));
+        UnsignedLong.valueOf(eleventyTen));
       final CountDownLatch latch = new CountDownLatch(1);
       final Consumer<IncomingSettlementSucceededEvent> settlementSucceededCallback =
-          new Consumer<IncomingSettlementSucceededEvent>() {
-            @Override
-            @Subscribe
-            public void accept(IncomingSettlementSucceededEvent localSettlementProcessedEvent) {
-              getLogger().info("Bob's Settlement Received by Alice: {}", localSettlementProcessedEvent);
-              latch.countDown();
-            }
-          };
+        new Consumer<IncomingSettlementSucceededEvent>() {
+          @Override
+          @Subscribe
+          public void accept(IncomingSettlementSucceededEvent localSettlementProcessedEvent) {
+            getLogger().info("Bob's Settlement Received by Alice: {}", localSettlementProcessedEvent);
+            latch.countDown();
+          }
+        };
       // Wait for Alice to receive the settlement...
       aliceConnector.getEventBus().register(settlementSucceededCallback);
       getLogger().info("Waiting up to 20 seconds for Settlement to be processed...");
@@ -478,20 +478,20 @@ public class TwoConnectorXrpSettlementIT extends AbstractIlpOverHttpIT {
     // Use this latch to wait for the Connector to receive a SettlementEvent...
     final CountDownLatch latch = new CountDownLatch(1);
     final Consumer<IncomingSettlementSucceededEvent> settlementSucceededCallback =
-        new Consumer<IncomingSettlementSucceededEvent>() {
-          @Override
-          @Subscribe
-          public void accept(IncomingSettlementSucceededEvent localSettlementProcessedEvent) {
-            getLogger().info("Bob's Settlement Received by Alice: {}", localSettlementProcessedEvent);
-            latch.countDown();
-          }
-        };
+      new Consumer<IncomingSettlementSucceededEvent>() {
+        @Override
+        @Subscribe
+        public void accept(IncomingSettlementSucceededEvent localSettlementProcessedEvent) {
+          getLogger().info("Bob's Settlement Received by Alice: {}", localSettlementProcessedEvent);
+          latch.countDown();
+        }
+      };
     // Wait for Alice to receive the settlement...
     aliceConnector.getEventBus().register(settlementSucceededCallback);
 
     BigInteger eleventyTen = BigInteger.valueOf(1100);
     this.testPing(PETER_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(),
-        UnsignedLong.valueOf(eleventyTen));
+      UnsignedLong.valueOf(eleventyTen));
 
     assertAccountBalance(bobConnector, PETER_ACCOUNT, eleventyTen.negate());
     // this is zero because...
