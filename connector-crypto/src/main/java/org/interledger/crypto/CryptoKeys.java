@@ -1,4 +1,4 @@
-package org.interledger.connector.settings;
+package org.interledger.crypto;
 
 
 import org.immutables.value.Value;
@@ -7,10 +7,10 @@ import org.immutables.value.Value;
  * Named keys that are configured for use by the connector.
  */
 @Value.Immutable
-public interface ConnectorKeys {
+public interface CryptoKeys {
 
-  static ImmutableConnectorKeys.Builder builder() {
-    return ImmutableConnectorKeys.builder();
+  static ImmutableCryptoKeys.Builder builder() {
+    return ImmutableCryptoKeys.builder();
   }
 
   /**
@@ -18,12 +18,12 @@ public interface ConnectorKeys {
    *
    * @return key
    */
-  ConnectorKey secret0();
+  CryptoKey secret0();
 
   /**
    * Key for incoming/outgoing shared secrets on account settings
    * @return key
    */
-  ConnectorKey accountSettings();
+  CryptoKey accountSettings();
 
 }
