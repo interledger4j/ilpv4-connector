@@ -42,7 +42,7 @@ public class ConnectorExceptionHandler {
     if (InterledgerProtocolException.class.isAssignableFrom(e.getClass())) {
       final InterledgerRejectPacket rejectPacket = ((InterledgerProtocolException) e).getInterledgerRejectPacket();
       logger.warn(
-        "[OPERATOR: `{}`]: Rejecting PREPARE Packet from `{}`: PREPARE_PACKET: {} REJECT_PACKET: {} ERROR: {}",
+        "[OPERATOR: `{}`]: Rejecting PREPARE Packet. sourceAccountId={} preparePacket={} rejectPacket={} error={}",
         connectorSettingsSupplier.get().operatorAddress(),
         sourceAccountId,
         preparePacket,
@@ -51,6 +51,7 @@ public class ConnectorExceptionHandler {
       );
       return rejectPacket;
     } else if (ArithmeticException.class.isAssignableFrom(e.getClass())) {
+      logger.error(e.getMessage(), e);
       return this.packetRejector.reject(
         LinkId.of(sourceAccountId.value()),
         preparePacket,
