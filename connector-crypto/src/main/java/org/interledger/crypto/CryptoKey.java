@@ -1,4 +1,4 @@
-package org.interledger.connector.settings;
+package org.interledger.crypto;
 
 import org.immutables.value.Value;
 
@@ -6,10 +6,10 @@ import org.immutables.value.Value;
  * Lookup info for a key that a connector will use. Mainly to capture key alias/version/etc from config.
  */
 @Value.Immutable
-public interface ConnectorKey {
+public interface CryptoKey {
 
-  static ImmutableConnectorKey.Builder builder() {
-    return ImmutableConnectorKey.builder();
+  static ImmutableCryptoKey.Builder builder() {
+    return ImmutableCryptoKey.builder();
   }
 
   /**
