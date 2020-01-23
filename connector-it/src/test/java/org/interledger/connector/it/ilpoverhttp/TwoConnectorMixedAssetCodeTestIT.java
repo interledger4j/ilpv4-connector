@@ -10,6 +10,7 @@ import static org.interledger.connector.it.topologies.AbstractTopology.PAUL_ACCO
 import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 
 import org.interledger.connector.ILPv4Connector;
+import org.interledger.connector.fx.JavaMoneyUtils;
 import org.interledger.connector.it.AbstractIlpOverHttpIT;
 import org.interledger.connector.it.ContainerHelper;
 import org.interledger.connector.it.markers.IlpOverHttp;
@@ -36,27 +37,49 @@ import org.testcontainers.containers.Network;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import javax.money.CurrencyUnit;
+import javax.money.Monetary;
+import javax.money.MonetaryAmount;
+import javax.money.convert.CurrencyConversion;
+import javax.money.convert.MonetaryConversions;
+
+/**
+ * Integration test that validates a JPY -> EUR exchange using the following topology:
+ *
+ * <pre>
+ *                                      ┌──────────────┐                  ┌──────────────┐
+ *                                      │              │                  │              │
+ * ┌──────────────────┐                 │              │                  │              │
+ * │       paul       │ micro-cent-EUR  │  CONNECTOR   │    nano-JPY      │  CONNECTOR   │
+ * │ (test.bob.paul)  │────(scale=8)───▷│  test.alice  │◁───(scale=9)────▷│   test.bob   │
+ * └──────────────────┘                 │              │                  │              │
+ *                                      │              │                  │              │
+ *                                      └──────────────┘                  └──────────────┘
+ * </pre>
+ */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Category(IlpOverHttp.class)
 public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
 
   private static final Denomination MICROCENTS_EUR = Denomination.builder()
-      .assetCode("EUR")
-      .assetScale((short) 8)
-      .build();
+    .assetCode("EUR")
+    .assetScale((short) 8)
+    .build();
 
+  private static final short NANO_YEN_SCALE = (short) 9;
   private static final Denomination NANO_YEN = Denomination.builder()
-      .assetCode("JPY")
-      .assetScale((short) 9)
-      .build();
+    .assetCode("JPY")
+    .assetScale(NANO_YEN_SCALE)
+    .build();
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorMixedAssetCodeTestIT.class);
   private static final Network network = Network.newNetwork();
   private static Topology topology = TwoConnectorPeerIlpOverHttpTopology.init(
-      NANO_YEN, MICROCENTS_EUR, UnsignedLong.valueOf(1000000000L)
+    NANO_YEN, MICROCENTS_EUR, UnsignedLong.valueOf(1000000000L)
   );
   private static GenericContainer redis = ContainerHelper.redis(network);
   private static GenericContainer postgres = ContainerHelper.postgres(network);
@@ -101,16 +124,20 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, BigInteger.valueOf(100000).negate());
     // test.alice.bob: Should be in range because this account will receive yen from Paul on this Connector.
     // hard to validate exchange rate but this should be close
-    BigInteger bobBalance = aliceConnector.getBalanceTracker().balance(BOB_ACCOUNT).netBalance();
-    assertThat(bobBalance).isBetween(BigInteger.valueOf(115000000), BigInteger.valueOf(125000000));
+    BigInteger bobBalanceAtAlice = aliceConnector.getBalanceTracker().balance(BOB_ACCOUNT).netBalance();
+    assertThat(bobBalanceAtAlice).isBetween(BigInteger.valueOf(115000000), BigInteger.valueOf(125000000));
 
     // test.bob.alice: Should be negative some range of the source because it pays from Alice Connector, but pays one
     // to the ping account on Bob.
-    assertThat(bobConnector.getBalanceTracker().balance(ALICE_ACCOUNT).netBalance()).isEqualTo(bobBalance.negate());
-    assertThat(bobConnector.getBalanceTracker().balance(PING_ACCOUNT_ID).netBalance()).isEqualTo(bobBalance);
+    assertThat(bobConnector.getBalanceTracker().balance(ALICE_ACCOUNT).netBalance())
+      .isEqualTo(bobBalanceAtAlice.negate());
+    // Bob's Ping account should be approx the value of `bobBalanceAtAlice`, but in XRP. Since `bobBalanceAtAlice` is
+    // denominated in JPY nano-yen, we need to convert it.
+    final UnsignedLong expectedPingBalanceInXRP = this.convert(bobBalanceAtAlice, "JPY", NANO_YEN_SCALE, "XRP", 9);
+    assertThat(bobConnector.getBalanceTracker().balance(PING_ACCOUNT_ID).netBalance())
+      .isEqualTo(BigInteger.valueOf(expectedPingBalanceInXRP.longValue()));
 
     await().atMost(5, TimeUnit.SECONDS).until(() -> pubsubMessages.size() >= 2);
-
     assertThat(pubsubMessages).hasSize(2);
   }
 
@@ -120,10 +147,10 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
   @Test
   public void sendTooMuch() throws InterruptedException {
     InterledgerResponsePacket response = this.testPing(PAUL_ACCOUNT, getAliceConnectorAddress(),
-        getBobConnectorAddress(), UnsignedLong.valueOf(10000000), true);
+      getBobConnectorAddress(), UnsignedLong.valueOf(10000000), true);
 
     assertThat(response).isInstanceOf(InterledgerRejectPacket.class)
-        .extracting("code").isEqualTo(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE);
+      .extracting("code").isEqualTo(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE);
 
     assertThat(pubsubMessages).isEmpty();
   }
@@ -146,5 +173,35 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
   @Override
   protected InterledgerAddress getBobConnectorAddress() {
     return BOB_CONNECTOR_ADDRESS;
+  }
+
+  /**
+   * Convert a source amount to a destination amount for testing purposes.
+   *
+   * @deprecated Remove this once https://github.com/interledger4j/ilpv4-connector/issues/534 is completed.
+   */
+  @Deprecated
+  private UnsignedLong convert(
+    final BigInteger sourceAmount,
+    final String sourceAsssetCode, final int sourceScale,
+    final String destinationAssetCode, final int destinationScale
+  ) {
+    Objects.requireNonNull(sourceAsssetCode);
+    Objects.requireNonNull(sourceScale);
+    Objects.requireNonNull(destinationAssetCode);
+    Objects.requireNonNull(destinationScale);
+    Objects.requireNonNull(sourceAmount);
+
+    final JavaMoneyUtils javaMoneyUtils = new JavaMoneyUtils();
+
+    final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAsssetCode);
+    final MonetaryAmount sourceMonetaryAmount =
+      javaMoneyUtils.toMonetaryAmount(sourceCurrencyUnit, sourceAmount, sourceScale);
+
+    final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAssetCode);
+    final CurrencyConversion destCurrencyConversion = MonetaryConversions.getConversion(destinationCurrencyUnit);
+
+    return UnsignedLong.valueOf(
+      javaMoneyUtils.toInterledgerAmount(sourceMonetaryAmount.with(destCurrencyConversion), destinationScale));
   }
 }

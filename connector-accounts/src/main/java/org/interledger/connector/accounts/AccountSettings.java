@@ -62,22 +62,23 @@ public interface AccountSettings {
   /**
    * Determines if this account is <tt>internal</tt> or <tt>external</tt>. Internal accounts are allowed to process
    * packets in the `self` and `private` prefixes, but packets from an internal account MUST not be forwarded to an
-   * external address. External account are not allowed to route packets to an internal account, but are allowed to have
-   * packets forwarded to other external accounts.
+   * external address. Likewise, external account are not allowed to be the source of packets that get forwarded to an
+   * internal account, but external accounts are allowed to be the source of packets that get forwarded to other
+   * external accounts. For more details on these rules, see `InterledgerAddressUtils`.
    *
    * @return {@code true} if this account is <tt>internal</tt>; {@code false} otherwise.
    */
   boolean isInternal();
 
   /**
-   * Determines if connections for this Account are initiated by this Connector, or if the connections are initiated by
-   * the counterparty.
+   * <p>Determines if connections for this Account are initiated by this Connector, or if the connections are
+   * initiated by the counterparty.</p>
    *
    * <p>For some Link types, such as BTP, a node can be either operate the Websocket client or server. In cases where
    * the Connector is the Websocket client, this value will be {@code true}. Conversely, if the Connector is operating
    * the Websocket server for an Account, then this value will be {@code false}.</p>
    *
-   * <p>For other Link types, such as Ilp-over-Http, the Connector will operate both a client _and_ a server, so
+   * <p>For other Link types, such as ILP-over-HTTP, the Connector will operate both a client _and_ a server, so
    * this value will always be {@code true}.</p>
    *
    * @return {@code true} if this Connector is the connection initiator for this {@link Link}; {@code false} otherwise.
@@ -157,18 +158,28 @@ public interface AccountSettings {
   AccountRateLimitSettings rateLimitSettings();
 
   /**
-   * Whether this account should receive and process route broadcasts from this peer. Defaults to `false` for {@link
-   * AccountRelationship#CHILD} and `true` otherwise.
+   * Indicates whether this account should send route broadcasts to the peer on the other side of this account. Defaults
+   * to `true` for accounts of type {@link AccountRelationship#CHILD} or {@link AccountRelationship#PEER} and `false`
+   * otherwise.
+   *
+   * @return {code true} if this account should send routes to the peer; {@code false} otherwise.
    */
-  boolean isSendRoutes();
+  default boolean isSendRoutes() {
+    return this.isPeerAccount() || this.isChildAccount();
+  }
 
   /**
-   * Whether this account should broadcast routes to this peer. Defaults to `false` for {@link
-   * AccountRelationship#CHILD} and `true` otherwise.
+   * Indicates whether this account should receive/accept route broadcasts from the peer on the other side of this
+   * account. Defaults to `true` for accounts of type {@link AccountRelationship#PARENT} or {@link
+   * AccountRelationship#PEER} and `false` otherwise.
+   *
+   * @return {code true} if this account should accept routes from the peer; {@code false} otherwise.
    */
-  boolean isReceiveRoutes();
+  default boolean isReceiveRoutes() {
+    return this.isPeerAccount() || this.isParentAccount();
+  }
 
-  // TODO: `throughput`, `ratelimit`, `deduplicate`, etc.
+  // TODO: `throughput`, `ratelimit`, etc.
   // See https://github.com/interledgerjs/ilp-connector#accounts
 
   /**
@@ -276,14 +287,14 @@ public interface AccountSettings {
     @Override
     @JsonProperty("sendRoutes")
     public boolean isSendRoutes() {
-      return false;
+      return this.isPeerAccount() || this.isChildAccount();
     }
 
     @Value.Default
     @Override
     @JsonProperty("receiveRoutes")
     public boolean isReceiveRoutes() {
-      return false;
+      return this.isPeerAccount() || this.isParentAccount();
     }
 
     @Value.Default

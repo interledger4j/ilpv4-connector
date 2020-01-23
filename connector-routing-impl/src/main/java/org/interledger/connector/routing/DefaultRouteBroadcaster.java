@@ -25,12 +25,9 @@ import java.util.stream.Stream;
  * <p>This implementation tracks a Collection of routable accounts, which are simply accounts that are eligible
  * for sending or receiving (or both) CCP route updates. It should be noted that this class does not track any sort of
  * ILP address mapping to a particular {@link RoutableAccount}. Instead, this class merely allows a given account to
- * hold a CCP Sender/Receiver that can be used to process CCP message.</p>
+ * hold a CCP Sender/Receiver that can be used to process CCP messages.</p>
  */
 public class DefaultRouteBroadcaster implements RouteBroadcaster {
-
-  private static final boolean SHOULD_NOT_SEND_ROUTES = false;
-  private static final boolean SHOULD_NOT_RECEIVE_ROUTES = false;
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -51,11 +48,11 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
    * Required-args Constructor.
    */
   public DefaultRouteBroadcaster(
-      final Supplier<ConnectorSettings> connectorSettingsSupplier,
-      final CodecContext ccpCodecContext,
-      final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
-      final AccountSettingsRepository accountSettingsRepository,
-      final LinkManager linkManager
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final CodecContext ccpCodecContext,
+    final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
+    final AccountSettingsRepository accountSettingsRepository,
+    final LinkManager linkManager
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.ccpCodecContext = Objects.requireNonNull(ccpCodecContext);
@@ -70,9 +67,9 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
   public Optional<RoutableAccount> registerCcpEnabledAccount(final AccountId accountId) {
     Objects.requireNonNull(accountId);
     return accountSettingsRepository.findByAccountIdWithConversion(accountId)
-        .map(this::registerCcpEnabledAccount)
-        .filter(Optional::isPresent)
-        .map(Optional::get);
+      .map(this::registerCcpEnabledAccount)
+      .filter(Optional::isPresent)
+      .map(Optional::get);
   }
 
   @Override
@@ -80,45 +77,44 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
     Objects.requireNonNull(accountSettings);
 
     final AccountId accountId = accountSettings.accountId();
-    final boolean sendRoutes = this.shouldSendRoutes(accountSettings);
-    final boolean receiveRoutes = this.shouldReceiveRoutes(accountSettings);
+    final boolean sendRoutes = accountSettings.isSendRoutes();
+    final boolean receiveRoutes = accountSettings.isReceiveRoutes();
     if (!sendRoutes && !receiveRoutes) {
       logger.warn("Not sending nor receiving routes for peer. accountId={}", accountId);
-      logger.debug("Checking to see if Account {} has a static-route...", accountId);
       return Optional.empty();
     } else {
 
       final RoutableAccount routableAccountForPeer = Optional.ofNullable(this.ccpEnabledAccounts.get(accountId))
-          .map(existingPeer -> {
-            // Every time we reconnect, we'll send a new route control message to make sure they are still sending us
-            // routes, but only as long as receiving is enabled.
-            if (receiveRoutes) {
-              existingPeer.ccpReceiver().sendRouteControl();
-            }
-            logger.warn("CCP Peer already registered with RouteBroadcaster using AccountId=`{}`", accountId);
-            return existingPeer;
-          })
-          .orElseGet(() -> {
-            // The Account in question did not have an existing link in this routing service, so create a new link and
-            // initialize it.
-            final Link<?> link = linkManager.getOrCreateLink(accountId);
-            logger.info(
-                "Adding Link to ccpEnabledAccounts. accountId={} sendRoutes={} isReceiveRoutes={}",
-                accountId, sendRoutes, receiveRoutes
-            );
-            final RoutableAccount newPeerAccount = ImmutableRoutableAccount.builder()
-                .accountId(accountId)
-                .ccpSender(constructCcpSender(accountSettings.accountId(), link))
-                .ccpReceiver(constructCcpReceiver(accountSettings.accountId(), link))
-                .build();
+        .map(existingPeer -> {
+          // Every time we reconnect, we'll send a new route control message to make sure they are still sending us
+          // routes, but only as long as receiving is enabled.
+          if (receiveRoutes) {
+            existingPeer.ccpReceiver().sendRouteControl();
+          }
+          logger.warn("CCP Peer already registered with RouteBroadcaster using AccountId=`{}`", accountId);
+          return existingPeer;
+        })
+        .orElseGet(() -> {
+          // The Account in question did not have an existing link in this routing service, so create a new link and
+          // initialize it.
+          final Link<?> link = linkManager.getOrCreateLink(accountId);
+          logger.info(
+            "Adding Link to ccpEnabledAccounts. accountId={} sendRoutes={} receiveRoutes={}",
+            accountId, sendRoutes, receiveRoutes
+          );
+          final RoutableAccount newPeerAccount = ImmutableRoutableAccount.builder()
+            .accountId(accountId)
+            .ccpSender(constructCcpSender(accountSettings.accountId(), link))
+            .ccpReceiver(constructCcpReceiver(accountSettings.accountId(), link))
+            .build();
 
-            this.setCcpEnabledAccount(newPeerAccount);
+          this.setCcpEnabledAccount(newPeerAccount);
 
-            // Always send a new RoutControl request to the remote peer, but only if it's connected.
-            newPeerAccount.ccpReceiver().sendRouteControl();
+          // Always send a new RoutControl request to the remote peer, but only if it's connected.
+          newPeerAccount.ccpReceiver().sendRouteControl();
 
-            return newPeerAccount;
-          });
+          return newPeerAccount;
+        });
       return Optional.of(routableAccountForPeer);
     }
   }
@@ -134,45 +130,11 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
     return this.ccpEnabledAccounts.values().stream();
   }
 
-  /**
-   * Determines if the link configured for the accountSettings in {@code accountSettings} should send routes to the
-   * remote peer accountSettings.
-   *
-   * @param accountSettings An instance of {@link AccountSettings} for a remote peer accountSettings.
-   *
-   * @return {@code true} if the link is configured to send routes, {@code false} otherwise.
-   */
-  private boolean shouldSendRoutes(final AccountSettings accountSettings) {
-    Objects.requireNonNull(accountSettings);
-    if (accountSettings.isChildAccount()) {
-      return SHOULD_NOT_SEND_ROUTES;
-    } else {
-      return accountSettings.isSendRoutes();
-    }
-  }
-
-  /**
-   * Determines if the link configured for the accountSettings in {@code accountSettings} should receive routes from the
-   * remote peer accountSettings.
-   *
-   * @param accountSettings An instance of {@link AccountSettings} for a remote peer accountSettings.
-   *
-   * @return {@code true} if the link is configured to receive routes, {@code false} otherwise.
-   */
-  private boolean shouldReceiveRoutes(final AccountSettings accountSettings) {
-    Objects.requireNonNull(accountSettings);
-    if (accountSettings.isChildAccount()) {
-      return SHOULD_NOT_RECEIVE_ROUTES;
-    } else {
-      return accountSettings.isReceiveRoutes();
-    }
-  }
-
   private CcpSender constructCcpSender(final AccountId peerAccountId, final Link link) {
     Objects.requireNonNull(peerAccountId);
     Objects.requireNonNull(link);
     return new DefaultCcpSender(
-        connectorSettingsSupplier, peerAccountId, link, outgoingRoutingTable, accountSettingsRepository, ccpCodecContext
+      connectorSettingsSupplier, peerAccountId, link, outgoingRoutingTable, accountSettingsRepository, ccpCodecContext
     );
   }
 
@@ -190,7 +152,7 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
 
     if (this.ccpEnabledAccounts.putIfAbsent(routableAccount.accountId(), routableAccount) != null) {
       throw new RuntimeException(
-          String.format("AccountId `%s` existed in the RouteBroadcaster already.", routableAccount.accountId())
+        String.format("AccountId `%s` existed in the RouteBroadcaster already.", routableAccount.accountId())
       );
     }
   }
@@ -198,15 +160,15 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
   // TODO: Remove this? CCP Senders/Receivers should be able to be turned off via config.
   protected void removeAccount(final AccountId accountId) {
     Optional.ofNullable(this.ccpEnabledAccounts.get(accountId))
-        .ifPresent(peer -> {
-          logger.trace("Remove peer. peerId={}", accountId);
+      .ifPresent(peer -> {
+        logger.trace("Remove peer. peerId={}", accountId);
 
-          // Stop the CcpSender from broadcasting routes...
-          peer.ccpSender().stopBroadcasting();
+        // Stop the CcpSender from broadcasting routes...
+        peer.ccpSender().stopBroadcasting();
 
-          // We have to removeEntry the peer before calling updatePrefix on each of its advertised prefixes in order to
-          // find the next best route.
-          this.ccpEnabledAccounts.remove(accountId);
-        });
+        // We have to removeEntry the peer before calling updatePrefix on each of its advertised prefixes in order to
+        // find the next best route.
+        this.ccpEnabledAccounts.remove(accountId);
+      });
   }
 }

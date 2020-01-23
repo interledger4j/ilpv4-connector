@@ -8,7 +8,6 @@ import org.interledger.connector.links.NextHopPacketMapper;
 import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.packetswitch.filters.DefaultPacketSwitchFilterChain;
 import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
@@ -16,10 +15,7 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.link.LinkId;
 import org.interledger.link.PacketRejector;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
@@ -41,27 +37,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   // rely upon AccountSettings found in this cache.
   private final AccountSettingsLoadingCache accountSettingsLoadingCache;
 
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final EventBus eventBus;
-
-  /**
-   * For testing purposes.
-   */
-  @VisibleForTesting
-  protected DefaultILPv4PacketSwitch(
-    final List<PacketSwitchFilter> packetSwitchFilters,
-    final List<LinkFilter> linkFilters,
-    final LinkManager linkManager,
-    final NextHopPacketMapper nextHopPacketMapper,
-    final ConnectorExceptionHandler connectorExceptionHandler,
-    final AccountSettingsRepository accountSettingsRepository,
-    final PacketRejector packetRejector,
-    EventBus eventBus) {
-    this(
-      packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler, packetRejector,
-      new AccountSettingsLoadingCache(accountSettingsRepository),
-      eventBus);
-  }
 
   public DefaultILPv4PacketSwitch(
     final List<PacketSwitchFilter> packetSwitchFilters,
@@ -71,7 +47,8 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     final ConnectorExceptionHandler connectorExceptionHandler,
     final PacketRejector packetRejector,
     final AccountSettingsLoadingCache accountSettingsLoadingCache,
-    EventBus eventBus) {
+    final EventBus eventBus
+  ) {
     this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
     this.linkFilters = Objects.requireNonNull(linkFilters);
     this.linkManager = Objects.requireNonNull(linkManager);
@@ -90,6 +67,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
    * @param sourceAccountId             An {@link AccountId} for the account that received the {@code
    *                                    incomingSourcePreparePacket}.
    * @param incomingSourcePreparePacket The packet received from the inbound/source account.
+   *
    * @return An {@link InterledgerResponsePacket} as received from the outbound link.
    */
   public final InterledgerResponsePacket switchPacket(
@@ -112,7 +90,6 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
             eventBus).doFilter(accountSettings, incomingSourcePreparePacket);
 
         } catch (Exception e) {
-          logger.info("Rejecting packet. Reason: " + e.getMessage());
           // Any rejections should be caught here, and returned as such....
           return this.connectorExceptionHandler.handleException(sourceAccountId, incomingSourcePreparePacket, e);
         }
