@@ -4,6 +4,7 @@ import static okhttp3.CookieJar.NO_COOKIES;
 import static org.interledger.connector.core.ConfigConstants.ENABLED_PROTOCOLS;
 import static org.interledger.connector.core.ConfigConstants.ILP_OVER_HTTP_ENABLED;
 import static org.interledger.connector.core.ConfigConstants.TRUE;
+import static org.interledger.connector.server.spring.settings.web.JacksonConfig.PROBLEM;
 
 import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.connector.accounts.DefaultAccountIdResolver;
@@ -46,6 +47,7 @@ public class IlpOverHttpConfig {
   public static final String ILP_OVER_HTTP = "ILP-over-HTTP";
 
   @Autowired
+  @Qualifier(PROBLEM)
   private ObjectMapper objectMapper;
 
   @Autowired
