@@ -2,7 +2,6 @@ package org.interledger.connector.server.ilpoverhttp;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.interledger.link.http.IlpOverHttpConstants.APPLICATION_OCTET_STREAM;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -25,7 +24,6 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.junit.Before;
