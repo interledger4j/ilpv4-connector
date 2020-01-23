@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
 import javax.money.CurrencyUnit;
 import javax.money.Monetary;
 import javax.money.MonetaryAmount;
@@ -73,7 +74,6 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     this.accountSettingsLoadingCache = Objects.requireNonNull(accountSettingsLoadingCache);
     this.currencyConverter = currencyConverter;
   }
-
 
   /**
    * Construct the <tt>next-hop</tt> ILP prepare packet, meaning a new packet with potentially new pricing, destination,
@@ -141,6 +141,19 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
       sourceAccountSettings, destinationAccountSettings, sourcePacket
     );
 
+    // This warning is added to alert the Connector operator if a particular path is accruing value on the inbound
+    // link but mapping to 0 on the outbound link. This typically occurs if the precision on the inbound link is
+    // higher than the precision of the outbound link. For example, a packet with 99 units coming into the Connector
+    // on an inbound USD link with a scale of 2 (e.g., 99 cents) might map to a USD link with a scale of 0 (i.e., 1
+    // unit equals 1 US Dollar). This will translate into a value of 0 on the outbound linke because of the way the
+    // Connector implements rouding. If this happens enough, the incoming link will continue to spend money that
+    // will show up in the outbound Link. Generally, this will result in a rejection from the outbound link, but
+    // just in case we want the Connector operator to be able to detect this condition.
+    if (UnsignedLong.ZERO.equals(nextAmount)) {
+      logger.warn("While packet-switching, the source packet amount translated into a zero-value destination amount. "
+        + "sourcePacket={} nextHopRoute={}", sourcePacket, nextHopRoute);
+    }
+
     return NextHopInfo.builder()
       .nextHopAccountId(nextHopRoute.nextHopAccountId())
       .nextHopPacket(
@@ -154,14 +167,14 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
   }
 
   /**
-   * Given a source account, determine the exchange-rate and new amount that should be returned in order to create the
-   * next packet in the chain for the destination account.
+   * Given a source account, determine the exchange-rate and new amount that should be used in order to forward the
+   * packet to the indicated destination account.
    *
-   * @param sourceAccountSettings
-   * @param destinationAccountSettings
-   * @param sourcePacket
+   * @param sourceAccountSettings      The {@link AccountSettings} that sourced the prepare packet.
+   * @param destinationAccountSettings The {@link AccountSettings} for the destination account.
+   * @param sourcePacket               The {@link InterledgerPreparePacket} being routed.
    *
-   * @return A BigInteger is the correct units for the source account.
+   * @return An {@link UnsignedLong} in the correct units for the destination account.
    */
   @VisibleForTesting
   protected UnsignedLong determineNextAmount(
@@ -193,39 +206,42 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
      * 2.6 GHz Intel Core i7. It's more than likely that this performance will be lower on virtual machines, but
      * we would have to do additional load testing on those VMs to get a better idea of how big of a deviation we see.
      */
+    final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.assetCode());
+    final int sourceScale = sourceAccountSettings.assetScale();
+    final MonetaryAmount sourceAmount =
+      javaMoneyUtils.toMonetaryAmount(sourceCurrencyUnit, sourcePacket.getAmount().bigIntegerValue(), sourceScale);
 
-    if (!this.addressUtils.isExternalForwardingAllowed(sourcePacket.getDestination())) {
-      return sourcePacket.getAmount();
-    } else {
-      // TODO: Consider a cache here for the source/dest conversion or perhaps an injected instance of
-      //  ExchangeRateProvider here (See https://github.com/interledger4j/ilpv4-connector/issues/223)
-      final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.assetCode());
-      final int sourceScale = sourceAccountSettings.assetScale();
-      final MonetaryAmount sourceAmount =
-        javaMoneyUtils.toMonetaryAmount(sourceCurrencyUnit, sourcePacket.getAmount().bigIntegerValue(), sourceScale);
+    final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAccountSettings.assetCode());
+    final int destinationScale = destinationAccountSettings.assetScale();
+    final CurrencyConversion destCurrencyConversion = currencyConverter.apply(destinationCurrencyUnit);
 
-      final CurrencyUnit destinationCurrencyUnit = Monetary.getCurrency(destinationAccountSettings.assetCode());
-      final int destinationScale = destinationAccountSettings.assetScale();
-      final CurrencyConversion destCurrencyConversion = currencyConverter.apply(destinationCurrencyUnit);
-
-      return UnsignedLong.valueOf(
-        javaMoneyUtils.toInterledgerAmount(sourceAmount.with(destCurrencyConversion), destinationScale));
-    }
+    return UnsignedLong.valueOf(
+      javaMoneyUtils.toInterledgerAmount(sourceAmount.with(destCurrencyConversion), destinationScale));
   }
 
   /**
-   * FIXME this can be removed after we stop operating in shadow mode
+   * NOTE: This method only exists in order to get FX info into PubSub + BigQuery. See deprecation note below for more
+   * details.
+   *
    * @param sourceAccountSettings
    * @param destinationAccountSettings
    * @param sourcePacket
+   *
    * @return
+   *
+   * @deprecated This only exists to faciliate getting FX information into BigQuery. However, this method should be
+   *   removed once https://github.com/interledger4j/ilpv4-connector/issues/529 is fixed (see that issue for more
+   *   details).
    */
-  public BigDecimal determineExchangeRate(final AccountSettings sourceAccountSettings,
-                                             final AccountSettings destinationAccountSettings,
-                                             final InterledgerPreparePacket sourcePacket) {
-    if (!this.addressUtils.isExternalForwardingAllowed(sourcePacket.getDestination())) {
-      return BigDecimal.ZERO;
-    }
+  @Deprecated
+  public BigDecimal determineExchangeRate(
+    final AccountSettings sourceAccountSettings,
+    final AccountSettings destinationAccountSettings,
+    final InterledgerPreparePacket sourcePacket
+  ) {
+    Objects.requireNonNull(sourceAccountSettings);
+    Objects.requireNonNull(destinationAccountSettings);
+    Objects.requireNonNull(sourcePacket);
 
     final CurrencyUnit sourceCurrencyUnit = Monetary.getCurrency(sourceAccountSettings.assetCode());
     final int sourceScale = sourceAccountSettings.assetScale();

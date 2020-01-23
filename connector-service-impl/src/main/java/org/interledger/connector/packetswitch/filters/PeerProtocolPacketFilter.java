@@ -3,7 +3,7 @@ package org.interledger.connector.packetswitch.filters;
 import static org.interledger.connector.ccp.CcpConstants.CCP_CONTROL_DESTINATION_ADDRESS;
 import static org.interledger.connector.ccp.CcpConstants.CCP_UPDATE_DESTINATION_ADDRESS;
 import static org.interledger.connector.ccp.CcpConstants.PEER_PROTOCOL_EXECUTION_CONDITION;
-import static org.interledger.connector.core.Ilpv4Constants.ALL_ZEROS_FULFILLMENT;
+import static org.interledger.core.InterledgerConstants.ALL_ZEROS_FULFILLMENT;
 
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.ccp.CcpConstants;

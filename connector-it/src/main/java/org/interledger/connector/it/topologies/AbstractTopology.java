@@ -73,8 +73,10 @@ public abstract class AbstractTopology {
       .accountId(PING_ACCOUNT_ID)
       .accountRelationship(AccountRelationship.CHILD)
       .settlementEngineDetails(Optional.empty())
-      .assetCode("USD")
-      .assetScale(2)
+      // Even though the default Connector's ping denomination is USD with a scale of 12, we set this to XRP/9 so that
+      // we can easily assert on XRP values after ping requests are made.
+      .assetCode("XRP")
+      .assetScale(9)
       .description("A receiver-like child account for collecting all Ping protocol revenues.")
       .linkType(PingLoopbackLink.LINK_TYPE)
       .build();

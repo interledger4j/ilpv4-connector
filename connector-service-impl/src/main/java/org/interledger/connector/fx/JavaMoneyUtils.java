@@ -1,12 +1,14 @@
 package org.interledger.connector.fx;
 
 import org.interledger.core.InterledgerPreparePacket;
+
 import org.javamoney.moneta.Money;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import javax.money.CurrencyUnit;
 import javax.money.MonetaryAmount;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 /**
  * Interledger amounts are integers, but most currencies are typically represented as fractional units, e.g. cents. This
@@ -25,7 +27,7 @@ public class JavaMoneyUtils {
    *                    <tt>1*10^(-currencyScale)</tt>. For example, 10000 dollar-cents (assetScale is 2) would be
    *                    translated into dollars via the following equation: `10000 * (10^(-2))`, or `100.00`.
    *
-   * @return
+   * @return A {@link MonetaryAmount} representing the money corresponding to the supplied inputs.
    */
   public MonetaryAmount toMonetaryAmount(
     final CurrencyUnit currencyUnit, final BigInteger assetAmount, final int assetScale
@@ -48,13 +50,15 @@ public class JavaMoneyUtils {
    *                       <tt>1*10^(-currencyScale)</tt>. For example, 10000 dollar-cents (assetScale is 2) would be
    *                       translated into dollars via the following equation: `10000 * (10^(-2))`, or `100.00`.
    *
-   * @return
+   * @return A {@link BigInteger} representing the ILP amount of teh supplied inputs. inputs.
    */
   public BigInteger toInterledgerAmount(MonetaryAmount monetaryAmount, int assetScale) {
     // 123.45 --> 12345 if scale is 2
 
     return monetaryAmount.scaleByPowerOfTen(assetScale).getNumber().numberValue(BigDecimal.class)
-      // Throw an exception if any precision is lost.
-      .toBigIntegerExact();
+      // This always rounds down so the Connector never loses money. E.g., if the monetary amount is 0.009, and is
+      // being converted to cents, then this should not convert into 0.01, because this suble rounding error would
+      // accrue over time as real money. Instead, 0.009 should convert to 0.00, which is what the unit tests validate.
+      .toBigInteger();
   }
 }
