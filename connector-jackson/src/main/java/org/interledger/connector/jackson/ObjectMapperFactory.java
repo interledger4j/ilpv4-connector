@@ -5,6 +5,7 @@ import org.interledger.connector.jackson.modules.HttpUrlModule;
 import org.interledger.connector.jackson.modules.SettlementAccountIdModule;
 import org.interledger.quilt.jackson.InterledgerModule;
 import org.interledger.quilt.jackson.address.InterledgerAddressModule;
+import org.interledger.quilt.jackson.addressprefix.InterledgerAddressPrefixModule;
 import org.interledger.quilt.jackson.conditions.Encoding;
 import org.interledger.quilt.jackson.link.LinkIdModule;
 import org.interledger.quilt.jackson.link.LinkTypeModule;
@@ -38,6 +39,7 @@ public class ObjectMapperFactory {
       .registerModule(new JavaTimeModule())
       .registerModule(new GuavaModule())
       .registerModule(new AccountIdModule())
+      .registerModule(new InterledgerAddressPrefixModule())
       .registerModule(new InterledgerAddressModule())
       .registerModule(new InterledgerModule(Encoding.BASE64))
       .registerModule(new SettlementAccountIdModule())
