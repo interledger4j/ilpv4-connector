@@ -1,12 +1,12 @@
 package org.interledger.connector.server.spring.controllers;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.interledger.connector.server.spring.controllers.IlpHttpController.APPLICATION_ILP_OCTET_STREAM_VALUE;
 import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH;
 import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerConstants;
@@ -21,11 +21,10 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultMatcher;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -48,20 +47,20 @@ public class IlpHttpControllerTest extends AbstractControllerTest {
 
   @Test
   public void testApplicationOctetStream() throws Exception {
-    postIlpPrepare(testOctetStreamHeaders(), HttpStatus.OK);
+    assertIlpPrepare(testOctetStreamHeaders(), status().isOk());
   }
 
   @Test
   public void testApplicationIlpOctetStream() throws Exception {
-    postIlpPrepare(contentTypeHeader(APPLICATION_ILP_OCTET_STREAM_VALUE), HttpStatus.OK);
+    assertIlpPrepare(contentTypeHeader(APPLICATION_ILP_OCTET_STREAM_VALUE), status().isOk());
   }
 
   @Test
   public void testContentTypeCovfefe() throws Exception {
-    postIlpPrepare(contentTypeHeader("application/covfefe"), HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+    assertIlpPrepare(contentTypeHeader("application/covfefe"), status().isUnsupportedMediaType());
   }
 
-  private void postIlpPrepare(HttpHeaders httpHeaders, HttpStatus expectedStatus) throws Exception {
+  private void assertIlpPrepare(HttpHeaders httpHeaders, ResultMatcher expectedStatus) throws Exception {
     String accountId = "foo";
     InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
       .executionCondition(InterledgerConstants.ALL_ZEROS_CONDITION)
@@ -70,13 +69,13 @@ public class IlpHttpControllerTest extends AbstractControllerTest {
       .expiresAt(new Date().toInstant())
       .build();
 
-    MvcResult result = this.mvc
+    this.mvc
       .perform(post(SLASH_ACCOUNTS + SLASH + accountId + "/ilp")
         .headers(httpHeaders)
         .content(serialize(preparePacket))
         .with(httpBasic("admin", "password")).with(csrf())
-      ).andReturn();
-    assertThat(result.getResponse().getStatus()).isEqualTo(expectedStatus.value());
+      )
+      .andExpect(expectedStatus);
   }
 
   private HttpHeaders contentTypeHeader(String contentType) {
