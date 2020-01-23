@@ -222,7 +222,7 @@
       <dependency>
         <groupId>io.grpc</groupId>
         <artifactId>grpc-api</artifactId>
-        <version>1.26.0</version> <!-- this should match the other grpc dependency versions in spring-cloud bom -->
+        <version>1.25.0</version> <!-- this should match the other grpc dependency versions in spring-cloud bom -->
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>

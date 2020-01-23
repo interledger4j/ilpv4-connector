@@ -31,10 +31,6 @@
           <groupId>javax.annotation</groupId>
           <artifactId>javax.annotation-api</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>io.grpc</groupId>
-          <artifactId>grpc-api</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
