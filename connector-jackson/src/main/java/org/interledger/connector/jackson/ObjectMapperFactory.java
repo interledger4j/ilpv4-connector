@@ -2,10 +2,10 @@ package org.interledger.connector.jackson;
 
 import org.interledger.connector.jackson.modules.AccountIdModule;
 import org.interledger.connector.jackson.modules.HttpUrlModule;
-import org.interledger.connector.jackson.modules.InterledgerAddressPrefixModule;
 import org.interledger.connector.jackson.modules.SettlementAccountIdModule;
 import org.interledger.quilt.jackson.InterledgerModule;
 import org.interledger.quilt.jackson.address.InterledgerAddressModule;
+import org.interledger.quilt.jackson.addressprefix.InterledgerAddressPrefixModule;
 import org.interledger.quilt.jackson.conditions.Encoding;
 import org.interledger.quilt.jackson.link.LinkIdModule;
 import org.interledger.quilt.jackson.link.LinkTypeModule;
