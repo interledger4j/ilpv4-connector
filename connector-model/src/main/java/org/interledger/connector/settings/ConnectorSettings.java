@@ -3,6 +3,8 @@ package org.interledger.connector.settings;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.crypto.CryptoKey;
+import org.interledger.crypto.CryptoKeys;
 import org.interledger.link.Link;
 
 import org.immutables.value.Value;
@@ -112,10 +114,10 @@ public interface ConnectorSettings {
    * @return keys
    */
   @Value.Default
-  default ConnectorKeys keys() {
-    return ConnectorKeys.builder()
-      .accountSettings(ConnectorKey.builder().alias("accountSettings").version("1").build())
-      .secret0(ConnectorKey.builder().alias("secret0").version("1").build())
+  default CryptoKeys keys() {
+    return CryptoKeys.builder()
+      .accountSettings(CryptoKey.builder().alias("accountSettings").version("1").build())
+      .secret0(CryptoKey.builder().alias("secret0").version("1").build())
       .build();
   }
 
