@@ -5,7 +5,6 @@ import static org.interledger.connector.core.ConfigConstants.ILP_OVER_HTTP_ENABL
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountIdResolver;
-import org.interledger.connector.accounts.IlpOverHttpAccountIdResolver;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
@@ -30,12 +29,12 @@ import java.util.Objects;
 @ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = ILP_OVER_HTTP_ENABLED, havingValue = "true")
 public class IlpHttpController {
 
-  private final IlpOverHttpAccountIdResolver accountIdResolver;
+  public static final String APPLICATION_ILP_OCTET_STREAM_VALUE = "application/ilp-octet-stream";
+  public static final MediaType APPLICATION_ILP_OCTET_STREAM = MediaType.valueOf(APPLICATION_ILP_OCTET_STREAM_VALUE);
+
   private final ILPv4PacketSwitch ilPv4PacketSwitch;
 
-  public IlpHttpController(final IlpOverHttpAccountIdResolver accountIdResolver,
-      final ILPv4PacketSwitch ilPv4PacketSwitch) {
-    this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
+  public IlpHttpController(final ILPv4PacketSwitch ilPv4PacketSwitch) {
     this.ilPv4PacketSwitch = Objects.requireNonNull(ilPv4PacketSwitch);
   }
 
@@ -53,7 +52,7 @@ public class IlpHttpController {
   @RequestMapping(
       value = PathConstants.SLASH_ACCOUNTS_ILP_PATH, method = {RequestMethod.POST},
       produces = {MediaType.APPLICATION_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE},
-      consumes = {MediaType.APPLICATION_OCTET_STREAM_VALUE}
+      consumes = {MediaType.APPLICATION_OCTET_STREAM_VALUE, APPLICATION_ILP_OCTET_STREAM_VALUE}
   )
   public InterledgerResponsePacket sendData(
       @PathVariable(PathConstants.ACCOUNT_ID) String accountId,
