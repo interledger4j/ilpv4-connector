@@ -1,6 +1,7 @@
 package org.interledger.connector.server;
 
 import org.interledger.connector.server.spring.settings.SpringConnectorConfig;
+
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
