@@ -18,7 +18,6 @@ import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.connector.jackson.ObjectMapperFactory;
 import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.connector.server.client.ConnectorAdminTestClient;
-import org.interledger.connector.server.spring.settings.Redactor;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.SettlementEngineClientException;
 import org.interledger.connector.settlement.client.CreateSettlementAccountResponse;
@@ -63,6 +62,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -278,10 +278,8 @@ public class AccountSettingsSpringBootTest {
       .build();
 
     AccountSettings created = assertPostAccountCreated(settings);
-    assertThat(created.customSettings().get(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN))
-      .isEqualTo(Redactor.REDACTED);
-    assertThat(created.customSettings().get(OutgoingLinkSettings.HTTP_OUTGOING_SIMPLE_AUTH_TOKEN))
-      .isEqualTo(Redactor.REDACTED);
+    assertThat(((String) created.customSettings().get(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN)).startsWith("enc:jks:crypto/crypto.p12:secret0:1:aes_gcm"));
+    assertThat(((String) created.customSettings().get(OutgoingLinkSettings.HTTP_OUTGOING_SIMPLE_AUTH_TOKEN)).startsWith("enc:jks:crypto/crypto.p12:secret0:1:aes_gcm"));
   }
 
   @Test
@@ -392,6 +390,104 @@ public class AccountSettingsSpringBootTest {
     assertJson.extractingJsonPathValue("detail").isEqualTo("Unsupported LinkType: LinkType(FOO)");
   }
 
+  /**
+   * Testing out removing the Redactor from the admin API (https://github.com/interledger4j/ilpv4-connector/issues/553).
+   *
+   * Simulate the old account API behavior of redacting auth_tokens by updating an account with auth_token = [**REDACTED**].
+   * Succeeds if auth_token gets set to [**REDACTED**], though in reality this is the failure we are fixing in #553
+   */
+  @Test
+  public void testUpdateAccountWithRedactedAuthToken() throws IOException {
+    final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
+
+    Map<String, Object> customSettings = new HashMap<>();
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE);
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SIMPLE_AUTH_TOKEN, "password");
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "http://iheartinterledger.com");
+
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE);
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN, "password");
+
+    final AccountSettings settings = AccountSettings.builder()
+      .accountId(accountId)
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
+      .createdAt(Instant.now())
+      .customSettings(customSettings)
+      .build();
+
+    AccountSettings response = assertPostAccountCreated(settings);
+    assertThat(response).isEqualTo(settings);
+
+    // Simulate passing pack a redacted auth_token
+    customSettings.replace(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN, "[**REDACTED**]");
+
+    final AccountSettings updatedSettings = AccountSettings.builder()
+      .accountId(response.accountId())
+      .accountRelationship(AccountRelationship.PEER)
+      .assetCode(response.assetCode())
+      .assetScale(response.assetScale())
+      .linkType(response.linkType())
+      .createdAt(response.createdAt())
+      .modifiedAt(Instant.now())
+      .customSettings(customSettings)
+      .build();
+
+    AccountSettings newSettings = adminApiTestClient.updateAccount(accountId.value(), updatedSettings);
+    String encryptedPassword = (String) response.customSettings().get(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN);
+    assertThat(newSettings.customSettings().get(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN)).isNotEqualTo(encryptedPassword);
+  }
+
+  /**
+   * Testing out removing the Redactor from the admin API (https://github.com/interledger4j/ilpv4-connector/issues/553).
+   *
+   * Make sure that updating AccountSettings (not updating auth_token) does not actually change the auth_token
+   */
+  @Test
+  public void testUpdateAccountWithNonRedactedAuthToken() throws IOException {
+    final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
+
+    Map<String, Object> customSettings = new HashMap<>();
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE);
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_SIMPLE_AUTH_TOKEN, "password");
+    customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "http://iheartinterledger.com");
+
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE);
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN, "password");
+
+    final AccountSettings settings = AccountSettings.builder()
+      .accountId(accountId)
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
+      .createdAt(Instant.now())
+      .customSettings(customSettings)
+      .build();
+
+    AccountSettings response = assertPostAccountCreated(settings);
+    assertThat(response).isEqualTo(settings);
+
+    // Simulate passing back an encrypted auth_token for an update instead of redacted auth_token
+    customSettings.replace(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN, response.customSettings().get(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN));
+    final AccountSettings updatedSettings = AccountSettings.builder()
+      .accountId(response.accountId())
+      .accountRelationship(AccountRelationship.PEER)
+      .assetCode(response.assetCode())
+      .assetScale(response.assetScale())
+      .linkType(response.linkType())
+      .createdAt(response.createdAt())
+      .modifiedAt(Instant.now())
+      .customSettings(customSettings)
+      .build();
+
+    AccountSettings newSettings = adminApiTestClient.updateAccount(accountId.value(), updatedSettings);
+    String encryptedPassword = (String) response.customSettings().get(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN);
+    assertThat(newSettings.customSettings().get(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN)).isEqualTo(encryptedPassword);
+  }
+
   @Test
   public void testUpdateAccountFailsOnInvalidLinkType() throws IOException {
     final AccountId accountId = AccountId.of(UUID.randomUUID().toString());
@@ -445,6 +541,7 @@ public class AccountSettingsSpringBootTest {
     fail("Expected failure");
     return "not reachable";
   }
+
 
   private String assertPutAccountFailure(AccountSettings settings, HttpStatus expectedStatus) {
     try {
