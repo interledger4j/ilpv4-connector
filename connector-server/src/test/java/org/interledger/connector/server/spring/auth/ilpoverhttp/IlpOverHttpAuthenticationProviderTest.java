@@ -11,10 +11,10 @@ import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings;
 import org.interledger.connector.links.DefaultLinkSettingsFactory;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.connector.server.spring.settings.ConnectorSettingsFromPropertyFileTest;
 import org.interledger.connector.server.spring.settings.crypto.JksCryptoConfig;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.ModifiableConnectorSettings;
+import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
@@ -30,17 +30,20 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(
-  classes = {JksCryptoConfig.class, ConnectorSettingsFromPropertyFileTest.TestConfiguration.class}
+  classes = {JksCryptoConfig.class, IlpOverHttpAuthenticationProviderTest.TestConfiguration.class}
 )
 @ActiveProfiles("connector-unit-test")
 public class IlpOverHttpAuthenticationProviderTest {
@@ -189,5 +192,14 @@ public class IlpOverHttpAuthenticationProviderTest {
       .thenAnswer(($) -> Optional.of(builder.build()));
 
     return builder;
+  }
+
+  @EnableConfigurationProperties(ConnectorSettingsFromPropertyFile.class)
+  public static class TestConfiguration {
+    @Bean
+    public Supplier<ConnectorSettings> connectorSettingsSupplier(ConnectorSettingsFromPropertyFile settings) {
+      return () -> settings;
+    }
+
   }
 }

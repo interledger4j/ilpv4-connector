@@ -14,6 +14,7 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.persistence.repositories.DeletedAccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.ModifiableConnectorSettings;
+import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.client.CreateSettlementAccountRequest;
 import org.interledger.connector.settlement.client.CreateSettlementAccountResponse;
@@ -283,8 +284,14 @@ public class DefaultAccountManager implements AccountManager {
     //////////////////////////////////
 
     // TODO: Consider a better way to update the operator address for a connector. Maybe an event?
-    ((ModifiableConnectorSettings) this.connectorSettingsSupplier.get())
-      .setOperatorAddress(ildcpResponse.getClientAddress());
+    if (this.connectorSettingsSupplier.get() instanceof ModifiableConnectorSettings) {
+      ((ModifiableConnectorSettings) this.connectorSettingsSupplier.get())
+        .setOperatorAddress(ildcpResponse.getClientAddress());
+    }
+    else if (this.connectorSettingsSupplier.get() instanceof ConnectorSettingsFromPropertyFile) {
+      ((ConnectorSettingsFromPropertyFile) this.connectorSettingsSupplier.get())
+        .setNodeIlpAddress(ildcpResponse.getClientAddress());
+    }
 
     //////////////////////////////////
     // Update the Account Settings with data returned by IL-DCP!
