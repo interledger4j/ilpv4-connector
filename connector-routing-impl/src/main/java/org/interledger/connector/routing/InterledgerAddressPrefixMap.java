@@ -1,13 +1,14 @@
 package org.interledger.connector.routing;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.collections4.trie.PatriciaTrie;
-import org.interledger.connector.routing.BaseRoute;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
+
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.collections4.trie.PatriciaTrie;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -128,7 +129,6 @@ public class InterledgerAddressPrefixMap<R> {
   public Optional<R> findNextHop(final InterledgerAddress finalDestinationAddress) {
     Objects.requireNonNull(finalDestinationAddress);
 
-
     return this.findLongestPrefix(InterledgerAddressPrefix.from(finalDestinationAddress))
       //.getPrefix()
       //.map(this::findLongestPrefix)
@@ -169,7 +169,10 @@ public class InterledgerAddressPrefixMap<R> {
     // routing-table has only "g", then "g.1.2." will not return a sub-map, so we should recursively search for a
     // sub-map with with "g.1" (which would return nothing), and then "g".
 
-    final SortedMap<String, R> prefixSubMap = prefixMap.prefixMap(toTrieKey(destinationAddressPrefix));
+    String destinationPrefixKey = toTrieKey(destinationAddressPrefix);
+    final SortedMap<String, R> prefixSubMap =
+      filterLongerPrefixes(destinationPrefixKey, prefixMap.prefixMap(destinationPrefixKey));
+
     if (prefixSubMap.isEmpty() && destinationAddressPrefix.hasPrefix()) {
       // The PatriciaTrie has no prefixes, so try this whole thing again with the parent prefix.
       return destinationAddressPrefix.getPrefix()
@@ -209,6 +212,24 @@ public class InterledgerAddressPrefixMap<R> {
           })
         );
     }
+  }
+
+  /**
+   * Filters entries from {@code toFilter} where entry.getKey() is longer than the prefixKey. For example, if the Trie
+   * has an entry for `g.foo` and `g.foo.bar.baz`, then when looking for a match for a destination address of
+   * `g.foo.bar`, the trie will choose `g.foo.bar.baz`. While correct behavior for a Trie, this is not what the ILP
+   * longest-prefix-match desires. To rectify this, we need to exclude any results from the trie that are longer than
+   * the destination address being matched upon.
+   *
+   * @param prefixKey
+   * @param toFilter
+   *
+   * @return filtered map
+   */
+  private SortedMap<String, R> filterLongerPrefixes(String prefixKey, SortedMap<String, R> toFilter) {
+    return toFilter.entrySet().stream()
+      .filter(entry -> entry.getKey().length() <= prefixKey.length())
+      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (v1, v2) -> v2, PatriciaTrie::new));
   }
 
   /**
