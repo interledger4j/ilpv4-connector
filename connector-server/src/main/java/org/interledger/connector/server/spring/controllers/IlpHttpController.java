@@ -29,7 +29,7 @@ import java.util.Objects;
 @ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = ILP_OVER_HTTP_ENABLED, havingValue = "true")
 public class IlpHttpController {
 
-  public static final String APPLICATION_ILP_OCTET_STREAM_VALUE = "application/ilp-octet-stream";
+  public static final String APPLICATION_ILP_OCTET_STREAM_VALUE = "application/ilp+octet-stream";
   public static final MediaType APPLICATION_ILP_OCTET_STREAM = MediaType.valueOf(APPLICATION_ILP_OCTET_STREAM_VALUE);
 
   private final ILPv4PacketSwitch ilPv4PacketSwitch;
