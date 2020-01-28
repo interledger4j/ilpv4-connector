@@ -94,13 +94,12 @@ public class DefaultGcpPacketResponseEventPublisher implements GcpPacketResponse
       .nextHopAccount(event.destinationAccount().accountId())
       .nextHopAssetCode(event.destinationAccount().assetCode())
       .nextHopAssetScale(event.destinationAccount().assetScale())
+      .nextHopAmount(event.outgoingPreparePacket().getAmount())
       .exchangeRate(event.exchangeRate())
       .fulfillment(event.fulfillment().getCondition())
       .destinationIlpAddress(event.incomingPreparePacket().getDestination())
       .timestamp(Instant.now(clock))
       .status(STATUS_FULFILLED);
-
-    event.outgoingPreparePacket().map(outgoing -> builder.nextHopAmount(outgoing.getAmount()));
 
     return builder.build();
   }

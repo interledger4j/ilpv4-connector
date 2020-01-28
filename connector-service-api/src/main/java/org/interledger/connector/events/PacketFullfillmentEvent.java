@@ -7,7 +7,6 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.immutables.value.Value;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 
 /**
  * Event that is emitted when the connector receives a ILP fulfillment
@@ -26,13 +25,13 @@ public interface PacketFullfillmentEvent extends ConnectorEvent {
   InterledgerPreparePacket incomingPreparePacket();
 
   /**
-   * Outgoing prepare packet to the next hop (if forwarded)
+   * Outgoing prepare packet to the next hop
    * @return
    */
-  Optional<InterledgerPreparePacket> outgoingPreparePacket();
+  InterledgerPreparePacket outgoingPreparePacket();
 
   /**
-   * Fulfillment condition from the receiver (if fulfilled)
+   * Fulfillment condition from the receiver
    * @return
    */
   InterledgerFulfillment fulfillment();
