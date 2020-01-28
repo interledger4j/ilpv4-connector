@@ -1,21 +1,22 @@
 package org.interledger.connector.events;
 
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.core.InterledgerFulfillment;
 import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerRejectPacket;
 
 import org.immutables.value.Value;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 /**
- * Event that is emitted when the connector receives a ILP fulfillment
+ * Event that is emitted when the connector sends back an ILP rejection
  */
 @Value.Immutable
-public interface PacketFulfillmentEvent extends ConnectorEvent {
+public interface PacketRejectionEvent extends ConnectorEvent {
 
-  static ImmutablePacketFulfillmentEvent.Builder builder() {
-    return ImmutablePacketFulfillmentEvent.builder();
+  static ImmutablePacketRejectionEvent.Builder builder() {
+    return ImmutablePacketRejectionEvent.builder();
   }
 
   /**
@@ -25,22 +26,22 @@ public interface PacketFulfillmentEvent extends ConnectorEvent {
   InterledgerPreparePacket incomingPreparePacket();
 
   /**
-   * Outgoing prepare packet to the next hop
+   * Outgoing prepare packet to the next hop if (forwarded)
    * @return
    */
-  InterledgerPreparePacket outgoingPreparePacket();
+  Optional<InterledgerPreparePacket> outgoingPreparePacket();
 
   /**
-   * Fulfillment condition from the receiver
+   * Reject packet (if prepare rejected)
    * @return
    */
-  InterledgerFulfillment fulfillment();
+  InterledgerRejectPacket rejection();
 
   /**
-   * Connector account for the next hop
+   * Connector account for the next hop (if forwarded)
    * @return
    */
-  AccountSettings destinationAccount();
+  Optional<AccountSettings> destinationAccount();
 
   /**
    * Exchange rate that the current connector applied. This is the currency conversion from the incoming prepare
@@ -48,6 +49,6 @@ public interface PacketFulfillmentEvent extends ConnectorEvent {
    * of connectors.
    * @return
    */
-  BigDecimal exchangeRate();
+  Optional<BigDecimal> exchangeRate();
 
 }

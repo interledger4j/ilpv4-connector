@@ -4,6 +4,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.primitives.UnsignedLong;
@@ -11,15 +12,16 @@ import org.immutables.value.Value;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.Optional;
+import javax.annotation.Nullable;
 
 @Value.Immutable
-@JsonSerialize(as=ImmutableGcpFulfillmentEvent.class)
-@JsonDeserialize(as=ImmutableGcpFulfillmentEvent.class)
-public interface GcpFulfillmentEvent {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonSerialize(as=ImmutableGcpPacketResponseEvent.class)
+@JsonDeserialize(as=ImmutableGcpPacketResponseEvent.class)
+public interface GcpPacketResponseEvent {
 
-  static ImmutableGcpFulfillmentEvent.Builder builder() {
-    return ImmutableGcpFulfillmentEvent.builder();
+  static ImmutableGcpPacketResponseEvent.Builder builder() {
+    return ImmutableGcpPacketResponseEvent.builder();
   }
 
   AccountId prevHopAccount();
@@ -28,10 +30,13 @@ public interface GcpFulfillmentEvent {
 
   UnsignedLong prevHopAmount();
 
+  @Nullable
   AccountId nextHopAccount();
 
+  @Nullable
   String nextHopAssetCode();
 
+  @Nullable
   UnsignedLong nextHopAmount();
 
   @Value.Default
@@ -39,18 +44,32 @@ public interface GcpFulfillmentEvent {
     return BigDecimal.ZERO;
   }
 
+  @Nullable
   BigDecimal exchangeRate();
 
   InterledgerAddress connectorIlpAddress();
 
   InterledgerAddress destinationIlpAddress();
 
-  Optional<InterledgerCondition> fulfillment();
+  @Nullable
+  InterledgerCondition fulfillment();
 
   Instant timestamp();
 
   int prevHopAssetScale();
 
-  int nextHopAssetScale();
+  @Nullable
+  Integer nextHopAssetScale();
+
+  String status();
+
+  @Nullable
+  String rejectionMessage();
+
+  @Nullable
+  String rejectionCode();
+
+  @Nullable
+  String rejectionTriggeredBy();
 
 }
