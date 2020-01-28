@@ -1,6 +1,8 @@
 package org.interledger.connector.gcp;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
@@ -32,27 +34,35 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class DefaultGcpPacketResponseEventPublisherTest {
   private static final InterledgerAddress OPERATOR_ADDRESS = InterledgerAddress.of("test.hugh.honey");
   private static final InterledgerAddress DEST_ADDRESS = InterledgerAddress.of("test.vic.vinegar");
+  public static final String FULFILLS = "fulfills";
+  public static final String REJECTS = "rejects";
 
   @Rule
   public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-  public static final String TOPIC = "real-estate";
   private DefaultGcpPacketResponseEventPublisher publisher;
   @Mock
   private PubSubTemplate template;
 
+  // mock out time to make it easier to assert the expected JSON
+  private int nanos = (int) TimeUnit.NANOSECONDS.convert(678, TimeUnit.MILLISECONDS);
+  private Clock clock = Clock.fixed(LocalDateTime.of(2000, 1, 2, 3, 4, 5, nanos).toInstant(ZoneOffset.UTC), ZoneId.of("UTC"));
+  private ObjectMapper mapper = ObjectMapperFactory.create();
+
   @Before
   public void setUp() {
-    // mock out time to make it easier to assert the expected JSON
-    int nanos = (int) TimeUnit.NANOSECONDS.convert(678, TimeUnit.MILLISECONDS);
-    Clock clock = Clock.fixed(LocalDateTime.of(2000, 1, 2, 3, 4, 5, nanos).toInstant(ZoneOffset.UTC), ZoneId.of("UTC"));
-    ObjectMapper mapper = ObjectMapperFactory.create();
-    publisher = new DefaultGcpPacketResponseEventPublisher(template, TOPIC, OPERATOR_ADDRESS, mapper, clock);
+    publisher = new DefaultGcpPacketResponseEventPublisher(template,
+      Optional.of(FULFILLS),
+      Optional.of(REJECTS),
+      OPERATOR_ADDRESS,
+      mapper,
+      clock);
   }
 
   @Test
@@ -116,7 +126,19 @@ public class DefaultGcpPacketResponseEventPublisherTest {
       "\"nextHopAssetScale\":\"2\"," +
       "\"status\":\"FULFILLED\"}";
 
-    verify(template).publish(TOPIC, expected);
+    verify(template).publish(FULFILLS, expected);
+  }
+
+  @Test
+  public void publishFulfillmentSkippedIfNotConfigured() {
+    publisher = new DefaultGcpPacketResponseEventPublisher(template,
+      Optional.empty(),
+      Optional.of(REJECTS),
+      OPERATOR_ADDRESS,
+      mapper,
+      clock);
+    publisher.publish(mock(PacketFullfillmentEvent.class));
+    verifyNoInteractions(template);
   }
 
   @Test
@@ -187,7 +209,7 @@ public class DefaultGcpPacketResponseEventPublisherTest {
       "\"rejectionCode\":\"F05\"," +
       "\"rejectionTriggeredBy\":\"test.vic.vinegar\"}";
 
-    verify(template).publish(TOPIC, expected);
+    verify(template).publish(REJECTS, expected);
   }
 
   @Test
@@ -235,7 +257,19 @@ public class DefaultGcpPacketResponseEventPublisherTest {
       "\"rejectionCode\":\"F05\"," +
       "\"rejectionTriggeredBy\":\"test.vic.vinegar\"}";
 
-    verify(template).publish(TOPIC, expected);
+    verify(template).publish(REJECTS, expected);
+  }
+
+  @Test
+  public void publishRejectionSkippedIfNotConfigured() {
+    publisher = new DefaultGcpPacketResponseEventPublisher(template,
+      Optional.of(FULFILLS),
+      Optional.empty(),
+      OPERATOR_ADDRESS,
+      mapper,
+      clock);
+    publisher.publish(mock(PacketRejectionEvent.class));
+    verifyNoInteractions(template);
   }
 
 }

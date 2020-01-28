@@ -61,7 +61,7 @@ public class DefaultPacketEventPublisher implements PacketEventPublisher {
       .incomingPreparePacket(preparePacket)
       .outgoingPreparePacket(nextHopPacket)
       .fulfillment(fulfillment)
-      .message("Fulfilled prepare condition " + preparePacket.getExecutionCondition())
+      .message("Fulfilled successfully")
       .build());
   }
 }

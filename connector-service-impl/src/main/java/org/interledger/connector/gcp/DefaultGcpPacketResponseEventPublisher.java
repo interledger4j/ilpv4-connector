@@ -12,6 +12,7 @@ import org.springframework.cloud.gcp.pubsub.core.PubSubTemplate;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Optional;
 
 /**
  * Default implementation of {@link GcpPacketResponseEventPublisher} that publishes {@link PacketFullfillmentEvent}
@@ -24,18 +25,32 @@ public class DefaultGcpPacketResponseEventPublisher implements GcpPacketResponse
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final PubSubTemplate template;
-  private final String topicName;
+  private final Optional<String> fulfillmentTopic;
+  private final Optional<String> rejectionTopic;
   private final InterledgerAddress connectorAddress;
   private final ObjectMapper mapper;
   private final Clock clock;
 
+  /**
+   * Creates a GcpPacketResponseEventPublisher that publishes fulfillments and rejections. Each can be published to
+   * separate topics, the same topic, or no topic.
+   *
+   * @param template template for publishing events.
+   * @param fulfillmentTopic topic where fulfillments are published. Not published if Optional.empty().
+   * @param rejectionTopic topic where rejects are published. Not published if empty.
+   * @param connectorAddress operator address of this connection
+   * @param mapper jackson mapper for serializing events to JSON
+   * @param clock clock for setting time on events
+   */
   public DefaultGcpPacketResponseEventPublisher(PubSubTemplate template,
-                                                String topicName,
+                                                Optional<String> fulfillmentTopic,
+                                                Optional<String> rejectionTopic,
                                                 InterledgerAddress connectorAddress,
                                                 ObjectMapper mapper,
                                                 Clock clock) {
     this.template = template;
-    this.topicName = topicName;
+    this.fulfillmentTopic = fulfillmentTopic;
+    this.rejectionTopic = rejectionTopic;
     this.connectorAddress = connectorAddress;
     this.mapper = mapper;
     this.clock = clock;
@@ -43,26 +58,30 @@ public class DefaultGcpPacketResponseEventPublisher implements GcpPacketResponse
 
   @Override
   public void publish(PacketFullfillmentEvent event) {
-    logger.debug("Received event");
-    try {
-      GcpPacketResponseEvent gcpFulfillmentEvent = mapFulfillment(event);
-      String payload = mapper.writerFor(GcpPacketResponseEvent.class).writeValueAsString(gcpFulfillmentEvent);
-      template.publish(topicName, payload);
-    } catch (JsonProcessingException e) {
-      logger.warn("Could not serialize event ", e);
-    }
+    logger.debug("Received fulfillment");
+    fulfillmentTopic.ifPresent(topicName -> {
+      try {
+        GcpPacketResponseEvent gcpFulfillmentEvent = mapFulfillment(event);
+        String payload = mapper.writerFor(GcpPacketResponseEvent.class).writeValueAsString(gcpFulfillmentEvent);
+        template.publish(topicName, payload);
+      } catch (JsonProcessingException e) {
+        logger.warn("Could not serialize event ", e);
+      }
+    });
   }
 
   @Override
   public void publish(PacketRejectionEvent event) {
-    logger.debug("Received event");
-    try {
-      GcpPacketResponseEvent gcpFulfillmentEvent = mapRejection(event);
-      String payload = mapper.writeValueAsString(gcpFulfillmentEvent);
-      template.publish(topicName, payload);
-    } catch (JsonProcessingException e) {
-      logger.warn("Could not serialize event ", e);
-    }
+    logger.debug("Received rejection");
+    rejectionTopic.ifPresent(topicName -> {
+      try {
+        GcpPacketResponseEvent gcpFulfillmentEvent = mapRejection(event);
+        String payload = mapper.writeValueAsString(gcpFulfillmentEvent);
+        template.publish(topicName, payload);
+      } catch (JsonProcessingException e) {
+        logger.warn("Could not serialize event ", e);
+      }
+    });
   }
 
   private GcpPacketResponseEvent mapFulfillment(PacketFullfillmentEvent event) {

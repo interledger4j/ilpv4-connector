@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Clock;
+import java.util.Optional;
 import java.util.function.Supplier;
 import javax.annotation.PostConstruct;
 
@@ -36,14 +37,16 @@ public class GcpPubSubConfig {
   }
 
   @Bean
-  public GcpPacketResponseEventPublisher fulfillmentPublisher(PubSubTemplate template,
-                                                              @Value("${interledger.connector.pubsub.topics.fulfillment-event}")
-                                                     String fulfillmentEventTopicName,
-                                                              ObjectMapper objectMapper,
-                                                              Supplier<ConnectorSettings> connectorSettingsSupplier,
-                                                              Clock clock) {
+  public GcpPacketResponseEventPublisher fulfillmentPublisher(
+    PubSubTemplate template,
+    @Value("${interledger.connector.pubsub.topics.fulfillment-event:#{null}}") Optional<String> fulfillmentEventTopicName,
+    @Value("${interledger.connector.pubsub.topics.rejection-event:#{null}}") Optional<String> rejectionEventTopicName,
+    ObjectMapper objectMapper,
+    Supplier<ConnectorSettings> connectorSettingsSupplier,
+    Clock clock) {
     return new DefaultGcpPacketResponseEventPublisher(template,
       fulfillmentEventTopicName,
+      rejectionEventTopicName,
       connectorSettingsSupplier.get().operatorAddress(),
       objectMapper,
       clock);
