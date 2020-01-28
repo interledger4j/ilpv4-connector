@@ -216,7 +216,7 @@ public class InterledgerAddressPrefixMap<R> {
   }
 
   /**
-   * Filters entries from {@code toFilter} where entry.getKey() is longer than the prefixKey.
+   * Filters entries from {@code toFilter} where entry.getKey() is longer than the prefixKey. For example, if the Trie has an entry for `g.foo` and `g.foo.bar.baz`, then when looking for a match for a destination address of `g.foo.bar`, the trie will choose `g.foo.bar.baz`. While correct behavior for a Trie, this is not what the ILP longest-prefix-match desires. To rectify this, we need to exclude any results from the trie that are longer than the destination address being matched upon.
    * @param prefixKey
    * @param toFilter
    * @return filtered map
