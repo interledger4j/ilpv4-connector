@@ -1,17 +1,20 @@
 package org.interledger.connector.routing;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.collections4.trie.PatriciaTrie;
-import org.interledger.connector.routing.BaseRoute;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableSortedMap;
+import org.apache.commons.collections4.trie.PatriciaTrie;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -169,7 +172,10 @@ public class InterledgerAddressPrefixMap<R> {
     // routing-table has only "g", then "g.1.2." will not return a sub-map, so we should recursively search for a
     // sub-map with with "g.1" (which would return nothing), and then "g".
 
-    final SortedMap<String, R> prefixSubMap = prefixMap.prefixMap(toTrieKey(destinationAddressPrefix));
+    String destinationPrefixKey = toTrieKey(destinationAddressPrefix);
+    final SortedMap<String, R> prefixSubMap =
+      filterLongerPrefixes(destinationPrefixKey, prefixMap.prefixMap(destinationPrefixKey));
+
     if (prefixSubMap.isEmpty() && destinationAddressPrefix.hasPrefix()) {
       // The PatriciaTrie has no prefixes, so try this whole thing again with the parent prefix.
       return destinationAddressPrefix.getPrefix()
@@ -209,6 +215,18 @@ public class InterledgerAddressPrefixMap<R> {
           })
         );
     }
+  }
+
+  /**
+   * Filters entries from {@code toFilter} where entry.getKey() is longer than the prefixKey.
+   * @param prefixKey
+   * @param toFilter
+   * @return filtered map
+   */
+  private SortedMap<String, R> filterLongerPrefixes(String prefixKey, SortedMap<String, R> toFilter) {
+    return toFilter.entrySet().stream()
+      .filter(entry -> entry.getKey().length() <= prefixKey.length())
+      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (v1, v2) -> v2, PatriciaTrie::new));
   }
 
   /**
