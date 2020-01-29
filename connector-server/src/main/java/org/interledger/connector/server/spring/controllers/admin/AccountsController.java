@@ -8,6 +8,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.pubsub.CoordinationMessagePublisher;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 
 import org.springframework.core.convert.ConversionService;
@@ -40,11 +41,14 @@ public class AccountsController {
 
   private final AccountManager accountManager;
   private final ConversionService conversionService;
+  private final CoordinationMessagePublisher coordinationMessagePublisher;
 
   public AccountsController(final AccountManager accountManager,
-                            final ConversionService conversionService) {
+                            final ConversionService conversionService,
+                            final CoordinationMessagePublisher coordinationMessagePublisher) {
     this.accountManager = Objects.requireNonNull(accountManager);
     this.conversionService = Objects.requireNonNull(conversionService);
+    this.coordinationMessagePublisher = coordinationMessagePublisher;
   }
 
   /**
@@ -90,6 +94,8 @@ public class AccountsController {
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public HttpEntity<PagedModel<EntityModel<AccountSettings>>> getAccounts() {
+
+    coordinationMessagePublisher.publish("yo dawg");
 
     // TODO: Add paging per https://github.com/interledger4j/ilpv4-connector/issues/404
     final List<EntityModel<AccountSettings>> accountSettingsResources = accountManager.getAccounts()

@@ -1,11 +1,12 @@
 package org.interledger.connector.server.spring.settings.web;
 
+import org.interledger.connector.server.spring.controllers.settlement.SettlementController;
+import org.interledger.connector.server.spring.controllers.settlement.SettlementEngineIdempotencyKeyGenerator;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.interledger.connector.server.spring.controllers.settlement.SettlementController;
-import org.interledger.connector.server.spring.controllers.settlement.SettlementEngineIdempotencyKeyGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
@@ -57,7 +58,7 @@ public class IdempotenceCacheConfig extends CachingConfigurerSupport {
   protected Environment environment;
 
   @Autowired
-  protected JedisConnectionFactory jedisConnectionFactory;
+  protected LettuceConnectionFactory lettuceConnectionFactory;
 
   @Autowired
   protected ObjectMapper objectMapper;
@@ -74,9 +75,9 @@ public class IdempotenceCacheConfig extends CachingConfigurerSupport {
       ));
       return cacheManager;
     } else {
-      // Try to connect using Jedis. If this fails, fallback to an in-memory cache...
+      // Try to connect using Lettuce. If this fails, fallback to an in-memory cache...
       try {
-        jedisConnectionFactory.getConnection().ping();
+        lettuceConnectionFactory.getConnection().ping();
 
         RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
           .prefixKeysWith(SETTLEMENT_IDEMPOTENCE + ":")
@@ -94,7 +95,7 @@ public class IdempotenceCacheConfig extends CachingConfigurerSupport {
         Map<String, RedisCacheConfiguration> initialDefaultConfigurations = Maps.newHashMap();
         initialDefaultConfigurations.put(SETTLEMENT_IDEMPOTENCE, defaultCacheConfig);
 
-        return RedisCacheManager.builder(jedisConnectionFactory)
+        return RedisCacheManager.builder(lettuceConnectionFactory)
           .initialCacheNames(Sets.newHashSet(SETTLEMENT_IDEMPOTENCE))
           .cacheDefaults(defaultCacheConfig)
           .withInitialCacheConfigurations(initialDefaultConfigurations)

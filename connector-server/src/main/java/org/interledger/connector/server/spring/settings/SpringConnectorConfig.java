@@ -57,6 +57,7 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.persistence.repositories.DeletedAccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
+import org.interledger.connector.pubsub.RedisPubSubConfig;
 import org.interledger.connector.routing.ChildAccountPaymentRouter;
 import org.interledger.connector.routing.DefaultRouteBroadcaster;
 import org.interledger.connector.routing.ExternalRoutingService;
@@ -72,11 +73,11 @@ import org.interledger.connector.server.spring.settings.javamoney.JavaMoneyConfi
 import org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration;
 import org.interledger.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
-import org.interledger.crypto.CryptoKeys;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.crypto.CryptoKeys;
 import org.interledger.crypto.Decryptor;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.link.AbstractStatefulLink.EventBusConnectionEventEmitter;
@@ -132,7 +133,8 @@ import java.util.function.Supplier;
   RedisConfig.class, SettlementConfig.class, BalanceTrackerConfig.class,
   MetricsConfiguration.class,
   SpringConnectorWebMvc.class,
-  GcpPubSubConfig.class
+  GcpPubSubConfig.class,
+  RedisPubSubConfig.class
 })
 public class SpringConnectorConfig {
 
