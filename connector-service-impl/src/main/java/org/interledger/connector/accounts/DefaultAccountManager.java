@@ -1,6 +1,6 @@
 package org.interledger.connector.accounts;
 
-import org.interledger.codecs.ildcp.IldcpUtils;
+import org.interledger.connector.links.IldcpFetcherFactory;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.links.LinkSettingsValidator;
@@ -18,10 +18,7 @@ import org.interledger.connector.settings.properties.ConnectorSettingsFromProper
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.client.CreateSettlementAccountRequest;
 import org.interledger.connector.settlement.client.CreateSettlementAccountResponse;
-import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.ildcp.IldcpFetcher;
 import org.interledger.ildcp.IldcpRequest;
-import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
 import org.interledger.link.Link;
 import org.interledger.link.LinkSettings;
@@ -61,6 +58,8 @@ public class DefaultAccountManager implements AccountManager {
   private final SettlementEngineClient settlementEngineClient;
   private final LinkSettingsFactory linkSettingsFactory;
   private final LinkSettingsValidator linkSettingsValidator;
+  private final IldcpFetcherFactory ildcpFetcherFactory;
+
 
   /**
    * Required-args Constructor.
@@ -72,7 +71,8 @@ public class DefaultAccountManager implements AccountManager {
     final DeletedAccountSettingsRepository deletedAccountSettingsRepository,
     final LinkManager linkManager,
     final SettlementEngineClient settlementEngineClient,
-    LinkSettingsFactory linkSettingsFactory, LinkSettingsValidator linkSettingsValidator) {
+    LinkSettingsFactory linkSettingsFactory, LinkSettingsValidator linkSettingsValidator,
+    IldcpFetcherFactory ildcpFetcherFactory) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.deletedAccountSettingsRepository = Objects.requireNonNull(deletedAccountSettingsRepository);
@@ -81,6 +81,7 @@ public class DefaultAccountManager implements AccountManager {
     this.settlementEngineClient = Objects.requireNonNull(settlementEngineClient);
     this.linkSettingsFactory = linkSettingsFactory;
     this.linkSettingsValidator = linkSettingsValidator;
+    this.ildcpFetcherFactory = ildcpFetcherFactory;
   }
 
   @Override
@@ -255,29 +256,7 @@ public class DefaultAccountManager implements AccountManager {
       conversionService.convert(parentAccountSettingsEntity, AccountSettings.class)
     );
 
-    // Construct a lambda that implements the Fetch logic for IL-DCP.
-    IldcpFetcher ildcpFetcher = ildcpRequest -> {
-      Objects.requireNonNull(ildcpRequest);
-
-      final IldcpRequestPacket ildcpRequestPacket = IldcpRequestPacket.builder().build();
-      final InterledgerPreparePacket preparePacket =
-        InterledgerPreparePacket.builder().from(ildcpRequestPacket).build();
-
-      // Fetch the IL-DCP response using the Link.
-      return link.sendPacket(preparePacket)
-        .map(
-          // If FulfillPacket...
-          IldcpUtils::toIldcpResponse,
-          // If Reject Packet...
-          (interledgerRejectPacket) -> {
-            throw new RuntimeException(
-              String.format("IL-DCP negotiation failed! Reject: %s", interledgerRejectPacket)
-            );
-          }
-        );
-    };
-
-    final IldcpResponse ildcpResponse = ildcpFetcher.fetch(IldcpRequest.builder().build());
+    final IldcpResponse ildcpResponse = ildcpFetcherFactory.construct(link).fetch(IldcpRequest.builder().build());
 
     //////////////////////////////////
     // Update the Operator address with data returned by IL-DCP!

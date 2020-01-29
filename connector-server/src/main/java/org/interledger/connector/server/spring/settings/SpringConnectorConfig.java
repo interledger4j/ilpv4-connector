@@ -26,10 +26,12 @@ import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.fx.JavaMoneyUtils;
 import org.interledger.connector.fxrates.DefaultFxRateOverridesManager;
 import org.interledger.connector.fxrates.FxRateOverridesManager;
+import org.interledger.connector.links.DefaultIldcpFetcherFactory;
 import org.interledger.connector.links.DefaultLinkManager;
 import org.interledger.connector.links.DefaultLinkSettingsFactory;
 import org.interledger.connector.links.DefaultLinkSettingsValidator;
 import org.interledger.connector.links.DefaultNextHopPacketMapper;
+import org.interledger.connector.links.IldcpFetcherFactory;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.links.LinkSettingsValidator;
@@ -253,6 +255,11 @@ public class SpringConnectorConfig {
   }
 
   @Bean
+  IldcpFetcherFactory ildcpFetcherFactory() {
+    return new DefaultIldcpFetcherFactory();
+  }
+
+  @Bean
   AccountManager accountManager(
     Supplier<ConnectorSettings> connectorSettingsSupplier,
     AccountSettingsRepository accountSettingsRepository,
@@ -260,13 +267,15 @@ public class SpringConnectorConfig {
     ConversionService conversionService,
     SettlementEngineClient settlementEngineClient,
     LinkSettingsFactory linkSettingsFactory,
-    LinkSettingsValidator linkSettingsValidator
+    LinkSettingsValidator linkSettingsValidator,
+    IldcpFetcherFactory ildcpFetcherFactory
   ) {
     return new DefaultAccountManager(
       connectorSettingsSupplier, conversionService, accountSettingsRepository, deletedAccountSettingsRepository,
       linkManager, settlementEngineClient,
       linkSettingsFactory,
-      linkSettingsValidator);
+      linkSettingsValidator,
+      ildcpFetcherFactory);
   }
 
   @Bean
