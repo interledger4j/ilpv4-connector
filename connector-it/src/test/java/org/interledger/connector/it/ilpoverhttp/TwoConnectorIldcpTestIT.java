@@ -1,13 +1,13 @@
 package org.interledger.connector.it.ilpoverhttp;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.interledger.connector.accounts.sub.SubAccountUtils.PING_ACCOUNT_ID;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_AT_ALICE_ADDRESS;
 import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorParentChildIlpOverHttpTopology.ALICE;
 import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorParentChildIlpOverHttpTopology.BOB;
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.it.AbstractIlpOverHttpIT;

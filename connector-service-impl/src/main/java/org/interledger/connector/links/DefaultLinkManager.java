@@ -16,6 +16,8 @@ import org.interledger.link.StatefulLink;
 import org.interledger.link.events.LinkConnectedEvent;
 import org.interledger.link.events.LinkConnectionEventListener;
 import org.interledger.link.events.LinkDisconnectedEvent;
+import org.interledger.link.spsp.StatelessSpspReceiverLink;
+import org.interledger.link.spsp.StatelessSpspReceiverLinkSettings;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
@@ -153,14 +155,22 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
     return new HashSet<>(this.connectedLinks.values());
   }
 
-  /**
-   * Accessor for the {@link Link} that processes Ping protocol requests.
-   *
-   * @return A {@link Link} for processing unidirectional and bidirectional ping requests.
-   */
   @Override
   public Link<? extends LinkSettings> getPingLink() {
     return pingLink;
+  }
+
+  @Override
+  public Link<? extends LinkSettings> getOrCreateSpspReceiverLink(final AccountSettings accountSettings) {
+    Objects.requireNonNull(accountSettings);
+    return linkFactoryProvider.getLinkFactory(StatelessSpspReceiverLink.LINK_TYPE)
+      .constructLink(
+        operatorAddressSupplier,
+        StatelessSpspReceiverLinkSettings.builder()
+          .assetCode(accountSettings.assetCode())
+          .assetScale(accountSettings.assetScale())
+          .build()
+      );
   }
 
   ////////////////////////

@@ -5,6 +5,7 @@ import static org.interledger.connector.routing.Route.HMAC;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.sub.SubAccountUtils;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -56,7 +57,7 @@ import java.util.stream.Collectors;
  * additional routes may become available based upon network conditions.</li>
  * <li>Child Accounts: If a particular packet has a destination address that starts-with the address of
  * the Connector's operational address, then the packet is routed using an instance of {@link
- * ChildAccountPaymentRouter}.</li>
+ * SpspSubAccountPaymentRouter}.</li>
  * </ol>
  * </p>
  */
@@ -70,6 +71,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   private final EventBus eventBus;
   private final AccountSettingsRepository accountSettingsRepository;
   private final StaticRoutesRepository staticRoutesRepository;
+
+  private final SubAccountUtils subAccountUtils;
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final Decryptor decryptor;
@@ -87,7 +90,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
   private final RoutingTableEntryComparator routingTableEntryComparator;
 
-  private final ChildAccountPaymentRouter childAccountPaymentRouter;
+  private final SpspSubAccountPaymentRouter spspSubAccountPaymentRouter;
 
   // Used to limit the number of warnings emitted for a missing default route.
   private int numDefaultRouteWarnings = 0;
@@ -96,15 +99,17 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
    * Required-args Constructor.
    */
   public InMemoryExternalRoutingService(
-      final EventBus eventBus,
-      final Supplier<ConnectorSettings> connectorSettingsSupplier,
-      final Decryptor decryptor,
-      final AccountSettingsRepository accountSettingsRepository,
-      final StaticRoutesRepository staticRoutesRepository,
-      final ChildAccountPaymentRouter childAccountPaymentRouter,
-      final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
-      final RouteBroadcaster routeBroadcaster
+    final SubAccountUtils subAccountUtils,
+    final EventBus eventBus,
+    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final Decryptor decryptor,
+    final AccountSettingsRepository accountSettingsRepository,
+    final StaticRoutesRepository staticRoutesRepository,
+    final SpspSubAccountPaymentRouter spspSubAccountPaymentRouter,
+    final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
+    final RouteBroadcaster routeBroadcaster
   ) {
+    this.subAccountUtils = Objects.requireNonNull(subAccountUtils);
     this.eventBus = Objects.requireNonNull(eventBus);
     this.eventBus.register(this);
 
@@ -114,7 +119,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     this.decryptor = decryptor;
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.staticRoutesRepository = Objects.requireNonNull(staticRoutesRepository);
-    this.childAccountPaymentRouter = Objects.requireNonNull(childAccountPaymentRouter);
+    this.spspSubAccountPaymentRouter = Objects.requireNonNull(spspSubAccountPaymentRouter);
     this.localRoutingTable = new InMemoryRoutingTable();
 
     this.outgoingRoutingTable = Objects.requireNonNull(outgoingRoutingTable);
@@ -137,11 +142,9 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   public Optional<Route> findBestNexHop(final InterledgerAddress finalDestinationAddress) {
     Objects.requireNonNull(finalDestinationAddress);
 
-    // TODO: An alternative to this setup is to create an Account with an address of `self.childaccounts` and route
-    // this packet to a Loopback-like plugin that forwards a packet to the correct account.
-
-    if (this.childAccountPaymentRouter.isChildAccount(finalDestinationAddress)) {
-      return childAccountPaymentRouter.findBestNexHop(finalDestinationAddress);
+    // All sub-accounts are handled here...
+    if (this.subAccountUtils.isConnectorSubAccount(finalDestinationAddress)) {
+      return spspSubAccountPaymentRouter.findBestNexHop(finalDestinationAddress);
     } else {
       // Child-accounts never make their way into this table. Because of this check, even if a remote node were to
       // get a child-address into this table, it would never be honored.
@@ -153,7 +156,6 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   public Set<StaticRoute> getAllStaticRoutes() {
     return staticRoutesRepository.getAllStaticRoutes();
   }
-
 
   @Override
   public void deleteStaticRouteByPrefix(InterledgerAddressPrefix prefix) {
@@ -172,8 +174,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
       StaticRoute saved = staticRoutesRepository.saveStaticRoute(route);
       addStaticRoute(saved);
       return saved;
-    }
-    catch(Exception e) {
+    } catch (Exception e) {
       if (e.getCause() instanceof ConstraintViolationException) {
         throw new StaticRouteAlreadyExistsProblem(route.routePrefix());
       }
@@ -196,7 +197,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
    * {@link RouteBroadcaster}.</li>
    * <li>Child Accounts: At present, `CHILD` accounts do not participate in CCP (though this could easily
    * be changed in the future). For local routing decisions, all packets destined for a child account are forwarded to
-   * an instance of {@link ChildAccountPaymentRouter}.</li>
+   * an instance of {@link SpspSubAccountPaymentRouter}.</li>
    * <li>Static Routes: For any configured static route, this implementation updates the local routing table and also
    * attempts to register each associated account in the {@link RouteBroadcaster}.</li>
    * </ol>
@@ -216,11 +217,11 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     // Determine the default Route, and add it to the local routing table.
     this.determineDefaultRoute().ifPresent(defaultRoute -> {
-          this.localRoutingTable.addRoute(defaultRoute);
+        this.localRoutingTable.addRoute(defaultRoute);
 
-          // Enable this Account for CCP (if appropriate)
-          routeBroadcaster.registerCcpEnabledAccount(defaultRoute.nextHopAccountId());
-        }
+        // Enable this Account for CCP (if appropriate)
+        routeBroadcaster.registerCcpEnabledAccount(defaultRoute.nextHopAccountId());
+      }
     );
 
     //////////////////
@@ -230,7 +231,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     // All eligible PEER accounts are registered for CCP (if appropriate). Unless there is a static route configured,
     // then only CCP will populate routes amongst peers.
     accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PEER).stream()
-        .forEach(routeBroadcaster::registerCcpEnabledAccount);
+      .forEach(routeBroadcaster::registerCcpEnabledAccount);
 
     //////////////////
     // Child Accounts
@@ -283,9 +284,9 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     if (this.updateLocalRoute(addressPrefix, newBestRoute)) {
 
       logger.info(
-          "New BestRoute for Prefix `{}` is AccountId(`{}`)",
-          addressPrefix.getValue(),
-          newBestRoute.map(Route::nextHopAccountId).map(AccountId::value).orElse("n/a")
+        "New BestRoute for Prefix `{}` is AccountId(`{}`)",
+        addressPrefix.getValue(),
+        newBestRoute.map(Route::nextHopAccountId).map(AccountId::value).orElse("n/a")
       );
 
       this.updateForwardingRoute(addressPrefix, newBestRoute);
@@ -303,7 +304,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
    * @return
    */
   private boolean updateLocalRoute(
-      final InterledgerAddressPrefix addressPrefix, final Optional<Route> newBestRoute
+    final InterledgerAddressPrefix addressPrefix, final Optional<Route> newBestRoute
   ) {
     Objects.requireNonNull(addressPrefix);
     Objects.requireNonNull(newBestRoute);
@@ -316,19 +317,19 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     // If the current and next best hops are different, then update the routing tables...
     if (!currentNextHop.equals(newBestHop)) {
       newBestRoute
-          .map(nbr -> {
-            logger.debug(
-                "New best route for prefix. prefix={} oldBest={} newBest={}",
-                addressPrefix, currentNextHop, nbr.nextHopAccountId()
-            );
-            this.localRoutingTable.addRoute(nbr);
-            return ROUTES_HAVE_CHANGED;
-          })
-          .orElseGet(() -> {
-            logger.debug("No more routes available for prefix. prefix={}", addressPrefix);
-            this.localRoutingTable.removeRoute(addressPrefix);
-            return ROUTES_HAVE_NOT_CHANGED;
-          });
+        .map(nbr -> {
+          logger.debug(
+            "New best route for prefix. prefix={} oldBest={} newBest={}",
+            addressPrefix, currentNextHop, nbr.nextHopAccountId()
+          );
+          this.localRoutingTable.addRoute(nbr);
+          return ROUTES_HAVE_CHANGED;
+        })
+        .orElseGet(() -> {
+          logger.debug("No more routes available for prefix. prefix={}", addressPrefix);
+          this.localRoutingTable.removeRoute(addressPrefix);
+          return ROUTES_HAVE_NOT_CHANGED;
+        });
       return ROUTES_HAVE_CHANGED;
     } else {
       return ROUTES_HAVE_NOT_CHANGED;
@@ -336,59 +337,59 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   }
 
   private void updateForwardingRoute(
-      final InterledgerAddressPrefix addressPrefix, final Optional<? extends Route> newBestLocalRoute
+    final InterledgerAddressPrefix addressPrefix, final Optional<? extends Route> newBestLocalRoute
   ) {
     Objects.requireNonNull(addressPrefix);
     Objects.requireNonNull(newBestLocalRoute);
 
     // Given an optionally-present newBestLocalRoute, compute the best next hop address...
     final Optional<AccountId> newBestNextHop = newBestLocalRoute
-        // Map the Local Route to a
-        .map(nblr -> {
-          // Inject ourselves into the path that we'll send to remote peers...
-          final List<InterledgerAddress> newPath = ImmutableList.<InterledgerAddress>builder()
-              .add(connectorSettingsSupplier.get().operatorAddress())
-              .addAll(nblr.path()).build();
+      // Map the Local Route to a
+      .map(nblr -> {
+        // Inject ourselves into the path that we'll send to remote peers...
+        final List<InterledgerAddress> newPath = ImmutableList.<InterledgerAddress>builder()
+          .add(connectorSettingsSupplier.get().operatorAddress())
+          .addAll(nblr.path()).build();
 
-          return ImmutableRoute.builder()
-              .from(nblr)
-              .path(newPath)
-              // All Routes have an `auth` value that is derived from the prefix and a connector-wide secret that the
-              // route-owner controls (e.g., this Connector for routes that come from us). When this route is advertised
-              // via a forwarding table, the auth value is hashed again so that it is always unique from the perspective of
-              // outside connectors (TODO: Verify this with https://github.com/interledger/rfcs/pull/455)
-              .auth(Hashing.sha256().hashBytes(nblr.auth()).asBytes())
-              .build();
-        })
-        .map(nblr -> {
-          final InterledgerAddressPrefix globalPrefix = connectorSettingsSupplier.get().globalPrefix();
-          final boolean hasGlobalPrefix = addressPrefix.getRootPrefix().equals(globalPrefix);
-          final boolean isDefaultRoute = determineDefaultRoute()
-              .map(Route::routePrefix)
-              .map(routePrefix -> routePrefix.equals(nblr.routePrefix()))
-              .orElse(false);
+        return ImmutableRoute.builder()
+          .from(nblr)
+          .path(newPath)
+          // All Routes have an `auth` value that is derived from the prefix and a connector-wide secret that the
+          // route-owner controls (e.g., this Connector for routes that come from us). When this route is advertised
+          // via a forwarding table, the auth value is hashed again so that it is always unique from the perspective of
+          // outside connectors (TODO: Verify this with https://github.com/interledger/rfcs/pull/455)
+          .auth(Hashing.sha256().hashBytes(nblr.auth()).asBytes())
+          .build();
+      })
+      .map(nblr -> {
+        final InterledgerAddressPrefix globalPrefix = connectorSettingsSupplier.get().globalPrefix();
+        final boolean hasGlobalPrefix = addressPrefix.getRootPrefix().equals(globalPrefix);
+        final boolean isDefaultRoute = determineDefaultRoute()
+          .map(Route::routePrefix)
+          .map(routePrefix -> routePrefix.equals(nblr.routePrefix()))
+          .orElse(false);
 
-          // Don't advertise local custom routes that we originated. Packets for these destinations should still
-          // reach us because we are advertising our own address as a prefix.
-          final boolean isLocalCustomerRoute = addressPrefix.getValue()
-              .startsWith(this.connectorSettingsSupplier.get().operatorAddress().getValue()) &&
-              nblr.path().size() == 1;
+        // Don't advertise local custom routes that we originated. Packets for these destinations should still
+        // reach us because we are advertising our own address as a prefix.
+        final boolean isLocalCustomerRoute = addressPrefix.getValue()
+          .startsWith(this.connectorSettingsSupplier.get().operatorAddress().getValue()) &&
+          nblr.path().size() == 1;
 
-          final boolean canDragonFilter = false; // TODO: Dragon!
+        final boolean canDragonFilter = false; // TODO: Dragon!
 
-          // We don't advertise route if any of the following are true:
-          // 1. Route doesn't start with the global prefix.
-          // 2. The prefix _is_ the global prefix (i.e., the default route).
-          // 3. The prefix is for a local-customer route.
-          // 4. The prefix can be dragon-filtered.
-          if (!hasGlobalPrefix || isDefaultRoute || isLocalCustomerRoute || canDragonFilter) {
-            // This will map to Optional.empty above...
-            return null;
-          } else {
-            return nblr;
-          }
-        })
-        .map(Route::nextHopAccountId);
+        // We don't advertise route if any of the following are true:
+        // 1. Route doesn't start with the global prefix.
+        // 2. The prefix _is_ the global prefix (i.e., the default route).
+        // 3. The prefix is for a local-customer route.
+        // 4. The prefix can be dragon-filtered.
+        if (!hasGlobalPrefix || isDefaultRoute || isLocalCustomerRoute || canDragonFilter) {
+          // This will map to Optional.empty above...
+          return null;
+        } else {
+          return nblr;
+        }
+      })
+      .map(Route::nextHopAccountId);
 
     // Only if there's a newBestNextHop, update the forwarding tables...
     newBestNextHop.ifPresent(nbnh -> {
@@ -396,10 +397,10 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
       // Don't look in the log, but look in the actual Routing table for the prefix...
       final Optional<RouteUpdate> currentBest = this.outgoingRoutingTable.getRouteByPrefix(addressPrefix);
       final Optional<AccountId> currentBestNextHop = currentBest
-          .map(RouteUpdate::route)
-          .filter(Optional::isPresent)
-          .map(Optional::get)
-          .map(Route::nextHopAccountId);
+        .map(RouteUpdate::route)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .map(Route::nextHopAccountId);
 
       // There's a new NextBestHop, so update the forwarding table, but only if it's different from the optionally
       // present currentBestNextHop.
@@ -407,10 +408,10 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
         final int newEpoch = this.outgoingRoutingTable.getCurrentEpoch();
 
         final RouteUpdate newBestRouteUpdate = ImmutableRouteUpdate.builder()
-            .routePrefix(addressPrefix)
-            .route(newBestLocalRoute)
-            .epoch(newEpoch)
-            .build();
+          .routePrefix(addressPrefix)
+          .route(newBestLocalRoute)
+          .epoch(newEpoch)
+          .build();
 
         // Add the route update to the outgoing routing table so that it will be sent to remote peers on the next CCP
         // send operation.
@@ -432,15 +433,15 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
         //
         // Note that we do this check *after* we have added the new route above.
         this.outgoingRoutingTable.getKeysStartingWith(addressPrefix).stream()
-            // If the subPrefix equals the addressPrefix, then ignore it.
-            .filter(subPrefix -> !subPrefix.equals(addressPrefix))
-            // Otherwise, update the outgoing RoutingTable.
-            .forEach(subPrefix -> {
-              // Only update the forward routing table if there is a route present (we don't want to removeEntry routes when
-              // dragon filtering...)
-              this.outgoingRoutingTable.getRouteByPrefix(subPrefix)
-                  .ifPresent(routeUpdate -> this.updateForwardingRoute(subPrefix, routeUpdate.route()));
-            });
+          // If the subPrefix equals the addressPrefix, then ignore it.
+          .filter(subPrefix -> !subPrefix.equals(addressPrefix))
+          // Otherwise, update the outgoing RoutingTable.
+          .forEach(subPrefix -> {
+            // Only update the forward routing table if there is a route present (we don't want to removeEntry routes when
+            // dragon filtering...)
+            this.outgoingRoutingTable.getRouteByPrefix(subPrefix)
+              .ifPresent(routeUpdate -> this.updateForwardingRoute(subPrefix, routeUpdate.route()));
+          });
       }
     });
   }
@@ -463,48 +464,48 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     // Static-routes have highest priority...
     return Optional.ofNullable(
-        staticRoutesRepository.getAllStaticRoutes().stream()
-            .filter(staticRoute -> staticRoute.routePrefix().equals(addressPrefix))
-            .findFirst()
-            .map(staticRoute -> {
-              // If there's a static route, then use it, even if the account doesn't exist. In this
-              // way, if the account does eventually come into existence, then things will work properly. If the account never
-              // comes into existence, then the Router and/or Link will simply reject if anything is attempted.
-              return (Route) ImmutableRoute.builder()
-                  .routePrefix(addressPrefix)
-                  .nextHopAccountId(staticRoute.nextHopAccountId())
-                  .auth(this.constructRouteAuth(addressPrefix))
-                  .build();
-            })
-            .orElseGet(() -> {
-                  //...then look in the receiver.
-                  // If we get here, there was no statically-configured route, _or, there was a statically configured route
-                  // but no account existed. Either way, look for a local route.
-                  return localRoutingTable.getRouteByPrefix(addressPrefix)
-                      .orElseGet(() -> {
-                        // If we get here, there was no local route, so search through all tracked accounts and sort all
-                        // of the routes to find the shortest-path (i.e., lowest weight) route that will work for
-                        // `addressPrefix`. This is the best route.
+      staticRoutesRepository.getAllStaticRoutes().stream()
+        .filter(staticRoute -> staticRoute.routePrefix().equals(addressPrefix))
+        .findFirst()
+        .map(staticRoute -> {
+          // If there's a static route, then use it, even if the account doesn't exist. In this
+          // way, if the account does eventually come into existence, then things will work properly. If the account never
+          // comes into existence, then the Router and/or Link will simply reject if anything is attempted.
+          return (Route) ImmutableRoute.builder()
+            .routePrefix(addressPrefix)
+            .nextHopAccountId(staticRoute.nextHopAccountId())
+            .auth(this.constructRouteAuth(addressPrefix))
+            .build();
+        })
+        .orElseGet(() -> {
+            //...then look in the receiver.
+            // If we get here, there was no statically-configured route, _or, there was a statically configured route
+            // but no account existed. Either way, look for a local route.
+            return localRoutingTable.getRouteByPrefix(addressPrefix)
+              .orElseGet(() -> {
+                // If we get here, there was no local route, so search through all tracked accounts and sort all
+                // of the routes to find the shortest-path (i.e., lowest weight) route that will work for
+                // `addressPrefix`. This is the best route.
 
-                        return this.routeBroadcaster.getAllCcpEnabledAccounts()
-                            .map(RoutableAccount::ccpReceiver)
-                            .map(ccpReceiver -> ccpReceiver.getIncomingRouteForPrefix(addressPrefix))
-                            .filter(Optional::isPresent)
-                            .map(Optional::get)
-                            .sorted(routingTableEntryComparator)
-                            .collect(Collectors.<IncomingRoute>toList()).stream()
-                            .findFirst()
-                            .map(bestRoute -> (Route) ImmutableRoute.builder()
-                                .routePrefix(bestRoute.routePrefix())
-                                .nextHopAccountId(bestRoute.peerAccountId())
-                                .path(bestRoute.path())
-                                .auth(bestRoute.auth())
-                                .build()
-                            )
-                            .orElse(null);
-                      });
-                }
-            )
+                return this.routeBroadcaster.getAllCcpEnabledAccounts()
+                  .map(RoutableAccount::ccpReceiver)
+                  .map(ccpReceiver -> ccpReceiver.getIncomingRouteForPrefix(addressPrefix))
+                  .filter(Optional::isPresent)
+                  .map(Optional::get)
+                  .sorted(routingTableEntryComparator)
+                  .collect(Collectors.<IncomingRoute>toList()).stream()
+                  .findFirst()
+                  .map(bestRoute -> (Route) ImmutableRoute.builder()
+                    .routePrefix(bestRoute.routePrefix())
+                    .nextHopAccountId(bestRoute.peerAccountId())
+                    .path(bestRoute.path())
+                    .auth(bestRoute.auth())
+                    .build()
+                  )
+                  .orElse(null);
+              });
+          }
+        )
     );
   }
 
@@ -521,7 +522,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     // Decrypt the routingSecret, but only momentarily...
     final byte[] routingSecret = decryptor.decrypt(EncryptedSecret.fromEncodedValue(
-        connectorSettingsSupplier.get().globalRoutingSettings().routingSecret()
+      connectorSettingsSupplier.get().globalRoutingSettings().routingSecret()
     ));
 
     try {
@@ -539,25 +540,25 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     final Optional<AccountId> nextHopForDefaultRoute;
     if (connectorSettingsSupplier.get().globalRoutingSettings().isUseParentForDefaultRoute()) {
       nextHopForDefaultRoute =
-          this.accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PARENT)
-              .map(AccountSettings::accountId)
-              .map(Optional::of)
-              .orElseThrow(() -> new RuntimeException(
-                  "Connector was configured to use a Parent account as the nextHop for the default route, but no Parent "
-                      +
-                      "Account was configured!"
-              ));
+        this.accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PARENT)
+          .map(AccountSettings::accountId)
+          .map(Optional::of)
+          .orElseThrow(() -> new RuntimeException(
+            "Connector was configured to use a Parent account as the nextHop for the default route, but no Parent "
+              +
+              "Account was configured!"
+          ));
     } else if (connectorSettingsSupplier.get().globalRoutingSettings().defaultRoute().isPresent()) {
       nextHopForDefaultRoute = connectorSettingsSupplier.get().globalRoutingSettings().defaultRoute()
-          .map(Optional::of)
-          .orElseThrow(() -> new RuntimeException("Connector was configured to use a default address as the nextHop " +
-              "for the default route, but no Account was configured for this address!"));
+        .map(Optional::of)
+        .orElseThrow(() -> new RuntimeException("Connector was configured to use a default address as the nextHop " +
+          "for the default route, but no Account was configured for this address!"));
     } else {
       if (numDefaultRouteWarnings++ <= 0) {
         logger.warn(
-            "No Default Route configured (A default route provides a fallback upstream link for any packets that are not"
-                +
-                " intrinsically routable)."
+          "No Default Route configured (A default route provides a fallback upstream link for any packets that are not"
+            +
+            " intrinsically routable)."
         );
       }
       nextHopForDefaultRoute = Optional.empty();
@@ -568,13 +569,13 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     final InterledgerAddressPrefix globalPrefix = connectorSettingsSupplier.get().globalPrefix();
     final Optional<Route> defaultRoute = nextHopForDefaultRoute.map(nextHopAccountId ->
-        ImmutableRoute.builder()
-            .routePrefix(globalPrefix)
-            .nextHopAccountId(nextHopAccountId)
-            // empty path.
-            // never expires
-            .auth(this.constructRouteAuth(globalPrefix))
-            .build()
+      ImmutableRoute.builder()
+        .routePrefix(globalPrefix)
+        .nextHopAccountId(nextHopAccountId)
+        // empty path.
+        // never expires
+        .auth(this.constructRouteAuth(globalPrefix))
+        .build()
     );
 
     // Emit the default route.

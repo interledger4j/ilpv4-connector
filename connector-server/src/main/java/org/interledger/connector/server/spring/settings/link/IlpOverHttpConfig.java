@@ -49,9 +49,6 @@ public class IlpOverHttpConfig {
   private ObjectMapper objectMapper;
 
   @Autowired
-  private Environment environment;
-
-  @Autowired
   @Qualifier(ILP_OVER_HTTP)
   private OkHttpClient ilpOverHttpClient;
 

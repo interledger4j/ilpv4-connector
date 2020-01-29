@@ -2,13 +2,13 @@ package org.interledger.connector.packetswitch;
 
 import org.interledger.connector.ConnectorExceptionHandler;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.sub.SpspSubAccountUtils;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.NextHopPacketMapper;
 import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.packetswitch.filters.DefaultPacketSwitchFilterChain;
 import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
@@ -16,10 +16,7 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.link.LinkId;
 import org.interledger.link.PacketRejector;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
@@ -35,34 +32,30 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   private final NextHopPacketMapper nextHopPacketMapper;
   private final ConnectorExceptionHandler connectorExceptionHandler;
   private final PacketRejector packetRejector;
+  private final SpspSubAccountUtils subAccountUtils;
 
   // Loading from the Database is somewhat expensive, so we don't want to do this on every packet processed for a
   // given account. Instead, for higher performance, we only load account settings once per period, and otherwise
   // rely upon AccountSettings found in this cache.
   private final AccountSettingsLoadingCache accountSettingsLoadingCache;
 
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final EventBus eventBus;
 
   /**
-   * For testing purposes.
+   * Required-args Constructor.
+   *
+   * // TODO: Add Javadoc!
+   *
+   * @param packetSwitchFilters
+   * @param linkFilters
+   * @param linkManager
+   * @param nextHopPacketMapper
+   * @param connectorExceptionHandler
+   * @param packetRejector
+   * @param accountSettingsLoadingCache
+   * @param spspSubAccountUtils
+   * @param eventBus
    */
-  @VisibleForTesting
-  protected DefaultILPv4PacketSwitch(
-    final List<PacketSwitchFilter> packetSwitchFilters,
-    final List<LinkFilter> linkFilters,
-    final LinkManager linkManager,
-    final NextHopPacketMapper nextHopPacketMapper,
-    final ConnectorExceptionHandler connectorExceptionHandler,
-    final AccountSettingsRepository accountSettingsRepository,
-    final PacketRejector packetRejector,
-    EventBus eventBus) {
-    this(
-      packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler, packetRejector,
-      new AccountSettingsLoadingCache(accountSettingsRepository),
-      eventBus);
-  }
-
   public DefaultILPv4PacketSwitch(
     final List<PacketSwitchFilter> packetSwitchFilters,
     final List<LinkFilter> linkFilters,
@@ -71,7 +64,9 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     final ConnectorExceptionHandler connectorExceptionHandler,
     final PacketRejector packetRejector,
     final AccountSettingsLoadingCache accountSettingsLoadingCache,
-    EventBus eventBus) {
+    final SpspSubAccountUtils spspSubAccountUtils,
+    final EventBus eventBus
+  ) {
     this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
     this.linkFilters = Objects.requireNonNull(linkFilters);
     this.linkManager = Objects.requireNonNull(linkManager);
@@ -79,7 +74,8 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     this.connectorExceptionHandler = Objects.requireNonNull(connectorExceptionHandler);
     this.packetRejector = Objects.requireNonNull(packetRejector);
     this.accountSettingsLoadingCache = Objects.requireNonNull(accountSettingsLoadingCache);
-    this.eventBus = eventBus;
+    this.subAccountUtils = Objects.requireNonNull(spspSubAccountUtils);
+    this.eventBus = Objects.requireNonNull(eventBus);
   }
 
   /**
@@ -90,6 +86,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
    * @param sourceAccountId             An {@link AccountId} for the account that received the {@code
    *                                    incomingSourcePreparePacket}.
    * @param incomingSourcePreparePacket The packet received from the inbound/source account.
+   *
    * @return An {@link InterledgerResponsePacket} as received from the outbound link.
    */
   public final InterledgerResponsePacket switchPacket(
@@ -106,10 +103,12 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
           return new DefaultPacketSwitchFilterChain(
             packetSwitchFilters,
             linkFilters,
+            subAccountUtils,
             linkManager,
             nextHopPacketMapper,
             accountSettingsLoadingCache, // Necessary to load the 'next-hop' account.
-            eventBus).doFilter(accountSettings, incomingSourcePreparePacket);
+            eventBus
+          ).doFilter(accountSettings, incomingSourcePreparePacket);
 
         } catch (Exception e) {
           // Any rejections should be caught here, and returned as such....

@@ -2,13 +2,13 @@ package org.interledger.connector.it.settlement;
 
 import static java.math.BigInteger.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.interledger.connector.accounts.sub.SubAccountUtils.PING_ACCOUNT_ID;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_CONNECTOR_ADDRESS;
 import static org.interledger.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.PETER_ACCOUNT;
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.accounts.AccountSettings;

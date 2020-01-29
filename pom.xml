@@ -55,7 +55,6 @@
   </properties>
 
   <modules>
-    <module>connector-ilpv4-api</module>
     <module>connector-core</module>
     <module>connector-crypto</module>
     <module>connector-crypto/connector-crypto-cli</module>

@@ -6,6 +6,8 @@ import org.interledger.link.LoopbackLink;
 import org.interledger.link.PingLoopbackLink;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
+import org.interledger.link.spsp.StatelessSpspReceiverLink;
+import org.interledger.link.spsp.StatelessSpspReceiverLinkSettings;
 
 import java.util.Objects;
 
@@ -23,11 +25,17 @@ public class DefaultLinkSettingsFactory implements LinkSettingsFactory {
       }
       case LoopbackLink.LINK_TYPE_STRING: {
         return LinkSettings.builder().customSettings(accountSettings.customSettings())
-            .linkType(LoopbackLink.LINK_TYPE).build();
+          .linkType(LoopbackLink.LINK_TYPE).build();
       }
       case PingLoopbackLink.LINK_TYPE_STRING: {
         return LinkSettings.builder().customSettings(accountSettings.customSettings())
-            .linkType(PingLoopbackLink.LINK_TYPE).build();
+          .linkType(PingLoopbackLink.LINK_TYPE).build();
+      }
+      case StatelessSpspReceiverLink.LINK_TYPE_STRING: {
+        return StatelessSpspReceiverLinkSettings.builder()
+          .assetScale(accountSettings.assetScale())
+          .assetCode(accountSettings.assetCode())
+          .build();
       }
       default: {
         throw new IllegalArgumentException("Unsupported LinkType: " + accountSettings.linkType());

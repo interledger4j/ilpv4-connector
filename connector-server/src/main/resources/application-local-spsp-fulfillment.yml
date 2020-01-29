@@ -1,0 +1,10 @@
+interledger:
+  connector:
+    enabled-features:
+      local-spsp-fulfillment-enabled: true
+    spsp:
+      # Base64-encoded String of bytes used to derive any values used in encryption/decryption for SPSP.
+      server-secret: aQLR5IWAGV2vKnBhnFFsl2cXOCh9u0IWz3PiA64KlJ8=
+      # This segment will be appended to the Connector's operating address in order to form a full address prefix
+      # that the Connector will key off of to
+      address-prefix-segment: money

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
+import org.interledger.connector.accounts.sub.SpspSubAccountUtils;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -34,9 +35,11 @@ import java.util.function.Supplier;
 
 public class InMemoryExternalRoutingServiceTest {
 
+  private final String encryptedSecret = EncryptedSecret.ENCODING_PREFIX +
+    ":GCPKMS:KR1:Foo_password:1:GS:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=";
+
   @Rule
   public MockitoRule mockitoRule = MockitoJUnit.rule();
-
   @Mock
   private EventBus eventBus;
   @Mock
@@ -48,16 +51,15 @@ public class InMemoryExternalRoutingServiceTest {
   @Mock
   private StaticRoutesRepository staticRoutesRepository;
   @Mock
-  private ChildAccountPaymentRouter childAccountPaymentRouter;
+  private SpspSubAccountPaymentRouter spspSubAccountPaymentRouter;
   @Mock
   private ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable;
   @Mock
   private RouteBroadcaster routeBroadcaster;
   @Mock
   private GlobalRoutingSettings globalRoutingSettings;
-
-  private final String encryptedSecret = EncryptedSecret.ENCODING_PREFIX +
-      ":GCPKMS:KR1:Foo_password:1:GS:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=";
+  @Mock
+  private SpspSubAccountUtils spspSubAccountUtilsMock;
 
   private InMemoryExternalRoutingService service;
 
@@ -71,32 +73,33 @@ public class InMemoryExternalRoutingServiceTest {
   public void setUp() {
     Supplier<ConnectorSettings> connectorSettingsSupplier = () -> connectorSettings;
     service = new InMemoryExternalRoutingService(
-        eventBus,
-        connectorSettingsSupplier,
-        decryptor,
-        accountSettingsRepository,
-        staticRoutesRepository,
-        childAccountPaymentRouter,
-        outgoingRoutingTable,
-        routeBroadcaster
+      spspSubAccountUtilsMock,
+      eventBus,
+      connectorSettingsSupplier,
+      decryptor,
+      accountSettingsRepository,
+      staticRoutesRepository,
+      spspSubAccountPaymentRouter,
+      outgoingRoutingTable,
+      routeBroadcaster
     );
 
     when(connectorSettings.globalRoutingSettings()).thenReturn(globalRoutingSettings);
 
     shawn = StaticRoute.builder()
-        .nextHopAccountId(AccountId.of("shawnSpencer"))
-        .routePrefix(InterledgerAddressPrefix.of("g.psych"))
-        .build();
+      .nextHopAccountId(AccountId.of("shawnSpencer"))
+      .routePrefix(InterledgerAddressPrefix.of("g.psych"))
+      .build();
 
     lassiter = StaticRoute.builder()
-        .nextHopAccountId(AccountId.of("carltonLassiter"))
-        .routePrefix(InterledgerAddressPrefix.of("g.sbpd"))
-        .build();
+      .nextHopAccountId(AccountId.of("carltonLassiter"))
+      .routePrefix(InterledgerAddressPrefix.of("g.sbpd"))
+      .build();
 
     woody = StaticRoute.builder()
-        .nextHopAccountId(AccountId.of("woody"))
-        .routePrefix(InterledgerAddressPrefix.of("g.sbpd.morgue"))
-        .build();
+      .nextHopAccountId(AccountId.of("woody"))
+      .routePrefix(InterledgerAddressPrefix.of("g.sbpd.morgue"))
+      .build();
   }
 
   @Test
@@ -113,18 +116,17 @@ public class InMemoryExternalRoutingServiceTest {
     when(globalRoutingSettings.routingSecret()).thenReturn(encryptedSecret);
     when(connectorSettings.operatorAddress()).thenReturn(InterledgerAddress.of("test.example"));
     when(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PEER))
-        .thenReturn(Collections.emptyList());
+      .thenReturn(Collections.emptyList());
     when(routeBroadcaster.registerCcpEnabledAccount((AccountId) any())).thenReturn(Optional.empty());
     when(decryptor.decrypt(any())).thenReturn(new byte[32]);
 
-
     service.start();
     assertThat(service.getAllRoutes())
-        .extracting("nextHopAccountId", "routePrefix")
-        .containsOnly(
-            tuple(shawn.nextHopAccountId(), shawn.routePrefix()),
-            tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
-        );
+      .extracting("nextHopAccountId", "routePrefix")
+      .containsOnly(
+        tuple(shawn.nextHopAccountId(), shawn.routePrefix()),
+        tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
+      );
     verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(shawn.nextHopAccountId());
     verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(lassiter.nextHopAccountId());
 
@@ -132,23 +134,23 @@ public class InMemoryExternalRoutingServiceTest {
     when(staticRoutesRepository.getAllStaticRoutes()).thenReturn(Sets.newHashSet(shawn, lassiter, woody));
     service.createStaticRoute(woody);
     assertThat(service.getAllRoutes())
-        .extracting("nextHopAccountId", "routePrefix")
-        .containsOnly(
-            tuple(shawn.nextHopAccountId(), shawn.routePrefix()),
-            tuple(woody.nextHopAccountId(), woody.routePrefix()),
-            tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
-        );
+      .extracting("nextHopAccountId", "routePrefix")
+      .containsOnly(
+        tuple(shawn.nextHopAccountId(), shawn.routePrefix()),
+        tuple(woody.nextHopAccountId(), woody.routePrefix()),
+        tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
+      );
     verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(woody.nextHopAccountId());
     verify(staticRoutesRepository, times(1)).saveStaticRoute(woody);
 
     when(staticRoutesRepository.deleteStaticRouteByPrefix(shawn.routePrefix())).thenReturn(true);
     service.deleteStaticRouteByPrefix(shawn.routePrefix());
     assertThat(service.getAllRoutes())
-        .extracting("nextHopAccountId", "routePrefix")
-        .containsOnly(
-            tuple(woody.nextHopAccountId(), woody.routePrefix()),
-            tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
-        );
+      .extracting("nextHopAccountId", "routePrefix")
+      .containsOnly(
+        tuple(woody.nextHopAccountId(), woody.routePrefix()),
+        tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
+      );
     verify(staticRoutesRepository, times(1)).deleteStaticRouteByPrefix(shawn.routePrefix());
   }
 

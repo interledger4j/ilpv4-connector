@@ -1,6 +1,5 @@
 package org.interledger.connector.routing;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 
 import java.util.Optional;
@@ -13,13 +12,9 @@ import java.util.Optional;
  */
 public interface PaymentRouter<R extends BaseRoute> {
 
-  // The unique identifier of the account that collects all incoming ping protocol payments, if any.
-  // TODO: Move to connector-core as part of https://github.com/interledger4j/ilpv4-connector/issues/148
-  AccountId PING_ACCOUNT_ID = AccountId.of("__ping_account__");
-
   /**
-   * Given an incoming transfer on a particular source ledger, this method finds the best "next-hop" route that
-   * should be utilized to complete an Interledger payment.
+   * Given an incoming transfer on a particular source ledger, this method finds the best "next-hop" route that should
+   * be utilized to complete an Interledger payment.
    *
    * At a general level, this method works as follows:
    *

@@ -5,6 +5,7 @@ import static java.math.BigInteger.TEN;
 import static java.math.BigInteger.ZERO;
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.interledger.connector.accounts.sub.SubAccountUtils.PING_ACCOUNT_ID;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;
@@ -13,7 +14,6 @@ import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPe
 import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerIlpOverHttpTopology.ALICE_CONNECTOR_ADDRESS;
 import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerIlpOverHttpTopology.BOB;
 import static org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerIlpOverHttpTopology.BOB_CONNECTOR_ADDRESS;
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static org.interledger.link.PingLoopbackLink.PING_PROTOCOL_CONDITION;
 
 import org.interledger.connector.ILPv4Connector;
@@ -152,16 +152,16 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
 
     final long start = System.currentTimeMillis();
     pingInitiator.ping(PAUL_AT_ALICE_ADDRESS, UnsignedLong.ONE).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F02_UNREACHABLE);
-          assertThat(rejectPacket.getMessage()).isEqualTo("Destination address is unreachable");
-          assertThat(rejectPacket.getTriggeredBy().isPresent()).isTrue();
-          assertThat(rejectPacket.getTriggeredBy().get()).isEqualTo(getAliceConnectorAddress());
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F02_UNREACHABLE);
+        assertThat(rejectPacket.getMessage()).isEqualTo("Destination address is unreachable");
+        assertThat(rejectPacket.getTriggeredBy().isPresent()).isTrue();
+        assertThat(rejectPacket.getTriggeredBy().get()).isEqualTo(getAliceConnectorAddress());
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -204,16 +204,16 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
     final long start = System.currentTimeMillis();
 
     pingInitiator.ping(getAliceConnectorAddress(), UnsignedLong.ONE).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F02_UNREACHABLE);
-          assertThat(rejectPacket.getMessage()).isEqualTo("Destination address is unreachable");
-          assertThat(rejectPacket.getTriggeredBy().isPresent()).isTrue();
-          assertThat(rejectPacket.getTriggeredBy().get()).isEqualTo(getBobConnectorAddress());
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F02_UNREACHABLE);
+        assertThat(rejectPacket.getMessage()).isEqualTo("Destination address is unreachable");
+        assertThat(rejectPacket.getTriggeredBy().isPresent()).isTrue();
+        assertThat(rejectPacket.getTriggeredBy().get()).isEqualTo(getBobConnectorAddress());
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -294,7 +294,7 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
   @Test
   public void testPaulPingsRandom() throws InterruptedException {
     final InterledgerAddress randomDestination =
-        InterledgerAddress.of(InterledgerAddressPrefix.TEST3.with(UUID.randomUUID().toString()).getValue());
+      InterledgerAddress.of(InterledgerAddressPrefix.TEST3.with(UUID.randomUUID().toString()).getValue());
 
     final IlpOverHttpLink ilpOverHttpLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
     final PingInitiator pingInitiator = new DefaultPingInitiator(ilpOverHttpLink, () -> Instant.now().plusSeconds(30));
@@ -303,16 +303,16 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
     final long start = System.currentTimeMillis();
 
     pingInitiator.ping(randomDestination, UnsignedLong.ONE).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F02_UNREACHABLE);
-          assertThat(rejectPacket.getMessage()).isEqualTo("Destination address is unreachable");
-          assertThat(rejectPacket.getTriggeredBy().isPresent()).isTrue();
-          assertThat(rejectPacket.getTriggeredBy().get()).isEqualTo(getAliceConnectorAddress());
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F02_UNREACHABLE);
+        assertThat(rejectPacket.getMessage()).isEqualTo("Destination address is unreachable");
+        assertThat(rejectPacket.getTriggeredBy().isPresent()).isTrue();
+        assertThat(rejectPacket.getTriggeredBy().get()).isEqualTo(getAliceConnectorAddress());
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -335,16 +335,16 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
     final long start = System.currentTimeMillis();
 
     pingInitiator.ping(randomDestination, UnsignedLong.ONE).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F02_UNREACHABLE);
-          assertThat(rejectPacket.getMessage()).isEqualTo("Destination address is unreachable");
-          assertThat(rejectPacket.getTriggeredBy().isPresent()).isTrue();
-          assertThat(rejectPacket.getTriggeredBy().get()).isEqualTo(getBobConnectorAddress());
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s)", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F02_UNREACHABLE);
+        assertThat(rejectPacket.getMessage()).isEqualTo("Destination address is unreachable");
+        assertThat(rejectPacket.getTriggeredBy().isPresent()).isTrue();
+        assertThat(rejectPacket.getTriggeredBy().get()).isEqualTo(getBobConnectorAddress());
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -363,20 +363,20 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
 
     final IlpOverHttpLink ilpOverHttpLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
-        .executionCondition(PING_PROTOCOL_CONDITION)
-        .expiresAt(Instant.now().minusSeconds(500))
-        .amount(UnsignedLong.ONE) // Ping with the smallest unit...
-        .destination(getBobConnectorAddress())
-        .build();
+      .executionCondition(PING_PROTOCOL_CONDITION)
+      .expiresAt(Instant.now().minusSeconds(500))
+      .amount(UnsignedLong.ONE) // Ping with the smallest unit...
+      .destination(getBobConnectorAddress())
+      .build();
 
     ilpOverHttpLink.sendPacket(pingPacket).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT);
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.R02_INSUFFICIENT_TIMEOUT);
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -397,20 +397,20 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
     final IlpOverHttpLink ilpOverHttpLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
-        .executionCondition(PING_PROTOCOL_CONDITION)
-        .expiresAt(Instant.now().plusSeconds(30))
-        .amount(UnsignedLong.valueOf(100000000000L)) // Ping with a unit that's too large...
-        .destination(getBobConnectorAddress())
-        .build();
+      .executionCondition(PING_PROTOCOL_CONDITION)
+      .expiresAt(Instant.now().plusSeconds(30))
+      .amount(UnsignedLong.valueOf(100000000000L)) // Ping with a unit that's too large...
+      .destination(getBobConnectorAddress())
+      .build();
 
     ilpOverHttpLink.sendPacket(pingPacket).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE);
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F08_AMOUNT_TOO_LARGE);
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -431,20 +431,20 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
     final IlpOverHttpLink ilpOverHttpLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
-        .executionCondition(PING_PROTOCOL_CONDITION)
-        .expiresAt(Instant.now().plusSeconds(30))
-        .amount(UnsignedLong.valueOf(1L)) // Ping with a unit that's too large...
-        .destination(InterledgerAddress.of("self.foo"))
-        .build();
+      .executionCondition(PING_PROTOCOL_CONDITION)
+      .expiresAt(Instant.now().plusSeconds(30))
+      .amount(UnsignedLong.valueOf(1L)) // Ping with a unit that's too large...
+      .destination(InterledgerAddress.of("self.foo"))
+      .build();
 
     ilpOverHttpLink.sendPacket(pingPacket).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F02_UNREACHABLE);
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F02_UNREACHABLE);
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -465,20 +465,20 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
     final IlpOverHttpLink ilpOverHttpLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
 
     final InterledgerPreparePacket pingPacket = InterledgerPreparePacket.builder()
-        .executionCondition(InterledgerCondition.of(new byte[32]))
-        .expiresAt(Instant.now().plusSeconds(30))
-        .amount(UnsignedLong.valueOf(1L)) // Ping with the smallest unit...
-        .destination(getBobConnectorAddress())
-        .build();
+      .executionCondition(InterledgerCondition.of(new byte[32]))
+      .expiresAt(Instant.now().plusSeconds(30))
+      .amount(UnsignedLong.valueOf(1L)) // Ping with the smallest unit...
+      .destination(getBobConnectorAddress())
+      .build();
 
     ilpOverHttpLink.sendPacket(pingPacket).handle(
-        fulfillPacket -> {
-          fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
-          latch.countDown();
-        }, rejectPacket -> {
-          assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
-          latch.countDown();
-        }
+      fulfillPacket -> {
+        fail(String.format("Ping request fulfilled, but should have rejected: %s", fulfillPacket));
+        latch.countDown();
+      }, rejectPacket -> {
+        assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
+        latch.countDown();
+      }
     );
 
     latch.await(5, TimeUnit.SECONDS);
@@ -515,13 +515,13 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
       final long start = System.currentTimeMillis();
 
       pingInitiator.ping(getBobConnectorAddress(), UnsignedLong.ONE).handle(
-          fulfillPacket -> {
-            assertThat(fulfillPacket.getFulfillment().validateCondition(PING_PROTOCOL_CONDITION)).isTrue();
-            latch.countDown();
-          }, rejectPacket -> {
-            fail(String.format("Ping request rejected, but should have fulfilled: %s", rejectPacket));
-            latch.countDown();
-          }
+        fulfillPacket -> {
+          assertThat(fulfillPacket.getFulfillment().validateCondition(PING_PROTOCOL_CONDITION)).isTrue();
+          latch.countDown();
+        }, rejectPacket -> {
+          fail(String.format("Ping request rejected, but should have fulfilled: %s", rejectPacket));
+          latch.countDown();
+        }
       );
 
       final long end = System.currentTimeMillis();
@@ -550,8 +550,10 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
     LOGGER.info("[Pings Perf Test] Average Ping (ms/ping): {} ms", averageMsPerPing);
 
     assertThat(latch.getCount()).isEqualTo(0L);
-    assertThat(averageProcessingTime < 30).as("averageProcessingTime should have been less than 30, but was " + averageProcessingTime).isTrue();
-    assertThat(averageMsPerPing < 6).as("averageMsPerPing should have been less than 6, but was " + averageMsPerPing).isTrue();
+    assertThat(averageProcessingTime < 30)
+      .as("averageProcessingTime should have been less than 30, but was " + averageProcessingTime).isTrue();
+    assertThat(averageMsPerPing < 6).as("averageMsPerPing should have been less than 6, but was " + averageMsPerPing)
+      .isTrue();
 
     // test.alice.paul: Should be -1 because that account initiated and paid for the ping.
     assertAccountBalance(aliceConnector, PAUL_ACCOUNT, BigInteger.valueOf(numReps * -1));

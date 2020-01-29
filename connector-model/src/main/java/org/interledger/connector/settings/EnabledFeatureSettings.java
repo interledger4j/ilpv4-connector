@@ -1,5 +1,7 @@
 package org.interledger.connector.settings;
 
+import org.interledger.connector.accounts.AccountId;
+
 import org.immutables.value.Value;
 
 /**
@@ -13,8 +15,22 @@ public interface EnabledFeatureSettings {
 
   /**
    * Whether this Connector rate-limits accounts.
+   *
+   * @return {@code true} if account-level rate limiting is enabled; {@code false} otherwise.
    */
   default boolean isRateLimitingEnabled() {
+    return false;
+  }
+
+  /**
+   * A configuration property that determines if the Connector supports connector-wide termination/fulfillment of
+   * SPSP/STREAM packets. If enabled, any packets addressed to `g.{connector}.{spsp_prefix}.{connector_account}.{any}`
+   * will be intercepted and forwarded to a local SPSP receiver Link for processing. The {@link AccountId} used will be
+   * `{accountId}` as parsed from the ILP prepare packet's destination address (see template above).
+   *
+   * @return {@code true} if local SPSP filfillment should be attempted; {@code false} otherwise.
+   */
+  default boolean isLocalSpspFulfillmentEnabled() {
     return false;
   }
 
@@ -25,6 +41,12 @@ public interface EnabledFeatureSettings {
     @Value.Default
     public boolean isRateLimitingEnabled() {
       return true;
+    }
+
+    @Override
+    @Value.Default
+    public boolean isLocalSpspFulfillmentEnabled() {
+      return false;
     }
 
   }
