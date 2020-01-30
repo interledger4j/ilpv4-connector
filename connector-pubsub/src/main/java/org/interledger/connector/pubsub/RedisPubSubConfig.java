@@ -1,5 +1,7 @@
 package org.interledger.connector.pubsub;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.eventbus.EventBus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,9 +22,15 @@ public class RedisPubSubConfig {
   @Autowired
   protected LettuceConnectionFactory lettuceConnectionFactory;
 
+  @Autowired
+  protected EventBus eventBus;
+
+  @Autowired
+  protected ObjectMapper objectMapper;
+
   @Bean
   MessageListenerAdapter coordinationMessageListener() {
-    return new MessageListenerAdapter(new CoordinationMessageSubscriber());
+    return new MessageListenerAdapter(new CoordinationMessageSubscriber(objectMapper, eventBus, coordinationDedupeCache()));
   }
 
   @Bean
@@ -41,7 +49,7 @@ public class RedisPubSubConfig {
 
   @Bean
   CoordinationMessagePublisher coordinationRedisPublisher() {
-    return new CoordinationMessagePublisherImpl(pubsubRedisTemplate(), coordinationTopic());
+    return new CoordinationMessagePublisherImpl(pubsubRedisTemplate(), coordinationTopic(), objectMapper, coordinationDedupeCache());
   }
 
   @Bean(PUBSUB_REDIS_TEMPLATE_BEAN_NAME)
@@ -53,5 +61,15 @@ public class RedisPubSubConfig {
     template.setConnectionFactory(lettuceConnectionFactory);
 
     return template;
+  }
+
+  @Bean
+  CoordinationEventBusBridge coordinationEventBusBridge() {
+    return new CoordinationEventBusBridge(coordinationRedisPublisher(), eventBus);
+  }
+
+  @Bean
+  CoordinationDedupeCache coordinationDedupeCache() {
+    return new CoordinationDedupeCache();
   }
 }

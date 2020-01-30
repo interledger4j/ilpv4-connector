@@ -24,6 +24,7 @@ import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.eventbus.EventBus;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -59,6 +60,8 @@ public class DefaultAccountManagerTest {
   private LinkSettingsValidator linkSettingsValidator;
   @Mock
   private LinkSettingsFactory linkSettingsFactory;
+  @Mock
+  private EventBus eventBus;
 
 
   private DefaultAccountManager accountManager;
@@ -73,7 +76,8 @@ public class DefaultAccountManagerTest {
       linkManager,
       settlementEngineClient,
       linkSettingsFactory,
-      linkSettingsValidator
+      linkSettingsValidator,
+      eventBus
     );
   }
 

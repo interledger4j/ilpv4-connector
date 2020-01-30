@@ -268,7 +268,8 @@ public class SpringConnectorConfig {
       connectorSettingsSupplier, conversionService, accountSettingsRepository, deletedAccountSettingsRepository,
       linkManager, settlementEngineClient,
       linkSettingsFactory,
-      linkSettingsValidator);
+      linkSettingsValidator,
+      eventBus());
   }
 
   @Bean

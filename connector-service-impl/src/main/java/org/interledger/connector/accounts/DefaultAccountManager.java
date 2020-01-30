@@ -1,6 +1,8 @@
 package org.interledger.connector.accounts;
 
 import org.interledger.codecs.ildcp.IldcpUtils;
+import org.interledger.connector.accounts.event.AccountCreatedEvent;
+import org.interledger.connector.accounts.event.AccountUpdatedEvent;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.links.LinkSettingsValidator;
@@ -30,6 +32,7 @@ import org.interledger.link.http.IlpOverHttpLinkSettings;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Preconditions;
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
 import org.hibernate.exception.ConstraintViolationException;
@@ -60,6 +63,7 @@ public class DefaultAccountManager implements AccountManager {
   private final SettlementEngineClient settlementEngineClient;
   private final LinkSettingsFactory linkSettingsFactory;
   private final LinkSettingsValidator linkSettingsValidator;
+  private final EventBus eventBus;
 
   /**
    * Required-args Constructor.
@@ -71,7 +75,9 @@ public class DefaultAccountManager implements AccountManager {
     final DeletedAccountSettingsRepository deletedAccountSettingsRepository,
     final LinkManager linkManager,
     final SettlementEngineClient settlementEngineClient,
-    LinkSettingsFactory linkSettingsFactory, LinkSettingsValidator linkSettingsValidator) {
+    final LinkSettingsFactory linkSettingsFactory,
+    final LinkSettingsValidator linkSettingsValidator,
+    final EventBus eventBus) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.deletedAccountSettingsRepository = Objects.requireNonNull(deletedAccountSettingsRepository);
@@ -80,6 +86,7 @@ public class DefaultAccountManager implements AccountManager {
     this.settlementEngineClient = Objects.requireNonNull(settlementEngineClient);
     this.linkSettingsFactory = linkSettingsFactory;
     this.linkSettingsValidator = linkSettingsValidator;
+    this.eventBus = eventBus;
   }
 
   @Override
@@ -155,6 +162,8 @@ public class DefaultAccountManager implements AccountManager {
       this.initializeParentAccountSettingsViaIlDcp(accountSettings.accountId());
     }
 
+    eventBus.post(AccountCreatedEvent.builder().accountId(returnableAccountSettings.accountId()).build());
+
     // No need to prematurely connect to this account. When packets need to flow over it, it will become connected.
     return returnableAccountSettings;
   }
@@ -186,7 +195,9 @@ public class DefaultAccountManager implements AccountManager {
         entity.setReceiveRoutes(updatedSettings.isReceiveRoutes());
         entity.setSendRoutes(updatedSettings.isSendRoutes());
 
-        return accountSettingsRepository.save(entity);
+        AccountSettingsEntity saved = accountSettingsRepository.save(entity);
+        eventBus.post(AccountUpdatedEvent.builder().accountId(saved.getAccountId()).build());
+        return saved;
       })
       .map(entity -> this.conversionService.convert(entity, AccountSettings.class))
       .orElseThrow(() -> new AccountNotFoundProblem(accountId));
