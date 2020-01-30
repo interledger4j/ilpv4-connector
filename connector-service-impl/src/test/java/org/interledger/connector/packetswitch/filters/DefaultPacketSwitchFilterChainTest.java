@@ -16,6 +16,7 @@ import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
+import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.NextHopInfo;
 import org.interledger.connector.links.NextHopPacketMapper;
@@ -31,7 +32,6 @@ import org.interledger.link.PacketRejector;
 import org.interledger.link.PingLoopbackLink;
 
 import com.google.common.collect.Lists;
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Test;
@@ -100,9 +100,9 @@ public class DefaultPacketSwitchFilterChainTest {
   @Mock
   private AccountSettingsLoadingCache accountSettingsLoadingCacheMock;
   @Mock
-  private EventBus eventBus;
-  @Mock
   private LocalDestinationAddressUtils localDestinationAddressUtilsMock;
+  @Mock
+  private PacketEventPublisher packetEventPublisherMock;
 
   private Link outgoingLink;
 
@@ -129,7 +129,7 @@ public class DefaultPacketSwitchFilterChainTest {
       linkManagerMock,
       nextHopPacketMapperMock,
       accountSettingsLoadingCacheMock,
-      eventBus
+      packetEventPublisherMock
     );
 
     when(accountSettingsLoadingCacheMock.getAccount(INCOMING_ACCOUNT_ID))
@@ -154,7 +154,6 @@ public class DefaultPacketSwitchFilterChainTest {
     when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
 
     // Simulate a Ping
-    //when(localDestinationAddressUtilsMock.isLocalDestinationAddress(OPERATOR_ADDRESS)).thenReturn(true);
     final Link linkMock = mock(Link.class);
     when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_SETTINGS)).thenReturn(linkMock);
     when(linkMock.sendPacket(any()))

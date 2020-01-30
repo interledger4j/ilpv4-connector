@@ -4,6 +4,7 @@ import org.interledger.connector.ConnectorExceptionHandler;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
+import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.NextHopPacketMapper;
 import org.interledger.connector.links.filters.LinkFilter;
@@ -15,8 +16,6 @@ import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.link.LinkId;
 import org.interledger.link.PacketRejector;
-
-import com.google.common.eventbus.EventBus;
 
 import java.util.List;
 import java.util.Objects;
@@ -38,23 +37,12 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   // given account. Instead, for higher performance, we only load account settings once per period, and otherwise
   // rely upon AccountSettings found in this cache.
   private final AccountSettingsLoadingCache accountSettingsLoadingCache;
-
-  private final EventBus eventBus;
+  private final PacketEventPublisher packetEventPublisher;
 
   /**
    * Required-args Constructor.
    *
    * // TODO: Add Javadoc!
-   *
-   * @param packetSwitchFilters
-   * @param linkFilters
-   * @param linkManager
-   * @param nextHopPacketMapper
-   * @param connectorExceptionHandler
-   * @param packetRejector
-   * @param accountSettingsLoadingCache
-   * @param localDestinationAddressUtils
-   * @param eventBus
    */
   public DefaultILPv4PacketSwitch(
     final List<PacketSwitchFilter> packetSwitchFilters,
@@ -64,8 +52,8 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     final ConnectorExceptionHandler connectorExceptionHandler,
     final PacketRejector packetRejector,
     final AccountSettingsLoadingCache accountSettingsLoadingCache,
-    final LocalDestinationAddressUtils localDestinationAddressUtils,
-    final EventBus eventBus
+    final PacketEventPublisher packetEventPublisher,
+    final LocalDestinationAddressUtils localDestinationAddressUtils
   ) {
     this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
     this.linkFilters = Objects.requireNonNull(linkFilters);
@@ -74,8 +62,8 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     this.connectorExceptionHandler = Objects.requireNonNull(connectorExceptionHandler);
     this.packetRejector = Objects.requireNonNull(packetRejector);
     this.accountSettingsLoadingCache = Objects.requireNonNull(accountSettingsLoadingCache);
+    this.packetEventPublisher = Objects.requireNonNull(packetEventPublisher);
     this.localDestinationAddressUtils = Objects.requireNonNull(localDestinationAddressUtils);
-    this.eventBus = Objects.requireNonNull(eventBus);
   }
 
   /**
@@ -107,12 +95,11 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
             linkManager,
             nextHopPacketMapper,
             accountSettingsLoadingCache, // Necessary to load the 'next-hop' account.
-            eventBus
+            packetEventPublisher
           ).doFilter(accountSettings, incomingSourcePreparePacket);
-
         } catch (Exception e) {
           // Any rejections should be caught here, and returned as such....
-          return this.connectorExceptionHandler.handleException(sourceAccountId, incomingSourcePreparePacket, e);
+          return this.connectorExceptionHandler.handleException(accountSettings, incomingSourcePreparePacket, e);
         }
       })
       .orElseThrow(() -> {

@@ -25,6 +25,7 @@ public interface ConfigConstants {
 
   String INTERLEDGER = "interledger";
   String CONNECTOR = "connector";
+  String CACHE = "cache";
   String INTERLEDGER__CONNECTOR = INTERLEDGER + DOT + CONNECTOR;
 
   String INTERLEDGER__CONNECTOR__GLOBAL_ROUTING_SETTINGS = INTERLEDGER__CONNECTOR + DOT + "globalRoutingSettings";

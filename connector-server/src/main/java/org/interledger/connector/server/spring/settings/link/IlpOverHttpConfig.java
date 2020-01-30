@@ -4,11 +4,11 @@ import static okhttp3.CookieJar.NO_COOKIES;
 import static org.interledger.connector.core.ConfigConstants.ENABLED_PROTOCOLS;
 import static org.interledger.connector.core.ConfigConstants.ILP_OVER_HTTP_ENABLED;
 import static org.interledger.connector.core.ConfigConstants.TRUE;
+import static org.interledger.connector.server.spring.settings.web.JacksonConfig.PROBLEM;
 
 import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.connector.accounts.DefaultAccountIdResolver;
 import org.interledger.connector.accounts.IlpOverHttpAccountIdResolver;
-import org.interledger.connector.server.spring.settings.Redactor;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.link.LinkFactoryProvider;
@@ -18,6 +18,7 @@ import org.interledger.link.http.IlpOverHttpLinkFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.ConnectionPool;
 import okhttp3.ConnectionSpec;
+import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -30,7 +31,6 @@ import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-
 import javax.annotation.PostConstruct;
 
 /**
@@ -46,6 +46,7 @@ public class IlpOverHttpConfig {
   public static final String ILP_OVER_HTTP = "ILP-over-HTTP";
 
   @Autowired
+  @Qualifier(PROBLEM)
   private ObjectMapper objectMapper;
 
   @Autowired
@@ -61,12 +62,12 @@ public class IlpOverHttpConfig {
   @Bean
   @Qualifier(ILP_OVER_HTTP)
   protected ConnectionPool ilpOverHttpConnectionPool(
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.maxIdleConnections:5}") final int defaultMaxIdleConnections,
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.keepAliveMinutes:1}") final long defaultConnectionKeepAliveMinutes
+    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.maxIdleConnections:10}") final int defaultMaxIdleConnections,
+    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.keepAliveSeconds:30}") final long defaultKeepAliveSeconds
   ) {
     return new ConnectionPool(
       defaultMaxIdleConnections,
-      defaultConnectionKeepAliveMinutes, TimeUnit.MINUTES
+      defaultKeepAliveSeconds, TimeUnit.SECONDS
     );
   }
 
@@ -84,6 +85,8 @@ public class IlpOverHttpConfig {
    * @param defaultWriteTimeoutMillis   Applied to individual write IO operations. A value of 0 means no timeout,
    *                                    otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted
    *                                    to milliseconds. If unspecified, defaults to 60000.
+   * @param maxRequests                 Maximum numbers of concurrent http requests (across all hosts).
+   * @param maxRequestsPerHost          Maximum numbers of concurrent http requests per host.
    *
    * @return A {@link OkHttp3ClientHttpRequestFactory}.
    */
@@ -93,11 +96,16 @@ public class IlpOverHttpConfig {
     @Qualifier(ILP_OVER_HTTP) final ConnectionPool ilpOverHttpConnectionPool,
     @Value("${interledger.connector.ilpOverHttp.connectionDefaults.connectTimeoutMillis:1000}") final long defaultConnectTimeoutMillis,
     @Value("${interledger.connector.ilpOverHttp.connectionDefaults.readTimeoutMillis:60000}") final long defaultReadTimeoutMillis,
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.writeTimeoutMillis:60000}") final long defaultWriteTimeoutMillis
+    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.writeTimeoutMillis:60000}") final long defaultWriteTimeoutMillis,
+    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.maxRequests:100}") final int maxRequests,
+    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.maxRequestsPerHost:50}") final int maxRequestsPerHost
   ) {
     OkHttpClient.Builder builder = new OkHttpClient.Builder();
     ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).build();
-
+    Dispatcher dispatcher = new Dispatcher();
+    dispatcher.setMaxRequests(maxRequests);
+    dispatcher.setMaxRequestsPerHost(maxRequestsPerHost);
+    builder.dispatcher(dispatcher);
     builder.connectionSpecs(Arrays.asList(spec, ConnectionSpec.CLEARTEXT));
     builder.cookieJar(NO_COOKIES);
 
@@ -126,11 +134,6 @@ public class IlpOverHttpConfig {
   @Bean
   protected IlpOverHttpAccountIdResolver ilpOverHttpAccountIdResolver() {
     return new DefaultAccountIdResolver();
-  }
-
-  @Bean
-  protected Redactor redactor() {
-    return new Redactor();
   }
 
   @PostConstruct

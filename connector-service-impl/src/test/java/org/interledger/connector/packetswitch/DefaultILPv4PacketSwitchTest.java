@@ -19,6 +19,7 @@ import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings;
 import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
+import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.NextHopInfo;
 import org.interledger.connector.links.NextHopPacketMapper;
@@ -35,7 +36,6 @@ import org.interledger.link.LinkSettings;
 import org.interledger.link.LoopbackLink;
 import org.interledger.link.PacketRejector;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Rule;
@@ -94,7 +94,7 @@ public class DefaultILPv4PacketSwitchTest {
   @Mock
   private LocalDestinationAddressUtils localDestinationAddressUtilsMock;
   @Mock
-  private EventBus eventBus;
+  private PacketEventPublisher packetEventPublisherMock;
 
   private Link outgoingLink;
 
@@ -118,8 +118,8 @@ public class DefaultILPv4PacketSwitchTest {
       connectorExceptionHandlerMock,
       packetRejectorMock,
       accountSettingsLoadingCacheMock,
-      localDestinationAddressUtilsMock,
-      eventBus
+      packetEventPublisherMock,
+      localDestinationAddressUtilsMock
     );
   }
 

@@ -1,11 +1,11 @@
 package org.interledger.connector.server.spring.settings.properties;
 
 
-import org.interledger.connector.settings.ConnectorKeys;
+import org.interledger.crypto.CryptoKeys;
 
 import java.util.Objects;
 
-public class ConnectorKeysFromPropertyFile implements ConnectorKeys {
+public class ConnectorKeysFromPropertyFile implements CryptoKeys {
 
   private ConnectorKeyFromPropertyFile secret0;
 
@@ -32,10 +32,10 @@ public class ConnectorKeysFromPropertyFile implements ConnectorKeys {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof ConnectorKeys)) {
+    if (!(o instanceof CryptoKeys)) {
       return false;
     }
-    ConnectorKeys that = (ConnectorKeys) o;
+    CryptoKeys that = (CryptoKeys) o;
     return secret0.equals(that.secret0()) &&
       accountSettings.equals(that.accountSettings());
   }

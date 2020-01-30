@@ -29,9 +29,6 @@ import java.util.stream.Stream;
  */
 public class DefaultRouteBroadcaster implements RouteBroadcaster {
 
-  private static final boolean SHOULD_NOT_SEND_ROUTES = false;
-  private static final boolean SHOULD_NOT_RECEIVE_ROUTES = false;
-
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;

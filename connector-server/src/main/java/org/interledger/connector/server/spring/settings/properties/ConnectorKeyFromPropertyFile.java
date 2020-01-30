@@ -1,10 +1,10 @@
 package org.interledger.connector.server.spring.settings.properties;
 
-import org.interledger.connector.settings.ConnectorKey;
+import org.interledger.crypto.CryptoKey;
 
 import java.util.Objects;
 
-public class ConnectorKeyFromPropertyFile implements ConnectorKey {
+public class ConnectorKeyFromPropertyFile implements CryptoKey {
 
   private String alias;
 
@@ -31,10 +31,10 @@ public class ConnectorKeyFromPropertyFile implements ConnectorKey {
     if (this == o) {
       return true;
     }
-    if (o == null || !(o instanceof ConnectorKey)) {
+    if (o == null || !(o instanceof CryptoKey)) {
       return false;
     }
-    ConnectorKey that = (ConnectorKey) o;
+    CryptoKey that = (CryptoKey) o;
     return alias.equals(that.alias()) &&
       version.equals(that.version());
   }

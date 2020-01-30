@@ -1,5 +1,7 @@
 package org.interledger.connector.server.spring.controllers.converters;
 
+import static org.interledger.connector.server.spring.controllers.IlpHttpController.APPLICATION_ILP_OCTET_STREAM;
+
 import org.interledger.connector.server.spring.controllers.IlpHttpController;
 import org.interledger.core.InterledgerPacket;
 import org.interledger.core.InterledgerPreparePacket;
@@ -28,7 +30,7 @@ public class OerPreparePacketHttpMessageConverter extends AbstractGenericHttpMes
   private final CodecContext ilpCodecContext;
 
   public OerPreparePacketHttpMessageConverter(final CodecContext ilpCodecContext) {
-    super(MediaType.APPLICATION_OCTET_STREAM);
+    super(MediaType.APPLICATION_OCTET_STREAM, APPLICATION_ILP_OCTET_STREAM);
     this.ilpCodecContext = Objects.requireNonNull(ilpCodecContext);
   }
 

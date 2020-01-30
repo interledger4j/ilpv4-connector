@@ -9,7 +9,6 @@ import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.server.spring.controllers.PathConstants;
-import org.interledger.connector.server.spring.settings.Redactor;
 
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
@@ -39,11 +38,9 @@ import java.util.stream.Collectors;
 public class AccountsController {
 
   private final AccountManager accountManager;
-  private final Redactor redactor;
 
-  public AccountsController(final AccountManager accountManager, final Redactor redactor) {
+  public AccountsController(final AccountManager accountManager) {
     this.accountManager = Objects.requireNonNull(accountManager);
-    this.redactor = Objects.requireNonNull(redactor);
   }
 
   /**
@@ -66,7 +63,7 @@ public class AccountsController {
     Objects.requireNonNull(accountSettings);
 
     final AccountSettings returnableAccountSettings =
-      redactor.redact(this.accountManager.createAccount(accountSettings));
+      this.accountManager.createAccount(accountSettings);
     final Link selfLink =
       linkTo(methodOn(AccountsController.class).getAccount(returnableAccountSettings.accountId())).withSelfRel();
     final EntityModel resource = new EntityModel(returnableAccountSettings, selfLink);
@@ -94,7 +91,6 @@ public class AccountsController {
     // TODO: Add paging per https://github.com/interledger4j/ilpv4-connector/issues/404
     final List<EntityModel<AccountSettings>> accountSettingsResources = accountManager.getAccounts()
       .stream()
-      .map(redactor::redact)
       .map(this::toEntityModel)
       .collect(Collectors.toList());
 
@@ -124,7 +120,6 @@ public class AccountsController {
     @PathVariable(PathConstants.ACCOUNT_ID) final AccountId accountId
   ) {
     return accountManager.findAccountById(accountId)
-      .map(redactor::redact)
       .map(this::toEntityModel)
       .orElseThrow(() -> new AccountNotFoundProblem(accountId));
   }
@@ -148,7 +143,7 @@ public class AccountsController {
     @PathVariable(PathConstants.ACCOUNT_ID) final AccountId accountId,
     @RequestBody final AccountSettings.AbstractAccountSettings accountSettings
   ) {
-    return toEntityModel(redactor.redact(accountManager.updateAccount(accountId, accountSettings)));
+    return toEntityModel(accountManager.updateAccount(accountId, accountSettings));
   }
 
   @RequestMapping(

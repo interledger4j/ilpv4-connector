@@ -4,7 +4,7 @@ import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
-import org.interledger.connector.events.PacketFulfillmentEvent;
+import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.NextHopInfo;
 import org.interledger.connector.links.NextHopPacketMapper;
@@ -15,7 +15,6 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.link.Link;
 import org.interledger.link.LinkSettings;
 
-import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,22 +45,16 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
   // rely upon AccountSettings found in this cache.
   private final AccountSettingsLoadingCache accountSettingsLoadingCache;
 
-  private final EventBus eventBus;
-
   // The index of the filter to call next...
   private int _filterIndex;
+
+  private PacketEventPublisher packetEventPublisher;
 
   /**
    * A chain of filters that are applied to a switchPacket request before attempting to determine the `next-hop` {@link
    * Link} to forward the packet onto.
    *
-   * @param packetSwitchFilters
-   * @param linkFilters
-   * @param localDestinationAddressUtils
-   * @param linkManager
-   * @param nextHopPacketMapper
-   * @param accountSettingsLoadingCache
-   * @param eventBus
+   * TODO FIXME
    */
   public DefaultPacketSwitchFilterChain(
     final List<PacketSwitchFilter> packetSwitchFilters,
@@ -70,14 +63,14 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
     final LinkManager linkManager,
     final NextHopPacketMapper nextHopPacketMapper,
     final AccountSettingsLoadingCache accountSettingsLoadingCache,
-    final EventBus eventBus
+    final PacketEventPublisher packetEventPublisher
   ) {
     this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
     this.linkFilters = Objects.requireNonNull(linkFilters);
     this.localDestinationAddressUtils = Objects.requireNonNull(localDestinationAddressUtils);
     this.linkManager = Objects.requireNonNull(linkManager);
-    this.nextHopPacketMapper = nextHopPacketMapper;
-    this.eventBus = eventBus;
+    this.nextHopPacketMapper = Objects.requireNonNull(nextHopPacketMapper);
+    this.packetEventPublisher = Objects.requireNonNull(packetEventPublisher);
     this.accountSettingsLoadingCache = Objects.requireNonNull(accountSettingsLoadingCache);
     this._filterIndex = 0;
   }
@@ -139,17 +132,23 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
 
       try {
         response.handle(interledgerFulfillPacket ->
-          eventBus.post(PacketFulfillmentEvent.builder()
-            .accountSettings(sourceAccountSettings)
-            .destinationAccount(nextHopAccountSettings)
-            .exchangeRate(fxRate)
-            .incomingPreparePacket(preparePacket)
-            .outgoingPreparePacket(nextHopInfo.nextHopPacket())
-            .fulfillment(interledgerFulfillPacket.getFulfillment())
-            .message("response packet for " + preparePacket.getExecutionCondition())
-            .build()
-          ), (rejectPacket) -> {
-        });
+          packetEventPublisher.publishFulfillment(
+            sourceAccountSettings,
+            nextHopAccountSettings,
+            preparePacket,
+            nextHopInfo.nextHopPacket(),
+            fxRate,
+            interledgerFulfillPacket.getFulfillment()
+          ), (rejectPacket) ->
+          packetEventPublisher.publishRejectionByNextHop(
+            sourceAccountSettings,
+            nextHopAccountSettings,
+            preparePacket,
+            nextHopInfo.nextHopPacket(),
+            fxRate,
+            rejectPacket
+          )
+        );
       } catch (Exception e) {
         logger.warn("Could not publish event", e);
       }

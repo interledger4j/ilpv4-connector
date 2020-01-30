@@ -1,6 +1,6 @@
 package org.interledger.connector.crypto;
 
-import org.interledger.connector.settings.ConnectorKeys;
+import org.interledger.crypto.CryptoKeys;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionAlgorithm;
@@ -14,13 +14,13 @@ public class DefaultConnectorEncryptionService implements ConnectorEncryptionSer
   private final EncryptionService encryptionService;
   private final KeyStoreType keyStoreType;
   private final String keyringIdentifier;
-  private final ConnectorKeys connectorKeys;
+  private final CryptoKeys connectorKeys;
   private final EncryptionAlgorithm encryptionAlgorithm;
 
   public DefaultConnectorEncryptionService(EncryptionService encryptionService,
                                            KeyStoreType keyStoreType,
                                            String keyringIdentifier,
-                                           ConnectorKeys connectorKeys,
+                                           CryptoKeys connectorKeys,
                                            EncryptionAlgorithm encryptionAlgorithm) {
     this.encryptionService = encryptionService;
     this.keyStoreType = keyStoreType;
