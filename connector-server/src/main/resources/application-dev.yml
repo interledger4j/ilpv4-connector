@@ -12,8 +12,8 @@ interledger:
     globalPrefix: test
     adminPassword: password
     enabled-features:
-      local-spsp-fulfillment-enabled: true
+      localSpspFulfillmentEnabled: true
     globalRoutingSettings:
-      local-accounts-address-segment: accounts
+      localAccountsAddressSegment: accounts
       routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
 

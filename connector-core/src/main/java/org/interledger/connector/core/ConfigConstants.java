@@ -48,9 +48,9 @@ public interface ConfigConstants {
   ////////////////////
   // Enabled Features
   ////////////////////
-  String ENABLED_FEATURES = INTERLEDGER__CONNECTOR + DOT + "enabled-features";
+  String ENABLED_FEATURES = INTERLEDGER__CONNECTOR + DOT + "enabledFeatures";
 
-  String LOCAL_SPSP_FULFILLMENT_ENABLED = "local-spsp-fulfillment-enabled";
+  String LOCAL_SPSP_FULFILLMENT_ENABLED = "localSpspFulfillmentEnabled";
   /**
    * @deprecated This is no longer necessary because the WebSocket server config doesn't engage unless BTP is enabled.
    */

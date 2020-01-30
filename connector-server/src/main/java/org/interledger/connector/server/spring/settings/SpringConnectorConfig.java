@@ -142,13 +142,13 @@ public class SpringConnectorConfig {
   @Autowired
   private DeletedAccountSettingsRepository deletedAccountSettingsRepository;
 
-  @Value("${interledger.connector.enabled-features.local-spsp-fulfillment-enabled}")
+  @Value("${interledger.connector.enabledFeatures.localSpspFulfillmentEnabled:false}")
   private boolean localSpspFulfillmentEnabled;
 
-  @Value("${interledger.connector.spsp.address-prefix-segment}")
+  @Value("${interledger.connector.spsp.addressPrefixSegment:spsp}")
   private String spspAddressPrefixSegment;
 
-  @Value("${interledger.connector.global-routing-settings.local-accounts-address-segment}")
+  @Value("${interledger.connector.globalRoutingSettings.localAccountsAddressSegment:accounts}")
   private String localAccountsAddressPrefixSegment;
 
   /**

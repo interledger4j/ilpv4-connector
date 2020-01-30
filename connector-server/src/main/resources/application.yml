@@ -80,7 +80,7 @@ interledger:
       # ILP address `{operatorAddress}.accounts.alice`. Typically this will be used in IL-DCP, but will also be used to
       # make routing decisions for any local accounts that might connect to the Connector. For example,
       # `g.connector.accounts.alice.bob` would route to `alice`.
-      local-accounts-address-segment: accounts
+      localAccountsAddressSegment: accounts
       # routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
     # Deprecated
     # btp.enabled: false
@@ -94,7 +94,7 @@ interledger:
     spsp:
       # Base64-encoded String of bytes used to derive any values used in encryption/decryption for SPSP.
       # EXAMPLE: server-secret: aQLR5IWAGV2vKnBhnFFsl2cXOCh9u0IWz3PiA64KlJ8=
-      address-prefix-segment: spsp
+      addressPrefixSegment: spsp
     require32ByteSharedSecrets: true
     keys:
       secret0:
@@ -103,9 +103,9 @@ interledger:
       accountSettings:
         alias: secret0
         version: 1
-    enabled-features:
+    enabledFeatures:
       rateLimitingEnabled: false
-      local-spsp-fulfillment-enabled: false
+      localSpspFulfillmentEnabled: false
     enabledProtocols:
       ilpOverHttpEnabled: true
       pingProtocolEnabled: true
