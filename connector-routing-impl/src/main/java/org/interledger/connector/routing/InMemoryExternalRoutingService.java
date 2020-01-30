@@ -5,7 +5,7 @@ import static org.interledger.connector.routing.Route.HMAC;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.accounts.sub.SubAccountUtils;
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -57,7 +57,7 @@ import java.util.stream.Collectors;
  * additional routes may become available based upon network conditions.</li>
  * <li>Child Accounts: If a particular packet has a destination address that starts-with the address of
  * the Connector's operational address, then the packet is routed using an instance of {@link
- * SpspSubAccountPaymentRouter}.</li>
+ * LocalDestinationAddressPaymentRouter}.</li>
  * </ol>
  * </p>
  */
@@ -72,7 +72,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   private final AccountSettingsRepository accountSettingsRepository;
   private final StaticRoutesRepository staticRoutesRepository;
 
-  private final SubAccountUtils subAccountUtils;
+  private final LocalDestinationAddressUtils localDestinationAddressUtils;
 
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final Decryptor decryptor;
@@ -90,7 +90,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
   private final RoutingTableEntryComparator routingTableEntryComparator;
 
-  private final SpspSubAccountPaymentRouter spspSubAccountPaymentRouter;
+  private final LocalDestinationAddressPaymentRouter localDestinationAddressPaymentRouter;
 
   // Used to limit the number of warnings emitted for a missing default route.
   private int numDefaultRouteWarnings = 0;
@@ -99,17 +99,18 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
    * Required-args Constructor.
    */
   public InMemoryExternalRoutingService(
-    final SubAccountUtils subAccountUtils,
+    final LocalDestinationAddressUtils localDestinationAddressUtils,
     final EventBus eventBus,
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final Decryptor decryptor,
     final AccountSettingsRepository accountSettingsRepository,
     final StaticRoutesRepository staticRoutesRepository,
-    final SpspSubAccountPaymentRouter spspSubAccountPaymentRouter,
+    final LocalDestinationAddressPaymentRouter localDestinationAddressPaymentRouter,
+    final RoutingTable<Route> localRoutingTable,
     final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
     final RouteBroadcaster routeBroadcaster
   ) {
-    this.subAccountUtils = Objects.requireNonNull(subAccountUtils);
+    this.localDestinationAddressUtils = Objects.requireNonNull(localDestinationAddressUtils);
     this.eventBus = Objects.requireNonNull(eventBus);
     this.eventBus.register(this);
 
@@ -119,9 +120,8 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     this.decryptor = decryptor;
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.staticRoutesRepository = Objects.requireNonNull(staticRoutesRepository);
-    this.spspSubAccountPaymentRouter = Objects.requireNonNull(spspSubAccountPaymentRouter);
-    this.localRoutingTable = new InMemoryRoutingTable();
-
+    this.localDestinationAddressPaymentRouter = Objects.requireNonNull(localDestinationAddressPaymentRouter);
+    this.localRoutingTable = Objects.requireNonNull(localRoutingTable);
     this.outgoingRoutingTable = Objects.requireNonNull(outgoingRoutingTable);
     this.routeBroadcaster = routeBroadcaster;
   }
@@ -142,14 +142,13 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   public Optional<Route> findBestNexHop(final InterledgerAddress finalDestinationAddress) {
     Objects.requireNonNull(finalDestinationAddress);
 
-    // All sub-accounts are handled here...
-    if (this.subAccountUtils.isConnectorSubAccount(finalDestinationAddress)) {
-      return spspSubAccountPaymentRouter.findBestNexHop(finalDestinationAddress);
-    } else {
-      // Child-accounts never make their way into this table. Because of this check, even if a remote node were to
-      // get a child-address into this table, it would never be honored.
-      return this.localRoutingTable.findNextHopRoute(finalDestinationAddress);
-    }
+    // All addresses are passed-through the localDestinationAddressPaymentRouter. If an addressed can't be processed
+    // by that code, then the local routing table is engaged.
+    return localDestinationAddressPaymentRouter.findBestNexHop(finalDestinationAddress)
+      .map(Optional::ofNullable)
+      // Child-accounts never make their way into the roouting table. Because of this, even if a remote node
+      // were to be able to inject a child-address into this table, it would never be honored.
+      .orElseGet(() -> localRoutingTable.findNextHopRoute(finalDestinationAddress));
   }
 
   @Override
@@ -197,7 +196,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
    * {@link RouteBroadcaster}.</li>
    * <li>Child Accounts: At present, `CHILD` accounts do not participate in CCP (though this could easily
    * be changed in the future). For local routing decisions, all packets destined for a child account are forwarded to
-   * an instance of {@link SpspSubAccountPaymentRouter}.</li>
+   * an instance of {@link LocalDestinationAddressPaymentRouter}.</li>
    * <li>Static Routes: For any configured static route, this implementation updates the local routing table and also
    * attempts to register each associated account in the {@link RouteBroadcaster}.</li>
    * </ol>

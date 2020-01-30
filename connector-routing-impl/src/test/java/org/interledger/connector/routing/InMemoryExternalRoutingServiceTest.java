@@ -3,13 +3,14 @@ package org.interledger.connector.routing;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
-import org.interledger.connector.accounts.sub.SpspSubAccountUtils;
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -33,6 +34,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
+/**
+ * Unit tests for {@link InMemoryExternalRoutingService}.
+ */
 public class InMemoryExternalRoutingServiceTest {
 
   private final String encryptedSecret = EncryptedSecret.ENCODING_PREFIX +
@@ -40,6 +44,7 @@ public class InMemoryExternalRoutingServiceTest {
 
   @Rule
   public MockitoRule mockitoRule = MockitoJUnit.rule();
+
   @Mock
   private EventBus eventBus;
   @Mock
@@ -51,7 +56,9 @@ public class InMemoryExternalRoutingServiceTest {
   @Mock
   private StaticRoutesRepository staticRoutesRepository;
   @Mock
-  private SpspSubAccountPaymentRouter spspSubAccountPaymentRouter;
+  private LocalDestinationAddressPaymentRouter localDestinationAddressPaymentRouter;
+  @Mock
+  private RoutingTable<Route> localRoutingTableMock;
   @Mock
   private ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable;
   @Mock
@@ -59,7 +66,9 @@ public class InMemoryExternalRoutingServiceTest {
   @Mock
   private GlobalRoutingSettings globalRoutingSettings;
   @Mock
-  private SpspSubAccountUtils spspSubAccountUtilsMock;
+  private LocalDestinationAddressUtils localDestinationAddressUtilsMock;
+
+  private Supplier<ConnectorSettings> connectorSettingsSupplier;
 
   private InMemoryExternalRoutingService service;
 
@@ -71,15 +80,16 @@ public class InMemoryExternalRoutingServiceTest {
 
   @Before
   public void setUp() {
-    Supplier<ConnectorSettings> connectorSettingsSupplier = () -> connectorSettings;
+    this.connectorSettingsSupplier = () -> connectorSettings;
     service = new InMemoryExternalRoutingService(
-      spspSubAccountUtilsMock,
+      localDestinationAddressUtilsMock,
       eventBus,
       connectorSettingsSupplier,
       decryptor,
       accountSettingsRepository,
       staticRoutesRepository,
-      spspSubAccountPaymentRouter,
+      localDestinationAddressPaymentRouter,
+      localRoutingTableMock,
       outgoingRoutingTable,
       routeBroadcaster
     );
@@ -104,6 +114,19 @@ public class InMemoryExternalRoutingServiceTest {
 
   @Test
   public void staticRoutes() {
+    service = new InMemoryExternalRoutingService(
+      localDestinationAddressUtilsMock,
+      eventBus,
+      connectorSettingsSupplier,
+      decryptor,
+      accountSettingsRepository,
+      staticRoutesRepository,
+      localDestinationAddressPaymentRouter,
+      new InMemoryRoutingTable<>(),
+      outgoingRoutingTable,
+      routeBroadcaster
+    );
+
     when(staticRoutesRepository.getAllStaticRoutes()).thenReturn(Collections.emptySet());
     assertThat(service.getAllStaticRoutes()).isEmpty();
     assertThat(service.getAllRoutes()).isEmpty();
@@ -152,6 +175,36 @@ public class InMemoryExternalRoutingServiceTest {
         tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
       );
     verify(staticRoutesRepository, times(1)).deleteStaticRouteByPrefix(shawn.routePrefix());
+  }
+
+  @Test
+  public void testFindBestNexHopFromLocalPaymentRouter() {
+    final Route routeMock = mock(Route.class);
+    when(localDestinationAddressPaymentRouter.findBestNexHop(any())).thenReturn(Optional.of(routeMock));
+
+    final Optional<Route> actual = service.findBestNexHop(InterledgerAddress.of("example.foo.bar"));
+    assertThat(actual).isPresent();
+    assertThat(actual.get()).isEqualTo(routeMock);
+  }
+
+  @Test
+  public void testFindBestNexHopFromForwardingPaymentRouter() {
+    final Route routeMock = mock(Route.class);
+    when(localDestinationAddressPaymentRouter.findBestNexHop(any())).thenReturn(Optional.empty());
+    when(localRoutingTableMock.findNextHopRoute(any())).thenReturn(Optional.of(routeMock));
+
+    final Optional<Route> actual = service.findBestNexHop(InterledgerAddress.of("example.foo.bar"));
+    assertThat(actual).isPresent();
+    assertThat(actual.get()).isEqualTo(routeMock);
+  }
+
+  @Test
+  public void testFindBestNexHopWhenBothTablesAreEmpty() {
+    when(localDestinationAddressPaymentRouter.findBestNexHop(any())).thenReturn(Optional.empty());
+    when(localRoutingTableMock.findNextHopRoute(any())).thenReturn(Optional.empty());
+
+    final Optional<Route> actual = service.findBestNexHop(InterledgerAddress.of("example.foo.bar"));
+    assertThat(actual).isNotPresent();
   }
 
   private Set<StaticRoute> defaultRoutes() {

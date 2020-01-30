@@ -2,7 +2,7 @@ package org.interledger.connector.packetswitch.filters;
 
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.accounts.sub.SpspSubAccountUtils;
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
 import org.interledger.connector.events.PacketFulfillmentEvent;
 import org.interledger.connector.links.LinkManager;
@@ -35,7 +35,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
   // The outbound filter-chain that will be applied to the outgoing packet...
   private final List<LinkFilter> linkFilters;
 
-  private final SpspSubAccountUtils subAccountUtils;
+  private final LocalDestinationAddressUtils localDestinationAddressUtils;
 
   private final LinkManager linkManager;
 
@@ -57,7 +57,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
    *
    * @param packetSwitchFilters
    * @param linkFilters
-   * @param subAccountUtils
+   * @param localDestinationAddressUtils
    * @param linkManager
    * @param nextHopPacketMapper
    * @param accountSettingsLoadingCache
@@ -66,7 +66,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
   public DefaultPacketSwitchFilterChain(
     final List<PacketSwitchFilter> packetSwitchFilters,
     final List<LinkFilter> linkFilters,
-    final SpspSubAccountUtils subAccountUtils,
+    final LocalDestinationAddressUtils localDestinationAddressUtils,
     final LinkManager linkManager,
     final NextHopPacketMapper nextHopPacketMapper,
     final AccountSettingsLoadingCache accountSettingsLoadingCache,
@@ -74,7 +74,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
   ) {
     this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
     this.linkFilters = Objects.requireNonNull(linkFilters);
-    this.subAccountUtils = Objects.requireNonNull(subAccountUtils);
+    this.localDestinationAddressUtils = Objects.requireNonNull(localDestinationAddressUtils);
     this.linkManager = Objects.requireNonNull(linkManager);
     this.nextHopPacketMapper = nextHopPacketMapper;
     this.eventBus = eventBus;
@@ -116,15 +116,10 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
       // In this case, the Connector needs to utilize a different Link that doesn't exactly correspond simply to
       // the nextHop's accountId. Instead, the Link obtained depends on the structure of the ILP address. For
       // example, a Connector operating with the ILP address `g.connector` would typically fulfill SPSP addresses
-      // like `g.connector.alice.123xyz`. In this case, Packet Switch should process this packet in Alice's account,
-      // but should use the SpspReceiverLink instead of the typical Link assigned in Alice's AccountSettings.
+      // like `g.connector.spsp.alice.123xyz`. In this case, the Packet Switch should process this packet using Alice's
+      // account, but should use the SpspReceiverLink instead of the typical Link assigned in Alice's AccountSettings.
       final Link<? extends LinkSettings> link;
-      if (subAccountUtils.isConnectorPingAccountId(nextHopInfo.nextHopAccountId())) {
-        // TODO: Remove this overt ping-link check once the LinkManager is smart enough to not create a new Link on
-        //  _every_ call per https://github.com/interledger4j/ilpv4-connector/issues/535
-        // link = this.linkManager.getOrCreateLink(subAccountUtils.getConnectorPingAccountId());
-        link = this.linkManager.getPingLink();
-      } else if (subAccountUtils.shouldFulfilLocally(preparePacket.getDestination())) {
+      if (localDestinationAddressUtils.isLocalSpspDestinationAddress(preparePacket.getDestination())) {
         link = this.linkManager.getOrCreateSpspReceiverLink(nextHopAccountSettings);
       } else {
         link = this.linkManager.getOrCreateLink(nextHopAccountSettings);

@@ -17,7 +17,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.ImmutableAccountSettings;
-import org.interledger.connector.accounts.sub.SpspSubAccountUtils;
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.NextHopInfo;
@@ -92,7 +92,7 @@ public class DefaultILPv4PacketSwitchTest {
   @Mock
   private PacketRejector packetRejectorMock;
   @Mock
-  private SpspSubAccountUtils spspSubAccountUtilsMock;
+  private LocalDestinationAddressUtils localDestinationAddressUtilsMock;
   @Mock
   private EventBus eventBus;
 
@@ -118,7 +118,7 @@ public class DefaultILPv4PacketSwitchTest {
       connectorExceptionHandlerMock,
       packetRejectorMock,
       accountSettingsLoadingCacheMock,
-      spspSubAccountUtilsMock,
+      localDestinationAddressUtilsMock,
       eventBus
     );
   }

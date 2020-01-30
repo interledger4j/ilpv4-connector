@@ -5,7 +5,7 @@ import static java.math.BigInteger.TEN;
 import static java.math.BigInteger.ZERO;
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.interledger.connector.accounts.sub.SubAccountUtils.PING_ACCOUNT_ID;
+import static org.interledger.connector.accounts.sub.LocalDestinationAddressUtils.PING_ACCOUNT_ID;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;

@@ -29,7 +29,6 @@ public interface GlobalRoutingSettings {
   /**
    * An optionally-defined account that should be used as the default route for all un-routed traffic. If empty, the
    * default route is disabled.
-   *
    */
   Optional<AccountId> defaultRoute();
 
@@ -37,6 +36,21 @@ public interface GlobalRoutingSettings {
    * Seed used for generating routing table auth values.
    */
   String routingSecret();
+
+  /**
+   * An ILP address segment that will be used to route packets to any local accounts defined in the Connector. For
+   * example, if an account exists in the Connector with id of `alice`, then node wanting to send packets to that
+   * account would use the ILP address `{connector-operator-address}.accounts.alice`. Typically this will be used in
+   * IL-DCP, but will also be used to make routing decisions for any local accounts that might connect to the Connector.
+   * For example, `g.connector.accounts.alice.bob` would route to `alice`, allowing that node to figure out how to route
+   * to "bob."
+   *
+   * @return A {@link String} that will be appended to this Connector's operating address in order to identify packets
+   *   that should be routed to a local account defined in this Connector.
+   */
+  default String localAccountAddressSegment() {
+    return "accounts";
+  }
 
   /**
    * Determines if the first parent-account should be used as the default route. This value overrides any specified

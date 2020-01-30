@@ -40,7 +40,7 @@ public interface EnabledFeatureSettings {
     @Override
     @Value.Default
     public boolean isRateLimitingEnabled() {
-      return true;
+      return false;
     }
 
     @Override

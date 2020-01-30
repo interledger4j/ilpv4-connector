@@ -44,9 +44,6 @@ public class LocalSpspFulfillmentConfig {
   @Value("${interledger.connector.spsp.server-secret}")
   private String spspServerSecretB64;
 
-  @Value("${interledger.connector.spsp.address-prefix-segment}")
-  private String spspAddressPrefixSegment;
-
   @Autowired
   private StatelessSpspReceiverLinkFactory statelessSpspReceiverLinkFactory;
 
@@ -55,12 +52,6 @@ public class LocalSpspFulfillmentConfig {
     PacketRejector packetRejector, StatelessStreamReceiver statelessStreamReceiver
   ) {
     return new StatelessSpspReceiverLinkFactory(packetRejector, statelessStreamReceiver);
-  }
-
-  @Bean
-  InterledgerAddressPrefix spspAddressPrefix(Supplier<ConnectorSettings> connectorSettingsSupplier) {
-    return InterledgerAddressPrefix.of(connectorSettingsSupplier.get().operatorAddress().getValue())
-      .with(spspAddressPrefixSegment);
   }
 
   @Bean

@@ -56,18 +56,6 @@ public interface LinkManager {
   Set<Link<? extends LinkSettings>> getAllConnectedLinks();
 
   /**
-   * Accessor for the {@link Link} that processes Ping protocol requests.
-   *
-   * @return A {@link Link} for processing unidirectional and bidirectional ping requests.
-   *
-   * @see "https://github.com/interledger4j/ilpv4-connector/issues/535"
-   * @deprecated This method will be removed once the LinkManager is smart enough to not create a new Link on _every_
-   *   call.
-   */
-  @Deprecated
-  Link<? extends LinkSettings> getPingLink();
-
-  /**
    * Accessor for the {@link Link} that processes SPSP-compatible STREAM packets. Each account will utilize a
    * potentially different asset code and scale, so this interface allows for varying instances of an SPSP Link on a
    * per-account basis.

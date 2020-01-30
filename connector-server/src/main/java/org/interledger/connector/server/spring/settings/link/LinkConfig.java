@@ -1,6 +1,7 @@
 package org.interledger.connector.server.spring.settings.link;
 
 import org.interledger.connector.accounts.AccountIdResolver;
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.links.DefaultLinkManager;
 import org.interledger.connector.links.DefaultLinkSettingsFactory;
@@ -86,6 +87,7 @@ public class LinkConfig {
     LinkSettingsFactory linkSettingsFactory,
     LinkFactoryProvider linkFactoryProvider,
     AccountIdResolver accountIdResolver,
+    LocalDestinationAddressUtils localDestinationAddressUtils,
     CircuitBreakerConfig circuitBreakerConfig
   ) {
     return new DefaultLinkManager(
@@ -95,6 +97,7 @@ public class LinkConfig {
       linkFactoryProvider,
       accountIdResolver,
       circuitBreakerConfig,
+      localDestinationAddressUtils,
       eventBus
     );
   }

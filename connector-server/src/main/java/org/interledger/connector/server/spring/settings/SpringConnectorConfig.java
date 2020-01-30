@@ -1,6 +1,6 @@
 package org.interledger.connector.server.spring.settings;
 
-import static org.interledger.connector.accounts.sub.SubAccountUtils.PING_ACCOUNT_ID;
+import static org.interledger.connector.accounts.sub.LocalDestinationAddressUtils.PING_ACCOUNT_ID;
 
 import org.interledger.connector.ConnectorExceptionHandler;
 import org.interledger.connector.DefaultILPv4Connector;
@@ -16,8 +16,7 @@ import org.interledger.connector.accounts.BtpAccountIdResolver;
 import org.interledger.connector.accounts.DefaultAccountIdResolver;
 import org.interledger.connector.accounts.DefaultAccountManager;
 import org.interledger.connector.accounts.DefaultAccountSettingsResolver;
-import org.interledger.connector.accounts.sub.SpspSubAccountUtils;
-import org.interledger.connector.accounts.sub.SubAccountUtils;
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
 import org.interledger.connector.config.BalanceTrackerConfig;
@@ -28,7 +27,6 @@ import org.interledger.connector.fx.JavaMoneyUtils;
 import org.interledger.connector.fxrates.DefaultFxRateOverridesManager;
 import org.interledger.connector.fxrates.FxRateOverridesManager;
 import org.interledger.connector.links.DefaultNextHopPacketMapper;
-import org.interledger.connector.links.DefaultSubAccountUtils;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.links.LinkSettingsValidator;
@@ -61,9 +59,10 @@ import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.routing.ForwardingRoutingTable;
 import org.interledger.connector.routing.InMemoryExternalRoutingService;
 import org.interledger.connector.routing.InMemoryForwardingRoutingTable;
+import org.interledger.connector.routing.InMemoryRoutingTable;
+import org.interledger.connector.routing.LocalDestinationAddressPaymentRouter;
 import org.interledger.connector.routing.RouteBroadcaster;
 import org.interledger.connector.routing.RouteUpdate;
-import org.interledger.connector.routing.SpspSubAccountPaymentRouter;
 import org.interledger.connector.routing.StaticRoutesManager;
 import org.interledger.connector.server.spring.gcp.GcpPubSubConfig;
 import org.interledger.connector.server.spring.settings.crypto.CryptoConfig;
@@ -77,7 +76,6 @@ import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.crypto.Decryptor;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.link.PacketRejector;
@@ -92,6 +90,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -142,6 +141,15 @@ public class SpringConnectorConfig {
 
   @Autowired
   private DeletedAccountSettingsRepository deletedAccountSettingsRepository;
+
+  @Value("${interledger.connector.enabled-features.local-spsp-fulfillment-enabled}")
+  private boolean localSpspFulfillmentEnabled;
+
+  @Value("${interledger.connector.spsp.address-prefix-segment}")
+  private String spspAddressPrefixSegment;
+
+  @Value("${interledger.connector.global-routing-settings.local-accounts-address-segment}")
+  private String localAccountsAddressPrefixSegment;
 
   /**
    * All internal Connector events propagate locally in this JVM using this EventBus.
@@ -224,11 +232,10 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  SpspSubAccountPaymentRouter childAccountPaymentRouter(
+  LocalDestinationAddressPaymentRouter childAccountPaymentRouter(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountSettingsRepository accountSettingsRepository,
-    final SpspSubAccountUtils spspSubAccountUtils,
-    final Decryptor decryptor
+    final LocalDestinationAddressUtils localDestinationAddressUtils
   ) {
 
     // If the Ping Protocol is enabled, we need to ensure that there is a Ping account suitable to accept value for
@@ -257,7 +264,7 @@ public class SpringConnectorConfig {
       accountSettingsRepository.save(new AccountSettingsEntity(pingAccountSettings));
     }
 
-    return new SpspSubAccountPaymentRouter(connectorSettingsSupplier, spspSubAccountUtils, decryptor);
+    return new LocalDestinationAddressPaymentRouter(connectorSettingsSupplier, localDestinationAddressUtils);
   }
 
   @Bean
@@ -267,14 +274,22 @@ public class SpringConnectorConfig {
     final Decryptor decryptor,
     final AccountSettingsRepository accountSettingsRepository,
     final StaticRoutesRepository staticRoutesRepository,
-    final SpspSubAccountPaymentRouter spspSubAccountPaymentRouter,
+    final LocalDestinationAddressPaymentRouter localDestinationAddressPaymentRouter,
     final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
     final RouteBroadcaster routeBroadcaster,
-    final SubAccountUtils subAccountUtils
+    final LocalDestinationAddressUtils localDestinationAddressUtils
   ) {
     return new InMemoryExternalRoutingService(
-      subAccountUtils, eventBus, connectorSettingsSupplier, decryptor, accountSettingsRepository,
-      staticRoutesRepository, spspSubAccountPaymentRouter, outgoingRoutingTable, routeBroadcaster
+      localDestinationAddressUtils,
+      eventBus,
+      connectorSettingsSupplier,
+      decryptor,
+      accountSettingsRepository,
+      staticRoutesRepository,
+      localDestinationAddressPaymentRouter,
+      new InMemoryRoutingTable(),
+      outgoingRoutingTable,
+      routeBroadcaster
     );
   }
 
@@ -445,13 +460,13 @@ public class SpringConnectorConfig {
     ConnectorExceptionHandler connectorExceptionHandler,
     PacketRejector packetRejector,
     AccountSettingsLoadingCache accountSettingsLoadingCache,
-    SpspSubAccountUtils spspSubAccountUtils,
+    LocalDestinationAddressUtils localDestinationAddressUtils,
     EventBus eventBus
   ) {
     return new DefaultILPv4PacketSwitch(
       packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler,
-      packetRejector, accountSettingsLoadingCache, spspSubAccountUtils, eventBus)
-      ;
+      packetRejector, accountSettingsLoadingCache, localDestinationAddressUtils, eventBus
+    );
   }
 
   @Bean
@@ -502,10 +517,27 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  SpspSubAccountUtils spspSubAccountUtils(
-    Supplier<ConnectorSettings> connectorSettingsSupplier,
-    InterledgerAddressPrefix spspAddressPrefix
-  ) {
-    return new DefaultSubAccountUtils(connectorSettingsSupplier, spspAddressPrefix);
+  LocalDestinationAddressUtils localDestinationAddressUtils(Supplier<ConnectorSettings> connectorSettingsSupplier) {
+    return new LocalDestinationAddressUtils() {
+      @Override
+      public Supplier<InterledgerAddress> getConnectorOperatorAddress() {
+        return () -> connectorSettingsSupplier.get().operatorAddress();
+      }
+
+      @Override
+      public boolean isLocalSpspFulfillmentEnabled() {
+        return localSpspFulfillmentEnabled && spspAddressPrefixSegment.isEmpty() == false;
+      }
+
+      @Override
+      public String getSpspAddressPrefixSegment() {
+        return spspAddressPrefixSegment;
+      }
+
+      @Override
+      public String getLocalAccountsAddressPrefixSegment() {
+        return localAccountsAddressPrefixSegment;
+      }
+    };
   }
 }

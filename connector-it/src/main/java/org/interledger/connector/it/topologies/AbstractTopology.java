@@ -1,6 +1,6 @@
 package org.interledger.connector.it.topologies;
 
-import static org.interledger.connector.accounts.sub.SubAccountUtils.PING_ACCOUNT_ID;
+import static org.interledger.connector.accounts.sub.LocalDestinationAddressUtils.PING_ACCOUNT_ID;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;

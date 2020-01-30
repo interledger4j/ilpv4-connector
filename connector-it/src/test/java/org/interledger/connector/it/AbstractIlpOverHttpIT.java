@@ -2,7 +2,7 @@ package org.interledger.connector.it;
 
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.interledger.connector.accounts.sub.SubAccountUtils.PING_ACCOUNT_ID;
+import static org.interledger.connector.accounts.sub.LocalDestinationAddressUtils.PING_ACCOUNT_ID;
 import static org.interledger.connector.config.BalanceTrackerConfig.BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME;
 import static org.interledger.connector.core.ConfigConstants.ADMIN_PASSWORD;
 import static org.interledger.connector.core.ConfigConstants.DOT;

@@ -2,10 +2,11 @@ package org.interledger.connector.packetswitch.filters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.interledger.connector.accounts.sub.SubAccountUtils.PING_ACCOUNT_ID;
+import static org.interledger.connector.accounts.sub.LocalDestinationAddressUtils.PING_ACCOUNT_ID;
 import static org.interledger.link.PingLoopbackLink.PING_PROTOCOL_CONDITION;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -13,7 +14,7 @@ import static org.mockito.Mockito.when;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.accounts.sub.SpspSubAccountUtils;
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.NextHopInfo;
@@ -21,6 +22,7 @@ import org.interledger.connector.links.NextHopPacketMapper;
 import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
+import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.link.Link;
 import org.interledger.link.LinkSettings;
@@ -34,6 +36,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.math.BigDecimal;
@@ -99,7 +102,7 @@ public class DefaultPacketSwitchFilterChainTest {
   @Mock
   private EventBus eventBus;
   @Mock
-  private SpspSubAccountUtils spspSubAccountUtilsMock;
+  private LocalDestinationAddressUtils localDestinationAddressUtilsMock;
 
   private Link outgoingLink;
 
@@ -122,7 +125,7 @@ public class DefaultPacketSwitchFilterChainTest {
     this.filterChain = new DefaultPacketSwitchFilterChain(
       packetSwitchFilters,
       linkFiltersMock,
-      spspSubAccountUtilsMock,
+      localDestinationAddressUtilsMock,
       linkManagerMock,
       nextHopPacketMapperMock,
       accountSettingsLoadingCacheMock,
@@ -150,13 +153,20 @@ public class DefaultPacketSwitchFilterChainTest {
     when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_ID)).thenReturn(outgoingLink);
     when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
 
+    // Simulate a Ping
+    //when(localDestinationAddressUtilsMock.isLocalDestinationAddress(OPERATOR_ADDRESS)).thenReturn(true);
+    final Link linkMock = mock(Link.class);
+    when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_SETTINGS)).thenReturn(linkMock);
+    when(linkMock.sendPacket(any()))
+      .thenReturn(InterledgerFulfillPacket.builder().fulfillment(LoopbackLink.LOOPBACK_FULFILLMENT).build());
+
     filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET).handle(
       fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LoopbackLink.LOOPBACK_FULFILLMENT),
       rejectPacket -> fail("Should have fulfilled but rejected!")
     );
 
     verify(linkFiltersMock).size();
-    verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_ID);
+    verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_SETTINGS);
     verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET);
     verify(nextHopPacketMapperMock).determineExchangeRate(any(), any(), any());
 
@@ -183,7 +193,7 @@ public class DefaultPacketSwitchFilterChainTest {
       .nextHopPacket(PREPARE_PACKET)
       .build();
     when(nextHopPacketMapperMock.getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET)).thenReturn(nextHopInfo);
-    when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_ID)).thenReturn(outgoingLink);
+    when(linkManagerMock.getOrCreateLink(Mockito.<AccountSettings>any())).thenReturn(outgoingLink);
     when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
 
     filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET).handle(
@@ -193,7 +203,7 @@ public class DefaultPacketSwitchFilterChainTest {
 
     // Each filter should only be called once...
     verify(linkFiltersMock).size();
-    verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_ID);
+    verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_SETTINGS);
     verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET);
     verify(nextHopPacketMapperMock).determineExchangeRate(any(), any(), any());
 
@@ -225,8 +235,14 @@ public class DefaultPacketSwitchFilterChainTest {
       .build();
     when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_SETTINGS), eq(pingPreparePacket)))
       .thenReturn(nextHopInfo);
-    when(linkManagerMock.getPingLink()).thenReturn(outgoingLink);
     when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
+
+    // Simulate a Ping
+    when(localDestinationAddressUtilsMock.isLocalDestinationAddress(OPERATOR_ADDRESS)).thenReturn(true);
+    final Link pingLink = mock(Link.class);
+    when(linkManagerMock.getOrCreateLink(Mockito.<AccountSettings>any())).thenReturn(pingLink);
+    when(pingLink.sendPacket(pingPreparePacket))
+      .thenReturn(InterledgerFulfillPacket.builder().fulfillment(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT).build());
 
     filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket).handle(
       fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT),
@@ -234,7 +250,6 @@ public class DefaultPacketSwitchFilterChainTest {
     );
 
     verify(linkFiltersMock).size();
-    verify(linkManagerMock).getPingLink();
     verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket);
     verify(nextHopPacketMapperMock).determineExchangeRate(any(), any(), any());
 
@@ -243,7 +258,86 @@ public class DefaultPacketSwitchFilterChainTest {
     verifyNoMoreInteractions(linkFiltersMock);
   }
 
-  // TODO: Test when spspSubAccountUtilsMock is disabled.
-  // TODO: Test when spspSubAccountUtilsMock is enabled.
+
+  /**
+   * Tests only the local vs forwarding functionality of the filter chain when an account IS a locally fulfilled SPSP
+   * account.
+   */
+  @Test
+  public void testDoFilterWithLocalSpspAddress() {
+    final InterledgerPreparePacket pingPreparePacket = InterledgerPreparePacket.builder()
+      .destination(OPERATOR_ADDRESS)
+      .amount(UnsignedLong.ONE)
+      .expiresAt(Instant.now().plusSeconds(30))
+      .executionCondition(PING_PROTOCOL_CONDITION)
+      .build();
+
+    this.outgoingLink = new PingLoopbackLink(
+      () -> OPERATOR_ADDRESS, OUTGOING_LINK_SETTINGS
+    );
+
+    when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_SETTINGS), eq(pingPreparePacket)))
+      .thenReturn(
+        NextHopInfo.builder()
+          .nextHopAccountId(OUTGOING_ACCOUNT_ID)
+          .nextHopPacket(pingPreparePacket)
+          .build()
+      );
+    when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
+
+    when(localDestinationAddressUtilsMock.isLocalSpspDestinationAddress(any())).thenReturn(true);
+    when(linkManagerMock.getOrCreateSpspReceiverLink(any())).thenReturn(outgoingLink);
+
+    filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket).handle(
+      fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT),
+      rejectPacket -> fail("Should have fulfilled but rejected!")
+    );
+
+    verify(localDestinationAddressUtilsMock).isLocalSpspDestinationAddress(OPERATOR_ADDRESS);
+    verifyNoMoreInteractions(localDestinationAddressUtilsMock);
+    verify(linkManagerMock).getOrCreateSpspReceiverLink(OUTGOING_ACCOUNT_SETTINGS);
+    verifyNoMoreInteractions(linkManagerMock);
+  }
+
+  /**
+   * Tests only the local vs forwarding functionality of the filter chain when an account IS NOT a locally fulfilled
+   * SPSP account.
+   */
+  @Test
+  public void testDoFilterWithNonLocalSpspAddress() {
+    final InterledgerAddress destinationAddres = InterledgerAddress.of("example.foo.bar.baz");
+    final InterledgerPreparePacket pingPreparePacket = InterledgerPreparePacket.builder()
+      .destination(destinationAddres)
+      .amount(UnsignedLong.ONE)
+      .expiresAt(Instant.now().plusSeconds(30))
+      .executionCondition(PING_PROTOCOL_CONDITION)
+      .build();
+
+    this.outgoingLink = new PingLoopbackLink(
+      () -> OPERATOR_ADDRESS, OUTGOING_LINK_SETTINGS
+    );
+
+    when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_SETTINGS), eq(pingPreparePacket)))
+      .thenReturn(
+        NextHopInfo.builder()
+          .nextHopAccountId(OUTGOING_ACCOUNT_ID)
+          .nextHopPacket(pingPreparePacket)
+          .build()
+      );
+    when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
+
+    when(localDestinationAddressUtilsMock.isLocalSpspDestinationAddress(any())).thenReturn(false);
+    when(linkManagerMock.getOrCreateLink(Mockito.<AccountSettings>any())).thenReturn(outgoingLink);
+
+    filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket).handle(
+      fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT),
+      rejectPacket -> fail("Should have fulfilled but rejected!")
+    );
+
+    verify(localDestinationAddressUtilsMock).isLocalSpspDestinationAddress(destinationAddres);
+    verifyNoMoreInteractions(localDestinationAddressUtilsMock);
+    verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_SETTINGS);
+    verifyNoMoreInteractions(linkManagerMock);
+  }
 
 }
