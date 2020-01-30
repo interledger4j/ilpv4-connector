@@ -138,7 +138,6 @@ public class DefaultILPv4PacketSwitchTest {
       .message("")
       .build();
     when(packetRejectorMock.reject(any(), any(), any(), anyString())).thenReturn(rejectPacket);
-
     expectedException.expect(InterledgerProtocolException.class);
     try {
       packetSwitch.switchPacket(NON_EXISTENT_ACCOUNT_ID, PREPARE_PACKET);
@@ -198,7 +197,7 @@ public class DefaultILPv4PacketSwitchTest {
       .build();
     when(nextHopPacketMapperMock.getNextHopPacket(eq(incomingAccountSettings), eq(PREPARE_PACKET)))
       .thenReturn(nextHopInfo);
-    when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_ID)).thenReturn(outgoingLink);
+    when(linkManagerMock.getOrCreateLink(outgoingAccountSettings)).thenReturn(outgoingLink);
     when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
 
     // Do the send numReps times to prove that the cache is working...
@@ -212,7 +211,7 @@ public class DefaultILPv4PacketSwitchTest {
 
     verify(packetSwitchFiltersMock, times(numReps)).size();
     verify(linkFiltersMock, times(numReps)).size();
-    verify(linkManagerMock, times(numReps)).getOrCreateLink(OUTGOING_ACCOUNT_ID);
+    verify(linkManagerMock, times(numReps)).getOrCreateLink(outgoingAccountSettings);
     verify(nextHopPacketMapperMock, times(numReps)).getNextHopPacket(incomingAccountSettings, PREPARE_PACKET);
     verify(accountSettingsLoadingCacheMock, times(10)).getAccount(any());
     verify(nextHopPacketMapperMock, times(numReps)).determineExchangeRate(any(), any(), any());
@@ -234,10 +233,10 @@ public class DefaultILPv4PacketSwitchTest {
     final int numReps = 5;
     for (int i = 0; i < numReps; i++) {
 
-      final AccountId incomingAccountID = INCOMING_ACCOUNT_ID.withValue(i + "");
-      final AccountId outgoingAccountID = OUTGOING_ACCOUNT_ID.withValue(i + "");
+      final AccountId incomingAccountID = AccountId.of(INCOMING_ACCOUNT_ID.value() + i);
+      final AccountId outgoingAccountID = AccountId.of(OUTGOING_ACCOUNT_ID.value() + i);
 
-      final ImmutableAccountSettings incomingAccountSettings =
+      final AccountSettings incomingAccountSettings =
         AccountSettings.builder()
           .accountId(incomingAccountID)
           .accountRelationship(AccountRelationship.PEER)
@@ -246,16 +245,27 @@ public class DefaultILPv4PacketSwitchTest {
           .linkType(LoopbackLink.LINK_TYPE)
           .build();
 
+      final AccountSettings outgoingAccountSettings =
+        AccountSettings.builder()
+          .accountId(outgoingAccountID)
+          .accountRelationship(AccountRelationship.PEER)
+          .assetCode("USD")
+          .assetScale(2)
+          .linkType(LoopbackLink.LINK_TYPE)
+          .build();
+      when(accountSettingsLoadingCacheMock.getAccount(incomingAccountID))
+        .thenReturn(Optional.of(incomingAccountSettings));
+      when(accountSettingsLoadingCacheMock.getAccount(outgoingAccountID))
+        .thenReturn(Optional.of(outgoingAccountSettings));
+
       final NextHopInfo nextHopInfo = NextHopInfo.builder()
         .nextHopAccountId(outgoingAccountID)
         .nextHopPacket(PREPARE_PACKET)
         .build();
-
-      when(accountSettingsLoadingCacheMock.getAccount(any())).thenReturn(Optional.of(incomingAccountSettings));
       when(nextHopPacketMapperMock.getNextHopPacket(eq(incomingAccountSettings), eq(PREPARE_PACKET)))
         .thenReturn(nextHopInfo);
-      when(linkManagerMock.getOrCreateLink(outgoingAccountID)).thenReturn(outgoingLink);
 
+      when(linkManagerMock.getOrCreateLink(outgoingAccountSettings)).thenReturn(outgoingLink);
       when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
 
       packetSwitch.switchPacket(incomingAccountID, PREPARE_PACKET).handle(
@@ -263,11 +273,10 @@ public class DefaultILPv4PacketSwitchTest {
         rejectPacket -> fail("Should have fulfilled but rejected!")
       );
 
-      verify(linkManagerMock).getOrCreateLink(eq(incomingAccountID));
-      verify(linkManagerMock).getOrCreateLink(eq(outgoingAccountID));
+      verify(linkManagerMock).getOrCreateLink(eq(outgoingAccountSettings));
       verify(nextHopPacketMapperMock).getNextHopPacket(incomingAccountSettings, PREPARE_PACKET);
-      verify(accountSettingsLoadingCacheMock, times(2)).getAccount(incomingAccountID);
-      verify(accountSettingsLoadingCacheMock, times(2)).getAccount(outgoingAccountID);
+      verify(accountSettingsLoadingCacheMock, times(1)).getAccount(incomingAccountID);
+      verify(accountSettingsLoadingCacheMock, times(1)).getAccount(outgoingAccountID);
       verify(nextHopPacketMapperMock).determineExchangeRate(eq(incomingAccountSettings), any(), eq(PREPARE_PACKET));
     }
 

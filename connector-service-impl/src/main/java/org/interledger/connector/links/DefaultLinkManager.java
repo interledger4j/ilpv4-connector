@@ -107,7 +107,7 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
 
   @Override
   public Link<? extends LinkSettings> getOrCreateLink(final AccountSettings accountSettings) {
-    Objects.requireNonNull(accountSettings);
+    Objects.requireNonNull(accountSettings, "accountId must not be null");
 
     final AccountId accountId = accountSettings.accountId();
     if (localDestinationAddressUtils.isConnectorPingAccountId(accountId)) {

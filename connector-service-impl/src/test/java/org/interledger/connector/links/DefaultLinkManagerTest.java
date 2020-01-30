@@ -1,6 +1,7 @@
 package org.interledger.connector.links;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -12,12 +13,16 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.core.InterledgerAddress;
 import org.interledger.link.Link;
 import org.interledger.link.LinkFactoryProvider;
+import org.interledger.link.LinkSettings;
+import org.interledger.link.PingLoopbackLink;
 
 import com.google.common.eventbus.EventBus;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -36,14 +41,16 @@ public class DefaultLinkManagerTest {
   private static final Supplier<InterledgerAddress> INTERLEDGER_ADDRESS_SUPPLIER
     = () -> InterledgerAddress.of("example.connector");
 
+  @Rule
   public ExpectedException expectedException = ExpectedException.none();
+
   @Mock
   private AccountSettingsRepository accountSettingsRepositoryMock;
 
   @Mock
   private LinkSettingsFactory linkSettingsFactoryMock;
 
-  @Mock
+  @Mock(answer = Answers.RETURNS_DEEP_STUBS)
   private LinkFactoryProvider linkFactoryProviderMock;
 
   @Mock
@@ -58,11 +65,20 @@ public class DefaultLinkManagerTest {
   @Mock
   private EventBus eventBusMock;
 
+  @Mock
+  private Link pingLinkMock;
+
+  @Mock
+  private Link nonPingLinkMock;
+
   private DefaultLinkManager defaultLinkManager;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
+
+    when(linkFactoryProviderMock.getLinkFactory(any()).constructLink(any(), any())).thenReturn(pingLinkMock);
+
     this.defaultLinkManager = new DefaultLinkManager(
       INTERLEDGER_ADDRESS_SUPPLIER,
       accountSettingsRepositoryMock,
@@ -86,18 +102,33 @@ public class DefaultLinkManagerTest {
 
   @Test
   public void getOrCreateLinkForPingLink() {
-    AccountSettings accountSettingsMock = mock(AccountSettings.class);
-    when(accountSettingsMock.accountId()).thenReturn(LocalDestinationAddressUtils.PING_ACCOUNT_ID);
-    final Link<?> accountId = defaultLinkManager.getOrCreateLink(accountSettingsMock);
+    when(localDestinationAddressUtilsMock.isConnectorPingAccountId(any())).thenReturn(true);
+    when(linkFactoryProviderMock.getLinkFactory(PingLoopbackLink.LINK_TYPE).constructLink(any(), any()))
+      .thenReturn(pingLinkMock);
 
-    assertThat(accountId).isEqualTo(LocalDestinationAddressUtils.PING_ACCOUNT_ID);
+    final AccountSettings accountSettingsMock = mock(AccountSettings.class);
+    when(accountSettingsMock.accountId()).thenReturn(LocalDestinationAddressUtils.PING_ACCOUNT_ID);
+    final Link<? extends LinkSettings> link = defaultLinkManager.getOrCreateLink(accountSettingsMock);
+
+    assertThat(link).isEqualTo(pingLinkMock);
     Mockito.verifyNoInteractions(linkSettingsFactoryMock);
   }
 
   @Test
   public void getOrCreateLinkForNonPingLink() {
-    AccountSettings accountSettingsMock = mock(AccountSettings.class);
+    final LinkSettings linkSettingsMock = mock(LinkSettings.class);
+    when(nonPingLinkMock.getOperatorAddressSupplier()).thenReturn(INTERLEDGER_ADDRESS_SUPPLIER);
+    when(nonPingLinkMock.getLinkSettings()).thenReturn(linkSettingsMock);
+    when(localDestinationAddressUtilsMock.isConnectorPingAccountId(any())).thenReturn(false);
+
+    when(linkFactoryProviderMock.getLinkFactory(any()).constructLink(any(), any())).thenReturn(nonPingLinkMock);
+    when(linkSettingsFactoryMock.construct(any())).thenReturn(linkSettingsMock);
+
+    final AccountSettings accountSettingsMock = mock(AccountSettings.class);
     when(accountSettingsMock.accountId()).thenReturn(AccountId.of("foo"));
-    defaultLinkManager.getOrCreateLink(accountSettingsMock);
+
+    final Link<? extends LinkSettings> link = defaultLinkManager.getOrCreateLink(accountSettingsMock);
+
+    assertThat(link.getLinkId()).isEqualTo(nonPingLinkMock.getLinkId());
   }
 }
