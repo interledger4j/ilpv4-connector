@@ -26,6 +26,7 @@ public interface ConfigConstants {
 
   String INTERLEDGER = "interledger";
   String CONNECTOR = "connector";
+  String CACHE = "cache";
   String INTERLEDGER__CONNECTOR = INTERLEDGER + DOT + CONNECTOR;
 
   /**
@@ -48,4 +49,5 @@ public interface ConfigConstants {
       INTERLEDGER__CONNECTOR__GLOBAL_ROUTING_SETTINGS + DOT + "routingSecret";
   String ENABLED_PROTOCOLS = INTERLEDGER__CONNECTOR + DOT + "enabledProtocols";
   String ADMIN_PASSWORD = INTERLEDGER__CONNECTOR + DOT + "adminPassword";
+  String FX_CACHE_TTL = INTERLEDGER__CONNECTOR + DOT + CACHE + DOT + "fxTtl";
 }
