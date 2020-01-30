@@ -1,8 +1,9 @@
 package org.interledger.connector.server.spring.gcp;
 
-import org.interledger.connector.events.PacketFulfillmentEvent;
-import org.interledger.connector.gcp.DefaultFulfillmentPublisher;
-import org.interledger.connector.gcp.FulfillmentPublisher;
+import org.interledger.connector.events.PacketFullfillmentEvent;
+import org.interledger.connector.events.PacketRejectionEvent;
+import org.interledger.connector.gcp.DefaultGcpPacketResponseEventPublisher;
+import org.interledger.connector.gcp.GcpPacketResponseEventPublisher;
 import org.interledger.connector.settings.ConnectorSettings;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +17,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Clock;
+import java.util.Optional;
 import java.util.function.Supplier;
 import javax.annotation.PostConstruct;
 
@@ -24,7 +26,7 @@ import javax.annotation.PostConstruct;
 public class GcpPubSubConfig {
 
   @Autowired
-  private FulfillmentPublisher fulfillmentPublisher;
+  private GcpPacketResponseEventPublisher eventPublisher;
 
   @Autowired
   private EventBus eventBus;
@@ -35,22 +37,29 @@ public class GcpPubSubConfig {
   }
 
   @Bean
-  public FulfillmentPublisher fulfillmentPublisher(PubSubTemplate template,
-                                                   @Value("${interledger.connector.pubsub.topics.fulfillment-event}")
-                                                     String fulfillmentEventTopicName,
-                                                   ObjectMapper objectMapper,
-                                                   Supplier<ConnectorSettings> connectorSettingsSupplier,
-                                                   Clock clock) {
-    return new DefaultFulfillmentPublisher(template,
+  public GcpPacketResponseEventPublisher fulfillmentPublisher(
+    PubSubTemplate template,
+    @Value("${interledger.connector.pubsub.topics.fulfillment-event:#{null}}") Optional<String> fulfillmentEventTopicName,
+    @Value("${interledger.connector.pubsub.topics.rejection-event:#{null}}") Optional<String> rejectionEventTopicName,
+    ObjectMapper objectMapper,
+    Supplier<ConnectorSettings> connectorSettingsSupplier,
+    Clock clock) {
+    return new DefaultGcpPacketResponseEventPublisher(template,
       fulfillmentEventTopicName,
+      rejectionEventTopicName,
       connectorSettingsSupplier.get().operatorAddress(),
       objectMapper,
       clock);
   }
 
   @Subscribe
-  public void handleFulfillment(PacketFulfillmentEvent event) {
-    fulfillmentPublisher.publish(event);
+  public void handleFulfillment(PacketFullfillmentEvent event) {
+    eventPublisher.publish(event);
+  }
+
+  @Subscribe
+  public void handleRejection(PacketRejectionEvent event) {
+    eventPublisher.publish(event);
   }
 
 

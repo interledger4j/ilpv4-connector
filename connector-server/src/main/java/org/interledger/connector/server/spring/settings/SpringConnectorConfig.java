@@ -23,6 +23,8 @@ import org.interledger.connector.config.CaffeineCacheConfig;
 import org.interledger.connector.config.RedisConfig;
 import org.interledger.connector.config.SettlementConfig;
 import org.interledger.connector.crypto.ConnectorEncryptionService;
+import org.interledger.connector.events.DefaultPacketEventPublisher;
+import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.fx.JavaMoneyUtils;
 import org.interledger.connector.fxrates.DefaultFxRateOverridesManager;
 import org.interledger.connector.fxrates.FxRateOverridesManager;
@@ -478,7 +480,7 @@ public class SpringConnectorConfig {
 
   @Bean
   List<LinkFilter> linkFilters(
-    BalanceTracker balanceTracker, SettlementService settlementService, MetricsService metricsService
+    BalanceTracker balanceTracker, SettlementService settlementService, MetricsService metricsService, EventBus eventBus
   ) {
     final Supplier<InterledgerAddress> operatorAddressSupplier =
       () -> connectorSettingsSupplier().get().operatorAddress();
@@ -487,7 +489,7 @@ public class SpringConnectorConfig {
       // TODO: Throughput for Money...
       new OutgoingMetricsLinkFilter(operatorAddressSupplier, metricsService),
       new OutgoingMaxPacketAmountLinkFilter(operatorAddressSupplier),
-      new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker, settlementService, eventBus())
+      new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker, settlementService, eventBus)
     );
   }
 
@@ -505,10 +507,15 @@ public class SpringConnectorConfig {
   }
 
   @Bean
+  PacketEventPublisher packetEventPublisher(EventBus eventBus) {
+    return new DefaultPacketEventPublisher(eventBus);
+  }
+
+  @Bean
   ConnectorExceptionHandler connectorExceptionHandler(
-    Supplier<ConnectorSettings> connectorSettingsSupplier, PacketRejector packetRejector
-  ) {
-    return new ConnectorExceptionHandler(connectorSettingsSupplier, packetRejector);
+    Supplier<ConnectorSettings> connectorSettingsSupplier, PacketRejector packetRejector,
+    PacketEventPublisher packetEventPublisher) {
+    return new ConnectorExceptionHandler(connectorSettingsSupplier, packetRejector, packetEventPublisher);
   }
 
   @Bean
@@ -520,12 +527,12 @@ public class SpringConnectorConfig {
     ConnectorExceptionHandler connectorExceptionHandler,
     PacketRejector packetRejector,
     AccountSettingsLoadingCache accountSettingsLoadingCache,
-    EventBus eventBus
+    PacketEventPublisher packetEventPublisher
   ) {
     return new DefaultILPv4PacketSwitch(
       packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler,
       packetRejector, accountSettingsLoadingCache,
-      eventBus);
+      packetEventPublisher);
   }
 
   @Bean

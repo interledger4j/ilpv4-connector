@@ -3,7 +3,7 @@ package org.interledger.connector.packetswitch.filters;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
-import org.interledger.connector.events.PacketFulfillmentEvent;
+import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.NextHopInfo;
 import org.interledger.connector.links.NextHopPacketMapper;
@@ -17,7 +17,6 @@ import org.interledger.link.Link;
 import org.interledger.link.LinkSettings;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +47,8 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
 
   // The index of the filter to call next...
   private int _filterIndex;
-  private final EventBus eventBus;
+
+  private PacketEventPublisher packetEventPublisher;
 
   /**
    * For testing purposes only.
@@ -60,11 +60,11 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
     final LinkManager linkManager,
     final NextHopPacketMapper nextHopPacketMapper,
     final AccountSettingsRepository accountSettingsRepository,
-    final EventBus eventBus) {
+    final PacketEventPublisher packetEventPublisher) {
     this(
-        packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper,
-        new AccountSettingsLoadingCache(accountSettingsRepository),
-      eventBus);
+      packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper,
+      new AccountSettingsLoadingCache(accountSettingsRepository),
+      packetEventPublisher);
   }
 
   /**
@@ -77,19 +77,19 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
     final LinkManager linkManager,
     final NextHopPacketMapper nextHopPacketMapper,
     final AccountSettingsLoadingCache accountSettingsLoadingCache,
-    final EventBus eventBus) {
+    final PacketEventPublisher packetEventPublisher) {
     this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
     this.linkFilters = Objects.requireNonNull(linkFilters);
     this.linkManager = Objects.requireNonNull(linkManager);
     this.nextHopPacketMapper = nextHopPacketMapper;
-    this.eventBus = eventBus;
+    this.packetEventPublisher = packetEventPublisher;
     this._filterIndex = 0;
     this.accountSettingsLoadingCache = Objects.requireNonNull(accountSettingsLoadingCache);
   }
 
   @Override
   public InterledgerResponsePacket doFilter(
-      final AccountSettings sourceAccountSettings, final InterledgerPreparePacket preparePacket
+    final AccountSettings sourceAccountSettings, final InterledgerPreparePacket preparePacket
   ) {
     Objects.requireNonNull(sourceAccountSettings);
     Objects.requireNonNull(preparePacket);
@@ -100,13 +100,13 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
     } else {
       // ...and then send the new packet to its destination on the correct outbound link.
       logger.debug(
-          "Sending outbound ILP Prepare: sourceAccountId: `{}` packet={}",
-          sourceAccountSettings.accountId(), preparePacket
+        "Sending outbound ILP Prepare: sourceAccountId: `{}` packet={}",
+        sourceAccountSettings.accountId(), preparePacket
       );
 
       // Here, use the link-mapper to get the `next-hop`, create a LinkFilterChain, and then send.
       final NextHopInfo nextHopInfo = this.nextHopPacketMapper.getNextHopPacket(
-          sourceAccountSettings, preparePacket
+        sourceAccountSettings, preparePacket
       );
 
       final Link<? extends LinkSettings> link;
@@ -117,13 +117,13 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
       }
 
       logger.debug(
-          "Sending outbound ILP Prepare: sourceAccountId: `{}` link={} packet={}",
-          sourceAccountSettings.accountId(), link, preparePacket
+        "Sending outbound ILP Prepare: sourceAccountId: `{}` link={} packet={}",
+        sourceAccountSettings.accountId(), link, preparePacket
       );
 
       final AccountSettings nextHopAccountSettings = accountSettingsLoadingCache
-          .getAccount(nextHopInfo.nextHopAccountId())
-          .orElseThrow(() -> new AccountNotFoundProblem(nextHopInfo.nextHopAccountId()));
+        .getAccount(nextHopInfo.nextHopAccountId())
+        .orElseThrow(() -> new AccountNotFoundProblem(nextHopInfo.nextHopAccountId()));
 
       // The final operation in the filter-chain is `link.sendPacket(newPreparePacket)`.
       InterledgerResponsePacket response = new DefaultLinkFilterChain(linkFilters, link)
@@ -134,18 +134,24 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
 
       try {
         response.handle(interledgerFulfillPacket ->
-          eventBus.post(PacketFulfillmentEvent.builder()
-            .accountSettings(sourceAccountSettings)
-            .destinationAccount(nextHopAccountSettings)
-            .exchangeRate(fxRate)
-            .incomingPreparePacket(preparePacket)
-            .outgoingPreparePacket(nextHopInfo.nextHopPacket())
-            .fulfillment(interledgerFulfillPacket.getFulfillment())
-            .message("response packet for " + preparePacket.getExecutionCondition())
-            .build()
-          ), (rejectPacket) -> {});
-      }
-      catch (Exception e) {
+          packetEventPublisher.publishFulfillment(
+            sourceAccountSettings,
+            nextHopAccountSettings,
+            preparePacket,
+            nextHopInfo.nextHopPacket(),
+            fxRate,
+            interledgerFulfillPacket.getFulfillment()
+          ), (rejectPacket) ->
+          packetEventPublisher.publishRejectionByNextHop(
+            sourceAccountSettings,
+            nextHopAccountSettings,
+            preparePacket,
+            nextHopInfo.nextHopPacket(),
+            fxRate,
+            rejectPacket
+          )
+        );
+      } catch (Exception e) {
         logger.warn("Could not publish event", e);
       }
       return response;
