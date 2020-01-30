@@ -430,7 +430,7 @@
                 <!-- pinning to prepare-package so that it runs before the 2 new relic-specific plugin exections -->
                 <phase>prepare-package</phase>
                 <goals>
-                  <goal>dockerBuild</goal> <!-- fix me -->
+                  <goal>build</goal>
                 </goals>
                 <configuration>
                   <to>
@@ -454,7 +454,7 @@
                 <id>dockerNewRelic</id>
                 <phase>package</phase>
                 <goals>
-                  <goal>dockerBuild</goal> <!-- fix me -->
+                  <goal>build</goal>
                 </goals>
                 <configuration>
                   <to>
