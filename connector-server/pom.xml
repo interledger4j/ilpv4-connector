@@ -340,6 +340,11 @@
       <artifactId>jakarta.servlet-api</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
     </dependency>
@@ -383,11 +388,6 @@
       <!-- ship liquibase with docker image build -->
       <dependencies>
         <dependency>
-          <groupId>org.liquibase</groupId>
-          <artifactId>liquibase-core</artifactId>
-          <scope>runtime</scope>
-        </dependency>
-        <dependency>
           <groupId>com.newrelic.agent.java</groupId>
           <artifactId>newrelic-java</artifactId>
           <version>5.9.0</version>
@@ -430,7 +430,7 @@
                 <!-- pinning to prepare-package so that it runs before the 2 new relic-specific plugin exections -->
                 <phase>prepare-package</phase>
                 <goals>
-                  <goal>build</goal>
+                  <goal>dockerBuild</goal> <!-- fix me -->
                 </goals>
                 <configuration>
                   <to>
@@ -454,7 +454,7 @@
                 <id>dockerNewRelic</id>
                 <phase>package</phase>
                 <goals>
-                  <goal>build</goal>
+                  <goal>dockerBuild</goal> <!-- fix me -->
                 </goals>
                 <configuration>
                   <to>
