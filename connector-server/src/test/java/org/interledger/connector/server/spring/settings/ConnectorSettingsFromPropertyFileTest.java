@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
+import org.interledger.connector.settings.FxConnectionSettings;
 import org.interledger.crypto.CryptoKey;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.EnabledFeatureSettings;
@@ -61,6 +62,13 @@ public class ConnectorSettingsFromPropertyFileTest {
     assertThat(globalRoutingSettings.routeCleanupInterval()).isEqualTo((Duration.ofMillis(30002L)));
     assertThat(globalRoutingSettings.routeExpiry()).isEqualTo((Duration.ofMillis(30003L)));
     assertThat(globalRoutingSettings.maxEpochsPerRoutingTable()).isEqualTo((77));
+
+    final FxConnectionSettings connectionDefaults = connectorSettings.connectionDefaults();
+    assertThat(connectionDefaults.keepAliveMinutes()).isEqualTo(2);
+    assertThat(connectionDefaults.connectTimeoutMillis()).isEqualTo(5000);
+    assertThat(connectionDefaults.maxIdleConnections()).isEqualTo(10);
+    assertThat(connectionDefaults.readTimeoutMillis()).isEqualTo(30000);
+    assertThat(connectionDefaults.writeTimeoutMillis()).isEqualTo(40000);
 
     assertThat(connectorSettings.isRequire32ByteSharedSecrets()).isTrue();
 

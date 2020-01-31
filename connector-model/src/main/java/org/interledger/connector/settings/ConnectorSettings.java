@@ -50,6 +50,14 @@ public interface ConnectorSettings {
     return EnabledFeatureSettings.builder().build();
   }
 
+  /**
+   * Connection settings/defaults used for FX pools and clients
+   */
+  @Value.Default
+  default FxConnectionSettings connectionDefaults() {
+    return ImmutableFxConnectionSettings.builder().build();
+  }
+
   @Value.Default
   default boolean websocketServerEnabled() {
     return false;
@@ -107,6 +115,14 @@ public interface ConnectorSettings {
   default boolean isRequire32ByteSharedSecrets() {
     return false;
   };
+
+  /**
+   * Connection Settings/Defaults used for IlpOverHttp connection pools and HttpClients.
+   */
+  @Value.Default
+  default IlpOverHttpConnectionSettings ilpOverHttpConnectionSettings() {
+    return ImmutableIlpOverHttpConnectionSettings.builder().build();
+  }
 
   /**
    * Keys the connector will use for various core functions.

@@ -1,6 +1,12 @@
 # Test settings to validate loading configuration properties.
 interledger:
   connector:
+    connectionDefaults:
+      keepAliveMinutes: 2
+      connectTimeoutMillis: 5000
+      readTimeoutMillis: 30000
+      writeTimeoutMillis: 40000
+      maxIdleConnections: 10
     # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
     adminPassword: password
     require32ByteSharedSecrets: true
@@ -57,3 +63,6 @@ interledger:
       routeExpiry: 30003
       # The maximum number of epochs per routing table update.
       maxEpochsPerRoutingTable: 77
+
+
+
