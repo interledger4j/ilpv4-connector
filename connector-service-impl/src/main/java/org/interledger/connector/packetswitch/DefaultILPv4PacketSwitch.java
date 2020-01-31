@@ -42,15 +42,15 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   /**
    * Required-args Constructor.
    *
-   * @param packetSwitchFilters
-   * @param linkFilters
-   * @param linkManager
-   * @param nextHopPacketMapper
-   * @param connectorExceptionHandler
-   * @param packetRejector
-   * @param accountSettingsLoadingCache
-   * @param packetEventPublisher
-   * @param localDestinationAddressUtils
+   * @param packetSwitchFilters          A {@link List} of type {@link PacketSwitchFilter}.
+   * @param linkFilters                  A {@link List} of type {@link LinkFilter}.
+   * @param linkManager                  A {@link LinkManager}.
+   * @param nextHopPacketMapper          A {@link NextHopPacketMapper}.
+   * @param connectorExceptionHandler    A {@link ConnectorExceptionHandler}.
+   * @param packetRejector               A {@link PacketRejector}.
+   * @param accountSettingsLoadingCache  A {@link AccountSettingsLoadingCache}.
+   * @param packetEventPublisher         A {@link PacketEventPublisher}.
+   * @param localDestinationAddressUtils A {@link LocalDestinationAddressUtils}.
    */
   public DefaultILPv4PacketSwitch(
     final List<PacketSwitchFilter> packetSwitchFilters,
