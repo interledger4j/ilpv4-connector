@@ -40,7 +40,7 @@ public class RedisPubSubConfig {
   @Bean
   MessageListenerAdapter coordinationMessageListener() {
     return new MessageListenerAdapter(new CoordinationMessageSubscriber(objectMapper, eventBus,
-      applicationCoordinationUuid(), coordinatedProxyGenerator()));
+      applicationCoordinationUuid()));
   }
 
   @Bean
@@ -82,11 +82,6 @@ public class RedisPubSubConfig {
   @Bean
   CoordinationMessageIdGenerator coordinatedMessageIdGenerator() {
     return new CoordinationMessageIdGeneratorImpl();
-  }
-
-  @Bean
-  CoordinationProxyGenerator coordinatedProxyGenerator() {
-    return new CoordinationProxyGeneratorImpl();
   }
 
 }

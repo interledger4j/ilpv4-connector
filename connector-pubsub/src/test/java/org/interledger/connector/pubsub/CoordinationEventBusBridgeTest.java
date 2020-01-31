@@ -4,10 +4,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.event.AccountCreatedEvent;
-import org.interledger.connector.accounts.event.AccountUpdatedEvent;
-
 import com.google.common.eventbus.EventBus;
 import org.junit.Before;
 import org.junit.Rule;
@@ -45,35 +41,25 @@ public class CoordinationEventBusBridgeTest {
 
   @Test
   public void ignoresPreviouslyCoordinatedMessage() {
-    AccountUpdatedEvent update = AccountUpdatedEvent.builder().accountId(AccountId.of("mark")).build();
-    bridge.onAccountUpdated((AccountUpdatedEvent) new CoordinationProxyGeneratorImpl().createCoordinatedProxy(update));
+    TestCoordinatedEvent event = new TestCoordinatedEvent();
+    event.markReceivedViaCoordination();
+    bridge.onCoordinatedEvent(event);
     verifyNoInteractions(publisher);
   }
 
   @Test
-  public void accountUpdate() {
-    AccountUpdatedEvent update = AccountUpdatedEvent.builder().accountId(AccountId.of("mark")).build();
-    bridge.onAccountUpdated(update);
-    verify(publisher, times(1)).publish(update);
+  public void event() {
+    TestCoordinatedEvent event = new TestCoordinatedEvent();
+    bridge.onCoordinatedEvent(event);
+    verify(publisher, times(1)).publish(event);
   }
 
   @Test
-  public void nullAccountUpdateFails() {
+  public void nullEventFails() {
     expectedException.expect(NullPointerException.class);
-    bridge.onAccountUpdated(null);
+    bridge.onCoordinatedEvent(null);
   }
 
-  @Test
-  public void accountCreate() {
-    AccountCreatedEvent update = AccountCreatedEvent.builder().accountId(AccountId.of("mark")).build();
-    bridge.onAccountCreated(update);
-    verify(publisher, times(1)).publish(update);
-  }
-
-  @Test
-  public void nullAccountCreateFails() {
-    expectedException.expect(NullPointerException.class);
-    bridge.onAccountCreated(null);
-  }
+  private static class TestCoordinatedEvent extends AbstractCoordinatedEvent {}
 
 }

@@ -9,13 +9,13 @@
 
   <artifactId>connector-pubsub</artifactId>
 
-  <name>Connector :: PubSub API</name>
+  <name>Connector :: PubSub Impl</name>
   <description>PubSub infrastructure for Connectors to participate in Cluster Coordination.</description>
 
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>connector-accounts</artifactId>
+      <artifactId>connector-pubsub-api</artifactId>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>

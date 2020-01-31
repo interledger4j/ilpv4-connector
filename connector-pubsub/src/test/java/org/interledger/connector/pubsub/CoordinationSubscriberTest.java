@@ -6,9 +6,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.event.AccountUpdatedEvent;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;
@@ -32,9 +29,6 @@ public class CoordinationSubscriberTest {
   @Mock
   private EventBus eventBus;
 
-  @Mock
-  private CoordinationProxyGenerator proxyGenerator;
-
   private UUID applicationUuid;
 
   private CoordinationMessageSubscriber subscriber;
@@ -43,32 +37,32 @@ public class CoordinationSubscriberTest {
   public void setUp() {
     objectMapper = new ObjectMapper();
     applicationUuid = UUID.randomUUID();
-    subscriber = new CoordinationMessageSubscriber(objectMapper, eventBus, applicationUuid, proxyGenerator);
+    subscriber = new CoordinationMessageSubscriber(objectMapper, eventBus, applicationUuid);
   }
 
   @Test
   public void onMessage() throws Exception {
-    AccountUpdatedEvent update = buildUpdate();
+    SampleCoordinatedEvent event = SampleCoordinatedEvent.builder().build();
 
-    CoordinationMessage message = buildMessage(update, UUID.randomUUID());
+    CoordinationMessage message = buildMessage(event, UUID.randomUUID());
 
     byte[] body = objectMapper.writeValueAsBytes(message);
 
     Message redisMessage = mock(Message.class);
     when(redisMessage.getBody()).thenReturn(body);
-    when(proxyGenerator.createCoordinatedProxy(update)).thenReturn(update);
 
     subscriber.onMessage(redisMessage, null);
 
-    verify(proxyGenerator, times(1)).createCoordinatedProxy(update);
-    verify(eventBus, times(1)).post(update);
+    // mutating this will force an equals check against the event bus
+    ((AbstractCoordinatedEvent) event).markReceivedViaCoordination();
+    verify(eventBus, times(1)).post(event);
   }
 
   @Test
   public void onMessageIgnoresLocal() throws Exception {
-    AccountUpdatedEvent update = buildUpdate();
+    SampleCoordinatedEvent event = SampleCoordinatedEvent.builder().build();
 
-    CoordinationMessage message = buildMessage(update, applicationUuid);
+    CoordinationMessage message = buildMessage(event, applicationUuid);
 
     byte[] body = objectMapper.writeValueAsBytes(message);
 
@@ -77,24 +71,17 @@ public class CoordinationSubscriberTest {
 
     subscriber.onMessage(redisMessage, null);
 
-    verifyNoInteractions(proxyGenerator);
     verifyNoInteractions(eventBus);
   }
 
-  protected ImmutableCoordinationMessage buildMessage(AccountUpdatedEvent update, UUID appUuid)
+  protected ImmutableCoordinationMessage buildMessage(SampleCoordinatedEvent event, UUID appUuid)
     throws JsonProcessingException {
     return CoordinationMessage.builder()
-      .messageClassName(update.getClass().getName())
-      .contents(objectMapper.writeValueAsBytes(update))
+      .messageClassName(event.getClass().getName())
+      .contents(objectMapper.writeValueAsBytes(event))
       .applicationCoordinationUuid(appUuid)
       .messageUuid(UUID.randomUUID())
       .build();
-  }
-
-  protected AccountUpdatedEvent buildUpdate() {
-    return AccountUpdatedEvent.builder()
-        .accountId(AccountId.of("lisa"))
-        .build();
   }
 
 }

@@ -1,8 +1,5 @@
 package org.interledger.connector.pubsub;
 
-import org.interledger.connector.accounts.event.AccountCreatedEvent;
-import org.interledger.connector.accounts.event.AccountUpdatedEvent;
-
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import org.slf4j.Logger;
@@ -32,9 +29,9 @@ public class CoordinationEventBusBridge {
    * Inspects event to make sure it's not null and hasn't previously come through via the shared topic.
    * @param event potentially forwardable event
    */
-  private void publish(Object event) {
+  private void publish(AbstractCoordinatedEvent event) {
     Objects.requireNonNull(event);
-    if (event instanceof Coordinated) {
+    if (receivedViaCoordination(event)) {
       LOGGER.info("Message detected as previously coordinated and will not be reprocessed: {}", event);
     }
     else {
@@ -42,19 +39,13 @@ public class CoordinationEventBusBridge {
     }
   }
 
-  @Subscribe
-  public void onAccountCreated(AccountCreatedEvent event) {
-    publish(event);
+  private boolean receivedViaCoordination(AbstractCoordinatedEvent event) {
+    return event.receivedViaCoordination();
   }
 
   @Subscribe
-  public void onAccountUpdated(AccountUpdatedEvent event) {
+  public void onCoordinatedEvent(AbstractCoordinatedEvent event) {
     publish(event);
   }
-
-//  @Subscribe
-//  public void onStaticRouteCreated() {
-//
-//  }
 
 }

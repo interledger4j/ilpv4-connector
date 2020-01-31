@@ -36,10 +36,10 @@ public class CoordinationMessagePublisherImpl implements CoordinationMessagePubl
     this.coordinatedMessageIdGenerator = coordinatedMessageIdGenerator;
   }
 
-  public void publish(Object message) {
+  public void publish(AbstractCoordinatedEvent message) {
     Objects.requireNonNull(message);
 
-    if (message instanceof Coordinated) {
+    if (message.receivedViaCoordination()) {
       throw new IllegalArgumentException("Cannot republish a message received via coordination already");
     }
 

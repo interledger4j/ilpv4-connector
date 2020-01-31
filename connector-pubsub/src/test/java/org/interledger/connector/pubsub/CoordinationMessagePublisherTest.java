@@ -19,38 +19,6 @@ import java.util.UUID;
 
 public class CoordinationMessagePublisherTest {
 
-  /**
-   * public CoordinationMessagePublisherImpl(
-   *     @Qualifier(PUBSUB_REDIS_TEMPLATE_BEAN_NAME) RedisTemplate<String, ?> pubsubRedisTemplate,
-   *     ChannelTopic topic,
-   *     ObjectMapper objectMapper,
-   *     UUID applicationCoordinationUuid
-   *   ) {
-   *     this.pubsubRedisTemplate = pubsubRedisTemplate;
-   *     this.topic = topic;
-   *     this.objectMapper = objectMapper;
-   *     this.applicationCoordinationUuid = applicationCoordinationUuid;
-   *   }
-   *
-   *   public void publish(Object message) {
-   *     try {
-   *       Objects.requireNonNull(message);
-   *       UUID messageUuid = UUID.randomUUID();
-   *       CoordinationMessage coordinationMessage = CoordinationMessage.builder()
-   *         .applicationCoordinationUuid(applicationCoordinationUuid)
-   *         .messageUuid(messageUuid)
-   *         .messageClassName(message.getClass().getName())
-   *         .contents(objectMapper.writeValueAsBytes(message))
-   *         .build();
-   *       String serialized = objectMapper.writeValueAsString(coordinationMessage);
-   *       pubsubRedisTemplate.convertAndSend(topic.getTopic(), serialized);
-   *     } catch (Exception e) {
-   *       LOGGER.error("Cannot serialize entity to publish to Redis via Jackson: {}", message);
-   *     }
-   *
-   *   }
-   */
-
   @Rule
   public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -89,30 +57,31 @@ public class CoordinationMessagePublisherTest {
   public void coordinatedMessageMakesPublishSad() {
     expectedException.expect(IllegalArgumentException.class);
     expectedException.expectMessage("Cannot republish a message received via coordination already");
-    publisher.publish(new CoordinationProxyGeneratorImpl()
-      .createCoordinatedProxy(ImmutablesSampleMessage.builder().build()));
+    ImmutableSampleCoordinatedEvent event = ImmutableSampleCoordinatedEvent.builder().build();
+    event.markReceivedViaCoordination();
+    publisher.publish(event);
   }
 
   @Test
   public void publish() throws Exception {
-    Object object = new Object();
+    ImmutableSampleCoordinatedEvent event = ImmutableSampleCoordinatedEvent.builder().build();
     byte[] contents = "what a story mark".getBytes();
     UUID messageId = UUID.randomUUID();
     CoordinationMessage coordinationMessage = CoordinationMessage.builder()
       .applicationCoordinationUuid(applicationUuid)
       .messageUuid(messageId)
       .contents(contents)
-      .messageClassName("java.lang.Object")
+      .messageClassName(ImmutableSampleCoordinatedEvent.class.getName())
       .build();
 
-    when(objectMapper.writeValueAsBytes(object)).thenReturn(contents);
+    when(objectMapper.writeValueAsBytes(event)).thenReturn(contents);
     when(objectMapper.writeValueAsString(coordinationMessage)).thenReturn("you're tearing me apart, lisa!");
     when(idGenerator.generatedMessageUUID()).thenReturn(messageId);
     when(topic.getTopic()).thenReturn("the room");
 
-    publisher.publish(object);
+    publisher.publish(event);
     verify(template, times(1)).convertAndSend("the room", "you're tearing me apart, lisa!");
-    verify(objectMapper, times(1)).writeValueAsBytes(object);
+    verify(objectMapper, times(1)).writeValueAsBytes(event);
     verify(objectMapper, times(1)).writeValueAsString(coordinationMessage);
   }
 }

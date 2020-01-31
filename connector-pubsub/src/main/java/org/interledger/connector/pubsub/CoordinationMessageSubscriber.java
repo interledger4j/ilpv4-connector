@@ -23,18 +23,14 @@ public class CoordinationMessageSubscriber implements MessageListener {
 
   private final UUID applicationCoordinationUuid;
 
-  private final CoordinationProxyGenerator coordinatedProxyGenerator;
-
   private static final Logger LOGGER = LoggerFactory.getLogger(CoordinationMessageSubscriber.class);
 
   public CoordinationMessageSubscriber(ObjectMapper objectMapper,
                                        EventBus eventBus,
-                                       UUID applicationCoordinationUuid,
-                                       CoordinationProxyGenerator coordinatedProxyGenerator) {
+                                       UUID applicationCoordinationUuid) {
     this.objectMapper = objectMapper;
     this.eventBus = eventBus;
     this.applicationCoordinationUuid = applicationCoordinationUuid;
-    this.coordinatedProxyGenerator = coordinatedProxyGenerator;
   }
 
   /**
@@ -48,7 +44,7 @@ public class CoordinationMessageSubscriber implements MessageListener {
     try {
       CoordinationMessage received = objectMapper.readValue(message.getBody(), CoordinationMessage.class);
 
-      if (applicationCoordinationUuid.equals(received.applicationCoordinationUuid())) {
+      if (publishedByMe(received)) {
         // FIXME - reduce scope
         LOGGER.info("Skipping message that was generated locally and received via coordination: {}", received);
         return;
@@ -56,23 +52,23 @@ public class CoordinationMessageSubscriber implements MessageListener {
 
       final Object receivedBody = objectMapper.readValue(received.contents(), Class.forName(received.messageClassName()));
 
-      if (receivedBody.getClass().getInterfaces().length == 0) {
-        LOGGER.warn("Received a message that has no interfaces, meaning it cannot be proxies as Coordinated. " +
-          "Rejecting coordination. {}", received);
-        return;
+      try {
+        ((AbstractCoordinatedEvent) receivedBody).markReceivedViaCoordination();
+      }
+      catch (Exception e) {
+        LOGGER.warn("Received a message that cannot be cast to AbstractCoordinatedEvent. Discarding. {}",
+          receivedBody);
       }
 
-      // FIXME - reduce scope
-      LOGGER.info("Received cluster pubsub message: {}", receivedBody);
-
-      Object proxiedMessage = coordinatedProxyGenerator.createCoordinatedProxy(receivedBody);
-
-      eventBus.post(proxiedMessage);
-//      eventBus.post(receivedBody);
+      eventBus.post(receivedBody);
 
     } catch (Exception e) {
       LOGGER.error("Cannot proxy message", e);
     }
+  }
+
+  protected boolean publishedByMe(CoordinationMessage received) {
+    return applicationCoordinationUuid.equals(received.applicationCoordinationUuid());
   }
 
 }

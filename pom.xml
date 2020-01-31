@@ -71,6 +71,7 @@
     <module>connector-fxrates</module>
     <module>connector-admin-client</module>
     <module>connector-pubsub</module>
+    <module>connector-pubsub-api</module>
   </modules>
 
   <profiles>
@@ -150,6 +151,11 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>connector-pubsub</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>connector-pubsub-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
