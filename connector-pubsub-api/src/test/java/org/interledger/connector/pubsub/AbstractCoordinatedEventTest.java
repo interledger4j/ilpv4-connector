@@ -11,9 +11,12 @@ public class AbstractCoordinatedEventTest {
     ImmutableSampleCoordinatedEvent e1 = SampleCoordinatedEvent.builder().build();
     ImmutableSampleCoordinatedEvent e2 = SampleCoordinatedEvent.builder().build();
 
+    assertThat(e1).isEqualTo(e1);
+
     assertThat(e1).isInstanceOf(AbstractCoordinatedEvent.class);
     assertThat(e2).isInstanceOf(AbstractCoordinatedEvent.class);
 
+    assertThat(e1.hashCode()).isEqualTo(e2.hashCode());
     assertThat(e1).isEqualTo(e2);
     assertThat(e2).isEqualTo(e1);
     assertThat(e1.receivedViaCoordination()).isFalse();
@@ -26,10 +29,18 @@ public class AbstractCoordinatedEventTest {
     assertThat(e2.receivedViaCoordination()).isFalse();
 
     e2.markReceivedViaCoordination();
+    assertThat(e1.hashCode()).isEqualTo(e2.hashCode());
     assertThat(e1).isEqualTo(e2);
     assertThat(e2).isEqualTo(e1);
     assertThat(e1.receivedViaCoordination()).isTrue();
     assertThat(e2.receivedViaCoordination()).isTrue();
+  }
+
+  @Test
+  public void notEqual() {
+    ImmutableSampleCoordinatedEvent event = SampleCoordinatedEvent.builder().build();
+    assertThat(event).isNotEqualTo(null);
+    assertThat(event).isNotEqualTo(new Integer(1));
   }
 
 }

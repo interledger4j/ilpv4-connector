@@ -57,6 +57,7 @@ public class CoordinationMessageSubscriber implements MessageListener {
       catch (Exception e) {
         LOGGER.warn("Received a message that cannot be cast to AbstractCoordinatedEvent. Discarding. {}",
           receivedBody);
+        return;
       }
 
       eventBus.post(receivedBody);

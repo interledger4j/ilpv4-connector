@@ -74,6 +74,27 @@ public class CoordinationSubscriberTest {
     verifyNoInteractions(eventBus);
   }
 
+  @Test
+  public void onMessageFailsSilentlyWhenNotCoordinatedEvent() throws Exception {
+    Integer event = 1;
+
+    CoordinationMessage message = CoordinationMessage.builder()
+      .messageClassName(event.getClass().getName())
+      .contents(objectMapper.writeValueAsBytes(event))
+      .applicationCoordinationUuid(UUID.randomUUID())
+      .messageUuid(UUID.randomUUID())
+      .build();
+
+    byte[] body = objectMapper.writeValueAsBytes(message);
+
+    Message redisMessage = mock(Message.class);
+    when(redisMessage.getBody()).thenReturn(body);
+
+    subscriber.onMessage(redisMessage, null);
+
+    verifyNoInteractions(eventBus);
+  }
+
   protected ImmutableCoordinationMessage buildMessage(SampleCoordinatedEvent event, UUID appUuid)
     throws JsonProcessingException {
     return CoordinationMessage.builder()
