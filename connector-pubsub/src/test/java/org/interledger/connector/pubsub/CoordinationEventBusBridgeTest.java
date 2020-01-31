@@ -34,7 +34,7 @@ public class CoordinationEventBusBridgeTest {
   private CoordinationEventBusBridge bridge;
 
   @Before
-  public void setup() {
+  public void setUp() {
     bridge = new CoordinationEventBusBridge(publisher, eventBus);
   }
 

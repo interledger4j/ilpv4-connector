@@ -40,7 +40,7 @@ public class CoordinationSubscriberTest {
   private CoordinationMessageSubscriber subscriber;
 
   @Before
-  public void setup() {
+  public void setUp() {
     objectMapper = new ObjectMapper();
     applicationUuid = UUID.randomUUID();
     subscriber = new CoordinationMessageSubscriber(objectMapper, eventBus, applicationUuid, proxyGenerator);

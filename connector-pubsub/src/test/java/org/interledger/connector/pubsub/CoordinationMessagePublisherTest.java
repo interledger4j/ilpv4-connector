@@ -74,7 +74,7 @@ public class CoordinationMessagePublisherTest {
   private CoordinationMessagePublisher publisher;
 
   @Before
-  public void setup() {
+  public void setUp() {
     applicationUuid = UUID.randomUUID();
     publisher = new CoordinationMessagePublisherImpl(template, topic, objectMapper, applicationUuid, idGenerator);
   }

@@ -15,7 +15,7 @@ public class CoordinationProxyGeneratorTest {
   private CoordinationProxyGenerator generator;
 
   @Before
-  public void setup() {
+  public void setUp() {
     generator = new CoordinationProxyGeneratorImpl();
   }
 
