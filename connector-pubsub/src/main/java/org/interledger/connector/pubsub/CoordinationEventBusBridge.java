@@ -32,7 +32,7 @@ public class CoordinationEventBusBridge {
   private void publish(AbstractCoordinatedEvent event) {
     Objects.requireNonNull(event);
     if (receivedViaCoordination(event)) {
-      LOGGER.info("Message detected as previously coordinated and will not be reprocessed: {}", event);
+      LOGGER.debug("Message detected as previously coordinated and will not be reprocessed: {}", event);
     }
     else {
       coordinationMessagePublisher.publish(event);

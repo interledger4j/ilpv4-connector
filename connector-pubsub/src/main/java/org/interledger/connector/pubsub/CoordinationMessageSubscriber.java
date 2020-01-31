@@ -45,8 +45,7 @@ public class CoordinationMessageSubscriber implements MessageListener {
       CoordinationMessage received = objectMapper.readValue(message.getBody(), CoordinationMessage.class);
 
       if (publishedByMe(received)) {
-        // FIXME - reduce scope
-        LOGGER.info("Skipping message that was generated locally and received via coordination: {}", received);
+        LOGGER.debug("Skipping message that was generated locally and received via coordination: {}", received);
         return;
       }
 
