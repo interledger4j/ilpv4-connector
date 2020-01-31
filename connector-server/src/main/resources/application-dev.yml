@@ -2,18 +2,4 @@
 # See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
 spring:
   profiles:
-    include: h2, management, jks, local-spsp-fulfillment
-
-interledger:
-  connector:
-    ## ILP address of the connector.
-    nodeIlpAddress: test1.connie
-    require32ByteSharedSecrets: false
-    globalPrefix: test
-    adminPassword: password
-    enabled-features:
-      localSpspFulfillmentEnabled: true
-    globalRoutingSettings:
-      localAccountsAddressSegment: accounts
-      routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
-
+    include: insecure, h2, management, local-spsp-fulfillment

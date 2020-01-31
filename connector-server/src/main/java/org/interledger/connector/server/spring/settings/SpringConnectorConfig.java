@@ -1,6 +1,7 @@
 package org.interledger.connector.server.spring.settings;
 
 import static org.interledger.connector.accounts.sub.LocalDestinationAddressUtils.PING_ACCOUNT_ID;
+
 import org.interledger.connector.ConnectorExceptionHandler;
 import org.interledger.connector.DefaultILPv4Connector;
 import org.interledger.connector.ILPv4Connector;
@@ -27,7 +28,9 @@ import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.fx.JavaMoneyUtils;
 import org.interledger.connector.fxrates.DefaultFxRateOverridesManager;
 import org.interledger.connector.fxrates.FxRateOverridesManager;
+import org.interledger.connector.links.DefaultIldcpFetcherFactory;
 import org.interledger.connector.links.DefaultNextHopPacketMapper;
+import org.interledger.connector.links.IldcpFetcherFactory;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.links.LinkSettingsValidator;
@@ -70,9 +73,9 @@ import org.interledger.connector.server.spring.settings.crypto.CryptoConfig;
 import org.interledger.connector.server.spring.settings.javamoney.JavaMoneyConfig;
 import org.interledger.connector.server.spring.settings.link.LinkConfig;
 import org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration;
-import org.interledger.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.core.InterledgerAddress;
@@ -194,6 +197,11 @@ public class SpringConnectorConfig {
   }
 
   @Bean
+  IldcpFetcherFactory ildcpFetcherFactory() {
+    return new DefaultIldcpFetcherFactory();
+  }
+
+  @Bean
   AccountManager accountManager(
     Supplier<ConnectorSettings> connectorSettingsSupplier,
     AccountSettingsRepository accountSettingsRepository,
@@ -201,13 +209,16 @@ public class SpringConnectorConfig {
     ConversionService conversionService,
     SettlementEngineClient settlementEngineClient,
     LinkSettingsFactory linkSettingsFactory,
-    LinkSettingsValidator linkSettingsValidator
+    LinkSettingsValidator linkSettingsValidator,
+    IldcpFetcherFactory ildcpFetcherFactory
   ) {
     return new DefaultAccountManager(
       connectorSettingsSupplier, conversionService, accountSettingsRepository, deletedAccountSettingsRepository,
       linkManager, settlementEngineClient,
       linkSettingsFactory,
-      linkSettingsValidator);
+      linkSettingsValidator,
+      ildcpFetcherFactory
+    );
   }
 
   @Bean
