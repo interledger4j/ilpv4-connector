@@ -282,7 +282,6 @@ public class SpringConnectorConfig {
   @Bean
   ExternalRoutingService externalRoutingService(
     final EventBus eventBus,
-    final LocalDestinationAddressUtils localDestinationAddressUtils,
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final Decryptor decryptor,
     final AccountSettingsRepository accountSettingsRepository,
@@ -292,7 +291,6 @@ public class SpringConnectorConfig {
     final RouteBroadcaster routeBroadcaster
   ) {
     return new InMemoryExternalRoutingService(
-      localDestinationAddressUtils,
       eventBus,
       connectorSettingsSupplier,
       decryptor,
@@ -550,7 +548,7 @@ public class SpringConnectorConfig {
 
       @Override
       public boolean isLocalSpspFulfillmentEnabled() {
-        return localSpspFulfillmentEnabled && spspAddressPrefixSegment.isEmpty() == false;
+        return localSpspFulfillmentEnabled && !spspAddressPrefixSegment.isEmpty();
       }
 
       @Override

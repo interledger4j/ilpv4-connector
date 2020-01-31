@@ -10,7 +10,6 @@ import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.links.LinkSettingsValidator;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.connector.server.spring.settings.localFulfillment.LocalSpspFulfillmentConfig;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.link.AbstractStatefulLink.EventBusConnectionEventEmitter;
 import org.interledger.link.LinkFactoryProvider;
@@ -37,17 +36,17 @@ import java.util.function.Supplier;
 public class LinkConfig {
 
   @Bean
-  LoopbackLinkFactory loopbackLinkFactory(PacketRejector packetRejector) {
+  protected LoopbackLinkFactory loopbackLinkFactory(PacketRejector packetRejector) {
     return new LoopbackLinkFactory(packetRejector);
   }
 
   @Bean
-  PingLoopbackLinkFactory unidirectionalPingLinkFactory() {
+  protected  PingLoopbackLinkFactory unidirectionalPingLinkFactory() {
     return new PingLoopbackLinkFactory();
   }
 
   @Bean
-  LinkFactoryProvider linkFactoryProvider(
+  protected  LinkFactoryProvider linkFactoryProvider(
     LoopbackLinkFactory loopbackLinkFactory, PingLoopbackLinkFactory pingLoopbackLinkFactory
   ) {
     final LinkFactoryProvider provider = new LinkFactoryProvider();
@@ -63,24 +62,24 @@ public class LinkConfig {
   }
 
   @Bean
-  LinkSettingsFactory linkSettingsFactory() {
+  protected LinkSettingsFactory linkSettingsFactory() {
     return new DefaultLinkSettingsFactory();
   }
 
   @Bean
-  LinkSettingsValidator linkSettingsValidator(
+  protected LinkSettingsValidator linkSettingsValidator(
     ConnectorEncryptionService encryptionService, Supplier<ConnectorSettings> connectorSettingsSupplier
   ) {
     return new DefaultLinkSettingsValidator(encryptionService, connectorSettingsSupplier);
   }
 
   @Bean
-  LinkConnectionEventEmitter linkEventEmitter(EventBus eventBus) {
+  protected LinkConnectionEventEmitter linkEventEmitter(EventBus eventBus) {
     return new EventBusConnectionEventEmitter(eventBus);
   }
 
   @Bean
-  LinkManager linkManager(
+  protected LinkManager linkManager(
     Supplier<ConnectorSettings> connectorSettingsSupplier,
     EventBus eventBus,
     AccountSettingsRepository accountSettingsRepository,

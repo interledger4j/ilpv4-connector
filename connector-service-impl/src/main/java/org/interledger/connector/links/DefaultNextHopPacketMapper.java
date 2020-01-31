@@ -149,7 +149,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     // Connector implements rouding. If this happens enough, the incoming link will continue to spend money that
     // will show up in the outbound Link. Generally, this will result in a rejection from the outbound link, but
     // just in case we want the Connector operator to be able to detect this condition.
-    if (sourcePacket.getAmount().equals(UnsignedLong.ZERO) == false && UnsignedLong.ZERO.equals(nextAmount)) {
+    if (!sourcePacket.getAmount().equals(UnsignedLong.ZERO) && UnsignedLong.ZERO.equals(nextAmount)) {
       logger.warn(
         "While packet-switching, a non-zero source packet amount translated into a zero-value destination amount. "
           + "sourcePacket={} nextHopRoute={}", sourcePacket, nextHopRoute);

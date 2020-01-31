@@ -34,10 +34,10 @@ public class LocalDestinationAddressPaymentRouterTest {
   public ExpectedException expectedException = ExpectedException.none();
 
   @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-  ConnectorSettings connectorSettingsMock;
+  private ConnectorSettings connectorSettingsMock;
 
   @Mock
-  LocalDestinationAddressUtils localDestinationAddressUtilsMock;
+  private LocalDestinationAddressUtils localDestinationAddressUtilsMock;
 
   private LocalDestinationAddressPaymentRouter localDestinationAddressPaymentRouter;
 

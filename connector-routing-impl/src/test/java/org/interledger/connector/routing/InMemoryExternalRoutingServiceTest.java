@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -68,8 +67,6 @@ public class InMemoryExternalRoutingServiceTest {
   private RouteBroadcaster routeBroadcaster;
   @Mock
   private GlobalRoutingSettings globalRoutingSettings;
-  @Mock
-  private LocalDestinationAddressUtils localDestinationAddressUtilsMock;
 
   private Supplier<ConnectorSettings> connectorSettingsSupplier;
 
@@ -85,7 +82,6 @@ public class InMemoryExternalRoutingServiceTest {
   public void setUp() {
     this.connectorSettingsSupplier = () -> connectorSettings;
     service = new InMemoryExternalRoutingService(
-      localDestinationAddressUtilsMock,
       eventBus,
       connectorSettingsSupplier,
       decryptor,
@@ -118,7 +114,6 @@ public class InMemoryExternalRoutingServiceTest {
   @Test
   public void staticRoutes() {
     service = new InMemoryExternalRoutingService(
-      localDestinationAddressUtilsMock,
       eventBus,
       connectorSettingsSupplier,
       decryptor,

@@ -1,12 +1,10 @@
-package org.interledger.connector.server.spring.settings.localFulfillment;
+package org.interledger.connector.server.spring.settings.link;
 
 import static org.interledger.connector.core.ConfigConstants.ENABLED_FEATURES;
 import static org.interledger.connector.core.ConfigConstants.LOCAL_SPSP_FULFILLMENT_ENABLED;
 import static org.interledger.connector.core.ConfigConstants.TRUE;
 
 import org.interledger.codecs.stream.StreamCodecContextFactory;
-import org.interledger.connector.settings.ConnectorSettings;
-import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.link.LinkFactoryProvider;
 import org.interledger.link.PacketRejector;
@@ -28,7 +26,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Base64;
-import java.util.function.Supplier;
 
 import javax.annotation.PostConstruct;
 
@@ -48,14 +45,14 @@ public class LocalSpspFulfillmentConfig {
   private StatelessSpspReceiverLinkFactory statelessSpspReceiverLinkFactory;
 
   @Bean
-  StatelessSpspReceiverLinkFactory statelessSpspReceiverLinkFactory(
+  protected StatelessSpspReceiverLinkFactory statelessSpspReceiverLinkFactory(
     PacketRejector packetRejector, StatelessStreamReceiver statelessStreamReceiver
   ) {
     return new StatelessSpspReceiverLinkFactory(packetRejector, statelessStreamReceiver);
   }
 
   @Bean
-  ServerSecretSupplier serverSecretSupplier() {
+  protected ServerSecretSupplier serverSecretSupplier() {
     final byte[] serverSecret;
     if (spspServerSecretB64 != null) {
       serverSecret = Base64.getDecoder().decode(spspServerSecretB64);
@@ -69,22 +66,22 @@ public class LocalSpspFulfillmentConfig {
 
   @Bean
   @Qualifier(STREAM)
-  CodecContext streamCodecContext() {
+  protected CodecContext streamCodecContext() {
     return StreamCodecContextFactory.oer();
   }
 
   @Bean
-  StreamEncryptionService streamEncryptionService() {
+  protected StreamEncryptionService streamEncryptionService() {
     return new JavaxStreamEncryptionService();
   }
 
   @Bean
-  StreamConnectionGenerator streamConnectionGenerator() {
+  protected StreamConnectionGenerator streamConnectionGenerator() {
     return new SpspStreamConnectionGenerator();
   }
 
   @Bean
-  StatelessStreamReceiver statelessStreamReceiver(
+  protected StatelessStreamReceiver statelessStreamReceiver(
     final ServerSecretSupplier serverSecretSupplier,
     final StreamConnectionGenerator streamConnectionGenerator,
     final StreamEncryptionService streamEncryptionService,

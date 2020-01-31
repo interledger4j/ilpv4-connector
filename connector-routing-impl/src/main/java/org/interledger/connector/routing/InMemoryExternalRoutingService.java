@@ -5,7 +5,6 @@ import static org.interledger.connector.routing.Route.HMAC;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -73,8 +72,6 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   private final AccountSettingsRepository accountSettingsRepository;
   private final StaticRoutesRepository staticRoutesRepository;
 
-  private final LocalDestinationAddressUtils localDestinationAddressUtils;
-
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final Decryptor decryptor;
 
@@ -99,7 +96,6 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
   /**
    * Required-args Constructor.
    *
-   * @param localDestinationAddressUtils         A {@link LocalDestinationAddressUtils}.
    * @param eventBus                             A {@link EventBus}.
    * @param connectorSettingsSupplier            A {@link Supplier} for {@link ConnectorSettings}.
    * @param decryptor                            A {@link Decryptor}.
@@ -111,7 +107,6 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
    * @param routeBroadcaster                     A {@link RouteBroadcaster}.
    */
   public InMemoryExternalRoutingService(
-    final LocalDestinationAddressUtils localDestinationAddressUtils,
     final EventBus eventBus,
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final Decryptor decryptor,
@@ -122,7 +117,6 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
     final RouteBroadcaster routeBroadcaster
   ) {
-    this.localDestinationAddressUtils = Objects.requireNonNull(localDestinationAddressUtils);
     this.eventBus = Objects.requireNonNull(eventBus);
     this.eventBus.register(this);
 
