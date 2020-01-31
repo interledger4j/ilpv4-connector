@@ -239,6 +239,7 @@ public class DefaultCcpSender implements CcpSender {
               }
             }
           })
+          .filter(Objects::nonNull)
           .collect(Collectors.toList());
 
       final ImmutableList.Builder<CcpNewRoute> newRoutesBuilder = ImmutableList.builder();
