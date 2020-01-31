@@ -12,12 +12,12 @@ import com.google.common.util.concurrent.RateLimiter;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-
 import javax.money.convert.ConversionQuery;
 import javax.money.convert.ExchangeRate;
 
@@ -96,12 +96,11 @@ public class CaffeineCacheConfig {
    * @return A {@link Cache}.
    */
   @Bean
-  public Cache<ConversionQuery, ExchangeRate> fxCache(CacheMetricsCollector cacheMetricsCollector) {
+  public Cache<ConversionQuery, ExchangeRate> fxCache(CacheMetricsCollector cacheMetricsCollector,
+                                                      @Value("${interledger.connector.cache.fxTtl:30}") long fxCacheTimeout) {
     final Cache<ConversionQuery, ExchangeRate> fxCache = Caffeine.newBuilder()
         .recordStats() // Publish stats to prometheus
-        // TODO: Make this configurable in order to support more frequent FX rate lookups.
-        // See https://github.com/interledger4j/ilpv4-connector/issues/401
-        .expireAfterAccess(30, TimeUnit.SECONDS)
+        .expireAfterAccess(fxCacheTimeout, TimeUnit.SECONDS)
         .build(); // No default loading function.
 
     cacheMetricsCollector.addCache("fxCache", fxCache);
