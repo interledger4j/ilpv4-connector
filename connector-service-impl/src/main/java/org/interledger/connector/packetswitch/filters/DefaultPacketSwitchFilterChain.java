@@ -54,7 +54,13 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
    * A chain of filters that are applied to a switchPacket request before attempting to determine the `next-hop` {@link
    * Link} to forward the packet onto.
    *
-   * TODO FIXME
+   * @param packetSwitchFilters          A {@link List} of type {@link PacketSwitchFilter}.
+   * @param linkFilters                  A {@link List} of {@link LinkFilter}.
+   * @param localDestinationAddressUtils A {@lnk LocalDestinationAddressUtils}.
+   * @param linkManager                  A {@link LinkManager}.
+   * @param nextHopPacketMapper          A {@link NextHopPacketMapper}.
+   * @param accountSettingsLoadingCache  A {@link AccountSettingsLoadingCache}.
+   * @param packetEventPublisher         A {@link PacketEventPublisher}.
    */
   public DefaultPacketSwitchFilterChain(
     final List<PacketSwitchFilter> packetSwitchFilters,

@@ -1,8 +1,6 @@
 package org.interledger.connector.connections;
 
-/**
- * An abstract implementation of {@link BilateralConnection}.
- */
+@Deprecated
 public abstract class AbstractBilateralConnection {//<IT extends MultiplexedBilateralReceiver,
 //  OT extends MultiplexedBilateralSender,
   //  P extends Plugin<?>>

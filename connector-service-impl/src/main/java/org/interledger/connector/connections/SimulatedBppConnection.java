@@ -6,6 +6,7 @@ package org.interledger.connector.connections;
  * network paths (in this case, the MultiplexedBilateralSender and MultiplexedBilateralReceiver are different
  * instances).
  */
+@Deprecated
 public class SimulatedBppConnection {
 //  extends AbstractBilateralConnection<MultiplexedBilateralReceiver, MultiplexedBilateralSender, SimulatedPlugin>
 //  implements BilateralConnection<MultiplexedBilateralReceiver, MultiplexedBilateralSender, SimulatedPlugin> {

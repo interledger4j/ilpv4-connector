@@ -24,9 +24,6 @@ import static java.util.Collections.singletonList;
  */
 public class RedisBalanceTracker implements BalanceTracker {
 
-  // TODO: Stop sending Strings into Redis and instead send longs!
-  // See https://github.com/interledger4j/ilpv4-connector/issues/153
-
   public static final String CLEARING_BALANCE = "clearing_balance";
   public static final String PREPAID_AMOUNT = "prepaid_amount";
 

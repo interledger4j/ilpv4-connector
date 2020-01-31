@@ -109,7 +109,7 @@ public interface LocalDestinationAddressUtils {
   }
 
   /**
-   * Determines if the supplied ILP destination address is a sub-account of this Connector. Sub-accounts can be...TODO!
+   * Determines if the supplied ILP destination address is an SPSP sub-account of this Connector.
    *
    * @param interledgerAddress An {@link InterledgerAddress}.
    *
@@ -122,7 +122,7 @@ public interface LocalDestinationAddressUtils {
   }
 
   /**
-   * Determines if the supplied ILP destination address is a sub-account of this Connector. Sub-accounts can be...TODO!
+   * Determines if the supplied ILP destination address is a local account of this Connector.
    *
    * @param interledgerAddress An {@link InterledgerAddress}.
    *

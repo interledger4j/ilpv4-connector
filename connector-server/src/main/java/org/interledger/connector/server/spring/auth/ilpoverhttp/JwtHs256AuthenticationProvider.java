@@ -28,7 +28,6 @@ public class JwtHs256AuthenticationProvider implements AuthenticationProvider {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  // TODO: Remove these once https://github.com/interledger/rfcs/pull/531 is closed.
   private final Optional<String> issuer;
   private final Optional<String>  audience;
   private final String subject;
