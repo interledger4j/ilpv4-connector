@@ -1,0 +1,59 @@
+# Test settings to validate loading configuration properties.
+interledger:
+  connector:
+    # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
+    adminPassword: password
+    require32ByteSharedSecrets: true
+    keys:
+      secret0:
+        alias: secret0
+        version: 2
+      accountSettings:
+        alias: accounts
+        version: 3
+    keystore:
+      jks:
+        enabled: true
+        filename: crypto/crypto.p12
+        # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
+        password: password
+        secret0_alias: secret0
+        # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
+        secret0_password: password
+    ## ILP address of the connector.
+    ## This property can be omitted if an account with relation=parent is configured under accounts.
+    nodeIlpAddress: test.example
+    # The global prefix. For production environments, this should be `g`. For test environments, consider `test`.
+    globalPrefix: test
+    minMessageWindowMillis: 1000
+    maxHoldTimeMillis: 30000
+    btp.enabled: true
+    # Which features are enabled.
+    enabledFeatures:
+      rateLimitingEnabled: true
+    # Which protocols this Connector supports
+    enabledProtocols:
+      ilpOverHttpEnabled: true
+      pingProtocolEnabled: true
+      peerRoutingEnabled: true
+      ildcpEnabled: true
+    # Global Routing Settings for this connector.
+    globalRoutingSettings:
+      # Whether to broadcast known routes.
+      routeBroadcastEnabled: true
+      # Determines if the parent-account should be used as the default route. This value overrides any specified
+      # `defaultRoute` value.
+      useParentForDefaultRoute: true
+      # Which account should be used as the default route for all un-routed traffic. If empty, the default route is
+      # disabled.
+      defaultRoute: self.internal
+      # Seed used for generating routing table auth values.
+      routingSecret: shh
+      # Frequency at which the connector broadcasts its routes to adjacent connectors. (in milliseconds)
+      routeBroadcastInterval: 30001
+      # The frequency at which the connector checks for expired routes. (in milliseconds)
+      routeCleanupInterval: 30002
+      # The maximum age of a route provided by this connector. (in milliseconds)
+      routeExpiry: 30003
+      # The maximum number of epochs per routing table update.
+      maxEpochsPerRoutingTable: 77
