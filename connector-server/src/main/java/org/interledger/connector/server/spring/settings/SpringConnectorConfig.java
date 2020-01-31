@@ -105,7 +105,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.convert.ConversionService;
@@ -138,6 +140,10 @@ import java.util.function.Supplier;
   SpringConnectorWebMvc.class,
   GcpPubSubConfig.class
 })
+@ComponentScan(basePackages = "${interledger.connector.extensions.basePackage:org.interledger.connector.extensions}",
+  useDefaultFilters = false,
+  includeFilters = @ComponentScan.Filter(type= FilterType.REGEX, pattern=".*")
+)
 public class SpringConnectorConfig {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
