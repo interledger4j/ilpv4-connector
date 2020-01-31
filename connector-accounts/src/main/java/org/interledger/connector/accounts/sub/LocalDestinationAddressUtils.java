@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 /**
  * <p>When it comes to packet switching, this Connector supports four types of ILP address structure that is uses to
  * make packet routing determinations (Note these conventions are an implementation detail of the Connector because the
- * Connector both generates and parses these address without mandating any special functionality on intermediaries or
+ * Connector both generates and parses these addresses without mandating any special functionality on intermediaries or
  * peers).</p>
  *
  * <p>The first type of address is the Connector operating address. Packets destined for this address will generally
@@ -32,7 +32,7 @@ import java.util.function.Supplier;
  * account. This allows alice to host sub-accounts of its own that it can forward or fulfill as needed.
  * </p>
  *
- * <p>The fourth type of address is an external address, which is defined any address that does not start with
+ * <p>The fourth type of address is an external address, which is defined as any address that does not start with the
  * `{allocation-scheme}.{connector-id}` of this Connector. For example, if a Connector has an operating address of
  * `example.connie`, then a packet with a destination address of `example.bob` would be routed according to the rules
  * defined in the routing table, which would typically be populated either by defining a static route, or via CCP route
@@ -42,7 +42,6 @@ public interface LocalDestinationAddressUtils {
 
   // The unique identifier of the account that collects all incoming ping protocol payments, if any.
   AccountId PING_ACCOUNT_ID = AccountId.of("__ping_account__");
-  String DOT = ".";
 
   /**
    * The ILP address of the Connector that this code is being used with.
@@ -176,10 +175,10 @@ public interface LocalDestinationAddressUtils {
 
     // Strip off spspAddress
     final String withoutOperatorAddress = StringUtils.substringAfter(
-      interledgerAddress.getValue(), getConnectorOperatorAddress().get().getValue() + DOT
+      interledgerAddress.getValue(), getConnectorOperatorAddress().get().getValue() + "."
     );
-    final String withoutSpsp = StringUtils.substringAfter(withoutOperatorAddress, getSpspAddressPrefixSegment() + DOT);
-    final String accountIdString = StringUtils.substringBefore(withoutSpsp, DOT);
+    final String withoutSpsp = StringUtils.substringAfter(withoutOperatorAddress, getSpspAddressPrefixSegment() + ".");
+    final String accountIdString = StringUtils.substringBefore(withoutSpsp, ".");
 
     if (accountIdString.isEmpty()) {
       throw new AccountNotFoundProblem(
@@ -209,12 +208,12 @@ public interface LocalDestinationAddressUtils {
     //g.connector.accounts.~bob.bar --> bob
 
     final String withoutOperatorAddress = StringUtils.substringAfter(
-      interledgerAddress.getValue(), getConnectorOperatorAddress().get().getValue() + DOT
+      interledgerAddress.getValue(), getConnectorOperatorAddress().get().getValue() + "."
     );
     final String withoutAccountsPrefix = StringUtils.substringAfter(
-      withoutOperatorAddress, getLocalAccountsAddressPrefixSegment() + DOT
+      withoutOperatorAddress, getLocalAccountsAddressPrefixSegment() + "."
     );
-    final String accountIdString = StringUtils.substringBefore(withoutAccountsPrefix, DOT);
+    final String accountIdString = StringUtils.substringBefore(withoutAccountsPrefix, ".");
 
     if (accountIdString.isEmpty()) {
       throw new AccountNotFoundProblem(

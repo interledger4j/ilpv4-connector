@@ -39,7 +39,7 @@ public interface GlobalRoutingSettings {
 
   /**
    * An ILP address segment that will be used to route packets to any local accounts defined in the Connector. For
-   * example, if an account exists in the Connector with id of `alice`, then node wanting to send packets to that
+   * example, if an account exists in the Connector with id of `alice`, then nodes wanting to send packets to that
    * account would use the ILP address `{connector-operator-address}.accounts.alice`. Typically this will be used in
    * IL-DCP, but will also be used to make routing decisions for any local accounts that might connect to the Connector.
    * For example, `g.connector.accounts.alice.bob` would route to `alice`, allowing that node to figure out how to route
@@ -48,6 +48,7 @@ public interface GlobalRoutingSettings {
    * @return A {@link String} that will be appended to this Connector's operating address in order to identify packets
    *   that should be routed to a local account defined in this Connector.
    */
+  @Value.Default
   default String localAccountAddressSegment() {
     return "accounts";
   }
@@ -96,18 +97,9 @@ public interface GlobalRoutingSettings {
 
   @Value.Check
   default void verify() {
-    // This code is commented out because in some use-cases, it's acceptable to not have a default-route. In these
-    // scenarios, if the route isn't defined in the routing table, then the traffic just rejects (e.g., a tier1
-    // Connector with no Parent likely doesn't want a default route). Alternatively, we might want a DeadRoute that
-    // is registered by default in the RoutingTable and sends traffic to a special handler that still rejects, but
-    // might also collect extra information.
-
-    // If we're not using the parent as a default route, then a default route must be specified!
-    //    if (!this.isUseParentForDefaultRoute()) {
-    //      Preconditions.checkArgument(
-    //        this.defaultRoute().isPresent(),
-    //        "A default ILP Route MUST be set if this ILSP is not relying upon a Parent Account for this information!"
-    //      );
-    //    }
+    // NOTE: It is acceptable to not have a default-route in certain scenarios. In these scenarios, if the route isn't
+    // defined in the routing table, then the traffic just rejects (e.g., a tier1 Connector with no Parent likely
+    // doesn't want a default route). Alternatively, we might want a DeadRoute that is registered by default in the
+    // RoutingTable and sends traffic to a special handler that still rejects, but might also collect extra information.
   }
 }

@@ -27,7 +27,8 @@ import java.util.Optional;
  */
 public class LocalDestinationAddressPaymentRouterTest {
 
-  private static final InterledgerAddress DESTINATION_ADDRESS = InterledgerAddress.of("test.foo");
+  private static final InterledgerAddress DESTINATION_ADDRESS =
+    InterledgerAddress.of("example.connector.this-is-ok-cuz-everything-is-mocks");
 
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
@@ -43,9 +44,13 @@ public class LocalDestinationAddressPaymentRouterTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
+
     when(localDestinationAddressUtilsMock.getConnectorPingAccountId()).thenReturn(PING_ACCOUNT_ID);
+
     this.localDestinationAddressPaymentRouter
       = new LocalDestinationAddressPaymentRouter(() -> connectorSettingsMock, localDestinationAddressUtilsMock);
+
+    when(connectorSettingsMock.enabledProtocols().isPingProtocolEnabled()).thenReturn(true);
   }
 
   @Test
@@ -68,9 +73,10 @@ public class LocalDestinationAddressPaymentRouterTest {
   }
 
   @Test
-  public void findBestNexHopWhenLocalWithPingDisabled() {
+  public void findBestNexHopWhenPingWithPingDisabled() {
     when(localDestinationAddressUtilsMock.isLocalDestinationAddress(any())).thenReturn(true);
     when(connectorSettingsMock.enabledProtocols().isPingProtocolEnabled()).thenReturn(false);
+    when(localDestinationAddressUtilsMock.isAddressForConnectorPingAccount(any())).thenReturn(true);
 
     assertThat(localDestinationAddressPaymentRouter.findBestNexHop(DESTINATION_ADDRESS)).isEmpty();
 
@@ -82,16 +88,43 @@ public class LocalDestinationAddressPaymentRouterTest {
   }
 
   @Test
+  public void findBestNexHopWhenLocalWithPingDisabled() {
+    when(localDestinationAddressUtilsMock.isLocalDestinationAddress(any())).thenReturn(true);
+    when(connectorSettingsMock.enabledProtocols().isPingProtocolEnabled()).thenReturn(false);
+    when(localDestinationAddressUtilsMock.isAddressForConnectorPingAccount(any())).thenReturn(false);
+    when(localDestinationAddressUtilsMock.isLocalAccountDestinationAddress(any())).thenReturn(true);
+    when(localDestinationAddressUtilsMock.parseLocalAccountId(any())).thenReturn(AccountId.of("foo"));
+
+    final Optional<Route> actual = localDestinationAddressPaymentRouter.findBestNexHop(DESTINATION_ADDRESS);
+    assertThat(actual).isPresent();
+    assertThat(actual.get().nextHopAccountId()).isEqualTo(AccountId.of("foo"));
+
+    verify(localDestinationAddressUtilsMock).getConnectorPingAccountId();
+    verify(localDestinationAddressUtilsMock).isLocalDestinationAddress(any());
+    verify(localDestinationAddressUtilsMock).isLocalSpspDestinationAddress(any());
+    verify(localDestinationAddressUtilsMock).isLocalAccountDestinationAddress(any());
+    verify(localDestinationAddressUtilsMock).parseLocalAccountId(any());
+    verifyNoMoreInteractions(localDestinationAddressUtilsMock);
+  }
+
+  @Test
   public void findBestNexHopWhenLocalWithPingEnabledNotPing() {
     when(localDestinationAddressUtilsMock.isLocalDestinationAddress(any())).thenReturn(true);
     when(connectorSettingsMock.enabledProtocols().isPingProtocolEnabled()).thenReturn(true);
     when(localDestinationAddressUtilsMock.isAddressForConnectorPingAccount(any())).thenReturn(false);
+    when(localDestinationAddressUtilsMock.isLocalAccountDestinationAddress(any())).thenReturn(true);
+    when(localDestinationAddressUtilsMock.parseLocalAccountId(any())).thenReturn(AccountId.of("foo"));
 
-    assertThat(localDestinationAddressPaymentRouter.findBestNexHop(DESTINATION_ADDRESS)).isEmpty();
+    final Optional<Route> actual = localDestinationAddressPaymentRouter.findBestNexHop(DESTINATION_ADDRESS);
+    assertThat(actual).isPresent();
+    assertThat(actual.get().nextHopAccountId()).isEqualTo(AccountId.of("foo"));
 
     verify(localDestinationAddressUtilsMock).getConnectorPingAccountId();
     verify(localDestinationAddressUtilsMock).isLocalDestinationAddress(any());
     verify(localDestinationAddressUtilsMock).isAddressForConnectorPingAccount(any());
+    verify(localDestinationAddressUtilsMock).isLocalSpspDestinationAddress(any());
+    verify(localDestinationAddressUtilsMock).isLocalAccountDestinationAddress(any());
+    verify(localDestinationAddressUtilsMock).parseLocalAccountId(any());
     verifyNoMoreInteractions(localDestinationAddressUtilsMock);
   }
 
@@ -158,7 +191,6 @@ public class LocalDestinationAddressPaymentRouterTest {
 
   @Test
   public void findBestNexHopWhenLocalDestinationButNoSubMatches() {
-    final AccountId accountId = AccountId.of("foo");
     when(localDestinationAddressUtilsMock.isLocalDestinationAddress(any())).thenReturn(true);
     when(connectorSettingsMock.enabledProtocols().isPingProtocolEnabled()).thenReturn(false);
     when(localDestinationAddressUtilsMock.isAddressForConnectorPingAccount(any())).thenReturn(false);

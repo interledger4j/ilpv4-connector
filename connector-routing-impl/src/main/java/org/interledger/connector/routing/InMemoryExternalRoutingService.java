@@ -98,6 +98,17 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
   /**
    * Required-args Constructor.
+   *
+   * @param localDestinationAddressUtils         A {@link LocalDestinationAddressUtils}.
+   * @param eventBus                             A {@link EventBus}.
+   * @param connectorSettingsSupplier            A {@link Supplier} for {@link ConnectorSettings}.
+   * @param decryptor                            A {@link Decryptor}.
+   * @param accountSettingsRepository            A {@link AccountSettingsRepository}.
+   * @param staticRoutesRepository               A {@link StaticRoutesRepository}.
+   * @param localDestinationAddressPaymentRouter A {@link LocalDestinationAddressPaymentRouter}.
+   * @param localRoutingTable                    A {@link RoutingTable}.
+   * @param outgoingRoutingTable                 A {@link ForwardingRoutingTable}.
+   * @param routeBroadcaster                     A {@link RouteBroadcaster}.
    */
   public InMemoryExternalRoutingService(
     final LocalDestinationAddressUtils localDestinationAddressUtils,
@@ -233,7 +244,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
 
     Collection<AccountSettings> peersAndParent = ImmutableList.<AccountSettings>builder()
       .addAll(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PEER))
-        .addAll(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PARENT))
+      .addAll(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PARENT))
       .build();
 
     peersAndParent.stream().forEach(routeBroadcaster::registerCcpEnabledAccount);

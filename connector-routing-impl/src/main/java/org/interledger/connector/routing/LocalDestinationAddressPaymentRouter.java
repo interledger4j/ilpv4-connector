@@ -47,14 +47,9 @@ public class LocalDestinationAddressPaymentRouter implements PaymentRouter<Route
       /////////////////
       // Ping Protocol
       final EnabledProtocolSettings enabledProtocolSettings = this.connectorSettingsSupplier.get().enabledProtocols();
-      if (enabledProtocolSettings.isPingProtocolEnabled()) {
-        // The SubAccount router will only ever be engaged for addresses that start with the Connector address. We
-        // need one final check to see if there's an exact match, and only then utilize the ping protocol link.
-        if (localDestinationAddressUtils.isAddressForConnectorPingAccount(finalDestinationAddress)) {
-          accountId = this.pingAccountId;
-        } else {
-          accountId = Optional.empty();
-        }
+      if (enabledProtocolSettings.isPingProtocolEnabled()
+        && localDestinationAddressUtils.isAddressForConnectorPingAccount(finalDestinationAddress)) {
+        accountId = this.pingAccountId;
       } else if (localDestinationAddressUtils.isLocalSpspDestinationAddress(finalDestinationAddress)) {
         // Process SPSP
         accountId = Optional.of(localDestinationAddressUtils.parseSpspAccountId(finalDestinationAddress));
