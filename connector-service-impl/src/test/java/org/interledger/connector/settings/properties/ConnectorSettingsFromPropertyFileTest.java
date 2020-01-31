@@ -1,16 +1,15 @@
-package org.interledger.connector.server.spring.settings;
+package org.interledger.connector.settings.properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
-import org.interledger.crypto.CryptoKey;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.EnabledFeatureSettings;
 import org.interledger.connector.settings.EnabledProtocolSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.crypto.CryptoKey;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

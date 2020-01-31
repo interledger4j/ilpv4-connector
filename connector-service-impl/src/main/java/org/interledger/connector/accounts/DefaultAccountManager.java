@@ -1,8 +1,8 @@
 package org.interledger.connector.accounts;
 
-import org.interledger.codecs.ildcp.IldcpUtils;
 import org.interledger.connector.accounts.event.AccountCreatedEvent;
 import org.interledger.connector.accounts.event.AccountUpdatedEvent;
+import org.interledger.connector.links.IldcpFetcherFactory;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.links.LinkSettingsValidator;
@@ -16,13 +16,11 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.persistence.repositories.DeletedAccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.ModifiableConnectorSettings;
+import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.client.CreateSettlementAccountRequest;
 import org.interledger.connector.settlement.client.CreateSettlementAccountResponse;
-import org.interledger.core.InterledgerPreparePacket;
-import org.interledger.ildcp.IldcpFetcher;
 import org.interledger.ildcp.IldcpRequest;
-import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponse;
 import org.interledger.link.Link;
 import org.interledger.link.LinkSettings;
@@ -63,6 +61,8 @@ public class DefaultAccountManager implements AccountManager {
   private final SettlementEngineClient settlementEngineClient;
   private final LinkSettingsFactory linkSettingsFactory;
   private final LinkSettingsValidator linkSettingsValidator;
+  private final IldcpFetcherFactory ildcpFetcherFactory;
+
   private final EventBus eventBus;
 
   /**
@@ -75,8 +75,8 @@ public class DefaultAccountManager implements AccountManager {
     final DeletedAccountSettingsRepository deletedAccountSettingsRepository,
     final LinkManager linkManager,
     final SettlementEngineClient settlementEngineClient,
-    final LinkSettingsFactory linkSettingsFactory,
-    final LinkSettingsValidator linkSettingsValidator,
+    LinkSettingsFactory linkSettingsFactory, LinkSettingsValidator linkSettingsValidator,
+    IldcpFetcherFactory ildcpFetcherFactory,
     final EventBus eventBus) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
@@ -86,6 +86,7 @@ public class DefaultAccountManager implements AccountManager {
     this.settlementEngineClient = Objects.requireNonNull(settlementEngineClient);
     this.linkSettingsFactory = linkSettingsFactory;
     this.linkSettingsValidator = linkSettingsValidator;
+    this.ildcpFetcherFactory = ildcpFetcherFactory;
     this.eventBus = eventBus;
   }
 
@@ -265,37 +266,21 @@ public class DefaultAccountManager implements AccountManager {
       conversionService.convert(parentAccountSettingsEntity, AccountSettings.class)
     );
 
-    // Construct a lambda that implements the Fetch logic for IL-DCP.
-    IldcpFetcher ildcpFetcher = ildcpRequest -> {
-      Objects.requireNonNull(ildcpRequest);
-
-      final IldcpRequestPacket ildcpRequestPacket = IldcpRequestPacket.builder().build();
-      final InterledgerPreparePacket preparePacket =
-        InterledgerPreparePacket.builder().from(ildcpRequestPacket).build();
-
-      // Fetch the IL-DCP response using the Link.
-      return link.sendPacket(preparePacket)
-        .map(
-          // If FulfillPacket...
-          IldcpUtils::toIldcpResponse,
-          // If Reject Packet...
-          (interledgerRejectPacket) -> {
-            throw new RuntimeException(
-              String.format("IL-DCP negotiation failed! Reject: %s", interledgerRejectPacket)
-            );
-          }
-        );
-    };
-
-    final IldcpResponse ildcpResponse = ildcpFetcher.fetch(IldcpRequest.builder().build());
+    final IldcpResponse ildcpResponse = ildcpFetcherFactory.construct(link).fetch(IldcpRequest.builder().build());
 
     //////////////////////////////////
     // Update the Operator address with data returned by IL-DCP!
     //////////////////////////////////
 
     // TODO: Consider a better way to update the operator address for a connector. Maybe an event?
-    ((ModifiableConnectorSettings) this.connectorSettingsSupplier.get())
-      .setOperatorAddress(ildcpResponse.getClientAddress());
+    if (this.connectorSettingsSupplier.get() instanceof ModifiableConnectorSettings) {
+      ((ModifiableConnectorSettings) this.connectorSettingsSupplier.get())
+        .setOperatorAddress(ildcpResponse.getClientAddress());
+    }
+    else if (this.connectorSettingsSupplier.get() instanceof ConnectorSettingsFromPropertyFile) {
+      ((ConnectorSettingsFromPropertyFile) this.connectorSettingsSupplier.get())
+        .setNodeIlpAddress(ildcpResponse.getClientAddress());
+    }
 
     //////////////////////////////////
     // Update the Account Settings with data returned by IL-DCP!

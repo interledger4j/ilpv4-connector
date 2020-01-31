@@ -23,8 +23,8 @@ public class ConnectorServerTest {
   }
 
   @Test
-  public void migrateOnlyCallsStop() {
-    System.setProperty(SPRING_PROFILES_ACTIVE, "test,migrate-only");
+  public void migrateOnlyCallsStop() throws InterruptedException {
+    System.setProperty(SPRING_PROFILES_ACTIVE, "migrate-only,test");
     System.setProperty(SERVER_PORT, "0");
     connectorServer.start();
     assertThat(connectorServer.getContext().isActive()).isFalse();

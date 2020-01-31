@@ -10,10 +10,9 @@ interledger:
 spring:
   cloud:
     gcp:
+      ## must set project-id and credentials
+      #        project-id: your-project-id
+      #        credentials:
+      #          encoded-key: your-base64-encoded-service-account-key-json
       pubsub:
         enabled: true
-        ## must set project-id and credentials
-#        project-id: your-project-id
-#        credentials:
-#          encoded-key: your-base64-encoded-service-account-key-json
-

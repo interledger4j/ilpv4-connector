@@ -1,0 +1,8 @@
+# profile to enable verbose SQL logging
+spring:
+  jpa:
+    properties:
+      hibernate:
+        show_sql: true
+        use_sql_comments: true
+        format_sql: true
