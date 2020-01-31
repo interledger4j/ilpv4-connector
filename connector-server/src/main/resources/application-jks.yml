@@ -1,3 +1,4 @@
+## DEPRECATED profile. use "insecure" profile instead.
 interledger:
   connector:
     keystore:

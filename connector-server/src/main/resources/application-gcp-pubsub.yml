@@ -2,16 +2,17 @@ interledger:
   connector:
     pubsub:
       topics:
-        fulfillment-event: ilp-fulfillment-event
-
+## controls which events get published to which topic
+## because the events have the same format, they can be published to the same topic if desired
+#        fulfillment-event: ilp-events
+#        rejection-event: ilp-events
 
 spring:
   cloud:
     gcp:
+      ## must set project-id and credentials
+      #        project-id: your-project-id
+      #        credentials:
+      #          encoded-key: your-base64-encoded-service-account-key-json
       pubsub:
         enabled: true
-        ## must set project-id and credentials
-#        project-id: your-project-id
-#        credentials:
-#          encoded-key: your-base64-encoded-service-account-key-json
-

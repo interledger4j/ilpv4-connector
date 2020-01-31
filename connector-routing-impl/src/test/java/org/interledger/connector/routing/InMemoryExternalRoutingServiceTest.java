@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -17,7 +18,9 @@ import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
+import org.interledger.link.LinkType;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
 import org.junit.Before;
@@ -151,6 +154,46 @@ public class InMemoryExternalRoutingServiceTest {
         );
     verify(staticRoutesRepository, times(1)).deleteStaticRouteByPrefix(shawn.routePrefix());
   }
+
+  @Test
+  public void peersAndParentsGetsAutoRegisteredForCcp() {
+
+    LinkType ilpoverhttp = LinkType.of("ILPOVERHTTP");
+    AccountSettings peer = AccountSettings.builder()
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(ilpoverhttp)
+      .accountId(AccountId.of("peer"))
+      .accountRelationship(AccountRelationship.PEER)
+      .build();
+
+    AccountSettings child = AccountSettings.builder()
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(ilpoverhttp)
+      .accountId(AccountId.of("child"))
+      .accountRelationship(AccountRelationship.CHILD)
+      .build();
+
+    AccountSettings parent = AccountSettings.builder()
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(ilpoverhttp)
+      .accountId(AccountId.of("parent"))
+      .accountRelationship(AccountRelationship.PARENT)
+      .build();
+
+    when(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PEER))
+      .thenReturn(Lists.newArrayList(peer));
+    when(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PARENT))
+      .thenReturn(Lists.newArrayList(parent));
+
+    service.start();
+    verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(peer);
+    verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(parent);
+    verify(routeBroadcaster, times(0)).registerCcpEnabledAccount(child);
+  }
+
 
   private Set<StaticRoute> defaultRoutes() {
     return Sets.newHashSet(shawn, lassiter);

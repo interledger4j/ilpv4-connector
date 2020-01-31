@@ -2,6 +2,7 @@ package org.interledger.connector.server.javamoney;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.interledger.connector.core.ConfigConstants.ADMIN_PASSWORD;
+import static org.interledger.connector.core.ConfigConstants.FX_CACHE_TTL;
 import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_FILENAME;
 import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_FILENAME_DEFAULT;
 import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_PASSWORD;
@@ -14,6 +15,7 @@ import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR
 import org.interledger.connector.core.ConfigConstants;
 import org.interledger.connector.server.ConnectorServerConfig;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import okhttp3.OkHttpClient;
 import org.javamoney.moneta.spi.DefaultNumberValue;
 import org.junit.Test;
@@ -28,6 +30,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.math.BigInteger;
+import javax.money.convert.ConversionQuery;
 import javax.money.convert.ConversionQueryBuilder;
 import javax.money.convert.ExchangeRate;
 import javax.money.convert.ExchangeRateProvider;
@@ -43,14 +46,15 @@ import javax.money.convert.RateType;
 )
 @ActiveProfiles( {"test"})
 @TestPropertySource(
-    properties = {
-        ADMIN_PASSWORD + "=password",
-        ConfigConstants.ENABLED_PROTOCOLS + "." + ConfigConstants.ILP_OVER_HTTP_ENABLED + "=true",
-        INTERLEDGER_CONNECTOR_KEYSTORE_JKS_FILENAME + "=" + INTERLEDGER_CONNECTOR_KEYSTORE_JKS_FILENAME_DEFAULT,
-        INTERLEDGER_CONNECTOR_KEYSTORE_JKS_PASSWORD + "=" + INTERLEDGER_CONNECTOR_KEYSTORE_JKS_PASSWORD_DEFAULT,
-        INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS + "=" + INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS_DEFAULT,
-        INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD + "=" + INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD_DEFAULT
-    }
+  properties = {
+    ADMIN_PASSWORD + "=password",
+    ConfigConstants.ENABLED_PROTOCOLS + "." + ConfigConstants.ILP_OVER_HTTP_ENABLED + "=true",
+    INTERLEDGER_CONNECTOR_KEYSTORE_JKS_FILENAME + "=" + INTERLEDGER_CONNECTOR_KEYSTORE_JKS_FILENAME_DEFAULT,
+    INTERLEDGER_CONNECTOR_KEYSTORE_JKS_PASSWORD + "=" + INTERLEDGER_CONNECTOR_KEYSTORE_JKS_PASSWORD_DEFAULT,
+    INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS + "=" + INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_ALIAS_DEFAULT,
+    INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD + "=" + INTERLEDGER_CONNECTOR_KEYSTORE_JKS_SECRET0_PASSWORD_DEFAULT,
+    FX_CACHE_TTL + "=" + 2
+  }
 )
 public class JavaMoneyConfigTest {
 
@@ -58,6 +62,9 @@ public class JavaMoneyConfigTest {
 
   @Autowired
   ExchangeRateProvider exchangeRateProvider;
+
+  @Autowired
+  private Cache<ConversionQuery, ExchangeRate> fxCache;
 
   @Autowired
   @Qualifier("fx")
@@ -108,6 +115,32 @@ public class JavaMoneyConfigTest {
     assertThat(fxHttpClient.readTimeoutMillis()).isEqualTo(30000);
     assertThat(fxHttpClient.writeTimeoutMillis()).isEqualTo(40000);
     assertThat(fxHttpClient.connectTimeoutMillis()).isEqualTo(5000);
+  }
+
+  @Test
+  public void testFxCacheTTLFromConfig() throws InterruptedException {
+    // Get an exchange rate from the provider, which will populate the cache
+    ConversionQuery conversionQuery = ConversionQueryBuilder.of()
+      .setRateTypes(RateType.DEFERRED)
+      .setBaseCurrency("XRP")
+      .setTermCurrency("USD")
+      .build();
+    final ExchangeRate actualExchangeRate = exchangeRateProvider.getExchangeRate(conversionQuery);
+
+    logger.info("Loaded XRP-USD ExchangeRate: {}", actualExchangeRate);
+    assertThat(actualExchangeRate.getCurrency().getCurrencyCode()).isEqualTo(("USD"));
+    assertThat(actualExchangeRate.getBaseCurrency().getCurrencyCode()).isEqualTo(("XRP"));
+    assertThat(actualExchangeRate.getFactor().compareTo(new DefaultNumberValue(BigInteger.ZERO)) > 0).isEqualTo((true));
+    assertThat(actualExchangeRate.getExchangeRateChain().size()).isEqualTo((1));
+
+    // Make sure it got put in the cache
+    assertThat(fxCache.getIfPresent(conversionQuery)).isNotNull();
+
+    // Wait a few seconds for the cache entry to die
+    Thread.sleep(2000);
+
+    // Make sure that entry was invalidated
+    assertThat(fxCache.getIfPresent(conversionQuery)).isNull();
   }
 
 }

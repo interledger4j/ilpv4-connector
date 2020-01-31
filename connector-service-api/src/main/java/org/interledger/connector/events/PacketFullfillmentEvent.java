@@ -12,10 +12,10 @@ import java.math.BigDecimal;
  * Event that is emitted when the connector receives a ILP fulfillment
  */
 @Value.Immutable
-public interface PacketFulfillmentEvent extends ConnectorEvent {
+public interface PacketFullfillmentEvent extends ConnectorEvent {
 
-  static ImmutablePacketFulfillmentEvent.Builder builder() {
-    return ImmutablePacketFulfillmentEvent.builder();
+  static ImmutablePacketFullfillmentEvent.Builder builder() {
+    return ImmutablePacketFullfillmentEvent.builder();
   }
 
   /**
