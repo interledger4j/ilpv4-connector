@@ -32,6 +32,7 @@ public interface ConfigConstants {
   String INTERLEDGER__CONNECTOR__GLOBAL_ROUTING_SETTINGS__ROUTING_SECRET =
     INTERLEDGER__CONNECTOR__GLOBAL_ROUTING_SETTINGS + DOT + "routingSecret";
   String ADMIN_PASSWORD = INTERLEDGER__CONNECTOR + DOT + "adminPassword";
+  String FX_CACHE_TTL = INTERLEDGER__CONNECTOR + DOT + CACHE + DOT + "fxTtl";
 
   ////////////////////
   // Enabled Protocols
