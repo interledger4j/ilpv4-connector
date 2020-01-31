@@ -24,12 +24,11 @@ public class CoordinationEventBusBridge {
 
   private void publish(Object event) {
     if (event instanceof Coordinated) {
-      LOGGER.info("Skipping message to avoid reprocessing: {}", event);
+      LOGGER.info("Message detected as previously coordinated and will not be reprocessed: {}", event);
     }
     else {
       coordinationMessagePublisher.publish(event);
     }
-
   }
 
   @Subscribe

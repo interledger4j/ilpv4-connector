@@ -12,6 +12,8 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.util.UUID;
+
 @Configuration
 public class RedisPubSubConfig {
 
@@ -28,9 +30,17 @@ public class RedisPubSubConfig {
   @Autowired
   protected ObjectMapper objectMapper;
 
+  private static final UUID APPLICATION_COORDINATION_UUID = UUID.randomUUID();
+
+  @Bean
+  UUID applicationCoordinationUuid() {
+    return APPLICATION_COORDINATION_UUID;
+  }
+
   @Bean
   MessageListenerAdapter coordinationMessageListener() {
-    return new MessageListenerAdapter(new CoordinationMessageSubscriber(objectMapper, eventBus, coordinationDedupeCache()));
+    return new MessageListenerAdapter(new CoordinationMessageSubscriber(objectMapper, eventBus,
+      applicationCoordinationUuid(), coordinatedProxyGenerator()));
   }
 
   @Bean
@@ -49,7 +59,8 @@ public class RedisPubSubConfig {
 
   @Bean
   CoordinationMessagePublisher coordinationRedisPublisher() {
-    return new CoordinationMessagePublisherImpl(pubsubRedisTemplate(), coordinationTopic(), objectMapper, coordinationDedupeCache());
+    return new CoordinationMessagePublisherImpl(pubsubRedisTemplate(), coordinationTopic(), objectMapper,
+      applicationCoordinationUuid(), coordinatedMessageIdGenerator());
   }
 
   @Bean(PUBSUB_REDIS_TEMPLATE_BEAN_NAME)
@@ -69,7 +80,13 @@ public class RedisPubSubConfig {
   }
 
   @Bean
-  CoordinationDedupeCache coordinationDedupeCache() {
-    return new CoordinationDedupeCache();
+  CoordinationMessageIdGenerator coordinatedMessageIdGenerator() {
+    return new CoordinationMessageIdGeneratorImpl();
   }
+
+  @Bean
+  CoordinationProxyGenerator coordinatedProxyGenerator() {
+    return new CoordinationProxyGeneratorImpl();
+  }
+
 }

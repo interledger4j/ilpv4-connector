@@ -11,11 +11,13 @@ import java.util.UUID;
 @JsonDeserialize(as = ImmutableCoordinationMessage.class)
 public interface CoordinationMessage {
 
-  Class<?> messageType();
+  String messageClassName();
 
   byte[] contents();
 
   UUID messageUuid();
+
+  UUID applicationCoordinationUuid();
 
   static ImmutableCoordinationMessage.Builder builder() {
     return ImmutableCoordinationMessage.builder();

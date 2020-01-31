@@ -8,7 +8,6 @@ import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.link.LoopbackLink;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import feign.FeignException;
 import okhttp3.HttpUrl;
 import org.junit.Before;
@@ -28,9 +27,6 @@ public class ConnectorAdminClientTest {
 
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
-
-  @Rule
-  public WireMockRule wireMockRule = new WireMockRule(0);
 
   private ConnectorAdminClient adminClient;
 
