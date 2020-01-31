@@ -426,6 +426,29 @@ public class InterledgerAddressPrefixMapTest {
     assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.2")).isPresent()).isTrue();
   }
 
+  @Test
+  public void testChildDoesNotInterceptParent() {
+    AccountId parent = AccountId.of("parent");
+    AccountId child = AccountId.of("child");
+    final Route parentRoute = ImmutableRoute.builder()
+      .routePrefix(InterledgerAddressPrefix.GLOBAL)
+      .nextHopAccountId(parent)
+      .build();
+
+    prefixMap.putEntry(parentRoute.routePrefix(), parentRoute);
+
+    final Route childRoute = ImmutableRoute.builder()
+      .routePrefix(InterledgerAddressPrefix.GLOBAL.with("parent").with("me").with("child"))
+      .nextHopAccountId(child)
+      .build();
+    prefixMap.putEntry(childRoute.routePrefix(), childRoute);
+
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.parent"))).isEqualTo(Optional.of(parentRoute));
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.parent.foo"))).isEqualTo(Optional.of(parentRoute));
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.parent.me.child"))).isEqualTo(Optional.of(childRoute));
+    assertThat(prefixMap.findNextHop(InterledgerAddress.of("g.parent.me.child.foo"))).isEqualTo(Optional.of(childRoute));
+  }
+
   ////////////////////
   // Private Helpers
   ////////////////////
