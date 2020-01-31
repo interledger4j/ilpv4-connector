@@ -340,6 +340,11 @@
       <artifactId>jakarta.servlet-api</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
     </dependency>
@@ -382,11 +387,6 @@
       <id>docker</id>
       <!-- ship liquibase with docker image build -->
       <dependencies>
-        <dependency>
-          <groupId>org.liquibase</groupId>
-          <artifactId>liquibase-core</artifactId>
-          <scope>runtime</scope>
-        </dependency>
         <dependency>
           <groupId>com.newrelic.agent.java</groupId>
           <artifactId>newrelic-java</artifactId>

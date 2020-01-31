@@ -1,0 +1,18 @@
+# dummy secrets and keys that make it easy to run for dev purposes but are completely insecure for running a real-world
+# connector because the passwords and keys would be known
+interledger:
+  connector:
+    ## ILP address of the connector.
+    nodeIlpAddress: test1.connie
+    require32ByteSharedSecrets: false
+    globalPrefix: test
+    adminPassword: password
+    globalRoutingSettings:
+      routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
+    keystore:
+      jks:
+        enabled: true
+        filename: crypto/crypto.p12
+        password: password
+        secret0_alias: secret0
+        secret0_password: password
