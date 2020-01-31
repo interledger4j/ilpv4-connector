@@ -10,6 +10,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+/**
+ * Service that subscribes to the shared topic for the cluster in order to forward messages potentially received
+ * by another connector in the cluster.
+ */
 @Service
 public class CoordinationMessageSubscriber implements MessageListener {
 
@@ -33,6 +37,13 @@ public class CoordinationMessageSubscriber implements MessageListener {
     this.coordinatedProxyGenerator = coordinatedProxyGenerator;
   }
 
+  /**
+   * Processes messages that were sent via the shared topic and forwards them to the application in their original
+   * form if they weren't originally sent by this connector instance. Proxies the original message for prevention
+   * of feedback loops resulting from cluster messages being forwarded by connectors back and forth to one another.
+   * @param message received via the shared topic
+   * @param pattern not used
+   */
   public void onMessage(Message message, byte[] pattern) {
     try {
       CoordinationMessage received = objectMapper.readValue(message.getBody(), CoordinationMessage.class);

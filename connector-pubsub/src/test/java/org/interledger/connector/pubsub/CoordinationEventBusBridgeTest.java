@@ -12,6 +12,7 @@ import com.google.common.eventbus.EventBus;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -20,6 +21,9 @@ public class CoordinationEventBusBridgeTest {
 
   @Rule
   public MockitoRule mockitoRule = MockitoJUnit.rule();
+
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
 
   @Mock
   private CoordinationMessagePublisher publisher;
@@ -54,10 +58,22 @@ public class CoordinationEventBusBridgeTest {
   }
 
   @Test
+  public void nullAccountUpdateFails() {
+    expectedException.expect(NullPointerException.class);
+    bridge.onAccountUpdated(null);
+  }
+
+  @Test
   public void accountCreate() {
     AccountCreatedEvent update = AccountCreatedEvent.builder().accountId(AccountId.of("mark")).build();
     bridge.onAccountCreated(update);
     verify(publisher, times(1)).publish(update);
+  }
+
+  @Test
+  public void nullAccountCreateFails() {
+    expectedException.expect(NullPointerException.class);
+    bridge.onAccountCreated(null);
   }
 
 }
