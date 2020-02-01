@@ -121,7 +121,6 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
     {
       final ConnectorServer aliceServer = new ConnectorServer(constructConnectorSettingsForAlice());
       aliceServer.setPort(ALICE_PORT);
-      // aliceServer.setProperty("LOGGING_LEVEL", "INFO");
       topology.addNode(ALICE_CONNECTOR_ADDRESS,
         new ConnectorServerNode(ALICE, aliceServer, constructStaticRoutesForAlice()));
     }
