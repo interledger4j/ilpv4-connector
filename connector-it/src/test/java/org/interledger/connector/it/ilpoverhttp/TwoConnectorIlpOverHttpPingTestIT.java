@@ -327,14 +327,7 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
 
 
   /**
-   * Random address should reject since it's not in the Bob's routing table. Note that as of
-   * https://github.com/interledger4j/ilpv4-connector/issues/563, the local routing table on Bob is getting usd
-   * correctly. However, this local table has static routes for both Alice and Bob because the two nodes are sharing the
-   * same database. This is a quirk of the IT topology, so in order to make this test work (i.e., ping a random address
-   * at paul that doesn't exist) we need to use an address that Alice will forward to Bob, but for which Bob will simply
-   * reject as unreachable. For now, this is a child-account on Bob (e.g., `test.bob.accounts.{uuid}`. Alice will route
-   * this to Bob, who will try to forward this to a local account that doesn't exist, yielding an `F02` error as
-   * expected.
+   * Random address should reject since it's not in the Bob's routing table.
    */
   @Test
   public void testPaulPingsRandomAtBob() throws InterruptedException {
