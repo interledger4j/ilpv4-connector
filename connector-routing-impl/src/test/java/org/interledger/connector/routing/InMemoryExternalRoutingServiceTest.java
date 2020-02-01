@@ -3,6 +3,7 @@ package org.interledger.connector.routing;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,7 +36,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
+/**
+ * Unit tests for {@link InMemoryExternalRoutingService}.
+ */
 public class InMemoryExternalRoutingServiceTest {
+
+  private final String encryptedSecret = EncryptedSecret.ENCODING_PREFIX +
+    ":GCPKMS:KR1:Foo_password:1:GS:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=";
 
   @Rule
   public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -51,7 +58,9 @@ public class InMemoryExternalRoutingServiceTest {
   @Mock
   private StaticRoutesRepository staticRoutesRepository;
   @Mock
-  private ChildAccountPaymentRouter childAccountPaymentRouter;
+  private LocalDestinationAddressPaymentRouter localDestinationAddressPaymentRouter;
+  @Mock
+  private RoutingTable<Route> localRoutingTableMock;
   @Mock
   private ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable;
   @Mock
@@ -59,8 +68,7 @@ public class InMemoryExternalRoutingServiceTest {
   @Mock
   private GlobalRoutingSettings globalRoutingSettings;
 
-  private final String encryptedSecret = EncryptedSecret.ENCODING_PREFIX +
-      ":GCPKMS:KR1:Foo_password:1:GS:VGhpcyBpcyBhIHRoZSBzZWNyZXQ=";
+  private Supplier<ConnectorSettings> connectorSettingsSupplier;
 
   private InMemoryExternalRoutingService service;
 
@@ -72,38 +80,51 @@ public class InMemoryExternalRoutingServiceTest {
 
   @Before
   public void setUp() {
-    Supplier<ConnectorSettings> connectorSettingsSupplier = () -> connectorSettings;
+    this.connectorSettingsSupplier = () -> connectorSettings;
     service = new InMemoryExternalRoutingService(
-        eventBus,
-        connectorSettingsSupplier,
-        decryptor,
-        accountSettingsRepository,
-        staticRoutesRepository,
-        childAccountPaymentRouter,
-        outgoingRoutingTable,
-        routeBroadcaster
+      eventBus,
+      connectorSettingsSupplier,
+      decryptor,
+      accountSettingsRepository,
+      staticRoutesRepository,
+      localDestinationAddressPaymentRouter,
+      localRoutingTableMock,
+      outgoingRoutingTable,
+      routeBroadcaster
     );
 
     when(connectorSettings.globalRoutingSettings()).thenReturn(globalRoutingSettings);
 
     shawn = StaticRoute.builder()
-        .nextHopAccountId(AccountId.of("shawnSpencer"))
-        .routePrefix(InterledgerAddressPrefix.of("g.psych"))
-        .build();
+      .nextHopAccountId(AccountId.of("shawnSpencer"))
+      .routePrefix(InterledgerAddressPrefix.of("g.psych"))
+      .build();
 
     lassiter = StaticRoute.builder()
-        .nextHopAccountId(AccountId.of("carltonLassiter"))
-        .routePrefix(InterledgerAddressPrefix.of("g.sbpd"))
-        .build();
+      .nextHopAccountId(AccountId.of("carltonLassiter"))
+      .routePrefix(InterledgerAddressPrefix.of("g.sbpd"))
+      .build();
 
     woody = StaticRoute.builder()
-        .nextHopAccountId(AccountId.of("woody"))
-        .routePrefix(InterledgerAddressPrefix.of("g.sbpd.morgue"))
-        .build();
+      .nextHopAccountId(AccountId.of("woody"))
+      .routePrefix(InterledgerAddressPrefix.of("g.sbpd.morgue"))
+      .build();
   }
 
   @Test
   public void staticRoutes() {
+    service = new InMemoryExternalRoutingService(
+      eventBus,
+      connectorSettingsSupplier,
+      decryptor,
+      accountSettingsRepository,
+      staticRoutesRepository,
+      localDestinationAddressPaymentRouter,
+      new InMemoryRoutingTable<>(),
+      outgoingRoutingTable,
+      routeBroadcaster
+    );
+
     when(staticRoutesRepository.getAllStaticRoutes()).thenReturn(Collections.emptySet());
     assertThat(service.getAllStaticRoutes()).isEmpty();
     assertThat(service.getAllRoutes()).isEmpty();
@@ -116,18 +137,17 @@ public class InMemoryExternalRoutingServiceTest {
     when(globalRoutingSettings.routingSecret()).thenReturn(encryptedSecret);
     when(connectorSettings.operatorAddress()).thenReturn(InterledgerAddress.of("test.example"));
     when(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PEER))
-        .thenReturn(Collections.emptyList());
+      .thenReturn(Collections.emptyList());
     when(routeBroadcaster.registerCcpEnabledAccount((AccountId) any())).thenReturn(Optional.empty());
     when(decryptor.decrypt(any())).thenReturn(new byte[32]);
 
-
     service.start();
     assertThat(service.getAllRoutes())
-        .extracting("nextHopAccountId", "routePrefix")
-        .containsOnly(
-            tuple(shawn.nextHopAccountId(), shawn.routePrefix()),
-            tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
-        );
+      .extracting("nextHopAccountId", "routePrefix")
+      .containsOnly(
+        tuple(shawn.nextHopAccountId(), shawn.routePrefix()),
+        tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
+      );
     verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(shawn.nextHopAccountId());
     verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(lassiter.nextHopAccountId());
 
@@ -135,23 +155,23 @@ public class InMemoryExternalRoutingServiceTest {
     when(staticRoutesRepository.getAllStaticRoutes()).thenReturn(Sets.newHashSet(shawn, lassiter, woody));
     service.createStaticRoute(woody);
     assertThat(service.getAllRoutes())
-        .extracting("nextHopAccountId", "routePrefix")
-        .containsOnly(
-            tuple(shawn.nextHopAccountId(), shawn.routePrefix()),
-            tuple(woody.nextHopAccountId(), woody.routePrefix()),
-            tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
-        );
+      .extracting("nextHopAccountId", "routePrefix")
+      .containsOnly(
+        tuple(shawn.nextHopAccountId(), shawn.routePrefix()),
+        tuple(woody.nextHopAccountId(), woody.routePrefix()),
+        tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
+      );
     verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(woody.nextHopAccountId());
     verify(staticRoutesRepository, times(1)).saveStaticRoute(woody);
 
     when(staticRoutesRepository.deleteStaticRouteByPrefix(shawn.routePrefix())).thenReturn(true);
     service.deleteStaticRouteByPrefix(shawn.routePrefix());
     assertThat(service.getAllRoutes())
-        .extracting("nextHopAccountId", "routePrefix")
-        .containsOnly(
-            tuple(woody.nextHopAccountId(), woody.routePrefix()),
-            tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
-        );
+      .extracting("nextHopAccountId", "routePrefix")
+      .containsOnly(
+        tuple(woody.nextHopAccountId(), woody.routePrefix()),
+        tuple(lassiter.nextHopAccountId(), lassiter.routePrefix())
+      );
     verify(staticRoutesRepository, times(1)).deleteStaticRouteByPrefix(shawn.routePrefix());
   }
 
@@ -226,6 +246,36 @@ public class InMemoryExternalRoutingServiceTest {
     verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(goodPeer);
   }
 
+
+  @Test
+  public void testFindBestNexHopFromLocalPaymentRouter() {
+    final Route routeMock = mock(Route.class);
+    when(localDestinationAddressPaymentRouter.findBestNexHop(any())).thenReturn(Optional.of(routeMock));
+
+    final Optional<Route> actual = service.findBestNexHop(InterledgerAddress.of("example.foo.bar"));
+    assertThat(actual).isPresent();
+    assertThat(actual.get()).isEqualTo(routeMock);
+  }
+
+  @Test
+  public void testFindBestNexHopFromForwardingPaymentRouter() {
+    final Route routeMock = mock(Route.class);
+    when(localDestinationAddressPaymentRouter.findBestNexHop(any())).thenReturn(Optional.empty());
+    when(localRoutingTableMock.findNextHopRoute(any())).thenReturn(Optional.of(routeMock));
+
+    final Optional<Route> actual = service.findBestNexHop(InterledgerAddress.of("example.foo.bar"));
+    assertThat(actual).isPresent();
+    assertThat(actual.get()).isEqualTo(routeMock);
+  }
+
+  @Test
+  public void testFindBestNexHopWhenBothTablesAreEmpty() {
+    when(localDestinationAddressPaymentRouter.findBestNexHop(any())).thenReturn(Optional.empty());
+    when(localRoutingTableMock.findNextHopRoute(any())).thenReturn(Optional.empty());
+
+    final Optional<Route> actual = service.findBestNexHop(InterledgerAddress.of("example.foo.bar"));
+    assertThat(actual).isNotPresent();
+  }
 
   private Set<StaticRoute> defaultRoutes() {
     return Sets.newHashSet(shawn, lassiter);

@@ -72,7 +72,9 @@ public class DefaultNextHopPacketMapperTest {
   public ExpectedException expectedException = ExpectedException.none();
 
   private DefaultNextHopPacketMapper mapper;
+
   private ModifiableConnectorSettings connectorSettings;
+
   @Mock
   private PaymentRouter<Route> mockRoutingService;
   @Mock

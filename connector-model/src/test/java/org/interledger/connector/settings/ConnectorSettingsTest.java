@@ -40,13 +40,14 @@ public class ConnectorSettingsTest {
     assertThat(defaultConnectorSettings.globalRoutingSettings().maxEpochsPerRoutingTable()).isEqualTo(50);
 
     assertThat(defaultConnectorSettings.enabledProtocols()).isNotNull();
-    assertThat(defaultConnectorSettings.enabledProtocols().isPeerRoutingEnabled()).isFalse();
+    assertThat(defaultConnectorSettings.enabledProtocols().isPeerRoutingEnabled()).isTrue();
     assertThat(defaultConnectorSettings.enabledProtocols().isPingProtocolEnabled()).isTrue();
-    assertThat(defaultConnectorSettings.enabledProtocols().isIldcpEnabled()).isFalse();
+    assertThat(defaultConnectorSettings.enabledProtocols().isIldcpEnabled()).isTrue();
     assertThat(defaultConnectorSettings.enabledProtocols().isIlpOverHttpEnabled()).isTrue();
 
     assertThat(defaultConnectorSettings.enabledFeatures()).isNotNull();
-    assertThat(defaultConnectorSettings.enabledFeatures().isRateLimitingEnabled()).isTrue();
+    assertThat(defaultConnectorSettings.enabledFeatures().isRateLimitingEnabled()).isFalse();
+    assertThat(defaultConnectorSettings.enabledFeatures().isLocalSpspFulfillmentEnabled()).isFalse();
 
     assertThat(defaultConnectorSettings.keys()).isEqualTo(
       CryptoKeys.builder()

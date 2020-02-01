@@ -2,13 +2,13 @@ package org.interledger.connector.it.settlement;
 
 import static java.math.BigInteger.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.interledger.connector.accounts.sub.LocalDestinationAddressUtils.PING_ACCOUNT_ID;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_CONNECTOR_ADDRESS;
 import static org.interledger.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.PETER_ACCOUNT;
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.accounts.AccountSettings;
@@ -432,8 +432,9 @@ public class TwoConnectorXrpSettlementIT extends AbstractIlpOverHttpIT {
     // this should trigger settlement 10x but will even out the leftovers of 100 units on each call that the
     // settlement engine is tracking
     for (int i = 0; i < 10; i++) {
-      this.testPing(PETER_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(),
-        UnsignedLong.valueOf(eleventyTen));
+      this.testPing(
+        PETER_ACCOUNT, getBobConnectorAddress(), getAliceConnectorAddress(), UnsignedLong.valueOf(eleventyTen)
+      );
       final CountDownLatch latch = new CountDownLatch(1);
       final Consumer<IncomingSettlementSucceededEvent> settlementSucceededCallback =
         new Consumer<IncomingSettlementSucceededEvent>() {
@@ -446,8 +447,12 @@ public class TwoConnectorXrpSettlementIT extends AbstractIlpOverHttpIT {
         };
       // Wait for Alice to receive the settlement...
       aliceConnector.getEventBus().register(settlementSucceededCallback);
-      getLogger().info("Waiting up to 20 seconds for Settlement to be processed...");
-      latch.await(20, TimeUnit.SECONDS);
+      getLogger().info("Waiting up to 20 seconds for Bob's settlement to be received by Alice...");
+      if (!latch.await(20, TimeUnit.SECONDS)) {
+        getLogger().error("Waited 20 seconds for Bob's settlement to be received by Alice, no such settlement occurred "
+          + "on the XRP ledger"
+        );
+      }
       aliceConnector.getEventBus().unregister(settlementSucceededCallback); // for cleanup...
 
       if (i < 9) {

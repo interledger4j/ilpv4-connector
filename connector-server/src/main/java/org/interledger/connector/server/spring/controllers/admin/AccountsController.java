@@ -10,7 +10,6 @@ import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 
-import org.springframework.core.convert.ConversionService;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
@@ -39,18 +38,16 @@ import java.util.stream.Collectors;
 public class AccountsController {
 
   private final AccountManager accountManager;
-  private final ConversionService conversionService;
 
-  public AccountsController(final AccountManager accountManager,
-                            final ConversionService conversionService) {
+  public AccountsController(final AccountManager accountManager) {
     this.accountManager = Objects.requireNonNull(accountManager);
-    this.conversionService = Objects.requireNonNull(conversionService);
   }
 
   /**
    * Create a new Account in this server.
    *
    * @param accountSettings The {@link AccountSettings} to create in this Connector.
+   *
    * @return An {@link HttpEntity} that contains a {@link EntityModel} that contains the created {@link
    *   AccountSettings}.
    */
@@ -110,6 +107,7 @@ public class AccountsController {
    * Get an account on this connector by its unique identifier.
    *
    * @param accountId The {@link AccountId} for the account to retrieve.
+   *
    * @return An {@link HttpEntity} that contains a {@link EntityModel} that contains the created {@link
    *   AccountSettings}.
    */
@@ -131,6 +129,7 @@ public class AccountsController {
    *
    * @param accountId       The {@link AccountId} for the account to update.
    * @param accountSettings An {@link AccountSettings} containing information to update the account with.
+   *
    * @return An {@link HttpEntity} that contains a {@link EntityModel} that contains the created {@link
    *   AccountSettings}.
    */

@@ -4,6 +4,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountIdResolver;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.link.CircuitBreakingLink;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.core.InterledgerAddress;
@@ -16,6 +17,8 @@ import org.interledger.link.StatefulLink;
 import org.interledger.link.events.LinkConnectedEvent;
 import org.interledger.link.events.LinkConnectionEventListener;
 import org.interledger.link.events.LinkDisconnectedEvent;
+import org.interledger.link.spsp.StatelessSpspReceiverLink;
+import org.interledger.link.spsp.StatelessSpspReceiverLinkSettings;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
@@ -53,6 +56,7 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
   private final LinkSettingsFactory linkSettingsFactory;
   private final LinkFactoryProvider linkFactoryProvider;
   private final CircuitBreakerConfig defaultCircuitBreakerConfig;
+  private final LocalDestinationAddressUtils localDestinationAddressUtils;
   private final Link<?> pingLink;
 
   /**
@@ -65,6 +69,7 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
     final LinkFactoryProvider linkFactoryProvider,
     final AccountIdResolver accountIdResolver,
     final CircuitBreakerConfig defaultCircuitBreakerConfig,
+    final LocalDestinationAddressUtils localDestinationAddressUtils,
     final EventBus eventBus
   ) {
     this.operatorAddressSupplier = Objects.requireNonNull(operatorAddressSupplier);
@@ -73,6 +78,7 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
     this.linkFactoryProvider = Objects.requireNonNull(linkFactoryProvider);
     this.accountIdResolver = Objects.requireNonNull(accountIdResolver);
     this.defaultCircuitBreakerConfig = Objects.requireNonNull(defaultCircuitBreakerConfig);
+    this.localDestinationAddressUtils = Objects.requireNonNull(localDestinationAddressUtils);
 
     Objects.requireNonNull(eventBus).register(this);
 
@@ -101,14 +107,19 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
 
   @Override
   public Link<? extends LinkSettings> getOrCreateLink(final AccountSettings accountSettings) {
-    Objects.requireNonNull(accountSettings);
+    Objects.requireNonNull(accountSettings, "accountId must not be null");
+
     final AccountId accountId = accountSettings.accountId();
-    return Optional.ofNullable(this.connectedLinks.get(accountId))
-      .orElseGet(() -> {
-        // Convert to LinkSettings...
-        final LinkSettings linkSettings = linkSettingsFactory.construct(accountSettings);
-        return createLink(accountId, linkSettings);
-      });
+    if (localDestinationAddressUtils.isConnectorPingAccountId(accountId)) {
+      return this.pingLink;
+    } else {
+      return Optional.ofNullable(this.connectedLinks.get(accountId))
+        .orElseGet(() -> {
+          // Convert to LinkSettings...
+          final LinkSettings linkSettings = linkSettingsFactory.construct(accountSettings);
+          return createLink(accountId, linkSettings);
+        });
+    }
   }
 
   @Override
@@ -153,14 +164,17 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
     return new HashSet<>(this.connectedLinks.values());
   }
 
-  /**
-   * Accessor for the {@link Link} that processes Ping protocol requests.
-   *
-   * @return A {@link Link} for processing unidirectional and bidirectional ping requests.
-   */
   @Override
-  public Link<? extends LinkSettings> getPingLink() {
-    return pingLink;
+  public Link<? extends LinkSettings> getOrCreateSpspReceiverLink(final AccountSettings accountSettings) {
+    Objects.requireNonNull(accountSettings);
+    return linkFactoryProvider.getLinkFactory(StatelessSpspReceiverLink.LINK_TYPE)
+      .constructLink(
+        operatorAddressSupplier,
+        StatelessSpspReceiverLinkSettings.builder()
+          .assetCode(accountSettings.assetCode())
+          .assetScale(accountSettings.assetScale())
+          .build()
+      );
   }
 
   ////////////////////////

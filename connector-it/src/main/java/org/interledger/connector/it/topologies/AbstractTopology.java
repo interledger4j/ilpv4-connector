@@ -1,11 +1,12 @@
 package org.interledger.connector.it.topologies;
 
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
+import static org.interledger.connector.accounts.sub.LocalDestinationAddressUtils.PING_ACCOUNT_ID;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.core.ConfigConstants;
+import org.interledger.connector.server.ConnectorServer;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.link.PingLoopbackLink;
@@ -84,6 +85,21 @@ public abstract class AbstractTopology {
 
   protected static String createOutgoingLinkUrl(int port, AccountId accountId) {
     return "http://localhost:" + port + PathConstants.SLASH_ACCOUNTS + "/" + accountId.toString() + "/ilp";
+  }
+
+  /**
+   * Configure the supplied {@link ConnectorServer} to use the H2 database instead of postgres.
+   *
+   * @param connectorServer A {@link ConnectorServer} that provides access to various data repositories.
+   */
+  protected static void useH2(final ConnectorServer connectorServer) {
+    // Make Bob use a different database from Alice.
+    connectorServer.setProperty("spring.profiles.include", "h2-in-memory, migrate, management");
+    connectorServer.setProperty(
+      "spring.datasource.url", "jdbc:h2:mem:connector-app;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
+    );
+    connectorServer.setProperty("spring.jpa.database-platform", "org.hibernate.dialect.H2Dialect");
+    connectorServer.setProperty("LOGGING_LEVEL", "INFO");
   }
 
   /**
