@@ -232,7 +232,7 @@ public class CcpSenderReceiverTest {
     // The Route to C
     ((DefaultCcpSender) this.connectorB.ccpSender).getForwardingRoutingTable().addRoute(
       ImmutableRouteUpdate.builder()
-        .epoch(0)
+        .epoch(1)
         .route(
           ImmutableRoute.builder()
             .routePrefix(CONNECTOR_C_PREFIX)
@@ -248,7 +248,7 @@ public class CcpSenderReceiverTest {
     // The Route to D through C.
     ((DefaultCcpSender) this.connectorB.ccpSender).getForwardingRoutingTable().addRoute(
       ImmutableRouteUpdate.builder()
-        .epoch(0)
+        .epoch(1)
         .route(
           ImmutableRoute.builder()
             .routePrefix(CONNECTOR_D_PREFIX)
@@ -278,6 +278,53 @@ public class CcpSenderReceiverTest {
     //assertHasRouteForPrefix(CONNECTOR_B_PREFIX, connectorA); // ConnA has a route to B.
     //assertHasRouteForPrefix(CONNECTOR_C_PREFIX, connectorA); // ConnA has a route to C.
     //assertHasRouteForPrefix(CONNECTOR_C_PREFIX, connectorA); // ConnA has a route to D.
+  }
+
+  /**
+   *
+   * If a connector tries to send a route update to its peer, and the route update's nextBestHop is the peer's ID,
+   * we shouldn't send it.  Per https://github.com/interledger4j/ilpv4-connector/issues/536, this behavior held true,
+   * but the DefaultCcpSender threw a NullPointerException.  This test makes sure DefaultCcpSender does not throw a NPE
+   * in this scenario.
+   */
+  @Test
+  public void testSendRouteUpdateWithPeerAsNextHopId() throws InterruptedException {
+    assertRoutingTableIsExpired(connectorA, connectorB);
+    assertSyncMode(CcpSyncMode.MODE_IDLE, connectorA, connectorB);
+    assertRoutingTableEpoch(0, connectorA, connectorB);
+
+    // 1. NodeB sends a RouteControlRequest to move NodeB into SYNC mode.
+    this.connectorA.ccpReceiver.sendRouteControl();
+    assertSyncMode(CcpSyncMode.MODE_IDLE, connectorA);
+    assertSyncMode(CcpSyncMode.MODE_SYNC, connectorB);
+    assertRoutingTableEpoch(0, connectorA, connectorB);
+
+    final int newEpoch = 1;
+    RouteUpdate routeUpdate = ImmutableRouteUpdate.builder()
+      .epoch(newEpoch)
+      .route(
+        ImmutableRoute.builder()
+          .routePrefix(CONNECTOR_C_PREFIX)
+          .addPath(CONNECTOR_C_ADDRESS)
+          .nextHopAccountId(CONNECTOR_A_ACCOUNT) // Simulate sending a route update request where the next hop id = the peer's id
+          .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS))
+          .build()
+      )
+      .routePrefix(CONNECTOR_C_PREFIX)
+      .build();
+    // Add a route on connector B to connector C
+    ((DefaultCcpSender) this.connectorB.ccpSender).getForwardingRoutingTable().addRoute(routeUpdate);
+
+    // Simulates the behavior of InMemoryExternalRoutingService#addStaticRoute by setting the epoch of this update to currentEpoch + 1
+    ((DefaultCcpSender) this.connectorB.ccpSender).getForwardingRoutingTable().setEpochValue(newEpoch, routeUpdate);
+
+    this.connectorB.ccpSender.sendRouteUpdateRequest();
+    Thread.sleep(1000);
+    assertRoutingTableIsNotExpired(connectorA);
+    assertSyncMode(CcpSyncMode.MODE_IDLE, connectorA);
+    assertSyncMode(CcpSyncMode.MODE_SYNC, connectorB);
+    assertRoutingTableEpoch(0, connectorA);
+    assertRoutingTableEpoch(0, connectorB);
   }
 
   private void assertRoutingTableEpoch(final int expectedEpoch, final SimulatedConnector... connectors) {
