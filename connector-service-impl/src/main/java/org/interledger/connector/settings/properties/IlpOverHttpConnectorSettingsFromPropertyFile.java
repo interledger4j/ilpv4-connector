@@ -5,7 +5,7 @@ import org.interledger.connector.settings.IlpOverHttpConnectorSettings;
 
 public class IlpOverHttpConnectorSettingsFromPropertyFile implements IlpOverHttpConnectorSettings {
 
-  IlpOverHttpConnectionSettingsFromPropertyFile connectionDefaults =
+  private IlpOverHttpConnectionSettingsFromPropertyFile connectionDefaults =
     new IlpOverHttpConnectionSettingsFromPropertyFile();
 
   @Override
@@ -15,5 +15,9 @@ public class IlpOverHttpConnectorSettingsFromPropertyFile implements IlpOverHttp
 
   public void setConnectionDefaults(IlpOverHttpConnectionSettingsFromPropertyFile connectionDefaults) {
     this.connectionDefaults = connectionDefaults;
+  }
+
+  public IlpOverHttpConnectionSettingsFromPropertyFile getConnectionDefaults() {
+    return connectionDefaults;
   }
 }

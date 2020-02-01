@@ -50,9 +50,6 @@ public class IlpOverHttpConfig {
   public static final String ILP_OVER_HTTP = "ILP-over-HTTP";
 
   @Autowired
-  ApplicationContext applicationContext;
-
-  @Autowired
   @Qualifier(PROBLEM)
   private ObjectMapper objectMapper;
 
@@ -77,11 +74,7 @@ public class IlpOverHttpConfig {
 
   @Bean
   @Qualifier(ILP_OVER_HTTP)
-  protected ConnectionPool ilpOverHttpConnectionPool(
-    /*@Value("${interledger.connector.ilpOverHttp.connectionDefaults.maxIdleConnections:10}") final int defaultMaxIdleConnections,
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.keepAliveSeconds:30}") final long defaultKeepAliveSeconds*/
-    IlpOverHttpConnectionSettings connectionSettings
-  ) {
+  protected ConnectionPool ilpOverHttpConnectionPool(IlpOverHttpConnectionSettings connectionSettings) {
     return new ConnectionPool(
       connectionSettings.maxIdleConnections(),
       connectionSettings.keepAliveSeconds(), TimeUnit.SECONDS
@@ -112,11 +105,6 @@ public class IlpOverHttpConfig {
   @Qualifier(ILP_OVER_HTTP)
   protected OkHttpClient ilpOverHttpClient(
     @Qualifier(ILP_OVER_HTTP) final ConnectionPool ilpOverHttpConnectionPool,
-    /*@Value("${interledger.connector.ilpOverHttp.connectionDefaults.connectTimeoutMillis:1000}") final long defaultConnectTimeoutMillis,
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.readTimeoutMillis:60000}") final long defaultReadTimeoutMillis,
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.writeTimeoutMillis:60000}") final long defaultWriteTimeoutMillis,
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.maxRequests:100}") final int maxRequests,
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.maxRequestsPerHost:50}") final int maxRequestsPerHost*/
     IlpOverHttpConnectionSettings connectionSettings
   ) {
     OkHttpClient.Builder builder = new OkHttpClient.Builder();

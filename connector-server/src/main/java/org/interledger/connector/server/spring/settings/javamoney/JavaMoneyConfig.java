@@ -158,9 +158,6 @@ public class JavaMoneyConfig {
   @Qualifier(FX)
   OkHttpClient fxHttpClient(
       @Qualifier(FX) final ConnectionPool fxConnectionPool,
-      /*@Value("${interledger.connector.fx.connectionDefaults.connectTimeoutMillis:1000}") final long defaultConnectTimeoutMillis,
-      @Value("${interledger.connector.fx.connectionDefaults.readTimeoutMillis:60000}") final long defaultReadTimeoutMillis,
-      @Value("${interledger.connector.fx.connectionDefaults.writeTimeoutMillis:60000}") final long defaultWriteTimeoutMillis*/
       FxConnectionSettings fxConnectionSettings
   ) {
     OkHttpClient.Builder builder = new OkHttpClient.Builder();
@@ -185,11 +182,7 @@ public class JavaMoneyConfig {
 
   @Bean
   @Qualifier(FX)
-  public ConnectionPool fxConnectionPool(
-      /*@Value("${interledger.connector.fx.connectionDefaults.maxIdleConnections:5}") final int defaultMaxIdleConnections,
-      @Value("${interledger.connector.fx.connectionDefaults.keepAliveMinutes:1}") final long defaultConnectionKeepAliveMinutes*/
-      FxConnectionSettings fxConnectionSettings
-  ) {
+  public ConnectionPool fxConnectionPool(FxConnectionSettings fxConnectionSettings) {
     return new ConnectionPool(
       fxConnectionSettings.maxIdleConnections(),
       fxConnectionSettings.keepAliveMinutes(), TimeUnit.MINUTES

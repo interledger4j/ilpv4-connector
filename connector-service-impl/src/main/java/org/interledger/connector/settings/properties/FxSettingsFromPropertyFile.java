@@ -5,7 +5,7 @@ import org.interledger.connector.settings.FxSettings;
 
 public class FxSettingsFromPropertyFile implements FxSettings {
 
-  FxConnectionSettingsFromPropertyFile connectionDefaults = new FxConnectionSettingsFromPropertyFile();
+  private FxConnectionSettingsFromPropertyFile connectionDefaults = new FxConnectionSettingsFromPropertyFile();
 
   @Override
   public FxConnectionSettings connectionDefaults() {
@@ -14,5 +14,9 @@ public class FxSettingsFromPropertyFile implements FxSettings {
 
   public void setConnectionDefaults(FxConnectionSettingsFromPropertyFile connectionDefaults) {
     this.connectionDefaults = connectionDefaults;
+  }
+
+  public FxConnectionSettingsFromPropertyFile getConnectionDefaults() {
+    return connectionDefaults;
   }
 }
