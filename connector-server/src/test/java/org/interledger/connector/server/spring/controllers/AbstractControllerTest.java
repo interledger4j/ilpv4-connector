@@ -7,9 +7,9 @@ import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
-import org.interledger.connector.server.spring.settings.ConnectorSettingsFromPropertyFileTest;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.link.LinkFactoryProvider;
@@ -20,11 +20,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -38,7 +37,7 @@ import java.util.function.Supplier;
 @ContextConfiguration(classes = {
   ControllerTestConfig.class, // For custom Beans.
   SpringConnectorWebMvc.class,
-  ConnectorSettingsFromPropertyFileTest.TestConfiguration.class
+  AbstractControllerTest.TestConfiguration.class
 })
 @ActiveProfiles( {"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 public abstract class AbstractControllerTest {
@@ -129,5 +128,14 @@ public abstract class AbstractControllerTest {
     headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_OCTET_STREAM));
     headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
     return headers;
+  }
+
+  @EnableConfigurationProperties(ConnectorSettingsFromPropertyFile.class)
+  public static class TestConfiguration {
+    @Bean
+    public Supplier<ConnectorSettings> connectorSettingsSupplier(ConnectorSettingsFromPropertyFile settings) {
+      return () -> settings;
+    }
+
   }
 }

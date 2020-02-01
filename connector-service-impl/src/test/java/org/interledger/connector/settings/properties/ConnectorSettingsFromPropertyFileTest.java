@@ -3,7 +3,6 @@ package org.interledger.connector.settings.properties;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.server.spring.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.settings.FxConnectionSettings;
 import org.interledger.connector.settings.IlpOverHttpConnectionSettings;
 import org.interledger.connector.settings.IlpOverHttpConnectorSettings;

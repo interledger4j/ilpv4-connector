@@ -1,4 +1,4 @@
-package org.interledger.connector.server.spring.settings.properties;
+package org.interledger.connector.settings.properties;
 
 import org.interledger.connector.settings.FxConnectionSettings;
 import org.interledger.connector.settings.FxSettings;
