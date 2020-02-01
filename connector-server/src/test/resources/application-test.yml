@@ -13,9 +13,11 @@ interledger:
       # A simulated routing secret, which is a seed used for generating routing table auth values.
       # Represents the plaintext value of `shh`, encrypted.
       routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
-    connectionDefaults:
-      connectTimeoutMillis: 5000
-      readTimeoutMillis: 30000
-      writeTimeoutMillis: 40000
-      maxIdleConnections: 10
-      keepAliveMinutes: 2
+    fx:
+      # these are just random overrides for test assertions
+      connectionDefaults:
+        connectTimeoutMillis: 5000
+        readTimeoutMillis: 30000
+        writeTimeoutMillis: 40000
+        maxIdleConnections: 10
+        keepAliveMinutes: 2

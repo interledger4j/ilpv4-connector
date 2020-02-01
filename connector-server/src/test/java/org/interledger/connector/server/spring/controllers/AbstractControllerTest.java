@@ -7,6 +7,7 @@ import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
+import org.interledger.connector.server.spring.settings.ConnectorSettingsFromPropertyFileTest;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementService;
@@ -21,6 +22,9 @@ import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -33,7 +37,8 @@ import java.util.function.Supplier;
  */
 @ContextConfiguration(classes = {
   ControllerTestConfig.class, // For custom Beans.
-  SpringConnectorWebMvc.class
+  SpringConnectorWebMvc.class,
+  ConnectorSettingsFromPropertyFileTest.TestConfiguration.class
 })
 @ActiveProfiles( {"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 public abstract class AbstractControllerTest {
@@ -50,11 +55,11 @@ public abstract class AbstractControllerTest {
   @MockBean
   protected AccountSettingsRepository accountSettingsRepositoryMock;
 
-  @MockBean
-  protected ConnectorSettings connectorSettingsMock;
+  /*@MockBean
+  protected ConnectorSettings connectorSettingsMock;*/
 
-  @MockBean
-  protected Supplier<ConnectorSettings> connectorSettingsSupplierMock;
+  /*@MockBean
+  protected Supplier<ConnectorSettings> connectorSettingsSupplierMock;*/
 
   @MockBean
   protected EncryptionService encryptionServiceMock;

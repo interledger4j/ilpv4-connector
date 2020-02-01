@@ -9,6 +9,8 @@ import static org.interledger.connector.server.spring.settings.web.JacksonConfig
 import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.connector.accounts.DefaultAccountIdResolver;
 import org.interledger.connector.accounts.IlpOverHttpAccountIdResolver;
+import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.connector.settings.IlpOverHttpConnectionSettings;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.link.LinkFactoryProvider;
@@ -24,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -31,6 +34,7 @@ import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import javax.annotation.PostConstruct;
 
 /**
@@ -44,6 +48,9 @@ import javax.annotation.PostConstruct;
 public class IlpOverHttpConfig {
 
   public static final String ILP_OVER_HTTP = "ILP-over-HTTP";
+
+  @Autowired
+  ApplicationContext applicationContext;
 
   @Autowired
   @Qualifier(PROBLEM)
@@ -64,13 +71,20 @@ public class IlpOverHttpConfig {
 
   @Bean
   @Qualifier(ILP_OVER_HTTP)
+  protected IlpOverHttpConnectionSettings connectionSettings(Supplier<ConnectorSettings> connectorSettings) {
+    return connectorSettings.get().ilpOverHttpSettings().connectionDefaults();
+  }
+
+  @Bean
+  @Qualifier(ILP_OVER_HTTP)
   protected ConnectionPool ilpOverHttpConnectionPool(
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.maxIdleConnections:10}") final int defaultMaxIdleConnections,
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.keepAliveSeconds:30}") final long defaultKeepAliveSeconds
+    /*@Value("${interledger.connector.ilpOverHttp.connectionDefaults.maxIdleConnections:10}") final int defaultMaxIdleConnections,
+    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.keepAliveSeconds:30}") final long defaultKeepAliveSeconds*/
+    IlpOverHttpConnectionSettings connectionSettings
   ) {
     return new ConnectionPool(
-      defaultMaxIdleConnections,
-      defaultKeepAliveSeconds, TimeUnit.SECONDS
+      connectionSettings.maxIdleConnections(),
+      connectionSettings.keepAliveSeconds(), TimeUnit.SECONDS
     );
   }
 
@@ -78,18 +92,19 @@ public class IlpOverHttpConfig {
    * A Bean for {@link OkHttp3ClientHttpRequestFactory}.
    *
    * @param ilpOverHttpConnectionPool   A {@link ConnectionPool} as configured above.
-   * @param defaultConnectTimeoutMillis Applied when connecting a TCP socket to the target host. A value of 0 means no
+   * @param connectionSettings          A {@link IlpOverHttpConnectionSettings} with the following properties
+   *        connectTimeoutMillis Applied when connecting a TCP socket to the target host. A value of 0 means no
    *                                    timeout, otherwise values must be between 1 and {@link Integer#MAX_VALUE} when
    *                                    converted to milliseconds. If unspecified, defaults to 10000.
-   * @param defaultReadTimeoutMillis    Applied to both the TCP socket and for individual read IO operations. A value of
+   *        readTimeoutMillis    Applied to both the TCP socket and for individual read IO operations. A value of
    *                                    0 means no timeout, otherwise values must be between 1 and {@link
    *                                    Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to
    *                                    60000.
-   * @param defaultWriteTimeoutMillis   Applied to individual write IO operations. A value of 0 means no timeout,
+   *        writeTimeoutMillis   Applied to individual write IO operations. A value of 0 means no timeout,
    *                                    otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted
    *                                    to milliseconds. If unspecified, defaults to 60000.
-   * @param maxRequests                 Maximum numbers of concurrent http requests (across all hosts).
-   * @param maxRequestsPerHost          Maximum numbers of concurrent http requests per host.
+   *        maxRequests                 Maximum numbers of concurrent http requests (across all hosts).
+   *        maxRequestsPerHost          Maximum numbers of concurrent http requests per host.
    *
    * @return A {@link OkHttp3ClientHttpRequestFactory}.
    */
@@ -97,24 +112,25 @@ public class IlpOverHttpConfig {
   @Qualifier(ILP_OVER_HTTP)
   protected OkHttpClient ilpOverHttpClient(
     @Qualifier(ILP_OVER_HTTP) final ConnectionPool ilpOverHttpConnectionPool,
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.connectTimeoutMillis:1000}") final long defaultConnectTimeoutMillis,
+    /*@Value("${interledger.connector.ilpOverHttp.connectionDefaults.connectTimeoutMillis:1000}") final long defaultConnectTimeoutMillis,
     @Value("${interledger.connector.ilpOverHttp.connectionDefaults.readTimeoutMillis:60000}") final long defaultReadTimeoutMillis,
     @Value("${interledger.connector.ilpOverHttp.connectionDefaults.writeTimeoutMillis:60000}") final long defaultWriteTimeoutMillis,
     @Value("${interledger.connector.ilpOverHttp.connectionDefaults.maxRequests:100}") final int maxRequests,
-    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.maxRequestsPerHost:50}") final int maxRequestsPerHost
+    @Value("${interledger.connector.ilpOverHttp.connectionDefaults.maxRequestsPerHost:50}") final int maxRequestsPerHost*/
+    IlpOverHttpConnectionSettings connectionSettings
   ) {
     OkHttpClient.Builder builder = new OkHttpClient.Builder();
     ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).build();
     Dispatcher dispatcher = new Dispatcher();
-    dispatcher.setMaxRequests(maxRequests);
-    dispatcher.setMaxRequestsPerHost(maxRequestsPerHost);
+    dispatcher.setMaxRequests(connectionSettings.maxRequests());
+    dispatcher.setMaxRequestsPerHost(connectionSettings.maxRequestsPerHost());
     builder.dispatcher(dispatcher);
     builder.connectionSpecs(Arrays.asList(spec, ConnectionSpec.CLEARTEXT));
     builder.cookieJar(NO_COOKIES);
 
-    builder.connectTimeout(defaultConnectTimeoutMillis, TimeUnit.MILLISECONDS);
-    builder.readTimeout(defaultReadTimeoutMillis, TimeUnit.MILLISECONDS);
-    builder.writeTimeout(defaultWriteTimeoutMillis, TimeUnit.MILLISECONDS);
+    builder.connectTimeout(connectionSettings.connectTimeoutMillis(), TimeUnit.MILLISECONDS);
+    builder.readTimeout(connectionSettings.readTimeoutMillis(), TimeUnit.MILLISECONDS);
+    builder.writeTimeout(connectionSettings.writeTimeoutMillis(), TimeUnit.MILLISECONDS);
 
     return builder.connectionPool(ilpOverHttpConnectionPool).build();
   }

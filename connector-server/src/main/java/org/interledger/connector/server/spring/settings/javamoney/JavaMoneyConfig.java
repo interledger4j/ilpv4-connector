@@ -7,6 +7,8 @@ import org.interledger.connector.fx.JavaMoneyUtils;
 import org.interledger.connector.javax.money.providers.CryptoCompareRateProvider;
 import org.interledger.connector.javax.money.providers.DropRoundingProvider;
 import org.interledger.connector.javax.money.providers.XrpCurrencyProvider;
+import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.connector.settings.FxConnectionSettings;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -148,11 +150,18 @@ public class JavaMoneyConfig {
 
   @Bean
   @Qualifier(FX)
+  FxConnectionSettings fxConnectionSettings(Supplier<ConnectorSettings> connectorSettings) {
+    return connectorSettings.get().fxSettings().connectionDefaults();
+  }
+
+  @Bean
+  @Qualifier(FX)
   OkHttpClient fxHttpClient(
       @Qualifier(FX) final ConnectionPool fxConnectionPool,
-      @Value("${interledger.connector.fx.connectionDefaults.connectTimeoutMillis:1000}") final long defaultConnectTimeoutMillis,
+      /*@Value("${interledger.connector.fx.connectionDefaults.connectTimeoutMillis:1000}") final long defaultConnectTimeoutMillis,
       @Value("${interledger.connector.fx.connectionDefaults.readTimeoutMillis:60000}") final long defaultReadTimeoutMillis,
-      @Value("${interledger.connector.fx.connectionDefaults.writeTimeoutMillis:60000}") final long defaultWriteTimeoutMillis
+      @Value("${interledger.connector.fx.connectionDefaults.writeTimeoutMillis:60000}") final long defaultWriteTimeoutMillis*/
+      FxConnectionSettings fxConnectionSettings
   ) {
     OkHttpClient.Builder builder = new OkHttpClient.Builder();
     ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).build();
@@ -160,9 +169,9 @@ public class JavaMoneyConfig {
     builder.connectionSpecs(Arrays.asList(spec, ConnectionSpec.CLEARTEXT));
     builder.cookieJar(NO_COOKIES);
 
-    builder.connectTimeout(defaultConnectTimeoutMillis, TimeUnit.MILLISECONDS);
-    builder.readTimeout(defaultReadTimeoutMillis, TimeUnit.MILLISECONDS);
-    builder.writeTimeout(defaultWriteTimeoutMillis, TimeUnit.MILLISECONDS);
+    builder.connectTimeout(fxConnectionSettings.connectTimeoutMillis(), TimeUnit.MILLISECONDS);
+    builder.readTimeout(fxConnectionSettings.readTimeoutMillis(), TimeUnit.MILLISECONDS);
+    builder.writeTimeout(fxConnectionSettings.writeTimeoutMillis(), TimeUnit.MILLISECONDS);
 
     return builder.connectionPool(fxConnectionPool).build();
   }
@@ -177,12 +186,13 @@ public class JavaMoneyConfig {
   @Bean
   @Qualifier(FX)
   public ConnectionPool fxConnectionPool(
-      @Value("${interledger.connector.fx.connectionDefaults.maxIdleConnections:5}") final int defaultMaxIdleConnections,
-      @Value("${interledger.connector.fx.connectionDefaults.keepAliveMinutes:1}") final long defaultConnectionKeepAliveMinutes
+      /*@Value("${interledger.connector.fx.connectionDefaults.maxIdleConnections:5}") final int defaultMaxIdleConnections,
+      @Value("${interledger.connector.fx.connectionDefaults.keepAliveMinutes:1}") final long defaultConnectionKeepAliveMinutes*/
+      FxConnectionSettings fxConnectionSettings
   ) {
     return new ConnectionPool(
-        defaultMaxIdleConnections,
-        defaultConnectionKeepAliveMinutes, TimeUnit.MINUTES
+      fxConnectionSettings.maxIdleConnections(),
+      fxConnectionSettings.keepAliveMinutes(), TimeUnit.MINUTES
     );
   }
 

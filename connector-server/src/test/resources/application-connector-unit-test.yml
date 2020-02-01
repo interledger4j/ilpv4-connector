@@ -1,12 +1,22 @@
 # Test settings to validate loading configuration properties.
 interledger:
   connector:
-    connectionDefaults:
-      keepAliveMinutes: 2
-      connectTimeoutMillis: 5000
-      readTimeoutMillis: 30000
-      writeTimeoutMillis: 40000
-      maxIdleConnections: 10
+    fx:
+      connectionDefaults:
+        keepAliveMinutes: 2
+        connectTimeoutMillis: 5000
+        readTimeoutMillis: 30000
+        writeTimeoutMillis: 40000
+        maxIdleConnections: 10
+    ilpOverHttp:
+      connectionDefaults:
+        connectTimeoutMillis: 2000
+        readTimeoutMillis: 70000
+        writeTimeoutMillis: 50000
+        maxRequests: 50
+        maxRequestsPerHost: 75
+        maxIdleConnections: 12
+        keepAliveSeconds: 40
     # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
     adminPassword: password
     require32ByteSharedSecrets: true

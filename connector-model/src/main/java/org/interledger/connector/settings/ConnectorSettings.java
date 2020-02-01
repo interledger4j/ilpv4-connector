@@ -51,11 +51,19 @@ public interface ConnectorSettings {
   }
 
   /**
+   * Connection Settings/Defaults used for IlpOverHttp connection pools and HttpClients.
+   */
+  @Value.Default
+  default IlpOverHttpConnectorSettings ilpOverHttpSettings() {
+    return ImmutableIlpOverHttpConnectorSettings.builder().build();
+  }
+
+  /**
    * Connection settings/defaults used for FX pools and clients
    */
   @Value.Default
-  default FxConnectionSettings connectionDefaults() {
-    return ImmutableFxConnectionSettings.builder().build();
+  default FxSettings fxSettings() {
+    return ImmutableFxSettings.builder().build();
   }
 
   @Value.Default
@@ -115,14 +123,6 @@ public interface ConnectorSettings {
   default boolean isRequire32ByteSharedSecrets() {
     return false;
   };
-
-  /**
-   * Connection Settings/Defaults used for IlpOverHttp connection pools and HttpClients.
-   */
-  @Value.Default
-  default IlpOverHttpConnectionSettings ilpOverHttpConnectionSettings() {
-    return ImmutableIlpOverHttpConnectionSettings.builder().build();
-  }
 
   /**
    * Keys the connector will use for various core functions.

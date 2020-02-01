@@ -4,13 +4,13 @@ import org.interledger.connector.settings.IlpOverHttpConnectionSettings;
 
 public class IlpOverHttpConnectionSettingsFromPropertyFile implements IlpOverHttpConnectionSettings {
 
-  private long connectTimeoutMillis;
-  private long readTimeoutMillis;
-  private long writeTimeoutMillis;
-  private int maxRequests;
-  private int maxRequestsPerHost;
-  private int maxIdleConnections;
-  private long keepAliveSeconds;
+  private long connectTimeoutMillis = 1000;
+  private long readTimeoutMillis = 60000;
+  private long writeTimeoutMillis = 60000;
+  private int maxRequests = 100;
+  private int maxRequestsPerHost = 50;
+  private int maxIdleConnections = 10;
+  private long keepAliveSeconds = 30;
 
   @Override
   public long connectTimeoutMillis() {
