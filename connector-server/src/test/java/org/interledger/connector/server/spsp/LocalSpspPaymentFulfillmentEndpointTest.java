@@ -77,7 +77,7 @@ import java.util.concurrent.ExecutionException;
 public class LocalSpspPaymentFulfillmentEndpointTest extends AbstractEndpointTest {
 
   public static final String DAVID = "david";
-  static final String TEST_DOT_CONNIE = "test.connie";
+  protected static final String TEST_DOT_CONNIE = "test.connie";
   private static final String SPSP_SENDER = "spsp_sender";
   private static final String SPSP_RECEIVER = "spsp_receiver";
   private static final String SUB_ACCOUNT_RECEIVER = "sub_account_receiver";
