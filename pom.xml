@@ -12,7 +12,7 @@
 
   <groupId>org.interledger.connector</groupId>
   <artifactId>connector-parent</artifactId>
-  <version>HEAD-SNAPSHOT</version>
+  <version>0.2.0</version>
   <packaging>pom</packaging>
 
   <name>Connector :: Parent</name>
