@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * <p>When it comes to packet switching, this Connector supports four types of ILP address structure that is uses to
+ * <p>When it comes to packet switching, this Connector supports four types of ILP address structure that it uses to
  * make packet routing determinations (Note these conventions are an implementation detail of the Connector because the
  * Connector both generates and parses these addresses without mandating any special functionality on intermediaries or
  * peers).</p>
