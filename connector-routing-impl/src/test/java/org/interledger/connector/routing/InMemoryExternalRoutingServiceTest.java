@@ -214,6 +214,38 @@ public class InMemoryExternalRoutingServiceTest {
     verify(routeBroadcaster, times(0)).registerCcpEnabledAccount(child);
   }
 
+  @Test
+  public void misconfiguredAccountsAreGracefullyHandled() {
+
+    LinkType ilpoverhttp = LinkType.of("ILPOVERHTTP");
+    AccountSettings goodPeer = AccountSettings.builder()
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(ilpoverhttp)
+      .accountId(AccountId.of("good_peer"))
+      .accountRelationship(AccountRelationship.PEER)
+      .build();
+
+    AccountSettings badPeer = AccountSettings.builder()
+      .assetCode("XRP")
+      .assetScale(9)
+      .linkType(ilpoverhttp)
+      .accountId(AccountId.of("bad_peer"))
+      .accountRelationship(AccountRelationship.PEER)
+      .build();
+
+
+    when(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PEER))
+      .thenReturn(Lists.newArrayList(badPeer, goodPeer));
+
+    when(routeBroadcaster.registerCcpEnabledAccount(badPeer)).thenThrow(new RuntimeException("fake exception!"));
+    when(routeBroadcaster.registerCcpEnabledAccount(goodPeer)).thenReturn(Optional.empty());
+
+    service.start();
+    verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(badPeer);
+    verify(routeBroadcaster, times(1)).registerCcpEnabledAccount(goodPeer);
+  }
+
 
   @Test
   public void testFindBestNexHopFromLocalPaymentRouter() {

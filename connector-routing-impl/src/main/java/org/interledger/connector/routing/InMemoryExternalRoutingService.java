@@ -241,7 +241,13 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
       .addAll(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PARENT))
       .build();
 
-    peersAndParent.stream().forEach(routeBroadcaster::registerCcpEnabledAccount);
+    peersAndParent.stream().forEach(account -> {
+      try {
+        routeBroadcaster.registerCcpEnabledAccount(account);
+      } catch (Exception e) {
+        logger.warn("CCP registration failed for account id: " + account.accountId(), e);
+      }
+    });
 
     //////////////////
     // Child Accounts
