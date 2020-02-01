@@ -98,11 +98,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.stereotype.Component;
 
 import java.time.Clock;
 import java.util.List;
@@ -132,6 +135,11 @@ import java.util.function.Supplier;
   SpringConnectorWebMvc.class,
   GcpPubSubConfig.class
 })
+// support extension by looking for annotated Component/Config classes under the configured extensions.basePackage
+@ComponentScan(basePackages = "${interledger.connector.extensions.basePackage:org.interledger.connector.extensions}",
+  useDefaultFilters = false,
+  includeFilters = @ComponentScan.Filter(type= FilterType.ANNOTATION, value = Component.class)
+)
 public class SpringConnectorConfig {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());

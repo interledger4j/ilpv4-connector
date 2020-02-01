@@ -28,6 +28,8 @@ server:
   jetty:
     max-form-post-size: 32767 # Max per ILP ASN.1
 spring:
+  profiles:
+    include: extensions
   cache:
     redis:
       time-to-live: 86400
