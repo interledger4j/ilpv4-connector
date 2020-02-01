@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -227,10 +228,21 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     // Peer Accounts
     //////////////////
 
-    // All eligible PEER accounts are registered for CCP (if appropriate). Unless there is a static route configured,
-    // then only CCP will populate routes amongst peers.
-    accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PEER).stream()
-        .forEach(routeBroadcaster::registerCcpEnabledAccount);
+    // All eligible PARENT and PEER accounts are registered for CCP (if appropriate). Unless there is a static route
+    // configured, then only CCP will populate routes amongst peers.
+
+    Collection<AccountSettings> peersAndParent = ImmutableList.<AccountSettings>builder()
+      .addAll(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PEER))
+        .addAll(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PARENT))
+      .build();
+
+    peersAndParent.stream().forEach(account -> {
+      try {
+        routeBroadcaster.registerCcpEnabledAccount(account);
+      } catch (Exception e) {
+        logger.warn("CCP registration failed for account id: " + account.accountId(), e);
+      }
+    });
 
     //////////////////
     // Child Accounts

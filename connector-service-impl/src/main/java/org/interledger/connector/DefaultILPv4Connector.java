@@ -142,7 +142,11 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     // If the default operator address is specified, then we attempt to use IL-DCP.
     if (connectorSettingsSupplier.get().operatorAddress().equals(Link.SELF)) {
       // ^^ IL-DCP ^^
-      this.configureAccountsUsingIldcp();
+      if (this.connectorSettingsSupplier.get().enabledProtocols().isIldcpEnabled()) {
+        this.configureAccountsUsingIldcp();
+      } else {
+        logger.warn("operatorAddress == SELF but ildcpEnabled=false");
+      }
     } else { // Otherwise, we use the configured address.
       this.configureAccounts();
     }

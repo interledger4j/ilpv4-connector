@@ -1,4 +1,4 @@
-package org.interledger.connector.server.spring.settings;
+package org.interledger.connector.settings.properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -14,6 +14,7 @@ import org.interledger.connector.settings.EnabledProtocolSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.crypto.CryptoKey;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
