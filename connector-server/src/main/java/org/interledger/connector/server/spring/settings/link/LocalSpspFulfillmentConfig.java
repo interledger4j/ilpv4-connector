@@ -38,7 +38,7 @@ public class LocalSpspFulfillmentConfig {
   @Autowired
   private LinkFactoryProvider linkFactoryProvider;
 
-  @Value("${interledger.connector.spsp.server-secret}")
+  @Value("${interledger.connector.spsp.serverSecret}")
   private String spspServerSecretB64;
 
   @Autowired
@@ -57,7 +57,7 @@ public class LocalSpspFulfillmentConfig {
     if (spspServerSecretB64 != null) {
       serverSecret = Base64.getDecoder().decode(spspServerSecretB64);
     } else {
-      // if `interledger.connector.spsp.server-secret` is not specified, this value will be regenerated on every server
+      // if `interledger.connector.spsp.serverSecret` is not specified, this value will be regenerated on every server
       // restart.
       serverSecret = Random.randBytes(32);
     }

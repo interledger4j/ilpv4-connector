@@ -255,11 +255,21 @@
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
+      <artifactId>spsp-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
       <artifactId>stream-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>stream-receiver</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>stream-client</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.javamoney.moneta</groupId>
@@ -282,6 +292,7 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-test-autoconfigure</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.security</groupId>
@@ -394,11 +405,6 @@
           <groupId>junit</groupId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.liquibase</groupId>
-      <artifactId>liquibase-core</artifactId>
-      <scope>runtime</scope>
     </dependency>
   </dependencies>
 

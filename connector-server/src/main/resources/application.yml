@@ -93,7 +93,7 @@ interledger:
     #     secret0_password: password
     spsp:
       # Base64-encoded String of bytes used to derive any values used in encryption/decryption for SPSP.
-      # EXAMPLE: server-secret: aQLR5IWAGV2vKnBhnFFsl2cXOCh9u0IWz3PiA64KlJ8=
+      # EXAMPLE: serverSecret: aQLR5IWAGV2vKnBhnFFsl2cXOCh9u0IWz3PiA64KlJ8=
       addressPrefixSegment: spsp
     require32ByteSharedSecrets: true
     keys:
