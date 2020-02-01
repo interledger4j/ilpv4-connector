@@ -23,7 +23,6 @@ import org.javamoney.moneta.internal.JDKCurrencyProvider;
 import org.javamoney.moneta.spi.CompoundRateProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -34,7 +33,6 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-
 import javax.money.convert.ConversionQuery;
 import javax.money.convert.ExchangeRate;
 import javax.money.convert.ExchangeRateProvider;
