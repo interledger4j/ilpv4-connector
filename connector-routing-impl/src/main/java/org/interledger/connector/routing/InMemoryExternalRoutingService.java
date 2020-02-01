@@ -416,7 +416,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
       // There's a new NextBestHop, so update the forwarding table, but only if it's different from the optionally
       // present currentBestNextHop.
       if (!currentBestNextHop.isPresent() || !currentBestNextHop.get().equals(nbnh)) {
-        final int newEpoch = this.outgoingRoutingTable.getCurrentEpoch();
+        final int newEpoch = this.outgoingRoutingTable.getCurrentEpoch() + 1;
 
         final RouteUpdate newBestRouteUpdate = ImmutableRouteUpdate.builder()
             .routePrefix(addressPrefix)
