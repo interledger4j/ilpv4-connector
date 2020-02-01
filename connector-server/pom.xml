@@ -280,6 +280,11 @@
       <artifactId>moneta-convert</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>
@@ -409,11 +414,6 @@
       <id>docker</id>
       <!-- ship liquibase with docker image build -->
       <dependencies>
-        <dependency>
-          <groupId>org.liquibase</groupId>
-          <artifactId>liquibase-core</artifactId>
-          <scope>runtime</scope>
-        </dependency>
         <dependency>
           <groupId>com.newrelic.agent.java</groupId>
           <artifactId>newrelic-java</artifactId>
