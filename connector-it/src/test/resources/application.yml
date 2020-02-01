@@ -18,6 +18,7 @@ spring:
       pubsub:
         emulator-host: localhost:38085
         project-id: integration-test
+        enabled: true
 
 redis:
   host: localhost

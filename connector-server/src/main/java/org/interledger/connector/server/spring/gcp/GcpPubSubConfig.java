@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 import javax.annotation.PostConstruct;
 
 @Configuration
-@ConditionalOnProperty("spring.cloud.gcp.pubsub.project-id")
+@ConditionalOnProperty(value = "spring.cloud.gcp.pubsub.enabled", havingValue = "true")
 public class GcpPubSubConfig {
 
   @Autowired
