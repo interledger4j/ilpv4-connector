@@ -38,6 +38,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runners.MethodSorters;
@@ -56,9 +57,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Tests to verify that a single connector can route data and money to/from a single child peer. In this test, value is
- * transferred both from Alice->Bob, and then in the opposite direction. Thus, both Alice and Bob sometimes play the
- * role of sender and sometimes play the role of receiver.
+ * <p>Tests to verify that a single connector can route data and money to/from a single child peer. In this test,
+ * value is transferred both from Alice->Bob, and then in the opposite direction. Thus, both Alice and Bob sometimes
+ * play the role of sender and sometimes play the role of receiver.</p>
  */
 // TODO: Once the PING protocol is specified via RFC, extract the PING tests into an abstract super-class. Every IT
 //  should exercise PING functionality as a baseline, but both BTP and ILP-over-HTTP duplicate the same PING tests.
@@ -122,6 +123,8 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
       .isEqualTo(IlpOverHttpLinkSettings.AuthType.JWT_HS_256);
     assertThat(ilpOverHttpLinkSettings.incomingLinkSettings().get().authType())
       .isEqualTo(IlpOverHttpLinkSettings.AuthType.JWT_HS_256);
+
+    assertThat(connector.getStaticRoutesManager().getAllStaticRoutes().size()).isEqualTo(1);
   }
 
   @Test
@@ -136,6 +139,8 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
       .isEqualTo(IlpOverHttpLinkSettings.AuthType.JWT_HS_256);
     assertThat(ilpOverHttpLinkSettings.incomingLinkSettings().get().authType())
       .isEqualTo(IlpOverHttpLinkSettings.AuthType.JWT_HS_256);
+
+    assertThat(connector.getStaticRoutesManager().getAllStaticRoutes().size()).isEqualTo(1);
   }
 
   /**
@@ -322,7 +327,14 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
 
 
   /**
-   * Random address should reject since it's not in the Bob's routing table.
+   * Random address should reject since it's not in the Bob's routing table. Note that as of
+   * https://github.com/interledger4j/ilpv4-connector/issues/563, the local routing table on Bob is getting usd
+   * correctly. However, this local table has static routes for both Alice and Bob because the two nodes are sharing the
+   * same database. This is a quirk of the IT topology, so in order to make this test work (i.e., ping a random address
+   * at paul that doesn't exist) we need to use an address that Alice will forward to Bob, but for which Bob will simply
+   * reject as unreachable. For now, this is a child-account on Bob (e.g., `test.bob.accounts.{uuid}`. Alice will route
+   * this to Bob, who will try to forward this to a local account that doesn't exist, yielding an `F02` error as
+   * expected.
    */
   @Test
   public void testPaulPingsRandomAtBob() throws InterruptedException {
@@ -498,6 +510,7 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
    */
   @Test
   @Category(Performance.class)
+  @Ignore
   public void zTestPingPerf() throws InterruptedException {
     final IlpOverHttpLink paulToAliceLink = getIlpOverHttpLinkFromGraph(getAliceConnectorAddress(), PAUL_ACCOUNT);
     final PingInitiator pingInitiator = new DefaultPingInitiator(paulToAliceLink, () -> Instant.now().plusSeconds(30));
