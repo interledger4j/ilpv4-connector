@@ -2,6 +2,7 @@ package org.interledger.connector.it;
 
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.interledger.connector.accounts.sub.LocalDestinationAddressUtils.PING_ACCOUNT_ID;
 import static org.interledger.connector.config.BalanceTrackerConfig.BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME;
 import static org.interledger.connector.core.ConfigConstants.ADMIN_PASSWORD;
 import static org.interledger.connector.core.ConfigConstants.DOT;
@@ -10,7 +11,6 @@ import static org.interledger.connector.it.topologies.AbstractTopology.ALICE;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB;
 import static org.interledger.connector.it.topologies.AbstractTopology.PAUL;
 import static org.interledger.connector.it.topologies.AbstractTopology.PETER;
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
 import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_ENABLED;
 import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_FILENAME;
 import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_PASSWORD;
@@ -66,6 +66,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+
 import javax.money.spi.Bootstrap;
 
 /**
@@ -300,7 +301,9 @@ public abstract class AbstractIlpOverHttpIT {
     final AccountId accountId,
     final BigInteger expectedAmount
   ) {
-    assertThat(connector.getBalanceTracker().balance(accountId).netBalance()).as(String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.toString())).isEqualTo(expectedAmount);
+    assertThat(connector.getBalanceTracker().balance(accountId).netBalance())
+      .as(String.format("Incorrect balance for `%s` @ `%s`!", accountId, connector.toString()))
+      .isEqualTo(expectedAmount);
   }
 
   /**

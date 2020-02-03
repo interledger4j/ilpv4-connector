@@ -1,6 +1,6 @@
 package org.interledger.connector.server.spring.settings;
 
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
+import static org.interledger.connector.accounts.sub.LocalDestinationAddressUtils.PING_ACCOUNT_ID;
 
 import org.interledger.connector.ConnectorExceptionHandler;
 import org.interledger.connector.DefaultILPv4Connector;
@@ -16,22 +16,19 @@ import org.interledger.connector.accounts.BtpAccountIdResolver;
 import org.interledger.connector.accounts.DefaultAccountIdResolver;
 import org.interledger.connector.accounts.DefaultAccountManager;
 import org.interledger.connector.accounts.DefaultAccountSettingsResolver;
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
 import org.interledger.connector.config.BalanceTrackerConfig;
 import org.interledger.connector.config.CaffeineCacheConfig;
 import org.interledger.connector.config.RedisConfig;
 import org.interledger.connector.config.SettlementConfig;
-import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.events.DefaultPacketEventPublisher;
 import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.fx.JavaMoneyUtils;
 import org.interledger.connector.fxrates.DefaultFxRateOverridesManager;
 import org.interledger.connector.fxrates.FxRateOverridesManager;
 import org.interledger.connector.links.DefaultIldcpFetcherFactory;
-import org.interledger.connector.links.DefaultLinkManager;
-import org.interledger.connector.links.DefaultLinkSettingsFactory;
-import org.interledger.connector.links.DefaultLinkSettingsValidator;
 import org.interledger.connector.links.DefaultNextHopPacketMapper;
 import org.interledger.connector.links.IldcpFetcherFactory;
 import org.interledger.connector.links.LinkManager;
@@ -61,18 +58,20 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.persistence.repositories.DeletedAccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
-import org.interledger.connector.routing.ChildAccountPaymentRouter;
 import org.interledger.connector.routing.DefaultRouteBroadcaster;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.routing.ForwardingRoutingTable;
 import org.interledger.connector.routing.InMemoryExternalRoutingService;
 import org.interledger.connector.routing.InMemoryForwardingRoutingTable;
+import org.interledger.connector.routing.InMemoryRoutingTable;
+import org.interledger.connector.routing.LocalDestinationAddressPaymentRouter;
 import org.interledger.connector.routing.RouteBroadcaster;
 import org.interledger.connector.routing.RouteUpdate;
 import org.interledger.connector.routing.StaticRoutesManager;
 import org.interledger.connector.server.spring.gcp.GcpPubSubConfig;
 import org.interledger.connector.server.spring.settings.crypto.CryptoConfig;
 import org.interledger.connector.server.spring.settings.javamoney.JavaMoneyConfig;
+import org.interledger.connector.server.spring.settings.link.LinkConfig;
 import org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -83,33 +82,30 @@ import org.interledger.core.InterledgerAddress;
 import org.interledger.crypto.CryptoKeys;
 import org.interledger.crypto.Decryptor;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.interledger.link.AbstractStatefulLink.EventBusConnectionEventEmitter;
-import org.interledger.link.LinkFactoryProvider;
-import org.interledger.link.LoopbackLink;
-import org.interledger.link.LoopbackLinkFactory;
 import org.interledger.link.PacketRejector;
 import org.interledger.link.PingLoopbackLink;
-import org.interledger.link.PingLoopbackLinkFactory;
-import org.interledger.link.events.LinkConnectionEventEmitter;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.RateLimiter;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.stereotype.Component;
 
 import java.time.Clock;
 import java.util.List;
@@ -134,10 +130,16 @@ import java.util.function.Supplier;
   ResiliencyConfig.class,
   CaffeineCacheConfig.class,
   RedisConfig.class, SettlementConfig.class, BalanceTrackerConfig.class,
+  LinkConfig.class,
   MetricsConfiguration.class,
   SpringConnectorWebMvc.class,
   GcpPubSubConfig.class
 })
+// support extension by looking for annotated Component/Config classes under the configured extensions.basePackage
+@ComponentScan(basePackages = "${interledger.connector.extensions.basePackage:org.interledger.connector.extensions}",
+  useDefaultFilters = false,
+  includeFilters = @ComponentScan.Filter(type= FilterType.ANNOTATION, value = Component.class)
+)
 public class SpringConnectorConfig {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -151,6 +153,15 @@ public class SpringConnectorConfig {
 
   @Autowired
   private DeletedAccountSettingsRepository deletedAccountSettingsRepository;
+
+  @Value("${interledger.connector.enabledFeatures.localSpspFulfillmentEnabled:false}")
+  private boolean localSpspFulfillmentEnabled;
+
+  @Value("${interledger.connector.spsp.addressPrefixSegment:spsp}")
+  private String spspAddressPrefixSegment;
+
+  @Value("${interledger.connector.globalRoutingSettings.localAccountsAddressSegment:accounts}")
+  private String localAccountsAddressPrefixSegment;
 
   /**
    * All internal Connector events propagate locally in this JVM using this EventBus.
@@ -184,69 +195,6 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  LoopbackLinkFactory loopbackLinkFactory(PacketRejector packetRejector) {
-    return new LoopbackLinkFactory(packetRejector);
-  }
-
-  @Bean
-  PingLoopbackLinkFactory unidirectionalPingLinkFactory() {
-    return new PingLoopbackLinkFactory();
-  }
-
-  @Bean
-  LinkFactoryProvider linkFactoryProvider(
-    LoopbackLinkFactory loopbackLinkFactory, PingLoopbackLinkFactory pingLoopbackLinkFactory
-  ) {
-    final LinkFactoryProvider provider = new LinkFactoryProvider();
-
-    // Register known types...Spring will register proper known types based upon config...
-    provider.registerLinkFactory(LoopbackLink.LINK_TYPE, loopbackLinkFactory);
-    provider.registerLinkFactory(PingLoopbackLink.LINK_TYPE, pingLoopbackLinkFactory);
-
-    // TODO: Register any SPI types...?
-    // See https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/core/io/support/SpringFactoriesLoader.html
-
-    return provider;
-  }
-
-  @Bean
-  LinkSettingsFactory linkSettingsFactory() {
-    return new DefaultLinkSettingsFactory();
-  }
-
-  @Bean
-  LinkSettingsValidator linkSettingsValidator(
-    ConnectorEncryptionService encryptionService, Supplier<ConnectorSettings> connectorSettingsSupplier
-  ) {
-    return new DefaultLinkSettingsValidator(encryptionService, connectorSettingsSupplier);
-  }
-
-  @Bean
-  LinkConnectionEventEmitter linkEventEmitter(EventBus eventBus) {
-    return new EventBusConnectionEventEmitter(eventBus);
-  }
-
-  @Bean
-  LinkManager linkManager(
-    EventBus eventBus,
-    AccountSettingsRepository accountSettingsRepository,
-    LinkSettingsFactory linkSettingsFactory,
-    LinkFactoryProvider linkFactoryProvider,
-    AccountIdResolver accountIdResolver,
-    CircuitBreakerConfig circuitBreakerConfig
-  ) {
-    return new DefaultLinkManager(
-      () -> connectorSettingsSupplier().get().operatorAddress(),
-      accountSettingsRepository,
-      linkSettingsFactory,
-      linkFactoryProvider,
-      accountIdResolver,
-      circuitBreakerConfig,
-      eventBus
-    );
-  }
-
-  @Bean
   AccountIdResolver accountIdResolver(BtpAccountIdResolver btpAccountIdResolver) {
     return btpAccountIdResolver;
   }
@@ -277,7 +225,8 @@ public class SpringConnectorConfig {
       linkManager, settlementEngineClient,
       linkSettingsFactory,
       linkSettingsValidator,
-      ildcpFetcherFactory);
+      ildcpFetcherFactory
+    );
   }
 
   @Bean
@@ -286,7 +235,7 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  StaticRoutesManager staticRoutesManager(StaticRoutesRepository staticRoutesRepository) {
+  StaticRoutesManager staticRoutesManager() {
     return externalRoutingService;
   }
 
@@ -303,10 +252,10 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  ChildAccountPaymentRouter childAccountPaymentRouter(
+  LocalDestinationAddressPaymentRouter childAccountPaymentRouter(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final AccountSettingsRepository accountSettingsRepository,
-    final Decryptor decryptor
+    final LocalDestinationAddressUtils localDestinationAddressUtils
   ) {
 
     // If the Ping Protocol is enabled, we need to ensure that there is a Ping account suitable to accept value for
@@ -335,7 +284,7 @@ public class SpringConnectorConfig {
       accountSettingsRepository.save(new AccountSettingsEntity(pingAccountSettings));
     }
 
-    return new ChildAccountPaymentRouter(connectorSettingsSupplier, accountSettingsRepository, decryptor);
+    return new LocalDestinationAddressPaymentRouter(connectorSettingsSupplier, localDestinationAddressUtils);
   }
 
   @Bean
@@ -345,13 +294,20 @@ public class SpringConnectorConfig {
     final Decryptor decryptor,
     final AccountSettingsRepository accountSettingsRepository,
     final StaticRoutesRepository staticRoutesRepository,
-    final ChildAccountPaymentRouter childAccountPaymentRouter,
+    final LocalDestinationAddressPaymentRouter localDestinationAddressPaymentRouter,
     final ForwardingRoutingTable<RouteUpdate> outgoingRoutingTable,
     final RouteBroadcaster routeBroadcaster
   ) {
     return new InMemoryExternalRoutingService(
-      eventBus, connectorSettingsSupplier, decryptor, accountSettingsRepository, staticRoutesRepository,
-      childAccountPaymentRouter, outgoingRoutingTable, routeBroadcaster
+      eventBus,
+      connectorSettingsSupplier,
+      decryptor,
+      accountSettingsRepository,
+      staticRoutesRepository,
+      localDestinationAddressPaymentRouter,
+      new InMemoryRoutingTable(),
+      outgoingRoutingTable,
+      routeBroadcaster
     );
   }
 
@@ -527,12 +483,20 @@ public class SpringConnectorConfig {
     ConnectorExceptionHandler connectorExceptionHandler,
     PacketRejector packetRejector,
     AccountSettingsLoadingCache accountSettingsLoadingCache,
-    PacketEventPublisher packetEventPublisher
+    PacketEventPublisher packetEventPublisher,
+    LocalDestinationAddressUtils localDestinationAddressUtils
   ) {
     return new DefaultILPv4PacketSwitch(
-      packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper, connectorExceptionHandler,
-      packetRejector, accountSettingsLoadingCache,
-      packetEventPublisher);
+      packetSwitchFilters,
+      linkFilters,
+      linkManager,
+      nextHopPacketMapper,
+      connectorExceptionHandler,
+      packetRejector,
+      accountSettingsLoadingCache,
+      packetEventPublisher,
+      localDestinationAddressUtils
+    );
   }
 
   @Bean
@@ -573,13 +537,37 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  protected CryptoKeys connectorKeys(Supplier<ConnectorSettings> connectorSettingsSupplier) {
+  CryptoKeys connectorKeys(Supplier<ConnectorSettings> connectorSettingsSupplier) {
     return connectorSettingsSupplier.get().keys();
   }
 
   @Bean
-  protected Clock clock() {
+  Clock clock() {
     return Clock.systemDefaultZone();
   }
 
+  @Bean
+  LocalDestinationAddressUtils localDestinationAddressUtils(Supplier<ConnectorSettings> connectorSettingsSupplier) {
+    return new LocalDestinationAddressUtils() {
+      @Override
+      public Supplier<InterledgerAddress> getConnectorOperatorAddress() {
+        return () -> connectorSettingsSupplier.get().operatorAddress();
+      }
+
+      @Override
+      public boolean isLocalSpspFulfillmentEnabled() {
+        return localSpspFulfillmentEnabled && !spspAddressPrefixSegment.isEmpty();
+      }
+
+      @Override
+      public String getSpspAddressPrefixSegment() {
+        return spspAddressPrefixSegment;
+      }
+
+      @Override
+      public String getLocalAccountsAddressPrefixSegment() {
+        return localAccountsAddressPrefixSegment;
+      }
+    };
+  }
 }

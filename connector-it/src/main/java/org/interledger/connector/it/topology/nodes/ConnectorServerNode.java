@@ -11,6 +11,7 @@ import org.interledger.connector.server.ConnectorServer;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.StreamSupport;
 
 /**
  * A Node that simulates an ILPv4 Connector.
@@ -40,7 +41,16 @@ public class ConnectorServerNode extends AbstractServerNode<ConnectorServer> {
     // reload routing for static routes
     // FIXME we should be doing this via a client
     ILPv4Connector connector = getILPv4Connector();
-    staticRoutes.stream().forEach(r -> connector.getStaticRoutesManager().createStaticRoute(r));
+
+    // Clear out the Static routes (just to start fresh)
+    StreamSupport.stream(connector.getStaticRoutesManager().getAllStaticRoutes().spliterator(), false)
+      .forEach(staticRoute -> connector.getStaticRoutesManager().deleteStaticRouteByPrefix(staticRoute.routePrefix()));
+
+    // Create new Static Routes, but only if the route doesn't already exist (there shouldn't be duplicates, but just
+    // in case).
+    staticRoutes.stream()
+      .filter(staticRoute -> !connector.getStaticRoutesManager().getAllStaticRoutes().contains(staticRoute))
+      .forEach(staticRoute -> connector.getStaticRoutesManager().createStaticRoute(staticRoute));
   }
 
   @Override
@@ -59,8 +69,8 @@ public class ConnectorServerNode extends AbstractServerNode<ConnectorServer> {
   public AccountSettings getAccountSettings(AccountId accountId) {
     Objects.requireNonNull(accountId);
     return this.getServer().getContext().getBean(AccountSettingsRepository.class)
-        .findByAccountIdWithConversion(accountId)
-        .orElseThrow(() -> new IllegalArgumentException("No account exists for id " + accountId.value()));
+      .findByAccountIdWithConversion(accountId)
+      .orElseThrow(() -> new IllegalArgumentException("No account exists for id " + accountId.value()));
   }
 
   @Override

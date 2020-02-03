@@ -28,6 +28,8 @@ server:
   jetty:
     max-form-post-size: 32767 # Max per ILP ASN.1
 spring:
+  profiles:
+    include: extensions
   cache:
     redis:
       time-to-live: 86400
@@ -74,8 +76,14 @@ interledger:
     # nodeIlpAddress: test.connie
     # adminPassword: password
     # Global Routing Settings for this connector.
-    # globalRoutingSettings:
-    #  routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
+    globalRoutingSettings:
+      # An ILP address segment that will be used to address any local accounts in the Connector. For example, if an
+      # account exists with id of `alice`, then anyone wanting to send packets to alice in the Connector would use the
+      # ILP address `{operatorAddress}.accounts.alice`. Typically this will be used in IL-DCP, but will also be used to
+      # make routing decisions for any local accounts that might connect to the Connector. For example,
+      # `g.connector.accounts.alice.bob` would route to `alice`.
+      localAccountsAddressSegment: accounts
+      # routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
     # Deprecated
     # btp.enabled: false
     # keystore:
@@ -85,7 +93,10 @@ interledger:
     #     password: password
     #     secret0_alias: secret0
     #     secret0_password: password
-
+    spsp:
+      # Base64-encoded String of bytes used to derive any values used in encryption/decryption for SPSP.
+      # EXAMPLE: serverSecret: aQLR5IWAGV2vKnBhnFFsl2cXOCh9u0IWz3PiA64KlJ8=
+      addressPrefixSegment: spsp
     require32ByteSharedSecrets: true
     keys:
       secret0:
@@ -94,7 +105,9 @@ interledger:
       accountSettings:
         alias: secret0
         version: 1
-
+    enabledFeatures:
+      rateLimitingEnabled: false
+      localSpspFulfillmentEnabled: false
     enabledProtocols:
       ilpOverHttpEnabled: true
       pingProtocolEnabled: true

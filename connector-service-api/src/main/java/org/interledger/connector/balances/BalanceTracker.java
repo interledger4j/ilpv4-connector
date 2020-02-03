@@ -1,8 +1,9 @@
 package org.interledger.connector.balances;
 
-import org.immutables.value.Value;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
+
+import org.immutables.value.Value;
 
 import java.util.Optional;
 
@@ -58,7 +59,8 @@ public interface BalanceTracker {
    *
    * @throws BalanceTrackerException If anything prevents the balance updates to succeed atomically.
    */
-  void updateBalanceForPrepare(AccountId sourceAccountId, long amount, Optional<Long> minBalance) throws BalanceTrackerException;
+  void updateBalanceForPrepare(AccountId sourceAccountId, long amount, Optional<Long> minBalance)
+    throws BalanceTrackerException;
 
   /**
    * Called in response to an ILP Fulfill packet, this function atomically updates the balance for the account
@@ -71,11 +73,12 @@ public interface BalanceTracker {
    *                                   account's balance.
    *
    * @return An {@link AccountBalance} that contains the current state of the balance. Note that this value _may_ be
-   * stale, depending on the load in the Connector.
+   *   stale, depending on the load in the Connector.
    *
    * @throws BalanceTrackerException If anything prevents the balance updates to succeed atomically.
    */
-  UpdateBalanceForFulfillResponse updateBalanceForFulfill(AccountSettings destinationAccountSettings, long amount) throws BalanceTrackerException;
+  UpdateBalanceForFulfillResponse updateBalanceForFulfill(AccountSettings destinationAccountSettings, long amount)
+    throws BalanceTrackerException;
 
   /**
    * Called in response to an ILP Reject packet, this function atomically updates the balance for the account *
@@ -109,7 +112,12 @@ public interface BalanceTracker {
    */
   void updateBalanceForIncomingSettlement(String idempotencyKey, AccountId accountId, long amount);
 
-  // TODO: Add javadoc!
+  /**
+   * Update the balance for an outgoing settlement refund.
+   *
+   * @param accountId A {@link AccountId}.
+   * @param amount    A long amount.
+   */
   void updateBalanceForOutgoingSettlementRefund(AccountId accountId, long amount) throws BalanceTrackerException;
 
   /**

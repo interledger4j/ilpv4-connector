@@ -83,30 +83,32 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
           // Delete all accounts before initializing the Topology otherwise we see sporadic CI build failures when
           // building on Postgres. Only need to do this on one server since both servers share the same DB.
           aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
+          bobServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
 
           // Add Paul's account on Alice (Paul is used for sending pings)
           final AccountSettings paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice(alicePort);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(paulAccountSettingsAtAlice);
 
           // Add Bob's account on Alice...
-          final AccountSettings bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort,
-            aliceContainerPort);
+          final AccountSettings bobAccountSettingsAtAlice
+            = constructBobAccountSettingsOnAlice(bobPort, aliceContainerPort);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
 
           // Add Alice's account on Bob...
-          final AccountSettings aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort,
-            bobContainerPort);
+          final AccountSettings aliceAccountSettingsAtBob
+            = constructAliceAccountSettingsOnBob(alicePort, bobContainerPort);
           bobServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
 
           // Add Peter's account on Bob (Peter is used for sending pings)
           final AccountSettings peterAccountSettingsAtBob = constructPeterAccountSettingsOnBob(bobPort);
           bobServerNode.getILPv4Connector().getAccountManager().createAccount(peterAccountSettingsAtBob);
 
-          // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
+          // Add Ping account on Alice.
           // NOTE: The Connector configures a Ping Account properly but this Topology deletes all accounts above
           // before running, so we must create a new PING account here.
-          final AccountSettings pingAccountSettingsAtBob = constructPingAccountSettings();
-          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(pingAccountSettingsAtBob);
+          final AccountSettings pingAccountSettings = constructPingAccountSettings();
+          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(pingAccountSettings);
+          bobServerNode.getILPv4Connector().getAccountManager().createAccount(pingAccountSettings);
 
           // Try to connect the bob account...
           aliceServerNode.getILPv4Connector().getLinkManager().getOrCreateLink(bobAccountSettingsAtAlice);
@@ -122,8 +124,10 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
     {
       final ConnectorServer aliceServer = new ConnectorServer(constructConnectorSettingsForAlice());
       aliceServer.setPort(ALICE_PORT);
-      topology.addNode(ALICE_CONNECTOR_ADDRESS, new ConnectorServerNode(ALICE, aliceServer,
-        constructStaticRoutesForAlice()));
+      aliceServer.setProperty("LOGGING_LEVEL", "TRACE");
+      topology.addNode(
+        ALICE_CONNECTOR_ADDRESS, new ConnectorServerNode(ALICE, aliceServer, constructStaticRoutesForAlice())
+      );
     }
 
     ///////////////////
@@ -132,6 +136,8 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
     {
       final ConnectorServer bobServer = new ConnectorServer(constructConnectorSettingsForBob());
       bobServer.setPort(BOB_PORT);
+      bobServer.setProperty("LOGGING_LEVEL", "TRACE");
+      useH2(bobServer);
       topology.addNode(BOB_CONNECTOR_ADDRESS, new ConnectorServerNode(BOB, bobServer, constructStaticRoutesForBob()));
     }
 
@@ -323,6 +329,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
   /**
    * An AccountSettings object that represents Paul's account at Alice. Since this account is only used to send, it does
    * not require any incoming connection settings.
+   *
    * @param alicePort
    */
   private static AccountSettings constructPaulAccountSettingsOnAlice(int alicePort) {

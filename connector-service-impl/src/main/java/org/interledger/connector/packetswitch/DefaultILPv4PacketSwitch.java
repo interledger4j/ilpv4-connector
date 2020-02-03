@@ -2,6 +2,7 @@ package org.interledger.connector.packetswitch;
 
 import org.interledger.connector.ConnectorExceptionHandler;
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
 import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.links.LinkManager;
@@ -30,6 +31,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   private final NextHopPacketMapper nextHopPacketMapper;
   private final ConnectorExceptionHandler connectorExceptionHandler;
   private final PacketRejector packetRejector;
+  private final LocalDestinationAddressUtils localDestinationAddressUtils;
 
   // Loading from the Database is somewhat expensive, so we don't want to do this on every packet processed for a
   // given account. Instead, for higher performance, we only load account settings once per period, and otherwise
@@ -37,6 +39,19 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
   private final AccountSettingsLoadingCache accountSettingsLoadingCache;
   private final PacketEventPublisher packetEventPublisher;
 
+  /**
+   * Required-args Constructor.
+   *
+   * @param packetSwitchFilters          A {@link List} of type {@link PacketSwitchFilter}.
+   * @param linkFilters                  A {@link List} of type {@link LinkFilter}.
+   * @param linkManager                  A {@link LinkManager}.
+   * @param nextHopPacketMapper          A {@link NextHopPacketMapper}.
+   * @param connectorExceptionHandler    A {@link ConnectorExceptionHandler}.
+   * @param packetRejector               A {@link PacketRejector}.
+   * @param accountSettingsLoadingCache  A {@link AccountSettingsLoadingCache}.
+   * @param packetEventPublisher         A {@link PacketEventPublisher}.
+   * @param localDestinationAddressUtils A {@link LocalDestinationAddressUtils}.
+   */
   public DefaultILPv4PacketSwitch(
     final List<PacketSwitchFilter> packetSwitchFilters,
     final List<LinkFilter> linkFilters,
@@ -45,7 +60,8 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     final ConnectorExceptionHandler connectorExceptionHandler,
     final PacketRejector packetRejector,
     final AccountSettingsLoadingCache accountSettingsLoadingCache,
-    final PacketEventPublisher packetEventPublisher
+    final PacketEventPublisher packetEventPublisher,
+    final LocalDestinationAddressUtils localDestinationAddressUtils
   ) {
     this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
     this.linkFilters = Objects.requireNonNull(linkFilters);
@@ -54,7 +70,8 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
     this.connectorExceptionHandler = Objects.requireNonNull(connectorExceptionHandler);
     this.packetRejector = Objects.requireNonNull(packetRejector);
     this.accountSettingsLoadingCache = Objects.requireNonNull(accountSettingsLoadingCache);
-    this.packetEventPublisher = packetEventPublisher;
+    this.packetEventPublisher = Objects.requireNonNull(packetEventPublisher);
+    this.localDestinationAddressUtils = Objects.requireNonNull(localDestinationAddressUtils);
   }
 
   /**
@@ -82,11 +99,12 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
           return new DefaultPacketSwitchFilterChain(
             packetSwitchFilters,
             linkFilters,
+            localDestinationAddressUtils,
             linkManager,
             nextHopPacketMapper,
             accountSettingsLoadingCache, // Necessary to load the 'next-hop' account.
-            packetEventPublisher).doFilter(accountSettings, incomingSourcePreparePacket);
-
+            packetEventPublisher
+          ).doFilter(accountSettings, incomingSourcePreparePacket);
         } catch (Exception e) {
           // Any rejections should be caught here, and returned as such....
           return this.connectorExceptionHandler.handleException(accountSettings, incomingSourcePreparePacket, e);

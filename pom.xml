@@ -29,7 +29,7 @@
     <activeProfile>prod</activeProfile>
     <feign.version>10.7.2</feign.version>
     <java.version>1.8</java.version>
-    <ilp.version>HEAD-SNAPSHOT</ilp.version>
+    <ilp.version>1.1.0</ilp.version>
     <problem.version>0.23.0</problem.version>
     <problem-spring-web.version>0.25.2</problem-spring-web.version>
     <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
@@ -55,7 +55,6 @@
   </properties>
 
   <modules>
-    <module>connector-ilpv4-api</module>
     <module>connector-core</module>
     <module>connector-crypto</module>
     <module>connector-crypto/connector-crypto-cli</module>
@@ -325,11 +324,6 @@
         <scope>import</scope>
       </dependency>
       <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>stream-core</artifactId>
-        <version>${ilp.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.javamoney.moneta</groupId>
         <artifactId>moneta-core</artifactId>
         <version>${moneta.version}</version>
@@ -509,7 +503,7 @@
             <dependency>
               <groupId>com.puppycrawl.tools</groupId>
               <artifactId>checkstyle</artifactId>
-              <version>8.28</version>
+              <version>8.29</version>
             </dependency>
           </dependencies>
           <executions>

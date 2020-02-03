@@ -1,6 +1,7 @@
 package org.interledger.connector.connections;
 
 // TODO: Depending on the final design, consider renaming this BilateralReceiverMux.
+@Deprecated
 public class AbstractMultiplexedBilateralReceiver {// implements MultiplexedBilateralReceiver {
 //
 //  private Map<InterledgerAddress, BilateralReceiver> bilateralReceivers;

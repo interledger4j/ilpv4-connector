@@ -2,10 +2,11 @@ package org.interledger.connector.packetswitch.filters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.interledger.connector.routing.PaymentRouter.PING_ACCOUNT_ID;
+import static org.interledger.connector.accounts.sub.LocalDestinationAddressUtils.PING_ACCOUNT_ID;
 import static org.interledger.link.PingLoopbackLink.PING_PROTOCOL_CONDITION;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -13,6 +14,7 @@ import static org.mockito.Mockito.when;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
 import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.links.LinkManager;
@@ -21,6 +23,7 @@ import org.interledger.connector.links.NextHopPacketMapper;
 import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
+import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.link.Link;
 import org.interledger.link.LinkSettings;
@@ -33,6 +36,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.math.BigDecimal;
@@ -50,42 +54,42 @@ public class DefaultPacketSwitchFilterChainTest {
   // The AccountId of the Incoming Link
   private static final AccountId INCOMING_ACCOUNT_ID = AccountId.of("source-account");
   private static final AccountSettings INCOMING_ACCOUNT_SETTINGS = AccountSettings.builder()
-      .accountId(INCOMING_ACCOUNT_ID)
-      .accountRelationship(AccountRelationship.PEER)
-      .assetCode("USD")
-      .assetScale(2)
-      .linkType(LoopbackLink.LINK_TYPE)
-      .build();
+    .accountId(INCOMING_ACCOUNT_ID)
+    .accountRelationship(AccountRelationship.PEER)
+    .assetCode("USD")
+    .assetScale(2)
+    .linkType(LoopbackLink.LINK_TYPE)
+    .build();
 
   // The AccountId of the Outbound Link
   private static final AccountId OUTGOING_ACCOUNT_ID = AccountId.of("destination-account");
   private static final AccountSettings OUTGOING_ACCOUNT_SETTINGS = AccountSettings.builder()
-      .accountId(OUTGOING_ACCOUNT_ID)
-      .accountRelationship(AccountRelationship.PEER)
-      .assetCode("USD")
-      .assetScale(2)
-      .linkType(LoopbackLink.LINK_TYPE)
-      .build();
+    .accountId(OUTGOING_ACCOUNT_ID)
+    .accountRelationship(AccountRelationship.PEER)
+    .assetCode("USD")
+    .assetScale(2)
+    .linkType(LoopbackLink.LINK_TYPE)
+    .build();
 
   private static final LinkSettings OUTGOING_LINK_SETTINGS = LinkSettings.builder()
-      .linkType(LoopbackLink.LINK_TYPE)
-      .putCustomSettings("accountId", OUTGOING_ACCOUNT_ID.value())
-      .build();
+    .linkType(LoopbackLink.LINK_TYPE)
+    .putCustomSettings("accountId", OUTGOING_ACCOUNT_ID.value())
+    .build();
 
   private static final AccountSettings PING_ACCOUNT_SETTINGS = AccountSettings.builder()
-      .accountId(PING_ACCOUNT_ID)
-      .accountRelationship(AccountRelationship.PEER)
-      .assetCode("USD")
-      .assetScale(2)
-      .linkType(PingLoopbackLink.LINK_TYPE)
-      .build();
+    .accountId(PING_ACCOUNT_ID)
+    .accountRelationship(AccountRelationship.PEER)
+    .assetCode("USD")
+    .assetScale(2)
+    .linkType(PingLoopbackLink.LINK_TYPE)
+    .build();
 
   private static final InterledgerPreparePacket PREPARE_PACKET = InterledgerPreparePacket.builder()
-      .destination(InterledgerAddress.of("test.foo"))
-      .amount(UnsignedLong.ONE)
-      .expiresAt(Instant.now().plusSeconds(30))
-      .executionCondition(InterledgerCondition.of(new byte[32]))
-      .build();
+    .destination(InterledgerAddress.of("test.foo"))
+    .amount(UnsignedLong.ONE)
+    .expiresAt(Instant.now().plusSeconds(30))
+    .executionCondition(InterledgerCondition.of(new byte[32]))
+    .build();
 
   @Mock
   private List<LinkFilter> linkFiltersMock;
@@ -96,7 +100,9 @@ public class DefaultPacketSwitchFilterChainTest {
   @Mock
   private AccountSettingsLoadingCache accountSettingsLoadingCacheMock;
   @Mock
-  private PacketEventPublisher packetEventPublisher;
+  private LocalDestinationAddressUtils localDestinationAddressUtilsMock;
+  @Mock
+  private PacketEventPublisher packetEventPublisherMock;
 
   private Link outgoingLink;
 
@@ -111,25 +117,27 @@ public class DefaultPacketSwitchFilterChainTest {
     this.packetSwitchFilters = Lists.newArrayList();
 
     this.outgoingLink = new LoopbackLink(
-        () -> OPERATOR_ADDRESS,
-        OUTGOING_LINK_SETTINGS,
-        new PacketRejector(() -> OPERATOR_ADDRESS)
+      () -> OPERATOR_ADDRESS,
+      OUTGOING_LINK_SETTINGS,
+      new PacketRejector(() -> OPERATOR_ADDRESS)
     );
 
     this.filterChain = new DefaultPacketSwitchFilterChain(
-        packetSwitchFilters,
-        linkFiltersMock,
-        linkManagerMock,
-        nextHopPacketMapperMock,
-        accountSettingsLoadingCacheMock,
-      packetEventPublisher);
+      packetSwitchFilters,
+      linkFiltersMock,
+      localDestinationAddressUtilsMock,
+      linkManagerMock,
+      nextHopPacketMapperMock,
+      accountSettingsLoadingCacheMock,
+      packetEventPublisherMock
+    );
 
     when(accountSettingsLoadingCacheMock.getAccount(INCOMING_ACCOUNT_ID))
-        .thenReturn(Optional.of(INCOMING_ACCOUNT_SETTINGS));
+      .thenReturn(Optional.of(INCOMING_ACCOUNT_SETTINGS));
     when(accountSettingsLoadingCacheMock.getAccount(OUTGOING_ACCOUNT_ID))
-        .thenReturn(Optional.of(OUTGOING_ACCOUNT_SETTINGS));
+      .thenReturn(Optional.of(OUTGOING_ACCOUNT_SETTINGS));
     when(accountSettingsLoadingCacheMock.getAccount(PING_ACCOUNT_ID))
-        .thenReturn(Optional.of(PING_ACCOUNT_SETTINGS));
+      .thenReturn(Optional.of(PING_ACCOUNT_SETTINGS));
   }
 
   @Test
@@ -137,21 +145,27 @@ public class DefaultPacketSwitchFilterChainTest {
     assertThat(this.packetSwitchFilters.size()).isEqualTo(0);
 
     final NextHopInfo nextHopInfo = NextHopInfo.builder()
-        .nextHopAccountId(OUTGOING_ACCOUNT_ID)
-        .nextHopPacket(PREPARE_PACKET)
-        .build();
+      .nextHopAccountId(OUTGOING_ACCOUNT_ID)
+      .nextHopPacket(PREPARE_PACKET)
+      .build();
     when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_SETTINGS), eq(PREPARE_PACKET)))
-        .thenReturn(nextHopInfo);
+      .thenReturn(nextHopInfo);
     when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_ID)).thenReturn(outgoingLink);
     when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
 
+    // Simulate a Ping
+    final Link linkMock = mock(Link.class);
+    when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_SETTINGS)).thenReturn(linkMock);
+    when(linkMock.sendPacket(any()))
+      .thenReturn(InterledgerFulfillPacket.builder().fulfillment(LoopbackLink.LOOPBACK_FULFILLMENT).build());
+
     filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET).handle(
-        fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LoopbackLink.LOOPBACK_FULFILLMENT),
-        rejectPacket -> fail("Should have fulfilled but rejected!")
+      fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LoopbackLink.LOOPBACK_FULFILLMENT),
+      rejectPacket -> fail("Should have fulfilled but rejected!")
     );
 
     verify(linkFiltersMock).size();
-    verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_ID);
+    verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_SETTINGS);
     verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET);
     verify(nextHopPacketMapperMock).determineExchangeRate(any(), any(), any());
 
@@ -163,32 +177,32 @@ public class DefaultPacketSwitchFilterChainTest {
   @Test
   public void filterPacketWithMultipleFilters() {
     final PacketSwitchFilter packetSwitchFilter1 =
-        (sourceAccountSettings, sourcePreparePacket, filterChain) -> filterChain
-            .doFilter(sourceAccountSettings, sourcePreparePacket);
+      (sourceAccountSettings, sourcePreparePacket, filterChain) -> filterChain
+        .doFilter(sourceAccountSettings, sourcePreparePacket);
     this.packetSwitchFilters.add(packetSwitchFilter1);
 
     final PacketSwitchFilter packetSwitchFilter2 = (sourceAccountSettings, sourcePreparePacket, filterChain) ->
-        filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
+      filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
     this.packetSwitchFilters.add(packetSwitchFilter2);
 
     assertThat(this.packetSwitchFilters.size()).isEqualTo(2);
 
     final NextHopInfo nextHopInfo = NextHopInfo.builder()
-        .nextHopAccountId(OUTGOING_ACCOUNT_ID)
-        .nextHopPacket(PREPARE_PACKET)
-        .build();
+      .nextHopAccountId(OUTGOING_ACCOUNT_ID)
+      .nextHopPacket(PREPARE_PACKET)
+      .build();
     when(nextHopPacketMapperMock.getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET)).thenReturn(nextHopInfo);
-    when(linkManagerMock.getOrCreateLink(OUTGOING_ACCOUNT_ID)).thenReturn(outgoingLink);
+    when(linkManagerMock.getOrCreateLink(Mockito.<AccountSettings>any())).thenReturn(outgoingLink);
     when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
 
     filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET).handle(
-        fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LoopbackLink.LOOPBACK_FULFILLMENT),
-        rejectPacket -> fail("Should have fulfilled but rejected!")
+      fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LoopbackLink.LOOPBACK_FULFILLMENT),
+      rejectPacket -> fail("Should have fulfilled but rejected!")
     );
 
     // Each filter should only be called once...
     verify(linkFiltersMock).size();
-    verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_ID);
+    verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_SETTINGS);
     verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET);
     verify(nextHopPacketMapperMock).determineExchangeRate(any(), any(), any());
 
@@ -204,38 +218,125 @@ public class DefaultPacketSwitchFilterChainTest {
     assertThat(this.packetSwitchFilters.size()).isEqualTo(0);
 
     final InterledgerPreparePacket pingPreparePacket = InterledgerPreparePacket.builder()
-        .destination(OPERATOR_ADDRESS)
-        .amount(UnsignedLong.ONE)
-        .expiresAt(Instant.now().plusSeconds(30))
-        .executionCondition(PING_PROTOCOL_CONDITION)
-        .build();
+      .destination(OPERATOR_ADDRESS)
+      .amount(UnsignedLong.ONE)
+      .expiresAt(Instant.now().plusSeconds(30))
+      .executionCondition(PING_PROTOCOL_CONDITION)
+      .build();
 
     this.outgoingLink = new PingLoopbackLink(
-        () -> OPERATOR_ADDRESS, OUTGOING_LINK_SETTINGS
+      () -> OPERATOR_ADDRESS, OUTGOING_LINK_SETTINGS
     );
 
     final NextHopInfo nextHopInfo = NextHopInfo.builder()
-        .nextHopAccountId(PING_ACCOUNT_ID)
-        .nextHopPacket(pingPreparePacket)
-        .build();
+      .nextHopAccountId(PING_ACCOUNT_ID)
+      .nextHopPacket(pingPreparePacket)
+      .build();
     when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_SETTINGS), eq(pingPreparePacket)))
-        .thenReturn(nextHopInfo);
-    when(linkManagerMock.getPingLink()).thenReturn(outgoingLink);
+      .thenReturn(nextHopInfo);
     when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
 
+    // Simulate a Ping
+    when(localDestinationAddressUtilsMock.isLocalDestinationAddress(OPERATOR_ADDRESS)).thenReturn(true);
+    final Link pingLink = mock(Link.class);
+    when(linkManagerMock.getOrCreateLink(Mockito.<AccountSettings>any())).thenReturn(pingLink);
+    when(pingLink.sendPacket(pingPreparePacket))
+      .thenReturn(InterledgerFulfillPacket.builder().fulfillment(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT).build());
+
     filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket).handle(
-        fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT),
-        rejectPacket -> fail("Should have fulfilled but rejected!")
+      fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT),
+      rejectPacket -> fail("Should have fulfilled but rejected!")
     );
 
     verify(linkFiltersMock).size();
-    verify(linkManagerMock).getPingLink();
     verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket);
     verify(nextHopPacketMapperMock).determineExchangeRate(any(), any(), any());
 
     assertThat(this.packetSwitchFilters.size()).isEqualTo(0);
     verifyNoMoreInteractions(nextHopPacketMapperMock);
     verifyNoMoreInteractions(linkFiltersMock);
+  }
+
+
+  /**
+   * Tests only the local vs forwarding functionality of the filter chain when an account IS a locally fulfilled SPSP
+   * account.
+   */
+  @Test
+  public void testDoFilterWithLocalSpspAddress() {
+    final InterledgerPreparePacket pingPreparePacket = InterledgerPreparePacket.builder()
+      .destination(OPERATOR_ADDRESS)
+      .amount(UnsignedLong.ONE)
+      .expiresAt(Instant.now().plusSeconds(30))
+      .executionCondition(PING_PROTOCOL_CONDITION)
+      .build();
+
+    this.outgoingLink = new PingLoopbackLink(
+      () -> OPERATOR_ADDRESS, OUTGOING_LINK_SETTINGS
+    );
+
+    when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_SETTINGS), eq(pingPreparePacket)))
+      .thenReturn(
+        NextHopInfo.builder()
+          .nextHopAccountId(OUTGOING_ACCOUNT_ID)
+          .nextHopPacket(pingPreparePacket)
+          .build()
+      );
+    when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
+
+    when(localDestinationAddressUtilsMock.isLocalSpspDestinationAddress(any())).thenReturn(true);
+    when(linkManagerMock.getOrCreateSpspReceiverLink(any())).thenReturn(outgoingLink);
+
+    filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket).handle(
+      fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT),
+      rejectPacket -> fail("Should have fulfilled but rejected!")
+    );
+
+    verify(localDestinationAddressUtilsMock).isLocalSpspDestinationAddress(OPERATOR_ADDRESS);
+    verifyNoMoreInteractions(localDestinationAddressUtilsMock);
+    verify(linkManagerMock).getOrCreateSpspReceiverLink(OUTGOING_ACCOUNT_SETTINGS);
+    verifyNoMoreInteractions(linkManagerMock);
+  }
+
+  /**
+   * Tests only the local vs forwarding functionality of the filter chain when an account IS NOT a locally fulfilled
+   * SPSP account.
+   */
+  @Test
+  public void testDoFilterWithNonLocalSpspAddress() {
+    final InterledgerAddress destinationAddres = InterledgerAddress.of("example.foo.bar.baz");
+    final InterledgerPreparePacket pingPreparePacket = InterledgerPreparePacket.builder()
+      .destination(destinationAddres)
+      .amount(UnsignedLong.ONE)
+      .expiresAt(Instant.now().plusSeconds(30))
+      .executionCondition(PING_PROTOCOL_CONDITION)
+      .build();
+
+    this.outgoingLink = new PingLoopbackLink(
+      () -> OPERATOR_ADDRESS, OUTGOING_LINK_SETTINGS
+    );
+
+    when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_SETTINGS), eq(pingPreparePacket)))
+      .thenReturn(
+        NextHopInfo.builder()
+          .nextHopAccountId(OUTGOING_ACCOUNT_ID)
+          .nextHopPacket(pingPreparePacket)
+          .build()
+      );
+    when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
+
+    when(localDestinationAddressUtilsMock.isLocalSpspDestinationAddress(any())).thenReturn(false);
+    when(linkManagerMock.getOrCreateLink(Mockito.<AccountSettings>any())).thenReturn(outgoingLink);
+
+    filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, pingPreparePacket).handle(
+      fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(PingLoopbackLink.PING_PROTOCOL_FULFILLMENT),
+      rejectPacket -> fail("Should have fulfilled but rejected!")
+    );
+
+    verify(localDestinationAddressUtilsMock).isLocalSpspDestinationAddress(destinationAddres);
+    verifyNoMoreInteractions(localDestinationAddressUtilsMock);
+    verify(linkManagerMock).getOrCreateLink(OUTGOING_ACCOUNT_SETTINGS);
+    verifyNoMoreInteractions(linkManagerMock);
   }
 
 }
