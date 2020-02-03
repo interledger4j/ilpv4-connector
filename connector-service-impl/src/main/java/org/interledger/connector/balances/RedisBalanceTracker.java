@@ -1,10 +1,11 @@
 package org.interledger.connector.balances;
 
-import com.google.common.base.Preconditions;
+import static java.util.Collections.singletonList;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
 
+import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.BoundHashOperations;
@@ -15,17 +16,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static java.util.Collections.singletonList;
-
 /**
  * An implementation of {@link BalanceTracker} that uses Redis to track all balances. Note that Redis does not support
  * INCR/DECR operations on unsigned longs, but is instead limited to sign-longs. This is an implementation detail of
  * this particular balance tracker, which will throw an exception if any negative amounts are supplied.
  */
 public class RedisBalanceTracker implements BalanceTracker {
-
-  // TODO: Stop sending Strings into Redis and instead send longs!
-  // See https://github.com/interledger4j/ilpv4-connector/issues/153
 
   public static final String CLEARING_BALANCE = "clearing_balance";
   public static final String PREPAID_AMOUNT = "prepaid_amount";

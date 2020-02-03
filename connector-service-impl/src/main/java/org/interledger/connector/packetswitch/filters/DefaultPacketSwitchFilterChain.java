@@ -2,6 +2,7 @@ package org.interledger.connector.packetswitch.filters;
 
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.caching.AccountSettingsLoadingCache;
 import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.links.LinkManager;
@@ -9,14 +10,11 @@ import org.interledger.connector.links.NextHopInfo;
 import org.interledger.connector.links.NextHopPacketMapper;
 import org.interledger.connector.links.filters.DefaultLinkFilterChain;
 import org.interledger.connector.links.filters.LinkFilter;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.connector.routing.PaymentRouter;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.link.Link;
 import org.interledger.link.LinkSettings;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +34,8 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
   // The outbound filter-chain that will be applied to the outgoing packet...
   private final List<LinkFilter> linkFilters;
 
+  private final LocalDestinationAddressUtils localDestinationAddressUtils;
+
   private final LinkManager linkManager;
 
   private final NextHopPacketMapper nextHopPacketMapper;
@@ -51,40 +51,34 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
   private PacketEventPublisher packetEventPublisher;
 
   /**
-   * For testing purposes only.
-   */
-  @VisibleForTesting
-  protected DefaultPacketSwitchFilterChain(
-    final List<PacketSwitchFilter> packetSwitchFilters,
-    final List<LinkFilter> linkFilters,
-    final LinkManager linkManager,
-    final NextHopPacketMapper nextHopPacketMapper,
-    final AccountSettingsRepository accountSettingsRepository,
-    final PacketEventPublisher packetEventPublisher) {
-    this(
-      packetSwitchFilters, linkFilters, linkManager, nextHopPacketMapper,
-      new AccountSettingsLoadingCache(accountSettingsRepository),
-      packetEventPublisher);
-  }
-
-  /**
    * A chain of filters that are applied to a switchPacket request before attempting to determine the `next-hop` {@link
    * Link} to forward the packet onto.
+   *
+   * @param packetSwitchFilters          A {@link List} of type {@link PacketSwitchFilter}.
+   * @param linkFilters                  A {@link List} of {@link LinkFilter}.
+   * @param localDestinationAddressUtils A {@lnk LocalDestinationAddressUtils}.
+   * @param linkManager                  A {@link LinkManager}.
+   * @param nextHopPacketMapper          A {@link NextHopPacketMapper}.
+   * @param accountSettingsLoadingCache  A {@link AccountSettingsLoadingCache}.
+   * @param packetEventPublisher         A {@link PacketEventPublisher}.
    */
   public DefaultPacketSwitchFilterChain(
     final List<PacketSwitchFilter> packetSwitchFilters,
     final List<LinkFilter> linkFilters,
+    final LocalDestinationAddressUtils localDestinationAddressUtils,
     final LinkManager linkManager,
     final NextHopPacketMapper nextHopPacketMapper,
     final AccountSettingsLoadingCache accountSettingsLoadingCache,
-    final PacketEventPublisher packetEventPublisher) {
+    final PacketEventPublisher packetEventPublisher
+  ) {
     this.packetSwitchFilters = Objects.requireNonNull(packetSwitchFilters);
     this.linkFilters = Objects.requireNonNull(linkFilters);
+    this.localDestinationAddressUtils = Objects.requireNonNull(localDestinationAddressUtils);
     this.linkManager = Objects.requireNonNull(linkManager);
-    this.nextHopPacketMapper = nextHopPacketMapper;
-    this.packetEventPublisher = packetEventPublisher;
-    this._filterIndex = 0;
+    this.nextHopPacketMapper = Objects.requireNonNull(nextHopPacketMapper);
+    this.packetEventPublisher = Objects.requireNonNull(packetEventPublisher);
     this.accountSettingsLoadingCache = Objects.requireNonNull(accountSettingsLoadingCache);
+    this._filterIndex = 0;
   }
 
   @Override
@@ -109,21 +103,31 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
         sourceAccountSettings, preparePacket
       );
 
+      final AccountSettings nextHopAccountSettings = accountSettingsLoadingCache
+        .getAccount(nextHopInfo.nextHopAccountId())
+        .orElseThrow(() -> new AccountNotFoundProblem(nextHopInfo.nextHopAccountId()));
+
+      // In this section of code, the Packet Switch needs to determine the correct Link to use to "forward" a
+      // particular packet. In the general case, the linkManager should simply be asked to return a Link for a given
+      // accountId (i.e., find the Link for nextHopInfo.nextHopAccountId()). However, sometimes it is desirable to
+      // locally fulfill a packet on behalf of an account without actually forwarding the Packet "out" of the
+      // Connector. One such example is when the Connector has been directed to locally fulfill an SPSP packet,
+      // In this case, the Connector needs to utilize a different Link that doesn't exactly correspond simply to
+      // the nextHop's accountId. Instead, the Link obtained depends on the structure of the ILP address. For
+      // example, a Connector operating with the ILP address `g.connector` would typically fulfill SPSP addresses
+      // like `g.connector.spsp.alice.123xyz`. In this case, the Packet Switch should process this packet using Alice's
+      // account, but should use the SpspReceiverLink instead of the typical Link assigned in Alice's AccountSettings.
       final Link<? extends LinkSettings> link;
-      if (nextHopInfo.nextHopAccountId().equals(PaymentRouter.PING_ACCOUNT_ID)) {
-        link = this.linkManager.getPingLink();
+      if (localDestinationAddressUtils.isLocalSpspDestinationAddress(preparePacket.getDestination())) {
+        link = this.linkManager.getOrCreateSpspReceiverLink(nextHopAccountSettings);
       } else {
-        link = this.linkManager.getOrCreateLink(nextHopInfo.nextHopAccountId());
+        link = this.linkManager.getOrCreateLink(nextHopAccountSettings);
       }
 
       logger.debug(
         "Sending outbound ILP Prepare: sourceAccountId: `{}` link={} packet={}",
         sourceAccountSettings.accountId(), link, preparePacket
       );
-
-      final AccountSettings nextHopAccountSettings = accountSettingsLoadingCache
-        .getAccount(nextHopInfo.nextHopAccountId())
-        .orElseThrow(() -> new AccountNotFoundProblem(nextHopInfo.nextHopAccountId()));
 
       // The final operation in the filter-chain is `link.sendPacket(newPreparePacket)`.
       InterledgerResponsePacket response = new DefaultLinkFilterChain(linkFilters, link)

@@ -243,11 +243,37 @@
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
+      <artifactId>codecs-stream</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
       <artifactId>link-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>link-ilp-over-http</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>link-stateless-spsp-receiver</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>spsp-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>stream-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>stream-receiver</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>stream-client</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.javamoney.moneta</groupId>
@@ -256,6 +282,11 @@
     <dependency>
       <groupId>org.javamoney.moneta</groupId>
       <artifactId>moneta-convert</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
@@ -270,6 +301,7 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-test-autoconfigure</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.security</groupId>
@@ -342,11 +374,6 @@
     <dependency>
       <groupId>jakarta.servlet</groupId>
       <artifactId>jakarta.servlet-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.liquibase</groupId>
-      <artifactId>liquibase-core</artifactId>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>

@@ -35,12 +35,15 @@ public abstract class AbstractEndpointTest {
   protected static final String CONNIE = "connie";
 
   protected ConnectorAdminTestClient adminApiTestClient;
+
   @Autowired
   protected ConnectorUserClient userClient;
+
   @Value("${interledger.connector.adminPassword}")
   private String adminPassword;
+
   @LocalServerPort
-  private int localServerPort;
+  protected int localServerPort;
 
   @Before
   public final void setUpAbstractEndpointTest() {

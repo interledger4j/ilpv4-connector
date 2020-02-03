@@ -35,7 +35,7 @@ public interface NextHopPacketMapper {
    *
    * @return
    *
-   * @deprecated This only exists to faciliate getting FX information into BigQuery. However, this method should be
+   * @deprecated This only exists to facilitate getting FX information into BigQuery. However, this method should be
    *   removed once https://github.com/interledger4j/ilpv4-connector/issues/529 is fixed (see that issue for more
    *   details).
    */

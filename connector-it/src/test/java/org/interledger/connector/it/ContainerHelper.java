@@ -44,10 +44,6 @@ public final class ContainerHelper {
       .waitingFor(new LogMessageWaitStrategy().withRegEx("(?s).*started.*$"));
   }
 
-  public static GenericContainer settlement(Network network, int port, int connectorPort) {
-    return settlement(network, port, connectorPort, null);
-  }
-
   public static GenericContainer settlement(Network network, int port, int connectorPort, Logger logger) {
     Testcontainers.exposeHostPorts(connectorPort);
     GenericContainer container = new GenericContainer<>("interledgerjs/settlement-xrp")

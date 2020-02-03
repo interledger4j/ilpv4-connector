@@ -12,6 +12,8 @@ import org.interledger.link.PingLoopbackLink;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
+import org.interledger.link.spsp.StatelessSpspReceiverLink;
+import org.interledger.link.spsp.StatelessSpspReceiverLinkSettings;
 
 import com.google.common.collect.Maps;
 import org.junit.Before;
@@ -27,12 +29,12 @@ import java.util.Map;
 public class DefaultLinkSettingsFactoryTest {
 
   protected static final String ENCRYPTED_SHH
-      = "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=";
-
-  DefaultLinkSettingsFactory factory;
+    = "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=";
 
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
+
+  DefaultLinkSettingsFactory factory;
 
   @Before
   public void setUp() {
@@ -44,13 +46,13 @@ public class DefaultLinkSettingsFactoryTest {
     expectedException.expect(IllegalArgumentException.class);
     expectedException.expectMessage("Unsupported LinkType: LinkType(FOO)");
     factory.construct(
-        AccountSettings.builder()
-            .accountId(AccountId.of("foo"))
-            .linkType(LinkType.of("foo"))
-            .accountRelationship(AccountRelationship.PEER)
-            .assetScale(2)
-            .assetCode("XRP")
-            .build()
+      AccountSettings.builder()
+        .accountId(AccountId.of("foo"))
+        .linkType(LinkType.of("foo"))
+        .accountRelationship(AccountRelationship.PEER)
+        .assetCode("XRP")
+        .assetScale(2)
+        .build()
     );
   }
 
@@ -71,13 +73,13 @@ public class DefaultLinkSettingsFactoryTest {
     customSettings.put(OutgoingLinkSettings.HTTP_OUTGOING_URL, "https://alice.example.com");
 
     AccountSettings accountSettings = AccountSettings.builder()
-        .accountId(AccountId.of("foo"))
-        .linkType(IlpOverHttpLink.LINK_TYPE)
-        .accountRelationship(AccountRelationship.PEER)
-        .assetScale(2)
-        .assetCode("XRP")
-        .customSettings(customSettings)
-        .build();
+      .accountId(AccountId.of("foo"))
+      .linkType(IlpOverHttpLink.LINK_TYPE)
+      .accountRelationship(AccountRelationship.PEER)
+      .assetCode("XRP")
+      .assetScale(2)
+      .customSettings(customSettings)
+      .build();
     final LinkSettings actual = factory.construct(accountSettings);
     assertThat(actual.getLinkType()).isEqualTo(IlpOverHttpLink.LINK_TYPE);
     assertThat(actual.getCustomSettings()).isEqualTo(customSettings);
@@ -86,12 +88,12 @@ public class DefaultLinkSettingsFactoryTest {
   @Test
   public void constructLoopLink() {
     AccountSettings accountSettings = AccountSettings.builder()
-        .accountId(AccountId.of("foo"))
-        .linkType(LoopbackLink.LINK_TYPE)
-        .accountRelationship(AccountRelationship.PEER)
-        .assetScale(2)
-        .assetCode("XRP")
-        .build();
+      .accountId(AccountId.of("foo"))
+      .linkType(LoopbackLink.LINK_TYPE)
+      .accountRelationship(AccountRelationship.PEER)
+      .assetCode("XRP")
+      .assetScale(2)
+      .build();
     final LinkSettings actual = factory.construct(accountSettings);
     assertThat(actual.getLinkType()).isEqualTo(LoopbackLink.LINK_TYPE);
     assertThat(actual.getCustomSettings().isEmpty()).isTrue();
@@ -100,14 +102,33 @@ public class DefaultLinkSettingsFactoryTest {
   @Test
   public void testConstructUnidirectionalPingLink() {
     AccountSettings accountSettings = AccountSettings.builder()
-        .accountId(AccountId.of("foo"))
-        .linkType(PingLoopbackLink.LINK_TYPE)
-        .accountRelationship(AccountRelationship.PEER)
-        .assetScale(2)
-        .assetCode("XRP")
-        .build();
+      .accountId(AccountId.of("foo"))
+      .linkType(PingLoopbackLink.LINK_TYPE)
+      .accountRelationship(AccountRelationship.PEER)
+      .assetCode("XRP")
+      .assetScale(2)
+      .build();
     final LinkSettings actual = factory.construct(accountSettings);
     assertThat(actual.getLinkType()).isEqualTo(PingLoopbackLink.LINK_TYPE);
     assertThat(actual.getCustomSettings().isEmpty()).isTrue();
+  }
+
+  @Test
+  public void testConstructStatelessSpspReceiverLink() {
+    AccountSettings accountSettings = AccountSettings.builder()
+      .accountId(AccountId.of("foo"))
+      .linkType(StatelessSpspReceiverLink.LINK_TYPE)
+      .accountRelationship(AccountRelationship.PEER)
+      .assetCode("XRP")
+      .assetScale(2)
+      .build();
+    final LinkSettings actual = factory.construct(accountSettings);
+    assertThat(actual.getLinkType()).isEqualTo(StatelessSpspReceiverLink.LINK_TYPE);
+    assertThat(actual.getCustomSettings().isEmpty()).isTrue();
+
+    final StatelessSpspReceiverLinkSettings statelessSpspReceiverLinkSettings =
+      (StatelessSpspReceiverLinkSettings) actual;
+    assertThat(statelessSpspReceiverLinkSettings.assetCode()).isEqualTo("XRP");
+    assertThat(statelessSpspReceiverLinkSettings.assetScale()).isEqualTo(2);
   }
 }

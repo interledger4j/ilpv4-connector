@@ -56,9 +56,12 @@ public interface LinkManager {
   Set<Link<? extends LinkSettings>> getAllConnectedLinks();
 
   /**
-   * Accessor for the {@link Link} that processes Ping protocol requests.
+   * Accessor for the {@link Link} that processes SPSP-compatible STREAM packets. Each account will utilize a
+   * potentially different asset code and scale, so this interface allows for varying instances of an SPSP Link on a
+   * per-account basis.
    *
-   * @return A {@link Link} for processing unidirectional and bidirectional ping requests.
+   * @return A {@link Link} for processing STREAM packets.
    */
-  Link<? extends LinkSettings> getPingLink();
+  Link<? extends LinkSettings> getOrCreateSpspReceiverLink(final AccountSettings accountSettings);
+
 }

@@ -40,7 +40,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
 import javax.annotation.PreDestroy;
 
 /**
@@ -239,6 +238,7 @@ public class DefaultCcpSender implements CcpSender {
               }
             }
           })
+          .filter(Objects::nonNull)
           .collect(Collectors.toList());
 
       final ImmutableList.Builder<CcpNewRoute> newRoutesBuilder = ImmutableList.builder();

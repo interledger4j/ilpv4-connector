@@ -22,9 +22,10 @@ public interface CreateSettlementAccountRequest {
   }
 
   /**
-   * The connector's account scale.
+   * An optionally-present {@link SettlementEngineAccountId} that the Connector can use as a hint for the Settlement
+   * Engine. If unspecified, the Settlement Engine will create a new account identifier and return it to the Connector.
    *
-   * @return An integer representing the scale used by the settlement engine.
+   * @return An optionally-present {@link SettlementEngineAccountId}.
    */
   @JsonProperty("id")
   Optional<SettlementEngineAccountId> requestedSettlementAccountId();

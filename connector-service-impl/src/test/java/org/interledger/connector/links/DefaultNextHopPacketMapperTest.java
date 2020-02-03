@@ -43,7 +43,6 @@ import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.function.Supplier;
-
 import javax.money.MonetaryAmount;
 import javax.money.convert.CurrencyConversion;
 import javax.money.convert.ExchangeRate;
@@ -72,7 +71,9 @@ public class DefaultNextHopPacketMapperTest {
   public ExpectedException expectedException = ExpectedException.none();
 
   private DefaultNextHopPacketMapper mapper;
+
   private ModifiableConnectorSettings connectorSettings;
+
   @Mock
   private PaymentRouter<Route> mockRoutingService;
   @Mock

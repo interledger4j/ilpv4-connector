@@ -35,7 +35,7 @@ public interface EnabledProtocolSettings {
    * @see "https://github.com/interledger/rfcs/blob/master/0031-dynamic-configuration-protocol/0031-dynamic-configuration-protocol.md"
    */
   default boolean isIldcpEnabled() {
-    return false;
+    return true;
   }
 
   /**
@@ -44,7 +44,7 @@ public interface EnabledProtocolSettings {
    * @see "RFC-LINK"
    */
   default boolean isPeerRoutingEnabled() {
-    return false;
+    return true;
   }
 
   @Value.Immutable(intern = true)
@@ -65,13 +65,13 @@ public interface EnabledProtocolSettings {
     @Override
     @Value.Default
     public boolean isPeerRoutingEnabled() {
-      return false;
+      return true;
     }
 
     @Override
     @Value.Default
     public boolean isIldcpEnabled() {
-      return false;
+      return true;
     }
   }
 

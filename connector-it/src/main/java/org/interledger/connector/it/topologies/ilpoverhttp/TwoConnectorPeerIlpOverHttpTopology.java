@@ -80,8 +80,10 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
           final int bobPort = bobServerNode.getPort();
 
           // Delete all accounts before initializing the Topology otherwise we see sporadic CI build failures when
-          // building on Postgres. Only need to do this on one server since both servers share the same DB.
+          // building on Postgres. This includes the "ping" account so that ping balances get reset from Topology to
+          // Topology.
           aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
+          bobServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
 
           // Add Bob's account on Alice...
           final AccountSettings bobAccountSettingsAtAlice = constructBobAccountSettingsOnAlice(bobPort,
@@ -96,13 +98,14 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
           // Add Alice's account on Bob...
           final AccountSettings aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort,
             aliceBobDenomination, maxPacketAmount);
-          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
+          bobServerNode.getILPv4Connector().getAccountManager().createAccount(aliceAccountSettingsAtBob);
 
-          // Add Ping account on Alice (Bob and Alice share a DB here, so this will work for Bob too).
+          // Add Ping account on Alice and Bob
           // NOTE: The Connector configures a Ping Account properly but this Topology deletes all accounts above
           // before running, so we must create a new PING account here.
-          final AccountSettings pingAccountSettingsAtBob = constructPingAccountSettings();
-          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(pingAccountSettingsAtBob);
+          final AccountSettings pingAccountSettings = constructPingAccountSettings();
+          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(pingAccountSettings);
+          bobServerNode.getILPv4Connector().getAccountManager().createAccount(pingAccountSettings);
 
           // Try to connect the bob account...
           aliceServerNode.getILPv4Connector().getLinkManager().getOrCreateLink(bobAccountSettingsAtAlice);
@@ -128,6 +131,7 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
     {
       final ConnectorServer bobServer = new ConnectorServer(constructConnectorSettingsForBob());
       bobServer.setPort(BOB_PORT);
+      useH2(bobServer);
       topology.addNode(BOB_CONNECTOR_ADDRESS, new ConnectorServerNode(BOB, bobServer, constructStaticRoutesForBob()));
     }
 
