@@ -8,6 +8,8 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
 
+import java.util.Optional;
+
 public final class ContainerHelper {
 
   public static GenericContainer redis(Network network) {
@@ -57,6 +59,14 @@ public final class ContainerHelper {
     if (logger != null) {
       container = container.withLogConsumer(new org.testcontainers.containers.output.Slf4jLogConsumer (logger));
     }
+    return container;
+  }
+
+  public static GenericContainer javaConnector(String version, Optional<Logger> logger) {
+    GenericContainer container = new GenericContainer("interledger4j/java-ilpv4-connector:" + version)
+      .withExposedPorts(8080)
+      .waitingFor(new LogMessageWaitStrategy().withRegEx("(?s).*Started ServerConnector.*$"));
+    logger.ifPresent($ -> container.withLogConsumer(new org.testcontainers.containers.output.Slf4jLogConsumer($)));
     return container;
   }
 }

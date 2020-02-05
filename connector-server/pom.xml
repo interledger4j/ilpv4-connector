@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.interledger.connector</groupId>
     <artifactId>connector-parent</artifactId>
-    <version>HEAD-SNAPSHOT</version>
+    <version>0.2.0</version>
   </parent>
 
   <artifactId>connector-server</artifactId>
@@ -18,6 +18,9 @@
   <properties>
     <container.image>interledger4j/java-ilpv4-connector</container.image>
     <container.version>${project.version}</container.version>
+    <!-- by default, configure jib plugin goal to build the docker image locally but not publish to dockerhub -->
+    <!-- to release and push to dockerhub run: mvn clean package -Pdocker,dockerhub -->
+    <jibGoal>dockerBuild</jibGoal>
   </properties>
 
   <build>
@@ -256,7 +259,7 @@
     <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>spsp-core</artifactId>
-      <scope>test</scope>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
@@ -410,24 +413,30 @@
 
   <profiles>
     <profile>
+      <id>dockerhub</id>
+      <properties>
+        <!-- override jib plugin goal to "build" which builds image and pushes to dockerhub -->
+        <jibGoal>build</jibGoal>
+      </properties>
+    </profile>
+    <profile>
       <!-- this profile builds 2 docker images, 1 with newrelic agent and 1 without any agent configured -->
       <id>docker</id>
-      <!-- ship liquibase with docker image build -->
-      <dependencies>
-        <dependency>
-          <groupId>com.newrelic.agent.java</groupId>
-          <artifactId>newrelic-java</artifactId>
-          <version>5.9.0</version>
-          <scope>provided</scope>
-          <type>zip</type>
-        </dependency>
-      </dependencies>
       <build>
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-dependency-plugin</artifactId>
             <version>3.1.1</version>
+            <dependencies>
+              <dependency>
+                <groupId>com.newrelic.agent.java</groupId>
+                <artifactId>newrelic-java</artifactId>
+                <version>5.9.0</version>
+                <scope>runtime</scope>
+                <type>zip</type>
+              </dependency>
+            </dependencies>
             <executions>
               <execution>
                 <id>unpack-newrelic</id>
@@ -457,7 +466,7 @@
                 <!-- pinning to prepare-package so that it runs before the 2 new relic-specific plugin exections -->
                 <phase>prepare-package</phase>
                 <goals>
-                  <goal>build</goal>
+                  <goal>${jibGoal}</goal>
                 </goals>
                 <configuration>
                   <to>
@@ -481,7 +490,7 @@
                 <id>dockerNewRelic</id>
                 <phase>package</phase>
                 <goals>
-                  <goal>build</goal>
+                  <goal>${jibGoal}</goal>
                 </goals>
                 <configuration>
                   <to>

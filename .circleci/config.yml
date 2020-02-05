@@ -183,7 +183,7 @@ jobs:
             - v1-dependencies-{{ checksum "pom.xml" }}
       - run:
           name: Deploy docker image
-          command: mvn package -DskipTests -DskipITs -Pdocker -Dcontainer.version=nightly -Djib.to.auth.username=${DOCKERHUB_USERNAME} -Djib.to.auth.password=${DOCKERHUB_API_KEY}
+          command: mvn clean install -DskipTests -Pdocker -Dcontainer.version=nightly
 
 workflows:
   version: 2
