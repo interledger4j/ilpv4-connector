@@ -1,27 +1,28 @@
 package org.interledger.connector.pubsub;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Base class for events that require coordination across a cluster of connectors.
  */
 public abstract class AbstractCoordinatedEvent {
 
-  private boolean receivedViaCoordination = false;
+  private AtomicBoolean receivedViaCoordination = new AtomicBoolean(false);
 
   /**
    * Indicates that a message was received from the shared topic
    * @return true if the message came from the shared topic
    */
   final boolean receivedViaCoordination() {
-    return receivedViaCoordination;
+    return receivedViaCoordination.get();
   }
 
   /**
    * Modifies the instance to indicate it was received via the shared topic
    */
   final void markReceivedViaCoordination() {
-    this.receivedViaCoordination = true;
+    this.receivedViaCoordination.set(true);
   }
 
   @Override
@@ -33,11 +34,11 @@ public abstract class AbstractCoordinatedEvent {
       return false;
     }
     AbstractCoordinatedEvent that = (AbstractCoordinatedEvent) o;
-    return receivedViaCoordination == that.receivedViaCoordination;
+    return receivedViaCoordination.get() == that.receivedViaCoordination.get();
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(receivedViaCoordination);
+    return Objects.hash(receivedViaCoordination.get());
   }
 }
