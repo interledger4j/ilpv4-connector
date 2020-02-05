@@ -185,7 +185,7 @@ jobs:
             - v1-dependencies-{{ checksum "pom.xml" }}
       - run:
           name: Deploy docker image
-          command: mvn clean install -DskipTests -Pdocker -Dcontainer.version=nightly
+          command: mvn verify -DskipTests -Pdocker -Dcontainer.version=nightly
 
 workflows:
   version: 2
@@ -196,7 +196,6 @@ workflows:
   commit:
     jobs:
       - build
-      - docker_image # FIXME remove this. just for testing it works
       - integration_tests_ilp_over_http:
           requires:
             - build
