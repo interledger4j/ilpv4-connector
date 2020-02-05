@@ -61,6 +61,12 @@ public class IlpOverHttpConfig {
   @Autowired
   private Decryptor decryptor;
 
+  /**
+   * A bean for {@link IlpOverHttpConnectionSettings}, used to create an IlpOverHttp {@link OkHttpClient}
+   * @param connectorSettings   A {@link Supplier<ConnectorSettings>} which include connection settings
+   *                            for IlpOverHttp clients.
+   * @return connection settings for {@link OkHttpClient}
+   */
   @Bean
   @Qualifier(ILP_OVER_HTTP)
   protected IlpOverHttpConnectionSettings connectionSettings(Supplier<ConnectorSettings> connectorSettings) {
@@ -81,18 +87,6 @@ public class IlpOverHttpConfig {
    *
    * @param ilpOverHttpConnectionPool   A {@link ConnectionPool} as configured above.
    * @param connectionSettings          A {@link IlpOverHttpConnectionSettings} with the following properties
-   *        connectTimeoutMillis Applied when connecting a TCP socket to the target host. A value of 0 means no
-   *                                    timeout, otherwise values must be between 1 and {@link Integer#MAX_VALUE} when
-   *                                    converted to milliseconds. If unspecified, defaults to 10000.
-   *        readTimeoutMillis    Applied to both the TCP socket and for individual read IO operations. A value of
-   *                                    0 means no timeout, otherwise values must be between 1 and {@link
-   *                                    Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to
-   *                                    60000.
-   *        writeTimeoutMillis   Applied to individual write IO operations. A value of 0 means no timeout,
-   *                                    otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted
-   *                                    to milliseconds. If unspecified, defaults to 60000.
-   *        maxRequests                 Maximum numbers of concurrent http requests (across all hosts).
-   *        maxRequestsPerHost          Maximum numbers of concurrent http requests per host.
    *
    * @return A {@link OkHttp3ClientHttpRequestFactory}.
    */

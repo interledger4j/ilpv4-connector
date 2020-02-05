@@ -9,6 +9,7 @@ import org.interledger.connector.javax.money.providers.DropRoundingProvider;
 import org.interledger.connector.javax.money.providers.XrpCurrencyProvider;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.FxConnectionSettings;
+import org.interledger.connector.settings.IlpOverHttpConnectionSettings;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -146,6 +147,12 @@ public class JavaMoneyConfig {
     return new DefaultMonetaryConversionsSingletonSpi();
   }
 
+  /**
+   * A bean for {@link IlpOverHttpConnectionSettings}, used to create an FX {@link OkHttpClient}
+   * @param connectorSettings A {@link Supplier<ConnectorSettings>} which include connection settings
+   *    *                     for FX clients.
+   * @return connection settings for {@link OkHttpClient}
+   */
   @Bean
   @Qualifier(FX)
   FxConnectionSettings fxConnectionSettings(Supplier<ConnectorSettings> connectorSettings) {
