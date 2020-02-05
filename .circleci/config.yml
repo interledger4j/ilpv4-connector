@@ -177,6 +177,7 @@ jobs:
           MAVEN_OPTS: -Xmx4096m
 
     steps:
+      - setup_remote_docker
       - checkout
       - restore_cache:
           keys:
@@ -194,6 +195,7 @@ workflows:
   commit:
     jobs:
       - build
+      - docker_image # FIXME remove this. just for testing it works
       - integration_tests_ilp_over_http:
           requires:
             - build
