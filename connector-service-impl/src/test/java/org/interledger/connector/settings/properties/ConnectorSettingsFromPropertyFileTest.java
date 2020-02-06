@@ -6,7 +6,9 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.EnabledFeatureSettings;
 import org.interledger.connector.settings.EnabledProtocolSettings;
+import org.interledger.connector.settings.FxConnectionSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
+import org.interledger.connector.settings.IlpOverHttpConnectionSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.crypto.CryptoKey;
@@ -60,6 +62,22 @@ public class ConnectorSettingsFromPropertyFileTest {
     assertThat(globalRoutingSettings.routeCleanupInterval()).isEqualTo((Duration.ofMillis(30002L)));
     assertThat(globalRoutingSettings.routeExpiry()).isEqualTo((Duration.ofMillis(30003L)));
     assertThat(globalRoutingSettings.maxEpochsPerRoutingTable()).isEqualTo((77));
+
+    final FxConnectionSettings fxConnectionSettings = connectorSettings.fxSettings().connectionDefaults();
+    assertThat(fxConnectionSettings.keepAliveMinutes()).isEqualTo(2);
+    assertThat(fxConnectionSettings.connectTimeoutMillis()).isEqualTo(5000);
+    assertThat(fxConnectionSettings.maxIdleConnections()).isEqualTo(10);
+    assertThat(fxConnectionSettings.readTimeoutMillis()).isEqualTo(30000);
+    assertThat(fxConnectionSettings.writeTimeoutMillis()).isEqualTo(40000);
+
+    final IlpOverHttpConnectionSettings ilpOverHttpConnectorSettings = connectorSettings.ilpOverHttpSettings().connectionDefaults();
+    assertThat(ilpOverHttpConnectorSettings.connectTimeoutMillis()).isEqualTo(2000);
+    assertThat(ilpOverHttpConnectorSettings.readTimeoutMillis()).isEqualTo(70000);
+    assertThat(ilpOverHttpConnectorSettings.writeTimeoutMillis()).isEqualTo(50000);
+    assertThat(ilpOverHttpConnectorSettings.maxRequests()).isEqualTo(50);
+    assertThat(ilpOverHttpConnectorSettings.maxRequestsPerHost()).isEqualTo(75);
+    assertThat(ilpOverHttpConnectorSettings.maxIdleConnections()).isEqualTo(12);
+    assertThat(ilpOverHttpConnectorSettings.keepAliveSeconds()).isEqualTo(40);
 
     assertThat(connectorSettings.isRequire32ByteSharedSecrets()).isTrue();
 

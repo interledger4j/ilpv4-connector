@@ -170,11 +170,13 @@ jobs:
 
   docker_image:
     working_directory: ~/repo
-    docker:
-      - image: circleci/openjdk:8-jdk
-        environment:
-          # Customize the JVM maximum heap limit
-          MAVEN_OPTS: -Xmx4096m
+
+    machine:
+      image: ubuntu-1604:201903-01
+
+    environment:
+      MAVEN_OPTS: -Xmx4096m
+      JAVA_HOME: /usr/lib/jvm/jdk1.8.0/
 
     steps:
       - checkout
@@ -183,7 +185,7 @@ jobs:
             - v1-dependencies-{{ checksum "pom.xml" }}
       - run:
           name: Deploy docker image
-          command: mvn package -DskipTests -DskipITs -Pdocker -Dcontainer.version=nightly -Djib.to.auth.username=${DOCKERHUB_USERNAME} -Djib.to.auth.password=${DOCKERHUB_API_KEY}
+          command: mvn verify -DskipTests -Pdocker -Dcontainer.version=nightly
 
 workflows:
   version: 2
