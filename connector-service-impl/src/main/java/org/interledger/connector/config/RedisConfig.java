@@ -3,6 +3,7 @@ package org.interledger.connector.config;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 
 import java.nio.charset.Charset;
 
@@ -36,13 +38,21 @@ public class RedisConfig {
 
   @Bean
   protected LettuceConnectionFactory lettuceConnectionFactory() {
+
     int actualRedisPort;
     try {
       actualRedisPort = Integer.parseInt(redisPort);
     } catch (Exception e) {
       actualRedisPort = 6379;
     }
-    RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, actualRedisPort);
+
+    String host = redisHost;
+    // due to @MockWebMvc not doing annotation processing
+    if ("${redis.host:localhost}".equals(redisHost)) {
+      host = "localhost";
+    }
+
+    RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, actualRedisPort);
 
     if (redisPassword != null && redisPassword.startsWith(EncryptedSecret.ENCODING_PREFIX)) {
       EncryptedSecret encryptedRedisPassword = EncryptedSecret.fromEncodedValue(redisPassword);
@@ -51,7 +61,10 @@ public class RedisConfig {
       config.setPassword(new String(decryptedBytes, Charset.defaultCharset()));
     }
 
-    LettuceConnectionFactory lettuceConnectionFactory = new LettuceConnectionFactory(config);
+    LettucePoolingClientConfiguration poolConfig = LettucePoolingClientConfiguration.builder()
+      .poolConfig(buildGenericObjectPoolConfig())
+      .build();
+    LettuceConnectionFactory lettuceConnectionFactory = new LettuceConnectionFactory(config, poolConfig);
     lettuceConnectionFactory.afterPropertiesSet();
 
     try {
@@ -72,4 +85,11 @@ public class RedisConfig {
 
   }
 
+  private static GenericObjectPoolConfig buildGenericObjectPoolConfig() {
+    GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
+    poolConfig.setMaxIdle(2);
+    poolConfig.setMinIdle(1);
+    poolConfig.setMaxTotal(25);
+    return poolConfig;
+  }
 }
