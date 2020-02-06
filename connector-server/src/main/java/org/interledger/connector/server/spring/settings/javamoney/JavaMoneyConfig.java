@@ -7,6 +7,9 @@ import org.interledger.connector.fx.JavaMoneyUtils;
 import org.interledger.connector.javax.money.providers.CryptoCompareRateProvider;
 import org.interledger.connector.javax.money.providers.DropRoundingProvider;
 import org.interledger.connector.javax.money.providers.XrpCurrencyProvider;
+import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.connector.settings.FxConnectionSettings;
+import org.interledger.connector.settings.IlpOverHttpConnectionSettings;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -21,7 +24,6 @@ import org.javamoney.moneta.internal.JDKCurrencyProvider;
 import org.javamoney.moneta.spi.CompoundRateProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -32,7 +34,6 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-
 import javax.money.convert.ConversionQuery;
 import javax.money.convert.ExchangeRate;
 import javax.money.convert.ExchangeRateProvider;
@@ -146,13 +147,23 @@ public class JavaMoneyConfig {
     return new DefaultMonetaryConversionsSingletonSpi();
   }
 
+  /**
+   * A bean for {@link IlpOverHttpConnectionSettings}, used to create an FX {@link OkHttpClient}
+   * @param connectorSettings A {@link Supplier<ConnectorSettings>} which include connection settings
+   *    *                     for FX clients.
+   * @return connection settings for {@link OkHttpClient}
+   */
+  @Bean
+  @Qualifier(FX)
+  FxConnectionSettings fxConnectionSettings(Supplier<ConnectorSettings> connectorSettings) {
+    return connectorSettings.get().fxSettings().connectionDefaults();
+  }
+
   @Bean
   @Qualifier(FX)
   OkHttpClient fxHttpClient(
       @Qualifier(FX) final ConnectionPool fxConnectionPool,
-      @Value("${interledger.connector.fx.connectionDefaults.connectTimeoutMillis:1000}") final long defaultConnectTimeoutMillis,
-      @Value("${interledger.connector.fx.connectionDefaults.readTimeoutMillis:60000}") final long defaultReadTimeoutMillis,
-      @Value("${interledger.connector.fx.connectionDefaults.writeTimeoutMillis:60000}") final long defaultWriteTimeoutMillis
+      FxConnectionSettings fxConnectionSettings
   ) {
     OkHttpClient.Builder builder = new OkHttpClient.Builder();
     ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).build();
@@ -160,9 +171,9 @@ public class JavaMoneyConfig {
     builder.connectionSpecs(Arrays.asList(spec, ConnectionSpec.CLEARTEXT));
     builder.cookieJar(NO_COOKIES);
 
-    builder.connectTimeout(defaultConnectTimeoutMillis, TimeUnit.MILLISECONDS);
-    builder.readTimeout(defaultReadTimeoutMillis, TimeUnit.MILLISECONDS);
-    builder.writeTimeout(defaultWriteTimeoutMillis, TimeUnit.MILLISECONDS);
+    builder.connectTimeout(fxConnectionSettings.connectTimeoutMillis(), TimeUnit.MILLISECONDS);
+    builder.readTimeout(fxConnectionSettings.readTimeoutMillis(), TimeUnit.MILLISECONDS);
+    builder.writeTimeout(fxConnectionSettings.writeTimeoutMillis(), TimeUnit.MILLISECONDS);
 
     return builder.connectionPool(fxConnectionPool).build();
   }
@@ -176,13 +187,10 @@ public class JavaMoneyConfig {
 
   @Bean
   @Qualifier(FX)
-  public ConnectionPool fxConnectionPool(
-      @Value("${interledger.connector.fx.connectionDefaults.maxIdleConnections:5}") final int defaultMaxIdleConnections,
-      @Value("${interledger.connector.fx.connectionDefaults.keepAliveMinutes:1}") final long defaultConnectionKeepAliveMinutes
-  ) {
+  public ConnectionPool fxConnectionPool(FxConnectionSettings fxConnectionSettings) {
     return new ConnectionPool(
-        defaultMaxIdleConnections,
-        defaultConnectionKeepAliveMinutes, TimeUnit.MINUTES
+      fxConnectionSettings.maxIdleConnections(),
+      fxConnectionSettings.keepAliveMinutes(), TimeUnit.MINUTES
     );
   }
 
