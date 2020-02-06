@@ -2,6 +2,7 @@ package org.interledger.connector;
 
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.events.PacketEventPublisher;
+import org.interledger.connector.packetswitch.RoutableAccountNotFoundException;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
@@ -67,6 +68,14 @@ public class ConnectorExceptionHandler {
         InterledgerErrorCode.F03_INVALID_AMOUNT,
         e.getMessage()
       );
+    } else if (RoutableAccountNotFoundException.class.isAssignableFrom(e.getClass())) {
+      logger.warn(e.getMessage());
+      return this.packetRejector.reject(
+        LinkId.of(sourceAccountSettings.accountId().value()),
+        preparePacket,
+        InterledgerErrorCode.T00_INTERNAL_ERROR, // FIXME: Decide on a better error code for this
+        e.getMessage()
+      );
     } else {
       logger.error(e.getMessage(), e);
       return this.packetRejector.reject(
@@ -79,8 +88,8 @@ public class ConnectorExceptionHandler {
   }
 
   private void publish(AccountSettings sourceAccountSettings,
-                                          InterledgerPreparePacket preparePacket,
-                                          InterledgerRejectPacket rejectPacket) {
+                       InterledgerPreparePacket preparePacket,
+                       InterledgerRejectPacket rejectPacket) {
     packetEventPublisher.publishRejectionByConnector(sourceAccountSettings, preparePacket, rejectPacket);
   }
 

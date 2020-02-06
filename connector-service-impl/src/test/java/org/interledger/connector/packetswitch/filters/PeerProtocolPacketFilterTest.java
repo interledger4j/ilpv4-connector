@@ -18,6 +18,7 @@ import org.interledger.connector.ccp.CcpRouteControlRequest;
 import org.interledger.connector.ccp.CcpRouteUpdateRequest;
 import org.interledger.connector.ccp.CcpSyncMode;
 import org.interledger.connector.ccp.codecs.CcpCodecContextFactory;
+import org.interledger.connector.packetswitch.RoutableAccountNotFoundException;
 import org.interledger.connector.routing.CcpReceiver;
 import org.interledger.connector.routing.CcpSender;
 import org.interledger.connector.routing.RoutableAccount;
@@ -31,6 +32,7 @@ import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
+import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.ildcp.IldcpRequestPacket;
 import org.interledger.ildcp.IldcpResponsePacket;
 import org.interledger.link.PacketRejector;
@@ -70,10 +72,10 @@ public class PeerProtocolPacketFilterTest {
   private static final InterledgerAddress OPERATOR_ADDRESS = InterledgerAddress.of("example.foo");
 
   private static final InterledgerRejectPacket REJECT_PACKET = InterledgerRejectPacket.builder()
-      .triggeredBy(OPERATOR_ADDRESS)
-      .code(InterledgerErrorCode.F00_BAD_REQUEST)
-      .message("error message")
-      .build();
+    .triggeredBy(OPERATOR_ADDRESS)
+    .code(InterledgerErrorCode.F00_BAD_REQUEST)
+    .message("error message")
+    .build();
 
   @Mock
   RouteBroadcaster routeBroadcasterMock;
@@ -89,6 +91,8 @@ public class PeerProtocolPacketFilterTest {
   PacketSwitchFilterChain filterChainMock;
   @Mock
   SettlementService settlementService;
+  @Mock
+  CodecContext ccpCodecContextMock;
 
   private boolean sendRoutesEnabled;
   private boolean receiveRoutesEnabled;
@@ -105,14 +109,14 @@ public class PeerProtocolPacketFilterTest {
   @Parameterized.Parameters
   public static Collection<Object[]> errorCodes() {
     return ImmutableList.of(
-        // Both disabled
-        new Object[] {SEND_ROUTES_DISABLED, RECEIVE_ROUTES_DISABLED},
-        // send enabled
-        new Object[] {SEND_ROUTES_ENABLED, RECEIVE_ROUTES_DISABLED},
-        // receive enabled
-        new Object[] {SEND_ROUTES_DISABLED, RECEIVE_ROUTES_ENABLED},
-        // Both enabled
-        new Object[] {SEND_ROUTES_ENABLED, RECEIVE_ROUTES_ENABLED}
+      // Both disabled
+      new Object[] {SEND_ROUTES_DISABLED, RECEIVE_ROUTES_DISABLED},
+      // send enabled
+      new Object[] {SEND_ROUTES_ENABLED, RECEIVE_ROUTES_DISABLED},
+      // receive enabled
+      new Object[] {SEND_ROUTES_DISABLED, RECEIVE_ROUTES_ENABLED},
+      // Both enabled
+      new Object[] {SEND_ROUTES_ENABLED, RECEIVE_ROUTES_ENABLED}
     );
   }
 
@@ -124,12 +128,12 @@ public class PeerProtocolPacketFilterTest {
     when(packetRejectorMock.reject(any(), any(), any(), any())).thenReturn(REJECT_PACKET);
 
     this.filter = new PeerProtocolPacketFilter(
-        () -> connectorSettingsMock,
-        packetRejectorMock,
-        routeBroadcasterMock,
-        CcpCodecContextFactory.oer(),
-        IldcpCodecContextFactory.oer(),
-        settlementService
+      () -> connectorSettingsMock,
+      packetRejectorMock,
+      routeBroadcasterMock,
+      ccpCodecContextMock,
+      IldcpCodecContextFactory.oer(),
+      settlementService
     );
 
     when(accountSettingsMock.accountId()).thenReturn(ACCOUNT_ID);
@@ -161,17 +165,17 @@ public class PeerProtocolPacketFilterTest {
     final InterledgerPreparePacket preparePacket = this.constructPreparePacket(IldcpRequestPacket.PEER_DOT_CONFIG);
 
     filter.doFilter(accountSettingsMock, preparePacket, filterChainMock).handle(
-        fulfillPacket -> fail(String.format("Should not fulfill: %s", fulfillPacket)),
-        rejectPacket -> {
-          final ArgumentCaptor<InterledgerErrorCode> errorCodeArgumentCaptor =
-              ArgumentCaptor.forClass(InterledgerErrorCode.class);
-          final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
-          verify(packetRejectorMock)
-              .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
+      fulfillPacket -> fail(String.format("Should not fulfill: %s", fulfillPacket)),
+      rejectPacket -> {
+        final ArgumentCaptor<InterledgerErrorCode> errorCodeArgumentCaptor =
+          ArgumentCaptor.forClass(InterledgerErrorCode.class);
+        final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
+        verify(packetRejectorMock)
+          .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
 
-          assertThat(errorCodeArgumentCaptor.getValue()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
-          assertThat(errorMessageCaptor.getValue()).isEqualTo("IL-DCP is not supported by this Connector.");
-        }
+        assertThat(errorCodeArgumentCaptor.getValue()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
+        assertThat(errorMessageCaptor.getValue()).isEqualTo("IL-DCP is not supported by this Connector.");
+      }
     );
   }
 
@@ -184,10 +188,10 @@ public class PeerProtocolPacketFilterTest {
     final InterledgerPreparePacket preparePacket = this.constructPreparePacket(IldcpRequestPacket.PEER_DOT_CONFIG);
 
     filter.doFilter(accountSettingsMock, preparePacket, filterChainMock)
-        .handle(
-            fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(IldcpResponsePacket.EXECUTION_FULFILLMENT),
-            rejectPacket -> fail(String.format("Should not reject: %s", rejectPacket))
-        );
+      .handle(
+        fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(IldcpResponsePacket.EXECUTION_FULFILLMENT),
+        rejectPacket -> fail(String.format("Should not reject: %s", rejectPacket))
+      );
   }
 
   ////////////////
@@ -203,18 +207,37 @@ public class PeerProtocolPacketFilterTest {
     final InterledgerPreparePacket preparePacket = this.constructPreparePacket(InterledgerAddress.of("peer.route"));
 
     filter.doFilter(accountSettingsMock, preparePacket, filterChainMock).handle(
-        fulfillPacket -> fail(String.format("Should not fulfill: %s", fulfillPacket)),
-        rejectPacket -> {
-          final ArgumentCaptor<InterledgerErrorCode> errorCodeArgumentCaptor =
-              ArgumentCaptor.forClass(InterledgerErrorCode.class);
-          final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
-          verify(packetRejectorMock)
-              .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
+      fulfillPacket -> fail(String.format("Should not fulfill: %s", fulfillPacket)),
+      rejectPacket -> {
+        final ArgumentCaptor<InterledgerErrorCode> errorCodeArgumentCaptor =
+          ArgumentCaptor.forClass(InterledgerErrorCode.class);
+        final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
+        verify(packetRejectorMock)
+          .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
 
-          assertThat(errorCodeArgumentCaptor.getValue()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
-          assertThat(errorMessageCaptor.getValue()).isEqualTo("CCP routing protocol is not supported by this node.");
-        }
+        assertThat(errorCodeArgumentCaptor.getValue()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
+        assertThat(errorMessageCaptor.getValue()).isEqualTo("CCP routing protocol is not supported by this node.");
+      }
     );
+  }
+
+  /**
+   * In the odd event that the connector has receiveRoutes=true but does not yet have a ccp enabled account with its peer,
+   * we should throw a {@link RoutableAccountNotFoundException}
+   */
+  @Test
+  public void doFilterForPeerDotRouteWhenReceiveEnabledButNoCcpEnabledAccount() throws IOException {
+    when(enabledProtocolSettingsMock.isPeerRoutingEnabled()).thenReturn(true);
+    final InterledgerPreparePacket preparePacket = this.constructPreparePacket(InterledgerAddress.of("peer.route.update"));
+
+    when(routeBroadcasterMock.getCcpEnabledAccount(ACCOUNT_ID)).thenReturn(Optional.empty());
+    when(ccpCodecContextMock.read(any(), any())).thenReturn(mock(CcpRouteUpdateRequest.class));
+
+    if (receiveRoutesEnabled) {
+      expectedException.expect(RoutableAccountNotFoundException.class);
+      expectedException.expectMessage(String.format("accountId=%s, message=%s", accountSettingsMock.accountId(), "No tracked RoutableAccount found"));
+      filter.doFilter(accountSettingsMock, preparePacket, filterChainMock);
+    }
   }
 
   /**
@@ -226,47 +249,47 @@ public class PeerProtocolPacketFilterTest {
     when(enabledProtocolSettingsMock.isPeerRoutingEnabled()).thenReturn(true);
 
     final CcpRouteControlRequest routeControlRequest = CcpRouteControlRequest.builder()
-        .lastKnownEpoch(1)
-        .lastKnownRoutingTableId(RoutingTableId.of(UUID.randomUUID()))
-        .mode(CcpSyncMode.MODE_IDLE)
-        .build();
+      .lastKnownEpoch(1)
+      .lastKnownRoutingTableId(RoutingTableId.of(UUID.randomUUID()))
+      .mode(CcpSyncMode.MODE_IDLE)
+      .build();
 
     final ByteArrayOutputStream os = new ByteArrayOutputStream();
     CcpCodecContextFactory.oer().write(routeControlRequest, os);
 
     final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
-        .destination(CCP_CONTROL_DESTINATION_ADDRESS)
-        .executionCondition(PEER_PROTOCOL_EXECUTION_CONDITION)
-        .amount(UnsignedLong.valueOf(10))
-        .expiresAt(Instant.now().plusSeconds(30))
-        .data(os.toByteArray())
-        .build();
+      .destination(CCP_CONTROL_DESTINATION_ADDRESS)
+      .executionCondition(PEER_PROTOCOL_EXECUTION_CONDITION)
+      .amount(UnsignedLong.valueOf(10))
+      .expiresAt(Instant.now().plusSeconds(30))
+      .data(os.toByteArray())
+      .build();
 
     filter.doFilter(accountSettingsMock, preparePacket, filterChainMock).handle(
-        fulfillPacket -> {
-          if (!sendRoutesEnabled) {
-            fail(String.format("Should not have fulfilled when sendRoutes is disabled! %s", fulfillPacket));
-          } else {
-            assertThat(fulfillPacket.getFulfillment()).as("Should have fulfilled when sendRoutes is enabled").isEqualTo(PEER_PROTOCOL_EXECUTION_FULFILLMENT);
-          }
-        },
-        rejectPacket -> {
-          // Route control messages have no connection to `receiveEnabled`.
-          if (!sendRoutesEnabled) {
-            final ArgumentCaptor<InterledgerErrorCode> errorCodeArgumentCaptor =
-                ArgumentCaptor.forClass(InterledgerErrorCode.class);
-            final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
-            verify(packetRejectorMock)
-                .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
-            assertThat(errorCodeArgumentCaptor.getValue()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
-            assertThat(errorMessageCaptor.getValue()).isEqualTo("CCP sending is not enabled for this account. destinationAddress=peer.route.control");
-
-            assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
-            assertThat(rejectPacket.getTriggeredBy().get()).isEqualTo(OPERATOR_ADDRESS);
-          } else {
-            fail(String.format("Should not have rejected when sendRoutes is enabled. %s", rejectPacket));
-          }
+      fulfillPacket -> {
+        if (!sendRoutesEnabled) {
+          fail(String.format("Should not have fulfilled when sendRoutes is disabled! %s", fulfillPacket));
+        } else {
+          assertThat(fulfillPacket.getFulfillment()).as("Should have fulfilled when sendRoutes is enabled").isEqualTo(PEER_PROTOCOL_EXECUTION_FULFILLMENT);
         }
+      },
+      rejectPacket -> {
+        // Route control messages have no connection to `receiveEnabled`.
+        if (!sendRoutesEnabled) {
+          final ArgumentCaptor<InterledgerErrorCode> errorCodeArgumentCaptor =
+            ArgumentCaptor.forClass(InterledgerErrorCode.class);
+          final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
+          verify(packetRejectorMock)
+            .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
+          assertThat(errorCodeArgumentCaptor.getValue()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
+          assertThat(errorMessageCaptor.getValue()).isEqualTo("CCP sending is not enabled for this account. destinationAddress=peer.route.control");
+
+          assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
+          assertThat(rejectPacket.getTriggeredBy().get()).isEqualTo(OPERATOR_ADDRESS);
+        } else {
+          fail(String.format("Should not have rejected when sendRoutes is enabled. %s", rejectPacket));
+        }
+      }
     );
   }
 
@@ -279,50 +302,50 @@ public class PeerProtocolPacketFilterTest {
     when(enabledProtocolSettingsMock.isPeerRoutingEnabled()).thenReturn(true);
 
     final CcpRouteUpdateRequest routeControlRequest = CcpRouteUpdateRequest.builder()
-        .currentEpochIndex(0)
-        .fromEpochIndex(0)
-        .toEpochIndex(1)
-        .holdDownTime(9L)
-        .routingTableId(RoutingTableId.of(UUID.randomUUID()))
-        .speaker(OPERATOR_ADDRESS)
-        .build();
+      .currentEpochIndex(0)
+      .fromEpochIndex(0)
+      .toEpochIndex(1)
+      .holdDownTime(9L)
+      .routingTableId(RoutingTableId.of(UUID.randomUUID()))
+      .speaker(OPERATOR_ADDRESS)
+      .build();
 
     final ByteArrayOutputStream os = new ByteArrayOutputStream();
     CcpCodecContextFactory.oer().write(routeControlRequest, os);
 
     final InterledgerPreparePacket preparePacket = InterledgerPreparePacket.builder()
-        .destination(CCP_UPDATE_DESTINATION_ADDRESS)
-        .executionCondition(PEER_PROTOCOL_EXECUTION_CONDITION)
-        .amount(UnsignedLong.valueOf(10))
-        .expiresAt(Instant.now().plusSeconds(30))
-        .data(os.toByteArray())
-        .build();
+      .destination(CCP_UPDATE_DESTINATION_ADDRESS)
+      .executionCondition(PEER_PROTOCOL_EXECUTION_CONDITION)
+      .amount(UnsignedLong.valueOf(10))
+      .expiresAt(Instant.now().plusSeconds(30))
+      .data(os.toByteArray())
+      .build();
 
     filter.doFilter(accountSettingsMock, preparePacket, filterChainMock).handle(
-        fulfillPacket -> {
-          if (!receiveRoutesEnabled) {
-            fail(String.format("Should not have fulfilled when sendRoutes is disabled! %s", fulfillPacket));
-          } else {
-            assertThat(fulfillPacket.getFulfillment()).as("Should have fulfilled when receiveRoutes is enabled").isEqualTo(PEER_PROTOCOL_EXECUTION_FULFILLMENT);
-          }
-        },
-        rejectPacket -> {
-          // Route control messages have no connection to `receiveEnabled`.
-          if (!receiveRoutesEnabled) {
-            final ArgumentCaptor<InterledgerErrorCode> errorCodeArgumentCaptor =
-                ArgumentCaptor.forClass(InterledgerErrorCode.class);
-            final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
-            verify(packetRejectorMock)
-                .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
-            assertThat(errorCodeArgumentCaptor.getValue()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
-            assertThat(errorMessageCaptor.getValue()).isEqualTo("CCP receiving is not enabled for this account. destinationAddress=peer.route.update");
-
-            assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
-            assertThat(rejectPacket.getTriggeredBy().get()).isEqualTo(OPERATOR_ADDRESS);
-          } else {
-            fail(String.format("Should not have rejected when receiveRoutes is enabled! %s", rejectPacket));
-          }
+      fulfillPacket -> {
+        if (!receiveRoutesEnabled) {
+          fail(String.format("Should not have fulfilled when receiveRoutes is disabled! %s", fulfillPacket));
+        } else {
+          assertThat(fulfillPacket.getFulfillment()).as("Should have fulfilled when receiveRoutes is enabled").isEqualTo(PEER_PROTOCOL_EXECUTION_FULFILLMENT);
         }
+      },
+      rejectPacket -> {
+        // Route control messages have no connection to `receiveEnabled`.
+        if (!receiveRoutesEnabled) {
+          final ArgumentCaptor<InterledgerErrorCode> errorCodeArgumentCaptor =
+            ArgumentCaptor.forClass(InterledgerErrorCode.class);
+          final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
+          verify(packetRejectorMock)
+            .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
+          assertThat(errorCodeArgumentCaptor.getValue()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
+          assertThat(errorMessageCaptor.getValue()).isEqualTo("CCP receiving is not enabled for this account. destinationAddress=peer.route.update");
+
+          assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.F00_BAD_REQUEST);
+          assertThat(rejectPacket.getTriggeredBy().get()).isEqualTo(OPERATOR_ADDRESS);
+        } else {
+          fail(String.format("Should not have rejected when receiveRoutes is enabled! %s", rejectPacket));
+        }
+      }
     );
   }
 
@@ -335,17 +358,17 @@ public class PeerProtocolPacketFilterTest {
     final InterledgerPreparePacket preparePacket = this.constructPreparePacket(InterledgerAddress.of("peer.foo"));
 
     filter.doFilter(accountSettingsMock, preparePacket, filterChainMock).handle(
-        fulfillPacket -> fail(String.format("Should not fulfill: %s", fulfillPacket)),
-        rejectPacket -> {
-          final ArgumentCaptor<InterledgerErrorCode> errorCodeArgumentCaptor =
-              ArgumentCaptor.forClass(InterledgerErrorCode.class);
-          final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
-          verify(packetRejectorMock)
-              .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
+      fulfillPacket -> fail(String.format("Should not fulfill: %s", fulfillPacket)),
+      rejectPacket -> {
+        final ArgumentCaptor<InterledgerErrorCode> errorCodeArgumentCaptor =
+          ArgumentCaptor.forClass(InterledgerErrorCode.class);
+        final ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
+        verify(packetRejectorMock)
+          .reject(any(), any(), errorCodeArgumentCaptor.capture(), errorMessageCaptor.capture());
 
-          assertThat(errorCodeArgumentCaptor.getValue()).isEqualTo(InterledgerErrorCode.F01_INVALID_PACKET);
-          assertThat(errorMessageCaptor.getValue()).isEqualTo("unknown peer protocol.");
-        }
+        assertThat(errorCodeArgumentCaptor.getValue()).isEqualTo(InterledgerErrorCode.F01_INVALID_PACKET);
+        assertThat(errorMessageCaptor.getValue()).isEqualTo("unknown peer protocol.");
+      }
     );
   }
 
@@ -356,11 +379,11 @@ public class PeerProtocolPacketFilterTest {
   private InterledgerPreparePacket constructPreparePacket(final InterledgerAddress destinationAddress) {
     Objects.requireNonNull(destinationAddress);
     return InterledgerPreparePacket.builder()
-        .destination(destinationAddress)
-        .executionCondition(InterledgerCondition.of(new byte[32]))
-        .amount(UnsignedLong.valueOf(10))
-        .expiresAt(Instant.now().plusSeconds(30))
-        .build();
+      .destination(destinationAddress)
+      .executionCondition(PEER_PROTOCOL_EXECUTION_CONDITION)
+      .amount(UnsignedLong.valueOf(10))
+      .expiresAt(Instant.now().plusSeconds(30))
+      .build();
   }
 
   // TODO: UPDATE TEST FOR SETTLEMENT SERVICE FUNCTIONALITY!!!!!!!!!!!!!!!!!!!!!!!!!!!!
