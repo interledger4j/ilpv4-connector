@@ -1,10 +1,11 @@
 package org.interledger.connector.balances;
 
-import com.google.common.base.Preconditions;
+import static java.util.Collections.singletonList;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountSettings;
 
+import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.BoundHashOperations;
@@ -14,8 +15,6 @@ import org.springframework.data.redis.core.script.RedisScript;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
-import static java.util.Collections.singletonList;
 
 /**
  * An implementation of {@link BalanceTracker} that uses Redis to track all balances. Note that Redis does not support

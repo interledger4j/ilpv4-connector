@@ -27,12 +27,13 @@ public class ConnectorAdminClientTest {
 
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
+
   private ConnectorAdminClient adminClient;
 
   @Before
   public void setUp() {
     this.adminClient = ConnectorAdminClient
-      .construct(HttpUrl.parse("https://example.com"), template -> {
+      .construct(HttpUrl.parse("https://www.google.com/foo/bar"), template -> {
         return;
       });
   }
@@ -47,7 +48,7 @@ public class ConnectorAdminClientTest {
   @Test
   public void testConstructWithNullAuthInterceptor() {
     expectedException.expect(NullPointerException.class);
-    ConnectorAdminClient.construct(HttpUrl.parse("https://example.com"), null);
+    ConnectorAdminClient.construct(HttpUrl.parse("https://www.google.com/foo/bar"), null);
   }
 
   @Test

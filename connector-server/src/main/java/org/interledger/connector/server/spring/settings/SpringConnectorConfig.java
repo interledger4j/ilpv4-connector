@@ -58,6 +58,7 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.persistence.repositories.DeletedAccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
+import org.interledger.connector.pubsub.RedisPubSubConfig;
 import org.interledger.connector.routing.DefaultRouteBroadcaster;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.routing.ForwardingRoutingTable;
@@ -133,7 +134,8 @@ import java.util.function.Supplier;
   LinkConfig.class,
   MetricsConfiguration.class,
   SpringConnectorWebMvc.class,
-  GcpPubSubConfig.class
+  GcpPubSubConfig.class,
+  RedisPubSubConfig.class
 })
 // support extension by looking for annotated Component/Config classes under the configured extensions.basePackage
 @ComponentScan(basePackages = "${interledger.connector.extensions.basePackage:org.interledger.connector.extensions}",
@@ -225,8 +227,8 @@ public class SpringConnectorConfig {
       linkManager, settlementEngineClient,
       linkSettingsFactory,
       linkSettingsValidator,
-      ildcpFetcherFactory
-    );
+      ildcpFetcherFactory,
+      eventBus());
   }
 
   @Bean

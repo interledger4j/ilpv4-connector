@@ -32,7 +32,6 @@ import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-
 import javax.annotation.PostConstruct;
 
 /**

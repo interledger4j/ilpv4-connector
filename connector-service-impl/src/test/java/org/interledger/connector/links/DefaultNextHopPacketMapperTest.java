@@ -43,7 +43,6 @@ import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.function.Supplier;
-
 import javax.money.MonetaryAmount;
 import javax.money.convert.CurrencyConversion;
 import javax.money.convert.ExchangeRate;

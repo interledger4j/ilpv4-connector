@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.RedisConnectionFailureException;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
@@ -35,7 +35,7 @@ public class BalanceTrackerConfig {
   protected Environment environment;
 
   @Autowired
-  protected JedisConnectionFactory jedisConnectionFactory;
+  protected LettuceConnectionFactory lettuceConnectionFactory;
 
   @Bean(BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME)
   @Qualifier(BALANCE_TRACKING)
@@ -44,7 +44,7 @@ public class BalanceTrackerConfig {
 
     template.setEnableDefaultSerializer(true);
     template.setDefaultSerializer(new StringRedisSerializer());
-    template.setConnectionFactory(jedisConnectionFactory);
+    template.setConnectionFactory(lettuceConnectionFactory);
 
     return template;
   }
