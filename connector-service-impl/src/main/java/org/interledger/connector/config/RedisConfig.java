@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
-import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 
 import java.nio.charset.Charset;
 
@@ -61,10 +60,7 @@ public class RedisConfig {
       config.setPassword(new String(decryptedBytes, Charset.defaultCharset()));
     }
 
-    LettucePoolingClientConfiguration poolConfig = LettucePoolingClientConfiguration.builder()
-      .poolConfig(buildGenericObjectPoolConfig())
-      .build();
-    LettuceConnectionFactory lettuceConnectionFactory = new LettuceConnectionFactory(config, poolConfig);
+    LettuceConnectionFactory lettuceConnectionFactory = new LettuceConnectionFactory(config);
     lettuceConnectionFactory.afterPropertiesSet();
 
     try {
