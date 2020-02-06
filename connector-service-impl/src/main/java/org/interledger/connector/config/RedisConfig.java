@@ -3,7 +3,6 @@ package org.interledger.connector.config;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,11 +80,4 @@ public class RedisConfig {
 
   }
 
-  private static GenericObjectPoolConfig buildGenericObjectPoolConfig() {
-    GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
-    poolConfig.setMaxIdle(2);
-    poolConfig.setMinIdle(1);
-    poolConfig.setMaxTotal(25);
-    return poolConfig;
-  }
 }
