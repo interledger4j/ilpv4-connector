@@ -9,6 +9,7 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.link.LinkFactoryProvider;
@@ -19,8 +20,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -33,7 +36,8 @@ import java.util.function.Supplier;
  */
 @ContextConfiguration(classes = {
   ControllerTestConfig.class, // For custom Beans.
-  SpringConnectorWebMvc.class
+  SpringConnectorWebMvc.class,
+  AbstractControllerTest.TestConfiguration.class
 })
 @ActiveProfiles( {"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 public abstract class AbstractControllerTest {
@@ -49,12 +53,6 @@ public abstract class AbstractControllerTest {
 
   @MockBean
   protected AccountSettingsRepository accountSettingsRepositoryMock;
-
-  @MockBean
-  protected ConnectorSettings connectorSettingsMock;
-
-  @MockBean
-  protected Supplier<ConnectorSettings> connectorSettingsSupplierMock;
 
   @MockBean
   protected EncryptionService encryptionServiceMock;
@@ -124,5 +122,21 @@ public abstract class AbstractControllerTest {
     headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_OCTET_STREAM));
     headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
     return headers;
+  }
+
+  /**
+   * Because @MockMvcTest test classes do not load connector settings into the {@link org.springframework.context.ApplicationContext},
+   * and because @MockBean fields are loaded into the {@link org.springframework.context.ApplicationContext} after all other
+   * beans have been initialized, the Supplier<ConnectorSettings> bean must be loaded from this test configuration.
+   * Otherwise, the beans which depend on this bean will not get initialized and the {@link org.springframework.context.ApplicationContext}
+   * will not start.
+   */
+  @EnableConfigurationProperties(ConnectorSettingsFromPropertyFile.class)
+  public static class TestConfiguration {
+    @Bean
+    public Supplier<ConnectorSettings> connectorSettingsSupplier(ConnectorSettingsFromPropertyFile settings) {
+      return () -> settings;
+    }
+
   }
 }

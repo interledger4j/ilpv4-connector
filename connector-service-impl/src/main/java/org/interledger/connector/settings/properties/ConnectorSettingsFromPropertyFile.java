@@ -4,6 +4,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
+import org.interledger.connector.settings.IlpOverHttpConnectorSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.link.Link;
@@ -51,6 +52,10 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   private boolean require32ByteSharedSecrets;
 
+  private IlpOverHttpConnectorSettingsFromPropertyFile ilpOverHttp = new IlpOverHttpConnectorSettingsFromPropertyFile();
+
+  private FxSettingsFromPropertyFile fx = new FxSettingsFromPropertyFile();
+
   private ConnectorKeysFromPropertyFile keys;
 
   @Override
@@ -91,6 +96,24 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   public void setEnabledFeatures(EnabledFeatureSettingsFromPropertyFile enabledFeatures) {
     this.enabledFeatures = enabledFeatures;
+  }
+
+  @Override
+  public FxSettingsFromPropertyFile fxSettings() {
+    return fx;
+  }
+
+  public void setFx(FxSettingsFromPropertyFile fx) {
+    this.fx = fx;
+  }
+
+  @Override
+  public IlpOverHttpConnectorSettings ilpOverHttpSettings() {
+    return ilpOverHttp;
+  }
+
+  public void setIlpOverHttp(IlpOverHttpConnectorSettingsFromPropertyFile ilpOverHttp) {
+    this.ilpOverHttp = ilpOverHttp;
   }
 
   @Override

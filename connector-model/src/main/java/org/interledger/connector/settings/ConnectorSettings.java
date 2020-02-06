@@ -50,6 +50,22 @@ public interface ConnectorSettings {
     return EnabledFeatureSettings.builder().build();
   }
 
+  /**
+   * Connection Settings/Defaults used for IlpOverHttp connection pools and HttpClients.
+   */
+  @Value.Default
+  default IlpOverHttpConnectorSettings ilpOverHttpSettings() {
+    return ImmutableIlpOverHttpConnectorSettings.builder().build();
+  }
+
+  /**
+   * Connection settings/defaults used for FX pools and clients
+   */
+  @Value.Default
+  default FxSettings fxSettings() {
+    return ImmutableFxSettings.builder().build();
+  }
+
   @Value.Default
   default boolean websocketServerEnabled() {
     return false;
