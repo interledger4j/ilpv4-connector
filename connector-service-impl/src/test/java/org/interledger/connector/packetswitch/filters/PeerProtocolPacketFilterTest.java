@@ -28,7 +28,6 @@ import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.EnabledProtocolSettings;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
