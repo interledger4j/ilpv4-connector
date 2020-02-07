@@ -32,6 +32,7 @@ import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.eventbus.EventBus;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -68,6 +69,9 @@ public class DefaultAccountManagerTest {
   @Mock
   private LinkSettingsFactory linkSettingsFactory;
   @Mock
+  private EventBus eventBus;
+
+  @Mock
   private IldcpFetcherFactory ildcpFetcherFactory;
 
   private DefaultAccountManager accountManager;
@@ -83,7 +87,9 @@ public class DefaultAccountManagerTest {
       settlementEngineClient,
       linkSettingsFactory,
       linkSettingsValidator,
-      ildcpFetcherFactory);
+      ildcpFetcherFactory,
+      eventBus
+    );
   }
 
   @Test
@@ -228,7 +234,8 @@ public class DefaultAccountManagerTest {
       settlementEngineClient,
       linkSettingsFactory,
       linkSettingsValidator,
-      ildcpFetcherFactory);
+      ildcpFetcherFactory,
+      eventBus);
 
     AccountId accountId = AccountId.of("child");
     LinkType linkType = IlpOverHttpLink.LINK_TYPE;

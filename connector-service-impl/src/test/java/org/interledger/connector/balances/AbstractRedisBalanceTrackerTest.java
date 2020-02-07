@@ -12,6 +12,8 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.crypto.Decryptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.api.StatefulRedisConnection;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.slf4j.Logger;
@@ -19,9 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.redis.connection.jedis.JedisConnection;
 import org.springframework.data.redis.core.RedisTemplate;
-import redis.clients.jedis.Jedis;
 import redis.embedded.RedisServerBuilder;
 
 import java.util.Objects;
@@ -86,9 +86,12 @@ public abstract class AbstractRedisBalanceTrackerTest {
   @BeforeClass
   public static void startRedisServer() {
     try {
-      final JedisConnection connection = new JedisConnection(new Jedis());
+      RedisClient redisClient = RedisClient
+        .create("redis://password@localhost:6379/");
+      StatefulRedisConnection<String, String> connection
+        = redisClient.connect();
       LOGGER.debug("Pinging Redis to check if its up...");
-      connection.ping();
+      connection.sync().ping();
       LOGGER.debug("Redis is running on port {}", REDIS_PORT);
     } catch (Exception e) {
       LOGGER.debug("Redis was NOT running on port {}. Using in-memory version instead.", REDIS_PORT);

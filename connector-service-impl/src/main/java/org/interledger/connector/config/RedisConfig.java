@@ -2,6 +2,7 @@ package org.interledger.connector.config;
 
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 
 import java.nio.charset.Charset;
 
@@ -34,7 +35,7 @@ public class RedisConfig {
   protected Decryptor decryptor;
 
   @Bean
-  protected JedisConnectionFactory jedisConnectionFactory() {
+  protected LettuceConnectionFactory lettuceConnectionFactory() {
 
     int actualRedisPort;
     try {
@@ -42,7 +43,14 @@ public class RedisConfig {
     } catch (Exception e) {
       actualRedisPort = 6379;
     }
-    RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, actualRedisPort);
+
+    String host = redisHost;
+    // due to @MockWebMvc not doing annotation processing
+    if ("${redis.host:localhost}".equals(redisHost)) {
+      host = "localhost";
+    }
+
+    RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, actualRedisPort);
 
     if (redisPassword != null && redisPassword.startsWith(EncryptedSecret.ENCODING_PREFIX)) {
       EncryptedSecret encryptedRedisPassword = EncryptedSecret.fromEncodedValue(redisPassword);
@@ -51,14 +59,12 @@ public class RedisConfig {
       config.setPassword(new String(decryptedBytes, Charset.defaultCharset()));
     }
 
-    final JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(config);
-    jedisConnectionFactory.getPoolConfig().setMaxTotal(25); // TODO: Make this configurable
-    jedisConnectionFactory.getPoolConfig().setMinIdle(1); // TODO: Make this configurable
-    jedisConnectionFactory.getPoolConfig().setMaxIdle(2); // TODO: Make this configurable
+    LettuceConnectionFactory lettuceConnectionFactory = new LettuceConnectionFactory(config);
+    lettuceConnectionFactory.afterPropertiesSet();
 
     try {
       // Try to connect to Redis, but default to InMemoryBalanceTracker if there's no Redis...
-      if (!jedisConnectionFactory.getConnection().ping().equalsIgnoreCase("PONG")) {
+      if (!lettuceConnectionFactory.getConnection().ping().equalsIgnoreCase("PONG")) {
         logger.warn("WARNING: Unable to connect to Redis.");
       }
     } catch (RedisConnectionFailureException e) {
@@ -70,6 +76,8 @@ public class RedisConfig {
     }
     // Even if unconnected, we return anyway because implementations that depend on this factory will detect this
     // condition and fallback to in-memory implementations.
-    return jedisConnectionFactory;
+    return lettuceConnectionFactory;
+
   }
+
 }
