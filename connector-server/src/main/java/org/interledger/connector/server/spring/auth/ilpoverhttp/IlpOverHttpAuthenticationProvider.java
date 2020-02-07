@@ -17,6 +17,7 @@ import com.auth0.jwk.GuavaCachedJwkProvider;
 import com.auth0.jwk.JwkProvider;
 import com.auth0.jwk.UrlJwkProvider;
 import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.spring.security.api.JwtAuthenticationProvider;
 import com.auth0.spring.security.api.authentication.PreAuthenticatedAuthenticationJsonWebToken;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -125,7 +126,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     } catch (AccountNotFoundProblem e) {
       throw new BadCredentialsException("Account not found for principal: " + authentication.getPrincipal());
     } catch (BadCredentialsException e) {
-      throw e;
+      throw handleBadCredentialsException(e, authentication);
     } catch (Exception e) {
       if (e.getCause() != null && BadCredentialsException.class.isAssignableFrom(e.getCause().getClass())) {
         throw e;
@@ -133,6 +134,15 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
         throw new BadCredentialsException("Unable to validate token due to system error", e);
       }
     }
+  }
+
+  private RuntimeException handleBadCredentialsException(BadCredentialsException e, Authentication authentication) {
+    if (e.getCause() != null && JWTVerificationException.class.isAssignableFrom(e.getCause().getClass())) {
+      return new BadCredentialsException(
+        String.format("Authentication failed for principal: %s. %s", authentication.getPrincipal(), e.getCause().getMessage()));
+    }
+
+    throw e;
   }
 
   private static AuthenticationDecision notAuthenticated() {
@@ -321,5 +331,4 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     HashCode tokenHash();
 
   }
-
 }
