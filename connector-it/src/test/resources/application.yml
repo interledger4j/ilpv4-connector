@@ -26,8 +26,6 @@ redis:
 
 interledger:
   connector:
-    enabledFeatures:
-      require32ByteSharedSecrets: false
     pubsub:
       topics:
         fulfillment-event: ilp-fulfillment-event
