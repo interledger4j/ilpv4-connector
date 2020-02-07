@@ -28,9 +28,7 @@ class ProblemExceptionHandling implements ProblemHandling, SecurityAdviceTrait {
     final StackTraceElement[] stackTrace = createStackTrace(throwable);
     problem.setStackTrace(stackTrace);
 
-    if (throwable instanceof BadCredentialsException) {
-      logger.warn(throwable.getMessage());
-    } else {
+    if (!(throwable instanceof BadCredentialsException)) {
       logger.error(throwable.getMessage(), throwable);
     }
 

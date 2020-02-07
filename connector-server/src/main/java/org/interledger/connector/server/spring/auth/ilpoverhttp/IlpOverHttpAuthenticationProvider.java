@@ -126,7 +126,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     } catch (AccountNotFoundProblem e) {
       throw new BadCredentialsException("Account not found for principal: " + authentication.getPrincipal());
     } catch (BadCredentialsException e) {
-      throw handleBadCredentialsException(e);
+      throw handleBadCredentialsException(e, authentication);
     } catch (Exception e) {
       if (e.getCause() != null && BadCredentialsException.class.isAssignableFrom(e.getCause().getClass())) {
         throw e;
@@ -136,9 +136,10 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     }
   }
 
-  private RuntimeException handleBadCredentialsException(BadCredentialsException e) {
+  private RuntimeException handleBadCredentialsException(BadCredentialsException e, Authentication authentication) {
     if (e.getCause() != null && JWTVerificationException.class.isAssignableFrom(e.getCause().getClass())) {
-      return new BadCredentialsException(e.getCause().getMessage());
+      return new BadCredentialsException(
+        String.format("Authentication failed for principal: %s. %s", authentication.getPrincipal(), e.getCause().getMessage()));
     }
 
     throw e;
