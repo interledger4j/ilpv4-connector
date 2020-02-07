@@ -39,7 +39,7 @@ public interface EnabledFeatureSettings {
    * @return true if required otherwise anything goes
    */
   default boolean isRequire32ByteSharedSecrets() {
-    return false;
+    return true;
   };
 
   @Value.Immutable(intern = true)
@@ -60,7 +60,7 @@ public interface EnabledFeatureSettings {
     @Override
     @Value.Default
     public boolean isRequire32ByteSharedSecrets() {
-      return false;
+      return true;
     }
   }
 
