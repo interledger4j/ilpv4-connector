@@ -2,6 +2,7 @@ package org.interledger.connector.server.spring.controllers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.zalando.problem.StatusType;
 import org.zalando.problem.ThrowableProblem;
@@ -27,9 +28,10 @@ class ProblemExceptionHandling implements ProblemHandling, SecurityAdviceTrait {
     final StackTraceElement[] stackTrace = createStackTrace(throwable);
     problem.setStackTrace(stackTrace);
 
-    logger.error(throwable.getMessage(), throwable);
+    if (!(throwable instanceof BadCredentialsException)) {
+      logger.error(throwable.getMessage(), throwable);
+    }
 
     return problem;
   }
-
 }
