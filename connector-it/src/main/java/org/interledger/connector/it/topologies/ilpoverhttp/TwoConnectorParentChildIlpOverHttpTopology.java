@@ -8,6 +8,7 @@ import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.it.topology.nodes.ConnectorServerNode;
 import org.interledger.connector.server.ConnectorServer;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.connector.settings.EnabledFeatureSettings;
 import org.interledger.connector.settings.EnabledProtocolSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
 import org.interledger.connector.settings.ImmutableConnectorSettings;
@@ -130,6 +131,9 @@ public class TwoConnectorParentChildIlpOverHttpTopology extends AbstractTopology
   private static ConnectorSettings constructConnectorSettingsForAlice() {
     final ConnectorSettings connectorSettings = ImmutableConnectorSettings.builder()
       .operatorAddress(ALICE_CONNECTOR_ADDRESS)
+      .enabledFeatures(EnabledFeatureSettings.builder()
+        .isRequire32ByteSharedSecrets(false)
+        .build())
       .enabledProtocols(EnabledProtocolSettings.builder()
         .isIlpOverHttpEnabled(true)
         .isPingProtocolEnabled(true)
@@ -193,6 +197,9 @@ public class TwoConnectorParentChildIlpOverHttpTopology extends AbstractTopology
    */
   private static ConnectorSettings constructConnectorSettingsForBob() {
     final ConnectorSettings connectorSettings = ImmutableConnectorSettings.builder()
+      .enabledFeatures(EnabledFeatureSettings.builder()
+        .isRequire32ByteSharedSecrets(false)
+        .build())
       .enabledProtocols(EnabledProtocolSettings.builder()
         .isIlpOverHttpEnabled(true)
         .isPingProtocolEnabled(true)
