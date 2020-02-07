@@ -98,7 +98,7 @@ public class DefaultLinkSettingsValidator implements LinkSettingsValidator {
 
   private EncryptedSecret validate(EncryptedSecret encryptedSecret) {
     return encryptionService.getDecryptor().withDecrypted(encryptedSecret, (decrypted) -> {
-      if (connectorSettingsSupplier.get().isRequire32ByteSharedSecrets() && decrypted.length < 32) {
+      if (connectorSettingsSupplier.get().enabledFeatures().isRequire32ByteSharedSecrets() && decrypted.length < 32) {
         throw new IllegalArgumentException("shared secret must be 32 bytes");
       }
       return encryptedSecret;

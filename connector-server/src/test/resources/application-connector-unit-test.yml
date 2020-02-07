@@ -19,7 +19,6 @@ interledger:
         keepAliveSeconds: 40
     # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
     adminPassword: password
-    require32ByteSharedSecrets: true
     keys:
       secret0:
         alias: secret0
@@ -47,6 +46,7 @@ interledger:
     # Which features are enabled.
     enabledFeatures:
       rateLimitingEnabled: true
+      require32ByteSharedSecrets: true
     # Which protocols this Connector supports
     enabledProtocols:
       ilpOverHttpEnabled: true

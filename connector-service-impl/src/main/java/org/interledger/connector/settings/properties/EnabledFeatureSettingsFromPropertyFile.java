@@ -8,6 +8,7 @@ import org.interledger.connector.settings.EnabledFeatureSettings;
 public class EnabledFeatureSettingsFromPropertyFile implements EnabledFeatureSettings {
 
   private boolean rateLimitingEnabled;
+  private boolean require32ByteSharedSecrets;
 
   @Override
   public boolean isRateLimitingEnabled() {
@@ -16,5 +17,14 @@ public class EnabledFeatureSettingsFromPropertyFile implements EnabledFeatureSet
 
   public void setRateLimitingEnabled(boolean rateLimitingEnabled) {
     this.rateLimitingEnabled = rateLimitingEnabled;
+  }
+
+  @Override
+  public boolean isRequire32ByteSharedSecrets() {
+    return require32ByteSharedSecrets;
+  }
+
+  public void setRequire32ByteSharedSecrets(boolean require32ByteSharedSecrets) {
+    this.require32ByteSharedSecrets = require32ByteSharedSecrets;
   }
 }

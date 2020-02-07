@@ -50,8 +50,6 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   private int minMessageWindowMillis = 1000;
 
-  private boolean require32ByteSharedSecrets;
-
   private IlpOverHttpConnectorSettingsFromPropertyFile ilpOverHttp = new IlpOverHttpConnectorSettingsFromPropertyFile();
 
   private FxSettingsFromPropertyFile fx = new FxSettingsFromPropertyFile();
@@ -162,15 +160,6 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   public void setMinMessageWindowMillis(int minMessageWindowMillis) {
     this.minMessageWindowMillis = minMessageWindowMillis;
-  }
-
-  @Override
-  public boolean isRequire32ByteSharedSecrets() {
-    return require32ByteSharedSecrets;
-  }
-
-  public void setRequire32ByteSharedSecrets(boolean require32ByteSharedSecrets) {
-    this.require32ByteSharedSecrets = require32ByteSharedSecrets;
   }
 
   @Override
