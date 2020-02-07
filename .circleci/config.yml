@@ -220,7 +220,6 @@ workflows:
           requires:
             - build
       - docker_image:
-          context: org-java-ilp-connector
           requires:
             - integration_tests_ilp_over_http
             - integration_tests_settlement
