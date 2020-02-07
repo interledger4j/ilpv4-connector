@@ -79,7 +79,7 @@ public class ConnectorSettingsFromPropertyFileTest {
     assertThat(ilpOverHttpConnectorSettings.maxIdleConnections()).isEqualTo(12);
     assertThat(ilpOverHttpConnectorSettings.keepAliveSeconds()).isEqualTo(40);
 
-    assertThat(connectorSettings.isRequire32ByteSharedSecrets()).isTrue();
+    assertThat(connectorSettings.enabledFeatures().isRequire32ByteSharedSecrets()).isTrue();
 
     assertThat(connectorSettings.keys().secret0())
       .isEqualTo(CryptoKey.builder().alias("secret0").version("2").build());

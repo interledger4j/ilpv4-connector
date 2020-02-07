@@ -4,7 +4,8 @@ interledger:
   connector:
     ## ILP address of the connector.
     nodeIlpAddress: test1.connie
-    require32ByteSharedSecrets: false
+    enabledFeatures:
+      require32ByteSharedSecrets: false
     globalPrefix: test
     adminPassword: password
     globalRoutingSettings:

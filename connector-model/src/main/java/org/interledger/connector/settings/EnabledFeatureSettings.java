@@ -34,6 +34,14 @@ public interface EnabledFeatureSettings {
     return false;
   }
 
+  /**
+   * Flag to control if shared secrets must be 32 bytes
+   * @return true if required otherwise anything goes
+   */
+  default boolean isRequire32ByteSharedSecrets() {
+    return false;
+  };
+
   @Value.Immutable(intern = true)
   abstract class AbstractEnabledFeatureSettings implements EnabledFeatureSettings {
 
@@ -49,6 +57,11 @@ public interface EnabledFeatureSettings {
       return false;
     }
 
+    @Override
+    @Value.Default
+    public boolean isRequire32ByteSharedSecrets() {
+      return false;
+    }
   }
 
 }

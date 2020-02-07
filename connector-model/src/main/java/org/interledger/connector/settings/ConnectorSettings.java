@@ -114,16 +114,6 @@ public interface ConnectorSettings {
     return 30000;
   }
 
-
-  /**
-   * Flag to control if shared secrets must be 32 bytes
-   * @return true if required otherwise anything goes
-   */
-  @Value.Default
-  default boolean isRequire32ByteSharedSecrets() {
-    return false;
-  };
-
   /**
    * Keys the connector will use for various core functions.
    *
