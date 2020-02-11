@@ -5,15 +5,11 @@ import org.interledger.crypto.EncryptionAlgorithm;
 import org.interledger.crypto.EncryptionException;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.crypto.KeyMetadata;
+import org.interledger.crypto.KeyStoreType;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
 import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -21,6 +17,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Objects;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 
 /**
  * An {@link EncryptionService} that uses a JavaKeystore for underlying key storage.
@@ -40,6 +42,11 @@ public class JksEncryptionService implements EncryptionService {
   public JksEncryptionService(SecretKey secretKey) throws NoSuchAlgorithmException {
     this.secretKey = Objects.requireNonNull(secretKey);
     this.secureRandom = SecureRandom.getInstance("NativePRNG");
+  }
+
+  @Override
+  public KeyStoreType keyStoreType() {
+    return KeyStoreType.JKS;
   }
 
   @Override

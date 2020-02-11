@@ -199,6 +199,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .antMatchers(HttpMethod.GET, PathConstants.SLASH_ROUTES_STATIC).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
       .antMatchers(HttpMethod.PUT, PathConstants.SLASH_ROUTES_STATIC_PREFIX).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
       .antMatchers(HttpMethod.DELETE, PathConstants.SLASH_ROUTES_STATIC_PREFIX).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+      // encrypted
+      .antMatchers(HttpMethod.POST, PathConstants.SLASH_ENCRYPTION + "/**").hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
 
       // Everything else...
       .anyRequest().denyAll()

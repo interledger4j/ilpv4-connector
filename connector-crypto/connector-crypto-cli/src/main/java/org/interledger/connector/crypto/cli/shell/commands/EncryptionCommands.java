@@ -9,6 +9,10 @@ import org.interledger.crypto.KeyMetadata;
 import org.interledger.crypto.KeyStoreType;
 import org.interledger.crypto.impl.GcpEncryptionService;
 import org.interledger.crypto.impl.JksEncryptionService;
+
+import com.google.api.gax.core.CredentialsProvider;
+import com.google.cloud.ServiceOptions;
+import com.google.cloud.kms.v1.stub.KeyManagementServiceStubSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.shell.Availability;
@@ -18,12 +22,12 @@ import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellMethodAvailability;
 import org.springframework.util.StringUtils;
 
-import javax.crypto.SecretKey;
 import java.security.Key;
 import java.security.KeyStore;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
+import javax.crypto.SecretKey;
 
 /**
  * Commands for encryption.
@@ -48,12 +52,14 @@ public class EncryptionCommands {
   private String secret0KeyPassword = "password";
 
   // GCP Properties.
-  private Optional<String> gcpProjectId = Optional.empty();
+  private String gcpProjectId = ServiceOptions.getDefaultProjectId();
   private Optional<String> gcpKeyringLocationId = Optional.of("global");
   private Optional<String> keyringIdentifier = Optional.empty();
   private EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithm.GOOGLE_SYMMETRIC;
   private Optional<String> encryptionKeyIdentifier = Optional.empty();
   private String encryptionKeyVersion = "1";
+  private CredentialsProvider credentialsProvider =
+    KeyManagementServiceStubSettings.defaultCredentialsProviderBuilder().build();
 
   public EncryptionCommands() {
   }
@@ -85,7 +91,7 @@ public class EncryptionCommands {
 
     if (this.keyStoreType.equals(KeyStoreType.GCP)) {
       final GcpEncryptionService gcpSecretsManager = new GcpEncryptionService(
-        gcpProjectId.get(), gcpKeyringLocationId.get()
+        gcpProjectId, gcpKeyringLocationId.get(), credentialsProvider
       );
 
       final KeyMetadata keyMetadata = KeyMetadata.builder()
@@ -131,7 +137,7 @@ public class EncryptionCommands {
 
     if (this.keyStoreType.equals(KeyStoreType.GCP)) {
       final GcpEncryptionService gcpSecretsManager = new GcpEncryptionService(
-        gcpProjectId.get(), gcpKeyringLocationId.get()
+        gcpProjectId, gcpKeyringLocationId.get(), credentialsProvider
       );
 
       final EncryptedSecret encryptedSecret = EncryptedSecret.fromEncodedValue(encodedValue);
@@ -185,7 +191,7 @@ public class EncryptionCommands {
   public void showCurrentValues() {
     if (KeyStoreType.GCP.equals(keyStoreType)) {
       blankLineLogger.info("Keystore Type         : " + this.keyStoreType);
-      blankLineLogger.info("GCP Project Id        : " + this.gcpProjectId.orElse(UNSET));
+      blankLineLogger.info("GCP Project Id        : " + this.gcpProjectId);
       blankLineLogger.info("Keyring Location      : " + this.gcpKeyringLocationId.orElse(UNSET));
       blankLineLogger.info("Keyring Id            : " + this.keyringIdentifier.orElse(UNSET));
       blankLineLogger.info("Encryption Algorithm  : " + this.encryptionAlgorithm);
@@ -206,12 +212,10 @@ public class EncryptionCommands {
   @ShellMethodAvailability({"e", "encrypt"})
   Availability availabilityCheck() {
     if (KeyStoreType.GCP.equals(this.keyStoreType)) {
-      if (!this.gcpProjectId.isPresent()) {
-        return Availability.unavailable("You must specify the GCP Project Id!");
-      } else if (!this.gcpKeyringLocationId.isPresent()) {
+      if (!this.gcpKeyringLocationId.isPresent()) {
         return Availability.unavailable("You must specify the GCP Keyring Location Id!");
       } else if (!this.keyringIdentifier.isPresent()) {
-        return Availability.unavailable("You must specify the keyring identifier!");
+        return Availability.unavailable("You must specify the keyringId identifier!");
       } else if (StringUtils.isEmpty(this.encryptionKeyIdentifier)) {
         return Availability.unavailable("You must specify the encryption key identifier!");
       } else if (StringUtils.isEmpty(this.encryptionKeyVersion)) {
@@ -330,23 +334,6 @@ public class EncryptionCommands {
   // GCP Commands
   ///////////////
 
-  /**
-   * Set the GCP Project Id.
-   *
-   * @param gcpProjectId {@link String} representing the GCP Project Identifier.
-   *
-   * @return A message displayable to the CLI user.
-   */
-  @ShellMethod(
-    value = "Set the GCP Project Id",
-    key = {"gcppid", "gcp-project-id"},
-    group = GCP_CONFIGURATION
-  )
-  public String setGcpProjectId(final String gcpProjectId) {
-    this.gcpProjectId = Optional.ofNullable(gcpProjectId);
-    return String.format("GCP ProjectId set to: `%s`", this.gcpProjectId.orElse(UNSET));
-  }
-
   public Availability setGcpProjectIdAvailability() {
     return gcpAvailability();
   }
@@ -381,7 +368,7 @@ public class EncryptionCommands {
    */
   @ShellMethod(
     value = "Set the Keyring platform",
-    key = {"krid", "keyring-id"},
+    key = {"krid", "keyringId-id"},
     group = GCP_CONFIGURATION
   )
   public String setKeyringIdentifier(final String keyringIdentifier) {

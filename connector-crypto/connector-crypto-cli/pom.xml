@@ -313,6 +313,26 @@
       <groupId>org.springframework.shell</groupId>
       <artifactId>spring-shell-starter</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.google.api</groupId>
+      <artifactId>gax</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-kms</artifactId>
+      <!-- Excluded so that only Jakarta annotations are used.
+      See https://dzone.com/articles/jakarta-ee-without-javax-the-world-wont-end-this-time-either for more details -->
+      <exclusions>
+        <exclusion>
+          <groupId>javax.annotation</groupId>
+          <artifactId>javax.annotation-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-core</artifactId>
+    </dependency>
   </dependencies>
   <dependencyManagement>
     <dependencies>
@@ -320,26 +340,16 @@
         <groupId>${project.groupId}</groupId>
         <artifactId>connector-crypto</artifactId>
         <version>${project.version}</version>
-        <exclusions>
-          <!-- Excluded so that cloud-kms can be directly imported below -->
-          <exclusion>
-            <groupId>com.google.cloud</groupId>
-            <artifactId>google-cloud-kms</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
       <dependency>
         <groupId>com.google.cloud</groupId>
-        <artifactId>google-cloud-kms</artifactId>
-        <version>1.36.0</version>
-        <!-- Excluded so that only Jakarta annotations are used.
-        See https://dzone.com/articles/jakarta-ee-without-javax-the-world-wont-end-this-time-either for more details -->
-        <exclusions>
-          <exclusion>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-          </exclusion>
-        </exclusions>
+        <artifactId>google-cloud-bom</artifactId>
+        <type>pom</type>
+        <!-- this should match version of google-cloud-bom that gets inherited in connector-parent -->
+        <!-- this command, run from the connector-parent directory, will show you what it is inheriting: -->
+        <!-- mvn help:effective-pom -Dverbose | grep google-cloud-bom | head -1 -->
+        <version>0.119.0-alpha</version>
+        <scope>import</scope>
       </dependency>
       <dependency>
         <groupId>jakarta.annotation</groupId>

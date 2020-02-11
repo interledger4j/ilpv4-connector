@@ -11,6 +11,7 @@ import org.interledger.link.Link;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Optional;
 
 /**
  * Unit tests for {@link ConnectorSettings}.
@@ -34,7 +35,7 @@ public class ConnectorSettingsTest {
     assertThat(defaultConnectorSettings.globalRoutingSettings().routeExpiry()).isEqualTo(Duration.ofMillis(45000L));
     assertThat(defaultConnectorSettings.globalRoutingSettings().routeBroadcastInterval())
         .isEqualTo(Duration.ofMillis(30000L));
-    assertThat(defaultConnectorSettings.globalRoutingSettings().routingSecret()).isEqualTo("foo");
+    assertThat(defaultConnectorSettings.globalRoutingSettings().routingSecret()).isEqualTo(Optional.of("foo"));
     assertThat(defaultConnectorSettings.globalRoutingSettings().isUseParentForDefaultRoute()).isFalse();
     assertThat(defaultConnectorSettings.globalRoutingSettings().isRouteBroadcastEnabled()).isFalse();
     assertThat(defaultConnectorSettings.globalRoutingSettings().maxEpochsPerRoutingTable()).isEqualTo(50);

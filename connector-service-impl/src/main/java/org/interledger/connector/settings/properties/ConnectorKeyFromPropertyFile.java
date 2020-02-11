@@ -10,6 +10,8 @@ public class ConnectorKeyFromPropertyFile implements CryptoKey {
 
   private String version;
 
+  private String keyringId;
+
   public String alias() {
     return alias;
   }
@@ -25,6 +27,15 @@ public class ConnectorKeyFromPropertyFile implements CryptoKey {
   public void setVersion(String version) {
     this.version = version;
   }
+
+  public String keyringId() {
+    return keyringId;
+  }
+
+  public void setKeyringId(String keyringId) {
+    this.keyringId = keyringId;
+  }
+
 
   @Override
   public boolean equals(Object o) {

@@ -134,7 +134,7 @@ public class InMemoryExternalRoutingServiceTest {
 
     when(globalRoutingSettings.isUseParentForDefaultRoute()).thenReturn(false);
     when(globalRoutingSettings.defaultRoute()).thenReturn(Optional.empty());
-    when(globalRoutingSettings.routingSecret()).thenReturn(encryptedSecret);
+    when(globalRoutingSettings.routingSecret()).thenReturn(Optional.of(encryptedSecret));
     when(connectorSettings.operatorAddress()).thenReturn(InterledgerAddress.of("test.example"));
     when(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PEER))
       .thenReturn(Collections.emptyList());

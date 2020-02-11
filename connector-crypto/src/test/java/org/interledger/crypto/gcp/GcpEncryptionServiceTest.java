@@ -7,6 +7,7 @@ import org.interledger.crypto.EncryptionAlgorithm;
 import org.interledger.crypto.KeyMetadata;
 import org.interledger.crypto.impl.GcpEncryptionService;
 
+import com.google.api.gax.core.GoogleCredentialsProvider;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -26,7 +27,9 @@ public class GcpEncryptionServiceTest {
   @Test
   @Ignore
   public void encryptDecryptViaGoogleKms() {
-    this.gcpEncryptionService = new GcpEncryptionService("ilpv4-dev", "global");
+    this.gcpEncryptionService = new GcpEncryptionService("ilpv4-dev", "global",
+      GoogleCredentialsProvider.newBuilder().build()
+    );
 
     final KeyMetadata metaData = KeyMetadata.builder()
       .platformIdentifier("gcp")

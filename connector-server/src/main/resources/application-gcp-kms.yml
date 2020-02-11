@@ -3,6 +3,15 @@
 interledger:
   connector:
     keystore:
+      primary: gcpkms
       gcpkms:
         enabled: true
-        # locationId: foo
+        locationId: global
+        keyringId: connector
+
+## uncomment to provide gcp service account as a base64-encoded value
+#spring:
+#  cloud:
+#    gcp:
+#      credentials:
+#        encoded-key: your-base64-encoded-service-account-key-json
