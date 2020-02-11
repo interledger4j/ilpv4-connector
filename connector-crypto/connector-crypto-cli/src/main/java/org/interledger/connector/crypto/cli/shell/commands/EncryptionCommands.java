@@ -215,7 +215,7 @@ public class EncryptionCommands {
       if (!this.gcpKeyringLocationId.isPresent()) {
         return Availability.unavailable("You must specify the GCP Keyring Location Id!");
       } else if (!this.keyringIdentifier.isPresent()) {
-        return Availability.unavailable("You must specify the keyringId identifier!");
+        return Availability.unavailable("You must specify the keyring identifier!");
       } else if (StringUtils.isEmpty(this.encryptionKeyIdentifier)) {
         return Availability.unavailable("You must specify the encryption key identifier!");
       } else if (StringUtils.isEmpty(this.encryptionKeyVersion)) {
