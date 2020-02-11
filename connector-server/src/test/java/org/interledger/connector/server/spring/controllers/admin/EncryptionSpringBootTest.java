@@ -24,14 +24,12 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.json.BasicJsonTester;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.Base64;
 import java.util.List;
 
 /**
@@ -46,12 +44,6 @@ import java.util.List;
 public class EncryptionSpringBootTest {
 
   private static final EncryptedSecret ENCRYPTED = EncryptedSecret.fromEncodedValue("enc:jks:file:foo:1:aes_gcm:BBBB");
-
-  private static final String PASSWORD = "password";
-  private static final String ADMIN = "admin";
-
-  private static final String INCOMING_SECRET = Base64.getEncoder().encodeToString("shh".getBytes());
-  private static final String OUTGOING_SECRET = Base64.getEncoder().encodeToString("hush".getBytes());
 
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
@@ -70,8 +62,6 @@ public class EncryptionSpringBootTest {
   private String adminPassword;
 
   private ConnectorAdminTestClient adminApiTestClient;
-
-  private BasicJsonTester jsonTester = new BasicJsonTester(getClass());
 
   @LocalServerPort
   private int localServerPort;

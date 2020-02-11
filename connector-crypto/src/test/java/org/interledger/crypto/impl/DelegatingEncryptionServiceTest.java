@@ -37,6 +37,8 @@ public class DelegatingEncryptionServiceTest {
   @Mock
   private JksEncryptionService mockJks;
 
+  private Function<byte[], byte[]> regurgitate = (input) -> input;
+
   @Before
   public void setUp() {
     when(mockJks.keyStoreType()).thenReturn(KeyStoreType.JKS);
@@ -102,7 +104,5 @@ public class DelegatingEncryptionServiceTest {
     when(service.encrypt(secret.keyMetadata(), secret.encryptionAlgorithm(), decryptedValue))
       .thenReturn(secret);
   }
-
-  Function<byte[], byte[]> regurgitate = (input) -> input;
 
 }
