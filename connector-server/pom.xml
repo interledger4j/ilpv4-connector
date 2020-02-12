@@ -434,21 +434,21 @@
     <profile>
       <!-- this profile builds 2 docker images, 1 with newrelic agent and 1 without any agent configured -->
       <id>docker</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.newrelic.agent.java</groupId>
+          <artifactId>newrelic-java</artifactId>
+          <version>5.9.0</version>
+          <scope>runtime</scope>
+          <type>zip</type>
+        </dependency>
+      </dependencies>
       <build>
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-dependency-plugin</artifactId>
             <version>3.1.1</version>
-            <dependencies>
-              <dependency>
-                <groupId>com.newrelic.agent.java</groupId>
-                <artifactId>newrelic-java</artifactId>
-                <version>5.9.0</version>
-                <scope>runtime</scope>
-                <type>zip</type>
-              </dependency>
-            </dependencies>
             <executions>
               <execution>
                 <id>unpack-newrelic</id>

@@ -11,6 +11,7 @@ import org.interledger.crypto.impl.GcpEncryptionService;
 import org.interledger.crypto.impl.JksEncryptionService;
 
 import com.google.api.gax.core.CredentialsProvider;
+import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.ServiceOptions;
 import com.google.cloud.kms.v1.stub.KeyManagementServiceStubSettings;
 import org.slf4j.Logger;
@@ -22,6 +23,7 @@ import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellMethodAvailability;
 import org.springframework.util.StringUtils;
 
+import java.io.IOException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.util.Base64;
@@ -52,7 +54,7 @@ public class EncryptionCommands {
   private String secret0KeyPassword = "password";
 
   // GCP Properties.
-  private String gcpProjectId = ServiceOptions.getDefaultProjectId();
+  private String gcpProjectId;
   private Optional<String> gcpKeyringLocationId = Optional.of("global");
   private Optional<String> keyringIdentifier = Optional.empty();
   private EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithm.GOOGLE_SYMMETRIC;
@@ -61,7 +63,14 @@ public class EncryptionCommands {
   private CredentialsProvider credentialsProvider =
     KeyManagementServiceStubSettings.defaultCredentialsProviderBuilder().build();
 
-  public EncryptionCommands() {
+  public EncryptionCommands() throws IOException {
+    Object credentials = credentialsProvider.getCredentials();
+    if (credentials instanceof ServiceAccountCredentials) {
+      this.gcpProjectId = ((ServiceAccountCredentials) credentials).getProjectId();
+    }
+    else {
+      this.gcpProjectId = ServiceOptions.getDefaultProjectId();
+    }
   }
 
   /**
@@ -368,7 +377,7 @@ public class EncryptionCommands {
    */
   @ShellMethod(
     value = "Set the Keyring platform",
-    key = {"krid", "keyringId-id"},
+    key = {"krid", "keyring-id"},
     group = GCP_CONFIGURATION
   )
   public String setKeyringIdentifier(final String keyringIdentifier) {

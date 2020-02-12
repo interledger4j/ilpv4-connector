@@ -333,6 +333,10 @@
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.google.auth</groupId>
+      <artifactId>google-auth-library-oauth2-http</artifactId>
+    </dependency>
   </dependencies>
   <dependencyManagement>
     <dependencies>
@@ -342,13 +346,13 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.google.cloud</groupId>
-        <artifactId>google-cloud-bom</artifactId>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-gcp-dependencies</artifactId>
         <type>pom</type>
-        <!-- this should match version of google-cloud-bom that gets inherited in connector-parent -->
+        <!-- this should match version of spring-cloud-gcp-dependencies that gets inherited in connector-parent -->
         <!-- this command, run from the connector-parent directory, will show you what it is inheriting: -->
-        <!-- mvn help:effective-pom -Dverbose | grep google-cloud-bom | head -1 -->
-        <version>0.119.0-alpha</version>
+        <!-- mvn help:effective-pom -Dverbose | grep spring-cloud-gcp-dependencies | head -1 -->
+        <version>1.2.1.RELEASE</version>
         <scope>import</scope>
       </dependency>
       <dependency>
