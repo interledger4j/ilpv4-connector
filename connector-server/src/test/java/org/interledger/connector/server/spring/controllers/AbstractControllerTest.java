@@ -3,12 +3,14 @@ package org.interledger.connector.server.spring.controllers;
 import static org.interledger.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
 
 import org.interledger.connector.accounts.AccountManager;
+import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.link.LinkFactoryProvider;
@@ -19,8 +21,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -33,7 +37,8 @@ import java.util.function.Supplier;
  */
 @ContextConfiguration(classes = {
   ControllerTestConfig.class, // For custom Beans.
-  SpringConnectorWebMvc.class
+  SpringConnectorWebMvc.class,
+  AbstractControllerTest.TestConfiguration.class
 })
 @ActiveProfiles( {"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 public abstract class AbstractControllerTest {
@@ -51,13 +56,10 @@ public abstract class AbstractControllerTest {
   protected AccountSettingsRepository accountSettingsRepositoryMock;
 
   @MockBean
-  protected ConnectorSettings connectorSettingsMock;
-
-  @MockBean
-  protected Supplier<ConnectorSettings> connectorSettingsSupplierMock;
-
-  @MockBean
   protected EncryptionService encryptionServiceMock;
+
+  @MockBean
+  protected ConnectorEncryptionService connectorEncryptionServiceMock;
 
   @MockBean
   protected ExternalRoutingService externalRoutingServiceMock;
@@ -124,5 +126,21 @@ public abstract class AbstractControllerTest {
     headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_OCTET_STREAM));
     headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
     return headers;
+  }
+
+  /**
+   * Because @MockMvcTest test classes do not load connector settings into the {@link org.springframework.context.ApplicationContext},
+   * and because @MockBean fields are loaded into the {@link org.springframework.context.ApplicationContext} after all other
+   * beans have been initialized, the Supplier<ConnectorSettings> bean must be loaded from this test configuration.
+   * Otherwise, the beans which depend on this bean will not get initialized and the {@link org.springframework.context.ApplicationContext}
+   * will not start.
+   */
+  @EnableConfigurationProperties(ConnectorSettingsFromPropertyFile.class)
+  public static class TestConfiguration {
+    @Bean
+    public Supplier<ConnectorSettings> connectorSettingsSupplier(ConnectorSettingsFromPropertyFile settings) {
+      return () -> settings;
+    }
+
   }
 }

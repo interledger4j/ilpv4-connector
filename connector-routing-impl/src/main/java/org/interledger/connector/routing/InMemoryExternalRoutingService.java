@@ -10,6 +10,7 @@ import org.interledger.connector.persistence.repositories.StaticRoutesRepository
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
+import org.interledger.crypto.ByteArrayUtils;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.link.LinkType;
@@ -537,9 +538,10 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
     Objects.requireNonNull(addressPrefix);
 
     // Decrypt the routingSecret, but only momentarily...
-    final byte[] routingSecret = decryptor.decrypt(EncryptedSecret.fromEncodedValue(
-      connectorSettingsSupplier.get().globalRoutingSettings().routingSecret()
-    ));
+    final byte[] routingSecret = connectorSettingsSupplier.get().globalRoutingSettings().routingSecret()
+      .map(secret -> decryptor.decrypt(EncryptedSecret.fromEncodedValue(secret)))
+      // use random ephemeral secret if not explicitly configured
+      .orElseGet(() -> ByteArrayUtils.generate32RandomBytes());
 
     try {
       return HMAC(routingSecret, addressPrefix);

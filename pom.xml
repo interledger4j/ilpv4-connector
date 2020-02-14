@@ -1,7 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -71,6 +69,8 @@
     <module>connector-it</module>
     <module>connector-fxrates</module>
     <module>connector-admin-client</module>
+    <module>connector-pubsub</module>
+    <module>connector-pubsub-api</module>
   </modules>
 
   <profiles>
@@ -149,6 +149,16 @@
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>connector-pubsub</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>connector-pubsub-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>connector-routing-api</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -213,11 +223,7 @@
         <scope>test</scope>
         <version>0.6</version>
       </dependency>
-      <dependency>
-        <groupId>com.google.cloud</groupId>
-        <artifactId>google-cloud-kms</artifactId>
-        <version>1.36.0</version>
-      </dependency>
+
       <dependency>
         <groupId>io.grpc</groupId>
         <artifactId>grpc-api</artifactId>
@@ -465,6 +471,7 @@
                   <ignoredDependency>org.springframework.cloud:spring-cloud-gcp-starter-pubsub</ignoredDependency>
 
                   <ignoredDependency>redis.clients:jedis:jar</ignoredDependency>
+                  <ignoredDependency>com.newrelic.agent.java</ignoredDependency>
                 </ignoredDependencies>
               </configuration>
             </execution>

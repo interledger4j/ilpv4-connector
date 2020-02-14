@@ -18,6 +18,9 @@
   <properties>
     <container.image>interledger4j/java-ilpv4-connector</container.image>
     <container.version>${project.version}</container.version>
+    <!-- by default, configure jib plugin goal to build the docker image locally but not publish to dockerhub -->
+    <!-- to release and push to dockerhub run: mvn clean package -Pdocker,dockerhub -->
+    <jibGoal>dockerBuild</jibGoal>
   </properties>
 
   <build>
@@ -131,6 +134,10 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>connector-routing-impl</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>connector-pubsub</artifactId>
     </dependency>
     <dependency>
       <groupId>com.auth0</groupId>
@@ -256,7 +263,7 @@
     <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>spsp-core</artifactId>
-      <scope>test</scope>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
@@ -352,6 +359,14 @@
       <artifactId>spring-boot-starter-websocket</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.springframework.cloud</groupId>
+      <artifactId>spring-cloud-gcp-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.api</groupId>
+      <artifactId>gax</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.zalando</groupId>
       <artifactId>jackson-datatype-problem</artifactId>
     </dependency>
@@ -410,15 +425,21 @@
 
   <profiles>
     <profile>
+      <id>dockerhub</id>
+      <properties>
+        <!-- override jib plugin goal to "build" which builds image and pushes to dockerhub -->
+        <jibGoal>build</jibGoal>
+      </properties>
+    </profile>
+    <profile>
       <!-- this profile builds 2 docker images, 1 with newrelic agent and 1 without any agent configured -->
       <id>docker</id>
-      <!-- ship liquibase with docker image build -->
       <dependencies>
         <dependency>
           <groupId>com.newrelic.agent.java</groupId>
           <artifactId>newrelic-java</artifactId>
           <version>5.9.0</version>
-          <scope>provided</scope>
+          <scope>runtime</scope>
           <type>zip</type>
         </dependency>
       </dependencies>
@@ -457,7 +478,7 @@
                 <!-- pinning to prepare-package so that it runs before the 2 new relic-specific plugin exections -->
                 <phase>prepare-package</phase>
                 <goals>
-                  <goal>build</goal>
+                  <goal>${jibGoal}</goal>
                 </goals>
                 <configuration>
                   <to>
@@ -481,7 +502,7 @@
                 <id>dockerNewRelic</id>
                 <phase>package</phase>
                 <goals>
-                  <goal>build</goal>
+                  <goal>${jibGoal}</goal>
                 </goals>
                 <configuration>
                   <to>

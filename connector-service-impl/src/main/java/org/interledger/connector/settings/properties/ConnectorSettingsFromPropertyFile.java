@@ -4,6 +4,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
+import org.interledger.connector.settings.IlpOverHttpConnectorSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.link.Link;
@@ -49,7 +50,9 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   private int minMessageWindowMillis = 1000;
 
-  private boolean require32ByteSharedSecrets;
+  private IlpOverHttpConnectorSettingsFromPropertyFile ilpOverHttp = new IlpOverHttpConnectorSettingsFromPropertyFile();
+
+  private FxSettingsFromPropertyFile fx = new FxSettingsFromPropertyFile();
 
   private ConnectorKeysFromPropertyFile keys;
 
@@ -91,6 +94,24 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   public void setEnabledFeatures(EnabledFeatureSettingsFromPropertyFile enabledFeatures) {
     this.enabledFeatures = enabledFeatures;
+  }
+
+  @Override
+  public FxSettingsFromPropertyFile fxSettings() {
+    return fx;
+  }
+
+  public void setFx(FxSettingsFromPropertyFile fx) {
+    this.fx = fx;
+  }
+
+  @Override
+  public IlpOverHttpConnectorSettings ilpOverHttpSettings() {
+    return ilpOverHttp;
+  }
+
+  public void setIlpOverHttp(IlpOverHttpConnectorSettingsFromPropertyFile ilpOverHttp) {
+    this.ilpOverHttp = ilpOverHttp;
   }
 
   @Override
@@ -142,15 +163,6 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   }
 
   @Override
-  public boolean isRequire32ByteSharedSecrets() {
-    return require32ByteSharedSecrets;
-  }
-
-  public void setRequire32ByteSharedSecrets(boolean require32ByteSharedSecrets) {
-    this.require32ByteSharedSecrets = require32ByteSharedSecrets;
-  }
-
-  @Override
   public ConnectorKeysFromPropertyFile keys() {
     return keys;
   }
@@ -169,7 +181,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     private Duration routeCleanupInterval = Duration.ofSeconds(1);
     private Duration routeExpiry = Duration.ofSeconds(45);
     private int maxEpochsPerRoutingTable = 50;
-    private String routingSecret;
+    private Optional<String> routingSecret = Optional.empty();
     private boolean useParentForDefaultRoute;
     private Duration routeBroadcastInterval = Duration.ofSeconds(30);
 
@@ -219,11 +231,11 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     }
 
     @Override
-    public String routingSecret() {
+    public Optional<String> routingSecret() {
       return routingSecret;
     }
 
-    public void setRoutingSecret(String routingSecret) {
+    public void setRoutingSecret(Optional<String> routingSecret) {
       this.routingSecret = routingSecret;
     }
 

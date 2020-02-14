@@ -1,9 +1,24 @@
 # Test settings to validate loading configuration properties.
 interledger:
   connector:
+    fx:
+      connectionDefaults:
+        keepAliveMinutes: 2
+        connectTimeoutMillis: 5000
+        readTimeoutMillis: 30000
+        writeTimeoutMillis: 40000
+        maxIdleConnections: 10
+    ilpOverHttp:
+      connectionDefaults:
+        connectTimeoutMillis: 2000
+        readTimeoutMillis: 70000
+        writeTimeoutMillis: 50000
+        maxRequests: 50
+        maxRequestsPerHost: 75
+        maxIdleConnections: 12
+        keepAliveSeconds: 40
     # For dev purposes this is fine, but not for real use-cases. Encrypt this value instead.
     adminPassword: password
-    require32ByteSharedSecrets: true
     keys:
       secret0:
         alias: secret0
@@ -31,6 +46,7 @@ interledger:
     # Which features are enabled.
     enabledFeatures:
       rateLimitingEnabled: true
+      require32ByteSharedSecrets: true
     # Which protocols this Connector supports
     enabledProtocols:
       ilpOverHttpEnabled: true
@@ -57,3 +73,6 @@ interledger:
       routeExpiry: 30003
       # The maximum number of epochs per routing table update.
       maxEpochsPerRoutingTable: 77
+
+
+

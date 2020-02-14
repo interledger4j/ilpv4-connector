@@ -30,6 +30,7 @@ import org.springframework.format.FormatterRegistry;
 import org.springframework.hateoas.config.EnableHypermediaSupport;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -100,6 +101,7 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
     converters.add(constructProblemsJsonConverter()); // For ProblemsJson only.
     converters.add(new MappingJackson2HttpMessageConverter(objectMapper)); // For any JSON payloads.
     converters.add(oerPreparePacketHttpMessageConverter());
+    converters.add(new StringHttpMessageConverter()); // for text/plain
   }
 
   @Override

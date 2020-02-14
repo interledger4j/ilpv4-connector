@@ -119,6 +119,12 @@
     </dependency>
 
     <dependency>
+      <groupId>io.github.openfeign</groupId>
+      <artifactId>feign-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
       <scope>test</scope>
@@ -163,6 +169,11 @@
     <dependency>
       <groupId>io.grpc</groupId>
       <artifactId>grpc-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger.connector</groupId>
+      <artifactId>connector-admin-client</artifactId>
       <scope>test</scope>
     </dependency>
 
@@ -284,6 +295,7 @@
                 org.interledger.connector.it.markers.Settlement
               </groups>
               <excludedGroups>
+                org.interledger.connector.it.markers.DockerImage,
                 org.interledger.connector.it.markers.IlpOverHttp,
                 org.interledger.connector.it.markers.Performance
               </excludedGroups>
@@ -322,6 +334,46 @@
                 org.interledger.connector.it.markers.IlpOverHttp
               </groups>
               <excludedGroups>
+                org.interledger.connector.it.markers.DockerImage,
+                org.interledger.connector.it.markers.Settlement,
+                org.interledger.connector.it.markers.Performance
+              </excludedGroups>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>docker</id>
+      <build>
+        <plugins>
+          <!-- Actually runs Integration Tests (use -DskipITs to skip) -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>run-integration-tests</id>
+                <phase>integration-test</phase>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <skipTests>false</skipTests>
+              <skipITs>false</skipITs>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <encoding>UTF-8</encoding>
+              <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
+              <argLine>${failsafe.argLine} -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <groups>
+                org.interledger.connector.it.markers.DockerImage
+              </groups>
+              <excludedGroups>
+                org.interledger.connector.it.markers.IlpOverHttp,
                 org.interledger.connector.it.markers.Settlement,
                 org.interledger.connector.it.markers.Performance
               </excludedGroups>

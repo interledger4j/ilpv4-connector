@@ -3,12 +3,14 @@ package org.interledger.connector.links;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.connector.settings.EnabledFeatureSettings;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.link.ImmutableLinkSettings;
@@ -60,7 +62,9 @@ public class DefaultLinkSettingsValidatorTest {
   public void setUp() {
     initMocks(this);
 
-    when(connectorSettings.isRequire32ByteSharedSecrets()).thenReturn(false);
+    EnabledFeatureSettings enabledFeatureMock = mock(EnabledFeatureSettings.class);
+    when(connectorSettings.enabledFeatures()).thenReturn(enabledFeatureMock);
+    when(enabledFeatureMock.isRequire32ByteSharedSecrets()).thenReturn(false);
     when(mockConnectorEncryptionService.getDecryptor()).thenReturn(decryptor);
 
     when(decryptor.withDecrypted(eq(ENCRYPTED_INCOMING_SECRET), any()))
@@ -114,7 +118,7 @@ public class DefaultLinkSettingsValidatorTest {
 
   @Test
   public void require32ByteSecretFailsIfConfigured() {
-    when(connectorSettings.isRequire32ByteSharedSecrets()).thenReturn(true);
+    when(connectorSettings.enabledFeatures().isRequire32ByteSharedSecrets()).thenReturn(true);
 
     final IlpOverHttpLinkSettings linkSettings = newSettings(INCOMING_BASE_64, OUTGOING_BASE_64);
 
@@ -154,6 +158,55 @@ public class DefaultLinkSettingsValidatorTest {
     expectedException.expect(IllegalArgumentException.class);
     expectedException.expectMessage("Shared secret must be ascii");
     validator.validateSettings(linkSettings);
+  }
+
+  @Test
+  public void encryptedSecretIsUpdatedIfNotUsingCurrentKey() {
+    EncryptedSecret incomingSecretWithNewerVersion =
+      EncryptedSecret.fromEncodedValue("enc:JKS:crypto.p12:secret0:2:aes_gcm:updated-incoming-secret");
+    EncryptedSecret outgoingSecretWithNewerVersion =
+      EncryptedSecret.fromEncodedValue("enc:JKS:crypto.p12:secret0:2:aes_gcm:updated-outgoing-secret");
+
+    when(mockConnectorEncryptionService.encryptWithAccountSettingsKey(INCOMING_BASE_64.getBytes()))
+      .thenReturn(incomingSecretWithNewerVersion);
+    when(mockConnectorEncryptionService.encryptWithAccountSettingsKey(OUTGOING_BASE_64.getBytes()))
+      .thenReturn(outgoingSecretWithNewerVersion);
+
+    final IlpOverHttpLinkSettings linkSettings = newSettings(ENCRYPTED_INCOMING_SECRET, ENCRYPTED_OUTGOING_SECRET);
+
+    IlpOverHttpLinkSettings expected =
+      newSettings(incomingSecretWithNewerVersion.encodedValue(), outgoingSecretWithNewerVersion.encodedValue());
+
+    assertThat(validator.validateSettings(linkSettings).incomingLinkSettings())
+      .isEqualTo(expected.incomingLinkSettings());
+
+    assertThat(validator.validateSettings(linkSettings).outgoingLinkSettings())
+      .isEqualTo(expected.outgoingLinkSettings());
+  }
+
+  @Test
+  public void encryptedSecretIsNotUpdatedIfUsingCurrentKey() {
+    EncryptedSecret incomingSecretWithSameVersion =
+      EncryptedSecret.fromEncodedValue("enc:JKS:crypto.p12:secret0:1:aes_gcm:updated-incoming-secret");
+
+    EncryptedSecret outgoingSecretWithSameVersion =
+      EncryptedSecret.fromEncodedValue("enc:JKS:crypto.p12:secret0:1:aes_gcm:updated-outgoing-secret");
+
+    when(mockConnectorEncryptionService.encryptWithAccountSettingsKey(INCOMING_BASE_64.getBytes()))
+      .thenReturn(incomingSecretWithSameVersion);
+    when(mockConnectorEncryptionService.encryptWithAccountSettingsKey(OUTGOING_BASE_64.getBytes()))
+      .thenReturn(outgoingSecretWithSameVersion);
+
+    final IlpOverHttpLinkSettings linkSettings = newSettings(ENCRYPTED_INCOMING_SECRET, ENCRYPTED_OUTGOING_SECRET);
+
+    IlpOverHttpLinkSettings expected =
+      newSettings(ENCRYPTED_INCOMING_SECRET.encodedValue(), ENCRYPTED_OUTGOING_SECRET.encodedValue());
+
+    assertThat(validator.validateSettings(linkSettings).incomingLinkSettings())
+      .isEqualTo(expected.incomingLinkSettings());
+
+    assertThat(validator.validateSettings(linkSettings).outgoingLinkSettings())
+      .isEqualTo(expected.outgoingLinkSettings());
   }
 
   private IlpOverHttpLinkSettings newSettings(EncryptedSecret incomingSecret, EncryptedSecret outgoingSecret) {

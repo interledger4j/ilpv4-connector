@@ -2,6 +2,7 @@
 interledger:
   connector:
     keystore:
+      primary: jks
       jks:
         enabled: true
         filename: crypto/crypto.p12

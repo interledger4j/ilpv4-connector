@@ -64,12 +64,12 @@ public class JksCryptoConfig {
   }
 
   @Bean
-  EncryptionService encryptionService(SecretKey secret0Key) throws NoSuchAlgorithmException {
+  JksEncryptionService jksEncryptionService(SecretKey secret0Key) throws NoSuchAlgorithmException {
     return new JksEncryptionService(secret0Key);
   }
 
   @Bean
-  ConnectorEncryptionService connectorEncryptionService(EncryptionService encryptionService,
+  ConnectorEncryptionService jksConnectorEncryptionService(EncryptionService encryptionService,
                                                         Supplier<ConnectorSettings> connectorSettings) {
     return new DefaultConnectorEncryptionService(encryptionService,
       KeyStoreType.JKS,

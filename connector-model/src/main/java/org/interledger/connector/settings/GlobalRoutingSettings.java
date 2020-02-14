@@ -33,9 +33,10 @@ public interface GlobalRoutingSettings {
   Optional<AccountId> defaultRoute();
 
   /**
-   * Seed used for generating routing table auth values.
+   * Seed used for generating routing table auth values. If not specific, a random, ephemeral routing secret
+   * will be used.
    */
-  String routingSecret();
+  Optional<String> routingSecret();
 
   /**
    * An ILP address segment that will be used to route packets to any local accounts defined in the Connector. For

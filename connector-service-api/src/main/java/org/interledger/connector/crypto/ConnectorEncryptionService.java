@@ -2,6 +2,7 @@ package org.interledger.connector.crypto;
 
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
+import org.interledger.crypto.KeyStoreType;
 
 /**
  * Encryption methods specific to a connector.
@@ -27,5 +28,11 @@ public interface ConnectorEncryptionService {
    * @return decryptor
    */
   Decryptor getDecryptor();
+
+  /**
+   * The {@link KeyStoreType} that this encryption service handles.
+   * @return keyStoreType
+   */
+  KeyStoreType getKeyStoreType();
 
 }

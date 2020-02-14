@@ -54,6 +54,11 @@ public class DefaultConnectorEncryptionService implements ConnectorEncryptionSer
     return encryptionService;
   }
 
+  @Override
+  public KeyStoreType getKeyStoreType() {
+    return keyStoreType;
+  }
+
   private ImmutableKeyMetadata.Builder newKeyMetadataBuilder() {
     return KeyMetadata.builder()
       .keyringIdentifier(keyringIdentifier)
