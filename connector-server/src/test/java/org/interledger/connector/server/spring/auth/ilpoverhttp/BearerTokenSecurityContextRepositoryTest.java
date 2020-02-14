@@ -64,9 +64,20 @@ public class BearerTokenSecurityContextRepositoryTest {
   }
 
   @Test
-  public void loadContextNoBearer() {
+  public void loadContextDeprecatedNoBearerPrefix() {
     mockRequestPath("/accounts/foo/ilp");
-    when(mockRequest.getHeader("Authorization")).thenReturn("not bearer token");
+    String deprecatedBearerToken = "undercover token";
+    when(mockRequest.getHeader("Authorization")).thenReturn(deprecatedBearerToken);
+    SecurityContext securityContext = repository.loadContext(holder);
+    assertThat(securityContext.getAuthentication()).isNotNull();
+    assertThat(securityContext.getAuthentication().getCredentials()).isEqualTo(deprecatedBearerToken.getBytes());
+  }
+
+  @Test
+  public void loadContextBasicAuth() {
+    mockRequestPath("/accounts/foo/ilp");
+    String basicAuth = "Basic token";
+    when(mockRequest.getHeader("Authorization")).thenReturn(basicAuth);
     SecurityContext securityContext = repository.loadContext(holder);
     assertThat(securityContext.getAuthentication()).isNull();
   }
@@ -76,13 +87,6 @@ public class BearerTokenSecurityContextRepositoryTest {
     mockRequestPath("/accounts/foo/ilp");
     when(mockRequest.getHeader("Authorization")).thenReturn("Bearer token");
     assertThat(repository.containsContext(mockRequest)).isTrue();
-  }
-
-  @Test
-  public void doesntContainContext() {
-    mockRequestPath("/accounts/foo/ilp");
-    when(mockRequest.getHeader("Authorization")).thenReturn("not bearer token");
-    assertThat(repository.containsContext(mockRequest)).isFalse();
   }
 
   private void verifyBearerAuth() {
