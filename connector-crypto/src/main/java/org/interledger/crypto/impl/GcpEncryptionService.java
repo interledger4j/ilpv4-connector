@@ -1,20 +1,24 @@
 package org.interledger.crypto.impl;
 
-import com.google.cloud.kms.v1.CryptoKeyName;
-import com.google.cloud.kms.v1.DecryptResponse;
-import com.google.cloud.kms.v1.EncryptResponse;
-import com.google.cloud.kms.v1.KeyManagementServiceClient;
-import com.google.protobuf.ByteString;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionAlgorithm;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.crypto.Encryptor;
 import org.interledger.crypto.KeyMetadata;
+import org.interledger.crypto.KeyStoreType;
 
-import javax.annotation.PreDestroy;
+import com.google.api.gax.core.CredentialsProvider;
+import com.google.cloud.kms.v1.CryptoKeyName;
+import com.google.cloud.kms.v1.DecryptResponse;
+import com.google.cloud.kms.v1.EncryptResponse;
+import com.google.cloud.kms.v1.KeyManagementServiceClient;
+import com.google.cloud.kms.v1.KeyManagementServiceSettings;
+import com.google.protobuf.ByteString;
+
 import java.io.IOException;
 import java.util.Objects;
+import javax.annotation.PreDestroy;
 
 /**
  * An {@link Encryptor} and {@link Decryptor} that uses Google KMS to store private keys and otherwise perform sensitive
@@ -32,12 +36,16 @@ public class GcpEncryptionService implements EncryptionService {
    *
    * @param projectId  The unique identifier of the GCP Project this keystore operates in.
    * @param locationId The canonical id for the locationId of the underlying keyring. For example: `us-east1`.
+   * @param credentialsProvider provider for google application credentials
    */
-  public GcpEncryptionService(final String projectId, final String locationId) {
+  public GcpEncryptionService(final String projectId, final String locationId, CredentialsProvider credentialsProvider) {
     this.projectId = Objects.requireNonNull(projectId);
     this.locationId = Objects.requireNonNull(locationId);
     try {
-      this.client = KeyManagementServiceClient.create();
+      KeyManagementServiceSettings settings = KeyManagementServiceSettings.newBuilder()
+        .setCredentialsProvider(credentialsProvider)
+        .build();
+      this.client = KeyManagementServiceClient.create(settings);
     } catch (IOException e) {
       throw new RuntimeException(e.getMessage(), e);
     }
@@ -46,6 +54,11 @@ public class GcpEncryptionService implements EncryptionService {
   @PreDestroy
   public void shutdown() {
     this.client.shutdown();
+  }
+
+  @Override
+  public KeyStoreType keyStoreType() {
+    return KeyStoreType.GCP;
   }
 
   @Override

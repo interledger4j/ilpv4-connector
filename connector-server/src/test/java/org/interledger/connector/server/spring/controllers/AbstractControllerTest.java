@@ -3,6 +3,7 @@ package org.interledger.connector.server.spring.controllers;
 import static org.interledger.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
 
 import org.interledger.connector.accounts.AccountManager;
+import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
@@ -56,6 +57,9 @@ public abstract class AbstractControllerTest {
 
   @MockBean
   protected EncryptionService encryptionServiceMock;
+
+  @MockBean
+  protected ConnectorEncryptionService connectorEncryptionServiceMock;
 
   @MockBean
   protected ExternalRoutingService externalRoutingServiceMock;

@@ -23,6 +23,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -57,7 +58,7 @@ public class ConnectorSettingsFromPropertyFileTest {
     final GlobalRoutingSettings globalRoutingSettings = connectorSettings.globalRoutingSettings();
     assertThat(globalRoutingSettings.defaultRoute().get()).isEqualTo((AccountId.of("self.internal")));
     assertThat(globalRoutingSettings.isUseParentForDefaultRoute()).isEqualTo((true));
-    assertThat(globalRoutingSettings.routingSecret()).isEqualTo(("shh"));
+    assertThat(globalRoutingSettings.routingSecret()).isEqualTo(Optional.of("shh"));
     assertThat(globalRoutingSettings.routeBroadcastInterval()).isEqualTo((Duration.ofMillis(30001L)));
     assertThat(globalRoutingSettings.routeCleanupInterval()).isEqualTo((Duration.ofMillis(30002L)));
     assertThat(globalRoutingSettings.routeExpiry()).isEqualTo((Duration.ofMillis(30003L)));

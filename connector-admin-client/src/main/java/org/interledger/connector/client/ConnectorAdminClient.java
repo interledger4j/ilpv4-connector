@@ -31,6 +31,7 @@ public interface ConnectorAdminClient {
   String ID = "id";
   String PREFIX = "prefix";
   String APPLICATION_JSON = "application/json";
+  String PLAIN_TEXT = "text/plain";
 
   /**
    * Static constructor to build a new instance of this Connector Admin client.
@@ -111,4 +112,18 @@ public interface ConnectorAdminClient {
     CONTENT_TYPE + APPLICATION_JSON
   })
   StaticRoute createStaticRoute(@Param(PREFIX) String prefix, StaticRoute route) throws ThrowableProblem;
+
+  @RequestLine("POST /encryption/encrypt")
+  @Headers( {
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + PLAIN_TEXT
+  })
+  String encrypt(String message) throws ThrowableProblem;
+
+  @RequestLine("POST /encryption/refresh")
+  @Headers( {
+    ACCEPT + APPLICATION_JSON
+  })
+  long refresh() throws ThrowableProblem;
+
 }

@@ -181,7 +181,7 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     private Duration routeCleanupInterval = Duration.ofSeconds(1);
     private Duration routeExpiry = Duration.ofSeconds(45);
     private int maxEpochsPerRoutingTable = 50;
-    private String routingSecret;
+    private Optional<String> routingSecret = Optional.empty();
     private boolean useParentForDefaultRoute;
     private Duration routeBroadcastInterval = Duration.ofSeconds(30);
 
@@ -231,11 +231,11 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
     }
 
     @Override
-    public String routingSecret() {
+    public Optional<String> routingSecret() {
       return routingSecret;
     }
 
-    public void setRoutingSecret(String routingSecret) {
+    public void setRoutingSecret(Optional<String> routingSecret) {
       this.routingSecret = routingSecret;
     }
 

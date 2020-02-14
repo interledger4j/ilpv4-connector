@@ -160,6 +160,55 @@ public class DefaultLinkSettingsValidatorTest {
     validator.validateSettings(linkSettings);
   }
 
+  @Test
+  public void encryptedSecretIsUpdatedIfNotUsingCurrentKey() {
+    EncryptedSecret incomingSecretWithNewerVersion =
+      EncryptedSecret.fromEncodedValue("enc:JKS:crypto.p12:secret0:2:aes_gcm:updated-incoming-secret");
+    EncryptedSecret outgoingSecretWithNewerVersion =
+      EncryptedSecret.fromEncodedValue("enc:JKS:crypto.p12:secret0:2:aes_gcm:updated-outgoing-secret");
+
+    when(mockConnectorEncryptionService.encryptWithAccountSettingsKey(INCOMING_BASE_64.getBytes()))
+      .thenReturn(incomingSecretWithNewerVersion);
+    when(mockConnectorEncryptionService.encryptWithAccountSettingsKey(OUTGOING_BASE_64.getBytes()))
+      .thenReturn(outgoingSecretWithNewerVersion);
+
+    final IlpOverHttpLinkSettings linkSettings = newSettings(ENCRYPTED_INCOMING_SECRET, ENCRYPTED_OUTGOING_SECRET);
+
+    IlpOverHttpLinkSettings expected =
+      newSettings(incomingSecretWithNewerVersion.encodedValue(), outgoingSecretWithNewerVersion.encodedValue());
+
+    assertThat(validator.validateSettings(linkSettings).incomingLinkSettings())
+      .isEqualTo(expected.incomingLinkSettings());
+
+    assertThat(validator.validateSettings(linkSettings).outgoingLinkSettings())
+      .isEqualTo(expected.outgoingLinkSettings());
+  }
+
+  @Test
+  public void encryptedSecretIsNotUpdatedIfUsingCurrentKey() {
+    EncryptedSecret incomingSecretWithSameVersion =
+      EncryptedSecret.fromEncodedValue("enc:JKS:crypto.p12:secret0:1:aes_gcm:updated-incoming-secret");
+
+    EncryptedSecret outgoingSecretWithSameVersion =
+      EncryptedSecret.fromEncodedValue("enc:JKS:crypto.p12:secret0:1:aes_gcm:updated-outgoing-secret");
+
+    when(mockConnectorEncryptionService.encryptWithAccountSettingsKey(INCOMING_BASE_64.getBytes()))
+      .thenReturn(incomingSecretWithSameVersion);
+    when(mockConnectorEncryptionService.encryptWithAccountSettingsKey(OUTGOING_BASE_64.getBytes()))
+      .thenReturn(outgoingSecretWithSameVersion);
+
+    final IlpOverHttpLinkSettings linkSettings = newSettings(ENCRYPTED_INCOMING_SECRET, ENCRYPTED_OUTGOING_SECRET);
+
+    IlpOverHttpLinkSettings expected =
+      newSettings(ENCRYPTED_INCOMING_SECRET.encodedValue(), ENCRYPTED_OUTGOING_SECRET.encodedValue());
+
+    assertThat(validator.validateSettings(linkSettings).incomingLinkSettings())
+      .isEqualTo(expected.incomingLinkSettings());
+
+    assertThat(validator.validateSettings(linkSettings).outgoingLinkSettings())
+      .isEqualTo(expected.outgoingLinkSettings());
+  }
+
   private IlpOverHttpLinkSettings newSettings(EncryptedSecret incomingSecret, EncryptedSecret outgoingSecret) {
     return newSettings(incomingSecret.encodedValue(), outgoingSecret.encodedValue());
   }

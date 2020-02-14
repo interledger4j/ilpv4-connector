@@ -223,11 +223,7 @@
         <scope>test</scope>
         <version>0.6</version>
       </dependency>
-      <dependency>
-        <groupId>com.google.cloud</groupId>
-        <artifactId>google-cloud-kms</artifactId>
-        <version>1.36.0</version>
-      </dependency>
+
       <dependency>
         <groupId>io.grpc</groupId>
         <artifactId>grpc-api</artifactId>
@@ -475,6 +471,7 @@
                   <ignoredDependency>org.springframework.cloud:spring-cloud-gcp-starter-pubsub</ignoredDependency>
 
                   <ignoredDependency>redis.clients:jedis:jar</ignoredDependency>
+                  <ignoredDependency>com.newrelic.agent.java</ignoredDependency>
                 </ignoredDependencies>
               </configuration>
             </execution>
