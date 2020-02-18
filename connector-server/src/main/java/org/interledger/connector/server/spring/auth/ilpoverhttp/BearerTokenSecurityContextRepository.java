@@ -11,6 +11,11 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * SecurityContextRepository for Bearer tokens (and a deprecated "secretToken" scheme supported by ILP JS implementation)
+ * that does Bearer-like tokens but without the "Bearer " prefix). Anything else like Basic auth is not handled by
+ * this.
+ */
 public class BearerTokenSecurityContextRepository implements SecurityContextRepository {
   private final byte[] ephemeralBytes;
   private static final AntPathRequestMatcher ACCOUNT_ID_MATCHER =
@@ -53,12 +58,16 @@ public class BearerTokenSecurityContextRepository implements SecurityContextRepo
   private Optional<byte[]> parseToken(HttpServletRequest request) {
     return Optional.ofNullable(request.getHeader("Authorization"))
       .map(authHeader -> {
+        if (authHeader.startsWith("Basic ")) {
+          // we don't handle Basic auth
+          return null;
+        }
         int bearerIndex = authHeader.indexOf("Bearer ");
         if (bearerIndex == 0) {
           byte[] token = authHeader.substring(7).getBytes();
           return token;
         } else {
-          return null;
+          return authHeader.getBytes();
         }
       });
   }
