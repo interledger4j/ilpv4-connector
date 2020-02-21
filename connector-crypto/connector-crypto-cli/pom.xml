@@ -26,13 +26,16 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <argLine>-Xmx1024m</argLine>
     <spring-shell.version>2.0.1.RELEASE</spring-shell.version>
-
+    <start-class>org.interledger.connector.crypto.cli.CryptoCli</start-class>
     <!-- org.jacoco:jacoco-maven-plugin -->
     <jacoco.propertyName>argLine</jacoco.propertyName>
 
     <!-- org.apache.maven.plugins:maven-checkstyle-plugin -->
     <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
     <checkstyle.violationSeverity>error</checkstyle.violationSeverity>
+    <container.image>interledger4j/crypto-cli</container.image>
+    <container.version>${project.version}</container.version>
+    <jibGoal>dockerBuild</jibGoal>
   </properties>
 
   <build>
@@ -270,6 +273,48 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>dockerhub</id>
+      <properties>
+        <!-- override jib plugin goal to "build" which builds image and pushes to dockerhub -->
+        <jibGoal>build</jibGoal>
+      </properties>
+    </profile>
+    <profile>
+      <id>docker</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.google.cloud.tools</groupId>
+            <artifactId>jib-maven-plugin</artifactId>
+            <version>1.8.0</version>
+            <executions>
+              <execution>
+                <id>docker</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>${jibGoal}</goal>
+                </goals>
+                <configuration>
+                  <from>
+                    <image>adoptopenjdk/openjdk11:alpine-jre</image>
+                  </from>
+                  <to>
+                    <image>${container.image}:${container.version}</image>
+                  </to>
+                  <container>
+                    <useCurrentTimestamp>true</useCurrentTimestamp>
+                    <environment>
+                      <GOOGLE_APPLICATION_CREDENTIALS>/app/gcp-credentials.json</GOOGLE_APPLICATION_CREDENTIALS>
+                    </environment>
+                  </container>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 
   <dependencies>
@@ -367,7 +412,7 @@
       <dependency>
         <groupId>org.jline</groupId>
         <artifactId>jline</artifactId>
-        <version>3.13.3</version>
+        <version>3.4.0</version>
       </dependency>
       <dependency>
         <groupId>org.springframework.shell</groupId>
