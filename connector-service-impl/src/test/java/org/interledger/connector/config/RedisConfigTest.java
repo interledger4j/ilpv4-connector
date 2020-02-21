@@ -32,7 +32,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @EnableConfigurationProperties
 public class RedisConfigTest {
 
-  static final String ENCRYPTED_SHH
+  protected static final String ENCRYPTED_SHH
     = "enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=";
 
   @Autowired
@@ -46,7 +46,7 @@ public class RedisConfigTest {
   }
 
   @Component
-  static class TestMockConfig {
+  protected static class TestMockConfig {
     @Bean
     public Decryptor decryptor() {
       Decryptor mock = mock(Decryptor.class);
