@@ -185,7 +185,7 @@ jobs:
             - v1-dependencies-{{ checksum "pom.xml" }}
       - run:
           name: Deploy docker image
-          command: mvn verify -DskipTests -Pdocker -Dcontainer.version=nightly
+          command: mvn verify -DskipTests -Pdocker,dockerHub -Dcontainer.version=nightly -Djib.httpTimeout=60000 -Djib.to.auth.username=${DOCKERHUB_USERNAME} -Djib.to.auth.password=${DOCKERHUB_API_KEY}
 
 workflows:
   version: 2
