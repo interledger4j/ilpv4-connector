@@ -23,7 +23,8 @@ import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellMethodAvailability;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.Key;
 import java.security.KeyStore;
 import java.util.Base64;
@@ -56,20 +57,38 @@ public class EncryptionCommands {
   // GCP Properties.
   private String gcpProjectId;
   private Optional<String> gcpKeyringLocationId = Optional.of("global");
-  private Optional<String> keyringIdentifier = Optional.empty();
+  private Optional<String> keyringIdentifier = Optional.of("connector");
   private EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithm.GOOGLE_SYMMETRIC;
-  private Optional<String> encryptionKeyIdentifier = Optional.empty();
+  private Optional<String> encryptionKeyIdentifier = Optional.of("secret0");
   private String encryptionKeyVersion = "1";
   private CredentialsProvider credentialsProvider =
     KeyManagementServiceStubSettings.defaultCredentialsProviderBuilder().build();
 
-  public EncryptionCommands() throws IOException {
-    Object credentials = credentialsProvider.getCredentials();
-    if (credentials instanceof ServiceAccountCredentials) {
-      this.gcpProjectId = ((ServiceAccountCredentials) credentials).getProjectId();
+  public EncryptionCommands() {
+    lookForGcpCredentials();
+    if (this.gcpProjectId != null) {
+      blankLineLogger.info("Using GCP as the default keystore platform");
+      setKeystorePlatform(KeyStoreType.GCP.name());
     }
     else {
-      this.gcpProjectId = ServiceOptions.getDefaultProjectId();
+      blankLineLogger.info("Using JKS as the default keystore platform");
+      setKeystorePlatform(KeyStoreType.JKS.name());
+    }
+  }
+
+  private void lookForGcpCredentials() {
+    if (Files.exists(Paths.get(System.getenv("GOOGLE_APPLICATION_CREDENTIALS")))) {
+      try {
+        Object credentials = credentialsProvider.getCredentials();
+        if (credentials instanceof ServiceAccountCredentials) {
+          this.gcpProjectId = ((ServiceAccountCredentials) credentials).getProjectId();
+        }
+        else {
+          this.gcpProjectId = ServiceOptions.getDefaultProjectId();
+        }
+      } catch (Exception e) {
+        blankLineLogger.warn("Failed to load GCP credentials. Cause: " + e.getMessage());
+      }
     }
   }
 
@@ -151,7 +170,7 @@ public class EncryptionCommands {
 
       final EncryptedSecret encryptedSecret = EncryptedSecret.fromEncodedValue(encodedValue);
       final byte[] plainTextBytes = gcpSecretsManager.decrypt(encryptedSecret);
-      return "Encoded Encrypted Secret: " + Base64.getUrlEncoder().encodeToString(plainTextBytes);
+      return "PlainText: " + new String(plainTextBytes);
     } else if (this.keyStoreType.equals(KeyStoreType.JKS)) {
       // Load Secret0 from Keystore.
       final KeyStore keyStore = JavaKeystoreLoader.loadFromClasspath(this.jksFileName, jksPassword.toCharArray());
