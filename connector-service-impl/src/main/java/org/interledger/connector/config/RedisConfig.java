@@ -28,7 +28,7 @@ public class RedisConfig {
   @Value("${redis.port:6379}")
   protected String redisPort = "6379";
 
-  @Value("${redis.password")
+  @Value("${redis.password:null}")
   protected String redisPassword;
 
   @Autowired
