@@ -257,18 +257,18 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
 
   /**
    * Determine the correct expiration date/time for a packet based upon the supplied inputs. Generally, this method will
-   * reduce the supplied value by some configurable amount, which is the amount of time the Connector estimates it needs
-   * to process the outgoing packet's response from any upstream ILP node.
+   * reduce the supplied {@code sourceExpiry} value by some configurable amount, which is the amount of time the
+   * Connector estimates it needs to process the outgoing packet's response from any upstream ILP node.
    *
    * @param clock              A {@link Clock}, useful for testing purposes.
    * @param sourceExpiry       An {@link Instant} representing the expiry found in the incoming prepare packet.
    * @param destinationAddress An {@link InterledgerAddress} so that this function can optionally ignore expiry
    *                           adjustments depending on the destination address.
    *
-   * @return A {@link Instant} that represents the new expiry of this packet. This value will be propagated to any
+   * @return An {@link Instant} that represents the new expiry of this packet. This value will be propagated to any
    *   next-hops.
    *
-   * @throws InterledgerProtocolException if the computed timeoout is before `now` (i.e., the packet is already
+   * @throws InterledgerProtocolException if the computed timeout is before `now` (i.e., the packet is already
    *                                      expired).
    */
   @VisibleForTesting
