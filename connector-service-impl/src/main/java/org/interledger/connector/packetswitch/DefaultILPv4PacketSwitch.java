@@ -97,6 +97,7 @@ public class DefaultILPv4PacketSwitch implements ILPv4PacketSwitch {
       .map(accountSettings -> {
         try {
           return new DefaultPacketSwitchFilterChain(
+            packetRejector,
             packetSwitchFilters,
             linkFilters,
             localDestinationAddressUtils,

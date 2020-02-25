@@ -57,7 +57,7 @@ public class JavaMoneyUtils {
 
     return monetaryAmount.scaleByPowerOfTen(assetScale).getNumber().numberValue(BigDecimal.class)
       // This always rounds down so the Connector never loses money. E.g., if the monetary amount is 0.009, and is
-      // being converted to cents, then this should not convert into 0.01, because this suble rounding error would
+      // being converted to cents, then this should not convert into 0.01, because this subtle rounding error would
       // accrue over time as real money. Instead, 0.009 should convert to 0.00, which is what the unit tests validate.
       .toBigInteger();
   }

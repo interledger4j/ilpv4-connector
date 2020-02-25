@@ -28,6 +28,7 @@ import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerPreparePacket.AbstractInterledgerPreparePacket;
 import org.interledger.core.InterledgerProtocolException;
 import org.interledger.core.InterledgerRejectPacket;
 import org.interledger.link.Link;
@@ -290,5 +291,68 @@ public class DefaultILPv4PacketSwitchTest {
     verifyNoMoreInteractions(nextHopPacketMapperMock);
     verifyNoMoreInteractions(accountSettingsLoadingCacheMock);
   }
+
+  @Test
+  public void switchExpiredPacket() {
+    final ImmutableAccountSettings incomingAccountSettings = AccountSettings.builder()
+      .accountId(INCOMING_ACCOUNT_ID)
+      .accountRelationship(AccountRelationship.PEER)
+      .assetCode("USD")
+      .assetScale(2)
+      .linkType(LoopbackLink.LINK_TYPE)
+      .build();
+    when(accountSettingsLoadingCacheMock.getAccount(INCOMING_ACCOUNT_ID))
+      .thenReturn(Optional.of(incomingAccountSettings));
+
+    final ImmutableAccountSettings outgoingAccountSettings = AccountSettings.builder()
+      .accountId(OUTGOING_ACCOUNT_ID)
+      .accountRelationship(AccountRelationship.PEER)
+      .assetCode("USD")
+      .assetScale(2)
+      .linkType(LoopbackLink.LINK_TYPE)
+      .build();
+    when(accountSettingsLoadingCacheMock.getAccount(OUTGOING_ACCOUNT_ID))
+      .thenReturn(Optional.of(outgoingAccountSettings));
+
+    // No FX/expiry changes, to keep things simple.
+    final NextHopInfo nextHopInfo = NextHopInfo.builder()
+      .nextHopAccountId(OUTGOING_ACCOUNT_ID)
+      .nextHopPacket(PREPARE_PACKET)
+      .build();
+    when(nextHopPacketMapperMock.getNextHopPacket(eq(incomingAccountSettings), eq(PREPARE_PACKET)))
+      .thenReturn(nextHopInfo);
+    when(linkManagerMock.getOrCreateLink(outgoingAccountSettings)).thenReturn(outgoingLink);
+    when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
+
+    // Do the send numReps times to prove that the cache is working...
+
+    final AbstractInterledgerPreparePacket expiredPreparePacket = InterledgerPreparePacket
+      .builder()
+      .destination(InterledgerAddress.of("test.foo"))
+      .amount(UnsignedLong.ONE)
+      .expiresAt(Instant.MIN) // definitely expired!
+      .executionCondition(InterledgerCondition.of(new byte[32]))
+      .build();
+
+    packetSwitch.switchPacket(INCOMING_ACCOUNT_ID, PREPARE_PACKET).handle(
+      fulfillPacket -> assertThat(fulfillPacket.getFulfillment()).isEqualTo(LoopbackLink.LOOPBACK_FULFILLMENT),
+      rejectPacket -> fail("Should have fulfilled but rejected!")
+    );
+
+    verify(packetSwitchFiltersMock).size();
+    verify(linkFiltersMock).size();
+    verify(linkManagerMock).getOrCreateLink(outgoingAccountSettings);
+    verify(nextHopPacketMapperMock).getNextHopPacket(incomingAccountSettings, PREPARE_PACKET);
+    verify(accountSettingsLoadingCacheMock, times(2)).getAccount(any());
+    verify(nextHopPacketMapperMock).determineExchangeRate(any(), any(), any());
+
+    verifyNoInteractions(connectorExceptionHandlerMock);
+    verifyNoInteractions(packetRejectorMock);
+    verifyNoMoreInteractions(packetSwitchFiltersMock);
+    verifyNoMoreInteractions(nextHopPacketMapperMock);
+    verifyNoMoreInteractions(linkFiltersMock);
+    verifyNoMoreInteractions(accountSettingsLoadingCacheMock);
+  }
+
 
 }
