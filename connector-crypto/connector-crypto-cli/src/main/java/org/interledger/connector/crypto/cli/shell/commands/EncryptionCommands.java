@@ -126,7 +126,7 @@ public class EncryptionCommands {
         .keyIdentifier(encryptionKeyIdentifier.get())
         .keyVersion(encryptionKeyVersion)
         .keyringIdentifier(keyringIdentifier.get())
-        .platformIdentifier(keyStoreType.name())
+        .platformIdentifier(keyStoreType.getKeystoreId())
         .build();
 
       final EncryptedSecret encryptedSecret =
@@ -140,7 +140,7 @@ public class EncryptionCommands {
       final EncryptionService encryptionService = new JksEncryptionService(secret0Key);
 
       final KeyMetadata keyMetadata = KeyMetadata.builder()
-        .platformIdentifier(keyStoreType.name())
+        .platformIdentifier(keyStoreType.getKeystoreId())
         .keyringIdentifier(jksFileName)
         .keyIdentifier(secret0KeyAlias)
         .keyVersion("1")
