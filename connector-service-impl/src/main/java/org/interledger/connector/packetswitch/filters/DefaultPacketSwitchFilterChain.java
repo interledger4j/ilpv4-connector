@@ -139,7 +139,7 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
         return response;
       }
     } catch (Exception e) {
-      // If any given packet switch emits an exception, this is considered a failure case. These always translate
+      // If anything in the filterchain emits an exception, this is considered a failure case. These always translate
       // into a rejection.
       logger.error("Failure in PacketSwitchFilterChain: " + e.getMessage(), e);
       if (InterledgerRuntimeException.class.isAssignableFrom(e.getClass())) {
