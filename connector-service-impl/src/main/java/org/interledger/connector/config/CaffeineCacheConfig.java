@@ -51,7 +51,7 @@ public class CaffeineCacheConfig {
   public Cache<AccountId, Optional<AccountSettings>> accountSettingsCache(CacheMetricsCollector cacheMetricsCollector) {
     final Cache<AccountId, Optional<AccountSettings>> accountSettingsCache = Caffeine.newBuilder()
         .recordStats() // Publish stats to Prometheus.
-        .expireAfterAccess(15, TimeUnit.MINUTES) // TODO Make this duration configurable
+        .expireAfterWrite(15, TimeUnit.MINUTES) // TODO Make this duration configurable
         .maximumSize(5000) // TODO: Make size configurable.
         .build();
 
@@ -82,7 +82,7 @@ public class CaffeineCacheConfig {
     final Cache<AccountId, Optional<RateLimiter>> rateLimiterCache = Caffeine.newBuilder()
         .recordStats() // Publish stats to prometheus
         //.maximumSize(100) // Not enabled for now in order to support many accounts.
-        .expireAfterAccess(30, TimeUnit.SECONDS)
+        .expireAfterWrite(30, TimeUnit.SECONDS)
         .build(); // No default loading function.
 
     cacheMetricsCollector.addCache("rateLimiterCache", rateLimiterCache);
@@ -100,7 +100,7 @@ public class CaffeineCacheConfig {
                                                       @Value("${interledger.connector.cache.fxTtl:30}") long fxCacheTimeout) {
     final Cache<ConversionQuery, ExchangeRate> fxCache = Caffeine.newBuilder()
         .recordStats() // Publish stats to prometheus
-        .expireAfterAccess(fxCacheTimeout, TimeUnit.SECONDS)
+        .expireAfterWrite(fxCacheTimeout, TimeUnit.SECONDS)
         .build(); // No default loading function.
 
     cacheMetricsCollector.addCache("fxCache", fxCache);
