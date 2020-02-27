@@ -2,6 +2,7 @@ package org.interledger.connector.links;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
@@ -27,6 +28,7 @@ import org.interledger.core.InterledgerProtocolException;
 import org.interledger.link.LoopbackLink;
 
 import com.google.common.primitives.UnsignedLong;
+import org.assertj.core.internal.bytebuddy.matcher.StringMatcher;
 import org.javamoney.moneta.spi.DefaultNumberValue;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -43,6 +45,7 @@ import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.function.Supplier;
+
 import javax.money.MonetaryAmount;
 import javax.money.convert.CurrencyConversion;
 import javax.money.convert.ExchangeRate;
@@ -154,6 +157,22 @@ public class DefaultNextHopPacketMapperTest {
 
     expectedException.expect(InterledgerProtocolException.class);
     expectedException.expectMessage("Refusing to route payments back to sender");
+    mapper.getNextHopPacket(settings, preparePacket);
+  }
+
+  @Test
+  public void getNextHopPacketWhenExpired() {
+    Instant now = Instant.now(clock);
+    AccountSettings settings = defaultSenderAccountSettings().build();
+    InterledgerPreparePacket preparePacket = defaultPreparePacket(now).expiresAt(now.minusSeconds(30)).build();
+
+    when(mockAccountCache.safeGetAccountId(NEXT_HOP.nextHopAccountId()))
+      .thenReturn(defaultNextHopSettings().build());
+
+    when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.of(NEXT_HOP));
+
+    expectedException.expect(InterledgerProtocolException.class);
+    expectedException.expectMessage("Source transfer has already expired.");
     mapper.getNextHopPacket(settings, preparePacket);
   }
 
