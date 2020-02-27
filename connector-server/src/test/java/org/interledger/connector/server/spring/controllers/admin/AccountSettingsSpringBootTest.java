@@ -278,11 +278,9 @@ public class AccountSettingsSpringBootTest {
       .build();
 
     AccountSettings created = assertPostAccountCreated(settings);
-    Optional<AccountSettings> fetched = adminApiTestClient.findAccount(accountId.value());
-    assertThat(fetched).isPresent().hasValue(created);
-    adminApiTestClient.deleteAccount(accountId.value());
-    Optional<AccountSettings> fetchedAgain = adminApiTestClient.findAccount(accountId.value());
-    assertThat(fetchedAgain).isNotPresent();
+
+    assertThat(((String) created.customSettings().get(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN)).startsWith("enc:jks:crypto/crypto.p12:secret0:1:aes_gcm"));
+    assertThat(((String) created.customSettings().get(OutgoingLinkSettings.HTTP_OUTGOING_SIMPLE_AUTH_TOKEN)).startsWith("enc:jks:crypto/crypto.p12:secret0:1:aes_gcm"));
   }
 
   @Test
@@ -304,8 +302,11 @@ public class AccountSettingsSpringBootTest {
 
     AccountSettings created = assertPostAccountCreated(settings);
 
-    assertThat(((String) created.customSettings().get(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN)).startsWith("enc:jks:crypto/crypto.p12:secret0:1:aes_gcm"));
-    assertThat(((String) created.customSettings().get(OutgoingLinkSettings.HTTP_OUTGOING_SIMPLE_AUTH_TOKEN)).startsWith("enc:jks:crypto/crypto.p12:secret0:1:aes_gcm"));
+    Optional<AccountSettings> fetched = adminApiTestClient.findAccount(accountId.value());
+    assertThat(fetched).isPresent().hasValue(created);
+    adminApiTestClient.deleteAccount(accountId.value());
+    Optional<AccountSettings> fetchedAgain = adminApiTestClient.findAccount(accountId.value());
+    assertThat(fetchedAgain).isNotPresent();
   }
 
   @Test
