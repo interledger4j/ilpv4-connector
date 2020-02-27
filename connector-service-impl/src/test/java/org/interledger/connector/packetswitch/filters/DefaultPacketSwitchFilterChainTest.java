@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -23,8 +24,10 @@ import org.interledger.connector.links.NextHopPacketMapper;
 import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
+import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.link.Link;
 import org.interledger.link.LinkSettings;
 import org.interledger.link.LoopbackLink;
@@ -43,6 +46,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Unit tests for {@link DefaultPacketSwitchFilterChain}.
@@ -91,6 +95,13 @@ public class DefaultPacketSwitchFilterChainTest {
     .executionCondition(InterledgerCondition.of(new byte[32]))
     .build();
 
+  private AtomicBoolean packetSwitchFilter1PreProcessed;
+  private AtomicBoolean packetSwitchFilter1PostProcessed;
+  private AtomicBoolean packetSwitchFilter2PreProcessed;
+  private AtomicBoolean packetSwitchFilter2PostProcessed;
+  private AtomicBoolean packetSwitchFilter3PreProcessed;
+  private AtomicBoolean packetSwitchFilter3PostProcessed;
+
   @Mock
   private List<LinkFilter> linkFiltersMock;
   @Mock
@@ -105,14 +116,19 @@ public class DefaultPacketSwitchFilterChainTest {
   private PacketEventPublisher packetEventPublisherMock;
 
   private Link outgoingLink;
-
   private List<PacketSwitchFilter> packetSwitchFilters;
-
   private DefaultPacketSwitchFilterChain filterChain;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
+
+    packetSwitchFilter1PreProcessed = new AtomicBoolean(false);
+    packetSwitchFilter2PreProcessed = new AtomicBoolean(false);
+    packetSwitchFilter3PreProcessed = new AtomicBoolean(false);
+    packetSwitchFilter1PostProcessed = new AtomicBoolean(false);
+    packetSwitchFilter2PostProcessed = new AtomicBoolean(false);
+    packetSwitchFilter3PostProcessed = new AtomicBoolean(false);
 
     this.packetSwitchFilters = Lists.newArrayList();
 
@@ -123,6 +139,7 @@ public class DefaultPacketSwitchFilterChainTest {
     );
 
     this.filterChain = new DefaultPacketSwitchFilterChain(
+      new PacketRejector(() -> OPERATOR_ADDRESS),
       packetSwitchFilters,
       linkFiltersMock,
       localDestinationAddressUtilsMock,
@@ -211,6 +228,310 @@ public class DefaultPacketSwitchFilterChainTest {
   }
 
   /**
+   * In this test, an exception is thrown in the first filter. The test verifies that only filters 1 is processed, but
+   * filter 2, 3, and the rest of the filter-chain are un-processed.
+   */
+  @Test
+  public void filterPacketWithExceptionInFirstFilter() {
+    final PacketSwitchFilter packetSwitchFilter1 = (sourceAccountSettings, sourcePreparePacket, filterChain) -> {
+      packetSwitchFilter1PreProcessed.set(true);
+      throw new RuntimeException("Simulated PacketSwitchFilter exception");
+    };
+    this.packetSwitchFilters.add(packetSwitchFilter1);
+
+    final PacketSwitchFilter packetSwitchFilter2 = (sourceAccountSettings, sourcePreparePacket, filterChain) -> {
+      packetSwitchFilter2PreProcessed.set(true);
+      InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
+      packetSwitchFilter2PostProcessed.set(true);
+      return responsePacket;
+    };
+    this.packetSwitchFilters.add(packetSwitchFilter2);
+
+    final PacketSwitchFilter packetSwitchFilter3 = (sourceAccountSettings, sourcePreparePacket, filterChain) -> {
+      packetSwitchFilter3PreProcessed.set(true);
+      InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
+      packetSwitchFilter3PostProcessed.set(true);
+      return responsePacket;
+    };
+    this.packetSwitchFilters.add(packetSwitchFilter3);
+
+    assertThat(this.packetSwitchFilters.size()).isEqualTo(3);
+
+    final NextHopInfo nextHopInfo = NextHopInfo.builder()
+      .nextHopAccountId(OUTGOING_ACCOUNT_ID)
+      .nextHopPacket(PREPARE_PACKET)
+      .build();
+    when(nextHopPacketMapperMock.getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET)).thenReturn(nextHopInfo);
+    when(linkManagerMock.getOrCreateLink(Mockito.<AccountSettings>any())).thenReturn(outgoingLink);
+    when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
+
+    filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET).handle(
+      fulfillPacket -> fail("Should have rejected but fulfilled!"),
+      rejectPacket -> assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.T00_INTERNAL_ERROR)
+    );
+
+    // Exception in first filter means 2 and 3 don't get called.
+    assertThat(packetSwitchFilter1PreProcessed).isTrue();
+    assertThat(packetSwitchFilter1PostProcessed).isFalse();
+    assertThat(packetSwitchFilter2PreProcessed).isFalse();
+    assertThat(packetSwitchFilter2PostProcessed).isFalse();
+    assertThat(packetSwitchFilter3PreProcessed).isFalse();
+    assertThat(packetSwitchFilter3PostProcessed).isFalse();
+
+    verifyNoInteractions(nextHopPacketMapperMock);
+    verifyNoInteractions(linkFiltersMock);
+    verifyNoInteractions(accountSettingsLoadingCacheMock);
+    verifyNoInteractions(packetEventPublisherMock);
+  }
+
+  /**
+   * In this test, an exception is thrown in the second filter. The test verifies that only filter 1 and 2 are
+   * processed, but filter 3 and the rest of the filter-chain are un-processed.
+   */
+  @Test
+  public void filterPacketWithExceptionInMiddleFilter() {
+    final PacketSwitchFilter packetSwitchFilter1 = (sourceAccountSettings, sourcePreparePacket, filterChain) -> {
+      packetSwitchFilter1PreProcessed.set(true);
+      InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
+      packetSwitchFilter1PostProcessed.set(true);
+      return responsePacket;
+    };
+    this.packetSwitchFilters.add(packetSwitchFilter1);
+
+    final PacketSwitchFilter packetSwitchFilter2 = (sourceAccountSettings, sourcePreparePacket, filterChain) -> {
+      packetSwitchFilter2PreProcessed.set(true);
+      throw new RuntimeException("Simulated PacketSwitchFilter exception");
+    };
+    this.packetSwitchFilters.add(packetSwitchFilter2);
+
+    final PacketSwitchFilter packetSwitchFilter3 = (sourceAccountSettings, sourcePreparePacket, filterChain) -> {
+      packetSwitchFilter3PreProcessed.set(true);
+      InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
+      packetSwitchFilter3PostProcessed.set(true);
+      return responsePacket;
+    };
+    this.packetSwitchFilters.add(packetSwitchFilter3);
+
+    assertThat(this.packetSwitchFilters.size()).isEqualTo(3);
+
+    final NextHopInfo nextHopInfo = NextHopInfo.builder()
+      .nextHopAccountId(OUTGOING_ACCOUNT_ID)
+      .nextHopPacket(PREPARE_PACKET)
+      .build();
+    when(nextHopPacketMapperMock.getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET)).thenReturn(nextHopInfo);
+    when(linkManagerMock.getOrCreateLink(Mockito.<AccountSettings>any())).thenReturn(outgoingLink);
+    when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
+
+    filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET).handle(
+      fulfillPacket -> fail("Should have rejected but fulfilled!"),
+      rejectPacket -> assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.T00_INTERNAL_ERROR)
+    );
+
+    // Exception in second filter means 1 and 2 get called, but not 3.
+    assertThat(packetSwitchFilter1PreProcessed).isTrue();
+    assertThat(packetSwitchFilter1PostProcessed).isTrue();
+    assertThat(packetSwitchFilter2PreProcessed).isTrue();
+    assertThat(packetSwitchFilter2PostProcessed).isFalse();
+    assertThat(packetSwitchFilter3PreProcessed).isFalse();
+    assertThat(packetSwitchFilter3PostProcessed).isFalse();
+
+    verifyNoInteractions(nextHopPacketMapperMock);
+    verifyNoInteractions(linkFiltersMock);
+    verifyNoInteractions(accountSettingsLoadingCacheMock);
+    verifyNoInteractions(packetEventPublisherMock);
+  }
+
+  /**
+   * In this test, an exception is thrown in the last filter. The test verifies that filters 1 and 2 are still
+   * processed.
+   */
+  @Test
+  public void filterPacketWithExceptionInLastFilter() {
+    final PacketSwitchFilter packetSwitchFilter1 = (sourceAccountSettings, sourcePreparePacket, filterChain) -> {
+      packetSwitchFilter1PreProcessed.set(true);
+      InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
+      packetSwitchFilter1PostProcessed.set(true);
+      return responsePacket;
+    };
+    this.packetSwitchFilters.add(packetSwitchFilter1);
+
+    final PacketSwitchFilter packetSwitchFilter2 = (sourceAccountSettings, sourcePreparePacket, filterChain) -> {
+      packetSwitchFilter2PreProcessed.set(true);
+      InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
+      packetSwitchFilter2PostProcessed.set(true);
+      return responsePacket;
+    };
+    this.packetSwitchFilters.add(packetSwitchFilter2);
+
+    final PacketSwitchFilter packetSwitchFilter3 = (sourceAccountSettings, sourcePreparePacket, filterChain) -> {
+      packetSwitchFilter3PreProcessed.set(true);
+      throw new RuntimeException("Simulated PacketSwitchFilter exception");
+    };
+    this.packetSwitchFilters.add(packetSwitchFilter3);
+
+    assertThat(this.packetSwitchFilters.size()).isEqualTo(3);
+
+    final NextHopInfo nextHopInfo = NextHopInfo.builder()
+      .nextHopAccountId(OUTGOING_ACCOUNT_ID)
+      .nextHopPacket(PREPARE_PACKET)
+      .build();
+    when(nextHopPacketMapperMock.getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET)).thenReturn(nextHopInfo);
+    when(linkManagerMock.getOrCreateLink(Mockito.<AccountSettings>any())).thenReturn(outgoingLink);
+    when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
+
+    filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET).handle(
+      fulfillPacket -> fail("Should have rejected but fulfilled!"),
+      rejectPacket -> assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.T00_INTERNAL_ERROR)
+    );
+
+    // Exception in last filter means 1 and 2 get called, but only half of 3.
+    assertThat(packetSwitchFilter1PreProcessed).isTrue();
+    assertThat(packetSwitchFilter1PostProcessed).isTrue();
+    assertThat(packetSwitchFilter2PreProcessed).isTrue();
+    assertThat(packetSwitchFilter2PostProcessed).isTrue();
+    assertThat(packetSwitchFilter3PreProcessed).isTrue();
+    assertThat(packetSwitchFilter3PostProcessed).isFalse();
+
+    verifyNoInteractions(nextHopPacketMapperMock);
+    verifyNoInteractions(linkFiltersMock);
+    verifyNoInteractions(accountSettingsLoadingCacheMock);
+    verifyNoInteractions(packetEventPublisherMock);
+  }
+
+  /**
+   * In this test, an exception is thrown from the NextHopPacketMapper, in the final portion of the Filter-chain (after
+   * all of the filters have been processed). This test verifies that all filters are processed on the return-path. For
+   * example, the Balance Tracking filter always needs to process both sides of a call. If the FilterChain aborts this
+   * processing, then it's possible that balance tracking logic will be incorrect.
+   *
+   * @see "https://github.com/interledger4j/ilpv4-connector/issues/593"
+   * @see "https://github.com/interledger4j/ilpv4-connector/issues/588"
+   */
+  @Test
+  public void filterPacketWithExpiredPacket() {
+    final PacketSwitchFilter packetSwitchFilter1 = (sourceAccountSettings, sourcePreparePacket, filterChain) -> {
+      packetSwitchFilter1PreProcessed.set(true);
+      InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
+      packetSwitchFilter1PostProcessed.set(true);
+      return responsePacket;
+    };
+    this.packetSwitchFilters.add(packetSwitchFilter1);
+
+    final PacketSwitchFilter packetSwitchFilter2 = (sourceAccountSettings, sourcePreparePacket, filterChain) -> {
+      packetSwitchFilter2PreProcessed.set(true);
+      InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
+      packetSwitchFilter2PostProcessed.set(true);
+      return responsePacket;
+    };
+    this.packetSwitchFilters.add(packetSwitchFilter2);
+
+    final PacketSwitchFilter packetSwitchFilter3 = (sourceAccountSettings, sourcePreparePacket, filterChain) -> {
+      packetSwitchFilter3PreProcessed.set(true);
+      InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
+      packetSwitchFilter3PostProcessed.set(true);
+      return responsePacket;
+    };
+    this.packetSwitchFilters.add(packetSwitchFilter3);
+
+    assertThat(this.packetSwitchFilters.size()).isEqualTo(3);
+
+    // Simulate an exception in NextHopPacketMapper (e.g., an expired packet).
+    when(nextHopPacketMapperMock.getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET))
+      .thenThrow(new RuntimeException("Simulated Exception"));
+    when(linkManagerMock.getOrCreateLink(Mockito.<AccountSettings>any())).thenReturn(outgoingLink);
+    when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
+
+    filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET).handle(
+      fulfillPacket -> fail("Should have rejected but fulfilled!"),
+      rejectPacket -> assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.T00_INTERNAL_ERROR)
+    );
+
+    // All filters should be pre and post processed.
+    assertThat(packetSwitchFilter1PreProcessed).isTrue();
+    assertThat(packetSwitchFilter1PostProcessed).isTrue();
+    assertThat(packetSwitchFilter2PreProcessed).isTrue();
+    assertThat(packetSwitchFilter2PostProcessed).isTrue();
+    assertThat(packetSwitchFilter3PreProcessed).isTrue();
+    assertThat(packetSwitchFilter3PostProcessed).isTrue();
+
+    verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET);
+    verifyNoMoreInteractions(nextHopPacketMapperMock);
+    verifyNoInteractions(linkFiltersMock);
+    verifyNoInteractions(accountSettingsLoadingCacheMock);
+    verifyNoInteractions(packetEventPublisherMock);
+  }
+
+  /**
+   * In this test, an exception is thrown in the final portion of the Filter-chain (after all of the filters have been
+   * processed) but from a source that is slightly different from {@link #filterPacketWithExpiredPacket}. This test is
+   * basically verifying the same thing as that test, but from a slightly different location in the code path. Because
+   * the try-catch in the filterChain is very broad (i.e., the entire doFilter is wrapped), we dont need to test _every_
+   * exception source. Instead, two places are chosen to get some coverage, but full coverage is not necessary here.
+   *
+   * @see "https://github.com/interledger4j/ilpv4-connector/issues/593"
+   * @see "https://github.com/interledger4j/ilpv4-connector/issues/588"
+   */
+  @Test
+  public void filterPacketWithInvalidFx() {
+    final PacketSwitchFilter packetSwitchFilter1 = (sourceAccountSettings, sourcePreparePacket, filterChain) -> {
+      packetSwitchFilter1PreProcessed.set(true);
+      InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
+      packetSwitchFilter1PostProcessed.set(true);
+      return responsePacket;
+    };
+    this.packetSwitchFilters.add(packetSwitchFilter1);
+
+    final PacketSwitchFilter packetSwitchFilter2 = (sourceAccountSettings, sourcePreparePacket, filterChain) -> {
+      packetSwitchFilter2PreProcessed.set(true);
+      InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
+      packetSwitchFilter2PostProcessed.set(true);
+      return responsePacket;
+    };
+    this.packetSwitchFilters.add(packetSwitchFilter2);
+
+    final PacketSwitchFilter packetSwitchFilter3 = (sourceAccountSettings, sourcePreparePacket, filterChain) -> {
+      packetSwitchFilter3PreProcessed.set(true);
+      InterledgerResponsePacket responsePacket = filterChain.doFilter(sourceAccountSettings, sourcePreparePacket);
+      packetSwitchFilter3PostProcessed.set(true);
+      return responsePacket;
+    };
+    this.packetSwitchFilters.add(packetSwitchFilter3);
+
+    assertThat(this.packetSwitchFilters.size()).isEqualTo(3);
+
+    final NextHopInfo nextHopInfo = NextHopInfo.builder()
+      .nextHopAccountId(PING_ACCOUNT_ID)
+      .nextHopPacket(PREPARE_PACKET)
+      .build();
+    when(nextHopPacketMapperMock.getNextHopPacket(eq(INCOMING_ACCOUNT_SETTINGS), eq(PREPARE_PACKET)))
+      .thenReturn(nextHopInfo);
+    // Simulate an exception in the Link manager.
+    when(linkManagerMock.getOrCreateLink(Mockito.<AccountSettings>any()))
+      .thenThrow(new RuntimeException("Simulated Link Exception"));
+    when(nextHopPacketMapperMock.determineExchangeRate(any(), any(), any())).thenReturn(BigDecimal.ZERO);
+
+    filterChain.doFilter(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET).handle(
+      fulfillPacket -> fail("Should have rejected but fulfilled!"),
+      rejectPacket -> assertThat(rejectPacket.getCode()).isEqualTo(InterledgerErrorCode.T00_INTERNAL_ERROR)
+    );
+
+    // All filters should be pre and post processed.
+    assertThat(packetSwitchFilter1PreProcessed).isTrue();
+    assertThat(packetSwitchFilter1PostProcessed).isTrue();
+    assertThat(packetSwitchFilter2PreProcessed).isTrue();
+    assertThat(packetSwitchFilter2PostProcessed).isTrue();
+    assertThat(packetSwitchFilter3PreProcessed).isTrue();
+    assertThat(packetSwitchFilter3PostProcessed).isTrue();
+
+    verify(nextHopPacketMapperMock).getNextHopPacket(INCOMING_ACCOUNT_SETTINGS, PREPARE_PACKET);
+    verify(accountSettingsLoadingCacheMock).getAccount(any());
+    verifyNoMoreInteractions(nextHopPacketMapperMock);
+    verifyNoMoreInteractions(accountSettingsLoadingCacheMock);
+    verifyNoInteractions(linkFiltersMock);
+    verifyNoInteractions(packetEventPublisherMock);
+  }
+
+  /**
    * Validates functionality for the Ping Link.
    */
   @Test
@@ -256,7 +577,6 @@ public class DefaultPacketSwitchFilterChainTest {
     verifyNoMoreInteractions(nextHopPacketMapperMock);
     verifyNoMoreInteractions(linkFiltersMock);
   }
-
 
   /**
    * Tests only the local vs forwarding functionality of the filter chain when an account IS a locally fulfilled SPSP
@@ -339,4 +659,19 @@ public class DefaultPacketSwitchFilterChainTest {
     verifyNoMoreInteractions(linkManagerMock);
   }
 
+  @Test
+  public void computeLinkForLocalSpsp() {
+    when(localDestinationAddressUtilsMock.isLocalSpspDestinationAddress(any())).thenReturn(true);
+    filterChain.computeLink(INCOMING_ACCOUNT_SETTINGS, InterledgerAddress.of("example.foo"));
+    verify(linkManagerMock).getOrCreateSpspReceiverLink(INCOMING_ACCOUNT_SETTINGS);
+    verifyNoMoreInteractions(linkManagerMock);
+  }
+
+  @Test
+  public void computeLinkForForwardingAccount() {
+    when(localDestinationAddressUtilsMock.isLocalSpspDestinationAddress(any())).thenReturn(false);
+    filterChain.computeLink(INCOMING_ACCOUNT_SETTINGS, InterledgerAddress.of("example.foo"));
+    verify(linkManagerMock).getOrCreateLink(INCOMING_ACCOUNT_SETTINGS);
+    verifyNoMoreInteractions(linkManagerMock);
+  }
 }

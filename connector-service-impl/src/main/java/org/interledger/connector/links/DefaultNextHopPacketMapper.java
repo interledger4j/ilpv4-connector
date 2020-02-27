@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
 import javax.money.CurrencyUnit;
 import javax.money.Monetary;
 import javax.money.MonetaryAmount;
@@ -145,7 +146,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     // higher than the precision of the outbound link. For example, a packet with 99 units coming into the Connector
     // on an inbound USD link with a scale of 2 (e.g., 99 cents) might map to a USD link with a scale of 0 (i.e., 1
     // unit equals 1 US Dollar). This will translate into a value of 0 on the outbound linke because of the way the
-    // Connector implements rouding. If this happens enough, the incoming link will continue to spend money that
+    // Connector implements rounding. If this happens enough, the incoming link will continue to spend money that
     // will show up in the outbound Link. Generally, this will result in a rejection from the outbound link, but
     // just in case we want the Connector operator to be able to detect this condition.
     if (!sourcePacket.getAmount().equals(UnsignedLong.ZERO) && UnsignedLong.ZERO.equals(nextAmount)) {
@@ -254,6 +255,22 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     return destCurrencyConversion.getExchangeRate(sourceAmount).getFactor().numberValue(BigDecimal.class);
   }
 
+  /**
+   * Determine the correct expiration date/time for a packet based upon the supplied inputs. Generally, this method will
+   * reduce the supplied {@code sourceExpiry} value by some configurable amount, which is the amount of time the
+   * Connector estimates it needs to process the outgoing packet's response from any upstream ILP node.
+   *
+   * @param clock              A {@link Clock}, useful for testing purposes.
+   * @param sourceExpiry       An {@link Instant} representing the expiry found in the incoming prepare packet.
+   * @param destinationAddress An {@link InterledgerAddress} so that this function can optionally ignore expiry
+   *                           adjustments depending on the destination address.
+   *
+   * @return An {@link Instant} that represents the new expiry of this packet. This value will be propagated to any
+   *   next-hops.
+   *
+   * @throws InterledgerProtocolException if the computed timeout is before `now` (i.e., the packet is already
+   *                                      expired).
+   */
   @VisibleForTesting
   protected Instant determineDestinationExpiresAt(
     final Clock clock, final Instant sourceExpiry, final InterledgerAddress destinationAddress
