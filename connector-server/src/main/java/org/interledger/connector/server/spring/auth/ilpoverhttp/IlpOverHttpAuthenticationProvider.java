@@ -99,7 +99,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
       .maximumSize(5000)
       // Expire after this duration, which will correspond to the last incoming request from the peer.
       // TODO: This value should be configurable and match the server-global token expiry.
-      .expireAfterAccess(30, TimeUnit.MINUTES)
+      .expireAfterWrite(30, TimeUnit.MINUTES)
       .removalListener((RemovalListener<DecisionsCacheKey, AuthenticationDecision>)
         (authenticationRequest, authenticationDecision, cause) ->
           logger.debug("Removing IlpOverHttp AuthenticationDecision from Cache for Principal: {}",

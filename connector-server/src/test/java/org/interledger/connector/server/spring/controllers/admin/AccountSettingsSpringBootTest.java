@@ -278,8 +278,35 @@ public class AccountSettingsSpringBootTest {
       .build();
 
     AccountSettings created = assertPostAccountCreated(settings);
+
     assertThat(((String) created.customSettings().get(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN)).startsWith("enc:jks:crypto/crypto.p12:secret0:1:aes_gcm"));
     assertThat(((String) created.customSettings().get(OutgoingLinkSettings.HTTP_OUTGOING_SIMPLE_AUTH_TOKEN)).startsWith("enc:jks:crypto/crypto.p12:secret0:1:aes_gcm"));
+  }
+
+  @Test
+  public void testGetDeleteAccountWithDot() throws IOException {
+    Map<String, Object> customSettings = com.google.common.collect.Maps.newHashMap();
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.SIMPLE.name());
+    customSettings.put(IncomingLinkSettings.HTTP_INCOMING_SIMPLE_AUTH_TOKEN, INCOMING_SECRET);
+
+    final AccountId accountId = AccountId.of(UUID.randomUUID().toString() + ".test");
+    AccountSettings settings = AccountSettings.builder()
+      .accountId(accountId)
+      .accountRelationship(AccountRelationship.CHILD)
+      .assetCode("FUD")
+      .assetScale(6)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
+      .createdAt(Instant.now())
+      .customSettings(customSettings)
+      .build();
+
+    AccountSettings created = assertPostAccountCreated(settings);
+
+    Optional<AccountSettings> fetched = adminApiTestClient.findAccount(accountId.value());
+    assertThat(fetched).isPresent().hasValue(created);
+    adminApiTestClient.deleteAccount(accountId.value());
+    Optional<AccountSettings> fetchedAgain = adminApiTestClient.findAccount(accountId.value());
+    assertThat(fetchedAgain).isNotPresent();
   }
 
   @Test
