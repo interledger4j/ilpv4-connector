@@ -13,10 +13,23 @@
   </appender>
 
   <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
-    <appender-ref ref="STDOUT" />
+    <appender-ref ref="STDOUT"/>
+  </appender>
+
+  <!-- Configure the Sentry appender, overriding the logging threshold to the WARN level -->
+  <!-- NOTE: the env property SENTRY_DSN must be set. E.g., SENTRY_DSN=https://public:private@host:port/1 -->
+  <appender name="SENTRY" class="io.sentry.logback.SentryAppender">
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>WARN</level>
+    </filter>
+    <!-- Optionally add an encoder -->
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
   </appender>
 
   <root level="INFO">
     <appender-ref ref="ASYNC"/>
+    <appender-ref ref="SENTRY"/>
   </root>
 </configuration>
