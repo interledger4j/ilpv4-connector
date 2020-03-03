@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
@@ -259,8 +260,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
         // instead, it will be logged and skipped
         try {
           return Stream.of(linkManager.getOrCreateLink(account));
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
           logger.warn("Could not configure link for account " + account.accountId(), e);
           return Stream.empty();
         }
