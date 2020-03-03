@@ -1,5 +1,6 @@
 # See https://docs.spring.io/spring-boot/docs/current/reference/html/common-application-properties.html
 logging:
+  config: classpath:logback-spring.xml
   level:
     ROOT: INFO
     com: INFO

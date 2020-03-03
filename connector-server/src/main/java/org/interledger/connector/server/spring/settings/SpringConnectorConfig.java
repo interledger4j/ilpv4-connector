@@ -86,6 +86,7 @@ import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.link.PacketRejector;
 import org.interledger.link.PingLoopbackLink;
 
+import ch.qos.logback.classic.LoggerContext;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -97,6 +98,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -105,14 +107,19 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.core.env.Environment;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import javax.annotation.PostConstruct;
 
 /**
  * <p>Primary configuration for the Connector.</p>
@@ -140,7 +147,7 @@ import java.util.function.Supplier;
 // support extension by looking for annotated Component/Config classes under the configured extensions.basePackage
 @ComponentScan(basePackages = "${interledger.connector.extensions.basePackage:org.interledger.connector.extensions}",
   useDefaultFilters = false,
-  includeFilters = @ComponentScan.Filter(type= FilterType.ANNOTATION, value = Component.class)
+  includeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, value = Component.class)
 )
 public class SpringConnectorConfig {
 
@@ -156,6 +163,15 @@ public class SpringConnectorConfig {
   @Autowired
   private DeletedAccountSettingsRepository deletedAccountSettingsRepository;
 
+  @Autowired
+  private Environment env;
+
+  @Autowired
+  private BuildProperties buildProperties;
+
+  @Autowired
+  private Supplier<ConnectorSettings> connectorSettingsSupplier;
+
   @Value("${interledger.connector.enabledFeatures.localSpspFulfillmentEnabled:false}")
   private boolean localSpspFulfillmentEnabled;
 
@@ -164,6 +180,19 @@ public class SpringConnectorConfig {
 
   @Value("${interledger.connector.globalRoutingSettings.localAccountsAddressSegment:accounts}")
   private String localAccountsAddressPrefixSegment;
+
+  /**
+   * <p>Initialize the connector after constructing it.</p>
+   */
+  @PostConstruct
+  @SuppressWarnings("PMD.UnusedPrivateMethod")
+  private void init() {
+    // Configure Sentry
+    LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+    context.putProperty("node-ilp-address", connectorSettingsSupplier.get().operatorAddress().getValue());
+    context.putProperty("release", buildProperties.getVersion());
+    context.putProperty("spring-profiles", Arrays.stream(env.getActiveProfiles()).collect(Collectors.joining(" ")));
+  }
 
   /**
    * All internal Connector events propagate locally in this JVM using this EventBus.

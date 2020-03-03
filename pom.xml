@@ -223,11 +223,15 @@
         <scope>test</scope>
         <version>0.6</version>
       </dependency>
-
       <dependency>
         <groupId>io.grpc</groupId>
         <artifactId>grpc-api</artifactId>
         <version>1.25.0</version> <!-- this should match the other grpc dependency versions in spring-cloud bom -->
+      </dependency>
+      <dependency>
+        <groupId>io.sentry</groupId>
+        <artifactId>sentry-logback</artifactId>
+        <version>1.7.30</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -458,6 +462,8 @@
                   <!-- Not used for compile time, only for OkHttp 4 support-->
                   <ignoredDependency>com.fasterxml.jackson.module:jackson-module-kotlin:jar</ignoredDependency>
 
+                  <!-- Sentry is not used directly in code, but needs to be a dependency in order to work. -->
+                  <ignoredDependency>io.sentry:sentry-logback:jar</ignoredDependency>
                   <ignoredDependency>com.h2database:h2:jar</ignoredDependency>
                   <ignoredDependency>org.hibernate:hibernate-entitymanager</ignoredDependency>
                   <ignoredDependency>org.liquibase:liquibase-core:jar</ignoredDependency>
