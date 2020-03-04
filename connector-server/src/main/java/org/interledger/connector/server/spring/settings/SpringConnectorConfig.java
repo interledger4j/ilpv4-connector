@@ -190,6 +190,9 @@ public class SpringConnectorConfig {
     // Configure Sentry
     LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
     context.putProperty("node-ilp-address", connectorSettingsSupplier.get().operatorAddress().getValue());
+    context.putProperty("name", buildProperties.getName());
+    context.putProperty("group", buildProperties.getGroup());
+    context.putProperty("artifact", buildProperties.getArtifact());
     context.putProperty("release", buildProperties.getVersion());
     context.putProperty("spring-profiles", Arrays.stream(env.getActiveProfiles()).collect(Collectors.joining(" ")));
   }
