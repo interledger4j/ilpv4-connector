@@ -5,6 +5,7 @@ import static org.interledger.connector.core.ConfigConstants.ILP_OVER_HTTP_ENABL
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 
 import org.interledger.connector.jackson.ObjectMapperFactory;
+import org.interledger.connector.persistence.converters.AccessTokenEntityConverter;
 import org.interledger.connector.persistence.converters.AccountBalanceSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.AccountSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.FxRateOverridesEntityConverter;
@@ -82,6 +83,9 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
   @Autowired
   private StaticRouteEntityConverter staticRouteEntityConverter;
 
+  @Autowired
+  private AccessTokenEntityConverter accessTokenEntityConverter;
+
   ////////////////////////
   // HttpMessageConverters
   ////////////////////////
@@ -132,6 +136,7 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
     registry.addConverter(accountSettingsConverter);
     registry.addConverter(fxRateOverrideEntityConverter);
     registry.addConverter(staticRouteEntityConverter);
+    registry.addConverter(accessTokenEntityConverter);
   }
 
   @VisibleForTesting

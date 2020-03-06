@@ -1,15 +1,26 @@
 package org.interledger.connector.server.client;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-
+import org.interledger.connector.accounts.AccessToken;
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.balances.AccountBalanceResponse;
+import org.interledger.connector.client.ConnectorAdminClient;
+import org.interledger.connector.jackson.ObjectMapperFactory;
+import org.interledger.connector.server.spring.controllers.model.CreateAccessTokenRequest;
 
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.Feign;
+import feign.Headers;
+import feign.Param;
+import feign.RequestLine;
+import feign.jackson.JacksonDecoder;
+import feign.jackson.JacksonEncoder;
+import feign.optionals.OptionalDecoder;
+import okhttp3.HttpUrl;
+import org.zalando.problem.ThrowableProblem;
 
-import java.net.URI;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Internally for testing the connector from spring boot tests. Note that all methods require
@@ -21,12 +32,65 @@ import java.net.URI;
  * </pre>
  * Hence the reason that the url property is initialzed to a placeholder value.
  */
-@FeignClient(name = "connector-user-client", url = "http://placeholder", decode404 = true)
 public interface ConnectorUserClient {
 
-  @GetMapping(value = "/accounts/{id}/balance", produces = APPLICATION_JSON_VALUE)
-  AccountBalanceResponse getBalance(URI baseURL,
-                                    @RequestHeader(value = "Authorization") String authorizationHeader,
-                                    @PathVariable("id") String accountId);
+  String ACCEPT = "Accept:";
+  String CONTENT_TYPE = "Content-Type:";
+  String APPLICATION_JSON = "application/json";
+  String ACCEPT_JSON = ACCEPT + APPLICATION_JSON;
+  String AUTHORIZATION = "Authorization: {auth}";
+  String CONTENT_TYPE_JSON = CONTENT_TYPE + APPLICATION_JSON;
+
+  /**
+   * Static constructor to build a new instance of this Connector Admin client.
+   *
+   * @param httpUrl The {@link HttpUrl} of the Connector.
+   * @return A {@link ConnectorAdminClient}.
+   */
+  static ConnectorUserClient construct(
+    final HttpUrl httpUrl) {
+    Objects.requireNonNull(httpUrl);
+
+    final ObjectMapper objectMapper = ObjectMapperFactory.createObjectMapperForProblemsJson();
+    return Feign.builder()
+      .encoder(new JacksonEncoder(objectMapper))
+      .decode404()
+      .decoder(new OptionalDecoder(new JacksonDecoder(objectMapper)))
+      .target(ConnectorUserClient.class, httpUrl.toString());
+  }
+
+  @RequestLine("GET /accounts/{accountId}/balance")
+  @Headers( {AUTHORIZATION, ACCEPT_JSON})
+  AccountBalanceResponse getBalance(@Param("auth") String authorizationHeader,
+                                    @Param("accountId") String accountId);
+
+  @RequestLine("GET /accounts/{accountId}/tokens/{tokenId}")
+  @Headers( {AUTHORIZATION, ACCEPT_JSON})
+  Optional<AccessToken> getToken(@Param("auth") String authorizationHeader,
+                                 @Param("accountId") AccountId accountId,
+                                 @Param("tokenId") long tokenId) throws ThrowableProblem;
+
+  @RequestLine("GET /accounts/{accountId}/tokens")
+  @Headers( {AUTHORIZATION, ACCEPT_JSON})
+  List<AccessToken> getTokens(@Param("auth") String authorizationHeader,
+                              @Param("accountId") AccountId accountId) throws ThrowableProblem;
+
+  @RequestLine("POST /accounts/{accountId}/tokens")
+  @Headers( {AUTHORIZATION, ACCEPT_JSON, CONTENT_TYPE_JSON})
+  AccessToken createToken(@Param("auth") String authorizationHeader,
+                          @Param("accountId") AccountId accountId,
+                          CreateAccessTokenRequest createAccessTokenRequest) throws ThrowableProblem;
+
+
+  @RequestLine("DELETE /accounts/{accountId}/tokens")
+  @Headers( {AUTHORIZATION, ACCEPT_JSON, CONTENT_TYPE_JSON})
+  void deleteTokens(@Param("auth") String authorizationHeader,
+                    @Param("accountId") AccountId accountId) throws ThrowableProblem;
+
+  @RequestLine("DELETE /accounts/{accountId}/tokens/{tokenId}")
+  @Headers( {AUTHORIZATION, ACCEPT_JSON, CONTENT_TYPE_JSON})
+  void deleteToken(@Param("auth") String authorizationHeader,
+                   @Param("accountId") AccountId accountId,
+                   @Param("tokenId") long tokenId) throws ThrowableProblem;
 
 }
