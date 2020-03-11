@@ -2,6 +2,7 @@ package org.interledger.connector.server.spring.settings.web;
 
 import static org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration.METRICS_ENDPOINT_URL_PATH;
 
+import org.interledger.connector.accounts.AccessTokenManager;
 import org.interledger.connector.core.ConfigConstants;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
@@ -16,6 +17,7 @@ import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionService;
 
 import com.auth0.spring.security.api.JwtAuthenticationEntryPoint;
+import com.google.common.eventbus.EventBus;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -66,6 +68,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Autowired
   Decryptor decryptor;
 
+  @Autowired
+  private AccessTokenManager accessTokenManager;
+
+  @Autowired
+  private EventBus eventBus;
+
   /**
    * Will be removed once a formal authentication mechanism is added for admin API calls.
    */
@@ -77,13 +85,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   // For Basic Auth
   /////////////////
 
-  /**
-   * Used only for BASIC auth at present. Will be moved to the AdminAPI configuration, and will be unused if the
-   * admin-api is disabled.
-   *
-   * @deprecated
-   */
-  @Deprecated
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder(11);
@@ -91,10 +92,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
   @Bean
   IlpOverHttpAuthenticationProvider ilpOverHttpAuthenticationProvider() {
-    return new IlpOverHttpAuthenticationProvider(
+    IlpOverHttpAuthenticationProvider provider = new IlpOverHttpAuthenticationProvider(
       connectorSettingsSupplier, encryptionService, accountSettingsRepository, linkSettingsFactory,
-      cacheMetricsCollector
-    );
+      cacheMetricsCollector,
+      accessTokenManager);
+    eventBus.register(provider);
+    return provider;
   }
 
   /**
@@ -156,6 +159,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .antMatchers(HttpMethod.HEAD, PathConstants.SLASH_ACCOUNTS_ILP_PATH).authenticated()
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS_ILP_PATH).authenticated()
       .antMatchers(HttpMethod.GET, PathConstants.SLASH_ACCOUNTS_BALANCE_PATH).authenticated()
+      .antMatchers(HttpMethod.GET, PathConstants.SLASH_ACCOUNTS_TOKENS_PATH + "/**").authenticated()
+      .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS_TOKENS_PATH).authenticated()
+      .antMatchers(HttpMethod.DELETE, PathConstants.SLASH_ACCOUNTS_TOKENS_PATH + "/**").authenticated()
       //.antMatchers(HttpMethod.GET, HealthController.SLASH_HEALTH).permitAll() // permitAll if hidden by LB.
       .antMatchers(HttpMethod.GET, METRICS_ENDPOINT_URL_PATH).permitAll() // permitAll if hidden by LB.
     ;

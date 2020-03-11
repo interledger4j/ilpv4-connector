@@ -1,5 +1,6 @@
 package org.interledger.connector.persistence.config;
 
+import org.interledger.connector.persistence.converters.AccessTokenEntityConverter;
 import org.interledger.connector.persistence.converters.AccountBalanceSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.AccountSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.FxRateOverridesEntityConverter;
@@ -44,6 +45,11 @@ public class ConvertersConfig {
   @Bean
   StaticRouteEntityConverter staticRouteEntityConverter() {
     return new StaticRouteEntityConverter();
+  }
+
+  @Bean
+  AccessTokenEntityConverter accessTokenEntityConverter() {
+    return new AccessTokenEntityConverter();
   }
 
 }

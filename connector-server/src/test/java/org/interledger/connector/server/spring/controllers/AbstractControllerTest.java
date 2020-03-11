@@ -2,6 +2,7 @@ package org.interledger.connector.server.spring.controllers;
 
 import static org.interledger.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
 
+import org.interledger.connector.accounts.AccessTokenManager;
 import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.links.LinkSettingsFactory;
@@ -19,6 +20,7 @@ import org.interledger.link.PacketRejector;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import com.google.common.eventbus.EventBus;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -51,6 +53,12 @@ public abstract class AbstractControllerTest {
 
   @MockBean
   protected AccountManager accountManagerMock;
+
+  @MockBean
+  protected AccessTokenManager accessTokenManager;
+
+  @MockBean
+  protected EventBus eventBus;
 
   @MockBean
   protected AccountSettingsRepository accountSettingsRepositoryMock;

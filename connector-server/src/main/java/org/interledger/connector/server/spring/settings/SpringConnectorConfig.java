@@ -5,6 +5,7 @@ import static org.interledger.connector.accounts.sub.LocalDestinationAddressUtil
 import org.interledger.connector.ConnectorExceptionHandler;
 import org.interledger.connector.DefaultILPv4Connector;
 import org.interledger.connector.ILPv4Connector;
+import org.interledger.connector.accounts.AccessTokenManager;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountIdResolver;
 import org.interledger.connector.accounts.AccountManager;
@@ -13,6 +14,7 @@ import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.AccountSettingsResolver;
 import org.interledger.connector.accounts.BtpAccountIdResolver;
+import org.interledger.connector.accounts.DefaultAccessTokenManager;
 import org.interledger.connector.accounts.DefaultAccountIdResolver;
 import org.interledger.connector.accounts.DefaultAccountManager;
 import org.interledger.connector.accounts.DefaultAccountSettingsResolver;
@@ -54,6 +56,7 @@ import org.interledger.connector.packetswitch.filters.RateLimitIlpPacketFilter;
 import org.interledger.connector.packetswitch.filters.ValidateFulfillmentPacketFilter;
 import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
+import org.interledger.connector.persistence.repositories.AccessTokensRepository;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.DeletedAccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
@@ -109,6 +112,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
@@ -118,7 +122,6 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import javax.annotation.PostConstruct;
 
 /**
@@ -261,6 +264,13 @@ public class SpringConnectorConfig {
       linkSettingsValidator,
       ildcpFetcherFactory,
       eventBus());
+  }
+
+  @Bean
+  AccessTokenManager accessTokenManager(PasswordEncoder passwordEncoder,
+                                        AccessTokensRepository accessTokensRepository,
+                                        EventBus eventBus) {
+    return new DefaultAccessTokenManager(passwordEncoder, accessTokensRepository, eventBus);
   }
 
   @Bean
