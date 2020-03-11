@@ -51,7 +51,7 @@ public class DefaultAccessTokenManagerTest {
   private DefaultAccessTokenManager manager;
 
   @Before
-  public void setup() {
+  public void setUp() {
     manager = new DefaultAccessTokenManager(passwordEncoder, accessTokensRepository, eventBus);
   }
 
@@ -110,12 +110,12 @@ public class DefaultAccessTokenManagerTest {
     private AccessTokenEntityConverter accessTokensEntityConverter;
 
     @Bean
-    ObjectMapper objectMapper() {
+    public ObjectMapper objectMapper() {
       return new ObjectMapper();
     }
 
     @Bean
-    ConfigurableConversionService conversionService() {
+    public ConfigurableConversionService conversionService() {
       ConfigurableConversionService conversionService = new DefaultConversionService();
       conversionService.addConverter(accessTokensEntityConverter);
       return conversionService;
