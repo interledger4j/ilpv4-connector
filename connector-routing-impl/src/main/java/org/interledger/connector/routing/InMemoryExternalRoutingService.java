@@ -436,7 +436,7 @@ public class InMemoryExternalRoutingService implements ExternalRoutingService {
         logger.debug("Logging route update. update={}", newBestRouteUpdate);
 
         // If there's a current-best, null-out the epoch.
-        currentBest.ifPresent(ru -> outgoingRoutingTable.resetEpochValue(ru.epoch()));
+        currentBest.ifPresent(ru -> outgoingRoutingTable.clearRouteInLogAtEpoch(ru.epoch()));
 
         // Set the new best into the new epoch.
         outgoingRoutingTable.setEpochValue(newEpoch, newBestRouteUpdate);

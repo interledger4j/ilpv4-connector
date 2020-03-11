@@ -1,9 +1,11 @@
 package org.interledger.connector.routing;
 
+import org.interledger.core.InterledgerAddressPrefix;
+
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import org.interledger.connector.routing.RoutingTableId;
-import org.interledger.core.InterledgerAddressPrefix;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
@@ -20,6 +22,8 @@ import java.util.stream.StreamSupport;
  */
 public class InMemoryForwardingRoutingTable extends InMemoryRoutingTable<RouteUpdate> implements
   ForwardingRoutingTable<RouteUpdate> {
+
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final AtomicReference<RoutingTableId> routingTableId;
   private final AtomicInteger currentEpoch;
@@ -57,7 +61,7 @@ public class InMemoryForwardingRoutingTable extends InMemoryRoutingTable<RouteUp
   }
 
   @Override
-  public void resetEpochValue(final int epoch) {
+  public void clearRouteInLogAtEpoch(final int epoch) {
     this.routeUpdateLog.put(epoch, null);
   }
 
@@ -65,5 +69,9 @@ public class InMemoryForwardingRoutingTable extends InMemoryRoutingTable<RouteUp
   public void setEpochValue(final int epoch, final RouteUpdate routeUpdate) {
     Objects.requireNonNull(routeUpdate);
     this.routeUpdateLog.put(epoch, routeUpdate);
+    if (epoch != getCurrentEpoch() + 1) {
+      logger.warn("Specified epoch is not 1 greater than current. epoch={}, currentEpoch={}", epoch, getCurrentEpoch());
+    }
+    this.currentEpoch.set(epoch);
   }
 }
