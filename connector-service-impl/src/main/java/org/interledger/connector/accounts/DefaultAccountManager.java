@@ -1,6 +1,7 @@
 package org.interledger.connector.accounts;
 
 import org.interledger.connector.accounts.event.AccountCreatedEvent;
+import org.interledger.connector.accounts.event.AccountCredentialsUpdatedEvent;
 import org.interledger.connector.accounts.event.AccountUpdatedEvent;
 import org.interledger.connector.links.IldcpFetcherFactory;
 import org.interledger.connector.links.LinkManager;
@@ -198,6 +199,7 @@ public class DefaultAccountManager implements AccountManager {
 
         AccountSettingsEntity saved = accountSettingsRepository.save(entity);
         eventBus.post(AccountUpdatedEvent.builder().accountId(saved.getAccountId()).build());
+        eventBus.post(AccountCredentialsUpdatedEvent.builder().accountId(saved.getAccountId()).build());
         return saved;
       })
       .map(entity -> this.conversionService.convert(entity, AccountSettings.class))

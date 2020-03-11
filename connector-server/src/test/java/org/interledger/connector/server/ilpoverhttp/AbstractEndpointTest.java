@@ -15,7 +15,6 @@ import feign.RequestInterceptor;
 import feign.auth.BasicAuthRequestInterceptor;
 import okhttp3.HttpUrl;
 import org.junit.Before;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.cloud.openfeign.EnableFeignClients;
@@ -36,7 +35,6 @@ public abstract class AbstractEndpointTest {
 
   protected ConnectorAdminTestClient adminApiTestClient;
 
-  @Autowired
   protected ConnectorUserClient userClient;
 
   @Value("${interledger.connector.adminPassword}")
@@ -50,6 +48,7 @@ public abstract class AbstractEndpointTest {
     final HttpUrl baseHttpUrl = HttpUrl.parse("http://localhost:" + localServerPort);
     final RequestInterceptor basicAuthRequestInterceptor = new BasicAuthRequestInterceptor("admin", adminPassword);
     adminApiTestClient = ConnectorAdminTestClient.construct(baseHttpUrl, basicAuthRequestInterceptor);
+    userClient = ConnectorUserClient.construct(baseHttpUrl);
   }
 
   /**

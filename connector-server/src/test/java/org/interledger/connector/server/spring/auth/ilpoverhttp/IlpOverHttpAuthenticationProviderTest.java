@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import org.interledger.connector.accounts.AccessTokenManager;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
@@ -70,16 +71,20 @@ public class IlpOverHttpAuthenticationProviderTest {
   @Autowired
   private EncryptionService encryptionService;
 
+  @Mock
+  private AccessTokenManager accessTokenManager;
+
   @Before
   public void setUp() {
     initMocks(this);
+    when(accessTokenManager.findByAccountIdAndRawToken(any(), any())).thenReturn(Optional.empty());
     ConnectorSettings connectorSettings = ModifiableConnectorSettings.create();
     ilpOverHttpAuthenticationProvider = new IlpOverHttpAuthenticationProvider(
       () -> connectorSettings,
       encryptionService,
       accountSettingsRepository,
       new DefaultLinkSettingsFactory(),
-      cacheMetrics);
+      cacheMetrics, accessTokenManager);
   }
 
   @Test
