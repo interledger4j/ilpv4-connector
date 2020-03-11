@@ -10,7 +10,6 @@ import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.balances.AccountBalanceResponse;
 import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.connector.server.ilpoverhttp.AbstractEndpointTest;
-import org.interledger.connector.server.spring.controllers.model.CreateAccessTokenRequest;
 import org.interledger.link.http.IlpOverHttpLink;
 
 import feign.FeignException;
@@ -39,28 +38,13 @@ public class AccountAccessTokenSpringBootTest extends AbstractEndpointTest {
   public ExpectedException expectedException = ExpectedException.none();
 
   @Test
-  public void createTokenUserProvided() {
-    AccountId accountId = AccountId.of(UUID.randomUUID().toString());
-    String password = "password";
-    String myToken = "token";
-    createAccount(accountId, customSettingsSimple(password));
-
-    AccessToken response =
-      userClient.createToken(bearer(password), accountId, CreateAccessTokenRequest.forToken(myToken));
-
-    assertThat(response.rawToken()).isPresent().isEqualTo(Optional.of(myToken));
-
-    assertTokenWorks(accountId, myToken);
-  }
-
-  @Test
   public void createGeneratedToken() {
     AccountId accountId = AccountId.of(UUID.randomUUID().toString());
     String password = "password";
     createAccount(accountId, customSettingsSimple(password));
 
     AccessToken response =
-      userClient.createToken(bearer(password), accountId, CreateAccessTokenRequest.generatedToken());
+      userClient.createToken(bearer(password), accountId);
 
     assertThat(response.rawToken()).isPresent();
 
@@ -74,10 +58,10 @@ public class AccountAccessTokenSpringBootTest extends AbstractEndpointTest {
     createAccount(accountId, customSettingsSimple(password));
 
     AccessToken token1 =
-      userClient.createToken(bearer(password), accountId, CreateAccessTokenRequest.generatedToken());
+      userClient.createToken(bearer(password), accountId);
 
     AccessToken token2 =
-      userClient.createToken(bearer(password), accountId, CreateAccessTokenRequest.generatedToken());
+      userClient.createToken(bearer(password), accountId);
 
     assertThat(userClient.getTokens(bearer(password), accountId)).hasSize(2);
 
@@ -85,10 +69,6 @@ public class AccountAccessTokenSpringBootTest extends AbstractEndpointTest {
     assertTokenNotAuthorized(accountId, token2.rawToken().get());
 
     assertThat(userClient.getTokens(bearer(password), accountId)).hasSize(1);
-
-    assertThat(userClient.getToken(bearer(password), accountId, token1.id()))
-      .isNotEmpty()
-      .get().extracting(AccessToken::encryptedToken).isEqualTo(token1.encryptedToken());
 
     assertTokenWorks(accountId, token1.rawToken().get());
 
@@ -118,9 +98,37 @@ public class AccountAccessTokenSpringBootTest extends AbstractEndpointTest {
     assertThat(userClient.getTokens(bearer(password), accountId)).isEmpty();
   }
 
+  @Test
+  public void cantAccessOtherUsersTokens() {
+    AccountId accountId1 = AccountId.of(UUID.randomUUID().toString());
+    AccountId accountId2 = AccountId.of(UUID.randomUUID().toString());
+    String password1 = "hello my lady";
+    String password2 = "hello my darling";
+    createAccount(accountId1, customSettingsSimple(password1));
+    createAccount(accountId2, customSettingsSimple(password2));
+
+    String account1Token = createToken(accountId1, password1);
+    String account2Token = createToken(accountId2, password2);
+
+    assertTokenWorks(accountId1, account1Token);
+    assertTokenWorks(accountId2, account2Token);
+
+    // check token doesn't work on other accounts
+    assertTokenNotAuthorized(accountId1, account2Token);
+    assertTokenNotAuthorized(accountId2, account1Token);
+
+    assertThat(userClient.getTokens(account1Token, accountId1))
+      .hasSize(1)
+      .extracting(AccessToken::accountId).containsOnly(accountId1);
+
+    assertThat(userClient.getTokens(account2Token, accountId2))
+      .hasSize(1)
+      .extracting(AccessToken::accountId).containsOnly(accountId2);
+  }
+
   private String createToken(AccountId accountId, String password) {
     AccessToken response =
-      userClient.createToken(bearer(password), accountId, CreateAccessTokenRequest.generatedToken());
+      userClient.createToken(bearer(password), accountId);
     assertThat(response.rawToken()).isPresent();
     return response.rawToken().get();
   }

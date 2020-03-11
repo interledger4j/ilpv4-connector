@@ -5,7 +5,6 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.balances.AccountBalanceResponse;
 import org.interledger.connector.client.ConnectorAdminClient;
 import org.interledger.connector.jackson.ObjectMapperFactory;
-import org.interledger.connector.server.spring.controllers.model.CreateAccessTokenRequest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Feign;
@@ -20,7 +19,6 @@ import org.zalando.problem.ThrowableProblem;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Internally for testing the connector from spring boot tests. Note that all methods require
@@ -64,12 +62,6 @@ public interface ConnectorUserClient {
   AccountBalanceResponse getBalance(@Param("auth") String authorizationHeader,
                                     @Param("accountId") String accountId);
 
-  @RequestLine("GET /accounts/{accountId}/tokens/{tokenId}")
-  @Headers( {AUTHORIZATION, ACCEPT_JSON})
-  Optional<AccessToken> getToken(@Param("auth") String authorizationHeader,
-                                 @Param("accountId") AccountId accountId,
-                                 @Param("tokenId") long tokenId) throws ThrowableProblem;
-
   @RequestLine("GET /accounts/{accountId}/tokens")
   @Headers( {AUTHORIZATION, ACCEPT_JSON})
   List<AccessToken> getTokens(@Param("auth") String authorizationHeader,
@@ -78,8 +70,7 @@ public interface ConnectorUserClient {
   @RequestLine("POST /accounts/{accountId}/tokens")
   @Headers( {AUTHORIZATION, ACCEPT_JSON, CONTENT_TYPE_JSON})
   AccessToken createToken(@Param("auth") String authorizationHeader,
-                          @Param("accountId") AccountId accountId,
-                          CreateAccessTokenRequest createAccessTokenRequest) throws ThrowableProblem;
+                          @Param("accountId") AccountId accountId) throws ThrowableProblem;
 
 
   @RequestLine("DELETE /accounts/{accountId}/tokens")

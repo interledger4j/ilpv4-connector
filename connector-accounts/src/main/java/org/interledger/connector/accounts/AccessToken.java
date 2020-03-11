@@ -29,6 +29,7 @@ public interface AccessToken {
    * Raw token (not encrypted). Only set on newly minted access tokens.
    * @return
    */
+  @Value.Auxiliary
   Optional<String> rawToken();
 
   Instant createdAt();

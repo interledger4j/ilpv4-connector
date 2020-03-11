@@ -13,6 +13,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Default {@link AccessTokenManager} that generates random secure tokens and persists them to the database.
+ */
 public class DefaultAccessTokenManager implements AccessTokenManager {
 
   private final PasswordEncoder passwordEncoder;
@@ -30,25 +33,15 @@ public class DefaultAccessTokenManager implements AccessTokenManager {
   }
 
   @Override
-  public Optional<AccessToken> findByAccountIdAndId(AccountId accountId, long id) {
-    return accessTokensRepository.withConversion(accessTokensRepository.findByAccountIdAndId(accountId, id));
-  }
-
-  @Override
   public AccessToken createToken(AccountId accountId) {
     String newRandomToken = Base64.getEncoder().encodeToString(UUID.randomUUID().toString().getBytes());
-    return createToken(accountId, newRandomToken);
-  }
-
-  @Override
-  public AccessToken createToken(AccountId accountId, String token) {
     AccessTokenEntity newEntity = new AccessTokenEntity();
     newEntity.setAccountId(accountId);
-    newEntity.setEncryptedToken(encryptToken(token));
+    newEntity.setEncryptedToken(encryptToken(newRandomToken));
     AccessTokenEntity saved = accessTokensRepository.save(newEntity);
     return AccessToken.builder()
       .from(accessTokensRepository.withConversion(saved))
-      .rawToken(token)
+      .rawToken(newRandomToken)
       .build();
   }
 
