@@ -59,6 +59,13 @@ public interface ConnectorSettings {
   }
 
   /**
+   * Settings to support SPSP in the Connector.
+   */
+  default SpspSettings spspSettings() {
+    return SpspSettings.builder().build();
+  }
+
+  /**
    * Connection settings/defaults used for FX pools and clients
    */
   @Value.Default
@@ -85,6 +92,7 @@ public interface ConnectorSettings {
    * append it to this connector's address to create a child address that this Connector can advertise as its own.
    *
    * @param childAccountId The {@link AccountId} of a child account.
+   *
    * @return An {@link InterledgerAddress } representing the new address of the supplied child account.
    */
   default InterledgerAddress toChildAddress(final AccountId childAccountId) {

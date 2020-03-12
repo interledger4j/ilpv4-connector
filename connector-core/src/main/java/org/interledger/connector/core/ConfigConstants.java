@@ -38,7 +38,7 @@ public interface ConfigConstants {
   // Enabled Protocols
   ////////////////////
   String ENABLED_PROTOCOLS = INTERLEDGER__CONNECTOR + DOT + "enabledProtocols";
-
+  String SPSP_ENABLED = "spspEnabled";
   /**
    * @deprecated This value will likely go away if we transition to a BTP proxy that doesn't typically run in the
    *   Connector runtime. If removing, be sure to remove from property files too.
@@ -53,6 +53,14 @@ public interface ConfigConstants {
   String ENABLED_FEATURES = INTERLEDGER__CONNECTOR + DOT + "enabledFeatures";
 
   String LOCAL_SPSP_FULFILLMENT_ENABLED = "localSpspFulfillmentEnabled";
+
+  ////////////////////
+  // SPSP
+  ////////////////////
+  String SPSP = INTERLEDGER__CONNECTOR + DOT + "spsp";
+  String URL_PATH = "urlPath";
+  String SPSP__URL_PATH = SPSP + DOT + URL_PATH;
+
   /**
    * @deprecated This is no longer necessary because the WebSocket server config doesn't engage unless BTP is enabled.
    */

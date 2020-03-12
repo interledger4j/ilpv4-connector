@@ -85,19 +85,6 @@ interledger:
       # `g.connector.accounts.alice.bob` would route to `alice`.
       localAccountsAddressSegment: accounts
       # routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
-    # Deprecated
-    # btp.enabled: false
-    # keystore:
-    #   jks:
-    #     enabled: true
-    #     filename: crypto/crypto.p12
-    #     password: password
-    #     secret0_alias: secret0
-    #     secret0_password: password
-    spsp:
-      # Base64-encoded String of bytes used to derive any values used in encryption/decryption for SPSP.
-      # EXAMPLE: serverSecret: aQLR5IWAGV2vKnBhnFFsl2cXOCh9u0IWz3PiA64KlJ8=
-      addressPrefixSegment: spsp
     keys:
       secret0:
         alias: secret0

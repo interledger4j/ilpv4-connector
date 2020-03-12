@@ -334,6 +334,11 @@
         <scope>import</scope>
       </dependency>
       <dependency>
+        <groupId>org.interledger</groupId>
+        <artifactId>jackson-datatypes</artifactId>
+        <version>HEAD-SNAPSHOT</version>
+      </dependency>
+      <dependency>
         <groupId>org.javamoney.moneta</groupId>
         <artifactId>moneta-core</artifactId>
         <version>${moneta.version}</version>

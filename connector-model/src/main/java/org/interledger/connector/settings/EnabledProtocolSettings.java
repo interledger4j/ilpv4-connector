@@ -47,6 +47,21 @@ public interface EnabledProtocolSettings {
     return true;
   }
 
+  /**
+   * <p>A configuration property that enables SPSP API support in the Connector. When enabled, the connector will
+   * respond to SPSP requests at any root URL-path (i.e., requests that include an Accept header containing
+   * `application/spsp4+json`) and process them as requests for SPSP connection information.</p>
+   *
+   * <p>Note that it is possible to operate an SPSP server outside of the Connector while still fulfilling STREAM
+   * payments locally by setting this value to {@code false} and {@link EnabledFeatureSettings#isLocalSpspFulfillmentEnabled()}
+   * to {@code true}.</p>
+   *
+   * @return {@code true} if the SPSP server endpoint should be enabled in this Connector; {@code false} otherwise.
+   */
+  default boolean isSpspEnabled() {
+    return false;
+  }
+
   @Value.Immutable(intern = true)
   abstract class AbstractEnabledProtocolSettings implements EnabledProtocolSettings {
 
