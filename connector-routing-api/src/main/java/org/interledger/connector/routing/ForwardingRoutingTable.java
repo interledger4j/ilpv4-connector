@@ -1,6 +1,5 @@
 package org.interledger.connector.routing;
 
-import org.interledger.connector.routing.RoutingTableId;
 import org.interledger.core.InterledgerAddressPrefix;
 
 import java.util.List;
@@ -55,7 +54,12 @@ public interface ForwardingRoutingTable<R extends RouteUpdate> extends RoutingTa
    */
   Iterable<R> getPartialRouteLog(final int numberToSkip, final int limit);
 
-  void resetEpochValue(int epoch);
+  /**
+   * Clears out the route from the route update log at the given epoch. This is important so that stale routes (that
+   * have been succeeded by a new route at a higher epoch) are not accidentally honored as the current best route.
+   * @param epoch
+   */
+  void clearRouteInLogAtEpoch(int epoch);
 
   void setEpochValue(int epoch, R route);
 }
