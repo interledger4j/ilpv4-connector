@@ -17,11 +17,11 @@ import javax.money.CurrencyUnit;
  */
 public class EthCurrencyProviderTest {
 
-  private XrpCurrencyProvider provider;
+  private EthCurrencyProvider provider;
 
   @Before
   public void setUp() {
-    provider = new XrpCurrencyProvider();
+    provider = new EthCurrencyProvider();
   }
 
   @Test
