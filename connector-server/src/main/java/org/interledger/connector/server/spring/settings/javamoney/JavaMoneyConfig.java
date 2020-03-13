@@ -1,11 +1,13 @@
 package org.interledger.connector.server.spring.settings.javamoney;
 
 import static okhttp3.CookieJar.NO_COOKIES;
+import static org.interledger.connector.javax.money.providers.EthCurrencyProvider.ETH;
 import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.XRP;
 
 import org.interledger.connector.fx.JavaMoneyUtils;
 import org.interledger.connector.javax.money.providers.CryptoCompareRateProvider;
 import org.interledger.connector.javax.money.providers.DropRoundingProvider;
+import org.interledger.connector.javax.money.providers.EthCurrencyProvider;
 import org.interledger.connector.javax.money.providers.XrpCurrencyProvider;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.FxConnectionSettings;
@@ -134,6 +136,13 @@ public class JavaMoneyConfig {
   protected XrpCurrencyProvider xrpCurrencyProviderSpi() {
     return new XrpCurrencyProvider();
   }
+
+  @Bean
+  @Qualifier(ETH)
+  protected EthCurrencyProvider ethCurrencyProviderSpi() {
+    return new EthCurrencyProvider();
+  }
+
 
   @Bean
   @Qualifier(DEFAULT)
