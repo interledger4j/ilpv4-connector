@@ -187,9 +187,9 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
     Objects.requireNonNull(sourcePacket);
 
     /**
-     * Some notes about the performance of the calls & calculations happening below with regard to the Java money api
+     * Some notes about the performance of the calls & calculations happening below with regard to the JavaMoney API
      *
-     * First, lookup of the `CurrencyUnit`s and internal lookup of the `ExchangeRateProvider` reuse the same instances,
+     * First, lookup of the `CurrencyUnit` and internal lookups of the `ExchangeRateProvider` reuse the same instances,
      * suggesting that we _should_ already be using cached data. The cost of the lookup involved in
      * `Monetary.getCurrency` looks to be around 2000ns (tested in a 1m iteration loop with randomized currencies).
      *
@@ -230,7 +230,7 @@ public class DefaultNextHopPacketMapper implements NextHopPacketMapper {
    *
    * @return
    *
-   * @deprecated This only exists to faciliate getting FX information into BigQuery. However, this method should be
+   * @deprecated This only exists to facilitate getting FX information into BigQuery. However, this method should be
    *   removed once https://github.com/interledger4j/ilpv4-connector/issues/529 is fixed (see that issue for more
    *   details).
    */
