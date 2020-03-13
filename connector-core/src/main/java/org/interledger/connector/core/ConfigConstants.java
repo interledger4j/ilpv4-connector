@@ -64,9 +64,12 @@ public interface ConfigConstants {
   ////////////////////
   // SPSP
   ////////////////////
-  String SPSP = INTERLEDGER__CONNECTOR + DOT + "spsp";
   String URL_PATH = "urlPath";
+  String SERVER_SECRET = "serverSecret";
+
+  String SPSP = INTERLEDGER__CONNECTOR + DOT + "spsp";
   String SPSP__URL_PATH = SPSP + DOT + URL_PATH;
+  String SPSP__SERVER_SECRET = SPSP + DOT + SERVER_SECRET;
 
   /**
    * @deprecated This is no longer necessary because the WebSocket server config doesn't engage unless BTP is enabled.

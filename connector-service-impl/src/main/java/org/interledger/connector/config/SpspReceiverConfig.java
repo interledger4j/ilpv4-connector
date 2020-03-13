@@ -1,5 +1,7 @@
 package org.interledger.connector.config;
 
+import static org.interledger.connector.core.ConfigConstants.SPSP__SERVER_SECRET;
+
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.link.LinkFactoryProvider;
 import org.interledger.link.PacketRejector;
@@ -13,6 +15,8 @@ import org.interledger.stream.receiver.SpspStreamConnectionGenerator;
 import org.interledger.stream.receiver.StatelessStreamReceiver;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -33,7 +37,9 @@ import javax.annotation.PostConstruct;
 @Conditional(SpspReceiverEnabledCondition.class)
 public class SpspReceiverConfig {
 
-  @Value("${interledger.connector.spsp.serverSecret}")
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
+  @Value("${" + SPSP__SERVER_SECRET + "}:")
   private String spspServerSecretB64;
 
   @Autowired
@@ -56,15 +62,27 @@ public class SpspReceiverConfig {
 
   @Bean
   protected ServerSecretSupplier serverSecretSupplier() {
-    final byte[] serverSecret;
     if (spspServerSecretB64 != null) {
-      serverSecret = Base64.getDecoder().decode(spspServerSecretB64);
+      try {
+        final byte[] serverSecret = Base64.getDecoder().decode(spspServerSecretB64);
+        return () -> serverSecret;
+      } catch (Exception e) {
+        logger.warn(String.format(
+          "Unable to properly Base64 decode property `%s` with value=`%s`. Using an ephemeral value instead.",
+          SPSP__SERVER_SECRET, spspServerSecretB64
+        ));
+        // If `interledger.connector.spsp.serverSecret` is invalid, an ephemeral version will be used.
+        // This value will be regenerated on every server restart.
+        final byte[] serverSecret = Random.randBytes(32);
+        return () -> serverSecret;
+      }
     } else {
-      // if `interledger.connector.spsp.serverSecret` is not specified, this value will be regenerated on every server
-      // restart.
-      serverSecret = Random.randBytes(32);
+      // If `interledger.connector.spsp.serverSecret` is not specified, an ephemeral version will be used.
+      // This value will be regenerated on every server restart.
+      final byte[] serverSecret = Random.randBytes(32);
+      return () -> serverSecret;
     }
-    return () -> serverSecret;
+
   }
 
   @Bean

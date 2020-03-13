@@ -1,7 +1,6 @@
 package org.interledger.connector.config;
 
 import static org.interledger.connector.core.ConfigConstants.DOT;
-import static org.interledger.connector.core.ConfigConstants.ENABLED_PROTOCOLS;
 
 import org.interledger.connector.core.ConfigConstants;
 
