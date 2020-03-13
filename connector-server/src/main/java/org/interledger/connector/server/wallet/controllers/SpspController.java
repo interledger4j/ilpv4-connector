@@ -14,8 +14,6 @@ import org.interledger.stream.receiver.StreamReceiver;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
@@ -42,8 +40,6 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = SPSP_ENABLED, havingValue = TRUE)
 public class SpspController {
-
-  private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final StreamReceiver streamReceiver;
   private final UrlPathHelper urlPathHelper;
@@ -79,7 +75,7 @@ public class SpspController {
     }
     // E.g., /p/foo.bar/baz will map to `g.connector.foo.bar.baz`
     final String ilpIntermediateSuffix = this.computePaymentTargetIntermediatePrefix(requestedUrlPath);
-    if(ilpIntermediateSuffix.length() <= 0) {
+    if (ilpIntermediateSuffix.length() <= 0) {
       throw new InvalidSpspRequestProblem();
     }
 
