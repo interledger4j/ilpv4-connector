@@ -87,10 +87,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   /**
    * Determines the path that the SPSP server operates under. E.g., https://connector/{spspUrlPath}/bob
    */
-  @Value("${" + ConfigConstants.SPSP__URL_PATH + "}")
+  @Value("${" + ConfigConstants.SPSP__URL_PATH + ":}")
   private String spspUrlPath;
 
-  @Value("${" + ConfigConstants.ENABLED_PROTOCOLS + DOT + SPSP_ENABLED + "}")
+  @Value("${" + ConfigConstants.ENABLED_PROTOCOLS + DOT + SPSP_ENABLED + ":false}")
   private boolean spspEnabled;
 
   /////////////////

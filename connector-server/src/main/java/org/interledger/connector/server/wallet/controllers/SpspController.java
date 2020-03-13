@@ -49,7 +49,7 @@ public class SpspController {
   public SpspController(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
     final StreamReceiver streamReceiver,
-    @Value("${" + SPSP__URL_PATH + "}") final String spspUrlPath
+    @Value("${" + SPSP__URL_PATH + ":}") final String spspUrlPath
   ) {
     this.streamReceiver = Objects.requireNonNull(streamReceiver);
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);

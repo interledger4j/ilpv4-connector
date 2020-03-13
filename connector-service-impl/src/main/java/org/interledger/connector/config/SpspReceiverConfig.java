@@ -39,7 +39,7 @@ public class SpspReceiverConfig {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  @Value("${" + SPSP__SERVER_SECRET + "}:")
+  @Value("${" + SPSP__SERVER_SECRET + ":}")
   private String spspServerSecretB64;
 
   @Autowired
