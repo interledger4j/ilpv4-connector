@@ -143,7 +143,40 @@ public class JavaMoneyUtilsTest {
     cents = BigInteger.valueOf(1999);
     assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, cents, assetScale)
       .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.001999"));
+  }
 
+  /**
+   * This test validates what should be a 1:1 FX rate even though the scale (i.e., 9) exceeds the default XRP Routing
+   * provider's scale, which is 6.
+   */
+  @Test
+  public void toMonetaryAmountDropsToDrops() {
+    final CurrencyUnit currencyXRP = Monetary.getCurrency("XRP");
+    final int assetScale = 9;
+
+    BigInteger drops = BigInteger.ZERO;
+    assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, drops, assetScale)
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0"));
+
+    drops = BigInteger.ONE;
+    assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, drops, assetScale)
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.000000001"));
+
+    drops = BigInteger.valueOf(100);
+    assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, drops, assetScale)
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.0000001"));
+
+    drops = BigInteger.valueOf(199);
+    assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, drops, assetScale)
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.000000199"));
+
+    drops = BigInteger.valueOf(1999);
+    assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, drops, assetScale)
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.000001999"));
+
+    drops = BigInteger.valueOf(1000000000L);
+    assertThat(javaMoneyUtils.toMonetaryAmount(currencyXRP, drops, assetScale)
+      .getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("1"));
   }
 
   @Test
@@ -174,7 +207,7 @@ public class JavaMoneyUtilsTest {
   }
 
   ///////////////////
-  // toMonetaryAmount
+  // toInterledgerAmount
   ///////////////////
 
   @Test
@@ -199,6 +232,40 @@ public class JavaMoneyUtilsTest {
 
     money = Money.of(BigInteger.valueOf(600000000), currencyUSD);
     assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(600000000L));
+  }
+
+  /**
+   * This test validates what should be a 1:1 FX rate even though the scale (i.e., 9) exceeds the default XRP Routing
+   * provider's scale, which is 6.
+   */
+  @Test
+  public void toInterledgerAmountDropsToDrops() {
+    final CurrencyUnit currencyXRP = Monetary.getCurrency("XRP");
+    final int assetScale = 9;
+
+    Money money = Money.of(BigInteger.ZERO, currencyXRP);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.ZERO);
+
+    money = Money.of(BigInteger.valueOf(1), currencyXRP);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1000000000L));
+
+    money = Money.of(BigDecimal.valueOf(0.1), currencyXRP);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(100000000L));
+
+    money = Money.of(BigDecimal.valueOf(0.01), currencyXRP);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(10000000L));
+
+    money = Money.of(BigDecimal.valueOf(0.001), currencyXRP);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1000000L));
+
+    money = Money.of(BigDecimal.valueOf(0.000001), currencyXRP);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1000L));
+
+    money = Money.of(BigDecimal.valueOf(0.000000001), currencyXRP);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(1L));
+
+    money = Money.of(BigDecimal.valueOf(0.000000000001), currencyXRP);
+    assertThat(javaMoneyUtils.toInterledgerAmount(money, assetScale)).isEqualTo(BigInteger.valueOf(0));
   }
 
   @Test
