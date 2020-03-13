@@ -13,7 +13,7 @@ import javax.money.CurrencyQueryBuilder;
 import javax.money.CurrencyUnit;
 
 /**
- * Unit tests for {@link XrpCurrencyProvider}.
+ * Unit tests for {@link EthCurrencyProvider}.
  */
 public class EthCurrencyProviderTest {
 

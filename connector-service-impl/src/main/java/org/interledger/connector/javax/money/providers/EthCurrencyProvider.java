@@ -10,7 +10,7 @@ import javax.money.CurrencyUnit;
 import javax.money.spi.CurrencyProviderSpi;
 
 /**
- * An implementation of {@link CurrencyProviderSpi} for registering XRP.
+ * An implementation of {@link CurrencyProviderSpi} for registering ETH.
  */
 public class EthCurrencyProvider implements CurrencyProviderSpi {
 
@@ -22,7 +22,7 @@ public class EthCurrencyProvider implements CurrencyProviderSpi {
     this.currencyUnits = ImmutableSet.<CurrencyUnit>builder()
       .add(
         CurrencyUnitBuilder.of(ETH, "EthCurrencyProvider")
-          .setDefaultFractionDigits(9) // 1 gwei
+          .setDefaultFractionDigits(9) // 1 wei
           .build()
       )
       .build();
