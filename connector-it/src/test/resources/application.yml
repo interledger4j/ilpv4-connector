@@ -29,3 +29,10 @@ interledger:
     pubsub:
       topics:
         fulfillment-event: ilp-fulfillment-event
+    enabledFeatures:
+      localSpspFulfillmentEnabled: true
+    enabledProtocols:
+      # Enables the REST Endpoint for SPSP requests.
+      spspEnabled: true
+    spsp:
+      urlPath:
