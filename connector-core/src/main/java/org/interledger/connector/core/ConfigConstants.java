@@ -23,6 +23,12 @@ public interface ConfigConstants {
   String TRUE = "true";
   String FALSE = "false";
 
+  ////////////////////
+  // Runtime Modes
+  ////////////////////
+  // Corresponds to the `wallet` profile
+  String WALLET_MODE = "wallet-mode";
+
   String INTERLEDGER = "interledger";
   String CONNECTOR = "connector";
   String CACHE = "cache";
@@ -39,6 +45,7 @@ public interface ConfigConstants {
   ////////////////////
   String ENABLED_PROTOCOLS = INTERLEDGER__CONNECTOR + DOT + "enabledProtocols";
   String SPSP_ENABLED = "spspEnabled";
+
   /**
    * @deprecated This value will likely go away if we transition to a BTP proxy that doesn't typically run in the
    *   Connector runtime. If removing, be sure to remove from property files too.

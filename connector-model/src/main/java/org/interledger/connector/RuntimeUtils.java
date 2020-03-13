@@ -1,5 +1,6 @@
 package org.interledger.connector;
 
+import org.interledger.connector.core.ConfigConstants;
 import org.interledger.crypto.KeyStoreType;
 import org.springframework.core.env.Environment;
 
@@ -60,6 +61,34 @@ public class RuntimeUtils {
           INTERLEDGER_CONNECTOR_KEYSTORE_GCP_ENABLED, INTERLEDGER_CONNECTOR_KEYSTORE_JKS_ENABLED)
       );
     }
+  }
+
+  /**
+   * Helper method to determine if the Connector is currently running in `Wallet` mode.
+   *
+   * @param env The current runtime {@link Environment}.
+   *
+   * @return {@code true} if the Connector is currently running in Wallet Mode; {@code false} otherwise.
+   */
+  public static final boolean walletModeEnabled(final Environment env) {
+    Objects.requireNonNull(env);
+    return Arrays.stream(env.getActiveProfiles())
+      .filter(profile -> profile.equalsIgnoreCase(ConfigConstants.WALLET_MODE))
+      .findAny()
+      .isPresent();
+  }
+
+  /**
+   * Helper method to determine if the Connector is currently running in `Packet-Switch` mode. A Connector runs in this
+   * mode by default whenever it is not running in Wallet Mode.
+   *
+   * @param env The current runtime {@link Environment}.
+   *
+   * @return
+   */
+  public static final boolean packetSwitchModeEnabled(final Environment env) {
+    Objects.requireNonNull(env);
+    return !walletModeEnabled(env);
   }
 
   /**

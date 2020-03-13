@@ -77,8 +77,8 @@ import org.interledger.connector.server.spring.settings.crypto.CryptoConfig;
 import org.interledger.connector.server.spring.settings.javamoney.JavaMoneyConfig;
 import org.interledger.connector.server.spring.settings.link.LinkConfig;
 import org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration;
+import org.interledger.connector.config.SpspReceiverConfig;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
-import org.interledger.connector.server.wallet.spring.config.SpspConfig;
 import org.interledger.connector.server.wallet.spring.config.WalletConfig;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
@@ -144,6 +144,7 @@ import javax.annotation.PostConstruct;
   ResiliencyConfig.class,
   CaffeineCacheConfig.class,
   RedisConfig.class,
+  SpspReceiverConfig.class,
   SettlementConfig.class,
   BalanceTrackerConfig.class,
   LinkConfig.class,

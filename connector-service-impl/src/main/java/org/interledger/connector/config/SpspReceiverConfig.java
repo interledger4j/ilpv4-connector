@@ -1,10 +1,5 @@
-package org.interledger.connector.server.spring.settings.link;
+package org.interledger.connector.config;
 
-import static org.interledger.connector.core.ConfigConstants.ENABLED_FEATURES;
-import static org.interledger.connector.core.ConfigConstants.LOCAL_SPSP_FULFILLMENT_ENABLED;
-import static org.interledger.connector.core.ConfigConstants.TRUE;
-
-import org.interledger.codecs.stream.StreamCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.link.LinkFactoryProvider;
 import org.interledger.link.PacketRejector;
@@ -19,35 +14,44 @@ import org.interledger.stream.receiver.StatelessStreamReceiver;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 import java.util.Base64;
+
 import javax.annotation.PostConstruct;
 
+/**
+ * This configuration can apply to either a packet-forwarding or wallet-mode connector in two cases: either the
+ * Connector is running in packet-forwarding mode, but local SPSP termination is enabled; or, the Connector is running
+ * in wallet-mode, but SPSP is enabled/disabled.
+ */
 @Configuration
-@ConditionalOnProperty(prefix = ENABLED_FEATURES, name = LOCAL_SPSP_FULFILLMENT_ENABLED, havingValue = TRUE)
-public class LocalSpspFulfillmentConfig {
-
-  public static final String STREAM = "STREAM";
-
-  @Autowired
-  private LinkFactoryProvider linkFactoryProvider;
+@Conditional(SpspReceiverEnabledCondition.class)
+public class SpspReceiverConfig {
 
   @Value("${interledger.connector.spsp.serverSecret}")
   private String spspServerSecretB64;
 
   @Autowired
-  private StatelessSpspReceiverLinkFactory statelessSpspReceiverLinkFactory;
+  private LinkFactoryProvider linkFactoryProvider;
 
-  @Bean
-  protected StatelessSpspReceiverLinkFactory statelessSpspReceiverLinkFactory(
-    PacketRejector packetRejector, StatelessStreamReceiver statelessStreamReceiver
-  ) {
-    return new StatelessSpspReceiverLinkFactory(packetRejector, statelessStreamReceiver);
+  @Autowired
+  private PacketRejector packetRejector;
+
+  @Autowired
+  @Lazy
+  private StatelessStreamReceiver statelessStreamReceiver;
+
+  @PostConstruct
+  public void init() {
+    linkFactoryProvider.registerLinkFactory(
+      StatelessSpspReceiverLink.LINK_TYPE,
+      statelessSpspReceiverLinkFactory(packetRejector, statelessStreamReceiver)
+    );
   }
 
   @Bean
@@ -64,9 +68,8 @@ public class LocalSpspFulfillmentConfig {
   }
 
   @Bean
-  @Qualifier(STREAM)
-  protected CodecContext streamCodecContext() {
-    return StreamCodecContextFactory.oer();
+  protected StreamConnectionGenerator streamConnectionGenerator() {
+    return new SpspStreamConnectionGenerator();
   }
 
   @Bean
@@ -75,12 +78,7 @@ public class LocalSpspFulfillmentConfig {
   }
 
   @Bean
-  protected StreamConnectionGenerator streamConnectionGenerator() {
-    return new SpspStreamConnectionGenerator();
-  }
-
-  @Bean
-  protected StatelessStreamReceiver statelessStreamReceiver(
+  StatelessStreamReceiver statelessStreamReceiver(
     final ServerSecretSupplier serverSecretSupplier,
     final StreamConnectionGenerator streamConnectionGenerator,
     final StreamEncryptionService streamEncryptionService,
@@ -91,9 +89,11 @@ public class LocalSpspFulfillmentConfig {
     );
   }
 
-  @PostConstruct
-  public void init() {
-    linkFactoryProvider.registerLinkFactory(StatelessSpspReceiverLink.LINK_TYPE, statelessSpspReceiverLinkFactory);
+  @Bean
+  protected StatelessSpspReceiverLinkFactory statelessSpspReceiverLinkFactory(
+    final PacketRejector packetRejector, final StatelessStreamReceiver statelessStreamReceiver
+  ) {
+    return new StatelessSpspReceiverLinkFactory(packetRejector, statelessStreamReceiver);
   }
 
 }

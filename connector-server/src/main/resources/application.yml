@@ -30,7 +30,7 @@ server:
     max-form-post-size: 32767 # Max per ILP ASN.1
 spring:
   profiles:
-    include: extensions
+    include: packet-switch, extensions
   cache:
     redis:
       time-to-live: 86400
@@ -94,6 +94,7 @@ interledger:
         version: 1
     enabledFeatures:
       rateLimitingEnabled: false
+      # The default for packet-switch mode
       localSpspFulfillmentEnabled: false
       require32ByteSharedSecrets: true
     enabledProtocols:
@@ -101,6 +102,8 @@ interledger:
       pingProtocolEnabled: true
       peerRoutingEnabled: true
       ildcpEnabled: true
+      # The default for packet-switch mode
+      spspEnabled: false
     # settlementEngines:
       # connectionDefaults:
       # Default connect timeout (in milliseconds).
@@ -116,7 +119,7 @@ interledger:
       # writeTimeoutMillis: 30000
       # maxIdleConnections: 5
       # keepAliveMinutes: 5
-    # ilpOverHttp:
+      # ilpOverHttp:
       # connectionDefaults:
       # Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must
       # be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If unspecified, defaults to 10.
