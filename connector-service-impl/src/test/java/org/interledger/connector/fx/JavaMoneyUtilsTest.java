@@ -146,8 +146,8 @@ public class JavaMoneyUtilsTest {
   }
 
   /**
-   * This test validates what should be a 1:1 FX rate even though the scale (i.e., 9) exceeds the default XRP Routing
-   * provider's scale, which is 6.
+   * This test validates that converting a number into a Money that exceeds the default rounding provider's scale occurs
+   * correctly.
    */
   @Test
   public void toMonetaryAmountDropsToDrops() {
@@ -235,8 +235,9 @@ public class JavaMoneyUtilsTest {
   }
 
   /**
-   * This test validates what should be a 1:1 FX rate even though the scale (i.e., 9) exceeds the default XRP Routing
-   * provider's scale, which is 6.
+   * This test validates that scaling a number beyond its default JavaMoney scale occurs correctly. E.g., this test uses
+   * XRP, which has a default rounding of 6 digits, whereas this test validates that simple ILP scaling doesn't engage
+   * this rounding provider.
    */
   @Test
   public void toInterledgerAmountDropsToDrops() {
