@@ -2,7 +2,6 @@ package org.interledger.connector.links;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
@@ -28,7 +27,6 @@ import org.interledger.core.InterledgerProtocolException;
 import org.interledger.link.LoopbackLink;
 
 import com.google.common.primitives.UnsignedLong;
-import org.assertj.core.internal.bytebuddy.matcher.StringMatcher;
 import org.javamoney.moneta.spi.DefaultNumberValue;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -196,6 +194,36 @@ public class DefaultNextHopPacketMapperTest {
 
     UnsignedLong result = mapper.determineNextAmount(sourceSettings, defaultNextHopSettings().build(), preparePacket);
     assertThat(result).isEqualTo(UnsignedLong.valueOf(200));
+  }
+
+  /**
+   * Just a sanity check to make sure that the Drops Rounding provider doesn't kick-in when doing math on a Money object
+   * that exceeds the precision of the default XRP rounding provider.
+   */
+  @Test
+  public void determineNextAmountSameConversionProperRounding() {
+    Instant now = Instant.now(clock);
+    AccountSettings sourceSettings = defaultSenderAccountSettings()
+      .assetCode("XRP")
+      .assetScale(9)
+      .build();
+    AccountSettings nextHop = defaultSenderAccountSettings()
+      .accountId(AccountId.of("netHop"))
+      .assetCode("XRP")
+      .assetScale(9)
+      .build();
+    InterledgerPreparePacket preparePacket = defaultPreparePacket(now)
+      .amount(UnsignedLong.valueOf(1))
+      .build();
+
+    when(mockAccountCache.safeGetAccountId(NEXT_HOP.nextHopAccountId())).thenReturn(nextHop);
+    when(mockRoutingService.findBestNexHop(RECEIVER)).thenReturn(Optional.of(NEXT_HOP));
+
+    int conversionRate = 1; // Simulate same conversion.
+    mockConversionRate(conversionRate);
+
+    UnsignedLong result = mapper.determineNextAmount(sourceSettings, nextHop, preparePacket);
+    assertThat(result).isEqualTo(UnsignedLong.valueOf(1));
   }
 
   /**
@@ -429,11 +457,12 @@ public class DefaultNextHopPacketMapperTest {
 
   private ImmutableAccountSettings.Builder defaultSenderAccountSettings() {
     return AccountSettings.builder()
+      .accountId(SENDER_ACCOUNT_ID)
       .accountRelationship(AccountRelationship.PEER)
       .assetCode("USD")
       .assetScale(3)
       .linkType(LoopbackLink.LINK_TYPE)
-      .accountId(SENDER_ACCOUNT_ID);
+      ;
   }
 
   private void assertPreparePacket(NextHopInfo result, InterledgerPreparePacket expectedPreparePacket) {

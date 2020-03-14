@@ -1,6 +1,13 @@
 package org.interledger.connector.javax.money.providers;
 
+import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.DROP;
+import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.XRP;
+
 import com.google.common.collect.ImmutableSet;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Set;
 
 import javax.money.CurrencyUnit;
 import javax.money.MonetaryAmount;
@@ -9,18 +16,12 @@ import javax.money.RoundingContext;
 import javax.money.RoundingContextBuilder;
 import javax.money.RoundingQuery;
 import javax.money.spi.RoundingProviderSpi;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.Set;
-
-import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.DROP;
-import static org.interledger.connector.javax.money.providers.XrpCurrencyProvider.XRP;
 
 /**
  * An implementation of {@link RoundingProviderSpi} for rounding XRP drops, which are 1 millionth of an XRP.
  *
  * @see "https://developers.ripple.com/currency-formats.html"
- * @see ""
+ * @see "https://jaxenter.de/go-for-the-money-einfuehrung-in-das-money-and-currency-api-38668"
  */
 public class DropRoundingProvider implements RoundingProviderSpi {
 
@@ -70,7 +71,7 @@ public class DropRoundingProvider implements RoundingProviderSpi {
 
       //RoundingQueryBuilder.of().setScale(4).set(RoundingMode.HALF_UP).build();
 
-     return amount.getFactory()
+      return amount.getFactory()
         .setCurrency(amount.getCurrency())
         .setNumber(
           amount.getNumber().numberValue(BigDecimal.class).setScale(this.scale, RoundingMode.HALF_EVEN)
