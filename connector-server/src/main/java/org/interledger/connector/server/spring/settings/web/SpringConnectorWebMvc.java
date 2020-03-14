@@ -48,7 +48,7 @@ import java.util.List;
 @EnableWebMvc
 @EnableHypermediaSupport(type = {EnableHypermediaSupport.HypermediaType.HAL})
 @ComponentScan(basePackages = {
-  "org.interledger.connector.server.spring.controllers", // For PacketForwarder
+  "org.interledger.connector.server.spring.controllers" // For PacketForwarder
 })
 @Import( {IlpOverHttpConfig.class, JacksonConfig.class, SecurityConfiguration.class})
 public class SpringConnectorWebMvc implements WebMvcConfigurer {

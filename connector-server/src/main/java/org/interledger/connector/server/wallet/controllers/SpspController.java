@@ -57,7 +57,6 @@ public class SpspController {
     this.urlPathHelper = new UrlPathHelper();
   }
 
-
   /**
    * A simple SPSP endpoint that merely returns a new Shared Secret and destination address to support a stateless
    * receiver.
@@ -94,8 +93,7 @@ public class SpspController {
 
   /**
    * The URL prefix path for SPSP requests is configurable and can be null, or optionally include a leading or trailing
-   * or forward-slash. This method cleanses the input so that whatever is supplied will work properly in this
-   * Controller.
+   * forward-slash. This method cleanses the input so that whatever is supplied will work properly in this Controller.
    *
    * @param spspUrlPath A {@link String} representing the configured SPSP URL prefix path.
    *
