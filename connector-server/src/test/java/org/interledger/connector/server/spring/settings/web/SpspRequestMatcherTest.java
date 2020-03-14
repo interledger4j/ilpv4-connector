@@ -7,6 +7,9 @@ import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
+/**
+ * Unit tests for {@link SpspRequestMatcher}.
+ */
 public class SpspRequestMatcherTest {
 
   private RequestMatcher spspRequestMatcher;

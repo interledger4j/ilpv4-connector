@@ -43,7 +43,7 @@ public class SpspRequestMatcher implements RequestMatcher {
     // then this check could be expanded to include `text/html`, but care should be take to not have usernames
     // collide with the admin API.
 
-    return hasCorrectSpspUrlPath(httpServletRequest) && hasCorrectAcceptHeader(httpServletRequest) && spspEnabled;
+    return spspEnabled && hasCorrectSpspUrlPath(httpServletRequest) && hasCorrectAcceptHeader(httpServletRequest);
   }
 
   private boolean hasCorrectAcceptHeader(final HttpServletRequest httpServletRequest) {
