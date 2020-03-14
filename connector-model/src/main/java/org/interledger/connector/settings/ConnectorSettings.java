@@ -61,6 +61,7 @@ public interface ConnectorSettings {
   /**
    * Settings to support SPSP in the Connector.
    */
+  @Value.Default
   default SpspSettings spspSettings() {
     return SpspSettings.builder().build();
   }
