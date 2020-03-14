@@ -20,6 +20,7 @@ public interface SpspSettings {
    *
    * @return A {@link String} containing an ILP address prefix; default is {@code spsp}.
    */
+  @Value.Default
   default String addressPrefixSegment() {
     return "spsp";
   }
