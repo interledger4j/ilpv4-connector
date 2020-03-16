@@ -190,6 +190,38 @@ public class JwtRs256IlpOverHttpEndpointTest extends AbstractEndpointTest {
   }
 
   @Test
+  public void canPayWithEth() {
+    ImmutableJwtAuthSettings authSettings = JwtAuthSettings.builder()
+      .tokenSubject("subject")
+      .tokenAudience("foo")
+      .tokenIssuer(HttpUrl.parse(wireMockRule.baseUrl()))
+      .build();
+    AccountId ethAccount = AccountId.of("i_luv_eth");
+    createAccount(ethAccount, "ETH", customSettingsJwtRs256(
+      authSettings
+    ));
+
+    String jwt = jwtServer.createJwt(authSettings, Instant.now().plusSeconds(30));
+    final IlpOverHttpLink ilpOverHttpLink = ilpOverHttpLink(ethAccount, jwt);
+
+    AtomicReference<InterledgerFulfillPacket> fulfillPacketRef = new AtomicReference<>();
+    ilpOverHttpLink.sendPacket(
+      InterledgerPreparePacket.builder()
+        .destination(InterledgerAddress.of("test.connie.vic"))
+        .amount(UnsignedLong.ONE)
+        .expiresAt(Instant.now().plus(5, ChronoUnit.MINUTES))
+        .executionCondition(LOOPBACK_FULFILLMENT.getCondition())
+        .build()
+    ).handle(
+      fulfillPacket -> fulfillPacketRef.set(fulfillPacket),
+      rejectPacket -> fail("Packet rejected but should not have!")
+    );
+
+    assertThat(fulfillPacketRef.get().getFulfillment()).isEqualTo(LOOPBACK_FULFILLMENT);
+  }
+
+
+  @Test
   public void cannotPayUsingSomeoneUsingOtherPersonsJWT() {
     String kylo = "kylo";
     ImmutableJwtAuthSettings kyloSettings = JwtAuthSettings.builder()
