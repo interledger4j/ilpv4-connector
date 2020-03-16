@@ -276,7 +276,6 @@
     <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>spsp-client</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>

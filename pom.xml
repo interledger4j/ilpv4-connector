@@ -329,14 +329,9 @@
       <dependency>
         <groupId>org.interledger</groupId>
         <artifactId>quilt-bom</artifactId>
-        <version>${ilp.version}</version>
+        <version>HEAD-SNAPSHOT</version>
         <type>pom</type>
         <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.interledger</groupId>
-        <artifactId>jackson-datatypes</artifactId>
-        <version>HEAD-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.javamoney.moneta</groupId>

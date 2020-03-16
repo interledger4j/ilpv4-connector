@@ -4,6 +4,7 @@ import static org.interledger.connector.core.ConfigConstants.ENABLED_PROTOCOLS;
 import static org.interledger.connector.core.ConfigConstants.SPSP_ENABLED;
 import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 import static org.interledger.connector.core.ConfigConstants.TRUE;
+import static org.interledger.spsp.client.SpspClient.APPLICATION_SPSP4_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.problems.spsp.InvalidSpspRequestProblem;
@@ -41,6 +42,8 @@ import javax.servlet.http.HttpServletRequest;
 @ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = SPSP_ENABLED, havingValue = TRUE)
 public class SpspController {
 
+  private static final MediaType APPLICATION_SPSP4_JSON = MediaType.valueOf(APPLICATION_SPSP4_JSON_VALUE);
+
   private final StreamReceiver streamReceiver;
   private final UrlPathHelper urlPathHelper;
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
@@ -65,7 +68,7 @@ public class SpspController {
    */
   @RequestMapping(
     path = "/**", method = RequestMethod.GET,
-    produces = {"application/spsp4+json", APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    produces = {APPLICATION_SPSP4_JSON_VALUE, APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public ResponseEntity<StreamConnectionDetails> getSpspResponse(final HttpServletRequest httpServletRequest) {
     final String requestedUrlPath = urlPathHelper.getPathWithinApplication(httpServletRequest);
@@ -83,9 +86,8 @@ public class SpspController {
 
     final StreamConnectionDetails streamConnectionDetails = streamReceiver.setupStream(paymentReceiverAddress);
 
-    // TODO: Validate that the content-type is `application/spsp+json`
     final HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
+    headers.setContentType(APPLICATION_SPSP4_JSON);
 
     // TODO: Add client-cache directive per RFC (i.e., configurable max-age).
     return new ResponseEntity(streamConnectionDetails, headers, HttpStatus.OK);
