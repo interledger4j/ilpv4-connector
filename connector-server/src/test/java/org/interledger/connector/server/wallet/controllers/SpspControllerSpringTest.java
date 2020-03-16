@@ -33,12 +33,12 @@ public class SpspControllerSpringTest {
   public ExpectedException expectedException = ExpectedException.none();
 
   @LocalServerPort
-  int randomServerPort;
+  private int randomServerPort;
 
   private SpspClient spspClient;
 
   @Before
-  public void setup() {
+  public void setUp() {
     spspClient = new SimpleSpspClient();
   }
 

@@ -96,7 +96,7 @@ public class SpspReceiverConfig {
   }
 
   @Bean
-  StatelessStreamReceiver statelessStreamReceiver(
+  protected StatelessStreamReceiver statelessStreamReceiver(
     final ServerSecretSupplier serverSecretSupplier,
     final StreamConnectionGenerator streamConnectionGenerator,
     final StreamEncryptionService streamEncryptionService,

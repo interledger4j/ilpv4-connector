@@ -3,7 +3,6 @@ package org.interledger.connector.server.wallet.controllers;
 import static org.hamcrest.Matchers.startsWith;
 
 import org.interledger.connector.server.ConnectorServerConfig;
-import org.interledger.spsp.StreamConnectionDetails;
 import org.interledger.spsp.client.SimpleSpspClient;
 import org.interledger.spsp.client.SpspClient;
 import org.interledger.spsp.client.SpspClientException;
@@ -32,12 +31,12 @@ public class SpspControllerDisabledSpringTest {
   public ExpectedException expectedException = ExpectedException.none();
 
   @LocalServerPort
-  int randomServerPort;
+  private int randomServerPort;
 
   private SpspClient spspClient;
 
   @Before
-  public void setup() {
+  public void setUp() {
     spspClient = new SimpleSpspClient();
   }
 

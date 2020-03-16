@@ -101,21 +101,22 @@ public class SpspController {
    */
   @VisibleForTesting
   protected final Optional<String> cleanupSpspUrlPath(String spspUrlPath) {
-    if (StringUtils.isBlank(spspUrlPath) || StringUtils.equals(spspUrlPath, "/")) {
+    String cleanedUpSpspUrlPath = spspUrlPath;
+    if (StringUtils.isBlank(cleanedUpSpspUrlPath) || StringUtils.equals(cleanedUpSpspUrlPath, "/")) {
       return Optional.empty();
     } else {
-      if (!spspUrlPath.startsWith("/")) { // add leading
-        spspUrlPath = "/" + spspUrlPath;
+      if (!cleanedUpSpspUrlPath.startsWith("/")) { // add leading
+        cleanedUpSpspUrlPath = "/" + cleanedUpSpspUrlPath;
       }
 
-      if (spspUrlPath.endsWith("/")) { // remove trailing
-        spspUrlPath = spspUrlPath.substring(0, spspUrlPath.length() - 1);
+      if (cleanedUpSpspUrlPath.endsWith("/")) { // remove trailing
+        cleanedUpSpspUrlPath = cleanedUpSpspUrlPath.substring(0, cleanedUpSpspUrlPath.length() - 1);
       }
 
       // Any double-forward-slashes should be replaced with a single.
-      spspUrlPath = spspUrlPath.replaceAll("//", "/");
+      cleanedUpSpspUrlPath = cleanedUpSpspUrlPath.replaceAll("//", "/");
 
-      return Optional.ofNullable(spspUrlPath);
+      return Optional.ofNullable(cleanedUpSpspUrlPath);
     }
   }
 
