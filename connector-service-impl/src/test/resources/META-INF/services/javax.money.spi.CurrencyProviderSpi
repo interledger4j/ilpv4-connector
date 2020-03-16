@@ -2,3 +2,4 @@
 # See https://jaxenter.de/go-for-the-money-einfuehrung-in-das-money-and-currency-api-38668
 # To display Bitcoin as Satoshis, for example.
 org.interledger.connector.javax.money.providers.XrpCurrencyProvider
+org.interledger.connector.javax.money.providers.EthCurrencyProvider
