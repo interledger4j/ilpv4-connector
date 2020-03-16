@@ -261,13 +261,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     HttpUrl issuer = jwtAuthSettings.tokenIssuer()
       .orElseThrow(() -> missingJwtAuthSetting(accountId, "jwtAuthSettings.tokenIssuer"));
 
-    HttpUrl jksUrl = new HttpUrl.Builder()
-      .scheme(issuer.scheme())
-      .host(issuer.host())
-      .port(issuer.port())
-      .addPathSegment(".well-known")
-      .addPathSegment("jwks.json")
-      .build();
+    HttpUrl jksUrl = JwksUtils.getJwksUrl(issuer);
 
     Authentication authResult = new JwtAuthenticationProvider(jwkProviderCache.get(jksUrl),
       issuer.toString(),
