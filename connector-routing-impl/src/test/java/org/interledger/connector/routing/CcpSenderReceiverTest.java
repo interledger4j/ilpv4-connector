@@ -324,7 +324,7 @@ public class CcpSenderReceiverTest {
     assertSyncMode(CcpSyncMode.MODE_IDLE, connectorA);
     assertSyncMode(CcpSyncMode.MODE_SYNC, connectorB);
     assertRoutingTableEpoch(0, connectorA);
-    assertRoutingTableEpoch(0, connectorB);
+    assertRoutingTableEpoch(1, connectorB);
   }
 
   private void assertRoutingTableEpoch(final int expectedEpoch, final SimulatedConnector... connectors) {

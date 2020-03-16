@@ -1,8 +1,10 @@
 package org.interledger.connector.server.spring.auth.ilpoverhttp;
 
+import org.interledger.connector.accounts.AccessTokenManager;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.event.AccountCredentialsUpdatedEvent;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -25,6 +27,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.google.common.collect.Sets;
+import com.google.common.eventbus.Subscribe;
 import com.google.common.hash.HashCode;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import okhttp3.HttpUrl;
@@ -36,6 +39,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -72,6 +77,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
   // See Javadoc above for how this is used.
   private final Cache<DecisionsCacheKey, AuthenticationDecision> authenticationDecisions;
   private AccountSettingsRepository accountSettingsRepository;
+  private AccessTokenManager accessTokenManager;
   private LinkSettingsFactory linkSettingsFactory;
   private Set<IlpOverHttpLinkSettings.AuthType> supportedJwtAuthTypes =
     Sets.newHashSet(IlpOverHttpLinkSettings.AuthType.JWT_HS_256, IlpOverHttpLinkSettings.AuthType.JWT_RS_256);
@@ -82,10 +88,11 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     final Decryptor decryptor,
     final AccountSettingsRepository accountSettingsRepository,
     final LinkSettingsFactory linkSettingsFactory,
-    final CacheMetricsCollector cacheMetrics
-  ) {
+    final CacheMetricsCollector cacheMetrics,
+    AccessTokenManager accessTokenManager) {
     this.accountSettingsRepository = accountSettingsRepository;
     this.linkSettingsFactory = linkSettingsFactory;
+    this.accessTokenManager = accessTokenManager;
     Objects.requireNonNull(connectorSettingsSupplier);
     this.decryptor = Objects.requireNonNull(decryptor);
 
@@ -136,6 +143,23 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     }
   }
 
+  /**
+   * clears any cached auth decisions matching an account id whenever credentials are updated
+   * @param event
+   */
+  @Subscribe
+  @SuppressWarnings("PMD.UnusedPublicMethod")
+  public void handleCredentialsUpdatedEvent(AccountCredentialsUpdatedEvent event) {
+    List<DecisionsCacheKey> toInvalidate = new ArrayList<>();
+    authenticationDecisions.asMap()
+      .forEach((key, value) -> {
+        if (key.accountId().equals(event.accountId())) {
+          toInvalidate.add(key);
+        }
+      });
+    authenticationDecisions.invalidateAll(toInvalidate);
+  }
+
   private RuntimeException handleBadCredentialsException(BadCredentialsException e, Authentication authentication) {
     if (e.getCause() != null && JWTVerificationException.class.isAssignableFrom(e.getCause().getClass())) {
       return new BadCredentialsException(
@@ -157,15 +181,35 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
   private AuthenticationDecision authenticateBearer(BearerAuthentication bearerAuth) {
     AccountId accountId = bearerAuth.getAccountId();
     return authenticationDecisions.get(DecisionsCacheKey.newKey(accountId, bearerAuth.hmacSha256()), (request) -> {
-      IncomingLinkSettings incomingLinkSettings = getIncomingLinkSettings(accountId)
-        .orElseThrow(() -> new IllegalArgumentException("no incoming settings for " + accountId));
-
-      if (incomingLinkSettings.authType().equals(IlpOverHttpLinkSettings.AuthType.SIMPLE)) {
-        return authenticateAsSimple(bearerAuth, accountId, incomingLinkSettings);
+      AuthenticationDecision authViaAccountSettings = authenticateViaAccountSettings(bearerAuth, accountId);
+      if (authViaAccountSettings.isAuthenticated()) {
+        return authViaAccountSettings;
       } else {
-        return authenticateAsJwt(bearerAuth, accountId, incomingLinkSettings);
+        return authenticateViaAccountAuthToken(bearerAuth).orElse(authViaAccountSettings);
       }
     });
+  }
+
+  private AuthenticationDecision authenticateViaAccountSettings(BearerAuthentication bearerAuth, AccountId accountId) {
+    IncomingLinkSettings incomingLinkSettings = getIncomingLinkSettings(accountId)
+      .orElseThrow(() -> new IllegalArgumentException("no incoming settings for " + accountId));
+
+    if (incomingLinkSettings.authType().equals(IlpOverHttpLinkSettings.AuthType.SIMPLE)) {
+      return authenticateAsSimple(bearerAuth, accountId, incomingLinkSettings);
+    } else {
+      return authenticateAsJwt(bearerAuth, accountId, incomingLinkSettings);
+    }
+  }
+
+  private Optional<AuthenticationDecision> authenticateViaAccountAuthToken(BearerAuthentication pendingAuth) {
+    return accessTokenManager.findByAccountIdAndRawToken(pendingAuth.getAccountId(),
+      new String(pendingAuth.getBearerToken()))
+      .map(accessToken -> AuthenticationDecision.builder()
+        .isAuthenticated(true)
+        .credentialHmac(pendingAuth.hmacSha256())
+        .principal(pendingAuth.getAccountId())
+        .build()
+      );
   }
 
   @Override
@@ -217,13 +261,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
     HttpUrl issuer = jwtAuthSettings.tokenIssuer()
       .orElseThrow(() -> missingJwtAuthSetting(accountId, "jwtAuthSettings.tokenIssuer"));
 
-    HttpUrl jksUrl = new HttpUrl.Builder()
-      .scheme(issuer.scheme())
-      .host(issuer.host())
-      .port(issuer.port())
-      .addPathSegment(".well-known")
-      .addPathSegment("jwks.json")
-      .build();
+    HttpUrl jksUrl = JwksUtils.getJwksUrl(issuer);
 
     Authentication authResult = new JwtAuthenticationProvider(jwkProviderCache.get(jksUrl),
       issuer.toString(),

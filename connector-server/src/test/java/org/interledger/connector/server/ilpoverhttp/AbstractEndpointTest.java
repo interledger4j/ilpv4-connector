@@ -15,7 +15,6 @@ import feign.RequestInterceptor;
 import feign.auth.BasicAuthRequestInterceptor;
 import okhttp3.HttpUrl;
 import org.junit.Before;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.cloud.openfeign.EnableFeignClients;
@@ -36,7 +35,6 @@ public abstract class AbstractEndpointTest {
 
   protected ConnectorAdminTestClient adminApiTestClient;
 
-  @Autowired
   protected ConnectorUserClient userClient;
 
   @Value("${interledger.connector.adminPassword}")
@@ -50,6 +48,7 @@ public abstract class AbstractEndpointTest {
     final HttpUrl baseHttpUrl = HttpUrl.parse("http://localhost:" + localServerPort);
     final RequestInterceptor basicAuthRequestInterceptor = new BasicAuthRequestInterceptor("admin", adminPassword);
     adminApiTestClient = ConnectorAdminTestClient.construct(baseHttpUrl, basicAuthRequestInterceptor);
+    userClient = ConnectorUserClient.construct(baseHttpUrl);
   }
 
   /**
@@ -66,18 +65,22 @@ public abstract class AbstractEndpointTest {
     }
   }
 
-  protected AccountSettings createAccount(AccountId accountId, Map<String, Object> customSettings) {
+  protected AccountSettings createAccount(AccountId accountId, String currencyCode, Map<String, Object> customSettings) {
     final AccountSettings accountSettings = AccountSettings.builder()
       .accountId(accountId)
       .description("HTTP account for Bob using a simple shared-secret")
       .accountRelationship(AccountRelationship.PEER)
       .linkType(IlpOverHttpLink.LINK_TYPE)
       .customSettings(customSettings)
-      .assetScale(2)
-      .assetCode("XRP")
+      .assetScale(9)
+      .assetCode(currencyCode)
       .build();
 
     return adminApiTestClient.createAccount(accountSettings);
+  }
+
+  protected AccountSettings createAccount(AccountId accountId, Map<String, Object> customSettings) {
+    return createAccount(accountId, "XRP", customSettings);
   }
 
   protected AccountSettings updateSimpleAuthToken(AccountSettings settings, String newSharedSecret) {

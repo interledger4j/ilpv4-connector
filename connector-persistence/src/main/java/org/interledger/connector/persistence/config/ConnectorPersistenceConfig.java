@@ -22,6 +22,5 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
   //H2ConnectorPersistenceConfig.class,
   //PostgresqlConnectorPersistenceConfig.class
 })
-
 public class ConnectorPersistenceConfig {
 }

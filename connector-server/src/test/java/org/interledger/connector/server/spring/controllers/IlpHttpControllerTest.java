@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.util.Date;
 
 @RunWith(SpringRunner.class)
-@WebMvcTest(controllers = IlpHttpControllerTest.class)
+@WebMvcTest(controllers = IlpHttpController.class)
 @Order
 public class IlpHttpControllerTest extends AbstractControllerTest {
 

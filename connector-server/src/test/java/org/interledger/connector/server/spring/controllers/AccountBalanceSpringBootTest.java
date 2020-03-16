@@ -43,7 +43,7 @@ public class AccountBalanceSpringBootTest extends AbstractEndpointTest {
   public void getBalanceRequiresAuthentication() {
     AccountId accountId = AccountId.of("napoleon");
     expectedException.expect(FeignException.Unauthorized.class);
-    userClient.getBalance(baseURI(), "", accountId.value());
+    userClient.getBalance("", accountId.value());
   }
 
   @Test
@@ -65,7 +65,7 @@ public class AccountBalanceSpringBootTest extends AbstractEndpointTest {
 
     when(balanceTracker.balance(accountId)).thenReturn(balance);
 
-    AccountBalanceResponse response = userClient.getBalance(baseURI(), bearer(password), accountId.value());
+    AccountBalanceResponse response = userClient.getBalance(bearer(password), accountId.value());
     assertThat(response).isEqualTo(expected);
   }
 
@@ -78,7 +78,7 @@ public class AccountBalanceSpringBootTest extends AbstractEndpointTest {
     createAccount(rex, customSettingsSimple("differentpassword"));
 
     expectedException.expect(FeignException.Unauthorized.class);
-    userClient.getBalance(baseURI(), bearer(password), rex.value());
+    userClient.getBalance(bearer(password), rex.value());
   }
 
   private String bearer(String password) {
