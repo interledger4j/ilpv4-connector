@@ -21,7 +21,7 @@ import javax.money.spi.RoundingProviderSpi;
  * An implementation of {@link RoundingProviderSpi} for rounding XRP drops, which are 1 millionth of an XRP.
  *
  * @see "https://developers.ripple.com/currency-formats.html"
- * @see ""
+ * @see "https://jaxenter.de/go-for-the-money-einfuehrung-in-das-money-and-currency-api-38668"
  */
 public class DropRoundingProvider implements RoundingProviderSpi {
 

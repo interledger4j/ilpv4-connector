@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+
 import javax.money.Monetary;
 import javax.money.MonetaryAmount;
 import javax.money.MonetaryRounding;
@@ -16,7 +17,8 @@ import javax.money.RoundingQueryBuilder;
 import javax.money.UnknownCurrencyException;
 
 /**
- * Unit tests for {@link DropRoundingProvider}.
+ * Unit tests for {@link DropRoundingProvider}. This test validates that whatever precision a particular XRP value is
+ * in, it will always be rounded to the millionth of an XRP, or 1 DROP, which is the smallest unit that XRP can handle.
  */
 public class DropRoundingProviderTest {
 
@@ -33,10 +35,28 @@ public class DropRoundingProviderTest {
       .setCurrency(XRP)
       .setNumber(new BigDecimal("0.123456789"))
       .create();
+    assertThat(xrpAmount.getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.123456789"));
 
     // round it to Drops
     final MonetaryAmount xrpRounded = xrpAmount.with(Monetary.getRounding(xrpAmount.getCurrency()));
     assertThat(xrpRounded.getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.123457"));
+  }
+
+  /**
+   * This test ensures that when very small amounts of XRP are rounded, the rounded amount does not exceed 1 drop, or
+   * one-millionth of an XRP.
+   */
+  @Test
+  public void testRoundXrpWhenSmallerThanDrops() {
+    final MonetaryAmount xrpAmount = Monetary.getAmountFactory(Money.class)
+      .setCurrency(XRP)
+      .setNumber(new BigDecimal("0.000000001"))
+      .create();
+    assertThat(xrpAmount.getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0.000000001"));
+
+    // round it to Drops
+    final MonetaryAmount xrpRounded = xrpAmount.with(Monetary.getRounding(xrpAmount.getCurrency()));
+    assertThat(xrpRounded.getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("0"));
   }
 
   @Test
@@ -45,6 +65,7 @@ public class DropRoundingProviderTest {
       .setCurrency(XRP)
       .setNumber(new BigDecimal("1.123456789"))
       .create();
+    assertThat(xrpAmount.getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("1.123456789"));
 
     // round it to Drops
     final MonetaryAmount xrpRounded = xrpAmount.with(Monetary.getRounding(xrpAmount.getCurrency()));
@@ -57,6 +78,7 @@ public class DropRoundingProviderTest {
       .setCurrency(XRP)
       .setNumber(new BigDecimal("221.123456"))
       .create();
+    assertThat(xrpAmount.getNumber().numberValue(BigDecimal.class)).isEqualTo(new BigDecimal("221.123456"));
 
     // round it to Drops
     final MonetaryAmount xrpRounded = xrpAmount.with(Monetary.getRounding(xrpAmount.getCurrency()));
@@ -67,7 +89,6 @@ public class DropRoundingProviderTest {
   public void getRounding() {
     final MonetaryRounding rounding = dropRoundingProvider.getRounding(RoundingQueryBuilder.of()
       .setCurrency(Monetary.getCurrency(XRP))
-      //.set("cashRounding", true)
       .build());
     assertThat(rounding.getRoundingContext().getProviderName()).isEqualTo("DropsProvider");
     assertThat(rounding.getRoundingContext().getRoundingName()).isEqualTo(DROP);
