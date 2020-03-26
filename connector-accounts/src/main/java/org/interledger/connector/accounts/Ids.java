@@ -5,11 +5,13 @@ import org.interledger.connector.core.immutables.Wrapper;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.common.base.CharMatcher;
 import com.google.common.base.Preconditions;
 import org.immutables.value.Value;
 
 import java.io.Serializable;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Wrapped immutable classes for providing type-safe identifiers.
@@ -17,13 +19,30 @@ import java.io.Serializable;
 public class Ids {
 
   /**
-   * A wrapper that defines a unique identifier for an account.
+   * <p>A wrapper that defines a unique identifier for an account. Because accountIds need to be usable in URL paths,
+   * this implementation only allows characters that are allowed in section 5 of RFC-4648 called "Base 64 Encoding with
+   * URL and Filename Safe Alphabet," plus periods. In other words, the following US-ASCII characters are allowed: (A–Z,
+   * a–z, 0–9, -, _, .) with the total character count not to exceed 64 characters.</p>
+   *
+   * <p>It is important to note that while capitalize US-ASCII characters are allowed when constructing an AccountId,
+   * the implementation lower-cases these characters. Thus, even though capital letters are allowed in initial input,
+   * they are not ultimately preserved once an {@link AccountId} is created.</p>
+   *
+   * <p>This design was chosen to ensure that any account identifier can be easily and correctly used in a URL path
+   * regardless of capitalization, such as when operating on the identifier using HTTP APIs.</p>
+   *
+   * @see "https://tools.ietf.org/html/rfc4648#section-5"
    */
   @Value.Immutable(intern = true)
   @Wrapped
   @JsonSerialize(as = AccountId.class)
   @JsonDeserialize(as = AccountId.class)
   static abstract class _AccountId extends Wrapper<String> implements Serializable {
+
+    // Represents section 5 of RFC-4684, "Base 64 Encoding with URL and Filename Safe Alphabet", plus periods.
+    // Capital letters are allowed, but later lower-cased during normalization.
+    private static final Pattern ALLOWED_CHARS_PATTERN = Pattern.compile("^([A-Za-z0-9\\-_\\.])+$");
+
     @Override
     public String toString() {
       return this.value();
@@ -31,26 +50,50 @@ public class Ids {
 
     @Value.Check
     public _AccountId enforceSize() {
-      Preconditions.checkArgument(
-        this.value().length() < 64,
-        "AccountId must not be longer than 64 characters!"
-      );
-      return this;
+      if (this.value().length() > 64) {
+        throw new InvalidAccountIdProblem("AccountId must not be longer than 64characters");
+      } else {
+        return this;
+      }
     }
 
+    /**
+     * Ensures that an accountId only ever contains lower-cased US-ASCII letters (not upper-cased).
+     *
+     * @return A normalized {@link AccountId}.
+     *
+     * @see "https://github.com/interledger4j/ilpv4-connector/issues/623"
+     */
     @Value.Check
-    public _AccountId enforceNoColons() {
-      Preconditions.checkArgument(!this.value().contains(":"), "Account id cannot contain a colon");
-      return this;
+    public _AccountId normalizeToLowercase() {
+      if (this.value().chars().anyMatch(Character::isUpperCase)) {
+        return AccountId.of(this.value().toLowerCase(Locale.ENGLISH));
+      } else {
+        return this;
+      }
     }
 
+    /**
+     * Ensures that an accountId only contains valid characters. This implementation only allows characters that are
+     * allowed in section 5 of RFC-4684 ("Base 64 Encoding with URL and Filename Safe Alphabet"), plus periods. In other
+     * words, the following US-ASCII characters are allowed: (A–Z, a–z, 0–9, -, _, .).
+     *
+     * @return A normalized {@link AccountId}.
+     *
+     * @see "https://tools.ietf.org/html/rfc4648#section-5"
+     * @see "https://github.com/interledger4j/ilpv4-connector/issues/623"
+     */
     @Value.Check
-    public _AccountId enforceAscii() {
-      Preconditions.checkArgument(CharMatcher.ascii().matchesAllOf(this.value()),
-        "Account id must be ascii");
-      return this;
+    public _AccountId enforceValidChars() {
+      Matcher m = ALLOWED_CHARS_PATTERN.matcher(this.value());
+      if (m.matches()) {
+        return this;
+      } else {
+        throw new InvalidAccountIdProblem(
+          "AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', or '.'"
+        );
+      }
     }
-
   }
 
   /**
@@ -61,6 +104,7 @@ public class Ids {
   @JsonSerialize(as = SettlementEngineAccountId.class)
   @JsonDeserialize(as = SettlementEngineAccountId.class)
   static abstract class _SettlementEngineAccountId extends Wrapper<String> implements Serializable {
+
     @Override
     public String toString() {
       return this.value();

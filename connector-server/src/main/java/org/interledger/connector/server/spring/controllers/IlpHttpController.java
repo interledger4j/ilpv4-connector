@@ -45,20 +45,20 @@ public class IlpHttpController {
    * @param preparePacket An {@link InterledgerPreparePacket} containing information about an ILP `sendPacket` request.
    *
    * @return All ILP Packets MUST be returned with the HTTP status code 200: OK. An endpoint MAY return standard HTTP
-   *     errors, including but not limited to: a malformed or unauthenticated request, rate limiting, or an unresponsive
-   *     upstream service. Connectors SHOULD either retry the request, if applicable, or relay an ILP Reject packet back
-   *     to the original sender with an appropriate Final or Temporary error code.
+   *   errors, including but not limited to: a malformed or unauthenticated request, rate limiting, or an unresponsive
+   *   upstream service. Connectors SHOULD either retry the request, if applicable, or relay an ILP Reject packet back
+   *   to the original sender with an appropriate Final or Temporary error code.
    */
   @RequestMapping(
-      value = PathConstants.SLASH_ACCOUNTS_ILP_PATH, method = {RequestMethod.POST},
-      produces = {MediaType.APPLICATION_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE},
-      consumes = {MediaType.APPLICATION_OCTET_STREAM_VALUE, APPLICATION_ILP_OCTET_STREAM_VALUE}
+    value = PathConstants.SLASH_ACCOUNTS_ILP_PATH, method = {RequestMethod.POST},
+    produces = {MediaType.APPLICATION_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE},
+    consumes = {MediaType.APPLICATION_OCTET_STREAM_VALUE, APPLICATION_ILP_OCTET_STREAM_VALUE}
   )
   public InterledgerResponsePacket sendData(
-      @PathVariable(PathConstants.ACCOUNT_ID) String accountId,
-      @RequestBody final InterledgerPreparePacket preparePacket
+    @PathVariable(PathConstants.ACCOUNT_ID) AccountId accountId,
+    @RequestBody final InterledgerPreparePacket preparePacket
   ) {
-    return this.ilPv4PacketSwitch.switchPacket(AccountId.of(accountId), preparePacket);
+    return this.ilPv4PacketSwitch.switchPacket(accountId, preparePacket);
   }
 
 }

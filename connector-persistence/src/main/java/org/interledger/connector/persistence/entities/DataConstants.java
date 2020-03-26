@@ -12,6 +12,7 @@ public interface DataConstants {
 
   interface ColumnNames {
     // ACCOUNT_SETTINGS
+    String ACCOUNT_ID = "ACCOUNT_ID";
     String ACCOUNT_RELATIONSHIP = "ACCOUNT_RELATIONSHIP";
     String SE_ACCOUNT_ID = "SE_ACCOUNT_ID";
 

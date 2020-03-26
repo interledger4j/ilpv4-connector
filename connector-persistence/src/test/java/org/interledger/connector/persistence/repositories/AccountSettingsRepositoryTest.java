@@ -1,6 +1,8 @@
 package org.interledger.connector.persistence.repositories;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.interledger.connector.persistence.entities.DataConstants.ColumnNames.ACCOUNT_ID;
+import static org.interledger.connector.persistence.entities.DataConstants.TableNames.ACCOUNT_SETTINGS;
 
 import org.interledger.connector.accounts.AccountBalanceSettings;
 import org.interledger.connector.accounts.AccountId;
@@ -44,6 +46,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
+
 /**
  * Unit tests for {@link AccountSettingsRepository}.
  */
@@ -58,8 +63,12 @@ public class AccountSettingsRepositoryTest {
 
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
+
   @Autowired
   private AccountSettingsRepository accountSettingsRepository;
+
+  @Autowired
+  private EntityManager entityManager;
 
   @Test
   public void whenSaveAndLoadWithAllFieldsPopulated() {
@@ -471,6 +480,82 @@ public class AccountSettingsRepositoryTest {
     assertThat(loadedAccountSettings.isPresent()).isTrue();
 
     assertThat(loadedAccountSettings.get()).isEqualTo(accountSettings1);
+  }
+
+  /**
+   * This test validates that account_settings database records that have an invalid identifier are ignored so that
+   * accoutIds that cannot be marshalled to an {@link AccountId} do not blow up the entire query system.
+   */
+  @Test
+  public void findFirstByAccountRelationshipWithConversionWhenIdIsInvalid() {
+    final AccountId accountId1 = AccountId.of(generateUuid());
+    final String invalidAccountId = "foo+bar";
+    {
+      final AccountSettings accountSettings1 = AccountSettings.builder()
+        .accountId(accountId1)
+        .assetCode("XRP")
+        .assetScale(9)
+        .linkType(LinkType.of("Loopback"))
+        .accountRelationship(AccountRelationship.PEER)
+        .isConnectionInitiator(true)
+        .build();
+      final AccountSettingsEntity accountSettingsEntity1 = new AccountSettingsEntity(accountSettings1);
+      accountSettingsRepository.save(accountSettingsEntity1);
+    }
+
+    final AccountId accountId2 = AccountId.of(generateUuid());
+    {
+      final AccountSettings accountSettings2 = AccountSettings.builder()
+        .accountId(accountId2)
+        .assetCode("XRP")
+        .assetScale(9)
+        .linkType(LinkType.of("Loopback"))
+        .accountRelationship(AccountRelationship.PEER)
+        .isConnectionInitiator(true)
+        .build();
+      final AccountSettingsEntity accountSettingsEntity2 = new AccountSettingsEntity(accountSettings2);
+      accountSettingsRepository.save(accountSettingsEntity2);
+    }
+
+    final Query query = entityManager.createNativeQuery(
+      "UPDATE " + ACCOUNT_SETTINGS + " set " + ACCOUNT_ID + "='" + invalidAccountId + "' WHERE " + ACCOUNT_ID + "='"
+        + accountId1.value() + "';"
+    );
+    assertThat(query.executeUpdate()).isEqualTo(1);
+    // Clear the EM so that all reloads will occur properly in-sync with DB.
+    entityManager.flush();
+    entityManager.clear();
+
+    assertThat(accountSettingsRepository.findByAccountId(accountId1)).isEmpty();
+    assertThat(accountSettingsRepository.findAll()).hasSize(2);
+    assertThat(accountSettingsRepository.findByAccountRelationshipIs(AccountRelationship.PEER).size()).isEqualTo(2);
+
+    ///////////////
+    // findByAccountRelationshipIsWithConversion
+    assertThat(accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PEER).size())
+      .isEqualTo(1);
+    assertThat(
+      accountSettingsRepository.findByAccountRelationshipIsWithConversion(AccountRelationship.PEER).stream().findFirst()
+        .get().accountId()).isEqualTo(accountId2);
+
+    ///////////////
+    // findByAccountId(String)
+    assertThat(accountSettingsRepository.findByAccountId(invalidAccountId)).isPresent();
+
+    ///////////////
+    // findByAccountIdWithConversion(AccountId)
+    assertThat(accountSettingsRepository.findByAccountIdWithConversion(accountId1)).isEmpty();
+    assertThat(accountSettingsRepository.findByAccountIdWithConversion(accountId2)).isNotEmpty();
+
+    ///////////////
+    //findFirstByAccountRelationshipWithConversion
+    assertThat(accountSettingsRepository.findFirstByAccountRelationshipWithConversion(AccountRelationship.PEER).get()
+      .accountId()).isEqualTo(accountId2);
+
+    ///////////////
+    //findAccountSettingsEntitiesByConnectionInitiatorIsTrueWithConversion
+    assertThat(accountSettingsRepository.findAccountSettingsEntitiesByConnectionInitiatorIsTrueWithConversion().size())
+      .isEqualTo(1);
   }
 
   @Test
