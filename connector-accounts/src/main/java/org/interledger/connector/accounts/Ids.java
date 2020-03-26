@@ -24,12 +24,17 @@ public class Ids {
    * URL and Filename Safe Alphabet," plus periods. In other words, the following US-ASCII characters are allowed: (A–Z,
    * a–z, 0–9, -, _, .) with the total character count not to exceed 64 characters.</p>
    *
-   * <p>It is important to note that while capitalize US-ASCII characters are allowed when constructing an AccountId,
-   * the implementation lower-cases these characters. Thus, even though capital letters are allowed in initial input,
+   * <p>It is important to note that while capitalized US-ASCII characters are allowed when constructing an AccountId,
+   * this implementation lower-cases these characters. Thus, even though capital letters are allowed in initial input,
    * they are not ultimately preserved once an {@link AccountId} is created.</p>
    *
    * <p>This design was chosen to ensure that any account identifier can be easily and correctly used in a URL path
    * regardless of capitalization, such as when operating on the identifier using HTTP APIs.</p>
+   *
+   * <p>Finally, it should be noted that '+' characaters are not allowed in an AccountId. This is because it is
+   * anticipated that plus-symbols will be used in payment-pointers to provide user-facing context, such as a currency
+   * or for anti-spam measures similar to the gmail's use of these symbols in email addresses. Thus, this character is
+   * disallowed to ensure clarity between user-facing augmentations of an existing accountId and the id itself.</p>
    *
    * @see "https://tools.ietf.org/html/rfc4648#section-5"
    */
