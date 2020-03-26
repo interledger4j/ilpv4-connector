@@ -24,7 +24,7 @@ public class AccountIdTest {
   public void testColons() {
     expectedException.expect(InvalidAccountIdProblem.class);
     expectedException
-      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', or '.')");
+      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', '.' or '~'");
     AccountId.of("foo:bar");
   }
 
@@ -32,7 +32,7 @@ public class AccountIdTest {
   public void testNonAscii() {
     expectedException.expect(InvalidAccountIdProblem.class);
     expectedException
-      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', or '.')");
+      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', '.' or '~'");
     AccountId.of("hànzìBopomofoㄏㄢㄗ");
   }
 
@@ -40,7 +40,7 @@ public class AccountIdTest {
   public void testForwardSlash() {
     expectedException.expect(InvalidAccountIdProblem.class);
     expectedException
-      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', or '.')");
+      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', '.' or '~'");
     AccountId.of("foo/bar");
   }
 
@@ -48,7 +48,7 @@ public class AccountIdTest {
   public void testBackSlash() {
     expectedException.expect(InvalidAccountIdProblem.class);
     expectedException
-      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', or '.')");
+      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', '.' or '~'");
     AccountId.of("foo\bar");
   }
 

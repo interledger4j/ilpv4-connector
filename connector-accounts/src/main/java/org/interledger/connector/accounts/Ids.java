@@ -21,8 +21,8 @@ public class Ids {
   /**
    * <p>A wrapper that defines a unique identifier for an account. Because accountIds need to be usable in URL paths,
    * this implementation only allows characters that are allowed in section 5 of RFC-4648 called "Base 64 Encoding with
-   * URL and Filename Safe Alphabet," plus periods. In other words, the following US-ASCII characters are allowed: (A–Z,
-   * a–z, 0–9, -, _, .) with the total character count not to exceed 64 characters.</p>
+   * URL and Filename Safe Alphabet," plus periods. In other words, the following US-ASCII characters are allowed:
+   * ('A–Z', 'a–z', '0–9', '-', '_', '.' and '~') with the total character count not to exceed 64 characters.</p>
    *
    * <p>It is important to note that while capitalized US-ASCII characters are allowed when constructing an AccountId,
    * this implementation lower-cases these characters. Thus, even though capital letters are allowed in initial input,
@@ -31,10 +31,13 @@ public class Ids {
    * <p>This design was chosen to ensure that any account identifier can be easily and correctly used in a URL path
    * regardless of capitalization, such as when operating on the identifier using HTTP APIs.</p>
    *
-   * <p>Finally, it should be noted that '+' characaters are not allowed in an AccountId. This is because it is
+   * <p>Finally, it should be noted that '+' characters are not allowed in an AccountId. This is because it is
    * anticipated that plus-symbols will be used in payment-pointers to provide user-facing context, such as a currency
    * or for anti-spam measures similar to the gmail's use of these symbols in email addresses. Thus, this character is
    * disallowed to ensure clarity between user-facing augmentations of an existing accountId and the id itself.</p>
+   *
+   * <p>Conversely, '.' characters are allowed in an AccountId because we have seen that it is occasionally
+   * desireable to have an account represent more than one prefix in an ILP address.</p>
    *
    * @see "https://tools.ietf.org/html/rfc4648#section-5"
    */
@@ -44,9 +47,9 @@ public class Ids {
   @JsonDeserialize(as = AccountId.class)
   static abstract class _AccountId extends Wrapper<String> implements Serializable {
 
-    // Represents section 5 of RFC-4684, "Base 64 Encoding with URL and Filename Safe Alphabet", plus periods.
+    // Represents section 5 of RFC-4684, "Base 64 Encoding with URL and Filename Safe Alphabet", plus periods and tilde.
     // Capital letters are allowed, but later lower-cased during normalization.
-    private static final Pattern ALLOWED_CHARS_PATTERN = Pattern.compile("^([A-Za-z0-9\\-_\\.])+$");
+    private static final Pattern ALLOWED_CHARS_PATTERN = Pattern.compile("^([A-Za-z0-9\\-_\\.\\~])+$");
 
     @Override
     public String toString() {
@@ -56,7 +59,7 @@ public class Ids {
     @Value.Check
     public _AccountId enforceSize() {
       if (this.value().length() > 64) {
-        throw new InvalidAccountIdProblem("AccountId must not be longer than 64characters");
+        throw new InvalidAccountIdProblem("AccountId must not be longer than 64 characters");
       } else {
         return this;
       }
@@ -81,7 +84,7 @@ public class Ids {
     /**
      * Ensures that an accountId only contains valid characters. This implementation only allows characters that are
      * allowed in section 5 of RFC-4684 ("Base 64 Encoding with URL and Filename Safe Alphabet"), plus periods. In other
-     * words, the following US-ASCII characters are allowed: (A–Z, a–z, 0–9, -, _, .).
+     * words, the following US-ASCII characters are allowed: ('A–Z', 'a–z', '0–9', '-', '_', '.' and '~').
      *
      * @return A normalized {@link AccountId}.
      *
@@ -95,7 +98,7 @@ public class Ids {
         return this;
       } else {
         throw new InvalidAccountIdProblem(
-          "AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', or '.'"
+          "AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', '.' or '~'"
         );
       }
     }
