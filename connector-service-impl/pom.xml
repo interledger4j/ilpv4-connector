@@ -129,6 +129,14 @@
       <artifactId>link-stateless-spsp-receiver</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>stream-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>stream-receiver</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
     </dependency>

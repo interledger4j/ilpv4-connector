@@ -23,6 +23,12 @@ public interface ConfigConstants {
   String TRUE = "true";
   String FALSE = "false";
 
+  ////////////////////
+  // Runtime Modes
+  ////////////////////
+  // Corresponds to the `wallet` profile
+  String WALLET_MODE = "wallet-mode";
+
   String INTERLEDGER = "interledger";
   String CONNECTOR = "connector";
   String CACHE = "cache";
@@ -38,6 +44,7 @@ public interface ConfigConstants {
   // Enabled Protocols
   ////////////////////
   String ENABLED_PROTOCOLS = INTERLEDGER__CONNECTOR + DOT + "enabledProtocols";
+  String SPSP_ENABLED = "spspEnabled";
 
   /**
    * @deprecated This value will likely go away if we transition to a BTP proxy that doesn't typically run in the
@@ -53,6 +60,17 @@ public interface ConfigConstants {
   String ENABLED_FEATURES = INTERLEDGER__CONNECTOR + DOT + "enabledFeatures";
 
   String LOCAL_SPSP_FULFILLMENT_ENABLED = "localSpspFulfillmentEnabled";
+
+  ////////////////////
+  // SPSP
+  ////////////////////
+  String URL_PATH = "urlPath";
+  String SERVER_SECRET = "serverSecret";
+
+  String SPSP = INTERLEDGER__CONNECTOR + DOT + "spsp";
+  String SPSP__URL_PATH = SPSP + DOT + URL_PATH;
+  String SPSP__SERVER_SECRET = SPSP + DOT + SERVER_SECRET;
+
   /**
    * @deprecated This is no longer necessary because the WebSocket server config doesn't engage unless BTP is enabled.
    */

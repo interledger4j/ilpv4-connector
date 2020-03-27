@@ -45,19 +45,22 @@ public class ConnectorSettingsFromPropertyFileTest {
 
     // Enabled Protocol Settings
     final EnabledProtocolSettings enabledProtocolSettings = connectorSettings.enabledProtocols();
-    assertThat(enabledProtocolSettings.isIlpOverHttpEnabled()).isEqualTo((true));
-    assertThat(enabledProtocolSettings.isPeerRoutingEnabled()).isEqualTo((true));
-    assertThat(enabledProtocolSettings.isPingProtocolEnabled()).isEqualTo((true));
-    assertThat(enabledProtocolSettings.isIldcpEnabled()).isEqualTo((true));
+    assertThat(enabledProtocolSettings.isIlpOverHttpEnabled()).isTrue();
+    assertThat(enabledProtocolSettings.isPeerRoutingEnabled()).isTrue();
+    assertThat(enabledProtocolSettings.isPingProtocolEnabled()).isTrue();
+    assertThat(enabledProtocolSettings.isIldcpEnabled()).isTrue();
+    assertThat(enabledProtocolSettings.isSpspEnabled()).isFalse();
 
     // Enabled Features
     final EnabledFeatureSettings enabledFeatureSettings = connectorSettings.enabledFeatures();
-    assertThat(enabledFeatureSettings.isRateLimitingEnabled()).isEqualTo((true));
+    assertThat(enabledFeatureSettings.isRateLimitingEnabled()).isTrue();
+    assertThat(enabledFeatureSettings.isLocalSpspFulfillmentEnabled()).isFalse();
+    assertThat(enabledFeatureSettings.isRequire32ByteSharedSecrets()).isTrue();
 
     // Global Routing Settings
     final GlobalRoutingSettings globalRoutingSettings = connectorSettings.globalRoutingSettings();
     assertThat(globalRoutingSettings.defaultRoute().get()).isEqualTo((AccountId.of("self.internal")));
-    assertThat(globalRoutingSettings.isUseParentForDefaultRoute()).isEqualTo((true));
+    assertThat(globalRoutingSettings.isUseParentForDefaultRoute()).isTrue();
     assertThat(globalRoutingSettings.routingSecret()).isEqualTo(Optional.of("shh"));
     assertThat(globalRoutingSettings.routeBroadcastInterval()).isEqualTo((Duration.ofMillis(30001L)));
     assertThat(globalRoutingSettings.routeCleanupInterval()).isEqualTo((Duration.ofMillis(30002L)));

@@ -24,7 +24,6 @@ import com.google.common.eventbus.EventBus;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 import java.util.function.Supplier;
 
@@ -32,7 +31,6 @@ import java.util.function.Supplier;
  * Baseline configuration for all Links.
  */
 @Configuration
-@Import( {LocalSpspFulfillmentConfig.class})
 public class LinkConfig {
 
   @Bean
@@ -41,12 +39,12 @@ public class LinkConfig {
   }
 
   @Bean
-  protected  PingLoopbackLinkFactory unidirectionalPingLinkFactory() {
+  protected PingLoopbackLinkFactory unidirectionalPingLinkFactory() {
     return new PingLoopbackLinkFactory();
   }
 
   @Bean
-  protected  LinkFactoryProvider linkFactoryProvider(
+  protected LinkFactoryProvider linkFactoryProvider(
     LoopbackLinkFactory loopbackLinkFactory, PingLoopbackLinkFactory pingLoopbackLinkFactory
   ) {
     final LinkFactoryProvider provider = new LinkFactoryProvider();

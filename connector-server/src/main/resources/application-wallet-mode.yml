@@ -1,0 +1,19 @@
+# Wallet Mode enables a Connector to do more than just packet switching. It also enables the Connector to support
+#  SPSP, both via a REST endpoint for STREAM connection generation as well as STREAM receiver termination.
+spring:
+
+interledger:
+  connector:
+    spsp:
+      # Any ILP address with {operator-address}.{addressPrefixSegment} will be treated as a locally terminated STREAM
+      # packet.
+      addressPrefixSegment: spsp
+      # The URL path that the Connector should respond to SPSP request on. Default is empty, meaning
+      # GET requests to https://connector.example.com/bob would be the default SPSP URL.
+      urlPath:
+    enabledFeatures:
+      # Enables local fulfillment of SPSP requests.
+      localSpspFulfillmentEnabled: true
+    enabledProtocols:
+      # Enables the Connector to respond to SPSP requests.
+      spspEnabled: true

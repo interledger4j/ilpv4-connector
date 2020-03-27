@@ -30,7 +30,7 @@ server:
     max-form-post-size: 32767 # Max per ILP ASN.1
 spring:
   profiles:
-    include: extensions
+    include: packet-switch, extensions
   cache:
     redis:
       time-to-live: 86400
@@ -85,19 +85,6 @@ interledger:
       # `g.connector.accounts.alice.bob` would route to `alice`.
       localAccountsAddressSegment: accounts
       # routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
-    # Deprecated
-    # btp.enabled: false
-    # keystore:
-    #   jks:
-    #     enabled: true
-    #     filename: crypto/crypto.p12
-    #     password: password
-    #     secret0_alias: secret0
-    #     secret0_password: password
-    spsp:
-      # Base64-encoded String of bytes used to derive any values used in encryption/decryption for SPSP.
-      # EXAMPLE: serverSecret: aQLR5IWAGV2vKnBhnFFsl2cXOCh9u0IWz3PiA64KlJ8=
-      addressPrefixSegment: spsp
     keys:
       secret0:
         alias: secret0
@@ -107,6 +94,7 @@ interledger:
         version: 1
     enabledFeatures:
       rateLimitingEnabled: false
+      # The default for packet-switch mode
       localSpspFulfillmentEnabled: false
       require32ByteSharedSecrets: true
     enabledProtocols:
@@ -114,6 +102,8 @@ interledger:
       pingProtocolEnabled: true
       peerRoutingEnabled: true
       ildcpEnabled: true
+      # The default for packet-switch mode
+      spspEnabled: false
     # settlementEngines:
       # connectionDefaults:
       # Default connect timeout (in milliseconds).
@@ -129,7 +119,7 @@ interledger:
       # writeTimeoutMillis: 30000
       # maxIdleConnections: 5
       # keepAliveMinutes: 5
-    # ilpOverHttp:
+      # ilpOverHttp:
       # connectionDefaults:
       # Applied when connecting a TCP socket to the target host. A value of 0 means no timeout, otherwise values must
       # be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If unspecified, defaults to 10.
