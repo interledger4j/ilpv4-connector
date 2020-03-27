@@ -228,6 +228,15 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.immutables</groupId>
       <artifactId>value</artifactId>
       <scope>provided</scope>
@@ -235,10 +244,6 @@
     <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>codecs-framework</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.interledger</groupId>
-      <artifactId>ilp-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
@@ -254,6 +259,10 @@
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
+      <artifactId>ilp-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
       <artifactId>link-core</artifactId>
     </dependency>
     <dependency>
@@ -262,12 +271,11 @@
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
-      <artifactId>link-stateless-spsp-receiver</artifactId>
+      <artifactId>spsp-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
-      <artifactId>spsp-core</artifactId>
-      <scope>runtime</scope>
+      <artifactId>spsp-client</artifactId>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>

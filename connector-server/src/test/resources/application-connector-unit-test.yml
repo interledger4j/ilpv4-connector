@@ -53,6 +53,7 @@ interledger:
       pingProtocolEnabled: true
       peerRoutingEnabled: true
       ildcpEnabled: true
+      spspEnabled: true
     # Global Routing Settings for this connector.
     globalRoutingSettings:
       # Whether to broadcast known routes.

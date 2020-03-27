@@ -5,6 +5,7 @@ import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR
 import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_ENABLED;
 import static org.mockito.Mockito.when;
 
+import org.interledger.connector.core.ConfigConstants;
 import org.interledger.crypto.KeyStoreType;
 
 import org.junit.Before;
@@ -38,7 +39,7 @@ public class RuntimeUtilsTest {
   /**
    * Helper method to simulate environment changes, which is otherwise not possible without reflection.
    */
-  @SuppressWarnings({"unchecked"})
+  @SuppressWarnings( {"unchecked"})
   private static void updateEnv(String name, String val) throws ReflectiveOperationException {
     Map<String, String> env = System.getenv();
     Field field = env.getClass().getDeclaredField("m");
@@ -55,9 +56,9 @@ public class RuntimeUtilsTest {
 
   @Test
   public void testGcpProfileEnabled() {
-    when(environmentMock.getActiveProfiles()).thenReturn(new String[]{"foo", "bar"});
+    when(environmentMock.getActiveProfiles()).thenReturn(new String[] {"foo", "bar"});
     assertThat(RuntimeUtils.gcpProfileEnabled(environmentMock)).isFalse();
-    when(environmentMock.getActiveProfiles()).thenReturn(new String[]{RuntimeProperties.Runtimes.GCP});
+    when(environmentMock.getActiveProfiles()).thenReturn(new String[] {RuntimeProperties.Runtimes.GCP});
     assertThat(RuntimeUtils.gcpProfileEnabled(environmentMock)).isTrue();
   }
 
@@ -112,5 +113,16 @@ public class RuntimeUtilsTest {
   public void testDetermineKeystoreTypeJksTrue() {
     when(environmentMock.getProperty(INTERLEDGER_CONNECTOR_KEYSTORE_JKS_ENABLED)).thenReturn(Boolean.TRUE.toString());
     assertThat(RuntimeUtils.determineKeystoreType(environmentMock)).isEqualTo(KeyStoreType.JKS);
+  }
+
+  @Test
+  public void walletModePacketSwitchModeEnabled() {
+    when(environmentMock.getActiveProfiles()).thenReturn(new String[] {ConfigConstants.WALLET_MODE});
+    assertThat(RuntimeUtils.walletModeEnabled(environmentMock)).isTrue();
+    assertThat(RuntimeUtils.packetSwitchModeEnabled(environmentMock)).isFalse();
+
+    when(environmentMock.getActiveProfiles()).thenReturn(new String[0]);
+    assertThat(RuntimeUtils.walletModeEnabled(environmentMock)).isFalse();
+    assertThat(RuntimeUtils.packetSwitchModeEnabled(environmentMock)).isTrue();
   }
 }

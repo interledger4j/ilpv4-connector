@@ -329,7 +329,7 @@
       <dependency>
         <groupId>org.interledger</groupId>
         <artifactId>quilt-bom</artifactId>
-        <version>${ilp.version}</version>
+        <version>HEAD-SNAPSHOT</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>

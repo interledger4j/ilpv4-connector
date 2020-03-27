@@ -40,5 +40,4 @@ public abstract class AbstractIdTest {
     @JsonProperty("settlement_account_id")
     SettlementEngineAccountId getSettlementAccountId();
   }
-
 }
