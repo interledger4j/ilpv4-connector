@@ -1,9 +1,11 @@
 package org.interledger.connector.server.spring.settings;
 
-import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.codecs.ildcp.IldcpCodecContextFactory;
+import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
+import org.interledger.codecs.stream.StreamCodecContextFactory;
 import org.interledger.connector.ccp.codecs.CcpCodecContextFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +17,7 @@ public class CodecContextConfig {
   //public static final String BTP = "btp";
   public static final String ILDCP = "il-dcp";
   public static final String CCP = "ccp";
+  public static final String STREAM = "stream";
 
   @Bean
   @Qualifier(ILP)
@@ -40,4 +43,9 @@ public class CodecContextConfig {
   //    return BtpCodecContextFactory.oer();
   //  }
 
+  @Bean
+  @Qualifier(STREAM)
+  public CodecContext streamCodecContext() {
+    return StreamCodecContextFactory.oer();
+  }
 }
