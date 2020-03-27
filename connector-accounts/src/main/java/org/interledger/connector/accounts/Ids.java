@@ -68,14 +68,15 @@ public class Ids {
     }
 
     /**
-     * Ensures that an accountId only ever contains lower-cased US-ASCII letters (not upper-cased).
+     * Ensures that an accountId that is specified with a dot ('.') is normalized in such a way that dots don't matter
+     * (i.e., the dot is simply removed).
      *
      * @return A normalized {@link AccountId}.
      *
      * @see "https://github.com/interledger4j/ilpv4-connector/issues/623"
      */
     @Value.Check
-    public _AccountId normalizeToDotsDontMatter() {
+    public _AccountId normalizeToRemoveDots() {
       if (this.value().contains(".")) {
         return AccountId.of(this.value().replace(".", ""));
       } else {
@@ -84,8 +85,7 @@ public class Ids {
     }
 
     /**
-     * Ensures that an accountId that is specified with a dot ('.') is normalized in such a way that dots don't matter
-     * (i.e., the dot is simply removed).
+     * Ensures that an accountId only ever contains lower-cased US-ASCII letters (not upper-cased).
      *
      * @return A normalized {@link AccountId}.
      *
