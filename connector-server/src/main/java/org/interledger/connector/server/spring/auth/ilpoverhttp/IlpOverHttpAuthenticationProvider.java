@@ -131,7 +131,7 @@ public class IlpOverHttpAuthenticationProvider implements AuthenticationProvider
         return null;
       }
     } catch (AccountNotFoundProblem e) {
-      throw new BadCredentialsException("Account not found for principal: " + authentication.getPrincipal());
+      throw new BadCredentialsException("Invalid credentials: " + authentication.getPrincipal());
     } catch (BadCredentialsException e) {
       throw handleBadCredentialsException(e, authentication);
     } catch (Exception e) {
