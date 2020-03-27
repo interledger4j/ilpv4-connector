@@ -97,7 +97,7 @@ public class DefaultSettlementServiceTest {
 
     expectedException.expect(InvalidAccountIdProblem.class);
     expectedException
-      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', '.' or '~'");
+      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', or '~'");
     when(accountSettingsRepositoryMock.findBySettlementEngineAccountId(SETTLEMENT_ACCOUNT_ID))
       .thenReturn(Optional.empty());
 
