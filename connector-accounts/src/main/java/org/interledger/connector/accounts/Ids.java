@@ -84,7 +84,8 @@ public class Ids {
     }
 
     /**
-     * Ensures that an accountId only ever contains lower-cased US-ASCII letters (not upper-cased).
+     * Ensures that an accountId that is specified with a dot ('.') is normalized in such a way that dots don't matter
+     * (i.e., the dot is simply removed).
      *
      * @return A normalized {@link AccountId}.
      *
