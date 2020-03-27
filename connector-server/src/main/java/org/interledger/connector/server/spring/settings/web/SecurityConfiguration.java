@@ -1,5 +1,7 @@
 package org.interledger.connector.server.spring.settings.web;
 
+import static org.interledger.connector.core.ConfigConstants.DOT;
+import static org.interledger.connector.core.ConfigConstants.SPSP_ENABLED;
 import static org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration.METRICS_ENDPOINT_URL_PATH;
 
 import org.interledger.connector.accounts.AccessTokenManager;
@@ -33,6 +35,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -80,6 +83,15 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Deprecated
   @Value("${" + ConfigConstants.ADMIN_PASSWORD + "}")
   private String adminPassword;
+
+  /**
+   * Determines the path that the SPSP server operates under. E.g., https://connector/{spspUrlPath}/bob
+   */
+  @Value("${" + ConfigConstants.SPSP__URL_PATH + ":}")
+  private String spspUrlPath;
+
+  @Value("${" + ConfigConstants.ENABLED_PROTOCOLS + DOT + SPSP_ENABLED + ":false}")
+  private boolean spspEnabled;
 
   /////////////////
   // For Basic Auth
@@ -148,6 +160,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
   @Override
   public void configure(final HttpSecurity http) throws Exception {
 
+    final RequestMatcher spspRequestMatcher = new SpspRequestMatcher(spspEnabled, spspUrlPath);
     byte[] ephemeralBytes = ByteArrayUtils.generate32RandomBytes();
 
     // Must come first in order to register properly due to 'denyAll' directive below.
@@ -162,8 +175,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .antMatchers(HttpMethod.GET, PathConstants.SLASH_ACCOUNTS_TOKENS_PATH + "/**").authenticated()
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS_TOKENS_PATH).authenticated()
       .antMatchers(HttpMethod.DELETE, PathConstants.SLASH_ACCOUNTS_TOKENS_PATH + "/**").authenticated()
-      //.antMatchers(HttpMethod.GET, HealthController.SLASH_HEALTH).permitAll() // permitAll if hidden by LB.
       .antMatchers(HttpMethod.GET, METRICS_ENDPOINT_URL_PATH).permitAll() // permitAll if hidden by LB.
+      // SPSP (if enabled)
+      .requestMatchers(spspRequestMatcher).permitAll()
     ;
 
     // WARNING: Don't add `denyAll` here...it's taken care of after the JWT security below. To verify, turn on debugging

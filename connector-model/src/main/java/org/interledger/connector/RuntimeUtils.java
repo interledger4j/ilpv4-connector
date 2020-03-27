@@ -1,14 +1,17 @@
 package org.interledger.connector;
 
+import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_GCP_ENABLED;
+import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_ENABLED;
+
+import org.interledger.connector.RuntimeProperties.Runtimes;
+import org.interledger.connector.core.ConfigConstants;
 import org.interledger.crypto.KeyStoreType;
+
 import org.springframework.core.env.Environment;
 
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
-
-import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_GCP_ENABLED;
-import static org.interledger.crypto.CryptoConfigConstants.INTERLEDGER_CONNECTOR_KEYSTORE_JKS_ENABLED;
 
 /**
  * Utility methods for interacting with and learning about the current server runtime.
@@ -25,10 +28,8 @@ public class RuntimeUtils {
     Objects.requireNonNull(environment);
 
     // If GCP profile is enabled, add those secrets...
-    final boolean runningInGcp = Arrays.stream(environment.getActiveProfiles())
-      .filter(profile -> RuntimeProperties.Runtimes.GCP.equals(profile))
-      .findAny().map($ -> true).orElse(false);
-    return runningInGcp;
+    return Arrays.stream(environment.getActiveProfiles())
+      .anyMatch(Runtimes.GCP::equalsIgnoreCase);
   }
 
   /**
@@ -63,11 +64,37 @@ public class RuntimeUtils {
   }
 
   /**
+   * Helper method to determine if the Connector is currently running in `Wallet` mode.
+   *
+   * @param env The current runtime {@link Environment}.
+   *
+   * @return {@code true} if the Connector is currently running in wallet-mode; {@code false} otherwise.
+   */
+  public static boolean walletModeEnabled(final Environment env) {
+    Objects.requireNonNull(env);
+    return Arrays.stream(env.getActiveProfiles())
+      .anyMatch(profile -> profile.equalsIgnoreCase(ConfigConstants.WALLET_MODE));
+  }
+
+  /**
+   * Helper method to determine if the Connector is currently running in `Packet-Switch` mode. A Connector runs in this
+   * mode by default whenever it is not running in Wallet Mode.
+   *
+   * @param env The current runtime {@link Environment}.
+   *
+   * @return {@code true}if the Connector is currently running in packet-switch-mode; {@code @false} otherwise.
+   */
+  public static boolean packetSwitchModeEnabled(final Environment env) {
+    Objects.requireNonNull(env);
+    return !walletModeEnabled(env);
+  }
+
+  /**
    * Determine if the GCP KMS key-store is enabled.
    *
-   * @param environment
+   * * @param environment An {@link Environment} to read properties from.
    *
-   * @return
+   * @return {@code true} if Goole Cloud Platform KMS is enabled; {@code @false} otherwise.
    */
   private static boolean isGcpKmsEnabled(final Environment environment) {
     Objects.requireNonNull(environment);
@@ -79,9 +106,9 @@ public class RuntimeUtils {
   /**
    * Determine if the JKS key-store is enabled.
    *
-   * @param environment
+   * @param environment An {@link Environment} to read properties from.
    *
-   * @return
+   * @return {@code true} if JKS KMS is enabled; {@code @false} otherwise.
    */
   private static boolean isJksKmsEnabled(final Environment environment) {
     Objects.requireNonNull(environment);

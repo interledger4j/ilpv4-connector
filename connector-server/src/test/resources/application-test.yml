@@ -9,8 +9,13 @@ spring:
 interledger:
   connector:
     nodeIlpAddress: test.connie
+    enabledProtocols:
+      # Enables the REST Endpoint for SPSP requests.
+      spspEnabled: true
     enabledFeatures:
       localSpspFulfillmentEnabled: true
+    spsp:
+        urlPath: p
     globalRoutingSettings:
       # A simulated routing secret, which is a seed used for generating routing table auth values.
       # Represents the plaintext value of `shh`, encrypted.

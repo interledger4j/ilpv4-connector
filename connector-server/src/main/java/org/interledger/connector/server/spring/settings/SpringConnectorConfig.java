@@ -77,7 +77,9 @@ import org.interledger.connector.server.spring.settings.crypto.CryptoConfig;
 import org.interledger.connector.server.spring.settings.javamoney.JavaMoneyConfig;
 import org.interledger.connector.server.spring.settings.link.LinkConfig;
 import org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration;
+import org.interledger.connector.config.SpspReceiverConfig;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
+import org.interledger.connector.server.wallet.spring.config.WalletConfig;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementEngineClient;
@@ -122,6 +124,7 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
 import javax.annotation.PostConstruct;
 
 /**
@@ -140,10 +143,14 @@ import javax.annotation.PostConstruct;
   CryptoConfig.class,
   ResiliencyConfig.class,
   CaffeineCacheConfig.class,
-  RedisConfig.class, SettlementConfig.class, BalanceTrackerConfig.class,
+  RedisConfig.class,
+  SpspReceiverConfig.class,
+  SettlementConfig.class,
+  BalanceTrackerConfig.class,
   LinkConfig.class,
   MetricsConfiguration.class,
   SpringConnectorWebMvc.class,
+  WalletConfig.class,
   GcpPubSubConfig.class,
   RedisPubSubConfig.class
 })
@@ -268,8 +275,8 @@ public class SpringConnectorConfig {
 
   @Bean
   AccessTokenManager accessTokenManager(PasswordEncoder passwordEncoder,
-                                        AccessTokensRepository accessTokensRepository,
-                                        EventBus eventBus) {
+    AccessTokensRepository accessTokensRepository,
+    EventBus eventBus) {
     return new DefaultAccessTokenManager(passwordEncoder, accessTokensRepository, eventBus);
   }
 
