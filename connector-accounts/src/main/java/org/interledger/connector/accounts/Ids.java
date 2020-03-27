@@ -28,16 +28,18 @@ public class Ids {
    * this implementation lower-cases these characters. Thus, even though capital letters are allowed in initial input,
    * they are not ultimately preserved once an {@link AccountId} is created.</p>
    *
-   * <p>This design was chosen to ensure that any account identifier can be easily and correctly used in a URL path
-   * regardless of capitalization, such as when operating on the identifier using HTTP APIs.</p>
+   * <p>Likewise, dot characters ('.') are accepted but then removed from any accountId. This is to replicate the
+   * thinking in Google's decition to make dots not matter in gmail. This helps prevent user confusion in use-cases
+   * where PaymentPointers directly map to a Connector's account identifier (even though this is an optional deployment
+   * strategy).</p>
+   *
+   * <p>These design choices were made to ensure that any account identifier can be easily and correctly used
+   * in a URL path regardless of capitalization, such as when operating on the identifier using HTTP APIs.</p>
    *
    * <p>Finally, it should be noted that '+' characters are not allowed in an AccountId. This is because it is
    * anticipated that plus-symbols will be used in payment-pointers to provide user-facing context, such as a currency
    * or for anti-spam measures similar to the gmail's use of these symbols in email addresses. Thus, this character is
    * disallowed to ensure clarity between user-facing augmentations of an existing accountId and the id itself.</p>
-   *
-   * <p>Conversely, '.' characters are allowed in an AccountId because we have seen that it is occasionally
-   * desireable to have an account represent more than one prefix in an ILP address.</p>
    *
    * @see "https://tools.ietf.org/html/rfc4648#section-5"
    */
@@ -60,6 +62,22 @@ public class Ids {
     public _AccountId enforceSize() {
       if (this.value().length() > 64) {
         throw new InvalidAccountIdProblem("AccountId must not be longer than 64 characters");
+      } else {
+        return this;
+      }
+    }
+
+    /**
+     * Ensures that an accountId only ever contains lower-cased US-ASCII letters (not upper-cased).
+     *
+     * @return A normalized {@link AccountId}.
+     *
+     * @see "https://github.com/interledger4j/ilpv4-connector/issues/623"
+     */
+    @Value.Check
+    public _AccountId normalizeToDotsDontMatter() {
+      if (this.value().contains(".")) {
+        return AccountId.of(this.value().replace(".", ""));
       } else {
         return this;
       }
@@ -98,7 +116,7 @@ public class Ids {
         return this;
       } else {
         throw new InvalidAccountIdProblem(
-          "AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', '.' or '~'"
+          "AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', or '~'"
         );
       }
     }

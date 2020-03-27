@@ -24,15 +24,22 @@ public class AccountIdTest {
   public void testColons() {
     expectedException.expect(InvalidAccountIdProblem.class);
     expectedException
-      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', '.' or '~'");
+      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', or '~'");
     AccountId.of("foo:bar");
+  }
+
+  @Test
+  public void testPeriods() {
+    assertThat(AccountId.of("foo.bar")).isEqualTo(AccountId.of("foobar"));
+    assertThat(AccountId.of(".foobar")).isEqualTo(AccountId.of("foobar"));
+    assertThat(AccountId.of("foo-bar.")).isEqualTo(AccountId.of("foo-bar"));
   }
 
   @Test
   public void testNonAscii() {
     expectedException.expect(InvalidAccountIdProblem.class);
     expectedException
-      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', '.' or '~'");
+      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', or '~'");
     AccountId.of("hànzìBopomofoㄏㄢㄗ");
   }
 
@@ -40,7 +47,7 @@ public class AccountIdTest {
   public void testForwardSlash() {
     expectedException.expect(InvalidAccountIdProblem.class);
     expectedException
-      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', '.' or '~'");
+      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', or '~'");
     AccountId.of("foo/bar");
   }
 
@@ -48,7 +55,7 @@ public class AccountIdTest {
   public void testBackSlash() {
     expectedException.expect(InvalidAccountIdProblem.class);
     expectedException
-      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', '.' or '~'");
+      .expectMessage("AccountIds may only contain the following characters: 'a–z', '0–9', '-', '_', or '~'");
     AccountId.of("foo\bar");
   }
 
@@ -62,9 +69,9 @@ public class AccountIdTest {
 
   @Test
   public void testValidCharset() {
-    assertThat(AccountId.of("abcdefghijklmnopqrstuvwxyz-_.foo.bar").value())
-      .isEqualTo("abcdefghijklmnopqrstuvwxyz-_.foo.bar");
-    assertThat(AccountId.of("0123456789_-.").value()).isEqualTo("0123456789_-.");
+    assertThat(AccountId.of("abcdefghijklmnopqrstuvwxyz-_~foo.bar").value())
+      .isEqualTo("abcdefghijklmnopqrstuvwxyz-_~foobar");
+    assertThat(AccountId.of("0123456789_-.").value()).isEqualTo("0123456789_-");
   }
 
   @Test
