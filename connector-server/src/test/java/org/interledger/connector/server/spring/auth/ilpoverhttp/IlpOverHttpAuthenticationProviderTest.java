@@ -121,7 +121,7 @@ public class IlpOverHttpAuthenticationProviderTest {
     String principal = "bad_principal";
     mockAccountSettings(AuthType.SIMPLE);
     expectedException.expect(BadCredentialsException.class);
-    expectedException.expectMessage("Account not found for principal: " + principal);
+    expectedException.expectMessage("Invalid credentials: " + principal);
     ilpOverHttpAuthenticationProvider.authenticate(BearerAuthentication.builder()
       .isAuthenticated(false)
       .principal(principal)
