@@ -12,6 +12,7 @@ import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.AccountSettingsCache;
 import org.interledger.connector.accounts.AccountSettingsResolver;
 import org.interledger.connector.accounts.BtpAccountIdResolver;
 import org.interledger.connector.accounts.DefaultAccessTokenManager;
@@ -25,6 +26,7 @@ import org.interledger.connector.config.BalanceTrackerConfig;
 import org.interledger.connector.config.CaffeineCacheConfig;
 import org.interledger.connector.config.RedisConfig;
 import org.interledger.connector.config.SettlementConfig;
+import org.interledger.connector.config.SpspReceiverConfig;
 import org.interledger.connector.events.DefaultPacketEventPublisher;
 import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.fx.JavaMoneyUtils;
@@ -77,7 +79,6 @@ import org.interledger.connector.server.spring.settings.crypto.CryptoConfig;
 import org.interledger.connector.server.spring.settings.javamoney.JavaMoneyConfig;
 import org.interledger.connector.server.spring.settings.link.LinkConfig;
 import org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration;
-import org.interledger.connector.config.SpspReceiverConfig;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
 import org.interledger.connector.server.wallet.spring.config.WalletConfig;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -124,7 +125,6 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import javax.annotation.PostConstruct;
 
 /**
@@ -561,7 +561,8 @@ public class SpringConnectorConfig {
     ILPv4PacketSwitch ilpPacketSwitch,
     BalanceTracker balanceTracker,
     EventBus eventBus,
-    SettlementService settlementService
+    SettlementService settlementService,
+    AccountSettingsCache accountSettingsCache
   ) {
     return new DefaultILPv4Connector(
       connectorSettingsSupplier,
@@ -573,6 +574,7 @@ public class SpringConnectorConfig {
       ilpPacketSwitch,
       balanceTracker,
       settlementService,
+      accountSettingsCache,
       eventBus
     );
   }

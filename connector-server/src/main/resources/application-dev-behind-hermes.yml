@@ -1,0 +1,6 @@
+spring:
+  profiles:
+    include: dev, postgres
+
+server:
+  port: 8000

@@ -89,6 +89,7 @@ public class DefaultAccountManager implements AccountManager {
     this.linkSettingsValidator = linkSettingsValidator;
     this.ildcpFetcherFactory = ildcpFetcherFactory;
     this.eventBus = eventBus;
+    this.eventBus.register(this);
   }
 
   @Override
