@@ -29,7 +29,20 @@ import java.util.Objects;
 @ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = ILP_OVER_HTTP_ENABLED, havingValue = "true")
 public class IlpHttpController {
 
+  /**
+   * @see "https://github.com/interledger4j/ilpv4-connector/issues/586"
+   * @deprecated This content-type does not conform to IL-RFC-29 and will be removed in a future version. Prefer *
+   *   {@link * MediaType#APPLICATION_OCTET_STREAM_VALUE} instead.
+   */
+  @Deprecated
   public static final String APPLICATION_ILP_OCTET_STREAM_VALUE = "application/ilp+octet-stream";
+
+  /**
+   * @see "https://github.com/interledger4j/ilpv4-connector/issues/586"
+   * @deprecated This content-type does not conform to IL-RFC-29 and will be removed in a future version. Prefer {@link
+   *   MediaType#APPLICATION_OCTET_STREAM} instead.
+   */
+  @Deprecated
   public static final MediaType APPLICATION_ILP_OCTET_STREAM = MediaType.valueOf(APPLICATION_ILP_OCTET_STREAM_VALUE);
 
   private final ILPv4PacketSwitch ilPv4PacketSwitch;
@@ -45,18 +58,18 @@ public class IlpHttpController {
    * @param preparePacket An {@link InterledgerPreparePacket} containing information about an ILP `sendPacket` request.
    *
    * @return All ILP Packets MUST be returned with the HTTP status code 200: OK. An endpoint MAY return standard HTTP
-   *     errors, including but not limited to: a malformed or unauthenticated request, rate limiting, or an unresponsive
-   *     upstream service. Connectors SHOULD either retry the request, if applicable, or relay an ILP Reject packet back
-   *     to the original sender with an appropriate Final or Temporary error code.
+   *   errors, including but not limited to: a malformed or unauthenticated request, rate limiting, or an unresponsive
+   *   upstream service. Connectors SHOULD either retry the request, if applicable, or relay an ILP Reject packet back
+   *   to the original sender with an appropriate Final or Temporary error code.
    */
   @RequestMapping(
-      value = PathConstants.SLASH_ACCOUNTS_ILP_PATH, method = {RequestMethod.POST},
-      produces = {MediaType.APPLICATION_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE},
-      consumes = {MediaType.APPLICATION_OCTET_STREAM_VALUE, APPLICATION_ILP_OCTET_STREAM_VALUE}
+    value = PathConstants.SLASH_ACCOUNTS_ILP_PATH, method = {RequestMethod.POST},
+    produces = {MediaType.APPLICATION_OCTET_STREAM_VALUE, MediaTypes.PROBLEM_VALUE},
+    consumes = {MediaType.APPLICATION_OCTET_STREAM_VALUE, APPLICATION_ILP_OCTET_STREAM_VALUE}
   )
   public InterledgerResponsePacket sendData(
-      @PathVariable(PathConstants.ACCOUNT_ID) String accountId,
-      @RequestBody final InterledgerPreparePacket preparePacket
+    @PathVariable(PathConstants.ACCOUNT_ID) String accountId,
+    @RequestBody final InterledgerPreparePacket preparePacket
   ) {
     return this.ilPv4PacketSwitch.switchPacket(AccountId.of(accountId), preparePacket);
   }
