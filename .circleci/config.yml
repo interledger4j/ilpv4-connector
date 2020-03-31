@@ -214,7 +214,7 @@ jobs:
           command: |
             cd ./connector-it
             docker network prune -f
-            mvn verify -coordination
+            mvn verify -Pcoordination
 
       # publish the coverage report to codecov.io
       - run: bash <(curl -s https://codecov.io/bash)
