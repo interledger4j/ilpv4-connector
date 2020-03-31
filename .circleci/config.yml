@@ -253,6 +253,9 @@ workflows:
       - integration_tests_settlement:
           requires:
             - build
+      - integration_tests_coordination:
+          requires:
+            - build
 
   nightly:
     triggers:
@@ -270,7 +273,11 @@ workflows:
       - integration_tests_settlement:
           requires:
             - build
+      - integration_tests_coordination:
+          requires:
+            - build
       - docker_image:
           requires:
             - integration_tests_ilp_over_http
             - integration_tests_settlement
+            - integration_tests_coordination
