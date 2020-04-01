@@ -2,6 +2,7 @@ package org.interledger.connector.accounts.sub;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
+import org.interledger.connector.accounts.InvalidAccountIdProblem;
 import org.interledger.core.InterledgerAddress;
 
 import org.apache.commons.lang3.StringUtils;
@@ -181,9 +182,9 @@ public interface LocalDestinationAddressUtils {
     final String accountIdString = StringUtils.substringBefore(withoutSpsp, ".");
 
     if (accountIdString.isEmpty()) {
-      throw new AccountNotFoundProblem(
-        "Invalid SPSP accountId parsed from interledgerAddress=" + interledgerAddress, AccountId.of(accountIdString)
-      );
+      throw new InvalidAccountIdProblem(String.format(
+        "No SPSP accountId parsed from Interledger Address. interledgerAddress=%s", interledgerAddress
+      ));
     } else {
       return AccountId.of(accountIdString);
     }
@@ -216,9 +217,9 @@ public interface LocalDestinationAddressUtils {
     final String accountIdString = StringUtils.substringBefore(withoutAccountsPrefix, ".");
 
     if (accountIdString.isEmpty()) {
-      throw new AccountNotFoundProblem(
-        "Invalid local accountId parsed from interledgerAddress=" + interledgerAddress, AccountId.of(accountIdString)
-      );
+      throw new InvalidAccountIdProblem(String.format(
+        "No SPSP accountId parsed from Interledger Address. interledgerAddress=%s", interledgerAddress
+      ));
     } else {
       return AccountId.of(accountIdString);
     }
