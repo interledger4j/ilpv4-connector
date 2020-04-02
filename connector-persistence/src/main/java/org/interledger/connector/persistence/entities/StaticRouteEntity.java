@@ -23,7 +23,7 @@ import javax.persistence.Table;
 @Entity
 @Access(AccessType.FIELD)
 @Table(name = STATIC_ROUTES, indexes = {
-    @Index(name = STATIC_ROUTES_IDX, columnList = ADDRESS_PREFIX)
+  @Index(name = STATIC_ROUTES_IDX, columnList = ADDRESS_PREFIX)
 })
 public class StaticRouteEntity extends AbstractEntity {
 
@@ -40,9 +40,9 @@ public class StaticRouteEntity extends AbstractEntity {
   @Column(name = "ACCOUNT_ID")
   private String accountId;
 
-
   // hibernate
-  StaticRouteEntity() {}
+  StaticRouteEntity() {
+  }
 
   public StaticRouteEntity(final StaticRoute staticRoute) {
     Objects.requireNonNull(staticRoute);
@@ -63,7 +63,8 @@ public class StaticRouteEntity extends AbstractEntity {
   }
 
   public void setAccountId(String accountId) {
-    this.accountId = accountId;
+    // Ensure a normalized account identifier.
+    this.accountId = AccountId.of(accountId).value();
   }
 
   public AccountId getBoxedAccountId() {

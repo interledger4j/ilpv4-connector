@@ -68,10 +68,10 @@ public class IlpHttpController {
     consumes = {MediaType.APPLICATION_OCTET_STREAM_VALUE, APPLICATION_ILP_OCTET_STREAM_VALUE}
   )
   public InterledgerResponsePacket sendData(
-    @PathVariable(PathConstants.ACCOUNT_ID) String accountId,
+    @PathVariable(PathConstants.ACCOUNT_ID) AccountId accountId,
     @RequestBody final InterledgerPreparePacket preparePacket
   ) {
-    return this.ilPv4PacketSwitch.switchPacket(AccountId.of(accountId), preparePacket);
+    return this.ilPv4PacketSwitch.switchPacket(accountId, preparePacket);
   }
 
 }

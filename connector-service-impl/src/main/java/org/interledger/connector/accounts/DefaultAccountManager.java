@@ -14,6 +14,7 @@ import org.interledger.connector.persistence.entities.DataConstants;
 import org.interledger.connector.persistence.entities.DeletedAccountSettingsEntity;
 import org.interledger.connector.persistence.entities.SettlementEngineDetailsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepositoryImpl.FilterAccountByValidAccountId;
 import org.interledger.connector.persistence.repositories.DeletedAccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.ModifiableConnectorSettings;
@@ -29,8 +30,6 @@ import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Preconditions;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
@@ -54,6 +53,8 @@ public class DefaultAccountManager implements AccountManager {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
+  private final FilterAccountByValidAccountId filterAccountByValidAccountId;
+
   private final Supplier<ConnectorSettings> connectorSettingsSupplier;
   private final AccountSettingsRepository accountSettingsRepository;
   private final DeletedAccountSettingsRepository deletedAccountSettingsRepository;
@@ -76,19 +77,22 @@ public class DefaultAccountManager implements AccountManager {
     final DeletedAccountSettingsRepository deletedAccountSettingsRepository,
     final LinkManager linkManager,
     final SettlementEngineClient settlementEngineClient,
-    LinkSettingsFactory linkSettingsFactory, LinkSettingsValidator linkSettingsValidator,
-    IldcpFetcherFactory ildcpFetcherFactory,
-    final EventBus eventBus) {
+    final LinkSettingsFactory linkSettingsFactory,
+    final LinkSettingsValidator linkSettingsValidator,
+    final IldcpFetcherFactory ildcpFetcherFactory,
+    final EventBus eventBus
+  ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.deletedAccountSettingsRepository = Objects.requireNonNull(deletedAccountSettingsRepository);
     this.linkManager = Objects.requireNonNull(linkManager);
     this.conversionService = Objects.requireNonNull(conversionService);
     this.settlementEngineClient = Objects.requireNonNull(settlementEngineClient);
-    this.linkSettingsFactory = linkSettingsFactory;
-    this.linkSettingsValidator = linkSettingsValidator;
-    this.ildcpFetcherFactory = ildcpFetcherFactory;
-    this.eventBus = eventBus;
+    this.linkSettingsFactory = Objects.requireNonNull(linkSettingsFactory);
+    this.linkSettingsValidator = Objects.requireNonNull(linkSettingsValidator);
+    this.ildcpFetcherFactory = Objects.requireNonNull(ildcpFetcherFactory);
+    this.eventBus = Objects.requireNonNull(eventBus);
+    this.filterAccountByValidAccountId = new FilterAccountByValidAccountId();
     this.eventBus.register(this);
   }
 
@@ -100,12 +104,14 @@ public class DefaultAccountManager implements AccountManager {
   @Override
   public Optional<AccountSettings> findAccountById(AccountId accountId) {
     return accountSettingsRepository.findByAccountId(accountId)
+      .filter(filterAccountByValidAccountId::test)
       .map(entity -> this.conversionService.convert(entity, AccountSettings.class));
   }
 
   @Override
   public List<AccountSettings> getAccounts() {
     return StreamSupport.stream(accountSettingsRepository.findAll().spliterator(), false)
+      .filter(filterAccountByValidAccountId::test)
       .map(accountSettingsEntity -> conversionService.convert(accountSettingsEntity, AccountSettings.class))
       .map(entity -> this.conversionService.convert(entity, AccountSettings.class))
       .collect(Collectors.toList());
@@ -114,7 +120,6 @@ public class DefaultAccountManager implements AccountManager {
   @Override
   public AccountSettings createAccount(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
-    validateAccountIdFormat(accountSettings.accountId());
 
     if (accountSettingsRepository.findByAccountId(accountSettings.accountId()).isPresent()) {
       throw new AccountAlreadyExistsProblem(accountSettings.accountId());
@@ -172,8 +177,11 @@ public class DefaultAccountManager implements AccountManager {
   }
 
   @Override
-  public AccountSettings updateAccount(AccountId accountId, AccountSettings accountSettings) {
-    AccountSettings updatedSettings = validateLinkSettings(accountSettings);
+  public AccountSettings updateAccount(final AccountId accountId, final AccountSettings accountSettings) {
+    Objects.requireNonNull(accountId);
+    Objects.requireNonNull(accountSettings);
+
+    final AccountSettings updatedSettings = validateLinkSettings(accountSettings);
     return accountSettingsRepository.findByAccountId(accountId)
       .map(entity -> {
 
@@ -212,7 +220,8 @@ public class DefaultAccountManager implements AccountManager {
     try {
 
       // Calling this for all link types will make sure the link type is supported
-      LinkSettings linkSettings = linkSettingsValidator.validateSettings(linkSettingsFactory.constructTyped(accountSettings));
+      LinkSettings linkSettings = linkSettingsValidator
+        .validateSettings(linkSettingsFactory.constructTyped(accountSettings));
 
       if (accountSettings.linkType().equals(IlpOverHttpLink.LINK_TYPE)) {
         IlpOverHttpLinkSettings ilpOverHttpLinkSettings = (IlpOverHttpLinkSettings) linkSettings;
@@ -253,6 +262,7 @@ public class DefaultAccountManager implements AccountManager {
    * Initialize a parent account with new settings from the parent connector.
    *
    * @param accountId The {@link AccountId} to initialize via IL-DCP.
+   *
    * @return The new {@link AccountSettings} after performing IL-DCP.
    */
   @Override
@@ -262,8 +272,7 @@ public class DefaultAccountManager implements AccountManager {
     // For IL-DCP to work, there MUST be a pre-existing parent account configured in the AccountSettingsRepository.
     // It's fine to preemptively load from the data-store here because these settings will naturally be updated later
     // in this method.
-    final AccountSettingsEntity parentAccountSettingsEntity =
-      accountSettingsRepository.safeFindByAccountId(accountId);
+    final AccountSettingsEntity parentAccountSettingsEntity = accountSettingsRepository.safeFindByAccountId(accountId);
 
     final Link<?> link = this.getLinkManager().getOrCreateLink(
       conversionService.convert(parentAccountSettingsEntity, AccountSettings.class)
@@ -279,8 +288,7 @@ public class DefaultAccountManager implements AccountManager {
     if (this.connectorSettingsSupplier.get() instanceof ModifiableConnectorSettings) {
       ((ModifiableConnectorSettings) this.connectorSettingsSupplier.get())
         .setOperatorAddress(ildcpResponse.getClientAddress());
-    }
-    else if (this.connectorSettingsSupplier.get() instanceof ConnectorSettingsFromPropertyFile) {
+    } else if (this.connectorSettingsSupplier.get() instanceof ConnectorSettingsFromPropertyFile) {
       ((ConnectorSettingsFromPropertyFile) this.connectorSettingsSupplier.get())
         .setNodeIlpAddress(ildcpResponse.getClientAddress());
     }
@@ -311,17 +319,6 @@ public class DefaultAccountManager implements AccountManager {
     }
     deletedAccountSettingsRepository.save(new DeletedAccountSettingsEntity(entity.get()));
     accountSettingsRepository.delete(entity.get());
-  }
-
-  private void validateAccountIdFormat(AccountId accountId) {
-    try {
-      Preconditions.checkArgument(!accountId.value().contains(":"), "Account id cannot contain a colon");
-      Preconditions.checkArgument(CharMatcher.ascii().matchesAllOf(accountId.value()),
-        "Account id must be ascii");
-    }
-    catch (IllegalArgumentException e) {
-      throw new InvalidAccountSettingsProblem(e.getMessage(), accountId);
-    }
   }
 
 }

@@ -7,6 +7,7 @@ import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepositoryImpl.FilterAccountByValidAccountId;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.routing.StaticRoutesManager;
@@ -81,6 +82,8 @@ public class DefaultILPv4Connector implements ILPv4Connector {
 
   private final AccountSettingsCache accountSettingsCache;
 
+  private final FilterAccountByValidAccountId filterAccountByValidAccountId;
+
   @VisibleForTesting
   DefaultILPv4Connector(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
@@ -138,6 +141,8 @@ public class DefaultILPv4Connector implements ILPv4Connector {
 
     this.eventBus = Objects.requireNonNull(eventBus);
     this.eventBus.register(this);
+
+    this.filterAccountByValidAccountId = new FilterAccountByValidAccountId();
   }
 
   /**
@@ -242,8 +247,9 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     /////////////////////////////////
     // If this Connector is starting in `child` mode, it will not have an operator address. We need to find the first
     // account of type `parent` and use IL-DCP to get the operating account for this Connector.
-    final Optional<AccountSettingsEntity> primaryParentAccountSettings =
-      this.accountSettingsRepository.findPrimaryParentAccountSettings();
+    final Optional<AccountSettingsEntity> primaryParentAccountSettings = this.accountSettingsRepository
+      .findPrimaryParentAccountSettings()
+      .filter(filterAccountByValidAccountId::test);
     if (primaryParentAccountSettings.isPresent()) {
       // If there's no Operator Address, use IL-DCP to try to get one. Only try this once. If this fails, then the
       // Connector should not startup.

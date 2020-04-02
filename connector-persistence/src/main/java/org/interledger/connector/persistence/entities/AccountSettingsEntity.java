@@ -1,5 +1,6 @@
 package org.interledger.connector.persistence.entities;
 
+import static org.interledger.connector.persistence.entities.DataConstants.ColumnNames.ACCOUNT_ID;
 import static org.interledger.connector.persistence.entities.DataConstants.ColumnNames.ACCOUNT_RELATIONSHIP;
 import static org.interledger.connector.persistence.entities.DataConstants.IndexNames.ACCT_REL_IDX;
 import static org.interledger.connector.persistence.entities.DataConstants.TableNames.ACCOUNT_SETTINGS;
@@ -44,7 +45,7 @@ public class AccountSettingsEntity extends AbstractEntity {
   private Long id;
 
   @NaturalId
-  @Column(name = "ACCOUNT_ID") // Hibernate treats this as unique, but Liquibase is explicit about uniqueness.
+  @Column(name = ACCOUNT_ID) // Hibernate treats this as unique, but Liquibase is explicit about uniqueness.
   private String accountId;
 
   @Column(name = "DESCRIPTION")
@@ -122,6 +123,14 @@ public class AccountSettingsEntity extends AbstractEntity {
     this.sendRoutes = accountSettings.isSendRoutes();
     this.receiveRoutes = accountSettings.isReceiveRoutes();
     this.customSettings = accountSettings.customSettings();
+  }
+
+  /**
+   * Helper method to obtain this Account's identifier as a String. WARNING: This method exists for internal account
+   * processing logic. Developers should prefer {@link #getAccountId()} instead .
+   */
+  public String getAccountIdAsString() {
+    return this.accountId;
   }
 
   public AccountId getAccountId() {

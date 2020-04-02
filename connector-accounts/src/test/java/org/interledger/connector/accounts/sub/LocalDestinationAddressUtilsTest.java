@@ -3,7 +3,7 @@ package org.interledger.connector.accounts.sub;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountNotFoundProblem;
+import org.interledger.connector.accounts.InvalidAccountIdProblem;
 import org.interledger.core.InterledgerAddress;
 
 import org.junit.Before;
@@ -245,20 +245,18 @@ public class LocalDestinationAddressUtilsTest {
 
   @Test
   public void parseSpspAccountIdWithShortAddress() {
-    expectedException.expect(AccountNotFoundProblem.class);
-    expectedException.expectMessage(
-      "Account Not Found (``): Invalid SPSP accountId parsed from "
-        + "interledgerAddress=InterledgerAddress{value=example.foo}"
+    expectedException.expect(InvalidAccountIdProblem.class);
+    expectedException.expectMessage("Invalid AccountId: No SPSP accountId parsed from Interledger Address. "
+      + "interledgerAddress=InterledgerAddress{value=example.foo}"
     );
     localDestinationAddressUtils.parseSpspAccountId(InterledgerAddress.of("example.foo"));
   }
 
   @Test
   public void parseSpspAccountIdWithLongAddress() {
-    expectedException.expect(AccountNotFoundProblem.class);
-    expectedException.expectMessage(
-      "Account Not Found (``): Invalid SPSP accountId parsed from "
-        + "interledgerAddress=InterledgerAddress{value=example.foo.bar.baz.boo.boo}"
+    expectedException.expect(InvalidAccountIdProblem.class);
+    expectedException.expectMessage("Invalid AccountId: No SPSP accountId parsed from Interledger Address. "
+      + "interledgerAddress=InterledgerAddress{value=example.foo.bar.baz.boo.boo}"
     );
     localDestinationAddressUtils.parseSpspAccountId(InterledgerAddress.of("example.foo.bar.baz.boo.boo"));
   }
@@ -310,20 +308,18 @@ public class LocalDestinationAddressUtilsTest {
 
   @Test
   public void parseLocalAccountIdWithShortAddress() {
-    expectedException.expect(AccountNotFoundProblem.class);
-    expectedException.expectMessage(
-      "Account Not Found (``): Invalid local accountId parsed from "
-        + "interledgerAddress=InterledgerAddress{value=example.foo}"
+    expectedException.expect(InvalidAccountIdProblem.class);
+    expectedException.expectMessage("Invalid AccountId: No SPSP accountId parsed from Interledger Address. "
+      + "interledgerAddress=InterledgerAddress{value=example.foo}"
     );
     localDestinationAddressUtils.parseLocalAccountId(InterledgerAddress.of("example.foo"));
   }
 
   @Test
   public void parseLocalAccountIdWithLongAddress() {
-    expectedException.expect(AccountNotFoundProblem.class);
-    expectedException.expectMessage(
-      "Account Not Found (``): Invalid local accountId parsed from "
-        + "interledgerAddress=InterledgerAddress{value=example.foo.bar.baz.boo.boo}"
+    expectedException.expect(InvalidAccountIdProblem.class);
+    expectedException.expectMessage("Invalid AccountId: No SPSP accountId parsed from Interledger Address. "
+      + "interledgerAddress=InterledgerAddress{value=example.foo.bar.baz.boo.boo}"
     );
     localDestinationAddressUtils.parseLocalAccountId(InterledgerAddress.of("example.foo.bar.baz.boo.boo"));
   }
@@ -335,31 +331,36 @@ public class LocalDestinationAddressUtilsTest {
     //g.connector.accounts.bob.~foo --> bob
     //g.connector.accounts.~bob.bar --> bob
 
-    assertThat(localDestinationAddressUtils.parseLocalAccountId(InterledgerAddress.of(EXAMPLE_CONNECTOR)
+    assertThat(localDestinationAddressUtils.parseLocalAccountId(
+      InterledgerAddress.of(EXAMPLE_CONNECTOR)
       .with(localDestinationAddressUtils.getLocalAccountsAddressPrefixSegment())
       .with(BOB)
       .with(XYZ123)
     )).isEqualTo(AccountId.of(BOB));
 
-    assertThat(localDestinationAddressUtils.parseLocalAccountId(InterledgerAddress.of(EXAMPLE_CONNECTOR)
+    assertThat(localDestinationAddressUtils.parseLocalAccountId(
+      InterledgerAddress.of(EXAMPLE_CONNECTOR)
       .with(localDestinationAddressUtils.getLocalAccountsAddressPrefixSegment())
       .with(TILDE + BOB)
       .with(XYZ123)
     )).isEqualTo(AccountId.of(TILDE + BOB));
 
-    assertThat(localDestinationAddressUtils.parseLocalAccountId(InterledgerAddress.of(EXAMPLE_CONNECTOR)
+    assertThat(localDestinationAddressUtils.parseLocalAccountId(
+      InterledgerAddress.of(EXAMPLE_CONNECTOR)
       .with(localDestinationAddressUtils.getLocalAccountsAddressPrefixSegment())
       .with(BOB + TILDE + FOO)
       .with(XYZ123)
     )).isEqualTo(AccountId.of(BOB + TILDE + FOO));
 
-    assertThat(localDestinationAddressUtils.parseLocalAccountId(InterledgerAddress.of(EXAMPLE_CONNECTOR)
+    assertThat(localDestinationAddressUtils.parseLocalAccountId(
+      InterledgerAddress.of(EXAMPLE_CONNECTOR)
       .with(localDestinationAddressUtils.getLocalAccountsAddressPrefixSegment())
       .with(BOB + TILDE)
       .with(XYZ123)
     )).isEqualTo(AccountId.of(BOB + TILDE));
 
-    assertThat(localDestinationAddressUtils.parseLocalAccountId(InterledgerAddress.of(EXAMPLE_CONNECTOR)
+    assertThat(localDestinationAddressUtils.parseLocalAccountId(
+      InterledgerAddress.of(EXAMPLE_CONNECTOR)
       .with(localDestinationAddressUtils.getLocalAccountsAddressPrefixSegment())
       .with(BOB)
       .with(TILDE + XYZ123)
