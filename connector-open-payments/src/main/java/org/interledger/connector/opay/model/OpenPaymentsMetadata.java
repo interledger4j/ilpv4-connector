@@ -1,8 +1,11 @@
-package org.interledger.connector.opay;
+package org.interledger.connector.opay.model;
 
+import org.interledger.connector.opay.ImmutableOpenPaymentsMetadata;
 import org.interledger.stream.Denomination;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import okhttp3.HttpUrl;
 import org.immutables.value.Value;
@@ -12,6 +15,7 @@ import java.util.List;
 @Value.Immutable
 @JsonSerialize(as = ImmutableOpenPaymentsMetadata.class)
 @JsonDeserialize(as = ImmutableOpenPaymentsMetadata.class)
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public interface OpenPaymentsMetadata {
 
   static ImmutableOpenPaymentsMetadata.Builder builder() {
