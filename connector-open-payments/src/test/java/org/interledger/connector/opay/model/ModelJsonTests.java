@@ -1,12 +1,9 @@
 package org.interledger.connector.opay.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.in;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.jackson.ObjectMapperFactory;
 import org.interledger.spsp.PaymentPointer;
-import org.interledger.stream.Denominations;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

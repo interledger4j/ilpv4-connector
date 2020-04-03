@@ -4,11 +4,9 @@ import org.interledger.spsp.PaymentPointer;
 import org.interledger.stream.Denomination;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.primitives.UnsignedLong;
-import okhttp3.HttpUrl;
 import org.immutables.value.Value;
 
 import java.time.Instant;
@@ -101,6 +99,7 @@ public interface Invoice {
    * @return The {@link Instant} that this invoice was created.
    */
   @JsonIgnore
+  @Value.Default
   default Instant createdAt() {
     return Instant.now();
   }
@@ -109,6 +108,7 @@ public interface Invoice {
    * @return The {@link Instant} that this invoice was updated.
    */
   @JsonIgnore
+  @Value.Default
   default Instant updatedAt() {
     return Instant.now();
   }
