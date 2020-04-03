@@ -433,6 +433,12 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>org.interledger.connector</groupId>
+      <artifactId>connector-open-payments</artifactId>
+      <version>HEAD-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 
   <profiles>

@@ -11,6 +11,8 @@ import org.immutables.value.Value;
 
 import java.time.Instant;
 import java.util.UUID;
+import javax.annotation.Nullable;
+import javax.validation.constraints.Null;
 
 /**
  * Represents an amount payable that can be presented to a third party and/or a Mandate to pay.
@@ -90,10 +92,8 @@ public interface Invoice {
    *
    * @return A {@link String} of the description of this invoice.
    */
-  @Value.Default
-  default String description() {
-    return "";
-  }
+  @Nullable
+  String description();
 
   /**
    * @return The {@link Instant} that this invoice was created.
