@@ -1,8 +1,9 @@
-package org.interledger.connector.opay;
+package org.interledger.connector.opay.model;
 
-import org.interledger.stream.Denomination;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import okhttp3.HttpUrl;
 import org.immutables.value.Value;
@@ -33,6 +34,7 @@ public interface OpenPaymentsMetadata {
    *
    * @return An {@link HttpUrl} representing the base URL for the Authorization Server.
    */
+  @JsonProperty("authorization_issuer")
   HttpUrl authorizationIssuer();
 
   /**
@@ -44,6 +46,7 @@ public interface OpenPaymentsMetadata {
    * @see "https://tools.ietf.org/html/rfc6749"
    * @return the {@link HttpUrl} of the endpoint on the Authorization Server which can create authorization grants.
    */
+  @JsonProperty("authorization_endpoint")
   HttpUrl authorizationEndpoint();
 
   /**
@@ -56,6 +59,7 @@ public interface OpenPaymentsMetadata {
    * @see "https://tools.ietf.org/html/rfc6749"
    * @return The {@link HttpUrl} of the endpoint on the Authorization Server which gives clients access and refresh tokens.
    */
+  @JsonProperty("token_endpoint")
   HttpUrl tokenEndpoint();
 
   /**
@@ -65,6 +69,7 @@ public interface OpenPaymentsMetadata {
    *
    * @return The {@link HttpUrl} of the endpoint on the Open Payments Server which handles invoices.
    */
+  @JsonProperty("invoices_endpoint")
   HttpUrl invoicesEndpoint();
 
   /**
@@ -74,10 +79,12 @@ public interface OpenPaymentsMetadata {
    *
    * @return The {@link HttpUrl} of the endpoint on the Open Payments Server which handles mandates.
    */
-  HttpUrl mandatesUrl();
+  @JsonProperty("mandates_endpoint")
+  HttpUrl mandatesEndpoint();
 
   /**
-   * @return A list of {@link Denomination} for assets that can be used to create agreements on this server
+   * @return A list of {@link SupportedAsset} for assets that can be used to create agreements on this server
    */
-  List<Denomination> assetsSupported();
+  @JsonProperty("assets_supported")
+  List<SupportedAsset> assetsSupported();
 }

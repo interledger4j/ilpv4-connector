@@ -42,6 +42,7 @@ import org.interledger.connector.links.filters.OutgoingBalanceLinkFilter;
 import org.interledger.connector.links.filters.OutgoingMaxPacketAmountLinkFilter;
 import org.interledger.connector.links.filters.OutgoingMetricsLinkFilter;
 import org.interledger.connector.metrics.MetricsService;
+import org.interledger.connector.opay.spring.config.OpenPaymentsConfig;
 import org.interledger.connector.packetswitch.DefaultILPv4PacketSwitch;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.packetswitch.InterledgerAddressUtils;
@@ -152,7 +153,8 @@ import javax.annotation.PostConstruct;
   SpringConnectorWebMvc.class,
   WalletConfig.class,
   GcpPubSubConfig.class,
-  RedisPubSubConfig.class
+  RedisPubSubConfig.class,
+  OpenPaymentsConfig.class
 })
 // support extension by looking for annotated Component/Config classes under the configured extensions.basePackage
 @ComponentScan(basePackages = "${interledger.connector.extensions.basePackage:org.interledger.connector.extensions}",
