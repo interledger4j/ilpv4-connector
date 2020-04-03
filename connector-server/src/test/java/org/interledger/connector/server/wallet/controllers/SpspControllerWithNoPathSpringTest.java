@@ -135,13 +135,14 @@ public class SpspControllerWithNoPathSpringTest extends AbstractEndpointTest {
   @Test
   public void bobPaysAliceUsingLocalFulfillment() throws InterruptedException, ExecutionException, TimeoutException {
     String authToken = "shh";
-    AccountSettings bob = createAccount(AccountId.of(BOB), customSettingsSimple(authToken));
-    createAccount(AccountId.of(ALICE), customSettingsSimple(authToken));
-    final IlpOverHttpLink ilpOverHttpLink = linkToServer(AccountId.of(BOB), authToken, okHttpClient, objectMapper);
+    AccountSettings bob = createAccount(AccountId.of(BOB + UUID.randomUUID()), customSettingsSimple(authToken));
+    AccountSettings alice =
+      createAccount(AccountId.of(ALICE + UUID.randomUUID()), customSettingsSimple(authToken));
+    final IlpOverHttpLink ilpOverHttpLink = linkToServer(bob.accountId(), authToken, okHttpClient, objectMapper);
 
     final StreamConnectionDetails connectionDetails = spspClient.getStreamConnectionDetails(
       HttpUrl.parse("http://localhost:" + randomServerPort).newBuilder()
-        .addPathSegment(ALICE)
+        .addPathSegment(alice.accountId().value())
         .build()
     );
 
