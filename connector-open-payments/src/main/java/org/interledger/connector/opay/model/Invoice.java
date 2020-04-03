@@ -1,10 +1,10 @@
 package org.interledger.connector.opay.model;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.stream.Denomination;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.primitives.UnsignedLong;
@@ -27,17 +27,6 @@ public interface Invoice {
   }
 
   /**
-   * The invoices URL of the Open Payments server.
-   *
-   * Used to generate a name for this invoice, as specified in the Open Payments specification.
-   *
-   * @see "https://docs.openpayments.dev/invoices#create".
-   * @return The {@link HttpUrl} invoices endpoint.
-   */
-  @JsonIgnore
-  HttpUrl openPaymentsInvoicesUrl();
-
-  /**
    * A unique identifier for this {@link Invoice}.
    *
    * Defaults to a random UUID.
@@ -45,23 +34,8 @@ public interface Invoice {
    * @return The {@link UUID} of this {@link Invoice}.
    */
   @Value.Default
-  default UUID invoiceId() {
+  default UUID id() {
     return UUID.randomUUID();
-  }
-
-  /**
-   * The name of this {@link Invoice}, as specified here: https://docs.openpayments.dev/invoices#create.
-   *
-   * This will be the invoices URL of the Open Payments server followed by the invoice Id.
-   *
-   * @return The name of this Invoice.
-   */
-  @Value.Derived
-  default String name() {
-    return openPaymentsInvoicesUrl().newBuilder()
-      .addPathSegment(invoiceId().toString())
-      .build()
-      .toString();
   }
 
   /**
@@ -124,14 +98,6 @@ public interface Invoice {
   }
 
   /**
-   * The ILP accountId of the subject of this invoice.
-   *
-   * @return The {@link AccountId} of the subject of this invoice.
-   */
-  @JsonIgnore
-  AccountId accountId();
-
-  /**
    * @return The {@link Instant} that this invoice was created.
    */
   @JsonIgnore
@@ -155,5 +121,8 @@ public interface Invoice {
    * @return The {@link Instant} when the invoice was finalized.
    */
   @JsonIgnore
-  Instant finalizedAt();
+  @Value.Default
+  default Instant finalizedAt() {
+    return Instant.now();
+  };
 }
