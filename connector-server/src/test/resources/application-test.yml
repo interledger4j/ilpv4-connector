@@ -16,6 +16,7 @@ interledger:
       localSpspFulfillmentEnabled: true
     spsp:
         urlPath: p
+        addressPrefixSegment: spsp-test
     globalRoutingSettings:
       # A simulated routing secret, which is a seed used for generating routing table auth values.
       # Represents the plaintext value of `shh`, encrypted.

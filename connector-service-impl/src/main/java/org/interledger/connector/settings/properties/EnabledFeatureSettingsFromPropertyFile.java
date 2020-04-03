@@ -9,6 +9,7 @@ public class EnabledFeatureSettingsFromPropertyFile implements EnabledFeatureSet
 
   private boolean rateLimitingEnabled;
   private boolean require32ByteSharedSecrets;
+  private boolean localSpspFulfillmentEnabled;
 
   @Override
   public boolean isRateLimitingEnabled() {
@@ -27,4 +28,14 @@ public class EnabledFeatureSettingsFromPropertyFile implements EnabledFeatureSet
   public void setRequire32ByteSharedSecrets(boolean require32ByteSharedSecrets) {
     this.require32ByteSharedSecrets = require32ByteSharedSecrets;
   }
+
+  @Override
+  public boolean isLocalSpspFulfillmentEnabled() {
+    return localSpspFulfillmentEnabled;
+  }
+
+  public void setLocalSpspFulfillmentEnabled(boolean localSpspFulfillmentEnabled) {
+    this.localSpspFulfillmentEnabled = localSpspFulfillmentEnabled;
+  }
+
 }
