@@ -145,6 +145,11 @@
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>connector-open-payments</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>connector-persistence</artifactId>
         <version>${project.version}</version>
       </dependency>

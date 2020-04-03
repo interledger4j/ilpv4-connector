@@ -17,5 +17,6 @@
     <!-- DDL -->
     <include file="db/changelogs/base/changelog.xml"/>
     <include file="db/changelogs/base/changelog_00001_access_token.xml"/>
+    <include file="db/changelogs/base/changelog_00002_invoices.xml"/>
 
 </databaseChangeLog>

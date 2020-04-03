@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+  <changeSet id="invoices" author="isimpson">
+    <createTable tableName="INVOICES">
+      <column autoIncrement="true" name="ID" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <!--
+        spec says this should just be id, but we'll translate to that
+        in the dto since we won't expose the auto increment to the
+        outside world
+      -->
+      <column name="INVOICE_ID" type="VARCHAR(64)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="ASSET_CODE" type="VARCHAR(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="ASSET_SCALE" type="SMALLINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="AMOUNT" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="RECEIVED" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="SUBJECT" type="VARCHAR(2000)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="DESCRIPTION" type="VARCHAR(2000)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="EXPIRES_AT" type="DATETIME">
+        <constraints nullable="false"/>
+      </column>
+
+      <!-- Extension columns that exist for auditing purposes -->
+      <column name="CREATED_DTTM" type="DATETIME">
+        <constraints nullable="false"/>
+      </column>
+      <column name="MODIFIED_DTTM" type="DATETIME">
+        <constraints nullable="false"/>
+      </column>
+      <column name="VERSION" type="SMALLINT">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <createIndex indexName="INVOICES_ID_IDX"
+                 tableName="INVOICES">
+      <column name="INVOICE_ID"/>
+    </createIndex>
+  </changeSet>
+</databaseChangeLog>
