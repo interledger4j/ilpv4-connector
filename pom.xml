@@ -71,6 +71,7 @@
     <module>connector-admin-client</module>
     <module>connector-pubsub</module>
     <module>connector-pubsub-api</module>
+    <module>connector-open-payments</module>
   </modules>
 
   <profiles>
