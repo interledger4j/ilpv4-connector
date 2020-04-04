@@ -188,6 +188,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .and()
       .authorizeRequests()
       .antMatchers(HttpMethod.GET, PathConstants.SLASH).permitAll()
+      .antMatchers(HttpMethod.GET, org.interledger.connector.opay.controllers.constants.PathConstants.OPEN_PAYMENTS_METADATA).permitAll()
       // @formatter:off
 
       /////////////

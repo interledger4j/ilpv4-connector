@@ -18,14 +18,16 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.function.Supplier;
+
 @RunWith(SpringRunner.class)
 @WebMvcTest(controllers = OpenPaymentsMetadataController.class)
-public class OpenPaymentsMetadataControllerTest {
+public class OpenPaymentsMetadataControllerTest extends AbstractControllerTest {
   @Autowired
   private MockMvc mvc;
 
   @Autowired
-  private OpenPaymentsMetadata openPaymentsMetadata;
+  private Supplier<OpenPaymentsMetadata> openPaymentsMetadata;
 
   @Before
   public void setUp() {
@@ -41,15 +43,15 @@ public class OpenPaymentsMetadataControllerTest {
         .headers(headers)
       )
       .andExpect(status().isOk())
-      .andExpect(jsonPath("$.issuer").value(openPaymentsMetadata.issuer().toString()))
-      .andExpect(jsonPath("$.authorization_issuer").value(openPaymentsMetadata.authorizationIssuer().toString()))
-      .andExpect(jsonPath("$.authorization_endpoint").value(openPaymentsMetadata.authorizationEndpoint().toString()))
-      .andExpect(jsonPath("$.token_endpoint").value(openPaymentsMetadata.authorizationEndpoint().toString()))
-      .andExpect(jsonPath("$.invoices_endpoint").value(openPaymentsMetadata.invoicesEndpoint().toString()))
-      .andExpect(jsonPath("$.mandates_endpoint").value(openPaymentsMetadata.mandatesEndpoint().toString()))
-      .andExpect(jsonPath("$.assets_supported[0].code").value(openPaymentsMetadata.assetsSupported().get(0).assetCode()))
-      .andExpect(jsonPath("$.assets_supported[0].scale").value(openPaymentsMetadata.assetsSupported().get(0).assetScale()))
-      .andExpect(jsonPath("$.assets_supported[1].code").value(openPaymentsMetadata.assetsSupported().get(1).assetCode()))
-      .andExpect(jsonPath("$.assets_supported[1].scale").value(openPaymentsMetadata.assetsSupported().get(1).assetCode()));
+      .andExpect(jsonPath("$.issuer").value(openPaymentsMetadata.get().issuer().toString()))
+      .andExpect(jsonPath("$.authorization_issuer").value(openPaymentsMetadata.get().authorizationIssuer().toString()))
+      .andExpect(jsonPath("$.authorization_endpoint").value(openPaymentsMetadata.get().authorizationEndpoint().toString()))
+      .andExpect(jsonPath("$.token_endpoint").value(openPaymentsMetadata.get().authorizationEndpoint().toString()))
+      .andExpect(jsonPath("$.invoices_endpoint").value(openPaymentsMetadata.get().invoicesEndpoint().toString()))
+      .andExpect(jsonPath("$.mandates_endpoint").value(openPaymentsMetadata.get().mandatesEndpoint().toString()))
+      .andExpect(jsonPath("$.assets_supported[0].code").value(openPaymentsMetadata.get().assetsSupported().get(0).assetCode()))
+      .andExpect(jsonPath("$.assets_supported[0].scale").value(openPaymentsMetadata.get().assetsSupported().get(0).assetScale()))
+      .andExpect(jsonPath("$.assets_supported[1].code").value(openPaymentsMetadata.get().assetsSupported().get(1).assetCode()))
+      .andExpect(jsonPath("$.assets_supported[1].scale").value(openPaymentsMetadata.get().assetsSupported().get(1).assetCode()));
   }
 }
