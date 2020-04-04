@@ -1,5 +1,6 @@
 package org.interledger.connector.opay.model;
 
+import org.interledger.connector.opay.InvoiceId;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.stream.Denomination;
 
@@ -12,7 +13,6 @@ import org.immutables.value.Value;
 import java.time.Instant;
 import java.util.UUID;
 import javax.annotation.Nullable;
-import javax.validation.constraints.Null;
 
 /**
  * Represents an amount payable that can be presented to a third party and/or a Mandate to pay.
@@ -34,8 +34,8 @@ public interface Invoice {
    * @return The {@link UUID} of this {@link Invoice}.
    */
   @Value.Default
-  default UUID id() {
-    return UUID.randomUUID();
+  default InvoiceId id() {
+    return InvoiceId.of(UUID.randomUUID());
   }
 
   /**
