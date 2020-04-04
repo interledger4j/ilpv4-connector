@@ -31,6 +31,6 @@ public interface SpspSettings {
    *
    * @return An optionally-present String.
    */
-  Optional<String> urlPathPrefix();
+  Optional<String> urlPath();
 
 }
