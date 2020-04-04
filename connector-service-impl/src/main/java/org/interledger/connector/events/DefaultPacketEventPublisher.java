@@ -1,6 +1,8 @@
 package org.interledger.connector.events;
 
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.transactions.Transaction;
+import org.interledger.connector.transactions.TransactionStatus;
 import org.interledger.core.InterledgerFulfillment;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerRejectPacket;
@@ -8,6 +10,7 @@ import org.interledger.core.InterledgerRejectPacket;
 import com.google.common.eventbus.EventBus;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 public class DefaultPacketEventPublisher implements PacketEventPublisher {
 
@@ -62,6 +65,23 @@ public class DefaultPacketEventPublisher implements PacketEventPublisher {
       .outgoingPreparePacket(nextHopPacket)
       .fulfillment(fulfillment)
       .message("Fulfilled successfully")
+      .build());
+  }
+
+  @Override
+  public void publishLocalFulfillment(AccountSettings destinationAccountSettings,
+                                      InterledgerPreparePacket preparePacket,
+                                      InterledgerPreparePacket nextHopPacket) {
+    eventBus.post(Transaction.builder()
+      .transactionStatus(TransactionStatus.PENDING)
+      .packetCount(1)
+      .referenceId(preparePacket.getDestination().getValue())
+      .modifiedAt(Instant.now())
+      .createdAt(Instant.now())
+      .assetScale((short) destinationAccountSettings.assetScale())
+      .assetCode(destinationAccountSettings.assetCode())
+      .amount(nextHopPacket.getAmount())
+      .accountId(destinationAccountSettings.accountId())
       .build());
   }
 }

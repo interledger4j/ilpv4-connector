@@ -25,6 +25,7 @@ import org.interledger.connector.config.BalanceTrackerConfig;
 import org.interledger.connector.config.CaffeineCacheConfig;
 import org.interledger.connector.config.RedisConfig;
 import org.interledger.connector.config.SettlementConfig;
+import org.interledger.connector.config.SpspReceiverConfig;
 import org.interledger.connector.events.DefaultPacketEventPublisher;
 import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.fx.JavaMoneyUtils;
@@ -61,6 +62,7 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.persistence.repositories.DeletedAccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
+import org.interledger.connector.persistence.repositories.TransactionsRepository;
 import org.interledger.connector.pubsub.RedisPubSubConfig;
 import org.interledger.connector.routing.DefaultRouteBroadcaster;
 import org.interledger.connector.routing.ExternalRoutingService;
@@ -77,13 +79,18 @@ import org.interledger.connector.server.spring.settings.crypto.CryptoConfig;
 import org.interledger.connector.server.spring.settings.javamoney.JavaMoneyConfig;
 import org.interledger.connector.server.spring.settings.link.LinkConfig;
 import org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration;
-import org.interledger.connector.config.SpspReceiverConfig;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
 import org.interledger.connector.server.wallet.spring.config.WalletConfig;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.SettlementService;
+import org.interledger.connector.transactions.DefaultPaymentTransactionManager;
+import org.interledger.connector.transactions.FulfilledTransactionAggregator;
+import org.interledger.connector.transactions.InDatabaseFulfilledPacketTransactionAggregator;
+import org.interledger.connector.transactions.PaymentTransactionManager;
+import org.interledger.connector.transactions.TransactionFromEntityConverter;
+import org.interledger.connector.transactions.TransactionToEntityConverter;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.crypto.CryptoKeys;
 import org.interledger.crypto.Decryptor;
@@ -124,8 +131,8 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import javax.annotation.PostConstruct;
+import javax.persistence.EntityManager;
 
 /**
  * <p>Primary configuration for the Connector.</p>
@@ -620,5 +627,22 @@ public class SpringConnectorConfig {
         return localAccountsAddressPrefixSegment;
       }
     };
+  }
+
+  @Bean
+  protected PaymentTransactionManager paymentTransactionManager(
+    TransactionsRepository transactionsRepository,
+    EntityManager entityManager) {
+    return new DefaultPaymentTransactionManager(transactionsRepository,
+      entityManager,
+      new TransactionFromEntityConverter(),
+      new TransactionToEntityConverter());
+  }
+
+  @Bean
+  protected FulfilledTransactionAggregator fulfilledTransactionAggregator(
+    EventBus eventBus,
+    PaymentTransactionManager paymentTransactionManager) {
+    return new InDatabaseFulfilledPacketTransactionAggregator(paymentTransactionManager, eventBus);
   }
 }

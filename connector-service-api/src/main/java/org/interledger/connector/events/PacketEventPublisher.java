@@ -26,4 +26,8 @@ public interface PacketEventPublisher {
                           InterledgerPreparePacket nextHopPacket,
                           BigDecimal fxRate,
                           InterledgerFulfillment fulfillment);
+
+  void publishLocalFulfillment(AccountSettings destinationAccount,
+                               InterledgerPreparePacket preparePacket,
+                               InterledgerPreparePacket nextHopPacket);
 }
