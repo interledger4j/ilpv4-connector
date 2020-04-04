@@ -38,9 +38,9 @@ import java.util.List;
  * └──────────────┘        └──────────────┘
  * </pre>
  */
-public class TwoConnectorClusterIlpOverHttpTopology extends AbstractTopology {
+public class TwoConnectorClusterTopology extends AbstractTopology {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorClusterIlpOverHttpTopology.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorClusterTopology.class);
 
   /**
    * In this topology, each Connector starts-up with no explicit knowledge of the other.
@@ -49,7 +49,7 @@ public class TwoConnectorClusterIlpOverHttpTopology extends AbstractTopology {
    */
   public static ClusteredTopology init() {
     // Some configuration must be done _after_ the topology starts...e.g., to grab the port that will be used.
-    final ClusteredTopology topology = new ClusteredTopology(TwoConnectorClusterIlpOverHttpTopology.class.getSimpleName(),
+    final ClusteredTopology topology = new ClusteredTopology(TwoConnectorClusterTopology.class.getSimpleName(),
       new AbstractBaseTopology.PostConstructListener<ClusteredTopology>() {
         @Override
         protected void doAfterTopologyStartup(ClusteredTopology g) {

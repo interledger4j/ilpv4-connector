@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 public class ClusteredTopology extends AbstractBaseTopology<ClusteredTopology> {
 
   private final Map<String, List<Node>> nodes = new HashMap<>();
+  private final List<Edge> edges = new ArrayList<>();
 
   public ClusteredTopology(final String topologyName) {
     this(topologyName, new PostConstructListener<ClusteredTopology>() {
@@ -31,6 +32,17 @@ public class ClusteredTopology extends AbstractBaseTopology<ClusteredTopology> {
 
   public ClusteredTopology(final String topologyName, final PostConstructListener postConstructListener) {
     super(topologyName, postConstructListener);
+  }
+
+  @Override
+  public ClusteredTopology addEdge(Edge edge) {
+    edges.add(edge);
+    return this;
+  }
+
+  @Override
+  public List<Edge> getEdges() {
+    return this.edges;
   }
 
   @Override

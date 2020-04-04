@@ -14,7 +14,7 @@ import org.interledger.connector.client.ConnectorAdminClient;
 import org.interledger.connector.it.AbstractIlpOverHttpIT;
 import org.interledger.connector.it.ContainerHelper;
 import org.interledger.connector.it.markers.Coordination;
-import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorClusterIlpOverHttpTopology;
+import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorClusterTopology;
 import org.interledger.connector.it.topology.ClusteredTopology;
 import org.interledger.connector.it.topology.nodes.ConnectorServerNode;
 import org.interledger.core.InterledgerAddress;
@@ -46,7 +46,7 @@ import java.util.Optional;
 public class TwoConnectorAccountCoordinationIT extends AbstractIlpOverHttpIT {
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorAccountCoordinationIT.class);
   private static final Network network = Network.newNetwork();
-  private static ClusteredTopology topology = TwoConnectorClusterIlpOverHttpTopology.init();
+  private static ClusteredTopology topology = TwoConnectorClusterTopology.init();
   private static GenericContainer redis = ContainerHelper.redis(network);
   private static GenericContainer postgres = ContainerHelper.postgres(network);
   private ILPv4Connector alice1Connector;

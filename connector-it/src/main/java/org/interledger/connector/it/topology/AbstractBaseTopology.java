@@ -3,6 +3,7 @@ package org.interledger.connector.it.topology;
 import org.interledger.core.InterledgerAddress;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -18,9 +19,13 @@ public abstract class AbstractBaseTopology<T extends AbstractBaseTopology<T>> {
     this.postConstructListener = Objects.requireNonNull(postConstructListener);
   }
 
-  public abstract AbstractBaseTopology addNode(String key, Node node);
+  public abstract T addEdge(Edge edge);
 
-  public abstract AbstractBaseTopology addNode(InterledgerAddress key, Node node);
+  public abstract List<Edge> getEdges();
+
+  public abstract T addNode(String key, Node node);
+
+  public abstract T addNode(InterledgerAddress key, Node node);
 
   public Node getNode(String key) {
     return getNode(key, Node.class);
@@ -56,11 +61,11 @@ public abstract class AbstractBaseTopology<T extends AbstractBaseTopology<T>> {
       this.doAfterTopologyStartup(topology);
 
       // Connect any unconnected edges...
-//      for (Edge edge : topology.getEdges()) {
-//        if (!edge.isConnected()) {
-//          edge.connect(topology);
-//        }
-//      }
+      for (Edge edge : topology.getEdges()) {
+        if (!edge.isConnected()) {
+          edge.connect(topology);
+        }
+      }
     }
 
     protected abstract void doAfterTopologyStartup(final T topology);

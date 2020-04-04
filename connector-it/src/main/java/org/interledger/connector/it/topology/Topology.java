@@ -4,6 +4,7 @@ import org.interledger.core.InterledgerAddress;
 
 import com.google.common.collect.Lists;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -17,7 +18,7 @@ import java.util.Map;
 public class Topology extends AbstractBaseTopology<Topology> {
 
   private final Map<String, Node> nodes = new HashMap<>();
-//  private final List<Edge> edges = new ArrayList<>();
+  private final List<Edge> edges = new ArrayList<>();
 
   public Topology(final String topologyName) {
     this(topologyName, new PostConstructListener<Topology>() {
@@ -44,10 +45,11 @@ public class Topology extends AbstractBaseTopology<Topology> {
     return this;
   }
 
-//  public Topology addEdge(Edge edge) {
-//    edges.add(edge);
-//    return this;
-//  }
+  @Override
+  public Topology addEdge(Edge edge) {
+    edges.add(edge);
+    return this;
+  }
 
   @Override
   public <T> T getNode(String key, Class<T> clazz) {
@@ -73,9 +75,9 @@ public class Topology extends AbstractBaseTopology<Topology> {
       node.start();
     }
 
-//    for (Edge edge : edges) {
-//      edge.connect(this);
-//    }
+    for (Edge edge : edges) {
+      edge.connect(this);
+    }
 
     // Notify the listener...
     postConstructListener.afterTopologyStartup(this);
@@ -83,9 +85,9 @@ public class Topology extends AbstractBaseTopology<Topology> {
     return this;
   }
 
-//  public List<Edge> getEdges() {
-//    return this.edges;
-//  }
+  public List<Edge> getEdges() {
+    return this.edges;
+  }
 
   @Override
   public void stop() {
@@ -93,27 +95,5 @@ public class Topology extends AbstractBaseTopology<Topology> {
       node.stop();
     }
   }
-
-//  /**
-//   * Allows the test-harness to addAccount edges _after_ the topology has started. This is useful for things like adding
-//   * a plugin, which might need to know the port of a peering server, which isn't known until after the Spring container
-//   * has started.
-//   */
-//  public static abstract class PostConstructListener {
-//
-//    public final void afterTopologyStartup(Topology topology) {
-//      this.doAfterTopologyStartup(topology);
-//
-//      // Connect any unconnected edges...
-////      for (Edge edge : topology.getEdges()) {
-////        if (!edge.isConnected()) {
-////          edge.connect(topology);
-////        }
-////      }
-//    }
-//
-//    protected abstract void doAfterTopologyStartup(final Topology topology);
-//
-//  }
 
 }
