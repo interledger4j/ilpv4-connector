@@ -31,19 +31,11 @@ public class ModelJsonTests {
 
     String issuer = "https://wallet.example/";
     String authorizationIssuer = "https://auth.wallet.example/";
-    String authorizationEndpoint = "https://auth.wallet.example/authorize/";
-    String tokenEndpoint = "https://auth.wallet.example/token/";
-    String invoicesEndpoint = "https://wallet.example/invoices/";
-    String mandatesEndpoint = "https://wallet.example/mandates/";
     List<SupportedAsset> supportedAssets = Arrays.asList(SupportedAssets.USD_CENTS, SupportedAssets.EUR_CENTS);
 
     OpenPaymentsMetadata metadata = OpenPaymentsMetadata.builder()
       .issuer(HttpUrl.parse(issuer))
       .authorizationIssuer(HttpUrl.parse(authorizationIssuer))
-      .authorizationEndpoint(HttpUrl.parse(authorizationEndpoint))
-      .tokenEndpoint(HttpUrl.parse(tokenEndpoint))
-      .invoicesEndpoint(HttpUrl.parse(invoicesEndpoint))
-      .mandatesEndpoint(HttpUrl.parse(mandatesEndpoint))
       .addAssetsSupported(SupportedAssets.USD_CENTS, SupportedAssets.EUR_CENTS)
       .build();
 
@@ -52,10 +44,10 @@ public class ModelJsonTests {
     JsonContentAssert assertJson = assertThat(jsonTester.from(metadataJson));
     assertJson.extractingJsonPathValue("issuer").isEqualTo(issuer);
     assertJson.extractingJsonPathValue("authorization_issuer").isEqualTo(authorizationIssuer);
-    assertJson.extractingJsonPathValue("authorization_endpoint").isEqualTo(authorizationEndpoint);
-    assertJson.extractingJsonPathValue("token_endpoint").isEqualTo(tokenEndpoint);
-    assertJson.extractingJsonPathValue("invoices_endpoint").isEqualTo(invoicesEndpoint);
-    assertJson.extractingJsonPathValue("mandates_endpoint").isEqualTo(mandatesEndpoint);
+    assertJson.extractingJsonPathValue("authorization_endpoint").isEqualTo(metadata.authorizationEndpoint().toString());
+    assertJson.extractingJsonPathValue("token_endpoint").isEqualTo(metadata.tokenEndpoint().toString());
+    assertJson.extractingJsonPathValue("invoices_endpoint").isEqualTo(metadata.invoicesEndpoint().toString());
+    assertJson.extractingJsonPathValue("mandates_endpoint").isEqualTo(metadata.mandatesEndpoint().toString());
     assertJson.extractingJsonPathValue("$.assets_supported[0].code").isEqualTo(supportedAssets.get(0).assetCode());
     assertJson.extractingJsonPathValue("$.assets_supported[0].scale").isEqualTo((int) supportedAssets.get(0).assetScale());
     assertJson.extractingJsonPathValue("$.assets_supported[1].code").isEqualTo(supportedAssets.get(1).assetCode());
@@ -98,7 +90,7 @@ public class ModelJsonTests {
     assertJson.extractingJsonPathValue("received").isEqualTo(received.intValue());
 
     Invoice deserializedInvoice = objectMapper.readValue(invoiceJson, Invoice.class);
-    assertThat(deserializedInvoice).isEqualToIgnoringGivenFields(invoice, "finalizedAt");
+    assertThat(deserializedInvoice).isEqualToIgnoringGivenFields(invoice, "finalizedAt", "createdAt", "updatedAt");
   }
 
 }

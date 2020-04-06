@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.zalando.problem.ProblemModule;
@@ -25,6 +26,7 @@ public class ObjectMapperFactory {
     return new ObjectMapper()
       .registerModule(new Jdk8Module())
       .registerModule(new HttpUrlModule())
+      .registerModule(new GuavaModule())
       .registerModule(new JavaTimeModule())
       .registerModule(new PaymentPointerModule())
       .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)

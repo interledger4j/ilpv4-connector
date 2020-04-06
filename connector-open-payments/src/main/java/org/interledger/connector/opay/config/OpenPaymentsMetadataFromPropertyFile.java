@@ -1,6 +1,7 @@
 package org.interledger.connector.opay.config;
 
 import org.interledger.connector.opay.model.OpenPaymentsMetadata;
+import org.interledger.connector.opay.model.OpenPaymentsMetadata.AbstractOpenPaymentsMetadata;
 import org.interledger.connector.opay.model.SupportedAsset;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -11,7 +12,7 @@ import java.util.List;
 
 @ConfigurationProperties(prefix = "interledger.connector.open-payments")
 @JsonSerialize(as = OpenPaymentsMetadata.class)
-public class OpenPaymentsMetadataFromPropertyFile implements OpenPaymentsMetadata {
+public class OpenPaymentsMetadataFromPropertyFile extends AbstractOpenPaymentsMetadata {
 
   private HttpUrl issuer;
   private HttpUrl authorizationIssuer;
@@ -33,22 +34,22 @@ public class OpenPaymentsMetadataFromPropertyFile implements OpenPaymentsMetadat
 
   @Override
   public HttpUrl authorizationEndpoint() {
-    return authorizationEndpoint;
+    return super.authorizationEndpoint();
   }
 
   @Override
   public HttpUrl tokenEndpoint() {
-    return tokenEndpoint;
+    return super.tokenEndpoint();
   }
 
   @Override
   public HttpUrl invoicesEndpoint() {
-    return invoicesEndpoint;
+    return super.invoicesEndpoint();
   }
 
   @Override
   public HttpUrl mandatesEndpoint() {
-    return mandatesEndpoint;
+    return super.mandatesEndpoint();
   }
 
   @Override

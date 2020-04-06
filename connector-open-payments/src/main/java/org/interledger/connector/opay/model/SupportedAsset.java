@@ -2,6 +2,8 @@ package org.interledger.connector.opay.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Objects;
+
 public class SupportedAsset {
 
   @JsonProperty("code")
@@ -32,5 +34,23 @@ public class SupportedAsset {
 
   public void setAssetScale(short assetScale) {
     this.assetScale = assetScale;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    SupportedAsset that = (SupportedAsset) o;
+    return assetScale == that.assetScale &&
+      Objects.equals(assetCode, that.assetCode);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(assetCode, assetScale);
   }
 }

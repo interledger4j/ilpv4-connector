@@ -1,5 +1,7 @@
 package org.interledger.connector.opay.model;
 
+import org.interledger.connector.opay.controllers.constants.PathConstants;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -45,8 +47,11 @@ public interface OpenPaymentsMetadata {
    * @see "https://tools.ietf.org/html/rfc6749"
    * @return the {@link HttpUrl} of the endpoint on the Authorization Server which can create authorization grants.
    */
+  @Value.Derived
   @JsonProperty("authorization_endpoint")
-  HttpUrl authorizationEndpoint();
+  default HttpUrl authorizationEndpoint() {
+    return authorizationIssuer().newBuilder().addPathSegment(PathConstants.AUTHORIZE).build();
+  };
 
   /**
    * Endpoint on the AS where the client can request access tokens and refresh tokens.
@@ -58,8 +63,11 @@ public interface OpenPaymentsMetadata {
    * @see "https://tools.ietf.org/html/rfc6749"
    * @return The {@link HttpUrl} of the endpoint on the Authorization Server which gives clients access and refresh tokens.
    */
+  @Value.Derived
   @JsonProperty("token_endpoint")
-  HttpUrl tokenEndpoint();
+  default HttpUrl tokenEndpoint() {
+    return authorizationIssuer().newBuilder().addPathSegment(PathConstants.TOKEN).build();
+  };
 
   /**
    * URL of the Open Payments server's invoices endpoint.
@@ -68,8 +76,11 @@ public interface OpenPaymentsMetadata {
    *
    * @return The {@link HttpUrl} of the endpoint on the Open Payments Server which handles invoices.
    */
+  @Value.Derived
   @JsonProperty("invoices_endpoint")
-  HttpUrl invoicesEndpoint();
+  default HttpUrl invoicesEndpoint() {
+    return issuer().newBuilder().addPathSegment(PathConstants.INVOICE).build();
+  };
 
   /**
    * URL of the Open Payments server's mandates endpoint.
@@ -78,12 +89,23 @@ public interface OpenPaymentsMetadata {
    *
    * @return The {@link HttpUrl} of the endpoint on the Open Payments Server which handles mandates.
    */
+  @Value.Derived
   @JsonProperty("mandates_endpoint")
-  HttpUrl mandatesEndpoint();
+  default HttpUrl mandatesEndpoint() {
+    return issuer().newBuilder().addPathSegment(PathConstants.MANDATE).build();
+  };
 
   /**
    * @return A list of {@link SupportedAsset} for assets that can be used to create agreements on this server
    */
   @JsonProperty("assets_supported")
   List<SupportedAsset> assetsSupported();
+
+  /**
+   * Only need this so that {@link org.interledger.connector.opay.config.OpenPaymentsMetadataFromPropertyFile} can
+   * make super calls to OpenPaymentsMetdata
+   */
+  abstract class AbstractOpenPaymentsMetadata implements OpenPaymentsMetadata {
+
+  }
 }
