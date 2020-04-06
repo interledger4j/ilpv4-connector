@@ -1,6 +1,5 @@
 package org.interledger.connector.opay.config;
 
-import org.interledger.connector.opay.model.ModifiableSupportedAsset;
 import org.interledger.connector.opay.model.OpenPaymentsMetadata;
 import org.interledger.connector.opay.model.SupportedAsset;
 
@@ -8,7 +7,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import okhttp3.HttpUrl;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @ConfigurationProperties(prefix = "interledger.connector.open-payments")
