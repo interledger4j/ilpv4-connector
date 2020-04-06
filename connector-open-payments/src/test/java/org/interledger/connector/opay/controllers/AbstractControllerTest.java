@@ -1,18 +1,16 @@
 package org.interledger.connector.opay.controllers;
 
+import org.interledger.connector.opay.config.OpenPaymentsConfig;
 import org.interledger.connector.opay.config.OpenPaymentsMetadataFromPropertyFile;
-import org.interledger.connector.opay.model.OpenPaymentsMetadata;
 
 import com.google.common.collect.Lists;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-
-import java.util.function.Supplier;
 
 @ContextConfiguration(classes = {
   AbstractControllerTest.TestConfiguration.class
@@ -34,10 +32,9 @@ public class AbstractControllerTest {
   }
 
   @EnableConfigurationProperties(OpenPaymentsMetadataFromPropertyFile.class)
+  @EnableWebMvc
+  @Import(OpenPaymentsConfig.class)
   public static class TestConfiguration {
-    @Bean
-    public Supplier<OpenPaymentsMetadata> openPaymentsMetadataSupplier(OpenPaymentsMetadataFromPropertyFile metadata) {
-      return () -> metadata;
-    }
+
   }
 }

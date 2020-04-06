@@ -2,6 +2,13 @@
 # connector because the passwords and keys would be known
 interledger:
   connector:
+    open-payments:
+      issuer: "http://localhost:8080"
+      authorizationIssuer: "http://localhost:8000"
+      authorizationEndpoint: "http://localhost:8000/authorize"
+      tokenEndpoint: "http://localhost:8000/token"
+      invoicesEndpoint: "http://localhost:8000/invoices"
+      mandatesEndpoint: "http://localhost:8000/mandates"
     ## ILP address of the connector.
     nodeIlpAddress: test1.connie
     enabledFeatures:

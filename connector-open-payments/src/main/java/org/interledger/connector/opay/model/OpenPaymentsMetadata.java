@@ -1,9 +1,7 @@
 package org.interledger.connector.opay.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import okhttp3.HttpUrl;
 import org.immutables.value.Value;
@@ -24,6 +22,7 @@ public interface OpenPaymentsMetadata {
    *
    * @return an {@link HttpUrl} representing the URL of the issuer.
    */
+  @JsonProperty("issuer")
   HttpUrl issuer();
 
   /**

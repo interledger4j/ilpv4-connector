@@ -1,25 +1,36 @@
 package org.interledger.connector.opay.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.immutables.value.Value;
 
-@Value.Immutable
-@JsonSerialize(as = ImmutableSupportedAsset.class)
-@JsonDeserialize(as = ImmutableSupportedAsset.class)
-public interface SupportedAsset {
-
-  static ImmutableSupportedAsset.Builder builder(String assetCode, short assetScale) {
-    return ImmutableSupportedAsset
-      .builder()
-      .assetCode(assetCode)
-      .assetScale(assetScale);
-  }
+public class SupportedAsset {
 
   @JsonProperty("code")
-  String assetCode();
+  private String assetCode;
 
   @JsonProperty("scale")
-  short assetScale();
+  private short assetScale;
+
+  public SupportedAsset() {
+  }
+
+  public SupportedAsset(String assetCode, short assetScale) {
+    this.assetCode = assetCode;
+    this.assetScale = assetScale;
+  }
+
+  public String getAssetCode() {
+    return assetCode;
+  }
+
+  public void setAssetCode(String assetCode) {
+    this.assetCode = assetCode;
+  }
+
+  public short getAssetScale() {
+    return assetScale;
+  }
+
+  public void setAssetScale(short assetScale) {
+    this.assetScale = assetScale;
+  }
 }
