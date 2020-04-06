@@ -13,7 +13,6 @@ import org.interledger.connector.persistence.HashMapConverter;
 import org.interledger.connector.persistence.LinkTypeConverter;
 import org.interledger.link.LinkType;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import org.hibernate.annotations.NaturalId;
 
@@ -21,7 +20,6 @@ import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;

@@ -25,8 +25,8 @@ import org.interledger.connector.balances.InMemoryBalanceTracker;
 import org.interledger.connector.balances.RedisBalanceTracker;
 import org.interledger.connector.core.ConfigConstants;
 import org.interledger.connector.it.pubsub.PubSubResourceGenerator;
+import org.interledger.connector.it.topology.AbstractBaseTopology;
 import org.interledger.connector.it.topology.Node;
-import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.it.topology.nodes.ConnectorServerNode;
 import org.interledger.connector.link.CircuitBreakingLink;
 import org.interledger.connector.ping.DefaultPingInitiator;
@@ -43,6 +43,7 @@ import org.interledger.link.http.IlpOverHttpLinkSettings;
 
 import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.common.primitives.UnsignedLong;
+import feign.RequestInterceptor;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -137,7 +138,7 @@ public abstract class AbstractIlpOverHttpIT {
 
   protected abstract Logger getLogger();
 
-  protected abstract Topology getTopology();
+  protected abstract AbstractBaseTopology getTopology();
 
   /**
    * Helper method to testing ping functionality. In a real system this would not function this way because this
@@ -313,12 +314,12 @@ public abstract class AbstractIlpOverHttpIT {
    */
   protected void resetBalanceTracking() {
     final ILPv4Connector aliceConnector = this.getILPv4NodeFromGraph(getAliceConnectorAddress());
-    final ILPv4Connector bobConnector = this.getILPv4NodeFromGraph(getBobConnectorAddress());
 
     // ITs should not be running with the InMemoryBalanceTracker, but sometimes they do such as when running from an
     // IDE where maven-exec-plugin doesn't startup Redis.
     if (InMemoryBalanceTracker.class.isAssignableFrom(aliceConnector.getBalanceTracker().getClass())) {
       ((InMemoryBalanceTracker) aliceConnector.getBalanceTracker()).resetAllBalances();
+      final ILPv4Connector bobConnector = this.getILPv4NodeFromGraph(getBobConnectorAddress());
       ((InMemoryBalanceTracker) bobConnector.getBalanceTracker()).resetAllBalances();
     } else {
       // Reset the balances for any peering accounts in the Topology.
@@ -349,4 +350,12 @@ public abstract class AbstractIlpOverHttpIT {
    * sub-classes of this abstract class may not all use the same ILP address for each Connector.
    */
   protected abstract InterledgerAddress getBobConnectorAddress();
+
+  /**
+   * Constructs a {@link RequestInterceptor} preconfigured to be able to talk to the connector.
+   * @return a request interceptor that allows login to the connector
+   */
+  protected RequestInterceptor basicAuthRequestInterceptor() {
+    return template -> template.header("Authorization", "Basic YWRtaW46cGFzc3dvcmQ=");
+  }
 }

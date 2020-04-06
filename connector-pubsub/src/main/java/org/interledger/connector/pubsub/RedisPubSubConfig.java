@@ -30,7 +30,7 @@ public class RedisPubSubConfig {
   @Autowired
   protected ObjectMapper objectMapper;
 
-  private static final UUID APPLICATION_COORDINATION_UUID = UUID.randomUUID();
+  private final UUID APPLICATION_COORDINATION_UUID = UUID.randomUUID();
 
   @Bean
   UUID applicationCoordinationUuid() {
