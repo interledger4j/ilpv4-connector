@@ -3,6 +3,7 @@ package org.interledger.connector.opay.model;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.opay.jackson.ObjectMapperFactory;
+import org.interledger.connector.opay.InvoiceId;
 import org.interledger.spsp.PaymentPointer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -68,7 +69,7 @@ public class ModelJsonTests {
     UnsignedLong received = UnsignedLong.valueOf(158);
 
     Invoice invoice = Invoice.builder()
-      .id(invoiceId)
+      .id(InvoiceId.of(invoiceId))
       .assetCode(assetCode)
       .assetScale(assetScale)
       .amount(amount)

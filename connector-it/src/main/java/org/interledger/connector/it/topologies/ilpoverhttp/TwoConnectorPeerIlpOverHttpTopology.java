@@ -4,6 +4,7 @@ import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.it.topologies.AbstractTopology;
+import org.interledger.connector.it.topology.AbstractBaseTopology;
 import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.it.topology.nodes.ConnectorServerNode;
 import org.interledger.connector.routing.StaticRoute;
@@ -70,7 +71,7 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
 
     // Some configuration must be done _after_ the topology starts...e.g., to grab the port that will be used.
     final Topology topology = new Topology(TwoConnectorPeerIlpOverHttpTopology.class.getSimpleName(),
-      new Topology.PostConstructListener() {
+      new AbstractBaseTopology.PostConstructListener<Topology>() {
         @Override
         protected void doAfterTopologyStartup(Topology g) {
           final ConnectorServerNode aliceServerNode =

@@ -1,13 +1,14 @@
 package org.interledger.connector;
 
 import org.interledger.connector.accounts.AccountManager;
+import org.interledger.connector.accounts.AccountSettingsCache;
 import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
-import org.interledger.connector.routing.StaticRoutesManager;
 import org.interledger.connector.routing.ExternalRoutingService;
+import org.interledger.connector.routing.StaticRoutesManager;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settlement.SettlementService;
 
@@ -47,6 +48,8 @@ public interface ILPv4Connector {
   BalanceTracker getBalanceTracker();
 
   SettlementService getSettlementService();
+
+  AccountSettingsCache getAccountSettingsCache();
 
   /**
    * Accessor for the {@link EventBus} that this Connector uses to propagate internal events of type ConnectorEvent.
