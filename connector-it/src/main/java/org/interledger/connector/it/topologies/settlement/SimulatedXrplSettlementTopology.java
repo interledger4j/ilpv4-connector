@@ -5,6 +5,7 @@ import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.SettlementEngineDetails;
 import org.interledger.connector.it.topologies.AbstractTopology;
+import org.interledger.connector.it.topology.AbstractBaseTopology.PostConstructListener;
 import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.it.topology.nodes.ConnectorServerNode;
 import org.interledger.connector.routing.StaticRoute;
@@ -71,7 +72,7 @@ public class SimulatedXrplSettlementTopology extends AbstractTopology {
 
     // Some configuration must be done _after_ the topology starts...e.g., to grab the port that will be used.
     final Topology topology = new Topology(SimulatedXrplSettlementTopology.class.getSimpleName(),
-      new Topology.PostConstructListener() {
+      new PostConstructListener<Topology>() {
         @Override
         protected void doAfterTopologyStartup(Topology g) {
           final ConnectorServerNode aliceServerNode =

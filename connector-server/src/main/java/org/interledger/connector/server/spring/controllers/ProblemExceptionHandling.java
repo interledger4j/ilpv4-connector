@@ -4,7 +4,6 @@ import org.interledger.connector.accounts.AccountProblem;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.collect.Sets;
-import org.apache.http.auth.InvalidCredentialsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.converter.HttpMessageNotReadableException;

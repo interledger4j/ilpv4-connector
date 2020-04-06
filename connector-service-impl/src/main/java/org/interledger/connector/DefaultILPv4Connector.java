@@ -1,6 +1,7 @@
 package org.interledger.connector;
 
 import org.interledger.connector.accounts.AccountManager;
+import org.interledger.connector.accounts.AccountSettingsCache;
 import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.links.LinkManager;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
@@ -27,7 +28,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
@@ -80,6 +80,8 @@ public class DefaultILPv4Connector implements ILPv4Connector {
 
   private final SettlementService settlementService;
 
+  private final AccountSettingsCache accountSettingsCache;
+
   private final FilterAccountByValidAccountId filterAccountByValidAccountId;
 
   @VisibleForTesting
@@ -92,7 +94,8 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     final ExternalRoutingService externalRoutingService,
     final ILPv4PacketSwitch ilpPacketSwitch,
     final BalanceTracker balanceTracker,
-    final SettlementService settlementService
+    final SettlementService settlementService,
+    final AccountSettingsCache accountSettingsCache
   ) {
     this(
       connectorSettingsSupplier,
@@ -104,6 +107,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       ilpPacketSwitch,
       balanceTracker,
       settlementService,
+      accountSettingsCache,
       new EventBus()
     );
   }
@@ -121,6 +125,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     final ILPv4PacketSwitch ilpPacketSwitch,
     final BalanceTracker balanceTracker,
     final SettlementService settlementService,
+    final AccountSettingsCache accountSettingsCache,
     final EventBus eventBus
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
@@ -132,6 +137,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     this.ilpPacketSwitch = Objects.requireNonNull(ilpPacketSwitch);
     this.balanceTracker = Objects.requireNonNull(balanceTracker);
     this.settlementService = Objects.requireNonNull(settlementService);
+    this.accountSettingsCache = Objects.requireNonNull(accountSettingsCache);
 
     this.eventBus = Objects.requireNonNull(eventBus);
     this.eventBus.register(this);
@@ -225,6 +231,11 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   @Override
   public SettlementService getSettlementService() {
     return this.settlementService;
+  }
+
+  @Override
+  public AccountSettingsCache getAccountSettingsCache() {
+    return accountSettingsCache;
   }
 
   /**

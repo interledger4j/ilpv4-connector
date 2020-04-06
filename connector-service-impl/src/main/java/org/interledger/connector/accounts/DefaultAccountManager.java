@@ -93,6 +93,7 @@ public class DefaultAccountManager implements AccountManager {
     this.ildcpFetcherFactory = Objects.requireNonNull(ildcpFetcherFactory);
     this.eventBus = Objects.requireNonNull(eventBus);
     this.filterAccountByValidAccountId = new FilterAccountByValidAccountId();
+    this.eventBus.register(this);
   }
 
   @Override
