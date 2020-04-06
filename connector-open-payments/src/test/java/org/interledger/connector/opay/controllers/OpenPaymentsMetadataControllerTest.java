@@ -48,10 +48,10 @@ public class OpenPaymentsMetadataControllerTest extends AbstractControllerTest {
       .andExpect(jsonPath("$.authorization_endpoint").value(openPaymentsMetadata.get().authorizationEndpoint().toString()))
       .andExpect(jsonPath("$.token_endpoint").value(openPaymentsMetadata.get().tokenEndpoint().toString()))
       .andExpect(jsonPath("$.invoices_endpoint").value(openPaymentsMetadata.get().invoicesEndpoint().toString()))
-      .andExpect(jsonPath("$.mandates_endpoint").value(openPaymentsMetadata.get().mandatesEndpoint().toString()));
-//      .andExpect(jsonPath("$.assets_supported[0].code").value(openPaymentsMetadata.get().assetsSupported().get(0).assetCode()))
-//      .andExpect(jsonPath("$.assets_supported[0].scale").value(openPaymentsMetadata.get().assetsSupported().get(0).assetScale()))
-//      .andExpect(jsonPath("$.assets_supported[1].code").value(openPaymentsMetadata.get().assetsSupported().get(1).assetCode()))
-//      .andExpect(jsonPath("$.assets_supported[1].scale").value(openPaymentsMetadata.get().assetsSupported().get(1).assetCode()));
+      .andExpect(jsonPath("$.mandates_endpoint").value(openPaymentsMetadata.get().mandatesEndpoint().toString()))
+      .andExpect(jsonPath("$.assets_supported[0].code").value(openPaymentsMetadata.get().assetsSupported().get(0).assetCode()))
+      .andExpect(jsonPath("$.assets_supported[0].scale").value((int) openPaymentsMetadata.get().assetsSupported().get(0).assetScale()))
+      .andExpect(jsonPath("$.assets_supported[1].code").value(openPaymentsMetadata.get().assetsSupported().get(1).assetCode()))
+      .andExpect(jsonPath("$.assets_supported[1].scale").value((int) openPaymentsMetadata.get().assetsSupported().get(1).assetScale()));
   }
 }

@@ -18,7 +18,7 @@ public class SupportedAsset {
     this.assetScale = assetScale;
   }
 
-  public String getAssetCode() {
+  public String assetCode() {
     return assetCode;
   }
 
@@ -26,7 +26,7 @@ public class SupportedAsset {
     this.assetCode = assetCode;
   }
 
-  public short getAssetScale() {
+  public short assetScale() {
     return assetScale;
   }
 

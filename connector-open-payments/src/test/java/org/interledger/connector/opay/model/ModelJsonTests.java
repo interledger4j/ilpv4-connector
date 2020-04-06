@@ -56,10 +56,10 @@ public class ModelJsonTests {
     assertJson.extractingJsonPathValue("token_endpoint").isEqualTo(tokenEndpoint);
     assertJson.extractingJsonPathValue("invoices_endpoint").isEqualTo(invoicesEndpoint);
     assertJson.extractingJsonPathValue("mandates_endpoint").isEqualTo(mandatesEndpoint);
-    assertJson.extractingJsonPathValue("$.assets_supported[0].code").isEqualTo(supportedAssets.get(0).getAssetCode());
-    assertJson.extractingJsonPathValue("$.assets_supported[0].scale").isEqualTo((int) supportedAssets.get(0).getAssetScale());
-    assertJson.extractingJsonPathValue("$.assets_supported[1].code").isEqualTo(supportedAssets.get(1).getAssetCode());
-    assertJson.extractingJsonPathValue("$.assets_supported[1].scale").isEqualTo((int) supportedAssets.get(1).getAssetScale());
+    assertJson.extractingJsonPathValue("$.assets_supported[0].code").isEqualTo(supportedAssets.get(0).assetCode());
+    assertJson.extractingJsonPathValue("$.assets_supported[0].scale").isEqualTo((int) supportedAssets.get(0).assetScale());
+    assertJson.extractingJsonPathValue("$.assets_supported[1].code").isEqualTo(supportedAssets.get(1).assetCode());
+    assertJson.extractingJsonPathValue("$.assets_supported[1].scale").isEqualTo((int) supportedAssets.get(1).assetScale());
 
     OpenPaymentsMetadata deserializedMetadata = objectMapper.readValue(metadataJson, OpenPaymentsMetadata.class);
     assertThat(deserializedMetadata).isEqualTo(metadata);

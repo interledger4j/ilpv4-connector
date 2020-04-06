@@ -5,8 +5,8 @@ interledger:
       authorizationIssuer: "http://localhost:8000"
       authorizationEndpoint: "http://localhost:8000/authorize"
       tokenEndpoint: "http://localhost:8000/token"
-      invoicesEndpoint: "http://localhost:8000/invoices"
-      mandatesEndpoint: "http://localhost:8000/mandates"
+      invoicesEndpoint: "http://localhost:8080/invoices"
+      mandatesEndpoint: "http://localhost:8080/mandates"
       assetsSupported:
         -
           assetCode: "USD"
