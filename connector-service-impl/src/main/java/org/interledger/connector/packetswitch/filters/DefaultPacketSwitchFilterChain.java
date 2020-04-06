@@ -169,11 +169,6 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
         sourceAccountSettings, nextHopAccountSettings, preparePacket
       );
       response.handle(interledgerFulfillPacket -> {
-          if (localDestinationAddressUtils.isLocalSpspDestinationAddress(preparePacket.getDestination())) {
-            // local fulfillment
-            packetEventPublisher.publishLocalFulfillment(
-              nextHopAccountSettings, preparePacket, nextHopInfo.nextHopPacket());
-          }
           packetEventPublisher.publishFulfillment(
             sourceAccountSettings,
             nextHopAccountSettings,

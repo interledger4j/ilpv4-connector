@@ -4,12 +4,6 @@ import static org.interledger.connector.persistence.entities.DataConstants.Table
 
 import org.interledger.connector.accounts.AccountId;
 
-import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.annotations.SQLInsert;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Objects;
@@ -17,33 +11,15 @@ import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EntityListeners;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
 @Access(AccessType.FIELD)
 @Table(name = TRANSACTIONS)
-@DynamicUpdate
-@EntityListeners(AuditingEntityListener.class)
-@SQLInsert(sql = TransactionEntity.UPSERT)
 @SuppressWarnings( {"PMD"})
 public class TransactionEntity {
 
-  public static final String UPSERT = "INSERT INTO transactions " +
-    "(account_id, amount, asset_code, asset_scale, created_dttm, destination_address, modified_dttm, " +
-    "packet_count, reference_id, status) " +
-    "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-    "ON CONFLICT(reference_id) DO " +
-    "UPDATE SET amount=transactions.amount + excluded.amount, " +
-    "  modified_dttm=excluded.modified_dttm, " +
-    "  packet_count=transactions.packet_count+excluded.packet_count";
-
-  @org.hibernate.annotations.GenericGenerator(
-    name       = "database-assigned",
-    strategy   = "sequence-identity")
-  @GeneratedValue(generator="database-assigned")
   @Id
   @Column(name = "ID")
   private Long id;
@@ -73,11 +49,9 @@ public class TransactionEntity {
   private String status;
 
   @Column(name = "CREATED_DTTM", nullable = false, updatable = false)
-  @CreatedDate
   private Instant createdDate;
 
   @Column(name = "MODIFIED_DTTM", nullable = false)
-  @LastModifiedDate
   private Instant modifiedDate;
 
   public Long getId() {
@@ -178,7 +152,6 @@ public class TransactionEntity {
    * Return the hashcode of the natural identifier.
    *
    * @return An integer representing the natural identifier for this entity.
-   *
    * @see "https://vladmihalcea.com/the-best-way-to-implement-equals-hashcode-and-tostring-with-jpa-and-hibernate/"
    */
   @Override

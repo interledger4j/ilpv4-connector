@@ -4,18 +4,17 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.entities.TransactionEntity;
 
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.repository.PagingAndSortingRepository;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.repository.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Allows AccessTokens to be persisted to a datastore.
+ * Read-only repository to fetch TransactionEntity from the database. For write operations,
+ * use {@link TransactionsRepositoryCustom} instead.
  */
-@Repository
-public interface TransactionsRepository
-  extends PagingAndSortingRepository<TransactionEntity, Long> {
+@org.springframework.stereotype.Repository
+public interface TransactionsRepository extends Repository<TransactionEntity, Long>, TransactionsRepositoryCustom {
 
   /**
    * Find an list {@link TransactionEntity} by accountId order by creation date desc

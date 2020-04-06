@@ -86,9 +86,11 @@ import org.interledger.connector.settings.properties.ConnectorSettingsFromProper
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.connector.transactions.DefaultPaymentTransactionManager;
-import org.interledger.connector.transactions.FulfilledTransactionAggregator;
-import org.interledger.connector.transactions.InDatabaseFulfilledPacketTransactionAggregator;
+import org.interledger.connector.transactions.GeneratedFulfillmentPublisher;
+import org.interledger.connector.transactions.InDatabasePaymentTransactionAggregator;
+import org.interledger.connector.transactions.PaymentTransactionAggregator;
 import org.interledger.connector.transactions.PaymentTransactionManager;
+import org.interledger.connector.transactions.SynchronousGeneratedFulfillmentPublisher;
 import org.interledger.connector.transactions.TransactionFromEntityConverter;
 import org.interledger.connector.transactions.TransactionToEntityConverter;
 import org.interledger.core.InterledgerAddress;
@@ -132,7 +134,6 @@ import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
-import javax.persistence.EntityManager;
 
 /**
  * <p>Primary configuration for the Connector.</p>
@@ -282,8 +283,8 @@ public class SpringConnectorConfig {
 
   @Bean
   AccessTokenManager accessTokenManager(PasswordEncoder passwordEncoder,
-    AccessTokensRepository accessTokensRepository,
-    EventBus eventBus) {
+                                        AccessTokensRepository accessTokensRepository,
+                                        EventBus eventBus) {
     return new DefaultAccessTokenManager(passwordEncoder, accessTokensRepository, eventBus);
   }
 
@@ -630,19 +631,23 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  protected PaymentTransactionManager paymentTransactionManager(
-    TransactionsRepository transactionsRepository,
-    EntityManager entityManager) {
+  protected PaymentTransactionManager paymentTransactionManager(TransactionsRepository transactionsRepository) {
     return new DefaultPaymentTransactionManager(transactionsRepository,
-      entityManager,
       new TransactionFromEntityConverter(),
       new TransactionToEntityConverter());
   }
 
   @Bean
-  protected FulfilledTransactionAggregator fulfilledTransactionAggregator(
-    EventBus eventBus,
+  protected PaymentTransactionAggregator fulfilledTransactionAggregator(
     PaymentTransactionManager paymentTransactionManager) {
-    return new InDatabaseFulfilledPacketTransactionAggregator(paymentTransactionManager, eventBus);
+    return new InDatabasePaymentTransactionAggregator(paymentTransactionManager);
   }
+
+  @Bean
+  protected GeneratedFulfillmentPublisher generatedFulfillmentPublisher(
+    EventBus eventBus,
+    PaymentTransactionAggregator paymentTransactionAggregator) {
+    return new SynchronousGeneratedFulfillmentPublisher(paymentTransactionAggregator, eventBus);
+  }
+
 }

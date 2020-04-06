@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -29,7 +30,6 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import javax.persistence.EntityManager;
 
 /**
  * Unit tests for {@link AccessTokensRepository}.
@@ -44,13 +44,14 @@ import javax.persistence.EntityManager;
 public class TransactionsRepositoryTest {
 
   public static final PageRequest DEFAULT_PAGE = PageRequest.of(0, 100);
+
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
   @Autowired
   private TransactionsRepository transactionsRepository;
 
   @Autowired
-  EntityManager entityManager;
+  private NamedParameterJdbcTemplate jdbcTemplate;
 
   @Test
   public void upsertSingleTransaction() {
@@ -59,13 +60,12 @@ public class TransactionsRepositoryTest {
 
     final TransactionEntity entity1 = newEntity(accountId, transactionId, 10);
 
-    final TransactionEntity savedEntity1 = save(entity1);
-    assertEqual(savedEntity1, entity1);
+    transactionsRepository.upsertAmounts(entity1);
 
     final TransactionEntity loadedAccessTokenEntity =
-      transactionsRepository.findByReferenceId(savedEntity1.getReferenceId()).get();
+      transactionsRepository.findByReferenceId(transactionId).get();
 
-    assertEqual(loadedAccessTokenEntity, savedEntity1);
+    assertEqual(loadedAccessTokenEntity, entity1);
   }
 
   @Test
@@ -75,11 +75,9 @@ public class TransactionsRepositoryTest {
 
     final TransactionEntity entity1 = newEntity(accountId, transactionId, 10);
 
-    final TransactionEntity savedEntity1 = save(entity1);
-    assertEqual(savedEntity1, entity1);
+    transactionsRepository.upsertAmounts(entity1);
 
-    savedEntity1.setStatus("CLOSED_BY_SENDER");
-    save(savedEntity1);
+    transactionsRepository.updateStatus(accountId, transactionId, "CLOSED_BY_SENDER");
 
     TransactionEntity transaction1 = transactionsRepository.findByReferenceId(transactionId).get();
     assertThat(transaction1.getStatus()).isEqualTo("CLOSED_BY_SENDER");
@@ -90,7 +88,7 @@ public class TransactionsRepositoryTest {
     AccountId accountId = AccountId.of(generateUuid());
     int transactionCount = 125;
     for (int i = 0; i < transactionCount; i++) {
-      save(newEntity(accountId, generateUuid(), 10));
+      transactionsRepository.upsertAmounts(newEntity(accountId, generateUuid(), 10));
     }
 
     List<TransactionEntity> trx1to50 = transactionsRepository.findByAccountIdOrderByCreatedDateDesc(
@@ -117,23 +115,24 @@ public class TransactionsRepositoryTest {
   }
 
   @Test
-  public void upsertMultipleTransactions() {
+  public void upsertMultipleTransactions() throws InterruptedException {
     AccountId accountId = AccountId.of(generateUuid());
     String transactionId = generateUuid();
     String transactionId2 = generateUuid();
 
     final TransactionEntity entity1 = newEntity(accountId, transactionId, 10);
 
-    final TransactionEntity savedEntity1 = save(entity1);
-    assertEqual(savedEntity1, entity1);
+    transactionsRepository.upsertAmounts(entity1);
 
     final TransactionEntity loadedAccessTokenEntity =
-      transactionsRepository.findByReferenceId(savedEntity1.getReferenceId()).get();
+      transactionsRepository.findByReferenceId(transactionId).get();
 
-    assertEqual(loadedAccessTokenEntity, savedEntity1);
+    assertEqual(loadedAccessTokenEntity, entity1);
+
+    Thread.sleep(1000); // sleep to make it more predictable to
 
     final TransactionEntity entity2 = newEntity(accountId, transactionId, 20);
-    save(entity2);
+    transactionsRepository.upsertAmounts(entity2);
 
     assertThat(transactionsRepository.findByAccountIdOrderByCreatedDateDesc(accountId, DEFAULT_PAGE)).hasSize(1);
     Optional<TransactionEntity> transaction1 = transactionsRepository.findByReferenceId(transactionId);
@@ -141,17 +140,15 @@ public class TransactionsRepositoryTest {
     assertThat(transaction1).isPresent();
     assertThat(transaction1.get().getPacketCount()).isEqualTo(2);
     assertThat(transaction1.get().getAmount()).isEqualTo(BigInteger.valueOf(30));
-    assertThat(transaction1.get().getModifiedDate()).isAfter(transaction1.get().getCreatedDate());
 
-    transaction1.get().setStatus("CLOSED_BY_SENDER");
-    save(transaction1.get());
+    transactionsRepository.updateStatus(accountId, transactionId, "CLOSED_BY_SENDER");
 
     assertThat(transactionsRepository.findByAccountIdOrderByCreatedDateDesc(accountId, DEFAULT_PAGE)).hasSize(1);
 
     transaction1 = transactionsRepository.findByReferenceId(transactionId);
     assertThat(transaction1.get().getStatus()).isEqualTo("CLOSED_BY_SENDER");
 
-    save(newEntity(accountId, transactionId2, 33));
+    transactionsRepository.upsertAmounts(newEntity(accountId, transactionId2, 33));
 
     assertThat(transactionsRepository.findByAccountIdOrderByCreatedDateDesc(accountId, DEFAULT_PAGE)).hasSize(2);
 
@@ -164,16 +161,6 @@ public class TransactionsRepositoryTest {
     assertThat(transaction2.get().getAmount()).isEqualTo(BigInteger.valueOf(33));
     assertThat(transaction2.get().getPacketCount()).isEqualTo(1);
     assertThat(transaction2.get().getModifiedDate()).isEqualTo(transaction2.get().getCreatedDate());
-  }
-
-  private TransactionEntity save(TransactionEntity entity) {
-    entityManager.clear();
-    TransactionEntity result = transactionsRepository.save(entity);
-    entityManager.flush();
-    entityManager.refresh(result);
-    entityManager.clear();
-
-    return result;
   }
 
   private String generateUuid() {
@@ -194,7 +181,7 @@ public class TransactionsRepositoryTest {
   }
 
   private void assertEqual(TransactionEntity actual, TransactionEntity expected) {
-    assertThat(actual).isEqualToIgnoringGivenFields(expected, "createdDate", "modifiedDate");
+    assertThat(actual).isEqualToIgnoringGivenFields(expected, "id", "createdDate", "modifiedDate");
   }
 
   @Configuration("application.yml")

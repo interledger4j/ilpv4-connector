@@ -1,6 +1,6 @@
 package org.interledger.connector.transactions;
 
-public interface FulfilledTransactionAggregator {
+public interface PaymentTransactionAggregator {
 
   void aggregate(Transaction transaction);
 

@@ -33,10 +33,10 @@
       <column name="STATUS" type="VARCHAR(32)">
         <constraints nullable="false"/>
       </column>
-      <column name="CREATED_DTTM" type="DATETIME">
+      <column name="CREATED_DTTM" type="DATETIME" defaultValue="now()">
         <constraints nullable="false"/>
       </column>
-      <column name="MODIFIED_DTTM" type="DATETIME">
+      <column name="MODIFIED_DTTM" type="DATETIME" defaultValue="now()">
         <constraints nullable="false"/>
       </column>
     </createTable>
