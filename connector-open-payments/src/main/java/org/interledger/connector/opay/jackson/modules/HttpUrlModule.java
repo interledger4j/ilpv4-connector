@@ -1,4 +1,4 @@
-package org.interledger.connector.opay.jackson;
+package org.interledger.connector.opay.jackson.modules;
 
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.DeserializationContext;

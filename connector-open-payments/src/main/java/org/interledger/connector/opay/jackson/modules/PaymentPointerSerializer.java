@@ -1,4 +1,4 @@
-package org.interledger.connector.opay.jackson;
+package org.interledger.connector.opay.jackson.modules;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.spsp.PaymentPointer;
