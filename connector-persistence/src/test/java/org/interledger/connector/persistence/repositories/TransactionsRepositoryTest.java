@@ -148,8 +148,6 @@ public class TransactionsRepositoryTest {
 
     assertEqual(loadedAccessTokenEntity, entity1);
 
-    Thread.sleep(1000); // sleep to make it more predictable to
-
     final TransactionEntity entity2 = newEntity(accountId, transactionId, 20);
     transactionsRepository.upsertAmounts(entity2);
 
