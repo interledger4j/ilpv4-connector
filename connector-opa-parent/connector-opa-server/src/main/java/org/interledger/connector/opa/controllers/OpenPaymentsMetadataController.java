@@ -21,8 +21,7 @@ import java.util.function.Supplier;
 public class OpenPaymentsMetadataController {
 
   @Autowired
-  @Qualifier(OPEN_PAYMENTS)
-  private ObjectMapper openPaymentsObjectMapper;
+  private ObjectMapper objectMapper;
 
   private Supplier<OpenPaymentsMetadata> openPaymentsMetadata;
 

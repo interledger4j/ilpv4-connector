@@ -39,7 +39,6 @@ public class OpenPaymentsConfig implements WebMvcConfigurer {
   public static final String OPEN_PAYMENTS = "OPEN_PAYMENTS";
 
   @Autowired
-  @Qualifier(OPEN_PAYMENTS)
   private ObjectMapper objectMapper;
 
   @Autowired
@@ -48,16 +47,6 @@ public class OpenPaymentsConfig implements WebMvcConfigurer {
   @Bean
   public Supplier<OpenPaymentsMetadata> openPaymentsMetadataSupplier() {
     return () -> applicationContext.getBean(OpenPaymentsMetadata.class);
-  }
-
-  /**
-   * This module has its own ObjectMapper bean so that it can be used as a standalone jar without
-   * and extra configuration.
-   */
-  @Bean
-  @Qualifier(OPEN_PAYMENTS)
-  public ObjectMapper openPaymentsObjectMapper() {
-    return ObjectMapperFactory.create();
   }
 
   @Bean
