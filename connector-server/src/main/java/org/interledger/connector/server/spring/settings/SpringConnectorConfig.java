@@ -12,6 +12,7 @@ import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.accounts.AccountRateLimitSettings;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.accounts.AccountSettingsCache;
 import org.interledger.connector.accounts.AccountSettingsResolver;
 import org.interledger.connector.accounts.BtpAccountIdResolver;
 import org.interledger.connector.accounts.DefaultAccessTokenManager;
@@ -569,7 +570,8 @@ public class SpringConnectorConfig {
     ILPv4PacketSwitch ilpPacketSwitch,
     BalanceTracker balanceTracker,
     EventBus eventBus,
-    SettlementService settlementService
+    SettlementService settlementService,
+    AccountSettingsCache accountSettingsCache
   ) {
     return new DefaultILPv4Connector(
       connectorSettingsSupplier,
@@ -581,6 +583,7 @@ public class SpringConnectorConfig {
       ilpPacketSwitch,
       balanceTracker,
       settlementService,
+      accountSettingsCache,
       eventBus
     );
   }

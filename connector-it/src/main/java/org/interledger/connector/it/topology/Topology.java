@@ -11,20 +11,17 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * A collection of nodes and edges that connect those nodes.
  */
-public class Topology {
+public class Topology extends AbstractBaseTopology<Topology> {
 
-  private final String topologyName;
   private final Map<String, Node> nodes = new HashMap<>();
   private final List<Edge> edges = new ArrayList<>();
-  private final PostConstructListener postConstructListener;
 
   public Topology(final String topologyName) {
-    this(topologyName, new PostConstructListener() {
+    this(topologyName, new PostConstructListener<Topology>() {
       @Override
       protected void doAfterTopologyStartup(Topology topology) {
         // do nothing by default.
@@ -33,45 +30,43 @@ public class Topology {
   }
 
   public Topology(final String topologyName, final PostConstructListener postConstructListener) {
-    this.topologyName = Objects.requireNonNull(topologyName);
-    this.postConstructListener = Objects.requireNonNull(postConstructListener);
+    super(topologyName, postConstructListener);
   }
 
+  @Override
   public Topology addNode(String key, Node node) {
     nodes.put(key, node);
     return this;
   }
 
+  @Override
   public Topology addNode(InterledgerAddress key, Node node) {
     nodes.put(key.getValue(), node);
     return this;
   }
 
+  @Override
   public Topology addEdge(Edge edge) {
     edges.add(edge);
     return this;
   }
 
-  public Node getNode(String key) {
-    return getNode(key, Node.class);
-  }
-
+  @Override
   public <T> T getNode(String key, Class<T> clazz) {
     return (T) nodes.get(key);
   }
 
-  public Node getNode(InterledgerAddress key) {
-    return getNode(key, Node.class);
-  }
-
+  @Override
   public <T> T getNode(InterledgerAddress key, Class<T> clazz) {
     return (T) nodes.get(key.getValue());
   }
 
+  @Override
   public Collection<Node> getNodeValues() {
     return nodes.values();
   }
 
+  @Override
   public Topology start() {
     List<Node> nodeList = Lists.newArrayList(nodes.values());
     Collections.sort(nodeList, Comparator.comparing(Node::getId));
@@ -94,37 +89,11 @@ public class Topology {
     return this.edges;
   }
 
+  @Override
   public void stop() {
     for (Node node : nodes.values()) {
       node.stop();
     }
-  }
-
-  @Override
-  public String toString() {
-    return this.topologyName;
-  }
-
-  /**
-   * Allows the test-harness to addAccount edges _after_ the topology has started. This is useful for things like adding
-   * a plugin, which might need to know the port of a peering server, which isn't known until after the Spring container
-   * has started.
-   */
-  public static abstract class PostConstructListener {
-
-    public final void afterTopologyStartup(Topology topology) {
-      this.doAfterTopologyStartup(topology);
-
-      // Connect any unconnected edges...
-      for (Edge edge : topology.getEdges()) {
-        if (!edge.isConnected()) {
-          edge.connect(topology);
-        }
-      }
-    }
-
-    protected abstract void doAfterTopologyStartup(final Topology topology);
-
   }
 
 }

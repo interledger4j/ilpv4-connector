@@ -4,11 +4,14 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.AccountSettingsCache;
+import org.interledger.connector.accounts.event.AccountUpdatedEvent;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -41,23 +44,27 @@ public class AccountSettingsLoadingCache implements AccountSettingsCache {
    * For testing purposes.
    */
   @VisibleForTesting
-  public AccountSettingsLoadingCache(final AccountSettingsRepository accountSettingsRepository) {
+  public AccountSettingsLoadingCache(final AccountSettingsRepository accountSettingsRepository,
+                                     final EventBus eventBus) {
     this(accountSettingsRepository, Caffeine.newBuilder()
       // No stats recording in the cache because this is only used for testing...
       .expireAfterWrite(15, TimeUnit.MINUTES) // Set very high just for testing...
       .maximumSize(5000)
       // The value stored in the Cache is the AccountSettings converted from the entity so we don't have to convert
       // on every ILPv4 packet switch.
-      .build((accountId) -> accountSettingsRepository.findByAccountIdWithConversion(accountId))
+      .build((accountId) -> accountSettingsRepository.findByAccountIdWithConversion(accountId)),
+      eventBus
     );
   }
 
   public AccountSettingsLoadingCache(
     final AccountSettingsRepository accountSettingsRepository,
-    final Cache<AccountId, Optional<AccountSettings>> accountSettingsCache
+    final Cache<AccountId, Optional<AccountSettings>> accountSettingsCache,
+    final EventBus eventBus
   ) {
     this.accountSettingsRepository = Objects.requireNonNull(accountSettingsRepository);
     this.accountSettingsCache = Objects.requireNonNull(accountSettingsCache);
+    eventBus.register(this);
   }
 
   /**
@@ -86,5 +93,16 @@ public class AccountSettingsLoadingCache implements AccountSettingsCache {
    */
   public AccountSettings safeGetAccountId(final AccountId accountId) {
     return this.getAccount(accountId).orElseThrow(() -> new AccountNotFoundProblem(accountId));
+  }
+
+  /**
+   * NOT TO BE CALLED DIRECTLY; visible out of necessity. Used to invalidate cache entries that
+   * have recently been updated.
+   * @param event details about which account was updated
+   */
+  @Subscribe
+  @SuppressWarnings("PMD.UnusedPublicMethod")
+  public void _handleAccountUpdated(AccountUpdatedEvent event) {
+    this.accountSettingsCache.invalidate(event.accountId());
   }
 }

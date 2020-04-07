@@ -3,7 +3,6 @@ package org.interledger.connector.accounts.sub;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.InvalidAccountIdProblem;
 import org.interledger.core.InterledgerAddress;
 

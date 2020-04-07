@@ -11,7 +11,6 @@ import org.interledger.core.InterledgerAddressPrefix;
 import org.hibernate.annotations.NaturalId;
 
 import java.util.Objects;
-
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
