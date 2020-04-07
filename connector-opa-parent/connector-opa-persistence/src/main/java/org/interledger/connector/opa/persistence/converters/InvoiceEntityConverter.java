@@ -7,8 +7,6 @@ import org.interledger.connector.opa.persistence.entities.InvoiceEntity;
 import com.google.common.primitives.UnsignedLong;
 import org.springframework.core.convert.converter.Converter;
 
-import java.util.UUID;
-
 public class InvoiceEntityConverter implements Converter<InvoiceEntity, Invoice> {
 
   @Override
@@ -21,8 +19,8 @@ public class InvoiceEntityConverter implements Converter<InvoiceEntity, Invoice>
       .createdAt(invoiceEntity.getCreatedDate())
       .description(invoiceEntity.getDescription())
       .expiresAt(invoiceEntity.getExpiresAt())
-      .finalizedAt(null) // fixme
-      .id(InvoiceId.of(UUID.fromString(invoiceEntity.getInvoiceId())))
+      .finalizedAt(invoiceEntity.getFinalizedAt())
+      .id(InvoiceId.of(invoiceEntity.getInvoiceId()))
       .received(UnsignedLong.valueOf(invoiceEntity.getReceived()))
       .subject(invoiceEntity.getSubject())
       .updatedAt(invoiceEntity.getModifiedDate())

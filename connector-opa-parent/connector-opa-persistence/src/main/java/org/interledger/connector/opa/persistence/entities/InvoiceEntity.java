@@ -77,7 +77,7 @@ public class InvoiceEntity extends AbstractEntity {
     this.description = invoice.description();
     this.expiresAt = invoice.expiresAt();
     this.finalizedAt = invoice.finalizedAt();
-    this.invoiceId = invoice.id().toString();
+    this.invoiceId = invoice.id().value();
     this.received = invoice.received().longValue();
     this.subject = invoice.subject();
   }

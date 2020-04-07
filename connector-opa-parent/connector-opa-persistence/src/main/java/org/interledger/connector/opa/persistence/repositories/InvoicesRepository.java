@@ -20,8 +20,19 @@ public interface InvoicesRepository extends CrudRepository<InvoiceEntity, Long>,
    *
    * @param invoiceId A {@link String} corresponding to {@link InvoiceEntity#getInvoiceId()}.
    *
-   * @return List of {@link InvoiceEntity}.
+   * @return the {@link InvoiceEntity} if present.
    */
-  Optional<InvoiceEntity> findByInvoiceId(InvoiceId invoiceId);
+  Optional<InvoiceEntity> findByInvoiceId(String invoiceId);
+
+  /**
+   * Find an {@link InvoiceEntity} by its natural identifier (i.e., the invoiceId as a String).
+   *
+   * @param invoiceId A {@link InvoiceId} corresponding to {@link InvoiceEntity#getInvoiceId()}.
+   *
+   * @return the {@link InvoiceEntity} if present.
+   */
+  default Optional<InvoiceEntity> findByInvoiceId(InvoiceId invoiceId) {
+    return findByInvoiceId(invoiceId.value());
+  }
 
 }

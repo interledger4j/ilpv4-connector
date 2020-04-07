@@ -7,8 +7,6 @@ import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;
 import org.hibernate.type.descriptor.sql.VarcharTypeDescriptor;
 
-import java.util.UUID;
-
 /**
  * Hibernate type for {@link InvoiceId}.
  */
@@ -34,7 +32,7 @@ public class InvoiceIdType extends AbstractSingleColumnStandardBasicType<Invoice
 
     @Override
     public InvoiceId fromString(String string) {
-      return InvoiceId.of(UUID.fromString(string));
+      return InvoiceId.of(string);
     }
 
     public <X> X unwrap(InvoiceId value, Class<X> type, WrapperOptions options) {
@@ -52,7 +50,7 @@ public class InvoiceIdType extends AbstractSingleColumnStandardBasicType<Invoice
         return null;
       }
       if ( String.class.isInstance( value ) ) {
-        return InvoiceId.of(UUID.fromString((String) value));
+        return InvoiceId.of((String) value);
       }
       throw unknownWrap( value.getClass() );
     }

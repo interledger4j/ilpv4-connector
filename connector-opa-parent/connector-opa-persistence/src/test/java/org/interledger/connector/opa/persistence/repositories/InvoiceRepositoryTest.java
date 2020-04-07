@@ -24,6 +24,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -48,6 +49,8 @@ public class InvoiceRepositoryTest {
     Invoice saved = invoicesRepository.saveInvoice(invoice);
     assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(invoice,
       "id", "createdAt", "updatedAt");
+    Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceId(invoice.id());
+    assertThat(fetched).isNotEmpty().get().isEqualTo(saved);
   }
 
   private ImmutableInvoice createNewInvoice() {
@@ -58,7 +61,7 @@ public class InvoiceRepositoryTest {
       .assetScale((short) 9)
       .description("A test invoice")
       .expiresAt(Instant.now().plusSeconds(60))
-      .id(InvoiceId.of(UUID.randomUUID()))
+      .id(InvoiceId.of(UUID.randomUUID().toString()))
       .received(UnsignedLong.ZERO)
       .subject("PAY ME BRUH")
       .build();

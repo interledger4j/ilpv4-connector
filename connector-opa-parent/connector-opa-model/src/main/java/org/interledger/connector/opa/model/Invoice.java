@@ -33,7 +33,7 @@ public interface Invoice {
    */
   @Value.Default
   default InvoiceId id() {
-    return InvoiceId.of(UUID.randomUUID());
+    return InvoiceId.of(UUID.randomUUID().toString());
   }
 
   /**
