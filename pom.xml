@@ -72,6 +72,7 @@
     <module>connector-pubsub</module>
     <module>connector-pubsub-api</module>
     <module>connector-open-payments</module>
+    <module>connector-opa-parent</module>
   </modules>
 
   <profiles>
