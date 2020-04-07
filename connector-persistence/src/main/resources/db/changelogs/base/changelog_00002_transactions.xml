@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+  <changeSet id="transactions" author="nhartner">
+    <createTable tableName="TRANSACTIONS">
+      <column autoIncrement="true" name="ID" type="BIGINT">
+        <constraints nullable="false" primaryKey="true"/>
+      </column>
+      <column name="REFERENCE_ID" type="VARCHAR(64)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="ACCOUNT_ID" type="VARCHAR(64)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="TYPE" type="VARCHAR(32)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="STATUS" type="VARCHAR(32)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="AMOUNT" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="ASSET_CODE" type="VARCHAR(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="ASSET_SCALE" type="SMALLINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="PACKET_COUNT" type="INTEGER">
+        <constraints nullable="false"/>
+      </column>
+      <column name="SOURCE_ADDRESS" type="VARCHAR(1024)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="DESTINATION_ADDRESS" type="VARCHAR(1024)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="CREATED_DTTM" type="DATETIME" defaultValue="now()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="MODIFIED_DTTM" type="DATETIME" defaultValue="now()">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+    <createIndex indexName="TRANSACTIONS_ACCT_ID_CREATED_IDX"
+                 tableName="TRANSACTIONS">
+      <column name="ACCOUNT_ID"/>
+      <column name="CREATED_DTTM"/>
+    </createIndex>
+    <createIndex indexName="TRANSACTIONS_ACCT_ID_REF_ID_IDX"
+                 tableName="TRANSACTIONS"
+                 unique="true">
+      <column name="ACCOUNT_ID"/>
+      <column name="REFERENCE_ID"/>
+    </createIndex>
+    <createIndex indexName="TRANSACTIONS_STATUS_CREATED_DTTM_IDX"
+                 tableName="TRANSACTIONS">
+      <column name="STATUS"/>
+      <column name="CREATED_DTTM"/>
+    </createIndex>
+
+  </changeSet>
+</databaseChangeLog>

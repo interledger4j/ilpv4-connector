@@ -3,6 +3,7 @@ package org.interledger.connector.persistence.config;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionService;
 
+import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +32,7 @@ public class EncryptedDatasourcePasswordConfig {
   protected DataSourceBuilder createDataSourceBuilder(DataSourceProperties dataSourceProperties,
                                                       EncryptionService encryptionService) {
     DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create();
+    dataSourceBuilder.type(HikariDataSource.class);
     dataSourceBuilder.url(dataSourceProperties.determineUrl());
     dataSourceBuilder.username(dataSourceProperties.getUsername());
     if (dataSourceProperties.getPassword() != null && dataSourceProperties.getPassword().startsWith("enc")) {
