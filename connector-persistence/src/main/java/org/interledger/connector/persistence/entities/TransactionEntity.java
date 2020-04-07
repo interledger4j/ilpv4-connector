@@ -14,6 +14,10 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+/**
+ * Entity for persisting a transaction. See {@link org.interledger.connector.transactions.Transaction} for
+ * javadoc of each field's meaning.
+ */
 @Entity
 @Access(AccessType.FIELD)
 @Table(name = TRANSACTIONS)

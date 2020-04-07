@@ -29,7 +29,7 @@ public interface TransactionsRepository extends Repository<TransactionEntity, Lo
 
   /**
    * Find an {@link TransactionEntity} by its natural identifier corresponding to
-   * {@link TransactionEntity#getReferenceId()}.
+   * {@link AccountId} and {@link TransactionEntity#getReferenceId()}.
    *
    * @param accountId
    * @param referenceId

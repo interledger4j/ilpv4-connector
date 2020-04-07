@@ -10,7 +10,7 @@ import org.interledger.connector.persistence.entities.TransactionEntity;
 public interface TransactionsRepositoryCustom {
 
   /**
-   * Inserts or updates an transaction entity.
+   * Inserts or updates an transaction entity and merges amounts.
    * @param transaction
    * @return number of rows updated. 1 = success.
    */
@@ -28,6 +28,15 @@ public interface TransactionsRepositoryCustom {
   int updateStatus(AccountId accountId, String referenceId, String status);
 
 
+  /**
+   * Updates just the source_address column of the transactions table. This is done explicitly because
+   * source address will not be present on most packets, just when the ILP stream data contains a ConnectionNewAddress
+   * frame.
+   * @param accountId
+   * @param referenceId
+   * @param sourceAddress
+   * @return number of rows updated. 1 = success
+   */
   int updateSourceAddress(AccountId accountId, String referenceId, String sourceAddress);
 
 }
