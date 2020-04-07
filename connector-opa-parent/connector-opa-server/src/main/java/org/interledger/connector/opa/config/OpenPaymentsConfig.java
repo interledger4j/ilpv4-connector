@@ -39,7 +39,6 @@ public class OpenPaymentsConfig implements WebMvcConfigurer {
   public static final String OPEN_PAYMENTS = "OPEN_PAYMENTS";
 
   @Autowired
-  @Qualifier(OPEN_PAYMENTS)
   private ObjectMapper objectMapper;
 
   @Autowired
@@ -50,16 +49,6 @@ public class OpenPaymentsConfig implements WebMvcConfigurer {
     return () -> applicationContext.getBean(OpenPaymentsMetadata.class);
   }
 
-  /**
-   * This module has its own ObjectMapper bean so that it can be used as a standalone jar without
-   * and extra configuration.
-   */
-  @Bean
-  @Qualifier(OPEN_PAYMENTS)
-  public ObjectMapper openPaymentsObjectMapper() {
-    return ObjectMapperFactory.create();
-  }
-
   @Bean
   @Qualifier(OPEN_PAYMENTS)
   public InvoiceService ilpInvoiceService() {
@@ -68,7 +57,7 @@ public class OpenPaymentsConfig implements WebMvcConfigurer {
 
   @Bean
   @Qualifier(OPEN_PAYMENTS)
-  public StreamConnectionGenerator streamConnectionGenerator() {
+  public StreamConnectionGenerator opaStreamConnectionGenerator() {
     return new OpaStreamConnectionGenerator();
   }
 

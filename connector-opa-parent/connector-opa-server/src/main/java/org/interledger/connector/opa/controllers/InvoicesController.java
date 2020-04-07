@@ -18,9 +18,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -35,6 +37,8 @@ import java.util.function.Supplier;
 @RestController
 public class InvoicesController {
 
+  private static final String APPLICATION_JSON_XRP_OPA_VALUE = "application/json+xrp-opa";
+  private static final MediaType APPLICATION_JSON_XRP_OPA = MediaType.valueOf(APPLICATION_JSON_XRP_OPA_VALUE);
   private final StreamConnectionGenerator streamConnectionGenerator;
   private InvoiceService invoiceService;
   private final Supplier<OpenPaymentsMetadata> openPaymentsMetadataSupplier;
@@ -45,12 +49,12 @@ public class InvoicesController {
 
   public InvoicesController(
     final InvoiceService invoiceService,
-    @Qualifier(OPEN_PAYMENTS) final StreamConnectionGenerator streamConnectionGenerator,
+    @Qualifier(OPEN_PAYMENTS) final StreamConnectionGenerator opaStreamConnectionGenerator,
     final Supplier<OpenPaymentsMetadata> openPaymentsMetadataSupplier,
     final ServerSecretSupplier serverSecretSupplier
   ) {
     this.invoiceService = Objects.requireNonNull(invoiceService);
-    this.streamConnectionGenerator = Objects.requireNonNull(streamConnectionGenerator);
+    this.streamConnectionGenerator = Objects.requireNonNull(opaStreamConnectionGenerator);
     this.openPaymentsMetadataSupplier = Objects.requireNonNull(openPaymentsMetadataSupplier);
     this.serverSecretSupplier = Objects.requireNonNull(serverSecretSupplier);
   }
@@ -103,34 +107,45 @@ public class InvoicesController {
   @RequestMapping(
     path = PathConstants.SLASH_INVOICE + "/{invoiceId}",
     method = RequestMethod.OPTIONS,
-    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    produces = {APPLICATION_JSON_XRP_OPA_VALUE, APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public @ResponseBody ResponseEntity<StreamConnectionDetails> getPaymentDetails(@PathVariable InvoiceId invoiceId) {
-    // Get the existing invoice
-    final Invoice invoice = invoiceService.getInvoiceById(invoiceId);
+  public @ResponseBody ResponseEntity getPaymentDetails(
+    @RequestHeader("Accept") String acceptHeaderValue,
+    @PathVariable InvoiceId invoiceId
+  ) {
+    // XRP payment details are not supported yet, so just return a bad request status
+    if (acceptHeaderValue.equals(APPLICATION_JSON_XRP_OPA_VALUE)) {
+      return new ResponseEntity(HttpStatus.BAD_REQUEST);
+    } else {
+      // Otherwise get ILP payment details
 
-    // Get ILP Address Prefix from payment pointer and invoiceId
-    final String destinationAddress = invoiceService.getAddressFromInvoice(invoice);
+      // Get the existing invoice
+      final Invoice invoice = invoiceService.getInvoiceById(invoiceId);
 
-    // Get shared secret and address with connection tag
-    final StreamConnectionDetails streamConnectionDetails =
-      streamConnectionGenerator.generateConnectionDetails(serverSecretSupplier, InterledgerAddress.of(destinationAddress));
+      // Get ILP Address Prefix from payment pointer and invoiceId
+      final String destinationAddress = invoiceService.getAddressFromInvoice(invoice);
 
-    // Base64 encode the invoiceId to add to the connection tag
-    final byte[] invoiceIdBytes = invoiceId.value().toString().getBytes();
-    final String encodedInvoiceId = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceIdBytes);
 
-    // Append the encoded invoiceId to the connection tag and return
-    final StreamConnectionDetails streamDetailsWithInvoiceIdTag =
-      StreamConnectionDetails.builder()
-        .from(streamConnectionDetails)
-        .destinationAddress(streamConnectionDetails.destinationAddress().with("~" + encodedInvoiceId))
-        .build();
+      // Get shared secret and address with connection tag
+      final StreamConnectionDetails streamConnectionDetails =
+        streamConnectionGenerator.generateConnectionDetails(serverSecretSupplier, InterledgerAddress.of(destinationAddress));
 
-    final HttpHeaders headers = new HttpHeaders();
-    headers.setLocation(getInvoiceLocation(invoiceId));
+      // Base64 encode the invoiceId to add to the connection tag
+      final byte[] invoiceIdBytes = invoiceId.value().toString().getBytes();
+      final String encodedInvoiceId = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceIdBytes);
 
-    return new ResponseEntity(streamDetailsWithInvoiceIdTag, headers, HttpStatus.OK);
+      // Append the encoded invoiceId to the connection tag and return
+      final StreamConnectionDetails streamDetailsWithInvoiceIdTag =
+        StreamConnectionDetails.builder()
+          .from(streamConnectionDetails)
+          .destinationAddress(streamConnectionDetails.destinationAddress().with("~" + encodedInvoiceId))
+          .build();
+
+      final HttpHeaders headers = new HttpHeaders();
+      headers.setLocation(getInvoiceLocation(invoiceId));
+
+      return new ResponseEntity(streamDetailsWithInvoiceIdTag, headers, HttpStatus.OK);
+    }
   }
 
   private URI getInvoiceLocation(InvoiceId invoiceId) {

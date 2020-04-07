@@ -36,6 +36,9 @@ public class InvoiceEntity extends AbstractEntity {
   @Column(name = "INVOICE_ID") // Hibernate treats this as unique, but Liquibase is explicit about uniqueness.
   private String invoiceId;
 
+  @Column(name = "ACCOUNT_ID")
+  private String accountId;
+
   @Column(name = "ASSET_CODE")
   private String assetCode;
 
@@ -67,6 +70,7 @@ public class InvoiceEntity extends AbstractEntity {
 
   public InvoiceEntity(final Invoice invoice) {
     Objects.requireNonNull(invoice);
+    this.accountId = invoice.accountId();
     this.amount = invoice.amount().longValue();
     this.assetCode = invoice.assetCode();
     this.assetScale = invoice.assetScale();
@@ -92,6 +96,14 @@ public class InvoiceEntity extends AbstractEntity {
 
   public void setInvoiceId(String invoiceId) {
     this.invoiceId = invoiceId;
+  }
+
+  public String getAccountId() {
+    return accountId;
+  }
+
+  public void setAccountId(String accountId) {
+    this.accountId = accountId;
   }
 
   public String getAssetCode() {

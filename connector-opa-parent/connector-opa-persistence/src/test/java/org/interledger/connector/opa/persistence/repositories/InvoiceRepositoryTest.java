@@ -46,11 +46,13 @@ public class InvoiceRepositoryTest {
 
   private void saveAndGetInvoice(Invoice invoice) {
     Invoice saved = invoicesRepository.saveInvoice(invoice);
-    assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(invoice, "id");
+    assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(invoice,
+      "id", "createdAt", "updatedAt");
   }
 
   private ImmutableInvoice createNewInvoice() {
     return Invoice.builder()
+      .accountId("ricketycricket")
       .amount(UnsignedLong.valueOf(1000))
       .assetCode("XRP")
       .assetScale((short) 9)

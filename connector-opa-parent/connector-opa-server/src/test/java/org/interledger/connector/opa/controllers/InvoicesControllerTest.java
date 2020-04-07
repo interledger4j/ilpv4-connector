@@ -10,40 +10,31 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.interledger.connector.opa.controllers.constants.PathConstants;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.service.InvoiceService;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.SharedSecret;
 import org.interledger.spsp.StreamConnectionDetails;
 import org.interledger.stream.crypto.Random;
-import org.interledger.stream.receiver.ServerSecretSupplier;
-import org.interledger.stream.receiver.StreamConnectionGenerator;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
 
 @RunWith(SpringRunner.class)
-@WebMvcTest(controllers = InvoicesController.class)
+@WebMvcTest(
+  controllers = InvoicesController.class,
+  excludeAutoConfiguration = {SecurityAutoConfiguration.class}
+)
 public class InvoicesControllerTest extends AbstractControllerTest {
 
   @Autowired
   MockMvc mockMvc;
-
-  @MockBean
-  InvoiceService invoiceServiceMock;
-
-  @MockBean
-  StreamConnectionGenerator streamConnectionGeneratorMock;
-
-  @MockBean
-  ServerSecretSupplier serverSecretSupplierMock;
 
   @Before
   public void setUp() {

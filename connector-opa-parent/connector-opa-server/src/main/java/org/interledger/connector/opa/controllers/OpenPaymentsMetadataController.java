@@ -1,6 +1,5 @@
 package org.interledger.connector.opa.controllers;
 
-import static org.interledger.connector.opa.config.OpenPaymentsConfig.OPEN_PAYMENTS;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.opa.controllers.constants.PathConstants;
@@ -8,7 +7,6 @@ import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -21,8 +19,7 @@ import java.util.function.Supplier;
 public class OpenPaymentsMetadataController {
 
   @Autowired
-  @Qualifier(OPEN_PAYMENTS)
-  private ObjectMapper openPaymentsObjectMapper;
+  private ObjectMapper objectMapper;
 
   private Supplier<OpenPaymentsMetadata> openPaymentsMetadata;
 

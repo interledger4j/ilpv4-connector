@@ -21,6 +21,9 @@
       <column name="INVOICE_ID" type="VARCHAR(64)">
         <constraints nullable="false"/>
       </column>
+      <column name="ACCOUNT_ID" type="VARCHAR(64)">
+        <constraints nullable="false"/>
+      </column>
       <column name="ASSET_CODE" type="VARCHAR(20)">
         <constraints nullable="false"/>
       </column>
