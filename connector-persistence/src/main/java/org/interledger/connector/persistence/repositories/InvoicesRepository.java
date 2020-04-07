@@ -1,6 +1,6 @@
 package org.interledger.connector.persistence.repositories;
 
-import org.interledger.connector.opay.InvoiceId;
+import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 
 import org.springframework.data.repository.CrudRepository;
