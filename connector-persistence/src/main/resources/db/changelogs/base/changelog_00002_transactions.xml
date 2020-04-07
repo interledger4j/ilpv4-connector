@@ -63,14 +63,5 @@
       <column name="CREATED_DTTM"/>
     </createIndex>
 
-<!--    fixme-->
-<!--    <addForeignKeyConstraint baseColumnNames="ACCOUNT_ID"-->
-<!--                             baseTableName="TRANSACTIONS"-->
-<!--                             constraintName="FK_TRANSACTIONS_ACCT_ID"-->
-<!--                             onDelete="CASCADE"-->
-<!--                             onUpdate="RESTRICT"-->
-<!--                             referencedColumnNames="ID"-->
-<!--                             referencedTableName="ACCOUNT_SETTINGS"/>-->
-
   </changeSet>
 </databaseChangeLog>
