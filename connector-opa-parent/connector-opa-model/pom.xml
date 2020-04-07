@@ -44,5 +44,9 @@
       <groupId>org.zalando</groupId>
       <artifactId>problem</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.interledger.connector</groupId>
+      <artifactId>connector-accounts</artifactId>
+    </dependency>
   </dependencies>
 </project>

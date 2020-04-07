@@ -222,7 +222,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .antMatchers(HttpMethod.DELETE, PathConstants.SLASH_ROUTES_STATIC_PREFIX).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
       // encrypted
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ENCRYPTION + "/**").hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
-
+      // open payments
+      .antMatchers(HttpMethod.GET, org.interledger.connector.opa.controllers.constants.PathConstants.SLASH_INVOICE + "/**").hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.OPTIONS, org.interledger.connector.opa.controllers.constants.PathConstants.SLASH_INVOICE + "/**").hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
       // Everything else...
       .anyRequest().denyAll()
 

@@ -57,7 +57,7 @@ public class OpenPaymentsConfig implements WebMvcConfigurer {
 
   @Bean
   @Qualifier(OPEN_PAYMENTS)
-  public StreamConnectionGenerator streamConnectionGenerator() {
+  public StreamConnectionGenerator opaStreamConnectionGenerator() {
     return new OpaStreamConnectionGenerator();
   }
 

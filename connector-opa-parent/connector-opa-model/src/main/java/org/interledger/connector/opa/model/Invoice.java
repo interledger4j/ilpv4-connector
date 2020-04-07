@@ -1,5 +1,7 @@
 package org.interledger.connector.opa.model;
 
+import org.interledger.connector.accounts.AccountId;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -66,7 +68,18 @@ public interface Invoice {
    * of 8 in the case of Bitcoin; and 1 drop represents an asset scale of 6 in XRP.</p>
    *
    * @return A {@link Short} representing the asset scale.
-   */  short assetScale();
+   */
+  short assetScale();
+
+  /**
+   * The account ID of the creator of this invoice.
+   *
+   * For ILP invoices, this will be the {@link String} form of an {@link AccountId}. For other payment networks,
+   * this may be the account ID of a wallet holder.
+   *
+   * @return A {@link String} representing the account ID of the user who created this invoice.
+   */
+  String accountId();
 
   /**
    * The amount that should be paid to this invoice, denominated in {@code assetCode()} and {@code assetScale()}.
@@ -137,8 +150,6 @@ public interface Invoice {
    * @return The {@link Instant} when the invoice was finalized.
    */
   @JsonIgnore
-  @Value.Default
-  default Instant finalizedAt() {
-    return Instant.now();
-  };
+  @Nullable
+  Instant finalizedAt();
 }
