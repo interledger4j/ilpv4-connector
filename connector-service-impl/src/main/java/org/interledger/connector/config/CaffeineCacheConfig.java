@@ -8,10 +8,12 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.RateLimiter;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +31,9 @@ import javax.money.convert.ExchangeRate;
 public class CaffeineCacheConfig {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
+  @Autowired
+  private EventBus eventBus;
 
   @Bean
   public CacheMetricsCollector cacheMetricsCollector() {
@@ -61,14 +66,15 @@ public class CaffeineCacheConfig {
 
   @Bean
   public AccountSettingsLoadingCache accountSettingsLoadingCache(
-      AccountSettingsRepository accountSettingsRepository,
-      Cache<AccountId, Optional<AccountSettings>> accountSettingsCache
+    AccountSettingsRepository accountSettingsRepository,
+    Cache<AccountId, Optional<AccountSettings>> accountSettingsCache
   ) {
     return new AccountSettingsLoadingCache(
-        accountSettingsRepository,
-        // NOTE: No need to enable Prometheus here because it is enabled for this cache inside of
-        // `accountSettingsCache()`
-        accountSettingsCache
+      accountSettingsRepository,
+      // NOTE: No need to enable Prometheus here because it is enabled for this cache inside of
+      // `accountSettingsCache()`
+      accountSettingsCache,
+      eventBus
     );
   }
 

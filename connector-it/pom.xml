@@ -218,6 +218,7 @@
               <groups>
                 org.interledger.connector.it.markers.IlpOverHttp,
                 org.interledger.connector.it.markers.Settlement,
+                org.interledger.connector.it.markers.Coordination
               </groups>
               <excludedGroups>
                 org.interledger.connector.it.markers.Performance
@@ -297,7 +298,48 @@
               <excludedGroups>
                 org.interledger.connector.it.markers.DockerImage,
                 org.interledger.connector.it.markers.IlpOverHttp,
-                org.interledger.connector.it.markers.Performance
+                org.interledger.connector.it.markers.Performance,
+                org.interledger.connector.it.markers.Coordination
+              </excludedGroups>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>coordination</id>
+      <build>
+        <plugins>
+          <!-- Actually runs Integration Tests (use -DskipITs to skip) -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>run-integration-tests</id>
+                <phase>integration-test</phase>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <skipTests>${skipTests}</skipTests>
+              <skipITs>${skipITs}</skipITs>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <encoding>UTF-8</encoding>
+              <!-- see: https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class -->
+              <argLine>${failsafe.argLine} -Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <groups>
+                org.interledger.connector.it.markers.Coordination
+              </groups>
+              <excludedGroups>
+                org.interledger.connector.it.markers.DockerImage,
+                org.interledger.connector.it.markers.IlpOverHttp,
+                org.interledger.connector.it.markers.Performance,
+                org.interledger.connector.it.markers.Settlement
               </excludedGroups>
             </configuration>
           </plugin>
@@ -336,7 +378,8 @@
               <excludedGroups>
                 org.interledger.connector.it.markers.DockerImage,
                 org.interledger.connector.it.markers.Settlement,
-                org.interledger.connector.it.markers.Performance
+                org.interledger.connector.it.markers.Performance,
+                org.interledger.connector.it.markers.Coordination
               </excludedGroups>
             </configuration>
           </plugin>
@@ -375,7 +418,8 @@
               <excludedGroups>
                 org.interledger.connector.it.markers.IlpOverHttp,
                 org.interledger.connector.it.markers.Settlement,
-                org.interledger.connector.it.markers.Performance
+                org.interledger.connector.it.markers.Performance,
+                org.interledger.connector.it.markers.Coordination
               </excludedGroups>
             </configuration>
           </plugin>

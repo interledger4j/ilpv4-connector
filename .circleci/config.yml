@@ -168,6 +168,57 @@ jobs:
       # publish the coverage report to codecov.io
       - run: bash <(curl -s https://codecov.io/bash)
 
+  # This job runs specific Coordination-related Integration Tests (ITs) found in the `connector-it` module.
+  # by executing a special maven command that limits ITs to the test-group `Coordination`.
+  integration_tests_coordination:
+    working_directory: ~/repo
+
+    machine:
+      image: ubuntu-1604:201903-01
+
+    environment:
+      MAVEN_OPTS: -Xmx4096m
+      JAVA_HOME: /usr/lib/jvm/jdk1.8.0/
+
+    steps:
+
+      # apply the JCE unlimited strength policy to allow the PSK 256 bit key length
+      # solution from http://qiita.com/yoskhdia/items/f4702a3abc4467de69b0
+      - run:
+          name: Getting JCE unlimited strength policy to allow the 256 bit keys
+          command: |
+            curl -L --cookie 'oraclelicense=accept-securebackup-cookie;'  http://download.oracle.com/otn-pub/java/jce/8/jce_policy-8.zip -o /tmp/jce_policy.zip
+            unzip -o /tmp/jce_policy.zip -d /tmp
+            sudo mv -f /tmp/UnlimitedJCEPolicyJDK8/US_export_policy.jar $JAVA_HOME/jre/lib/security/US_export_policy.jar
+            sudo mv -f /tmp/UnlimitedJCEPolicyJDK8/local_policy.jar $JAVA_HOME/jre/lib/security/local_policy.jar
+      - checkout # check out source code to working directory
+
+      # Restore the saved cache after the first run or if `pom.xml` has changed. Read about caching dependencies:
+      # https://circleci.com/docs/2.0/caching/
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "pom.xml" }}
+
+      # gets the project dependencies and installs sub-module deps
+      - run:
+          name: Install Connector Dependencies
+          command: mvn dependency:go-offline -DskipTests -DskipITs install
+
+      - save_cache: # saves the project dependencies
+          paths:
+            - ~/.m2
+          key: v1-dependencies-{{ checksum "pom.xml" }}
+
+      - run:
+          name: Run Integration Tests (ITs)
+          command: |
+            cd ./connector-it
+            docker network prune -f
+            mvn verify -Pcoordination
+
+      # publish the coverage report to codecov.io
+      - run: bash <(curl -s https://codecov.io/bash)
+
   docker_image:
     working_directory: ~/repo
 
@@ -202,6 +253,9 @@ workflows:
       - integration_tests_settlement:
           requires:
             - build
+      - integration_tests_coordination:
+          requires:
+            - build
 
   nightly:
     triggers:
@@ -219,7 +273,11 @@ workflows:
       - integration_tests_settlement:
           requires:
             - build
+      - integration_tests_coordination:
+          requires:
+            - build
       - docker_image:
           requires:
             - integration_tests_ilp_over_http
             - integration_tests_settlement
+            - integration_tests_coordination

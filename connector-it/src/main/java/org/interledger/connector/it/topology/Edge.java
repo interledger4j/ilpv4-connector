@@ -15,5 +15,5 @@ public abstract class Edge {
    *
    * @param topology
    */
-  public abstract void connect(Topology topology);
+  public abstract void connect(AbstractBaseTopology topology);
 }
