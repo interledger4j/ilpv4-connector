@@ -2,14 +2,12 @@ package org.interledger.connector.opa.persistence.repositories;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.interledger.connector.opa.model.ImmutableInvoice;
 import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.persistence.config.OpaPersistenceConfig;
 import org.interledger.connector.opa.persistence.converters.InvoiceEntityConverter;
+import org.interledger.connector.opa.persistence.util.SampleObjectUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.primitives.UnsignedLong;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -23,9 +21,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {
@@ -41,7 +37,7 @@ public class InvoiceRepositoryTest {
 
   @Test
   public void saveGetSaveGetDeleteGet() {
-    Invoice invoice = createNewInvoice();
+    Invoice invoice = SampleObjectUtils.createNewInvoice();
     saveAndGetInvoice(invoice);
   }
 
@@ -52,21 +48,6 @@ public class InvoiceRepositoryTest {
     Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceId(invoice.id());
     assertThat(fetched).isNotEmpty().get().isEqualTo(saved);
   }
-
-  private ImmutableInvoice createNewInvoice() {
-    return Invoice.builder()
-      .accountId("ricketycricket")
-      .amount(UnsignedLong.valueOf(1000))
-      .assetCode("XRP")
-      .assetScale((short) 9)
-      .description("A test invoice")
-      .expiresAt(Instant.now().plusSeconds(60))
-      .id(InvoiceId.of(UUID.randomUUID().toString()))
-      .received(UnsignedLong.ZERO)
-      .subject("PAY ME BRUH")
-      .build();
-  }
-
 
   @Configuration("application.yml")
   public static class TestPersistenceConfig {

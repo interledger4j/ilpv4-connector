@@ -7,6 +7,9 @@ import org.interledger.connector.opa.persistence.entities.InvoiceEntity;
 import com.google.common.primitives.UnsignedLong;
 import org.springframework.core.convert.converter.Converter;
 
+import java.time.Instant;
+import java.util.Optional;
+
 public class InvoiceEntityConverter implements Converter<InvoiceEntity, Invoice> {
 
   @Override
@@ -16,14 +19,14 @@ public class InvoiceEntityConverter implements Converter<InvoiceEntity, Invoice>
       .amount(UnsignedLong.valueOf(invoiceEntity.getAmount()))
       .assetCode(invoiceEntity.getAssetCode())
       .assetScale((short) invoiceEntity.getAssetScale())
-      .createdAt(invoiceEntity.getCreatedDate())
+      .createdAt(Optional.ofNullable(invoiceEntity.getCreatedDate()).orElse(Instant.now()))
       .description(invoiceEntity.getDescription())
       .expiresAt(invoiceEntity.getExpiresAt())
       .finalizedAt(invoiceEntity.getFinalizedAt())
       .id(InvoiceId.of(invoiceEntity.getInvoiceId()))
       .received(UnsignedLong.valueOf(invoiceEntity.getReceived()))
       .subject(invoiceEntity.getSubject())
-      .updatedAt(invoiceEntity.getModifiedDate())
+      .updatedAt(Optional.ofNullable(invoiceEntity.getModifiedDate()).orElse(Instant.now()))
       .build();
   }
 }
