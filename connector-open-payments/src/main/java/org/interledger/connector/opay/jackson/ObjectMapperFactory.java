@@ -3,6 +3,8 @@ package org.interledger.connector.opay.jackson;
 import org.interledger.connector.opay.jackson.modules.HttpUrlModule;
 import org.interledger.connector.opay.jackson.modules.InvoiceIdModule;
 import org.interledger.connector.opay.jackson.modules.PaymentPointerModule;
+import org.interledger.quilt.jackson.InterledgerModule;
+import org.interledger.quilt.jackson.conditions.Encoding;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -34,6 +36,7 @@ public class ObjectMapperFactory {
       .registerModule(new JavaTimeModule())
       .registerModule(new PaymentPointerModule())
       .registerModule(new InvoiceIdModule())
+      .registerModule(new InterledgerModule(Encoding.BASE64))
       .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
       // Even though `false`` is the default setting for WRITE_NUMBERS_AS_STRINGS, we overtly set it here to alert
       // the reader that this value must be set this way in order to easily support Problems JSON, which per

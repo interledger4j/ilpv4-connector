@@ -132,5 +132,11 @@
       <version>1.2.0</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>jackson-datatypes</artifactId>
+      <version>1.2.0</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 </project>

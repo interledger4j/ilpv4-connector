@@ -2,8 +2,18 @@ package org.interledger.connector.opay.config;
 
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 
+import org.interledger.connector.opay.controllers.converters.InvoiceIdConverter;
 import org.interledger.connector.opay.jackson.ObjectMapperFactory;
 import org.interledger.connector.opay.model.OpenPaymentsMetadata;
+import org.interledger.connector.opay.service.InvoiceService;
+import org.interledger.connector.opay.service.ilp.IlpInvoiceServiceImpl;
+import org.interledger.connector.opay.service.ilp.OpaStreamConnectionGenerator;
+import org.interledger.encoding.asn.framework.CodecContext;
+import org.interledger.stream.crypto.StreamEncryptionService;
+import org.interledger.stream.receiver.ServerSecretSupplier;
+import org.interledger.stream.receiver.StatelessStreamReceiver;
+import org.interledger.stream.receiver.StreamConnectionGenerator;
+import org.interledger.stream.receiver.StreamReceiver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -15,6 +25,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.format.FormatterRegistry;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
@@ -52,6 +63,23 @@ public class OpenPaymentsConfig implements WebMvcConfigurer {
   @Qualifier(OPEN_PAYMENTS)
   public ObjectMapper openPaymentsObjectMapper() {
     return ObjectMapperFactory.create();
+  }
+
+  @Bean
+  @Qualifier(OPEN_PAYMENTS)
+  public InvoiceService ilpInvoiceService() {
+    return new IlpInvoiceServiceImpl();
+  }
+
+  @Bean
+  @Qualifier(OPEN_PAYMENTS)
+  public StreamConnectionGenerator streamConnectionGenerator() {
+    return new OpaStreamConnectionGenerator();
+  }
+
+  @Override
+  public void addFormatters(FormatterRegistry registry) {
+    registry.addConverter(new InvoiceIdConverter());
   }
 
   /**

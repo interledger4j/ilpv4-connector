@@ -1,5 +1,6 @@
 package org.interledger.connector.opay.controllers;
 
+import static org.interledger.connector.opay.config.OpenPaymentsConfig.OPEN_PAYMENTS;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.opay.InvoiceId;
@@ -9,9 +10,12 @@ import org.interledger.connector.opay.model.OpenPaymentsMetadata;
 import org.interledger.connector.opay.service.InvoiceService;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.spsp.StreamConnectionDetails;
-import org.interledger.stream.receiver.StreamReceiver;
+import org.interledger.stream.receiver.ServerSecretSupplier;
+import org.interledger.stream.receiver.StreamConnectionGenerator;
 
-import org.springframework.http.HttpEntity;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +27,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.spring.common.MediaTypes;
 
+import java.net.URI;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -30,18 +35,24 @@ import java.util.function.Supplier;
 @RestController
 public class InvoicesController {
 
+  private final StreamConnectionGenerator streamConnectionGenerator;
   private InvoiceService invoiceService;
-  private StreamReceiver streamReceiver;
   private final Supplier<OpenPaymentsMetadata> openPaymentsMetadataSupplier;
+  private ServerSecretSupplier serverSecretSupplier;
+
+  @Autowired
+  ObjectMapper objectMapper;
 
   public InvoicesController(
     final InvoiceService invoiceService,
-    final StreamReceiver streamReceiver,
-    final Supplier<OpenPaymentsMetadata> openPaymentsMetadataSupplier
-    ) {
+    @Qualifier(OPEN_PAYMENTS) final StreamConnectionGenerator streamConnectionGenerator,
+    final Supplier<OpenPaymentsMetadata> openPaymentsMetadataSupplier,
+    final ServerSecretSupplier serverSecretSupplier
+  ) {
     this.invoiceService = Objects.requireNonNull(invoiceService);
-    this.streamReceiver = Objects.requireNonNull(streamReceiver);
+    this.streamConnectionGenerator = Objects.requireNonNull(streamConnectionGenerator);
     this.openPaymentsMetadataSupplier = Objects.requireNonNull(openPaymentsMetadataSupplier);
+    this.serverSecretSupplier = Objects.requireNonNull(serverSecretSupplier);
   }
 
   /**
@@ -57,8 +68,12 @@ public class InvoicesController {
     method = RequestMethod.POST,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public @ResponseBody HttpEntity<Invoice> createInvoice(@RequestBody Invoice invoice) {
-    return null;
+  public @ResponseBody ResponseEntity<Invoice> createInvoice(@RequestBody Invoice invoice) {
+    Invoice createdInvoice = invoiceService.createInvoice(invoice);
+
+    final HttpHeaders headers = new HttpHeaders();
+    headers.setLocation(getInvoiceLocation(invoice.id()));
+    return new ResponseEntity(createdInvoice, headers, HttpStatus.CREATED);
   }
 
   /**
@@ -68,12 +83,12 @@ public class InvoicesController {
    * @return An existing {@link Invoice}
    */
   @RequestMapping(
-    path = PathConstants.SLASH_INVOICE + "/id",
+    path = PathConstants.SLASH_INVOICE + "/{invoiceId}",
     method = RequestMethod.GET,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody Invoice getInvoice(@PathVariable InvoiceId invoiceId) {
-    return null;
+    return invoiceService.getInvoiceById(invoiceId);
   }
 
   /**
@@ -86,7 +101,7 @@ public class InvoicesController {
    * @return The {@link StreamConnectionDetails} needed to send a STREAM payment in the context of the {@link Invoice}
    */
   @RequestMapping(
-    path = PathConstants.SLASH_INVOICE + "/id",
+    path = PathConstants.SLASH_INVOICE + "/{invoiceId}",
     method = RequestMethod.OPTIONS,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
@@ -99,7 +114,7 @@ public class InvoicesController {
 
     // Get shared secret and address with connection tag
     final StreamConnectionDetails streamConnectionDetails =
-      streamReceiver.setupStream(InterledgerAddress.of(destinationAddress));
+      streamConnectionGenerator.generateConnectionDetails(serverSecretSupplier, InterledgerAddress.of(destinationAddress));
 
     // Base64 encode the invoiceId to add to the connection tag
     final byte[] invoiceIdBytes = invoiceId.value().toString().getBytes();
@@ -113,14 +128,18 @@ public class InvoicesController {
         .build();
 
     final HttpHeaders headers = new HttpHeaders();
-    headers.setLocation(openPaymentsMetadataSupplier
+    headers.setLocation(getInvoiceLocation(invoiceId));
+
+    return new ResponseEntity(streamDetailsWithInvoiceIdTag, headers, HttpStatus.OK);
+  }
+
+  private URI getInvoiceLocation(InvoiceId invoiceId) {
+    return openPaymentsMetadataSupplier
       .get()
       .invoicesEndpoint()
       .newBuilder()
       .addPathSegment(invoiceId.toString())
       .build()
-      .uri());
-
-    return new ResponseEntity(streamDetailsWithInvoiceIdTag, headers, HttpStatus.OK);
+      .uri();
   }
 }
