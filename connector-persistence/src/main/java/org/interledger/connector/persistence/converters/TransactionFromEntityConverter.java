@@ -3,6 +3,7 @@ package org.interledger.connector.persistence.converters;
 import org.interledger.connector.persistence.entities.TransactionEntity;
 import org.interledger.connector.transactions.Transaction;
 import org.interledger.connector.transactions.TransactionStatus;
+import org.interledger.connector.transactions.TransactionType;
 import org.interledger.core.InterledgerAddress;
 
 import com.google.common.base.Enums;
@@ -18,11 +19,13 @@ public class TransactionFromEntityConverter implements Converter<TransactionEnti
       .assetCode(source.getAssetCode())
       .assetScale(source.getAssetScale())
       .createdAt(source.getCreatedDate())
+      .sourceAddress(InterledgerAddress.of(source.getSourceAddress()))
       .destinationAddress(InterledgerAddress.of(source.getDestinationAddress()))
       .modifiedAt(source.getModifiedDate())
       .packetCount(source.getPacketCount())
       .referenceId(source.getReferenceId())
-      .transactionStatus(Enums.getIfPresent(TransactionStatus.class, source.getStatus()).or(TransactionStatus.UNKNOWN))
+      .status(Enums.getIfPresent(TransactionStatus.class, source.getStatus()).or(TransactionStatus.UNKNOWN))
+      .type(Enums.getIfPresent(TransactionType.class, source.getType()).or(TransactionType.UNKNOWN))
       .build();
   }
 

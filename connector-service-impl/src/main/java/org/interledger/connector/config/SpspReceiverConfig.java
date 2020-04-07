@@ -5,6 +5,7 @@ import static org.interledger.connector.core.ConfigConstants.SPSP__SERVER_SECRET
 import org.interledger.connector.stream.TrackingStreamReceiver;
 import org.interledger.connector.stream.TrackingStreamReceiverLink;
 import org.interledger.connector.stream.TrackingStreamReceiverLinkFactory;
+import org.interledger.connector.transactions.GeneratedFulfillmentPublisher;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.link.LinkFactoryProvider;
 import org.interledger.link.PacketRejector;
@@ -16,7 +17,6 @@ import org.interledger.stream.receiver.SpspStreamConnectionGenerator;
 import org.interledger.stream.receiver.StatelessStreamReceiver;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
-import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,7 +107,7 @@ public class SpspReceiverConfig {
     final StreamEncryptionService streamEncryptionService,
     final CodecContext streamCodecContext,
     final PacketRejector packetRejector,
-    final EventBus eventBus) {
+    final GeneratedFulfillmentPublisher generatedFulfillmentPublisher) {
 
     return new TrackingStreamReceiverLinkFactory(packetRejector,
       (linkSettings) ->  new TrackingStreamReceiver(
@@ -115,7 +115,7 @@ public class SpspReceiverConfig {
         streamConnectionGenerator,
         streamEncryptionService, streamCodecContext,
         linkSettings.accountId(),
-        eventBus
+        generatedFulfillmentPublisher
       ));
   }
 

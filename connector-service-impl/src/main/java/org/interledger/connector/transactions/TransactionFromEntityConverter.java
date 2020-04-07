@@ -7,11 +7,14 @@ import com.google.common.base.Enums;
 import com.google.common.primitives.UnsignedLong;
 import org.springframework.core.convert.converter.Converter;
 
+import java.util.Optional;
+
 public class TransactionFromEntityConverter implements Converter<TransactionEntity, Transaction> {
 
   @Override
   public Transaction convert(TransactionEntity source) {
-    return Transaction.builder().accountId(source.getAccountId())
+    return Transaction.builder()
+      .accountId(source.getAccountId())
       .amount(UnsignedLong.valueOf(source.getAmount()))
       .assetCode(source.getAssetCode())
       .assetScale(source.getAssetScale())
@@ -20,7 +23,9 @@ public class TransactionFromEntityConverter implements Converter<TransactionEnti
       .modifiedAt(source.getModifiedDate())
       .packetCount(source.getPacketCount())
       .referenceId(source.getReferenceId())
-      .transactionStatus(Enums.getIfPresent(TransactionStatus.class, source.getStatus()).or(TransactionStatus.UNKNOWN))
+      .sourceAddress(Optional.ofNullable(source.getSourceAddress()).map(InterledgerAddress::of))
+      .status(Enums.getIfPresent(TransactionStatus.class, source.getStatus()).or(TransactionStatus.UNKNOWN))
+      .type(Enums.getIfPresent(TransactionType.class, source.getType()).or(TransactionType.UNKNOWN))
       .build();
   }
 

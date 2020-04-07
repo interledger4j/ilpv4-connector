@@ -45,8 +45,14 @@ public class TransactionEntity {
   @Column(name = "PACKET_COUNT")
   private int packetCount;
 
+  @Column(name = "SOURCE_ADDRESS")
+  private String sourceAddress;
+
   @Column(name = "STATUS")
   private String status;
+
+  @Column(name = "TYPE")
+  private String type;
 
   @Column(name = "CREATED_DTTM", nullable = false, updatable = false)
   private Instant createdDate;
@@ -66,14 +72,13 @@ public class TransactionEntity {
     this.accountId = accountId;
   }
 
-  public String getReferenceId() {
-    return referenceId;
+  public String getDestinationAddress() {
+    return destinationAddress;
   }
 
-  public void setReferenceId(String referenceId) {
-    this.referenceId = referenceId;
+  public void setDestinationAddress(String destinationAddress) {
+    this.destinationAddress = destinationAddress;
   }
-
   public String getAssetCode() {
     return assetCode;
   }
@@ -106,6 +111,23 @@ public class TransactionEntity {
     this.packetCount = packetCount;
   }
 
+
+  public String getReferenceId() {
+    return referenceId;
+  }
+
+  public void setReferenceId(String referenceId) {
+    this.referenceId = referenceId;
+  }
+
+  public String getSourceAddress() {
+    return sourceAddress;
+  }
+
+  public void setSourceAddress(String sourceAddress) {
+    this.sourceAddress = sourceAddress;
+  }
+
   public String getStatus() {
     return status;
   }
@@ -114,12 +136,12 @@ public class TransactionEntity {
     this.status = status;
   }
 
-  public String getDestinationAddress() {
-    return destinationAddress;
+  public String getType() {
+    return type;
   }
 
-  public void setDestinationAddress(String destinationAddress) {
-    this.destinationAddress = destinationAddress;
+  public void setType(String type) {
+    this.type = type;
   }
 
   public Instant getCreatedDate() {
@@ -162,14 +184,19 @@ public class TransactionEntity {
   @Override
   public String toString() {
     return "TransactionEntity{" +
-      "referenceId='" + referenceId + '\'' +
+      "id=" + id +
+      ", referenceId='" + referenceId + '\'' +
       ", accountId=" + accountId +
       ", destinationAddress='" + destinationAddress + '\'' +
       ", assetCode='" + assetCode + '\'' +
       ", assetScale=" + assetScale +
       ", amount=" + amount +
       ", packetCount=" + packetCount +
+      ", sourceAddress='" + sourceAddress + '\'' +
       ", status='" + status + '\'' +
+      ", type='" + type + '\'' +
+      ", createdDate=" + createdDate +
+      ", modifiedDate=" + modifiedDate +
       '}';
   }
 }

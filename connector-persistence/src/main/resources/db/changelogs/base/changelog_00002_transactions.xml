@@ -10,12 +10,18 @@
         <constraints nullable="false" primaryKey="true"/>
       </column>
       <column name="REFERENCE_ID" type="VARCHAR(64)">
-        <constraints nullable="false" unique="true"/>
+        <constraints nullable="false"/>
       </column>
       <column name="ACCOUNT_ID" type="VARCHAR(64)">
         <constraints nullable="false"/>
       </column>
-      <column name="DESTINATION_ADDRESS" type="VARCHAR(1024)">
+      <column name="TYPE" type="VARCHAR(32)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="STATUS" type="VARCHAR(32)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="AMOUNT" type="BIGINT">
         <constraints nullable="false"/>
       </column>
       <column name="ASSET_CODE" type="VARCHAR(20)">
@@ -24,13 +30,13 @@
       <column name="ASSET_SCALE" type="SMALLINT">
         <constraints nullable="false"/>
       </column>
-      <column name="AMOUNT" type="BIGINT">
-        <constraints nullable="false"/>
-      </column>
       <column name="PACKET_COUNT" type="INTEGER">
         <constraints nullable="false"/>
       </column>
-      <column name="STATUS" type="VARCHAR(32)">
+      <column name="SOURCE_ADDRESS" type="VARCHAR(1024)">
+        <constraints nullable="true"/>
+      </column>
+      <column name="DESTINATION_ADDRESS" type="VARCHAR(1024)">
         <constraints nullable="false"/>
       </column>
       <column name="CREATED_DTTM" type="DATETIME" defaultValue="now()">
@@ -45,9 +51,16 @@
       <column name="ACCOUNT_ID"/>
       <column name="CREATED_DTTM"/>
     </createIndex>
-    <createIndex indexName="TRANSACTIONS_STATUS_IDX"
+    <createIndex indexName="TRANSACTIONS_ACCT_ID_REF_ID_IDX"
+                 tableName="TRANSACTIONS"
+                 unique="true">
+      <column name="ACCOUNT_ID"/>
+      <column name="REFERENCE_ID"/>
+    </createIndex>
+    <createIndex indexName="TRANSACTIONS_STATUS_CREATED_DTTM_IDX"
                  tableName="TRANSACTIONS">
       <column name="STATUS"/>
+      <column name="CREATED_DTTM"/>
     </createIndex>
 
 <!--    fixme-->

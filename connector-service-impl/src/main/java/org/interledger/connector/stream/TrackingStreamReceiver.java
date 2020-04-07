@@ -4,6 +4,7 @@ import static org.interledger.stream.FluentCompareTo.is;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.events.FulfillmentGeneratedEvent;
+import org.interledger.connector.transactions.GeneratedFulfillmentPublisher;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;
@@ -33,7 +34,6 @@ import org.interledger.stream.receiver.StreamReceiver;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +64,7 @@ public class TrackingStreamReceiver implements StreamReceiver {
   private final StreamEncryptionService streamEncryptionService;
   private final CodecContext streamCodecContext;
   private final AccountId accountId;
-  private final EventBus eventBus;
+  private final GeneratedFulfillmentPublisher generatedFulfillmentPublisher;
 
   public TrackingStreamReceiver(
     final ServerSecretSupplier serverSecretSupplier,
@@ -72,7 +72,7 @@ public class TrackingStreamReceiver implements StreamReceiver {
     final StreamEncryptionService streamEncryptionService,
     final CodecContext streamCodecContext,
     final AccountId accountId,
-    final EventBus eventBus) {
+    final GeneratedFulfillmentPublisher generatedFulfillmentPublisher) {
     this.serverSecretSupplier = Objects.requireNonNull(serverSecretSupplier, "serverSecretSupplier must not be null");
     this.streamConnectionGenerator = Objects
         .requireNonNull(streamConnectionGenerator, "connectionGenerator must not be null");
@@ -80,7 +80,7 @@ public class TrackingStreamReceiver implements StreamReceiver {
         .requireNonNull(streamEncryptionService, "streamEncryptionService must not be null");
     this.streamCodecContext = Objects.requireNonNull(streamCodecContext, "streamCodecContext must not be null");
     this.accountId = accountId;
-    this.eventBus = eventBus;
+    this.generatedFulfillmentPublisher = generatedFulfillmentPublisher;
   }
 
   @Override
@@ -185,7 +185,7 @@ public class TrackingStreamReceiver implements StreamReceiver {
             .data(encryptedReturnableStreamPacketBytes)
             .build();
 
-        eventBus.post(FulfillmentGeneratedEvent.builder()
+        generatedFulfillmentPublisher.publish(FulfillmentGeneratedEvent.builder()
           .fulfillment(fulfillment)
           .streamPacket(streamPacket)
           .accountId(accountId)

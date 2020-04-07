@@ -638,16 +638,15 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  protected PaymentTransactionAggregator fulfilledTransactionAggregator(
-    PaymentTransactionManager paymentTransactionManager) {
-    return new InDatabasePaymentTransactionAggregator(paymentTransactionManager);
+  protected GeneratedFulfillmentPublisher generatedFulfillmentPublisher(
+    PaymentTransactionAggregator paymentTransactionAggregator) {
+    return new SynchronousGeneratedFulfillmentPublisher(paymentTransactionAggregator);
   }
 
   @Bean
-  protected GeneratedFulfillmentPublisher generatedFulfillmentPublisher(
-    EventBus eventBus,
-    PaymentTransactionAggregator paymentTransactionAggregator) {
-    return new SynchronousGeneratedFulfillmentPublisher(paymentTransactionAggregator, eventBus);
+  protected PaymentTransactionAggregator fulfilledTransactionAggregator(
+    PaymentTransactionManager paymentTransactionManager) {
+    return new InDatabasePaymentTransactionAggregator(paymentTransactionManager);
   }
 
 }

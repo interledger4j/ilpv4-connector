@@ -3,6 +3,8 @@ package org.interledger.connector.transactions;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.repositories.TransactionsRepository;
 
+import com.google.common.base.Preconditions;
+import com.google.common.primitives.UnsignedLong;
 import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
@@ -34,13 +36,29 @@ public class DefaultPaymentTransactionManager implements PaymentTransactionManag
 
   @Override
   public void upsert(Transaction transaction) {
-    if (transaction.amount().longValue() > 0) {
-      transactionsRepository.upsertAmounts(transactionToEntityConverter.convert(transaction));
-    }
-    if (!transaction.transactionStatus().equals(TransactionStatus.PENDING)) {
+    validateAmount(transaction.amount(), transaction.type().getAdjustmentType());
+    transactionsRepository.upsertAmounts(transactionToEntityConverter.convert(transaction));
+    transaction.sourceAddress().ifPresent(sourceAddress -> {
+      transactionsRepository.updateSourceAddress(transaction.accountId(),
+        transaction.referenceId(),
+        sourceAddress.getValue());
+    });
+    if (!transaction.status().equals(TransactionStatus.PENDING)) {
       transactionsRepository.updateStatus(transaction.accountId(),
         transaction.referenceId(),
-        transaction.transactionStatus().toString());
+        transaction.status().toString());
     }
   }
+
+  private void validateAmount(UnsignedLong amount, TransactionType.BalanceAdjustmentType balanceAdjustmentType) {
+    switch (balanceAdjustmentType) {
+      case CREDIT:
+        Preconditions.checkArgument(amount.longValue() >= 0, "amount cannot be negative for a credit adjustment");
+        break;
+      case DEBIT:
+        Preconditions.checkArgument(amount.longValue() <= 0, "amount cannot be positive for a debit adjustment");
+        break;
+    }
+  }
+
 }

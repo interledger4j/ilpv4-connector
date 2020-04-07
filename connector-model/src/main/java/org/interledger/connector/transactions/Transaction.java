@@ -7,6 +7,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.immutables.value.Value;
 
 import java.time.Instant;
+import java.util.Optional;
 
 @Value.Immutable
 public interface Transaction {
@@ -19,6 +20,8 @@ public interface Transaction {
 
   AccountId accountId();
 
+  Optional<InterledgerAddress> sourceAddress();
+
   InterledgerAddress destinationAddress();
 
   UnsignedLong amount();
@@ -29,7 +32,9 @@ public interface Transaction {
 
   short assetScale();
 
-  TransactionStatus transactionStatus();
+  TransactionStatus status();
+
+  TransactionType type();
 
   Instant createdAt();
 

@@ -1,6 +1,7 @@
 package org.interledger.connector.transactions;
 
 import org.interledger.connector.persistence.entities.TransactionEntity;
+import org.interledger.core.InterledgerAddress;
 
 import org.springframework.core.convert.converter.Converter;
 
@@ -16,7 +17,9 @@ public class TransactionToEntityConverter implements Converter<Transaction, Tran
     entity.setDestinationAddress(source.destinationAddress().getValue());
     entity.setPacketCount(source.packetCount());
     entity.setReferenceId(source.referenceId());
-    entity.setStatus(source.transactionStatus().toString());
+    entity.setSourceAddress(source.sourceAddress().map(InterledgerAddress::getValue).orElse(null));
+    entity.setStatus(source.status().toString());
+    entity.setType(source.type().toString());
     return entity;
   }
 

@@ -27,4 +27,7 @@ public interface TransactionsRepositoryCustom {
    */
   int updateStatus(AccountId accountId, String referenceId, String status);
 
+
+  int updateSourceAddress(AccountId accountId, String referenceId, String sourceAddress);
+
 }
