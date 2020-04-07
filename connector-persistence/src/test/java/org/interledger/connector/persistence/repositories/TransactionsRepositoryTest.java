@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
-import org.interledger.connector.persistence.converters.AccessTokenEntityConverter;
 import org.interledger.connector.persistence.entities.TransactionEntity;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -212,13 +211,6 @@ public class TransactionsRepositoryTest {
   @Configuration("application.yml")
   public static class TestPersistenceConfig {
 
-    ////////////////////////
-    // SpringConverters
-    ////////////////////////
-
-    @Autowired
-    private AccessTokenEntityConverter accessTokensEntityConverter;
-
     @Bean
     public ObjectMapper objectMapper() {
       return new ObjectMapper();
@@ -226,9 +218,7 @@ public class TransactionsRepositoryTest {
 
     @Bean
     public ConfigurableConversionService conversionService() {
-      ConfigurableConversionService conversionService = new DefaultConversionService();
-      conversionService.addConverter(accessTokensEntityConverter);
-      return conversionService;
+      return new DefaultConversionService();
     }
   }
 }
