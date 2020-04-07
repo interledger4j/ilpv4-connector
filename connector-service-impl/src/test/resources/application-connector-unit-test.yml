@@ -47,12 +47,14 @@ interledger:
     enabledFeatures:
       rateLimitingEnabled: true
       require32ByteSharedSecrets: true
+      localSpspFulfillmentEnabled: true
     # Which protocols this Connector supports
     enabledProtocols:
       ilpOverHttpEnabled: true
       pingProtocolEnabled: true
       peerRoutingEnabled: true
       ildcpEnabled: true
+      spspEnabled: true
     # Global Routing Settings for this connector.
     globalRoutingSettings:
       # Whether to broadcast known routes.
@@ -73,3 +75,6 @@ interledger:
       routeExpiry: 30003
       # The maximum number of epochs per routing table update.
       maxEpochsPerRoutingTable: 77
+    spsp:
+      urlPath: test-url-path
+      addressPrefixSegment: test-address-prefix

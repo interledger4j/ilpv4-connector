@@ -1,19 +1,24 @@
 package org.interledger.connector.server.ilpoverhttp;
 
+import org.interledger.codecs.ilp.InterledgerCodecContextFactory;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.server.client.ConnectorAdminTestClient;
 import org.interledger.connector.server.client.ConnectorUserClient;
+import org.interledger.core.InterledgerAddress;
+import org.interledger.link.LinkId;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.JwtAuthSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import feign.RequestInterceptor;
 import feign.auth.BasicAuthRequestInterceptor;
 import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
 import org.junit.Before;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.server.LocalServerPort;
@@ -137,5 +142,29 @@ public abstract class AbstractEndpointTest {
 
   protected HttpUrl createAccountIlpUrl(String rootUri, AccountId accountId) {
     return HttpUrl.parse(rootUri + "/accounts/" + accountId + "/ilp");
+  }
+
+  /**
+   * Creates an {@link IlpOverHttpLink} to the locally running connector using the given account id and auth token.
+   * @param accountId
+   * @param authToken
+   * @param okHttpClient
+   * @param objectMapper
+   * @return
+   */
+  protected IlpOverHttpLink linkToServer(AccountId accountId,
+                                       String authToken,
+                                       OkHttpClient okHttpClient,
+                                       ObjectMapper objectMapper) {
+    IlpOverHttpLink link = new IlpOverHttpLink(
+      () -> InterledgerAddress.of("test." + accountId.value()),
+      createAccountIlpUrl(baseURI().toString(), accountId),
+      okHttpClient,
+      objectMapper,
+      InterledgerCodecContextFactory.oer(),
+      () -> authToken
+    );
+    link.setLinkId(LinkId.of(accountId.value()));
+    return link;
   }
 }

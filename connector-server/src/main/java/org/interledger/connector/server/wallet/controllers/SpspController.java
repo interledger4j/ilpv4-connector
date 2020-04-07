@@ -30,7 +30,6 @@ import org.zalando.problem.spring.common.MediaTypes;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
-
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -82,6 +81,7 @@ public class SpspController {
     }
 
     final InterledgerAddress paymentReceiverAddress = connectorSettingsSupplier.get().operatorAddress()
+      .with(connectorSettingsSupplier.get().spspSettings().addressPrefixSegment())
       .with(ilpIntermediateSuffix);
 
     final StreamConnectionDetails streamConnectionDetails = streamReceiver.setupStream(paymentReceiverAddress);
