@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -31,6 +33,7 @@ import java.util.concurrent.TimeoutException;
 public class DefaultLinkFilterChain implements LinkFilterChain {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultLinkFilterChain.class);
+  private static final Executor EXECUTOR = Executors.newCachedThreadPool();
 
   private final PacketRejector packetRejector;
   private final List<LinkFilter> linkFilters;
@@ -90,7 +93,7 @@ public class DefaultLinkFilterChain implements LinkFilterChain {
             );
           }
 
-          return CompletableFuture.supplyAsync(() -> link.sendPacket(preparePacket))
+          return CompletableFuture.supplyAsync(() -> link.sendPacket(preparePacket), EXECUTOR)
             .get(timeoutDuration.getSeconds(), TimeUnit.SECONDS);
 
         } catch (InterruptedException | ExecutionException e) {
