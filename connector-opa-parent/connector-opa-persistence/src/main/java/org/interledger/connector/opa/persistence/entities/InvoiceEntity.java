@@ -1,8 +1,10 @@
-package org.interledger.connector.persistence.entities;
+package org.interledger.connector.opa.persistence.entities;
 
-import static org.interledger.connector.persistence.entities.DataConstants.ColumnNames.INVOICE_IDX_COLUMN_NAMES;
-import static org.interledger.connector.persistence.entities.DataConstants.IndexNames.INVOICES_ID_IDX;
-import static org.interledger.connector.persistence.entities.DataConstants.TableNames.INVOICES;
+import static org.interledger.connector.opa.persistence.entities.DataConstants.ColumnNames.INVOICE_IDX_COLUMN_NAMES;
+import static org.interledger.connector.opa.persistence.entities.DataConstants.IndexNames.INVOICES_ID_IDX;
+import static org.interledger.connector.opa.persistence.entities.DataConstants.TableNames.INVOICES;
+
+import org.interledger.connector.opa.model.Invoice;
 
 import org.hibernate.annotations.NaturalId;
 
@@ -55,7 +57,26 @@ public class InvoiceEntity extends AbstractEntity {
   @Column(name = "EXPIRES_AT", nullable = false)
   private Instant expiresAt;
 
-  // FIXME needs constructor from DTO
+  @Column(name = "FINALIZED_AT")
+  private Instant finalizedAt;
+
+  /**
+   * For Hibernate
+   */
+  InvoiceEntity() {}
+
+  public InvoiceEntity(final Invoice invoice) {
+    Objects.requireNonNull(invoice);
+    this.amount = invoice.amount().longValue();
+    this.assetCode = invoice.assetCode();
+    this.assetScale = invoice.assetScale();
+    this.description = invoice.description();
+    this.expiresAt = invoice.expiresAt();
+    this.finalizedAt = invoice.finalizedAt();
+    this.invoiceId = invoice.id().toString();
+    this.received = invoice.received().longValue();
+    this.subject = invoice.subject();
+  }
 
   public Long getId() {
     return id;
@@ -129,6 +150,14 @@ public class InvoiceEntity extends AbstractEntity {
     this.expiresAt = expiresAt;
   }
 
+  public Instant getFinalizedAt() {
+    return finalizedAt;
+  }
+
+  public void setFinalizedAt(Instant finalizedAt) {
+    this.finalizedAt = finalizedAt;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -138,19 +167,11 @@ public class InvoiceEntity extends AbstractEntity {
       return false;
     }
     InvoiceEntity that = (InvoiceEntity) o;
-    return getAssetScale() == that.getAssetScale() &&
-      getInvoiceId().equals(that.getInvoiceId()) &&
-      getId().equals(that.getId()) &&
-      getAssetCode().equals(that.getAssetCode()) &&
-      getAmount().equals(that.getAmount()) &&
-      getReceived().equals(that.getReceived()) &&
-      getSubject().equals(that.getSubject()) &&
-      Objects.equals(getDescription(), that.getDescription()) &&
-      getExpiresAt().equals(that.getExpiresAt());
+    return getInvoiceId().equals(that.getInvoiceId());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getInvoiceId(), getId(), getAssetCode(), getAssetScale(), getAmount(), getReceived(), getSubject(), getDescription(), getExpiresAt());
+    return Objects.hash(getInvoiceId());
   }
 }

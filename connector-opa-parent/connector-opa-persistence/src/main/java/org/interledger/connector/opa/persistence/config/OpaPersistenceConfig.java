@@ -1,0 +1,26 @@
+package org.interledger.connector.opa.persistence.config;
+
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+
+/**
+ * The Open Payment Server's Spring Data configuration.
+ */
+@Configuration
+@EnableJpaAuditing
+@ComponentScan("org.interledger.connector.opa.persistence")
+@EnableJpaRepositories(basePackages = "org.interledger.connector.opa.persistence.repositories")
+@EntityScan("org.interledger.connector.opa.persistence.entities")
+@Import( {
+  ConvertersConfig.class,
+  EncryptedDatasourcePasswordConfig.class
+  // Placeholders for now (enable if we ever want custom processing that Spring Boot can't easily provide).
+  //H2ConnectorPersistenceConfig.class,
+  //PostgresqlConnectorPersistenceConfig.class
+})
+public class OpaPersistenceConfig {
+}

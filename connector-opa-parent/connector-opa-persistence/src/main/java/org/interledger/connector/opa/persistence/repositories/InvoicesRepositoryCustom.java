@@ -1,4 +1,6 @@
-package org.interledger.connector.persistence.repositories;
+package org.interledger.connector.opa.persistence.repositories;
+
+import org.interledger.connector.opa.model.Invoice;
 
 /**
  * Allows a {@link InvoicesRepository} to perform additional, custom logic not provided by Spring Data.
@@ -6,4 +8,6 @@ package org.interledger.connector.persistence.repositories;
  * @see "https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repositories.single-repository-behavior"
  */
 public interface InvoicesRepositoryCustom {
+
+  Invoice saveInvoice(Invoice invoice);
 }

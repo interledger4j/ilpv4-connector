@@ -33,6 +33,11 @@
       </dependency>
       <dependency>
         <groupId>${connector.groupId}</groupId>
+        <artifactId>connector-crypto</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${connector.groupId}</groupId>
         <artifactId>connector-jackson</artifactId>
         <version>${project.version}</version>
       </dependency>

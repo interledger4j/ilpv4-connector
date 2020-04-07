@@ -15,7 +15,6 @@
     <property name="timestamp" value="TIMESTAMP WITHOUT TIME ZONE" dbms="postgresql"/>
 
     <!-- DDL -->
-    <include file="db/changelogs/base/changelog.xml"/>
-    <include file="db/changelogs/base/changelog_00001_access_token.xml"/>
+    <include file="db/changelogs/changelog_00001_invoices.xml"/>
 
 </databaseChangeLog>
