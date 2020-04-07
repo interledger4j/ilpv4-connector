@@ -90,51 +90,15 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>${connector.groupId}</groupId>
-			<artifactId>connector-accounts</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>${connector.groupId}</groupId>
-			<artifactId>connector-core</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>${connector.groupId}</groupId>
-			<artifactId>connector-jackson</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>${connector.groupId}</groupId>
-			<artifactId>connector-persistence</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>${connector.groupId}</groupId>
-			<artifactId>connector-open-payments</artifactId>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>connector-opa-model</artifactId>
 			<!-- FIXME this isn't pulling from the parent correctly for some reason -->
 			<version>HEAD-SNAPSHOT</version>
 		</dependency>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>connector-opa-jackson</artifactId>
-		</dependency>
-		<dependency>
+		<!--<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>connector-opa-persistence</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.auth0</groupId>
-			<artifactId>java-jwt</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.auth0</groupId>
-			<artifactId>jwks-rsa</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.auth0</groupId>
-			<artifactId>auth0-spring-security-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-annotations</artifactId>
-		</dependency>
+		</dependency>-->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-core</artifactId>
@@ -142,14 +106,6 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-core</artifactId>
 		</dependency>
 		<!-- Only required by OkHttp4 runtime introspection, but not for compilation-->
 		<dependency>
@@ -166,33 +122,8 @@
 			<artifactId>okhttp</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>io.github.openfeign</groupId>
-			<artifactId>feign-jackson</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.github.resilience4j</groupId>
-			<artifactId>resilience4j-circuitbreaker</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.prometheus</groupId>
-			<artifactId>simpleclient_caffeine</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.prometheus</groupId>
-			<artifactId>simpleclient_hotspot</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.prometheus</groupId>
-			<artifactId>simpleclient_servlet</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>io.sentry</groupId>
 			<artifactId>sentry-logback</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>jakarta.annotation</groupId>
-			<artifactId>jakarta.annotation-api</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -200,49 +131,12 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.immutables</groupId>
-			<artifactId>value</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.interledger</groupId>
-			<artifactId>codecs-framework</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.interledger</groupId>
-			<artifactId>codecs-ilp</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.interledger</groupId>
-			<artifactId>codecs-ildcp</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.interledger</groupId>
-			<artifactId>codecs-stream</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>org.interledger</groupId>
 			<artifactId>ilp-core</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.interledger</groupId>
-			<artifactId>link-core</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.interledger</groupId>
-			<artifactId>link-ilp-over-http</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.interledger</groupId>
 			<artifactId>spsp-core</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.interledger</groupId>
-			<artifactId>spsp-client</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.interledger</groupId>
@@ -251,11 +145,6 @@
 		<dependency>
 			<groupId>org.interledger</groupId>
 			<artifactId>stream-receiver</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.interledger</groupId>
-			<artifactId>stream-client</artifactId>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.liquibase</groupId>
@@ -281,10 +170,6 @@
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -327,23 +212,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.zalando</groupId>
-			<artifactId>jackson-datatype-problem</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.zalando</groupId>
-			<artifactId>problem</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.zalando</groupId>
 			<artifactId>problem-spring-common</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.zalando</groupId>
-			<artifactId>problem-spring-web</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>jakarta.servlet</groupId>
-			<artifactId>jakarta.servlet-api</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.assertj</groupId>
@@ -356,39 +225,8 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-openfeign-core</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.github.openfeign</groupId>
-			<artifactId>feign-core</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.github.tomakehurst</groupId>
-			<artifactId>wiremock-jre8</artifactId>
-			<version>2.25.1</version>
-			<scope>test</scope>
-			<exclusions>
-				<exclusion>
-					<artifactId>junit</artifactId>
-					<groupId>junit</groupId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
 			<groupId>org.interledger.connector</groupId>
-			<artifactId>connector-open-payments</artifactId>
-			<version>HEAD-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>connector-opa-jackson</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>connector-opa-persistence</artifactId>
+			<artifactId>connector-jackson</artifactId>
 		</dependency>
 	</dependencies>
 

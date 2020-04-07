@@ -4,6 +4,7 @@ import org.interledger.connector.jackson.modules.AccountIdModule;
 import org.interledger.connector.jackson.modules.HttpUrlModule;
 import org.interledger.connector.jackson.modules.PaymentPointerModule;
 import org.interledger.connector.jackson.modules.SettlementAccountIdModule;
+import org.interledger.connector.opa.modules.InvoiceIdModule;
 import org.interledger.quilt.jackson.InterledgerModule;
 import org.interledger.quilt.jackson.conditions.Encoding;
 
@@ -39,6 +40,7 @@ public class ObjectMapperFactory {
       .registerModule(new SettlementAccountIdModule())
       .registerModule(new InterledgerModule(Encoding.BASE64))
       .registerModule(new PaymentPointerModule())
+      .registerModule(new InvoiceIdModule())
       .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
       // Even though `false`` is the default setting for WRITE_NUMBERS_AS_STRINGS, we overtly set it here to alert
       // the reader that this value must be set this way in order to easily support Problems JSON, which per

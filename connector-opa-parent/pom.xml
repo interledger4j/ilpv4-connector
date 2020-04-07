@@ -42,11 +42,6 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>${connector.groupId}</groupId>
-        <artifactId>connector-open-payments</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>connector-opa-jackson</artifactId>
         <version>${project.version}</version>
@@ -56,6 +51,11 @@
         <artifactId>connector-opa-persistence</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>connector-opa-model</artifactId>
+        <version>${project.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -63,6 +63,7 @@
     <module>connector-opa-jackson</module>
     <module>connector-opa-persistence</module>
     <module>connector-opa-server</module>
+    <module>connector-opa-model</module>
   </modules>
 
 </project>

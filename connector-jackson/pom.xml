@@ -95,6 +95,12 @@
       <version>1.2.0</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>org.interledger.connector.opa</groupId>
+      <artifactId>connector-opa-jackson</artifactId>
+      <version>HEAD-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 
 
