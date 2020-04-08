@@ -56,6 +56,8 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   private ConnectorKeysFromPropertyFile keys;
 
+  private SpspSettingsFromPropertyFile spsp = new SpspSettingsFromPropertyFile();
+
   @Override
   public InterledgerAddress operatorAddress() {
     return nodeIlpAddress;
@@ -169,6 +171,19 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   public void setKeys(ConnectorKeysFromPropertyFile keys) {
     this.keys = keys;
+  }
+
+  public SpspSettingsFromPropertyFile spsp() {
+    return spspSettings();
+  }
+
+  @Override
+  public SpspSettingsFromPropertyFile spspSettings() {
+    return spsp;
+  }
+
+  public void setSpsp(SpspSettingsFromPropertyFile spsp) {
+    this.spsp = spsp;
   }
 
   /**
