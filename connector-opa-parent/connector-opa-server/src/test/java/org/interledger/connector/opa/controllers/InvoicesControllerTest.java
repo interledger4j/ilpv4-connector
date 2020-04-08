@@ -24,8 +24,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.UUID;
-
 @RunWith(SpringRunner.class)
 @WebMvcTest(
   controllers = InvoicesController.class,
@@ -43,7 +41,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
 
   @Test
   public void getPaymentDetailsForInvoice() throws Exception {
-    InvoiceId invoiceId = InvoiceId.of(UUID.fromString("66ce60d8-f4ba-4c60-ba6e-fc5e0aa99923"));
+    InvoiceId invoiceId = InvoiceId.of("66ce60d8-f4ba-4c60-ba6e-fc5e0aa99923");
 
     Invoice mockInvoice = mock(Invoice.class);
     when(invoiceServiceMock.getInvoiceById(invoiceId)).thenReturn(mockInvoice);

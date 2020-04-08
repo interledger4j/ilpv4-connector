@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
 import java.io.IOException;
-import java.util.UUID;
 
 /**
  * Jackson deserializer for {@link InvoiceId}.
@@ -21,6 +20,6 @@ public class InvoiceIdDeserializer extends StdDeserializer<InvoiceId> {
 
   @Override
   public InvoiceId deserialize(JsonParser jsonParser, DeserializationContext ctxt) throws IOException {
-    return InvoiceId.of(UUID.fromString(jsonParser.getText()));
+    return InvoiceId.of(jsonParser.getText());
   }
 }

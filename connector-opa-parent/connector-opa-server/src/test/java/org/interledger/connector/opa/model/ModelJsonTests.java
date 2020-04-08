@@ -59,7 +59,7 @@ public class ModelJsonTests {
 
   @Test
   public void testInvoice() throws JsonProcessingException {
-    UUID invoiceId = UUID.randomUUID();
+    String invoiceId = UUID.randomUUID().toString();
     PaymentPointer subject = PaymentPointer.of("$acquirer.wallet/merchant");
     UnsignedLong amount = UnsignedLong.valueOf(200);
     String assetCode = "USD";
@@ -82,7 +82,7 @@ public class ModelJsonTests {
 
     JsonContentAssert assertJson = assertThat(jsonTester.from(invoiceJson));
     assertJson.extractingJsonPathValue("subject").isEqualTo(subject.toString());
-    assertJson.extractingJsonPathValue("id").isEqualTo(invoiceId.toString());
+    assertJson.extractingJsonPathValue("id").isEqualTo(invoiceId);
     assertJson.extractingJsonPathValue("amount").isEqualTo(amount.intValue());
     assertJson.extractingJsonPathValue("assetCode").isEqualTo(assetCode);
     assertJson.extractingJsonPathValue("assetScale").isEqualTo((int) assetScale);
