@@ -32,8 +32,8 @@ public class InMemoryPaymentTransactionManager implements PaymentTransactionMana
   }
 
   @Override
-  public Optional<Transaction> findByAccountIdAndReferenceId(AccountId accountId, String referenceId) {
-    MapKey key = MapKey.of(accountId, referenceId);
+  public Optional<Transaction> findByAccountIdAndTransactionId(AccountId accountId, String transactionId) {
+    MapKey key = MapKey.of(accountId, transactionId);
     return Optional.ofNullable(transactionsMap.get(key));
   }
 
@@ -53,9 +53,9 @@ public class InMemoryPaymentTransactionManager implements PaymentTransactionMana
   }
 
   private Transaction upsertAmounts(Transaction transaction) {
-    return findByAccountIdAndReferenceId(transaction.accountId(), transaction.referenceId())
+    return findByAccountIdAndTransactionId(transaction.accountId(), transaction.transactionId())
       .map(existing -> put(Transaction.builder().from(existing)
-        .amount(existing.amount().plus(transaction.amount()))
+        .amount(existing.amount().add(transaction.amount()))
         .packetCount(existing.packetCount() + transaction.packetCount())
         .modifiedAt(Instant.now())
         .build()))
@@ -63,22 +63,22 @@ public class InMemoryPaymentTransactionManager implements PaymentTransactionMana
   }
 
   private Transaction put(Transaction transaction) {
-    MapKey key = MapKey.of(transaction.accountId(), transaction.referenceId());
+    MapKey key = MapKey.of(transaction.accountId(), transaction.transactionId());
     transactionsMap.put(key, transaction);
     return transaction;
   }
 
   @Value.Immutable
   public interface MapKey {
-    static MapKey of(AccountId accountId, String referenceId) {
+    static MapKey of(AccountId accountId, String transactionId) {
       return ImmutableMapKey.builder()
         .accountId(accountId)
-        .referenceId(referenceId)
+        .transactionId(transactionId)
         .build();
     }
 
     AccountId accountId();
-    String referenceId();
+    String transactionId();
   }
 
 }

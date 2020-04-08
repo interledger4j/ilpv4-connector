@@ -6,7 +6,6 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.entities.TransactionEntity;
 import org.interledger.core.InterledgerAddress;
 
-import com.google.common.primitives.UnsignedLong;
 import org.junit.Test;
 
 import java.math.BigInteger;
@@ -30,20 +29,20 @@ public class TransactionConvertersTest {
     AccountId accountId = AccountId.of("bob");
     Instant createdAt = Instant.now().minusSeconds(10);
     Instant modifiedAt = Instant.now();
-    String referenceId = UUID.randomUUID().toString();
+    String transactionId = UUID.randomUUID().toString();
     String assetCode = "XRP";
     short assetScale = (short) 9;
 
     Transaction transaction = Transaction.builder()
       .accountId(accountId)
-      .amount(UnsignedLong.valueOf(amount))
+      .amount(BigInteger.valueOf(amount))
       .assetCode(assetCode)
       .assetScale(assetScale)
       .createdAt(createdAt)
       .destinationAddress(destinationAddress)
       .modifiedAt(modifiedAt)
       .packetCount(packetCount)
-      .referenceId(referenceId)
+      .transactionId(transactionId)
       .sourceAddress(sourceAddress)
       .status(transactionStatus)
       .type(transactionType)
@@ -58,10 +57,10 @@ public class TransactionConvertersTest {
     entity.setDestinationAddress(destinationAddress.getValue());
     entity.setModifiedDate(modifiedAt);
     entity.setPacketCount(packetCount);
-    entity.setReferenceId(referenceId);
+    entity.setTransactionId(transactionId);
     entity.setSourceAddress(sourceAddress.getValue());
-    entity.setStatus(transactionStatus.toString());
-    entity.setType(transactionType.toString());
+    entity.setStatus(transactionStatus);
+    entity.setType(transactionType);
 
     assertThat(toEntityConverter.convert(transaction)).isEqualTo(entity);
     assertThat(fromEntityConverter.convert(entity)).isEqualTo(transaction);

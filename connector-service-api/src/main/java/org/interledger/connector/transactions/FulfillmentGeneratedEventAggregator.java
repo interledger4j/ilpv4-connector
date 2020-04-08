@@ -9,13 +9,13 @@ import org.interledger.connector.events.FulfillmentGeneratedEvent;
  * are aggregated into the same transaction, such that the numeric values are summed and any non-numeric values are
  * overwritten with the latest value.
  *
- * Implementations may choose whether to aggregate in-real time or using eventually consistency.
+ * Implementations may choose whether to aggregate in-real time or use eventual consistency.
  */
 public interface FulfillmentGeneratedEventAggregator {
 
   /**
    * Accepts a {@link FulfillmentGeneratedEvent} to be eventually aggregated it into a new or existing transaction
-   * by accountId and referenceId. This call may or may not block depending on implementation.
+   * by accountId and transactionId. This call may or may not block depending on implementation.
    * @param event
    */
   void aggregate(FulfillmentGeneratedEvent event);

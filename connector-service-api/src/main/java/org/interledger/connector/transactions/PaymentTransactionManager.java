@@ -10,7 +10,7 @@ import java.util.Optional;
 /**
  * Service for managing {@link Transaction}s. Business logic should interact with this instead of going to the
  * underlying persistence layer. This design allows transactions to be persisted to different datastores
- * such as Postgres, Big Query, Spanner, etc without the business layer needing to about the underlying datastore.
+ * such as Postgres, Big Query, Spanner, etc without the business layer needing to know about the underlying datastore.
  */
 public interface PaymentTransactionManager {
 
@@ -25,14 +25,14 @@ public interface PaymentTransactionManager {
   /**
    * Find transaction by accountId and reference id
    * @param accountId
-   * @param referenceId
+   * @param transactionId
    * @return
    */
-  Optional<Transaction> findByAccountIdAndReferenceId(AccountId accountId, String referenceId);
+  Optional<Transaction> findByAccountIdAndTransactionId(AccountId accountId, String transactionId);
 
   /**
    * Inserts or updates a transaction. Transactions with the same {@link Transaction#accountId()} and
-   * {@link Transaction#referenceId()} are merged together.
+   * {@link Transaction#transactionId()} are merged together.
    *
    * @param transaction
    */

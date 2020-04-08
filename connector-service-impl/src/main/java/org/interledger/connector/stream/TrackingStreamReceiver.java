@@ -208,7 +208,7 @@ public class TrackingStreamReceiver implements StreamReceiver {
           .build();
 
       if (isFulfillable) {
-        logger.debug("Packet is unfulfillable. preparePacket={}", preparePacket);
+        logger.debug("Packet is fulfillable. preparePacket={}", preparePacket);
       } else if (is(preparePacket.getAmount()).lessThan(streamPacket.prepareAmount())) {
         logger.debug(
             "Received only: {} when we should have received at least: {}",

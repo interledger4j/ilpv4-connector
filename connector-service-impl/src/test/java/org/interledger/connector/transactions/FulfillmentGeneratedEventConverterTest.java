@@ -20,6 +20,7 @@ import com.google.common.hash.Hashing;
 import com.google.common.primitives.UnsignedLong;
 import org.junit.Test;
 
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
@@ -57,9 +58,9 @@ public class FulfillmentGeneratedEventConverterTest {
       .assetCode(DENOMINATION.assetCode())
       .status(TransactionStatus.PENDING)
       .accountId(ACCOUNT_ID)
-      .amount(UnsignedLong.valueOf(amount))
+      .amount(BigInteger.valueOf(amount))
       .packetCount(1)
-      .referenceId(Hashing.sha256().hashString(DESTINATION_ADDRESS.getValue(), StandardCharsets.UTF_8).toString())
+      .transactionId(Hashing.sha256().hashString(DESTINATION_ADDRESS.getValue(), StandardCharsets.UTF_8).toString())
       .destinationAddress(DESTINATION_ADDRESS)
       .createdAt(transaction.createdAt())
       .modifiedAt(transaction.modifiedAt())
@@ -93,9 +94,9 @@ public class FulfillmentGeneratedEventConverterTest {
       .assetCode(DENOMINATION.assetCode())
       .status(TransactionStatus.CLOSED_BY_STREAM)
       .accountId(ACCOUNT_ID)
-      .amount(UnsignedLong.valueOf(amount))
+      .amount(BigInteger.valueOf(amount))
       .packetCount(1)
-      .referenceId(Hashing.sha256().hashString(DESTINATION_ADDRESS.getValue(), StandardCharsets.UTF_8).toString())
+      .transactionId(Hashing.sha256().hashString(DESTINATION_ADDRESS.getValue(), StandardCharsets.UTF_8).toString())
       .destinationAddress(DESTINATION_ADDRESS)
       .createdAt(transaction.createdAt())
       .modifiedAt(transaction.modifiedAt())
@@ -130,9 +131,9 @@ public class FulfillmentGeneratedEventConverterTest {
       .assetCode(DENOMINATION.assetCode())
       .status(TransactionStatus.PENDING)
       .accountId(ACCOUNT_ID)
-      .amount(UnsignedLong.valueOf(amount))
+      .amount(BigInteger.valueOf(amount))
       .packetCount(1)
-      .referenceId(Hashing.sha256().hashString(DESTINATION_ADDRESS.getValue(), StandardCharsets.UTF_8).toString())
+      .transactionId(Hashing.sha256().hashString(DESTINATION_ADDRESS.getValue(), StandardCharsets.UTF_8).toString())
       .destinationAddress(DESTINATION_ADDRESS)
       .createdAt(transaction.createdAt())
       .modifiedAt(transaction.modifiedAt())

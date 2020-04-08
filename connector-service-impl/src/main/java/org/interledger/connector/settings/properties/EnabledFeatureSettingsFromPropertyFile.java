@@ -41,7 +41,6 @@ public class EnabledFeatureSettingsFromPropertyFile implements EnabledFeatureSet
 
   @Override
   public PaymentTransactionMode paymentTransactionMode() {
-    //return PaymentTransactionMode.valueOf(paymentTransactionMode);
     return paymentTransactionMode;
   }
 

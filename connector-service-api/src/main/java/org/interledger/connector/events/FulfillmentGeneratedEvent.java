@@ -9,7 +9,7 @@ import org.interledger.stream.StreamPacket;
 import org.immutables.value.Value;
 
 /**
- * Event that is emitted when a connector in wallet-mode generates a generates a fulfillment.
+ * Event that is emitted when a connector in wallet-mode generates a fulfillment.
  */
 @Value.Immutable
 public interface FulfillmentGeneratedEvent {

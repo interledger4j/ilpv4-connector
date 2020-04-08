@@ -6,11 +6,11 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.data.domain.PageRequest;
 
+import java.math.BigInteger;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -69,7 +69,7 @@ public class InMemoryPaymentTransactionManagerTest {
     paymentTransactionManager.merge(entity1);
 
     final Transaction loadedAccessTokenEntity =
-      paymentTransactionManager.findByAccountIdAndReferenceId(accountId, transactionId).get();
+      paymentTransactionManager.findByAccountIdAndTransactionId(accountId, transactionId).get();
 
     assertEqual(loadedAccessTokenEntity, entity1);
 
@@ -78,25 +78,25 @@ public class InMemoryPaymentTransactionManagerTest {
 
     assertThat(paymentTransactionManager.findByAccountId(accountId, DEFAULT_PAGE)).hasSize(1);
     Optional<Transaction> transaction1 =
-      paymentTransactionManager.findByAccountIdAndReferenceId(accountId, transactionId);
+      paymentTransactionManager.findByAccountIdAndTransactionId(accountId, transactionId);
 
     assertThat(transaction1).isPresent();
     assertThat(transaction1.get().packetCount()).isEqualTo(2);
-    assertThat(transaction1.get().amount()).isEqualTo(UnsignedLong.valueOf(30));
+    assertThat(transaction1.get().amount()).isEqualTo(BigInteger.valueOf(30));
 
     paymentTransactionManager.merge(newTransaction(accountId, transactionId2, 33));
 
     assertThat(paymentTransactionManager.findByAccountId(accountId, DEFAULT_PAGE)).hasSize(2);
 
     Optional<Transaction> transaction1Again =
-      paymentTransactionManager.findByAccountIdAndReferenceId(accountId, transactionId);
+      paymentTransactionManager.findByAccountIdAndTransactionId(accountId, transactionId);
     Optional<Transaction> transaction2 =
-      paymentTransactionManager.findByAccountIdAndReferenceId(accountId, transactionId2);
+      paymentTransactionManager.findByAccountIdAndTransactionId(accountId, transactionId2);
 
     assertEqual(transaction1Again.get(), transaction1.get());
 
     assertThat(transaction2).isPresent();
-    assertThat(transaction2.get().amount()).isEqualTo(UnsignedLong.valueOf(33));
+    assertThat(transaction2.get().amount()).isEqualTo(BigInteger.valueOf(33));
     assertThat(transaction2.get().packetCount()).isEqualTo(1);
   }
 
@@ -104,14 +104,14 @@ public class InMemoryPaymentTransactionManagerTest {
     assertThat(loadedAccessTokenEntity).isEqualTo(entity1);
   }
 
-  private Transaction newTransaction(AccountId accountId, String referenceId, long amount) {
+  private Transaction newTransaction(AccountId accountId, String transactionId, long amount) {
     return Transaction.builder()
       .accountId(accountId)
       .sourceAddress(InterledgerAddress.of("test.foo.bar"))
-      .destinationAddress(InterledgerAddress.of("test.foo").with(referenceId))
+      .destinationAddress(InterledgerAddress.of("test.foo").with(transactionId))
       .packetCount(1)
-      .referenceId(referenceId)
-      .amount(UnsignedLong.valueOf(amount))
+      .transactionId(transactionId)
+      .amount(BigInteger.valueOf(amount))
       .assetScale((short) 9)
       .assetCode("XRP")
       .status(TransactionStatus.PENDING)

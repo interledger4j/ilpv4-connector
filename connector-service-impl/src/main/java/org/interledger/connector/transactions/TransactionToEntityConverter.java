@@ -11,15 +11,15 @@ public class TransactionToEntityConverter implements Converter<Transaction, Tran
   public TransactionEntity convert(Transaction source) {
     TransactionEntity entity = new TransactionEntity();
     entity.setAccountId(source.accountId());
-    entity.setAmount(source.amount().bigIntegerValue());
+    entity.setAmount(source.amount());
     entity.setAssetScale(source.assetScale());
     entity.setAssetCode(source.assetCode());
     entity.setDestinationAddress(source.destinationAddress().getValue());
     entity.setPacketCount(source.packetCount());
-    entity.setReferenceId(source.referenceId());
+    entity.setTransactionId(source.transactionId());
     entity.setSourceAddress(source.sourceAddress().map(InterledgerAddress::getValue).orElse(null));
-    entity.setStatus(source.status().toString());
-    entity.setType(source.type().toString());
+    entity.setStatus(source.status());
+    entity.setType(source.type());
     return entity;
   }
 

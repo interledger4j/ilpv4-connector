@@ -4,9 +4,9 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.repositories.TransactionsRepository;
 
 import com.google.common.base.Preconditions;
-import com.google.common.primitives.UnsignedLong;
 import org.springframework.data.domain.PageRequest;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -39,8 +39,8 @@ public class InDatabasePaymentTransactionManager implements PaymentTransactionMa
   }
 
   @Override
-  public Optional<Transaction> findByAccountIdAndReferenceId(AccountId accountId, String referenceId) {
-    return transactionsRepository.findByAccountIdAndReferenceId(accountId, referenceId)
+  public Optional<Transaction> findByAccountIdAndTransactionId(AccountId accountId, String transactionId) {
+    return transactionsRepository.findByAccountIdAndTransactionId(accountId, transactionId)
       .map(transactionFromEntityConverter::convert);
   }
 
@@ -50,13 +50,13 @@ public class InDatabasePaymentTransactionManager implements PaymentTransactionMa
     transactionsRepository.upsertAmounts(transactionToEntityConverter.convert(transaction));
     transaction.sourceAddress().ifPresent(sourceAddress -> {
       transactionsRepository.updateSourceAddress(transaction.accountId(),
-        transaction.referenceId(),
+        transaction.transactionId(),
         sourceAddress.getValue());
     });
     if (!transaction.status().equals(TransactionStatus.PENDING)) {
       transactionsRepository.updateStatus(transaction.accountId(),
-        transaction.referenceId(),
-        transaction.status().toString());
+        transaction.transactionId(),
+        transaction.status());
     }
   }
 
@@ -65,7 +65,7 @@ public class InDatabasePaymentTransactionManager implements PaymentTransactionMa
    * @param amount
    * @param balanceAdjustmentType
    */
-  private static void validateAmount(UnsignedLong amount, TransactionType.BalanceAdjustmentType balanceAdjustmentType) {
+  private static void validateAmount(BigInteger amount, TransactionType.BalanceAdjustmentType balanceAdjustmentType) {
     switch (balanceAdjustmentType) {
       case CREDIT:
         Preconditions.checkArgument(amount.longValue() >= 0, "amount cannot be negative for a credit adjustment");

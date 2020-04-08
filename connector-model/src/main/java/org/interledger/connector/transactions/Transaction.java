@@ -3,9 +3,9 @@ package org.interledger.connector.transactions;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 
-import com.google.common.primitives.UnsignedLong;
 import org.immutables.value.Value;
 
+import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -48,7 +48,7 @@ public interface Transaction {
    * Amount (in assetScale) of the accountId's account settings at the time the transaction was created.
    * @return
    */
-  UnsignedLong amount();
+  BigInteger amount();
 
   /**
    * Number of ILP packets that were aggregated into this transaction.
