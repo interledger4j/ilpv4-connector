@@ -43,6 +43,10 @@ public interface EnabledFeatureSettings {
     return true;
   }
 
+  /**
+   * Which mode to use to aggregate payment transactions.
+   * @return mode
+   */
   default PaymentTransactionMode paymentTransactionMode() {
     return PaymentTransactionMode.IN_MEMORY;
   }
@@ -75,9 +79,12 @@ public interface EnabledFeatureSettings {
     }
   }
 
+  /**
+   * Modes for aggregating payment transactions
+   */
   enum PaymentTransactionMode {
-    IN_MEMORY,
-    IN_POSTGRES
+    IN_MEMORY, // aggregate in memory, no durable persistence
+    IN_POSTGRES // aggregate in postgres database
   }
 
 }
