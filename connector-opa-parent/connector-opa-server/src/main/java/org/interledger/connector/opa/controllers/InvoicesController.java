@@ -123,7 +123,7 @@ public class InvoicesController {
       final Invoice invoice = invoiceService.getInvoiceById(invoiceId);
 
       // Get ILP Address Prefix from payment pointer and invoiceId
-      final String destinationAddress = invoiceService.getAddressFromInvoice(invoice);
+      final String destinationAddress = invoiceService.getAddressFromInvoiceSubject(invoice.subject());
 
 
       // Get shared secret and address with connection tag

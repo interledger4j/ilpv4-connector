@@ -225,8 +225,12 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.interledger.connector</groupId>
+			<groupId>${connector.groupId}</groupId>
 			<artifactId>connector-jackson</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>${connector.groupId}</groupId>
+			<artifactId>connector-model</artifactId>
 		</dependency>
 	</dependencies>
 

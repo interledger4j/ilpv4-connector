@@ -12,5 +12,5 @@ public interface InvoiceService {
 
   Invoice updateInvoice(final Invoice invoice);
 
-  String getAddressFromInvoice(final Invoice invoice);
+  String getAddressFromInvoiceSubject(final String subject);
 }

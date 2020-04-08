@@ -1,13 +1,16 @@
 package org.interledger.connector.opa.config;
 
+import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 
 import org.interledger.connector.jackson.ObjectMapperFactory;
 import org.interledger.connector.opa.controllers.converters.InvoiceIdConverter;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.service.InvoiceService;
-import org.interledger.connector.opa.service.ilp.IlpInvoiceServiceImpl;
+import org.interledger.connector.opa.service.ilp.IlpInvoiceService;
 import org.interledger.connector.opa.service.ilp.OpaStreamConnectionGenerator;
+import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.spsp.PaymentPointerResolver;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +18,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -51,8 +55,12 @@ public class OpenPaymentsConfig implements WebMvcConfigurer {
 
   @Bean
   @Qualifier(OPEN_PAYMENTS)
-  public InvoiceService ilpInvoiceService() {
-    return new IlpInvoiceServiceImpl();
+  public InvoiceService ilpInvoiceService(
+    Supplier<ConnectorSettings> connectorSettingsSupplier,
+    PaymentPointerResolver paymentPointerResolver,
+    @Value("${" + SPSP__URL_PATH + ":}") final String opaUrlPath
+  ) {
+    return new IlpInvoiceService(connectorSettingsSupplier, paymentPointerResolver, opaUrlPath);
   }
 
   @Bean

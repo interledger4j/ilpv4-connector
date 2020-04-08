@@ -61,6 +61,11 @@
         <artifactId>connector-opa-model</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <dependency>
+        <groupId>${connector.groupId}</groupId>
+        <artifactId>connector-model</artifactId>
+        <version>${project.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
