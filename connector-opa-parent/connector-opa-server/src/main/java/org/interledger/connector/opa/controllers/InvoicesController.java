@@ -3,6 +3,7 @@ package org.interledger.connector.opa.controllers;
 import static org.interledger.connector.opa.config.OpenPaymentsConfig.OPEN_PAYMENTS;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import org.interledger.connector.opa.config.settings.OpenPaymentsSettings;
 import org.interledger.connector.opa.controllers.constants.PathConstants;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
@@ -41,7 +42,7 @@ public class InvoicesController {
   private static final MediaType APPLICATION_JSON_XRP_OPA = MediaType.valueOf(APPLICATION_JSON_XRP_OPA_VALUE);
   private final StreamConnectionGenerator streamConnectionGenerator;
   private InvoiceService invoiceService;
-  private final Supplier<OpenPaymentsMetadata> openPaymentsMetadataSupplier;
+  private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
   private ServerSecretSupplier serverSecretSupplier;
 
   @Autowired
@@ -50,12 +51,12 @@ public class InvoicesController {
   public InvoicesController(
     final InvoiceService invoiceService,
     @Qualifier(OPEN_PAYMENTS) final StreamConnectionGenerator opaStreamConnectionGenerator,
-    final Supplier<OpenPaymentsMetadata> openPaymentsMetadataSupplier,
+    final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     final ServerSecretSupplier serverSecretSupplier
   ) {
     this.invoiceService = Objects.requireNonNull(invoiceService);
     this.streamConnectionGenerator = Objects.requireNonNull(opaStreamConnectionGenerator);
-    this.openPaymentsMetadataSupplier = Objects.requireNonNull(openPaymentsMetadataSupplier);
+    this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
     this.serverSecretSupplier = Objects.requireNonNull(serverSecretSupplier);
   }
 
@@ -149,8 +150,9 @@ public class InvoicesController {
   }
 
   private URI getInvoiceLocation(InvoiceId invoiceId) {
-    return openPaymentsMetadataSupplier
+    return openPaymentsSettingsSupplier
       .get()
+      .openPaymentsMetadata()
       .invoicesEndpoint()
       .newBuilder()
       .addPathSegment(invoiceId.toString())

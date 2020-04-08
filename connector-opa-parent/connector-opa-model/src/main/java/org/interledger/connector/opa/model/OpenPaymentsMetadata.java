@@ -98,11 +98,4 @@ public interface OpenPaymentsMetadata {
    */
   @JsonProperty("assets_supported")
   List<SupportedAsset> assetsSupported();
-
-  /**
-   * Only need this so that  can ConfigurationProperty classes can make super calls to OpenPaymentsMetadata
-   */
-  abstract class AbstractOpenPaymentsMetadata implements OpenPaymentsMetadata {
-
-  }
 }

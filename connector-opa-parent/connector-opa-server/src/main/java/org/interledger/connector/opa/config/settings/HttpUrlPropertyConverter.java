@@ -1,4 +1,4 @@
-package org.interledger.connector.opa.config;
+package org.interledger.connector.opa.config.settings;
 
 import okhttp3.HttpUrl;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;

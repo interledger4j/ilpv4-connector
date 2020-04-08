@@ -2,6 +2,7 @@ package org.interledger.connector.opa.controllers;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import org.interledger.connector.opa.config.settings.OpenPaymentsSettings;
 import org.interledger.connector.opa.controllers.constants.PathConstants;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 
@@ -21,10 +22,10 @@ public class OpenPaymentsMetadataController {
   @Autowired
   private ObjectMapper objectMapper;
 
-  private Supplier<OpenPaymentsMetadata> openPaymentsMetadata;
+  private Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
 
-  public OpenPaymentsMetadataController(Supplier<OpenPaymentsMetadata> openPaymentsMetadata) {
-    this.openPaymentsMetadata = openPaymentsMetadata;
+  public OpenPaymentsMetadataController(Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier) {
+    this.openPaymentsSettingsSupplier = openPaymentsSettingsSupplier;
   }
 
   @RequestMapping(
@@ -33,6 +34,6 @@ public class OpenPaymentsMetadataController {
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody OpenPaymentsMetadata getOpenPaymentsMetadata() {
-    return openPaymentsMetadata.get();
+    return openPaymentsSettingsSupplier.get().openPaymentsMetadata();
   }
 }

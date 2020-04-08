@@ -4,6 +4,9 @@ import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 
 import org.interledger.connector.jackson.ObjectMapperFactory;
+import org.interledger.connector.opa.config.settings.OpenPaymentsMetadataFromPropertyFile;
+import org.interledger.connector.opa.config.settings.OpenPaymentsSettings;
+import org.interledger.connector.opa.config.settings.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.opa.controllers.converters.InvoiceIdConverter;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.service.InvoiceService;
@@ -36,7 +39,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 @Configuration
-@EnableConfigurationProperties(OpenPaymentsMetadataFromPropertyFile.class)
+@EnableConfigurationProperties(OpenPaymentsSettingsFromPropertyFile.class)
 @ComponentScan(basePackages = {"org.interledger.connector.opa"})
 public class OpenPaymentsConfig implements WebMvcConfigurer {
 
@@ -49,8 +52,8 @@ public class OpenPaymentsConfig implements WebMvcConfigurer {
   private ApplicationContext applicationContext;
 
   @Bean
-  public Supplier<OpenPaymentsMetadata> openPaymentsMetadataSupplier() {
-    return () -> applicationContext.getBean(OpenPaymentsMetadata.class);
+  public Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier() {
+    return () -> applicationContext.getBean(OpenPaymentsSettings.class);
   }
 
   @Bean

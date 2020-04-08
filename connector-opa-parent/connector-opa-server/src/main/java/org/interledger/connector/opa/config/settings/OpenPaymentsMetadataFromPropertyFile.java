@@ -1,4 +1,4 @@
-package org.interledger.connector.opa.config;
+package org.interledger.connector.opa.config.settings;
 
 
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
@@ -10,9 +10,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.List;
 
-@ConfigurationProperties(prefix = "interledger.connector.open-payments")
 @JsonSerialize(as = OpenPaymentsMetadata.class)
-public class OpenPaymentsMetadataFromPropertyFile extends OpenPaymentsMetadata.AbstractOpenPaymentsMetadata {
+public class OpenPaymentsMetadataFromPropertyFile implements OpenPaymentsMetadata {
 
   private HttpUrl issuer;
   private HttpUrl authorizationIssuer;
@@ -34,22 +33,22 @@ public class OpenPaymentsMetadataFromPropertyFile extends OpenPaymentsMetadata.A
 
   @Override
   public HttpUrl authorizationEndpoint() {
-    return super.authorizationEndpoint();
+    return authorizationIssuer().newBuilder().addPathSegment("authorize").build();
   }
 
   @Override
   public HttpUrl tokenEndpoint() {
-    return super.tokenEndpoint();
+    return authorizationIssuer().newBuilder().addPathSegment("token").build();
   }
 
   @Override
   public HttpUrl invoicesEndpoint() {
-    return super.invoicesEndpoint();
+    return authorizationIssuer().newBuilder().addPathSegment("invoice").build();
   }
 
   @Override
   public HttpUrl mandatesEndpoint() {
-    return super.mandatesEndpoint();
+    return authorizationIssuer().newBuilder().addPathSegment("mandate").build();
   }
 
   @Override
@@ -57,56 +56,28 @@ public class OpenPaymentsMetadataFromPropertyFile extends OpenPaymentsMetadata.A
     return assetsSupported;
   }
 
-  public HttpUrl getIssuer() {
-    return issuer;
-  }
-
   public void setIssuer(HttpUrl issuer) {
     this.issuer = issuer;
-  }
-
-  public HttpUrl getAuthorizationIssuer() {
-    return authorizationIssuer;
   }
 
   public void setAuthorizationIssuer(HttpUrl authorizationIssuer) {
     this.authorizationIssuer = authorizationIssuer;
   }
 
-  public HttpUrl getAuthorizationEndpoint() {
-    return authorizationEndpoint;
-  }
-
   public void setAuthorizationEndpoint(HttpUrl authorizationEndpoint) {
     this.authorizationEndpoint = authorizationEndpoint;
-  }
-
-  public HttpUrl getTokenEndpoint() {
-    return tokenEndpoint;
   }
 
   public void setTokenEndpoint(HttpUrl tokenEndpoint) {
     this.tokenEndpoint = tokenEndpoint;
   }
 
-  public HttpUrl getInvoicesEndpoint() {
-    return invoicesEndpoint;
-  }
-
   public void setInvoicesEndpoint(HttpUrl invoicesEndpoint) {
     this.invoicesEndpoint = invoicesEndpoint;
   }
 
-  public HttpUrl getMandatesEndpoint() {
-    return mandatesEndpoint;
-  }
-
   public void setMandatesEndpoint(HttpUrl mandatesEndpoint) {
     this.mandatesEndpoint = mandatesEndpoint;
-  }
-
-  public List<SupportedAsset> getAssetsSupported() {
-    return assetsSupported;
   }
 
   public void setAssetsSupported(List<SupportedAsset> assetsSupported) {

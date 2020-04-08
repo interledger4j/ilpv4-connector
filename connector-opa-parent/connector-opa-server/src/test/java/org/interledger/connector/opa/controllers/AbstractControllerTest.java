@@ -4,7 +4,8 @@ import static org.interledger.connector.opa.config.OpenPaymentsConfig.OPEN_PAYME
 
 import org.interledger.connector.jackson.ObjectMapperFactory;
 import org.interledger.connector.opa.config.OpenPaymentsConfig;
-import org.interledger.connector.opa.config.OpenPaymentsMetadataFromPropertyFile;
+import org.interledger.connector.opa.config.settings.OpenPaymentsMetadataFromPropertyFile;
+import org.interledger.connector.opa.config.settings.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.opa.service.InvoiceService;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
@@ -51,7 +52,7 @@ public class AbstractControllerTest {
     return headers;
   }
 
-  @EnableConfigurationProperties(OpenPaymentsMetadataFromPropertyFile.class)
+  @EnableConfigurationProperties(OpenPaymentsSettingsFromPropertyFile.class)
   @EnableWebMvc
   @Import(OpenPaymentsConfig.class)
   public static class TestConfiguration {
