@@ -43,6 +43,10 @@ public interface EnabledFeatureSettings {
     return true;
   }
 
+  default PaymentTransactionMode paymentTransactionMode() {
+    return PaymentTransactionMode.IN_MEMORY;
+  }
+
   @Value.Immutable(intern = true)
   abstract class AbstractEnabledFeatureSettings implements EnabledFeatureSettings {
 
@@ -63,6 +67,17 @@ public interface EnabledFeatureSettings {
     public boolean isRequire32ByteSharedSecrets() {
       return true;
     }
+
+    @Override
+    @Value.Default
+    public PaymentTransactionMode paymentTransactionMode() {
+      return PaymentTransactionMode.IN_MEMORY;
+    }
+  }
+
+  enum PaymentTransactionMode {
+    IN_MEMORY,
+    IN_POSTGRES
   }
 
 }

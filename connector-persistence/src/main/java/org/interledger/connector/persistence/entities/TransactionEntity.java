@@ -158,8 +158,16 @@ public class TransactionEntity {
     return createdDate;
   }
 
+  public void setCreatedDate(Instant createdDate) {
+    this.createdDate = createdDate;
+  }
+
   public Instant getModifiedDate() {
     return modifiedDate;
+  }
+
+  public void setModifiedDate(Instant modifiedDate) {
+    this.modifiedDate = modifiedDate;
   }
 
   /**

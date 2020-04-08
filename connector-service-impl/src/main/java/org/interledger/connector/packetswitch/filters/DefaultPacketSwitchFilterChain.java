@@ -168,15 +168,15 @@ public class DefaultPacketSwitchFilterChain implements PacketSwitchFilterChain {
       BigDecimal fxRate = nextHopPacketMapper.determineExchangeRate(
         sourceAccountSettings, nextHopAccountSettings, preparePacket
       );
-      response.handle(interledgerFulfillPacket ->
-        packetEventPublisher.publishFulfillment(
-          sourceAccountSettings,
-          nextHopAccountSettings,
-          preparePacket,
-          nextHopInfo.nextHopPacket(),
-          fxRate,
-          interledgerFulfillPacket.getFulfillment()
-        ), (rejectPacket) ->
+      response.handle(interledgerFulfillPacket -> {
+          packetEventPublisher.publishFulfillment(
+            sourceAccountSettings,
+            nextHopAccountSettings,
+            preparePacket,
+            nextHopInfo.nextHopPacket(),
+            fxRate,
+            interledgerFulfillPacket.getFulfillment());
+        }, (rejectPacket) ->
         packetEventPublisher.publishRejectionByNextHop(
           sourceAccountSettings,
           nextHopAccountSettings,

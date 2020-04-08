@@ -63,6 +63,7 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.persistence.repositories.DeletedAccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
+import org.interledger.connector.persistence.repositories.TransactionsRepository;
 import org.interledger.connector.pubsub.RedisPubSubConfig;
 import org.interledger.connector.routing.DefaultRouteBroadcaster;
 import org.interledger.connector.routing.ExternalRoutingService;
@@ -85,6 +86,14 @@ import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.SettlementService;
+import org.interledger.connector.transactions.FulfillmentGeneratedEventAggregator;
+import org.interledger.connector.transactions.FulfillmentGeneratedEventConverter;
+import org.interledger.connector.transactions.InDatabasePaymentTransactionManager;
+import org.interledger.connector.transactions.InMemoryPaymentTransactionManager;
+import org.interledger.connector.transactions.PaymentTransactionManager;
+import org.interledger.connector.transactions.SynchronousFulfillmentGeneratedEventAggregator;
+import org.interledger.connector.transactions.TransactionFromEntityConverter;
+import org.interledger.connector.transactions.TransactionToEntityConverter;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.crypto.CryptoKeys;
 import org.interledger.crypto.Decryptor;
@@ -275,8 +284,8 @@ public class SpringConnectorConfig {
 
   @Bean
   AccessTokenManager accessTokenManager(PasswordEncoder passwordEncoder,
-    AccessTokensRepository accessTokensRepository,
-    EventBus eventBus) {
+                                        AccessTokensRepository accessTokensRepository,
+                                        EventBus eventBus) {
     return new DefaultAccessTokenManager(passwordEncoder, accessTokensRepository, eventBus);
   }
 
@@ -623,4 +632,25 @@ public class SpringConnectorConfig {
       }
     };
   }
+
+  @Bean
+  protected PaymentTransactionManager paymentTransactionManager(Supplier<ConnectorSettings> connectorSettingsSupplier,
+                                                                TransactionsRepository transactionsRepository) {
+    switch (connectorSettingsSupplier.get().enabledFeatures().paymentTransactionMode()) {
+      case IN_POSTGRES: return new InDatabasePaymentTransactionManager(
+        transactionsRepository,
+        new TransactionFromEntityConverter(),
+        new TransactionToEntityConverter());
+      default:
+        return new InMemoryPaymentTransactionManager();
+    }
+  }
+
+  @Bean
+  protected FulfillmentGeneratedEventAggregator fulfilledTransactionAggregator(
+    PaymentTransactionManager paymentTransactionManager) {
+    return new SynchronousFulfillmentGeneratedEventAggregator(paymentTransactionManager,
+      new FulfillmentGeneratedEventConverter());
+  }
+
 }
