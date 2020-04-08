@@ -6,6 +6,10 @@ import org.interledger.link.Link;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * Pojo class for automatic mapping of configuration properties via Spring's {@link ConfigurationProperties}
+ * annotation to {@link OpenPaymentsSettings}.
+ */
 @ConfigurationProperties(prefix = "interledger.connector.open-payments")
 public class OpenPaymentsSettingsFromPropertyFile implements OpenPaymentsSettings {
 

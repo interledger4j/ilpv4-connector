@@ -96,13 +96,18 @@ public class InvoicesController {
   }
 
   /**
-   * Generate payment details for a STREAM payment, including a destination address and a shared secret.
+   * Generate payment details for any supported payment rail.
    *
-   * This logic will largely be the same as an SPSP server's setup logic, except that the connection tag
-   * on the destination address will be in the form: (randomToken) + '~' + (invoiceId in Base64).
+   * For ILP payments, this logic will largely be the same as an SPSP server's setup logic,
+   * except that the connection tag on the destination address will be in the form:
+   * (randomToken) + '~' + (invoiceId in Base64).
+   *
+   * For XRP payments, this will return an XRP address and the invoiceId encoded in Base64 as a destination tag.
+   *
+   * XRP payment details can be requested by using the "application/json+xrp-opa" MIME type in the Accept header.
    *
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} this payment is being set up to pay.
-   * @return The {@link StreamConnectionDetails} needed to send a STREAM payment in the context of the {@link Invoice}
+   * @return The payment details necessary to pay an invoice.
    */
   @RequestMapping(
     path = PathConstants.SLASH_INVOICE + "/{invoiceId}",

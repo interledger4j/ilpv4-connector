@@ -8,7 +8,11 @@ import org.immutables.value.Value;
 
 import java.util.List;
 
-@Value.Immutable
+/**
+ * A configurable settings class which holds information about this Open Payments server, which can be discovered
+ * at the server's /.well-known/open-payments endpoint.
+ */
+@Value.Immutable(intern = true)
 @JsonSerialize(as = ImmutableOpenPaymentsMetadata.class)
 @JsonDeserialize(as = ImmutableOpenPaymentsMetadata.class)
 public interface OpenPaymentsMetadata {

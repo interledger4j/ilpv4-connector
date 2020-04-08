@@ -1,6 +1,7 @@
 package org.interledger.connector.opa.config.settings;
 
 
+import org.interledger.connector.opa.controllers.constants.PathConstants;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.model.SupportedAsset;
 
@@ -10,6 +11,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.List;
 
+/**
+ * Pojo class for automatic mapping of configuration properties via Spring's {@link ConfigurationProperties}
+ * annotation to {@link OpenPaymentsMetadata}.
+ */
 @JsonSerialize(as = OpenPaymentsMetadata.class)
 public class OpenPaymentsMetadataFromPropertyFile implements OpenPaymentsMetadata {
 
@@ -33,22 +38,22 @@ public class OpenPaymentsMetadataFromPropertyFile implements OpenPaymentsMetadat
 
   @Override
   public HttpUrl authorizationEndpoint() {
-    return authorizationIssuer().newBuilder().addPathSegment("authorize").build();
+    return authorizationIssuer().newBuilder().addPathSegment(PathConstants.AUTHORIZE).build();
   }
 
   @Override
   public HttpUrl tokenEndpoint() {
-    return authorizationIssuer().newBuilder().addPathSegment("token").build();
+    return authorizationIssuer().newBuilder().addPathSegment(PathConstants.TOKEN).build();
   }
 
   @Override
   public HttpUrl invoicesEndpoint() {
-    return issuer().newBuilder().addPathSegment("invoice").build();
+    return issuer().newBuilder().addPathSegment(PathConstants.INVOICE).build();
   }
 
   @Override
   public HttpUrl mandatesEndpoint() {
-    return issuer().newBuilder().addPathSegment("mandate").build();
+    return issuer().newBuilder().addPathSegment(PathConstants.MANDATE).build();
   }
 
   @Override

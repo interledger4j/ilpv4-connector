@@ -16,11 +16,11 @@ import org.zalando.problem.spring.common.MediaTypes;
 
 import java.util.function.Supplier;
 
+/**
+ * Controller to serve the Open Payments discovery resource.
+ */
 @RestController
 public class OpenPaymentsMetadataController {
-
-  @Autowired
-  private ObjectMapper objectMapper;
 
   private Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
 
@@ -28,6 +28,11 @@ public class OpenPaymentsMetadataController {
     this.openPaymentsSettingsSupplier = openPaymentsSettingsSupplier;
   }
 
+  /**
+   * Get the metadata for the Open Payments server at /.well-known/open-payments.
+   *
+   * @return The {@link OpenPaymentsMetadata} for this server.
+   */
   @RequestMapping(
     path = PathConstants.OPEN_PAYMENTS_METADATA,
     method = RequestMethod.GET,

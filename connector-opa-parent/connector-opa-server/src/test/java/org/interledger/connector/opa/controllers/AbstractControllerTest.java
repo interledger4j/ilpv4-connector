@@ -37,6 +37,7 @@ public class AbstractControllerTest {
   StreamConnectionGenerator streamConnectionGeneratorMock;
 
   @MockBean
+  @Qualifier(OPEN_PAYMENTS)
   ServerSecretSupplier serverSecretSupplierMock;
 
   /**

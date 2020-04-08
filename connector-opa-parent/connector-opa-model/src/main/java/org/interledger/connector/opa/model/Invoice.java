@@ -1,7 +1,5 @@
 package org.interledger.connector.opa.model;
 
-import org.interledger.connector.accounts.AccountId;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -74,7 +72,7 @@ public interface Invoice {
   /**
    * The account ID of the creator of this invoice.
    *
-   * For ILP invoices, this will be the {@link String} form of an {@link AccountId}. For other payment networks,
+   * For ILP invoices, this will be the {@link String} form of an AccountId. For other payment networks,
    * this may be the account ID of a wallet holder.
    *
    * @return A {@link String} representing the account ID of the user who created this invoice.
