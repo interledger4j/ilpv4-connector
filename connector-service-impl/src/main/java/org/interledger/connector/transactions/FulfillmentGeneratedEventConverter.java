@@ -42,7 +42,7 @@ public class FulfillmentGeneratedEventConverter implements Converter<Fulfillment
 
   private String hash(InterledgerAddress destinationAddress) {
     return Hashing.sha256()
-      .hashString(destinationAddress.getValue(), StandardCharsets.UTF_8)
+      .hashString(destinationAddress.getValue(), StandardCharsets.US_ASCII)
       .toString();
   }
 
