@@ -49,12 +49,12 @@ public class ConnectorSettingsFromPropertyFileTest {
     assertThat(enabledProtocolSettings.isPeerRoutingEnabled()).isTrue();
     assertThat(enabledProtocolSettings.isPingProtocolEnabled()).isTrue();
     assertThat(enabledProtocolSettings.isIldcpEnabled()).isTrue();
-    assertThat(enabledProtocolSettings.isSpspEnabled()).isFalse();
+    assertThat(enabledProtocolSettings.isSpspEnabled()).isTrue();
 
     // Enabled Features
     final EnabledFeatureSettings enabledFeatureSettings = connectorSettings.enabledFeatures();
     assertThat(enabledFeatureSettings.isRateLimitingEnabled()).isTrue();
-    assertThat(enabledFeatureSettings.isLocalSpspFulfillmentEnabled()).isFalse();
+    assertThat(enabledFeatureSettings.isLocalSpspFulfillmentEnabled()).isTrue();
     assertThat(enabledFeatureSettings.isRequire32ByteSharedSecrets()).isTrue();
 
     // Global Routing Settings
@@ -89,6 +89,9 @@ public class ConnectorSettingsFromPropertyFileTest {
       .isEqualTo(CryptoKey.builder().alias("secret0").version("2").build());
     assertThat(connectorSettings.keys().accountSettings())
       .isEqualTo(CryptoKey.builder().alias("accounts").version("3").build());
+
+    assertThat(connectorSettings.spspSettings().addressPrefixSegment()).isEqualTo("test-address-prefix");
+    assertThat(connectorSettings.spspSettings().urlPath()).isEqualTo(Optional.of("test-url-path"));
   }
 
   @EnableConfigurationProperties(ConnectorSettingsFromPropertyFile.class)
