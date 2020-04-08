@@ -284,8 +284,8 @@ public class SpringConnectorConfig {
 
   @Bean
   AccessTokenManager accessTokenManager(PasswordEncoder passwordEncoder,
-                                        AccessTokensRepository accessTokensRepository,
-                                        EventBus eventBus) {
+    AccessTokensRepository accessTokensRepository,
+    EventBus eventBus) {
     return new DefaultAccessTokenManager(passwordEncoder, accessTokensRepository, eventBus);
   }
 
