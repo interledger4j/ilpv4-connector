@@ -1,19 +1,16 @@
 package org.interledger.connector.opa.service.ilp;
 
-import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
-
+import org.interledger.connector.opa.config.settings.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
 import org.interledger.connector.opa.service.InvoiceService;
-import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
 
 import com.google.common.annotations.VisibleForTesting;
 import okhttp3.HttpUrl;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -21,16 +18,16 @@ import java.util.function.Supplier;
 
 public class IlpInvoiceService implements InvoiceService {
 
-  private final Supplier<ConnectorSettings> connectorSettingsSupplier;
+  private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
   private final Optional<String> opaUrlPath;
   private final PaymentPointerResolver paymentPointerResolver;
 
   public IlpInvoiceService(
-    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     final PaymentPointerResolver paymentPointerResolver,
     final String opaUrlPath
   ) {
-    this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
+    this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
     this.opaUrlPath = cleanupOpaUrlPath(opaUrlPath);
     this.paymentPointerResolver = Objects.requireNonNull(paymentPointerResolver);
   }
@@ -64,7 +61,7 @@ public class IlpInvoiceService implements InvoiceService {
       throw new InvalidInvoiceSubjectProblem();
     }
 
-    return connectorSettingsSupplier.get().operatorAddress()
+    return openPaymentsSettingsSupplier.get().ilpOperatorAddress()
       .with(ilpIntermediateSuffix).getValue();
   }
 

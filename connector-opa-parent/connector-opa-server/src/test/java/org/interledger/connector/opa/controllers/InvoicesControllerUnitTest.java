@@ -29,7 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
   controllers = InvoicesController.class,
   excludeAutoConfiguration = {SecurityAutoConfiguration.class}
 )
-public class InvoicesControllerTest extends AbstractControllerTest {
+public class InvoicesControllerUnitTest extends AbstractControllerTest {
 
   @Autowired
   MockMvc mockMvc;

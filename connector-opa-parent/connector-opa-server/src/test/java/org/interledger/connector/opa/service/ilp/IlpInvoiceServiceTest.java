@@ -5,8 +5,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import org.interledger.connector.opa.config.settings.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
-import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
@@ -24,7 +24,7 @@ public class IlpInvoiceServiceTest {
   public ExpectedException expectedException = ExpectedException.none();
 
   @Mock
-  private ConnectorSettings connectorSettingsMock;
+  private OpenPaymentsSettings openPaymentsSettingsMock;
 
   private String opaUrlPath;
 
@@ -39,7 +39,7 @@ public class IlpInvoiceServiceTest {
 
     opaUrlPath = "/p/";
     ilpInvoiceService = new IlpInvoiceService(
-      () -> connectorSettingsMock,
+      () -> openPaymentsSettingsMock,
       paymentPointerResolver,
       opaUrlPath
     );
@@ -80,7 +80,7 @@ public class IlpInvoiceServiceTest {
    */
   @Test
   public void computePaymentTargetIntermediatePrefix() {
-    ilpInvoiceService = new IlpInvoiceService(() -> connectorSettingsMock, paymentPointerResolver, "/opa");
+    ilpInvoiceService = new IlpInvoiceService(() -> openPaymentsSettingsMock, paymentPointerResolver, "/opa");
     assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("")).isEqualTo("");
     assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix(" ")).isEqualTo("");
     assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/")).isEqualTo("");
@@ -108,7 +108,7 @@ public class IlpInvoiceServiceTest {
 
   @Test
   public void computePaymentTargetIntermediatePrefixWithEmptySpspPath() {
-    ilpInvoiceService = new IlpInvoiceService(() -> connectorSettingsMock, paymentPointerResolver, "");
+    ilpInvoiceService = new IlpInvoiceService(() -> openPaymentsSettingsMock, paymentPointerResolver, "");
     assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("")).isEqualTo("");
     assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix(" ")).isEqualTo("");
     assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/")).isEqualTo("");
@@ -140,7 +140,7 @@ public class IlpInvoiceServiceTest {
     HttpUrl resolvedPaymentPointer = HttpUrl.parse("https://xpring.money/p/foo");
 
     InterledgerAddress operatorAddress = InterledgerAddress.of("test.jc1");
-    when(connectorSettingsMock.operatorAddress()).thenReturn(operatorAddress);
+    when(openPaymentsSettingsMock.ilpOperatorAddress()).thenReturn(operatorAddress);
     when(paymentPointerResolver.resolveHttpUrl(eq(PaymentPointer.of(subjectPaymentPointer)))).thenReturn(resolvedPaymentPointer);
 
     String resolvedAddress = ilpInvoiceService.getAddressFromInvoiceSubject(subjectPaymentPointer);
@@ -150,7 +150,7 @@ public class IlpInvoiceServiceTest {
   @Test
   public void getAddressFromInvoiceSubjectWithNoOpaPath() {
     ilpInvoiceService = new IlpInvoiceService(
-      () -> connectorSettingsMock,
+      () -> openPaymentsSettingsMock,
       paymentPointerResolver,
       ""
     );
@@ -159,7 +159,7 @@ public class IlpInvoiceServiceTest {
     HttpUrl resolvedPaymentPointer = HttpUrl.parse("https://xpring.money/foo");
 
     InterledgerAddress operatorAddress = InterledgerAddress.of("test.jc1");
-    when(connectorSettingsMock.operatorAddress()).thenReturn(operatorAddress);
+    when(openPaymentsSettingsMock.ilpOperatorAddress()).thenReturn(operatorAddress);
     when(paymentPointerResolver.resolveHttpUrl(eq(PaymentPointer.of(subjectPaymentPointer)))).thenReturn(resolvedPaymentPointer);
 
     String resolvedAddress = ilpInvoiceService.getAddressFromInvoiceSubject(subjectPaymentPointer);
@@ -172,7 +172,7 @@ public class IlpInvoiceServiceTest {
     HttpUrl resolvedPaymentPointer = HttpUrl.parse("https://xpring.money/");
 
     InterledgerAddress operatorAddress = InterledgerAddress.of("test.jc1");
-    when(connectorSettingsMock.operatorAddress()).thenReturn(operatorAddress);
+    when(openPaymentsSettingsMock.ilpOperatorAddress()).thenReturn(operatorAddress);
     when(paymentPointerResolver.resolveHttpUrl(eq(PaymentPointer.of(subjectPaymentPointer)))).thenReturn(resolvedPaymentPointer);
 
     expectedException.expect(InvalidInvoiceSubjectProblem.class);

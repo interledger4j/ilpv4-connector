@@ -43,12 +43,12 @@ public class OpenPaymentsMetadataFromPropertyFile implements OpenPaymentsMetadat
 
   @Override
   public HttpUrl invoicesEndpoint() {
-    return authorizationIssuer().newBuilder().addPathSegment("invoice").build();
+    return issuer().newBuilder().addPathSegment("invoice").build();
   }
 
   @Override
   public HttpUrl mandatesEndpoint() {
-    return authorizationIssuer().newBuilder().addPathSegment("mandate").build();
+    return issuer().newBuilder().addPathSegment("mandate").build();
   }
 
   @Override

@@ -34,6 +34,6 @@ public class OpenPaymentsMetadataController {
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody OpenPaymentsMetadata getOpenPaymentsMetadata() {
-    return openPaymentsSettingsSupplier.get().openPaymentsMetadata();
+    return openPaymentsSettingsSupplier.get().metadata();
   }
 }

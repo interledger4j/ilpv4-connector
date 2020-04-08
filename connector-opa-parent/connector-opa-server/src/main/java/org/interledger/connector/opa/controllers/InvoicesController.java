@@ -7,7 +7,6 @@ import org.interledger.connector.opa.config.settings.OpenPaymentsSettings;
 import org.interledger.connector.opa.controllers.constants.PathConstants;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.service.InvoiceService;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.spsp.StreamConnectionDetails;
@@ -52,12 +51,12 @@ public class InvoicesController {
     final InvoiceService invoiceService,
     @Qualifier(OPEN_PAYMENTS) final StreamConnectionGenerator opaStreamConnectionGenerator,
     final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    final ServerSecretSupplier serverSecretSupplier
+    @Qualifier(OPEN_PAYMENTS) final ServerSecretSupplier openPaymentsServerSecretSupplier
   ) {
     this.invoiceService = Objects.requireNonNull(invoiceService);
     this.streamConnectionGenerator = Objects.requireNonNull(opaStreamConnectionGenerator);
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
-    this.serverSecretSupplier = Objects.requireNonNull(serverSecretSupplier);
+    this.serverSecretSupplier = Objects.requireNonNull(openPaymentsServerSecretSupplier);
   }
 
   /**
@@ -152,7 +151,7 @@ public class InvoicesController {
   private URI getInvoiceLocation(InvoiceId invoiceId) {
     return openPaymentsSettingsSupplier
       .get()
-      .openPaymentsMetadata()
+      .metadata()
       .invoicesEndpoint()
       .newBuilder()
       .addPathSegment(invoiceId.toString())

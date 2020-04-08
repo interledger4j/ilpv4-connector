@@ -19,7 +19,7 @@ public class OpenPaymentsSettingsFromPropertyFile implements OpenPaymentsSetting
   }
 
   @Override
-  public OpenPaymentsMetadata openPaymentsMetadata() {
+  public OpenPaymentsMetadata metadata() {
     return metadata;
   }
 

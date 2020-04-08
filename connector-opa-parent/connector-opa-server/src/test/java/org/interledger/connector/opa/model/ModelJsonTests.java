@@ -76,6 +76,7 @@ public class ModelJsonTests {
       .subject(subject.toString())
       .description(description)
       .expiresAt(Instant.now().plusSeconds(30))
+      .accountId("foo")
       .build();
 
     String invoiceJson = objectMapper.writeValueAsString(invoice);

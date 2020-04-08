@@ -16,7 +16,7 @@ public interface OpenPaymentsSettings {
 
 
   @Value.Default
-  default OpenPaymentsMetadata openPaymentsMetadata() {
+  default OpenPaymentsMetadata metadata() {
     return OpenPaymentsMetadata.builder().build();
   }
 }
