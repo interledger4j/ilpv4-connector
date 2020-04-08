@@ -2,16 +2,6 @@
 # connector because the passwords and keys would be known
 interledger:
   connector:
-    open-payments:
-      metadata:
-        issuer: "http://localhost:8080"
-        authorizationIssuer: "http://localhost:8000"
-        assetsSupported:
-          - assetCode: "USD"
-            assetScale: 2
-          - assetCode: "XRP"
-            assetScale: 9
-      ilp-operator-address: "test1.connie"
     ## ILP address of the connector.
     nodeIlpAddress: test1.connie
     enabledFeatures:

@@ -152,7 +152,7 @@ import javax.annotation.PostConstruct;
   SpringConnectorWebMvc.class,
   WalletConfig.class,
   GcpPubSubConfig.class,
-  RedisPubSubConfig.class,
+  RedisPubSubConfig.class
 })
 // support extension by looking for annotated Component/Config classes under the configured extensions.basePackage
 @ComponentScan(basePackages = "${interledger.connector.extensions.basePackage:org.interledger.connector.extensions}",
