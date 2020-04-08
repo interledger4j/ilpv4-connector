@@ -2,6 +2,7 @@ package org.interledger.connector.persistence.repositories;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.entities.TransactionEntity;
+import org.interledger.connector.transactions.TransactionStatus;
 
 /**
  * Custom persistence operations for {@link TransactionEntity} that, for performance, are done
@@ -21,11 +22,11 @@ public interface TransactionsRepositoryCustom {
    * upsertAmounts does not update the status because status changes require an explicit event such
    * as a stream close frame being sent, or a transaction being rolled off based on time expiry.
    * @param accountId
-   * @param referenceId
+   * @param transactionId
    * @param status
    * @return number of rows updated. 1 = success.
    */
-  int updateStatus(AccountId accountId, String referenceId, String status);
+  int updateStatus(AccountId accountId, String transactionId, TransactionStatus status);
 
 
   /**
@@ -33,10 +34,10 @@ public interface TransactionsRepositoryCustom {
    * source address will not be present on most packets, just when the ILP stream data contains a ConnectionNewAddress
    * frame.
    * @param accountId
-   * @param referenceId
+   * @param transactionId
    * @param sourceAddress
    * @return number of rows updated. 1 = success
    */
-  int updateSourceAddress(AccountId accountId, String referenceId, String sourceAddress);
+  int updateSourceAddress(AccountId accountId, String transactionId, String sourceAddress);
 
 }

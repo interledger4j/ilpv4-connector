@@ -2,6 +2,7 @@ package org.interledger.connector.persistence.repositories;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.entities.TransactionEntity;
+import org.interledger.connector.transactions.TransactionStatus;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -13,21 +14,21 @@ import javax.persistence.EntityManager;
 public class TransactionsRepositoryCustomImpl implements TransactionsRepositoryCustom {
 
   private static final String UPSERT = "INSERT INTO transactions " +
-    "(account_id, amount, asset_code, asset_scale, destination_address, packet_count, reference_id, source_address, " +
+    "(account_id, amount, asset_code, asset_scale, destination_address, packet_count, transaction_id, source_address, " +
     "status, type) values " +
-    "(:accountId, :amount, :assetCode, :assetScale, :destinationAddress, :packetCount, :referenceId, :sourceAddress, " +
+    "(:accountId, :amount, :assetCode, :assetScale, :destinationAddress, :packetCount, :transactionId, :sourceAddress, " +
     ":status, :type) " +
-    "ON CONFLICT(account_id, reference_id) DO " +
+    "ON CONFLICT(account_id, transaction_id) DO " +
     "UPDATE SET amount=transactions.amount + excluded.amount, " +
     "  modified_dttm=now(), " +
     "  packet_count=transactions.packet_count+excluded.packet_count";
 
   private static final String UPDATE_STATUS = "UPDATE transactions SET status = :status, modified_dttm=now() " +
-      "WHERE account_id = :accountId AND reference_id = :referenceId";
+      "WHERE account_id = :accountId AND transaction_id = :transactionId";
 
   private static final String UPDATE_SOURCE_ADDRESS =
     "UPDATE transactions SET source_address = :sourceAddress, modified_dttm=now() " +
-    "WHERE account_id = :accountId AND reference_id = :referenceId";
+    "WHERE account_id = :accountId AND transaction_id = :transactionId";
 
   @Autowired
   private NamedParameterJdbcTemplate jdbcTemplate;
@@ -44,31 +45,31 @@ public class TransactionsRepositoryCustomImpl implements TransactionsRepositoryC
     parameters.put("assetScale", transaction.getAssetScale());
     parameters.put("destinationAddress", transaction.getDestinationAddress());
     parameters.put("packetCount", transaction.getPacketCount());
-    parameters.put("referenceId", transaction.getReferenceId());
+    parameters.put("transactionId", transaction.getTransactionId());
     parameters.put("sourceAddress", transaction.getSourceAddress());
-    parameters.put("status", transaction.getStatus());
-    parameters.put("type", transaction.getType());
+    parameters.put("status", transaction.getStatus().toString());
+    parameters.put("type", transaction.getType().toString());
 
     entityManager.clear();
     return jdbcTemplate.update(UPSERT, parameters);
   }
 
   @Override
-  public int updateStatus(AccountId accountId, String referenceId, String status) {
+  public int updateStatus(AccountId accountId, String transactionId, TransactionStatus status) {
     Map<String, Object> parameters = new HashMap<>();
     parameters.put("accountId", accountId.value());
-    parameters.put("referenceId", referenceId);
-    parameters.put("status", status);
+    parameters.put("transactionId", transactionId);
+    parameters.put("status", status.toString());
 
     entityManager.clear();
     return jdbcTemplate.update(UPDATE_STATUS, parameters);
   }
 
   @Override
-  public int updateSourceAddress(AccountId accountId, String referenceId, String sourceAddress) {
+  public int updateSourceAddress(AccountId accountId, String transactionId, String sourceAddress) {
     Map<String, Object> parameters = new HashMap<>();
     parameters.put("accountId", accountId.value());
-    parameters.put("referenceId", referenceId);
+    parameters.put("transactionId", transactionId);
     parameters.put("sourceAddress", sourceAddress);
 
     entityManager.clear();

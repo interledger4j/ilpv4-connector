@@ -29,12 +29,12 @@ public interface TransactionsRepository extends Repository<TransactionEntity, Lo
 
   /**
    * Find an {@link TransactionEntity} by its natural identifier corresponding to
-   * {@link AccountId} and {@link TransactionEntity#getReferenceId()}.
+   * {@link AccountId} and {@link TransactionEntity#getTransactionId()}.
    *
    * @param accountId
-   * @param referenceId
+   * @param transactionId
    * @return record if found
    */
-  Optional<TransactionEntity> findByAccountIdAndReferenceId(AccountId accountId, String referenceId);
+  Optional<TransactionEntity> findByAccountIdAndTransactionId(AccountId accountId, String transactionId);
 
 }

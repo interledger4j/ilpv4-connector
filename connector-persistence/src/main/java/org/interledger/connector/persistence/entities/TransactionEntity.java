@@ -3,6 +3,8 @@ package org.interledger.connector.persistence.entities;
 import static org.interledger.connector.persistence.entities.DataConstants.TableNames.TRANSACTIONS;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.transactions.TransactionStatus;
+import org.interledger.connector.transactions.TransactionType;
 
 import java.math.BigInteger;
 import java.time.Instant;
@@ -11,6 +13,8 @@ import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
@@ -28,8 +32,8 @@ public class TransactionEntity {
   @Column(name = "ID")
   private Long id;
 
-  @Column(name = "REFERENCE_ID")
-  private String referenceId;
+  @Column(name = "TRANSACTION_ID")
+  private String transactionId;
 
   @Column(name = "ACCOUNT_ID")
   private AccountId accountId;
@@ -53,10 +57,12 @@ public class TransactionEntity {
   private String sourceAddress;
 
   @Column(name = "STATUS")
-  private String status;
+  @Enumerated(EnumType.STRING)
+  private TransactionStatus status;
 
   @Column(name = "TYPE")
-  private String type;
+  @Enumerated(EnumType.STRING)
+  private TransactionType type;
 
   @Column(name = "CREATED_DTTM", nullable = false, updatable = false)
   private Instant createdDate;
@@ -116,12 +122,12 @@ public class TransactionEntity {
   }
 
 
-  public String getReferenceId() {
-    return referenceId;
+  public String getTransactionId() {
+    return transactionId;
   }
 
-  public void setReferenceId(String referenceId) {
-    this.referenceId = referenceId;
+  public void setTransactionId(String transactionId) {
+    this.transactionId = transactionId;
   }
 
   public String getSourceAddress() {
@@ -132,19 +138,19 @@ public class TransactionEntity {
     this.sourceAddress = sourceAddress;
   }
 
-  public String getStatus() {
+  public TransactionStatus getStatus() {
     return status;
   }
 
-  public void setStatus(String status) {
+  public void setStatus(TransactionStatus status) {
     this.status = status;
   }
 
-  public String getType() {
+  public TransactionType getType() {
     return type;
   }
 
-  public void setType(String type) {
+  public void setType(TransactionType type) {
     this.type = type;
   }
 
@@ -171,7 +177,7 @@ public class TransactionEntity {
     }
 
     TransactionEntity that = (TransactionEntity) o;
-    return Objects.equals(getReferenceId(), that.getReferenceId());
+    return Objects.equals(getTransactionId(), that.getTransactionId());
   }
 
   /**
@@ -182,14 +188,14 @@ public class TransactionEntity {
    */
   @Override
   public int hashCode() {
-    return Objects.hash(getReferenceId());
+    return Objects.hash(getTransactionId());
   }
 
   @Override
   public String toString() {
     return "TransactionEntity{" +
       "id=" + id +
-      ", referenceId='" + referenceId + '\'' +
+      ", transactionId='" + transactionId + '\'' +
       ", accountId=" + accountId +
       ", destinationAddress='" + destinationAddress + '\'' +
       ", assetCode='" + assetCode + '\'' +

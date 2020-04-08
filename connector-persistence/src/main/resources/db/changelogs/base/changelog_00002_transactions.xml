@@ -9,7 +9,7 @@
       <column autoIncrement="true" name="ID" type="BIGINT">
         <constraints nullable="false" primaryKey="true"/>
       </column>
-      <column name="REFERENCE_ID" type="VARCHAR(64)">
+      <column name="TRANSACTION_ID" type="VARCHAR(64)">
         <constraints nullable="false"/>
       </column>
       <column name="ACCOUNT_ID" type="VARCHAR(64)">
@@ -51,11 +51,11 @@
       <column name="ACCOUNT_ID"/>
       <column name="CREATED_DTTM"/>
     </createIndex>
-    <createIndex indexName="TRANSACTIONS_ACCT_ID_REF_ID_IDX"
+    <createIndex indexName="TRANSACTIONS_ACCT_ID_TRX_ID_IDX"
                  tableName="TRANSACTIONS"
                  unique="true">
       <column name="ACCOUNT_ID"/>
-      <column name="REFERENCE_ID"/>
+      <column name="TRANSACTION_ID"/>
     </createIndex>
     <createIndex indexName="TRANSACTIONS_STATUS_CREATED_DTTM_IDX"
                  tableName="TRANSACTIONS">

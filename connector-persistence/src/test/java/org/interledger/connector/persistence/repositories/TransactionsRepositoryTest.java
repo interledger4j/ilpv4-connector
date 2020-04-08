@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.connector.persistence.entities.TransactionEntity;
+import org.interledger.connector.transactions.TransactionStatus;
+import org.interledger.connector.transactions.TransactionType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
@@ -62,7 +64,7 @@ public class TransactionsRepositoryTest {
     transactionsRepository.upsertAmounts(entity1);
 
     final TransactionEntity loadedAccessTokenEntity =
-      transactionsRepository.findByAccountIdAndReferenceId(accountId, transactionId).get();
+      transactionsRepository.findByAccountIdAndTransactionId(accountId, transactionId).get();
 
     assertEqual(loadedAccessTokenEntity, entity1);
   }
@@ -76,11 +78,11 @@ public class TransactionsRepositoryTest {
 
     transactionsRepository.upsertAmounts(entity1);
 
-    transactionsRepository.updateStatus(accountId, transactionId, "CLOSED_BY_SENDER");
+    transactionsRepository.updateStatus(accountId, transactionId, TransactionStatus.CLOSED_BY_STREAM);
 
     TransactionEntity transaction1 =
-      transactionsRepository.findByAccountIdAndReferenceId(accountId, transactionId).get();
-    assertThat(transaction1.getStatus()).isEqualTo("CLOSED_BY_SENDER");
+      transactionsRepository.findByAccountIdAndTransactionId(accountId, transactionId).get();
+    assertThat(transaction1.getStatus()).isEqualTo(TransactionStatus.CLOSED_BY_STREAM);
   }
 
   @Test
@@ -126,11 +128,11 @@ public class TransactionsRepositoryTest {
   @Test
   public void findByReferenceIdWithWrongAccountIdReturnsEmpty() {
     AccountId accountId = AccountId.of(generateUuid());
-    String referenceId = generateUuid();
-    transactionsRepository.upsertAmounts(newEntity(accountId, referenceId, 10));
+    String transactionId = generateUuid();
+    transactionsRepository.upsertAmounts(newEntity(accountId, transactionId, 10));
 
     AccountId wrongAccountId = AccountId.of(generateUuid());
-    assertThat(transactionsRepository.findByAccountIdAndReferenceId(wrongAccountId, referenceId)).isEmpty();
+    assertThat(transactionsRepository.findByAccountIdAndTransactionId(wrongAccountId, transactionId)).isEmpty();
   }
 
   @Test
@@ -144,7 +146,7 @@ public class TransactionsRepositoryTest {
     transactionsRepository.upsertAmounts(entity1);
 
     final TransactionEntity loadedAccessTokenEntity =
-      transactionsRepository.findByAccountIdAndReferenceId(accountId, transactionId).get();
+      transactionsRepository.findByAccountIdAndTransactionId(accountId, transactionId).get();
 
     assertEqual(loadedAccessTokenEntity, entity1);
 
@@ -153,27 +155,27 @@ public class TransactionsRepositoryTest {
 
     assertThat(transactionsRepository.findByAccountIdOrderByCreatedDateDesc(accountId, DEFAULT_PAGE)).hasSize(1);
     Optional<TransactionEntity> transaction1 =
-      transactionsRepository.findByAccountIdAndReferenceId(accountId, transactionId);
+      transactionsRepository.findByAccountIdAndTransactionId(accountId, transactionId);
 
     assertThat(transaction1).isPresent();
     assertThat(transaction1.get().getPacketCount()).isEqualTo(2);
     assertThat(transaction1.get().getAmount()).isEqualTo(BigInteger.valueOf(30));
 
-    transactionsRepository.updateStatus(accountId, transactionId, "CLOSED_BY_SENDER");
+    transactionsRepository.updateStatus(accountId, transactionId, TransactionStatus.CLOSED_BY_STREAM);
 
     assertThat(transactionsRepository.findByAccountIdOrderByCreatedDateDesc(accountId, DEFAULT_PAGE)).hasSize(1);
 
-    transaction1 = transactionsRepository.findByAccountIdAndReferenceId(accountId, transactionId);
-    assertThat(transaction1.get().getStatus()).isEqualTo("CLOSED_BY_SENDER");
+    transaction1 = transactionsRepository.findByAccountIdAndTransactionId(accountId, transactionId);
+    assertThat(transaction1.get().getStatus()).isEqualTo(TransactionStatus.CLOSED_BY_STREAM);
 
     transactionsRepository.upsertAmounts(newEntity(accountId, transactionId2, 33));
 
     assertThat(transactionsRepository.findByAccountIdOrderByCreatedDateDesc(accountId, DEFAULT_PAGE)).hasSize(2);
 
     Optional<TransactionEntity> transaction1Again =
-      transactionsRepository.findByAccountIdAndReferenceId(accountId, transactionId);
+      transactionsRepository.findByAccountIdAndTransactionId(accountId, transactionId);
     Optional<TransactionEntity> transaction2 =
-      transactionsRepository.findByAccountIdAndReferenceId(accountId, transactionId2);
+      transactionsRepository.findByAccountIdAndTransactionId(accountId, transactionId2);
 
     assertEqual(transaction1Again.get(), transaction1.get());
 
@@ -187,18 +189,18 @@ public class TransactionsRepositoryTest {
     return UUID.randomUUID().toString();
   }
 
-  private TransactionEntity newEntity(AccountId accountId, String referenceId, long amount) {
+  private TransactionEntity newEntity(AccountId accountId, String transactionId, long amount) {
     TransactionEntity entity = new TransactionEntity();
     entity.setSourceAddress("test.foo.bar");
     entity.setAccountId(accountId);
     entity.setPacketCount(1);
-    entity.setReferenceId(referenceId);
+    entity.setTransactionId(transactionId);
     entity.setAmount(BigInteger.valueOf(amount));
     entity.setAssetCode("XRP");
     entity.setAssetScale((short) 9);
-    entity.setDestinationAddress("test." + referenceId);
-    entity.setStatus("PENDING");
-    entity.setType("PAYMENT_RECEIVED");
+    entity.setDestinationAddress("test." + transactionId);
+    entity.setStatus(TransactionStatus.PENDING);
+    entity.setType(TransactionType.PAYMENT_RECEIVED);
     return entity;
   }
 

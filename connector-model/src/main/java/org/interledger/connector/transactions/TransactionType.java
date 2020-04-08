@@ -6,10 +6,7 @@ package org.interledger.connector.transactions;
 public enum TransactionType {
 
   PAYMENT_RECEIVED(BalanceAdjustmentType.CREDIT),
-  PAYMENT_SENT(BalanceAdjustmentType.DEBIT),
-  // for raw status strings from the database that don't map to any of the above. Shouldn't happen but just in case
-  // map to this rather than null
-  UNKNOWN(null);
+  PAYMENT_SENT(BalanceAdjustmentType.DEBIT);
 
   private BalanceAdjustmentType adjustmentType;
 

@@ -23,7 +23,7 @@ public interface Transaction {
    * Reference Id for transaction. Locally unique by accountId.
    * @return
    */
-  String referenceId();
+  String transactionId();
 
   /**
    * AccountId that this transaction is attached to.
