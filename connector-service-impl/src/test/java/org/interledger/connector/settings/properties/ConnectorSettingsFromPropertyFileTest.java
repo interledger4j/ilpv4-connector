@@ -56,6 +56,8 @@ public class ConnectorSettingsFromPropertyFileTest {
     assertThat(enabledFeatureSettings.isRateLimitingEnabled()).isTrue();
     assertThat(enabledFeatureSettings.isLocalSpspFulfillmentEnabled()).isTrue();
     assertThat(enabledFeatureSettings.isRequire32ByteSharedSecrets()).isTrue();
+    assertThat(enabledFeatureSettings.streamPaymentAggregationMode())
+      .isEqualTo(EnabledFeatureSettings.StreamPaymentAggregationMode.IN_POSTGRES);
 
     // Global Routing Settings
     final GlobalRoutingSettings globalRoutingSettings = connectorSettings.globalRoutingSettings();

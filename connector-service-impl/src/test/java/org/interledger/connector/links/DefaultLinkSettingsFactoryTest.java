@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.stream.TrackingStreamReceiverLink;
+import org.interledger.connector.stream.TrackingStreamReceiverLinkSettings;
 import org.interledger.link.LinkSettings;
 import org.interledger.link.LinkType;
 import org.interledger.link.LoopbackLink;
@@ -12,8 +14,6 @@ import org.interledger.link.PingLoopbackLink;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
-import org.interledger.link.spsp.StatelessSpspReceiverLink;
-import org.interledger.link.spsp.StatelessSpspReceiverLinkSettings;
 
 import com.google.common.collect.Maps;
 import org.junit.Before;
@@ -114,21 +114,21 @@ public class DefaultLinkSettingsFactoryTest {
   }
 
   @Test
-  public void testConstructStatelessSpspReceiverLink() {
+  public void testConstructTrackingStreamReceiverLink() {
     AccountSettings accountSettings = AccountSettings.builder()
       .accountId(AccountId.of("foo"))
-      .linkType(StatelessSpspReceiverLink.LINK_TYPE)
+      .linkType(TrackingStreamReceiverLink.LINK_TYPE)
       .accountRelationship(AccountRelationship.PEER)
       .assetCode("XRP")
       .assetScale(2)
       .build();
     final LinkSettings actual = factory.construct(accountSettings);
-    assertThat(actual.getLinkType()).isEqualTo(StatelessSpspReceiverLink.LINK_TYPE);
+    assertThat(actual.getLinkType()).isEqualTo(TrackingStreamReceiverLink.LINK_TYPE);
     assertThat(actual.getCustomSettings().isEmpty()).isTrue();
 
-    final StatelessSpspReceiverLinkSettings statelessSpspReceiverLinkSettings =
-      (StatelessSpspReceiverLinkSettings) actual;
-    assertThat(statelessSpspReceiverLinkSettings.assetCode()).isEqualTo("XRP");
-    assertThat(statelessSpspReceiverLinkSettings.assetScale()).isEqualTo(2);
+    final TrackingStreamReceiverLinkSettings trackingStreamReceiverLinkSettings =
+      (TrackingStreamReceiverLinkSettings) actual;
+    assertThat(trackingStreamReceiverLinkSettings.assetCode()).isEqualTo("XRP");
+    assertThat(trackingStreamReceiverLinkSettings.assetScale()).isEqualTo(2);
   }
 }

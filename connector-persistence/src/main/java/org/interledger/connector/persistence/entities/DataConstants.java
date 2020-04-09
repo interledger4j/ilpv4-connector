@@ -8,6 +8,7 @@ public interface DataConstants {
     String DELETED_ACCOUNT_SETTINGS = "DELETED_ACCOUNT_SETTINGS";
     String FX_RATE_OVERRIDES = "FX_RATE_OVERRIDES";
     String STATIC_ROUTES = "STATIC_ROUTES";
+    String STREAM_PAYMENTS = "STREAM_PAYMENTS";
   }
 
   interface ColumnNames {

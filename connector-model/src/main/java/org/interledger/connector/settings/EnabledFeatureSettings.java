@@ -43,6 +43,14 @@ public interface EnabledFeatureSettings {
     return true;
   }
 
+  /**
+   * Which mode to use to aggregate payment payments.
+   * @return mode
+   */
+  default StreamPaymentAggregationMode streamPaymentAggregationMode() {
+    return StreamPaymentAggregationMode.IN_MEMORY;
+  }
+
   @Value.Immutable(intern = true)
   abstract class AbstractEnabledFeatureSettings implements EnabledFeatureSettings {
 
@@ -63,6 +71,20 @@ public interface EnabledFeatureSettings {
     public boolean isRequire32ByteSharedSecrets() {
       return true;
     }
+
+    @Override
+    @Value.Default
+    public StreamPaymentAggregationMode streamPaymentAggregationMode() {
+      return StreamPaymentAggregationMode.IN_MEMORY;
+    }
+  }
+
+  /**
+   * Modes for aggregating stream payments
+   */
+  enum StreamPaymentAggregationMode {
+    IN_MEMORY, // aggregate in memory, no durable persistence
+    IN_POSTGRES // aggregate in postgres database
   }
 
 }
