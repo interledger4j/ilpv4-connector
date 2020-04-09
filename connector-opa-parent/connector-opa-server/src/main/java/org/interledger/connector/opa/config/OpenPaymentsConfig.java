@@ -54,6 +54,9 @@ public class OpenPaymentsConfig implements WebMvcConfigurer {
   @Autowired
   private ApplicationContext applicationContext;
 
+  @Value("${" + SPSP__SERVER_SECRET + ":}")
+  private String spspServerSecretB64;
+
   @Bean
   public Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier() {
     return () -> applicationContext.getBean(OpenPaymentsSettings.class);
@@ -80,9 +83,6 @@ public class OpenPaymentsConfig implements WebMvcConfigurer {
   public StreamConnectionGenerator opaStreamConnectionGenerator() {
     return new OpaStreamConnectionGenerator();
   }
-
-  @Value("${" + SPSP__SERVER_SECRET + ":}")
-  private String spspServerSecretB64;
 
   @Bean
   @Qualifier(OPEN_PAYMENTS)
