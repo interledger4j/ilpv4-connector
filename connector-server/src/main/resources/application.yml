@@ -97,6 +97,8 @@ interledger:
       # The default for packet-switch mode
       localSpspFulfillmentEnabled: false
       require32ByteSharedSecrets: true
+      # in-postgres mode enabled by postgres profile
+      streamPaymentAggregationMode: in-memory
     enabledProtocols:
       ilpOverHttpEnabled: true
       pingProtocolEnabled: true

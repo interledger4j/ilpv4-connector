@@ -48,6 +48,7 @@ interledger:
       rateLimitingEnabled: true
       require32ByteSharedSecrets: true
       localSpspFulfillmentEnabled: true
+      streamPaymentAggregationMode: in-postgres
     # Which protocols this Connector supports
     enabledProtocols:
       ilpOverHttpEnabled: true

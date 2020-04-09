@@ -10,3 +10,8 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQL10Dialect
     hibernate:
       ddl-auto: none
+
+interledger:
+  connector:
+    enabledFeatures:
+      streamPaymentAggregationMode: in-postgres

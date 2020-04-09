@@ -9,6 +9,7 @@ public interface DataConstants {
     String FX_RATE_OVERRIDES = "FX_RATE_OVERRIDES";
     String STATIC_ROUTES = "STATIC_ROUTES";
     String INVOICES = "INVOICES";
+    String STREAM_PAYMENTS = "STREAM_PAYMENTS";
   }
 
   interface ColumnNames {

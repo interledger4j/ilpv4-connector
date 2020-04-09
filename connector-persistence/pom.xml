@@ -177,6 +177,10 @@
       <artifactId>spring-tx</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.zonky.test</groupId>
       <artifactId>embedded-database-spring-test</artifactId>
       <version>1.5.2</version>
@@ -201,7 +205,10 @@
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
-      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger.connector</groupId>
+      <artifactId>connector-model</artifactId>
     </dependency>
   </dependencies>
 

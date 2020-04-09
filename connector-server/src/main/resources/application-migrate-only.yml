@@ -3,6 +3,9 @@
 # running the migrations on a publicly accessible connector
 
 spring:
+  jpa:
+    hibernate:
+      ddl-auto: none
   liquibase:
     change-log: classpath:/db/changelog-master.xml
     enabled: true
