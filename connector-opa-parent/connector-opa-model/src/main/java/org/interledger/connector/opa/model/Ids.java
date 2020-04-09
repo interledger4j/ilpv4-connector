@@ -32,7 +32,7 @@ public interface Ids {
         return this;
       }
       catch (Exception e) {
-        throw new InvalidInvoiceIdProblem("InvoiceIds must match the UUID format.");
+        throw new InvalidInvoiceIdProblem("InvoiceIds must match the UUID format.", this);
       }
     }
   }

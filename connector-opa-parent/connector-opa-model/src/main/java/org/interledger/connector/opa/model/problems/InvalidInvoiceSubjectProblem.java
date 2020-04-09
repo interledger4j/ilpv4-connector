@@ -1,29 +1,29 @@
 package org.interledger.connector.opa.model.problems;
 
-import org.interledger.connector.opa.model.InvoiceId;
+import static org.interledger.connector.opa.model.problems.InvoiceProblem.INVOICES_PATH;
+
+import org.interledger.connector.core.problems.AbstractConnectorProblem;
 
 import org.zalando.problem.Status;
 
 import java.net.URI;
-import java.util.Objects;
 
-public class InvalidInvoiceSubjectProblem extends InvoiceProblem {
-  public InvalidInvoiceSubjectProblem(final InvoiceId invoiceId) {
+public class InvalidInvoiceSubjectProblem extends AbstractConnectorProblem {
+  public InvalidInvoiceSubjectProblem(final String invoiceSubject) {
     super(
       URI.create(TYPE_PREFIX + INVOICES_PATH + "/invalid-invoice-subject"),
-      "Invalid Invoice Subject (" + invoiceId.value() + ")",
+      "Invalid Invoice Subject (" + invoiceSubject + ")",
       Status.BAD_REQUEST,
-      Objects.requireNonNull(invoiceId)
+      null
     );
   }
 
-  public InvalidInvoiceSubjectProblem(final String detail, final InvoiceId invoiceId) {
+  public InvalidInvoiceSubjectProblem(final String detail, final String invoiceSubject) {
     super(
       URI.create(TYPE_PREFIX + INVOICES_PATH + "/invalid-invoice-subject"),
-      "Invalid Invoice Subject (" + invoiceId.value() + ")",
+      "Invalid Invoice Subject (" + invoiceSubject + ")",
       Status.BAD_REQUEST,
-      detail,
-      Objects.requireNonNull(invoiceId)
+      detail
     );
   }
 }

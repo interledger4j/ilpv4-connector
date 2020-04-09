@@ -58,7 +58,7 @@ public class IlpInvoiceService implements InvoiceService {
       .reduce("", (s, s2) -> s + "/" + s2);
     final String ilpIntermediateSuffix = this.computePaymentTargetIntermediatePrefix(paymentPointerPath);
     if (StringUtils.isBlank(ilpIntermediateSuffix)) {
-      throw new InvalidInvoiceSubjectProblem();
+      throw new InvalidInvoiceSubjectProblem(subject);
     }
 
     return openPaymentsSettingsSupplier.get().ilpOperatorAddress()
