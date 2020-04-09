@@ -56,6 +56,14 @@ import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
 import org.interledger.connector.packetswitch.filters.PeerProtocolPacketFilter;
 import org.interledger.connector.packetswitch.filters.RateLimitIlpPacketFilter;
 import org.interledger.connector.packetswitch.filters.ValidateFulfillmentPacketFilter;
+import org.interledger.connector.payments.FulfillmentGeneratedEventAggregator;
+import org.interledger.connector.payments.FulfillmentGeneratedEventConverter;
+import org.interledger.connector.payments.InDatabaseStreamPaymentManager;
+import org.interledger.connector.payments.InMemoryStreamPaymentnManager;
+import org.interledger.connector.payments.StreamPaymentFromEntityConverter;
+import org.interledger.connector.payments.StreamPaymentManager;
+import org.interledger.connector.payments.StreamPaymentToEntityConverter;
+import org.interledger.connector.payments.SynchronousFulfillmentGeneratedEventAggregator;
 import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccessTokensRepository;
@@ -63,7 +71,7 @@ import org.interledger.connector.persistence.repositories.AccountSettingsReposit
 import org.interledger.connector.persistence.repositories.DeletedAccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.FxRateOverridesRepository;
 import org.interledger.connector.persistence.repositories.StaticRoutesRepository;
-import org.interledger.connector.persistence.repositories.TransactionsRepository;
+import org.interledger.connector.persistence.repositories.StreamPaymentsRepository;
 import org.interledger.connector.pubsub.RedisPubSubConfig;
 import org.interledger.connector.routing.DefaultRouteBroadcaster;
 import org.interledger.connector.routing.ExternalRoutingService;
@@ -86,14 +94,6 @@ import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementEngineClient;
 import org.interledger.connector.settlement.SettlementService;
-import org.interledger.connector.transactions.FulfillmentGeneratedEventAggregator;
-import org.interledger.connector.transactions.FulfillmentGeneratedEventConverter;
-import org.interledger.connector.transactions.InDatabasePaymentTransactionManager;
-import org.interledger.connector.transactions.InMemoryPaymentTransactionManager;
-import org.interledger.connector.transactions.PaymentTransactionManager;
-import org.interledger.connector.transactions.SynchronousFulfillmentGeneratedEventAggregator;
-import org.interledger.connector.transactions.TransactionFromEntityConverter;
-import org.interledger.connector.transactions.TransactionToEntityConverter;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.crypto.CryptoKeys;
 import org.interledger.crypto.Decryptor;
@@ -634,22 +634,22 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  protected PaymentTransactionManager paymentTransactionManager(Supplier<ConnectorSettings> connectorSettingsSupplier,
-                                                                TransactionsRepository transactionsRepository) {
+  protected StreamPaymentManager streamPaymentManager(Supplier<ConnectorSettings> connectorSettingsSupplier,
+                                                      StreamPaymentsRepository streamPaymentsRepository) {
     switch (connectorSettingsSupplier.get().enabledFeatures().paymentTransactionMode()) {
-      case IN_POSTGRES: return new InDatabasePaymentTransactionManager(
-        transactionsRepository,
-        new TransactionFromEntityConverter(),
-        new TransactionToEntityConverter());
+      case IN_POSTGRES: return new InDatabaseStreamPaymentManager(
+        streamPaymentsRepository,
+        new StreamPaymentFromEntityConverter(),
+        new StreamPaymentToEntityConverter());
       default:
-        return new InMemoryPaymentTransactionManager();
+        return new InMemoryStreamPaymentnManager();
     }
   }
 
   @Bean
   protected FulfillmentGeneratedEventAggregator fulfilledTransactionAggregator(
-    PaymentTransactionManager paymentTransactionManager) {
-    return new SynchronousFulfillmentGeneratedEventAggregator(paymentTransactionManager,
+    StreamPaymentManager streamPaymentManager) {
+    return new SynchronousFulfillmentGeneratedEventAggregator(streamPaymentManager,
       new FulfillmentGeneratedEventConverter());
   }
 

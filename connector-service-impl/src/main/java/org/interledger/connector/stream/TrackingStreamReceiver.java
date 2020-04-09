@@ -4,7 +4,7 @@ import static org.interledger.stream.FluentCompareTo.is;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.events.FulfillmentGeneratedEvent;
-import org.interledger.connector.transactions.FulfillmentGeneratedEventAggregator;
+import org.interledger.connector.payments.FulfillmentGeneratedEventAggregator;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerErrorCode;
 import org.interledger.core.InterledgerFulfillPacket;

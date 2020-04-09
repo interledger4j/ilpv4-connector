@@ -5,7 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.transactions.FulfillmentGeneratedEventAggregator;
+import org.interledger.connector.payments.FulfillmentGeneratedEventAggregator;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.link.LinkId;

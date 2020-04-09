@@ -1,15 +1,15 @@
-package org.interledger.connector.transactions;
+package org.interledger.connector.payments;
 
-import org.interledger.connector.persistence.entities.TransactionEntity;
+import org.interledger.connector.persistence.entities.StreamPaymentEntity;
 import org.interledger.core.InterledgerAddress;
 
 import org.springframework.core.convert.converter.Converter;
 
-public class TransactionToEntityConverter implements Converter<Transaction, TransactionEntity> {
+public class StreamPaymentToEntityConverter implements Converter<StreamPayment, StreamPaymentEntity> {
 
   @Override
-  public TransactionEntity convert(Transaction source) {
-    TransactionEntity entity = new TransactionEntity();
+  public StreamPaymentEntity convert(StreamPayment source) {
+    StreamPaymentEntity entity = new StreamPaymentEntity();
     entity.setAccountId(source.accountId());
     entity.setAmount(source.amount());
     entity.setAssetScale(source.assetScale());
@@ -18,7 +18,7 @@ public class TransactionToEntityConverter implements Converter<Transaction, Tran
     entity.setDestinationAddress(source.destinationAddress().getValue());
     entity.setModifiedDate(source.modifiedAt());
     entity.setPacketCount(source.packetCount());
-    entity.setTransactionId(source.transactionId());
+    entity.setStreamPaymentId(source.streamPaymentId());
     entity.setSourceAddress(source.sourceAddress().map(InterledgerAddress::getValue).orElse(null));
     entity.setStatus(source.status());
     entity.setType(source.type());

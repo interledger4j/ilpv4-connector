@@ -1,4 +1,4 @@
-package org.interledger.connector.transactions;
+package org.interledger.connector.payments;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -9,7 +9,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.persistence.repositories.TransactionsRepository;
+import org.interledger.connector.persistence.repositories.StreamPaymentsRepository;
 import org.interledger.core.InterledgerAddress;
 
 import com.google.common.collect.Lists;
@@ -27,7 +27,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-public class InDatabasePaymentTransactionManagerTest {
+public class InDatabaseStreamPaymentManagerTest {
 
   @Rule
   public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -36,37 +36,37 @@ public class InDatabasePaymentTransactionManagerTest {
   public ExpectedException expectedException = ExpectedException.none();
 
   @Mock
-  private TransactionsRepository mockRepo;
+  private StreamPaymentsRepository mockRepo;
 
-  private InDatabasePaymentTransactionManager transactionManager;
-  private TransactionFromEntityConverter transactionFromEntityConverter = new TransactionFromEntityConverter();
-  private TransactionToEntityConverter transactionToEntityConverter = new TransactionToEntityConverter();
+  private InDatabaseStreamPaymentManager transactionManager;
+  private StreamPaymentFromEntityConverter streamPaymentFromEntityConverter = new StreamPaymentFromEntityConverter();
+  private StreamPaymentToEntityConverter streamPaymentToEntityConverter = new StreamPaymentToEntityConverter();
 
   @Before
   public void setUp() {
-    transactionToEntityConverter = new TransactionToEntityConverter();
-    transactionManager = new InDatabasePaymentTransactionManager(mockRepo,
-      transactionFromEntityConverter,
-      transactionToEntityConverter);
+    streamPaymentToEntityConverter = new StreamPaymentToEntityConverter();
+    transactionManager = new InDatabaseStreamPaymentManager(mockRepo,
+      streamPaymentFromEntityConverter,
+      streamPaymentToEntityConverter);
   }
 
   @Test
-  public void findByAccountIdAndTransactionId() {
-    Transaction trx1 = transactionBuilder().build();
-    when(mockRepo.findByAccountIdAndTransactionId(trx1.accountId(), trx1.transactionId()))
-      .thenReturn(Optional.of(transactionToEntityConverter.convert(trx1)));
+  public void findByAccountIdAndStreamPaymentId() {
+    StreamPayment trx1 = transactionBuilder().build();
+    when(mockRepo.findByAccountIdAndStreamPaymentId(trx1.accountId(), trx1.streamPaymentId()))
+      .thenReturn(Optional.of(streamPaymentToEntityConverter.convert(trx1)));
 
-    assertThat(transactionManager.findByAccountIdAndTransactionId(trx1.accountId(), trx1.transactionId()))
+    assertThat(transactionManager.findByAccountIdAndStreamPaymentId(trx1.accountId(), trx1.streamPaymentId()))
       .isEqualTo(Optional.of(trx1));
   }
 
   @Test
   public void findByAccountId() {
-    Transaction trx1 = transactionBuilder().build();
-    Transaction trx2 = transactionBuilder().build();
+    StreamPayment trx1 = transactionBuilder().build();
+    StreamPayment trx2 = transactionBuilder().build();
     when(mockRepo.findByAccountIdOrderByCreatedDateDesc(eq(trx1.accountId()), any()))
-      .thenReturn(Lists.newArrayList(transactionToEntityConverter.convert(trx1),
-        transactionToEntityConverter.convert(trx2)));
+      .thenReturn(Lists.newArrayList(streamPaymentToEntityConverter.convert(trx1),
+        streamPaymentToEntityConverter.convert(trx2)));
 
     assertThat(transactionManager.findByAccountId(trx1.accountId(), PageRequest.of(0, 100)))
       .isEqualTo(Lists.newArrayList(trx1, trx2));
@@ -74,41 +74,41 @@ public class InDatabasePaymentTransactionManagerTest {
 
   @Test
   public void mergePending() {
-    Transaction trx = transactionBuilder().build();
+    StreamPayment trx = transactionBuilder().build();
     transactionManager.merge(trx);
-    verify(mockRepo, times(1)).upsertAmounts(transactionToEntityConverter.convert(trx));
+    verify(mockRepo, times(1)).upsertAmounts(streamPaymentToEntityConverter.convert(trx));
     verifyNoMoreInteractions(mockRepo);
   }
 
   @Test
   public void mergeAndUpdateStatus() {
-    Transaction trx = transactionBuilder()
-      .status(TransactionStatus.CLOSED_BY_STREAM)
+    StreamPayment trx = transactionBuilder()
+      .status(StreamPaymentStatus.CLOSED_BY_STREAM)
       .build();
     transactionManager.merge(trx);
-    verify(mockRepo, times(1)).upsertAmounts(transactionToEntityConverter.convert(trx));
-    verify(mockRepo, times(1)).updateStatus(trx.accountId(), trx.transactionId(), trx.status());
+    verify(mockRepo, times(1)).upsertAmounts(streamPaymentToEntityConverter.convert(trx));
+    verify(mockRepo, times(1)).updateStatus(trx.accountId(), trx.streamPaymentId(), trx.status());
     verifyNoMoreInteractions(mockRepo);
   }
 
   @Test
   public void mergeAndUpdateSourceAddress() {
     InterledgerAddress source = InterledgerAddress.of("test.sender");
-    Transaction trx = transactionBuilder()
+    StreamPayment trx = transactionBuilder()
       .sourceAddress(source)
       .build();
     transactionManager.merge(trx);
-    verify(mockRepo, times(1)).upsertAmounts(transactionToEntityConverter.convert(trx));
-    verify(mockRepo, times(1)).updateSourceAddress(trx.accountId(), trx.transactionId(), source.getValue());
+    verify(mockRepo, times(1)).upsertAmounts(streamPaymentToEntityConverter.convert(trx));
+    verify(mockRepo, times(1)).updateSourceAddress(trx.accountId(), trx.streamPaymentId(), source.getValue());
     verifyNoMoreInteractions(mockRepo);
   }
 
   @Test
   public void mergeRejectsNegativePaymentReceived() {
     // payments received should not be negative (debit)
-    Transaction trx = transactionBuilder()
+    StreamPayment trx = transactionBuilder()
       .amount(BigInteger.valueOf(-1))
-      .type(TransactionType.PAYMENT_RECEIVED)
+      .type(StreamPaymentType.PAYMENT_RECEIVED)
       .build();
 
     expectedException.expect(IllegalArgumentException.class);
@@ -118,17 +118,17 @@ public class InDatabasePaymentTransactionManagerTest {
   @Test
   public void mergeRejectsPostivePaymentSent() {
     // payments sent should be a debit (negative amount)
-    Transaction trx = transactionBuilder()
+    StreamPayment trx = transactionBuilder()
       .amount(BigInteger.valueOf(1))
-      .type(TransactionType.PAYMENT_SENT)
+      .type(StreamPaymentType.PAYMENT_SENT)
       .build();
 
     expectedException.expect(IllegalArgumentException.class);
     transactionManager.merge(trx);
   }
 
-  private ImmutableTransaction.Builder transactionBuilder() {
-    return Transaction.builder()
+  private ImmutableStreamPayment.Builder transactionBuilder() {
+    return StreamPayment.builder()
       .accountId(AccountId.of("test"))
       .amount(BigInteger.valueOf(100))
       .assetCode("XRP")
@@ -137,9 +137,9 @@ public class InDatabasePaymentTransactionManagerTest {
       .destinationAddress(InterledgerAddress.of("test.receiver"))
       .modifiedAt(Instant.now())
       .packetCount(1)
-      .status(TransactionStatus.PENDING)
-      .transactionId(UUID.randomUUID().toString())
-      .type(TransactionType.PAYMENT_RECEIVED);
+      .status(StreamPaymentStatus.PENDING)
+      .streamPaymentId(UUID.randomUUID().toString())
+      .type(StreamPaymentType.PAYMENT_RECEIVED);
   }
 
 

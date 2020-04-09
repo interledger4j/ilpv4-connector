@@ -1,4 +1,4 @@
-package org.interledger.connector.transactions;
+package org.interledger.connector.payments;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
@@ -13,17 +13,17 @@ import java.util.Optional;
  *
  */
 @Value.Immutable
-public interface Transaction {
+public interface StreamPayment {
 
-  static ImmutableTransaction.Builder builder() {
-    return ImmutableTransaction.builder();
+  static ImmutableStreamPayment.Builder builder() {
+    return ImmutableStreamPayment.builder();
   }
 
   /**
    * Reference Id for transaction. Locally unique by accountId.
    * @return
    */
-  String transactionId();
+  String streamPaymentId();
 
   /**
    * AccountId that this transaction is attached to.
@@ -69,9 +69,9 @@ public interface Transaction {
    */
   short assetScale();
 
-  TransactionStatus status();
+  StreamPaymentStatus status();
 
-  TransactionType type();
+  StreamPaymentType type();
 
   Instant createdAt();
 

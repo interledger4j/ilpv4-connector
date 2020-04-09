@@ -2,10 +2,10 @@ package org.interledger.connector.config;
 
 import static org.interledger.connector.core.ConfigConstants.SPSP__SERVER_SECRET;
 
+import org.interledger.connector.payments.FulfillmentGeneratedEventAggregator;
 import org.interledger.connector.stream.TrackingStreamReceiver;
 import org.interledger.connector.stream.TrackingStreamReceiverLink;
 import org.interledger.connector.stream.TrackingStreamReceiverLinkFactory;
-import org.interledger.connector.transactions.FulfillmentGeneratedEventAggregator;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.link.LinkFactoryProvider;
 import org.interledger.link.PacketRejector;

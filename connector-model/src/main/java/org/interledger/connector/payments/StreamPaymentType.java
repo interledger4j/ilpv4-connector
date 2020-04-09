@@ -1,16 +1,16 @@
-package org.interledger.connector.transactions;
+package org.interledger.connector.payments;
 
 /**
- * Types of {@link Transaction} that the system tracks.
+ * Types of {@link StreamPayment} that the system tracks.
  */
-public enum TransactionType {
+public enum StreamPaymentType {
 
   PAYMENT_RECEIVED(BalanceAdjustmentType.CREDIT),
   PAYMENT_SENT(BalanceAdjustmentType.DEBIT);
 
   private BalanceAdjustmentType adjustmentType;
 
-  TransactionType(BalanceAdjustmentType adjustmentType) {
+  StreamPaymentType(BalanceAdjustmentType adjustmentType) {
     this.adjustmentType = adjustmentType;
   }
 

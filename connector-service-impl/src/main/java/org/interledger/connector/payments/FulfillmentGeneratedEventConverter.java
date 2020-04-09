@@ -1,4 +1,4 @@
-package org.interledger.connector.transactions;
+package org.interledger.connector.payments;
 
 import org.interledger.connector.events.FulfillmentGeneratedEvent;
 import org.interledger.core.InterledgerAddress;
@@ -16,27 +16,27 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 
-public class FulfillmentGeneratedEventConverter implements Converter<FulfillmentGeneratedEvent, Transaction> {
+public class FulfillmentGeneratedEventConverter implements Converter<FulfillmentGeneratedEvent, StreamPayment> {
 
   private static final Set<StreamFrameType> CLOSING_FRAMES = Sets.newHashSet(
     StreamFrameType.ConnectionClose,
     StreamFrameType.StreamClose
   );
 
-  public Transaction convert(FulfillmentGeneratedEvent event) {
-    return Transaction.builder()
+  public StreamPayment convert(FulfillmentGeneratedEvent event) {
+    return StreamPayment.builder()
         .destinationAddress(event.incomingPreparePacket().getDestination())
         .sourceAddress(getSourceAddress(event.streamPacket()))
         .status(getTransactionStatus(event.streamPacket()))
         .packetCount(1)
-        .transactionId(hash(event.incomingPreparePacket().getDestination()))
+        .streamPaymentId(hash(event.incomingPreparePacket().getDestination()))
         .modifiedAt(Instant.now())
         .createdAt(Instant.now())
         .assetScale(event.denomination().assetScale())
         .assetCode(event.denomination().assetCode())
         .amount(event.incomingPreparePacket().getAmount().bigIntegerValue())
         .accountId(event.accountId())
-        .type(TransactionType.PAYMENT_RECEIVED)
+        .type(StreamPaymentType.PAYMENT_RECEIVED)
         .build();
   }
 
@@ -46,13 +46,13 @@ public class FulfillmentGeneratedEventConverter implements Converter<Fulfillment
       .toString();
   }
 
-  private TransactionStatus getTransactionStatus(StreamPacket streamPacket) {
+  private StreamPaymentStatus getTransactionStatus(StreamPacket streamPacket) {
     if (streamPacket.frames().stream()
       .map(StreamFrame::streamFrameType)
       .anyMatch(CLOSING_FRAMES::contains)) {
-      return TransactionStatus.CLOSED_BY_STREAM;
+      return StreamPaymentStatus.CLOSED_BY_STREAM;
     } else {
-      return TransactionStatus.PENDING;
+      return StreamPaymentStatus.PENDING;
     }
   }
 

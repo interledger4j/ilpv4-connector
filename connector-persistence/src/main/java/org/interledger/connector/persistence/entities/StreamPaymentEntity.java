@@ -1,10 +1,11 @@
 package org.interledger.connector.persistence.entities;
 
-import static org.interledger.connector.persistence.entities.DataConstants.TableNames.TRANSACTIONS;
+import static org.interledger.connector.persistence.entities.DataConstants.TableNames.STREAM_PAYMENTS;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.transactions.TransactionStatus;
-import org.interledger.connector.transactions.TransactionType;
+import org.interledger.connector.payments.StreamPayment;
+import org.interledger.connector.payments.StreamPaymentStatus;
+import org.interledger.connector.payments.StreamPaymentType;
 
 import java.math.BigInteger;
 import java.time.Instant;
@@ -19,21 +20,21 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
- * Entity for persisting a transaction. See {@link org.interledger.connector.transactions.Transaction} for
+ * Entity for persisting a transaction. See {@link StreamPayment} for
  * javadoc of each field's meaning.
  */
 @Entity
 @Access(AccessType.FIELD)
-@Table(name = TRANSACTIONS)
+@Table(name = STREAM_PAYMENTS)
 @SuppressWarnings( {"PMD"})
-public class TransactionEntity {
+public class StreamPaymentEntity {
 
   @Id
   @Column(name = "ID")
   private Long id;
 
-  @Column(name = "TRANSACTION_ID")
-  private String transactionId;
+  @Column(name = "STREAM_PAYMENT_ID")
+  private String streamPaymentId;
 
   @Column(name = "ACCOUNT_ID")
   private AccountId accountId;
@@ -58,11 +59,11 @@ public class TransactionEntity {
 
   @Column(name = "STATUS")
   @Enumerated(EnumType.STRING)
-  private TransactionStatus status;
+  private StreamPaymentStatus status;
 
   @Column(name = "TYPE")
   @Enumerated(EnumType.STRING)
-  private TransactionType type;
+  private StreamPaymentType type;
 
   @Column(name = "CREATED_DTTM", nullable = false, updatable = false)
   private Instant createdDate;
@@ -122,12 +123,12 @@ public class TransactionEntity {
   }
 
 
-  public String getTransactionId() {
-    return transactionId;
+  public String getStreamPaymentId() {
+    return streamPaymentId;
   }
 
-  public void setTransactionId(String transactionId) {
-    this.transactionId = transactionId;
+  public void setStreamPaymentId(String streamPaymentId) {
+    this.streamPaymentId = streamPaymentId;
   }
 
   public String getSourceAddress() {
@@ -138,19 +139,19 @@ public class TransactionEntity {
     this.sourceAddress = sourceAddress;
   }
 
-  public TransactionStatus getStatus() {
+  public StreamPaymentStatus getStatus() {
     return status;
   }
 
-  public void setStatus(TransactionStatus status) {
+  public void setStatus(StreamPaymentStatus status) {
     this.status = status;
   }
 
-  public TransactionType getType() {
+  public StreamPaymentType getType() {
     return type;
   }
 
-  public void setType(TransactionType type) {
+  public void setType(StreamPaymentType type) {
     this.type = type;
   }
 
@@ -184,8 +185,8 @@ public class TransactionEntity {
       return false;
     }
 
-    TransactionEntity that = (TransactionEntity) o;
-    return Objects.equals(getTransactionId(), that.getTransactionId());
+    StreamPaymentEntity that = (StreamPaymentEntity) o;
+    return Objects.equals(getStreamPaymentId(), that.getStreamPaymentId());
   }
 
   /**
@@ -196,14 +197,14 @@ public class TransactionEntity {
    */
   @Override
   public int hashCode() {
-    return Objects.hash(getTransactionId());
+    return Objects.hash(getStreamPaymentId());
   }
 
   @Override
   public String toString() {
     return "TransactionEntity{" +
       "id=" + id +
-      ", transactionId='" + transactionId + '\'' +
+      ", streamPaymentId='" + streamPaymentId + '\'' +
       ", accountId=" + accountId +
       ", destinationAddress='" + destinationAddress + '\'' +
       ", assetCode='" + assetCode + '\'' +

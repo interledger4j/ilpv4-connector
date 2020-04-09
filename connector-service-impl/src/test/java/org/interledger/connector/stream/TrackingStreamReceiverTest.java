@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 import org.interledger.codecs.stream.StreamCodecContextFactory;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.events.FulfillmentGeneratedEvent;
-import org.interledger.connector.transactions.FulfillmentGeneratedEventAggregator;
+import org.interledger.connector.payments.FulfillmentGeneratedEventAggregator;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerErrorCode;

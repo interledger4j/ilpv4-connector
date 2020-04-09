@@ -1,4 +1,4 @@
-package org.interledger.connector.transactions;
+package org.interledger.connector.payments;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,22 +52,22 @@ public class FulfillmentGeneratedEventConverterTest {
       .fulfillment(InterledgerFulfillment.of(new byte[32]))
       .build();
 
-    Transaction transaction = converter.convert(event);
-    Transaction expected = Transaction.builder()
+    StreamPayment streamPayment = converter.convert(event);
+    StreamPayment expected = StreamPayment.builder()
       .assetScale(DENOMINATION.assetScale())
       .assetCode(DENOMINATION.assetCode())
-      .status(TransactionStatus.PENDING)
+      .status(StreamPaymentStatus.PENDING)
       .accountId(ACCOUNT_ID)
       .amount(BigInteger.valueOf(amount))
       .packetCount(1)
-      .transactionId(Hashing.sha256().hashString(DESTINATION_ADDRESS.getValue(), StandardCharsets.UTF_8).toString())
+      .streamPaymentId(Hashing.sha256().hashString(DESTINATION_ADDRESS.getValue(), StandardCharsets.UTF_8).toString())
       .destinationAddress(DESTINATION_ADDRESS)
-      .createdAt(transaction.createdAt())
-      .modifiedAt(transaction.modifiedAt())
-      .type(TransactionType.PAYMENT_RECEIVED)
+      .createdAt(streamPayment.createdAt())
+      .modifiedAt(streamPayment.modifiedAt())
+      .type(StreamPaymentType.PAYMENT_RECEIVED)
       .build();
 
-    assertThat(transaction).isEqualTo(expected);
+    assertThat(streamPayment).isEqualTo(expected);
   }
 
   @Test
@@ -88,22 +88,22 @@ public class FulfillmentGeneratedEventConverterTest {
       .fulfillment(InterledgerFulfillment.of(new byte[32]))
       .build();
 
-    Transaction transaction = converter.convert(event);
-    Transaction expected = Transaction.builder()
+    StreamPayment streamPayment = converter.convert(event);
+    StreamPayment expected = StreamPayment.builder()
       .assetScale(DENOMINATION.assetScale())
       .assetCode(DENOMINATION.assetCode())
-      .status(TransactionStatus.CLOSED_BY_STREAM)
+      .status(StreamPaymentStatus.CLOSED_BY_STREAM)
       .accountId(ACCOUNT_ID)
       .amount(BigInteger.valueOf(amount))
       .packetCount(1)
-      .transactionId(Hashing.sha256().hashString(DESTINATION_ADDRESS.getValue(), StandardCharsets.UTF_8).toString())
+      .streamPaymentId(Hashing.sha256().hashString(DESTINATION_ADDRESS.getValue(), StandardCharsets.UTF_8).toString())
       .destinationAddress(DESTINATION_ADDRESS)
-      .createdAt(transaction.createdAt())
-      .modifiedAt(transaction.modifiedAt())
-      .type(TransactionType.PAYMENT_RECEIVED)
+      .createdAt(streamPayment.createdAt())
+      .modifiedAt(streamPayment.modifiedAt())
+      .type(StreamPaymentType.PAYMENT_RECEIVED)
       .build();
 
-    assertThat(transaction).isEqualTo(expected);
+    assertThat(streamPayment).isEqualTo(expected);
   }
 
   @Test
@@ -125,23 +125,23 @@ public class FulfillmentGeneratedEventConverterTest {
       .fulfillment(InterledgerFulfillment.of(new byte[32]))
       .build();
 
-    Transaction transaction = converter.convert(event);
-    Transaction expected = Transaction.builder()
+    StreamPayment streamPayment = converter.convert(event);
+    StreamPayment expected = StreamPayment.builder()
       .assetScale(DENOMINATION.assetScale())
       .assetCode(DENOMINATION.assetCode())
-      .status(TransactionStatus.PENDING)
+      .status(StreamPaymentStatus.PENDING)
       .accountId(ACCOUNT_ID)
       .amount(BigInteger.valueOf(amount))
       .packetCount(1)
-      .transactionId(Hashing.sha256().hashString(DESTINATION_ADDRESS.getValue(), StandardCharsets.UTF_8).toString())
+      .streamPaymentId(Hashing.sha256().hashString(DESTINATION_ADDRESS.getValue(), StandardCharsets.UTF_8).toString())
       .destinationAddress(DESTINATION_ADDRESS)
-      .createdAt(transaction.createdAt())
-      .modifiedAt(transaction.modifiedAt())
+      .createdAt(streamPayment.createdAt())
+      .modifiedAt(streamPayment.modifiedAt())
       .sourceAddress(source)
-      .type(TransactionType.PAYMENT_RECEIVED)
+      .type(StreamPaymentType.PAYMENT_RECEIVED)
       .build();
 
-    assertThat(transaction).isEqualTo(expected);
+    assertThat(streamPayment).isEqualTo(expected);
   }
 
   private InterledgerPreparePacket.AbstractInterledgerPreparePacket preparePacket(long amount) {

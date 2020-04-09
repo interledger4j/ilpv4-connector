@@ -44,7 +44,7 @@ public interface EnabledFeatureSettings {
   }
 
   /**
-   * Which mode to use to aggregate payment transactions.
+   * Which mode to use to aggregate payment payments.
    * @return mode
    */
   default PaymentTransactionMode paymentTransactionMode() {
@@ -80,7 +80,7 @@ public interface EnabledFeatureSettings {
   }
 
   /**
-   * Modes for aggregating payment transactions
+   * Modes for aggregating payment payments
    */
   enum PaymentTransactionMode {
     IN_MEMORY, // aggregate in memory, no durable persistence

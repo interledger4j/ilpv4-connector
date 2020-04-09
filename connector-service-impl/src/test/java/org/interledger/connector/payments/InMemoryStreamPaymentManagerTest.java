@@ -1,4 +1,4 @@
-package org.interledger.connector.transactions;
+package org.interledger.connector.payments;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,15 +16,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class InMemoryPaymentTransactionManagerTest {
+public class InMemoryStreamPaymentManagerTest {
 
   public static final PageRequest DEFAULT_PAGE = PageRequest.of(0, 100);
 
-  private InMemoryPaymentTransactionManager paymentTransactionManager;
+  private InMemoryStreamPaymentnManager paymentTransactionManager;
 
   @Before
   public void setUp() {
-    paymentTransactionManager = new InMemoryPaymentTransactionManager();
+    paymentTransactionManager = new InMemoryStreamPaymentnManager();
   }
 
   @Test
@@ -35,19 +35,19 @@ public class InMemoryPaymentTransactionManagerTest {
       paymentTransactionManager.merge(newTransaction(accountId, generateUuid(), 10));
     }
 
-    List<Transaction> trx1to50 = paymentTransactionManager.findByAccountId(
+    List<StreamPayment> trx1to50 = paymentTransactionManager.findByAccountId(
       accountId, PageRequest.of(0, 50)
     );
 
     assertThat(trx1to50).hasSize(50);
 
-    List<Transaction> trx51To100 = paymentTransactionManager.findByAccountId(
+    List<StreamPayment> trx51To100 = paymentTransactionManager.findByAccountId(
       accountId, PageRequest.of(1, 50)
     );
 
     assertThat(trx51To100).hasSize(50);
 
-    List<Transaction> trx101To125 = paymentTransactionManager.findByAccountId(
+    List<StreamPayment> trx101To125 = paymentTransactionManager.findByAccountId(
       accountId, PageRequest.of(2, 50)
     );
 
@@ -61,37 +61,37 @@ public class InMemoryPaymentTransactionManagerTest {
   @Test
   public void merge() {
     AccountId accountId = AccountId.of(generateUuid());
-    String transactionId = generateUuid();
-    String transactionId2 = generateUuid();
+    String streamPaymentId = generateUuid();
+    String streamPaymentId2 = generateUuid();
 
-    final Transaction entity1 = newTransaction(accountId, transactionId, 10);
+    final StreamPayment entity1 = newTransaction(accountId, streamPaymentId, 10);
 
     paymentTransactionManager.merge(entity1);
 
-    final Transaction loadedAccessTokenEntity =
-      paymentTransactionManager.findByAccountIdAndTransactionId(accountId, transactionId).get();
+    final StreamPayment loadedAccessTokenEntity =
+      paymentTransactionManager.findByAccountIdAndStreamPaymentId(accountId, streamPaymentId).get();
 
     assertEqual(loadedAccessTokenEntity, entity1);
 
-    final Transaction entity2 = newTransaction(accountId, transactionId, 20);
+    final StreamPayment entity2 = newTransaction(accountId, streamPaymentId, 20);
     paymentTransactionManager.merge(entity2);
 
     assertThat(paymentTransactionManager.findByAccountId(accountId, DEFAULT_PAGE)).hasSize(1);
-    Optional<Transaction> transaction1 =
-      paymentTransactionManager.findByAccountIdAndTransactionId(accountId, transactionId);
+    Optional<StreamPayment> transaction1 =
+      paymentTransactionManager.findByAccountIdAndStreamPaymentId(accountId, streamPaymentId);
 
     assertThat(transaction1).isPresent();
     assertThat(transaction1.get().packetCount()).isEqualTo(2);
     assertThat(transaction1.get().amount()).isEqualTo(BigInteger.valueOf(30));
 
-    paymentTransactionManager.merge(newTransaction(accountId, transactionId2, 33));
+    paymentTransactionManager.merge(newTransaction(accountId, streamPaymentId2, 33));
 
     assertThat(paymentTransactionManager.findByAccountId(accountId, DEFAULT_PAGE)).hasSize(2);
 
-    Optional<Transaction> transaction1Again =
-      paymentTransactionManager.findByAccountIdAndTransactionId(accountId, transactionId);
-    Optional<Transaction> transaction2 =
-      paymentTransactionManager.findByAccountIdAndTransactionId(accountId, transactionId2);
+    Optional<StreamPayment> transaction1Again =
+      paymentTransactionManager.findByAccountIdAndStreamPaymentId(accountId, streamPaymentId);
+    Optional<StreamPayment> transaction2 =
+      paymentTransactionManager.findByAccountIdAndStreamPaymentId(accountId, streamPaymentId2);
 
     assertEqual(transaction1Again.get(), transaction1.get());
 
@@ -100,22 +100,22 @@ public class InMemoryPaymentTransactionManagerTest {
     assertThat(transaction2.get().packetCount()).isEqualTo(1);
   }
 
-  private void assertEqual(Transaction loadedAccessTokenEntity, Transaction entity1) {
+  private void assertEqual(StreamPayment loadedAccessTokenEntity, StreamPayment entity1) {
     assertThat(loadedAccessTokenEntity).isEqualTo(entity1);
   }
 
-  private Transaction newTransaction(AccountId accountId, String transactionId, long amount) {
-    return Transaction.builder()
+  private StreamPayment newTransaction(AccountId accountId, String streamPaymentId, long amount) {
+    return StreamPayment.builder()
       .accountId(accountId)
       .sourceAddress(InterledgerAddress.of("test.foo.bar"))
-      .destinationAddress(InterledgerAddress.of("test.foo").with(transactionId))
+      .destinationAddress(InterledgerAddress.of("test.foo").with(streamPaymentId))
       .packetCount(1)
-      .transactionId(transactionId)
+      .streamPaymentId(streamPaymentId)
       .amount(BigInteger.valueOf(amount))
       .assetScale((short) 9)
       .assetCode("XRP")
-      .status(TransactionStatus.PENDING)
-      .type(TransactionType.PAYMENT_RECEIVED)
+      .status(StreamPaymentStatus.PENDING)
+      .type(StreamPaymentType.PAYMENT_RECEIVED)
       .createdAt(Instant.now())
       .modifiedAt(Instant.now())
       .build();
