@@ -1,6 +1,6 @@
 package org.interledger.connector.opa.service.ilp;
 
-import org.interledger.connector.opa.config.settings.OpenPaymentsSettings;
+import org.interledger.connector.opa.config.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;

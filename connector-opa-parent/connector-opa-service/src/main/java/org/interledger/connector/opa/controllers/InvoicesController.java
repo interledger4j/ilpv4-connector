@@ -1,9 +1,8 @@
 package org.interledger.connector.opa.controllers;
 
-import static org.interledger.connector.opa.config.OpenPaymentsConfig.OPEN_PAYMENTS;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-import org.interledger.connector.opa.config.settings.OpenPaymentsSettings;
+import org.interledger.connector.opa.config.OpenPaymentsSettings;
 import org.interledger.connector.opa.controllers.constants.PathConstants;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
@@ -39,6 +38,7 @@ public class InvoicesController {
 
   private static final String APPLICATION_JSON_XRP_OPA_VALUE = "application/json+xrp-opa";
   private static final MediaType APPLICATION_JSON_XRP_OPA = MediaType.valueOf(APPLICATION_JSON_XRP_OPA_VALUE);
+  public static final String OPEN_PAYMENTS = "OPEN_PAYMENTS";
   private final StreamConnectionGenerator streamConnectionGenerator;
   private InvoiceService invoiceService;
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;

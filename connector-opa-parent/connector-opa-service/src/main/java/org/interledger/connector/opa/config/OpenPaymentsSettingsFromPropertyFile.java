@@ -1,4 +1,4 @@
-package org.interledger.connector.opa.config.settings;
+package org.interledger.connector.opa.config;
 
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.core.InterledgerAddress;

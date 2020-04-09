@@ -5,7 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
-import org.interledger.connector.opa.config.settings.OpenPaymentsSettings;
+import org.interledger.connector.opa.config.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.spsp.PaymentPointer;
@@ -45,10 +45,6 @@ public class IlpInvoiceServiceTest {
     );
   }
 
-  ////////////////////
-  // cleanupSpspUrlPath
-  ////////////////////
-
   @Test
   public void cleanupSpspUrlPathWithNullBlankEmpty() {
     assertThat(ilpInvoiceService.cleanupOpaUrlPath(null)).isEmpty();
@@ -80,7 +76,7 @@ public class IlpInvoiceServiceTest {
    */
   @Test
   public void computePaymentTargetIntermediatePrefix() {
-    ilpInvoiceService = new IlpInvoiceService(() -> openPaymentsSettingsMock, paymentPointerResolver, "/opa");
+    ilpInvoiceService = new IlpInvoiceService(() -> openPaymentsSettingsMock, paymentPointerResolver, "/org/interledger/connector/opa");
     assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("")).isEqualTo("");
     assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix(" ")).isEqualTo("");
     assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/")).isEqualTo("");
@@ -93,17 +89,17 @@ public class IlpInvoiceServiceTest {
     assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/foo/bar")).isEqualTo("");
     assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/foo.bar/baz")).isEqualTo("");
     assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/foo.bar/baz/")).isEqualTo("");
-    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/opa")).isEqualTo("");
-    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/opa/")).isEqualTo("");
-    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/opa//")).isEqualTo("");
-    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/opa/foo")).isEqualTo("foo");
-    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/opa/foo/")).isEqualTo("foo");
-    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/opa/foo//")).isEqualTo("foo");
-    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/opa/foo.bar")).isEqualTo("foo.bar");
-    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/opa/foo.bar/")).isEqualTo("foo.bar");
-    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/opa/foo/bar")).isEqualTo("foo.bar");
-    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/opa/foo.bar/baz")).isEqualTo("foo.bar.baz");
-    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/opa/foo.bar/baz/")).isEqualTo("foo.bar.baz");
+    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/org/interledger/connector/opa")).isEqualTo("");
+    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/org/interledger/connector/opa/")).isEqualTo("");
+    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/org/interledger/connector/opa//")).isEqualTo("");
+    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/org/interledger/connector/opa/foo")).isEqualTo("foo");
+    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/org/interledger/connector/opa/foo/")).isEqualTo("foo");
+    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/org/interledger/connector/opa/foo//")).isEqualTo("foo");
+    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/org/interledger/connector/opa/foo.bar")).isEqualTo("foo.bar");
+    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/org/interledger/connector/opa/foo.bar/")).isEqualTo("foo.bar");
+    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/org/interledger/connector/opa/foo/bar")).isEqualTo("foo.bar");
+    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/org/interledger/connector/opa/foo.bar/baz")).isEqualTo("foo.bar.baz");
+    assertThat(ilpInvoiceService.computePaymentTargetIntermediatePrefix("/org/interledger/connector/opa/foo.bar/baz/")).isEqualTo("foo.bar.baz");
   }
 
   @Test

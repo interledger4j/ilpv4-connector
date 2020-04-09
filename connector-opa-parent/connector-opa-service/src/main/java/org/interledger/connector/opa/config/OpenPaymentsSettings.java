@@ -1,4 +1,4 @@
-package org.interledger.connector.opa.config.settings;
+package org.interledger.connector.opa.config;
 
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.core.InterledgerAddress;
@@ -11,6 +11,10 @@ import org.immutables.value.Value;
  */
 @Value.Immutable(intern = true)
 public interface OpenPaymentsSettings {
+
+  static ImmutableOpenPaymentsSettings.Builder builder() {
+    return ImmutableOpenPaymentsSettings.builder();
+  }
 
   /**
    * The ILP address of the connector that this Open Payments server sits next to.

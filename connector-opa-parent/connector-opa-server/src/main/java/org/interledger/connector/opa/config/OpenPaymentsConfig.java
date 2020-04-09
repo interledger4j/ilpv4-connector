@@ -5,8 +5,6 @@ import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 
 import org.interledger.connector.jackson.ObjectMapperFactory;
-import org.interledger.connector.opa.config.settings.OpenPaymentsSettings;
-import org.interledger.connector.opa.config.settings.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.opa.controllers.converters.InvoiceIdConverter;
 import org.interledger.connector.opa.service.InvoiceService;
 import org.interledger.connector.opa.service.ilp.IlpInvoiceService;
