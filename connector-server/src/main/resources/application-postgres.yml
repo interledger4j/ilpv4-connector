@@ -14,4 +14,4 @@ spring:
 interledger:
   connector:
     enabledFeatures:
-      paymentTransactionMode: in-postgres
+      streamPaymentAggregationMode: in-postgres

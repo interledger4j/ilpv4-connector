@@ -47,8 +47,8 @@ public interface EnabledFeatureSettings {
    * Which mode to use to aggregate payment payments.
    * @return mode
    */
-  default PaymentTransactionMode paymentTransactionMode() {
-    return PaymentTransactionMode.IN_MEMORY;
+  default StreamPaymentAggregationMode streamPaymentAggregationMode() {
+    return StreamPaymentAggregationMode.IN_MEMORY;
   }
 
   @Value.Immutable(intern = true)
@@ -74,15 +74,15 @@ public interface EnabledFeatureSettings {
 
     @Override
     @Value.Default
-    public PaymentTransactionMode paymentTransactionMode() {
-      return PaymentTransactionMode.IN_MEMORY;
+    public StreamPaymentAggregationMode streamPaymentAggregationMode() {
+      return StreamPaymentAggregationMode.IN_MEMORY;
     }
   }
 
   /**
-   * Modes for aggregating payment payments
+   * Modes for aggregating stream payments
    */
-  enum PaymentTransactionMode {
+  enum StreamPaymentAggregationMode {
     IN_MEMORY, // aggregate in memory, no durable persistence
     IN_POSTGRES // aggregate in postgres database
   }

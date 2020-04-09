@@ -10,7 +10,7 @@ public class EnabledFeatureSettingsFromPropertyFile implements EnabledFeatureSet
   private boolean rateLimitingEnabled;
   private boolean require32ByteSharedSecrets;
   private boolean localSpspFulfillmentEnabled;
-  private PaymentTransactionMode paymentTransactionMode;
+  private StreamPaymentAggregationMode streamPaymentAggregationMode;
 
   @Override
   public boolean isRateLimitingEnabled() {
@@ -40,15 +40,15 @@ public class EnabledFeatureSettingsFromPropertyFile implements EnabledFeatureSet
   }
 
   @Override
-  public PaymentTransactionMode paymentTransactionMode() {
-    return paymentTransactionMode;
+  public StreamPaymentAggregationMode streamPaymentAggregationMode() {
+    return streamPaymentAggregationMode;
   }
 
-  public PaymentTransactionMode getPaymentTransactionMode() {
-    return paymentTransactionMode;
+  public StreamPaymentAggregationMode getStreamPaymentAggregationMode() {
+    return streamPaymentAggregationMode;
   }
 
-  public void setPaymentTransactionMode(PaymentTransactionMode paymentTransactionMode) {
-    this.paymentTransactionMode = paymentTransactionMode;
+  public void setStreamPaymentAggregationMode(StreamPaymentAggregationMode streamPaymentAggregationMode) {
+    this.streamPaymentAggregationMode = streamPaymentAggregationMode;
   }
 }

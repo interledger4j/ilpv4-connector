@@ -19,7 +19,7 @@ public enum StreamPaymentType {
   }
 
   /**
-   * Types of changes that a transaction can make to a balance
+   * Types of changes that a stream payment can make to a balance
    */
   enum BalanceAdjustmentType {
     DEBIT,

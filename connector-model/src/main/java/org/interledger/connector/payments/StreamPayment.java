@@ -10,7 +10,8 @@ import java.time.Instant;
 import java.util.Optional;
 
 /**
- *
+ * Payment representing the aggregation of STREAM packets that have been sent or received as part of a STREAM
+ * payment.
  */
 @Value.Immutable
 public interface StreamPayment {
@@ -20,13 +21,13 @@ public interface StreamPayment {
   }
 
   /**
-   * Reference Id for transaction. Locally unique by accountId.
+   * Unique id for stream payment. Locally unique by accountId.
    * @return
    */
   String streamPaymentId();
 
   /**
-   * AccountId that this transaction is attached to.
+   * AccountId that this stream payment is attached to.
    * @return
    */
   AccountId accountId();
@@ -45,36 +46,52 @@ public interface StreamPayment {
   InterledgerAddress destinationAddress();
 
   /**
-   * Amount (in assetScale) of the accountId's account settings at the time the transaction was created.
+   * Amount (in assetScale) of the accountId's account settings at the time the stream payment was created.
    * @return
    */
   BigInteger amount();
 
   /**
-   * Number of ILP packets that were aggregated into this transaction.
+   * Number of ILP packets that were aggregated into this stream payment.
    * @return
    */
   int packetCount();
 
   /**
-   * Asset code of the accountId's account settings at the time the transaction was created.
+   * Asset code of the accountId's account settings at the time the stream payment was created.
    * @return
    */
   String assetCode();
 
 
   /**
-   * Asset scale of the accountId's account settings at the time the transaction was created.
+   * Asset scale of the accountId's account settings at the time the stream payment was created.
    * @return
    */
   short assetScale();
 
+  /**
+   * Status of the stream payment.
+   * @return
+   */
   StreamPaymentStatus status();
 
+  /**
+   * Type of stream payment (e.g. payment sent vs payment received)
+   * @return
+   */
   StreamPaymentType type();
 
+  /**
+   * When first packet on stream payment was received and aggregated into this payment
+   * @return
+   */
   Instant createdAt();
 
+  /**
+   * Last time stream payment was modified, typically as a result of packets being aggregated or a status change.
+   * @return
+   */
   Instant modifiedAt();
 
 }

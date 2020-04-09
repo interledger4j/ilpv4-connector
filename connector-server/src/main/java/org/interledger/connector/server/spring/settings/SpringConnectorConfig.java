@@ -636,7 +636,7 @@ public class SpringConnectorConfig {
   @Bean
   protected StreamPaymentManager streamPaymentManager(Supplier<ConnectorSettings> connectorSettingsSupplier,
                                                       StreamPaymentsRepository streamPaymentsRepository) {
-    switch (connectorSettingsSupplier.get().enabledFeatures().paymentTransactionMode()) {
+    switch (connectorSettingsSupplier.get().enabledFeatures().streamPaymentAggregationMode()) {
       case IN_POSTGRES: return new InDatabaseStreamPaymentManager(
         streamPaymentsRepository,
         new StreamPaymentFromEntityConverter(),
