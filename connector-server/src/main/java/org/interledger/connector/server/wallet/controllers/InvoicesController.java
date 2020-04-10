@@ -9,8 +9,6 @@ import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.connector.server.spring.auth.ilpoverhttp.AuthConstants;
-import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.spsp.StreamConnectionDetails;
@@ -21,13 +19,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -50,25 +46,24 @@ public class InvoicesController {
 
   private static final String APPLICATION_JSON_XRP_OPA_VALUE = "application/json+xrp-opa";
   private static final MediaType APPLICATION_JSON_XRP_OPA = MediaType.valueOf(APPLICATION_JSON_XRP_OPA_VALUE);
-  public static final String OPEN_PAYMENTS = "OPEN_PAYMENTS";
-  private final StreamConnectionGenerator streamConnectionGenerator;
   private InvoiceService invoiceService;
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
-  private ServerSecretSupplier serverSecretSupplier;
+  private final ServerSecretSupplier serverSecretSupplier;
+  private final StreamConnectionGenerator streamConnectionGenerator;
 
   @Autowired
   ObjectMapper objectMapper;
 
   public InvoicesController(
     final InvoiceService invoiceService,
-    @Qualifier(OPEN_PAYMENTS) final StreamConnectionGenerator opaStreamConnectionGenerator,
     final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    final ServerSecretSupplier openPaymentsServerSecretSupplier
-  ) {
+    final ServerSecretSupplier serverSecretSupplier,
+    final StreamConnectionGenerator streamConnectionGenerator
+    ) {
     this.invoiceService = Objects.requireNonNull(invoiceService);
-    this.streamConnectionGenerator = Objects.requireNonNull(opaStreamConnectionGenerator);
+    this.streamConnectionGenerator = Objects.requireNonNull(streamConnectionGenerator);
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
-    this.serverSecretSupplier = Objects.requireNonNull(openPaymentsServerSecretSupplier);
+    this.serverSecretSupplier = Objects.requireNonNull(serverSecretSupplier);
     logger.info("Invoices controller starting the FUCK up");
   }
 

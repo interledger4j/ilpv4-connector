@@ -1,6 +1,5 @@
 package org.interledger.connector.server.spring.controllers;
 
-import static org.interledger.connector.server.wallet.controllers.InvoicesController.OPEN_PAYMENTS;
 import static org.interledger.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
 
 import org.interledger.connector.accounts.AccessTokenManager;
@@ -8,9 +7,6 @@ import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.opa.InvoiceService;
-import org.interledger.connector.opa.model.OpenPaymentsMetadata;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.connector.opa.model.SupportedAssets;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
@@ -20,7 +16,6 @@ import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.settings.properties.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementService;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.link.LinkFactoryProvider;
 import org.interledger.link.PacketRejector;
@@ -33,9 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
-import okhttp3.HttpUrl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -108,11 +101,9 @@ public abstract class AbstractControllerTest {
   protected InvoiceService invoiceServiceMock;
 
   @MockBean
-  @Qualifier(OPEN_PAYMENTS)
   protected StreamConnectionGenerator streamConnectionGeneratorMock;
 
   @MockBean
-  @Qualifier(OPEN_PAYMENTS)
   protected ServerSecretSupplier serverSecretSupplierMock;
 
   @MockBean

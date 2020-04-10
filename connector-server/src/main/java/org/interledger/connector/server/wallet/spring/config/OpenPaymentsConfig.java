@@ -4,16 +4,14 @@ import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.ilp.IlpInvoiceService;
-import org.interledger.connector.opa.ilp.OpaStreamConnectionGenerator;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.settings.properties.OpenPaymentsSettingsFromPropertyFile;
+import org.interledger.connector.settings.properties.converters.HttpUrlPropertyConverter;
 import org.interledger.spsp.PaymentPointerResolver;
-import org.interledger.stream.receiver.StreamConnectionGenerator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
@@ -27,13 +25,10 @@ import java.util.function.Supplier;
 @EnableConfigurationProperties(OpenPaymentsSettingsFromPropertyFile.class)
 @ComponentScan(basePackages = {
   "org.interledger.connector.server.wallet.controllers", // For Wallet
-  "org.interledger.connector.settings.properties.converters" // for HttpUrlConverter
 })
 public class OpenPaymentsConfig {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
-  public static final String OPEN_PAYMENTS = "OPEN_PAYMENTS";
 
   @Autowired
   private ApplicationContext applicationContext;
@@ -44,7 +39,11 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
-  @Qualifier(OPEN_PAYMENTS)
+  public HttpUrlPropertyConverter httpUrlPropertyConverter() {
+    return new HttpUrlPropertyConverter();
+  }
+
+  @Bean
   public InvoiceService ilpInvoiceService(
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     PaymentPointerResolver paymentPointerResolver,
@@ -54,14 +53,8 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
-  @Qualifier(OPEN_PAYMENTS)
   public PaymentPointerResolver opaPaymentPointerResolver() {
     return PaymentPointerResolver.defaultResolver();
   }
 
-  @Bean
-  @Qualifier(OPEN_PAYMENTS)
-  public StreamConnectionGenerator opaStreamConnectionGenerator() {
-    return new OpaStreamConnectionGenerator();
-  }
 }
