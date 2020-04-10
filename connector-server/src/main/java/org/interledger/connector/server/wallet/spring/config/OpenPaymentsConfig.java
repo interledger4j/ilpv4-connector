@@ -26,7 +26,8 @@ import java.util.function.Supplier;
 @Configuration
 @EnableConfigurationProperties(OpenPaymentsSettingsFromPropertyFile.class)
 @ComponentScan(basePackages = {
-  "org.interledger.connector.server.wallet.controllers" // For Wallet
+  "org.interledger.connector.server.wallet.controllers", // For Wallet
+  "org.interledger.connector.settings.properties.converters" // for HttpUrlConverter
 })
 public class OpenPaymentsConfig {
 

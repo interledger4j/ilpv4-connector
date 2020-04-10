@@ -177,6 +177,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS_TOKENS_PATH).authenticated()
       .antMatchers(HttpMethod.DELETE, PathConstants.SLASH_ACCOUNTS_TOKENS_PATH + "/**").authenticated()
       .antMatchers(HttpMethod.GET, METRICS_ENDPOINT_URL_PATH).permitAll() // permitAll if hidden by LB.
+      .antMatchers(HttpMethod.GET, OpenPaymentsPathConstants.OPEN_PAYMENTS_METADATA).permitAll()
       // SPSP (if enabled)
       .requestMatchers(spspRequestMatcher).permitAll()
     ;

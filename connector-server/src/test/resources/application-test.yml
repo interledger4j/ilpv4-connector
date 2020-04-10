@@ -26,6 +26,9 @@ interledger:
           -
             assetCode: "XRP"
             assetScale: 9
+          -
+            assetCode: "USD"
+            assetScale: 2
     globalRoutingSettings:
       # A simulated routing secret, which is a seed used for generating routing table auth values.
       # Represents the plaintext value of `shh`, encrypted.
