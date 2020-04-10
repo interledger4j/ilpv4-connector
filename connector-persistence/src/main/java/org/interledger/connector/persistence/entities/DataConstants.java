@@ -9,6 +9,7 @@ public interface DataConstants {
     String FX_RATE_OVERRIDES = "FX_RATE_OVERRIDES";
     String STATIC_ROUTES = "STATIC_ROUTES";
     String STREAM_PAYMENTS = "STREAM_PAYMENTS";
+    String INVOICES = "INVOICES";
   }
 
   interface ColumnNames {
@@ -25,6 +26,9 @@ public interface DataConstants {
 
     // STATIC_ROUTES
     String ADDRESS_PREFIX = "ADDRESS_PREFIX";
+
+    // INVOICE ID
+    String INVOICE_IDX_COLUMN_NAMES = "INVOICE_ID";
   }
 
   interface IndexNames {
@@ -42,6 +46,9 @@ public interface DataConstants {
 
     // STATIC_ROUTES
     String STATIC_ROUTES_IDX = "STATIC_ROUTES_PREFIX_IDX";
+
+    // INVOICES
+    String INVOICES_ID_IDX = "INVOICES_ID_IDX";
   }
 
   interface ConstraintNames {
