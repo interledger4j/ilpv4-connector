@@ -9,12 +9,14 @@ import org.interledger.connector.persistence.converters.AccessTokenEntityConvert
 import org.interledger.connector.persistence.converters.AccountBalanceSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.AccountSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.FxRateOverridesEntityConverter;
+import org.interledger.connector.persistence.converters.InvoiceEntityConverter;
 import org.interledger.connector.persistence.converters.RateLimitSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.SettlementEngineDetailsEntityConverter;
 import org.interledger.connector.persistence.converters.StaticRouteEntityConverter;
 import org.interledger.connector.server.spring.controllers.converters.OerPreparePacketHttpMessageConverter;
 import org.interledger.connector.server.spring.settings.CodecContextConfig;
 import org.interledger.connector.server.spring.settings.link.IlpOverHttpConfig;
+import org.interledger.connector.server.wallet.controllers.converters.InvoiceIdConverter;
 import org.interledger.encoding.asn.framework.CodecContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +35,7 @@ import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.zalando.problem.ProblemModule;
@@ -88,6 +91,9 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
   @Autowired
   private AccessTokenEntityConverter accessTokenEntityConverter;
 
+  @Autowired
+  private InvoiceEntityConverter invoiceEntityConverter;
+
   ////////////////////////
   // HttpMessageConverters
   ////////////////////////
@@ -139,6 +145,8 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
     registry.addConverter(fxRateOverrideEntityConverter);
     registry.addConverter(staticRouteEntityConverter);
     registry.addConverter(accessTokenEntityConverter);
+    registry.addConverter(invoiceEntityConverter);
+    registry.addConverter(new InvoiceIdConverter());
   }
 
   @VisibleForTesting

@@ -1,32 +1,46 @@
 package org.interledger.connector.server.spring.controllers;
 
+import static org.interledger.connector.server.wallet.controllers.InvoicesController.OPEN_PAYMENTS;
 import static org.interledger.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
 
 import org.interledger.connector.accounts.AccessTokenManager;
 import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.links.LinkSettingsFactory;
+import org.interledger.connector.opa.InvoiceService;
+import org.interledger.connector.opa.model.OpenPaymentsMetadata;
+import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.SupportedAssets;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
+import org.interledger.connector.server.wallet.spring.config.OpenPaymentsConfig;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
+import org.interledger.connector.settings.properties.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementService;
+import org.interledger.core.InterledgerAddress;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.link.LinkFactoryProvider;
 import org.interledger.link.PacketRejector;
+import org.interledger.stream.receiver.ServerSecretSupplier;
+import org.interledger.stream.receiver.StreamConnectionGenerator;
+import org.interledger.stream.receiver.StreamReceiver;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
+import okhttp3.HttpUrl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -90,6 +104,20 @@ public abstract class AbstractControllerTest {
   @MockBean
   protected BuildProperties buildProperties;
 
+  @MockBean
+  protected InvoiceService invoiceServiceMock;
+
+  @MockBean
+  @Qualifier(OPEN_PAYMENTS)
+  protected StreamConnectionGenerator streamConnectionGeneratorMock;
+
+  @MockBean
+  @Qualifier(OPEN_PAYMENTS)
+  protected ServerSecretSupplier serverSecretSupplierMock;
+
+  @MockBean
+  protected StreamReceiver streamReceiverMock;
+
   protected String asJsonString(final Object obj) throws JsonProcessingException {
     return this.objectMapper.writeValueAsString(obj);
   }
@@ -143,12 +171,20 @@ public abstract class AbstractControllerTest {
    * Otherwise, the beans which depend on this bean will not get initialized and the {@link org.springframework.context.ApplicationContext}
    * will not start.
    */
-  @EnableConfigurationProperties(ConnectorSettingsFromPropertyFile.class)
+  @EnableConfigurationProperties({
+    ConnectorSettingsFromPropertyFile.class,
+    OpenPaymentsSettingsFromPropertyFile.class
+  })
+  @Import(OpenPaymentsConfig.class)
   public static class TestConfiguration {
     @Bean
     public Supplier<ConnectorSettings> connectorSettingsSupplier(ConnectorSettingsFromPropertyFile settings) {
       return () -> settings;
     }
 
+    /*@Bean
+    public Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier(OpenPaymentsSettingsFromPropertyFile settings) {
+      return () -> settings;
+    }*/
   }
 }

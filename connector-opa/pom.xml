@@ -7,7 +7,6 @@
     <version>HEAD-SNAPSHOT</version>
   </parent>
 
-  <groupId>org.interledger.connector</groupId>
   <artifactId>connector-opa</artifactId>
 
   <name>Connector :: Open Payments</name>
@@ -42,6 +41,18 @@
     <dependency>
       <groupId>org.zalando</groupId>
       <artifactId>problem</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>ilp-core</artifactId>
+      <version>1.2.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>link-core</artifactId>
+      <version>1.2.0</version>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
 

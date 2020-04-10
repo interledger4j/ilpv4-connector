@@ -17,6 +17,15 @@ interledger:
     spsp:
         urlPath: p
         addressPrefixSegment: spsp-test
+    open-payments:
+      ilpOperatorAddress: "test.connie"
+      metadata:
+        issuer: "https://localhost:8080"
+        authorizationIssuer: "https://localhost:8000"
+        assetsSupported:
+          -
+            assetCode: "XRP"
+            assetScale: 9
     globalRoutingSettings:
       # A simulated routing secret, which is a seed used for generating routing table auth values.
       # Represents the plaintext value of `shh`, encrypted.

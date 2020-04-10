@@ -13,6 +13,7 @@ import org.interledger.connector.server.spring.auth.ilpoverhttp.BearerTokenSecur
 import org.interledger.connector.server.spring.auth.ilpoverhttp.IlpOverHttpAuthenticationProvider;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
 import org.interledger.crypto.ByteArrayUtils;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
@@ -219,6 +220,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .antMatchers(HttpMethod.GET, PathConstants.SLASH_ROUTES_STATIC).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
       .antMatchers(HttpMethod.PUT, PathConstants.SLASH_ROUTES_STATIC_PREFIX).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
       .antMatchers(HttpMethod.DELETE, PathConstants.SLASH_ROUTES_STATIC_PREFIX).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+
+      .antMatchers(HttpMethod.OPTIONS, OpenPaymentsPathConstants.SLASH_INVOICE + "/**").hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
       // encrypted
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ENCRYPTION + "/**").hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
 
