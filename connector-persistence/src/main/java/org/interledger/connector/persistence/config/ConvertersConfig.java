@@ -4,6 +4,7 @@ import org.interledger.connector.persistence.converters.AccessTokenEntityConvert
 import org.interledger.connector.persistence.converters.AccountBalanceSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.AccountSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.FxRateOverridesEntityConverter;
+import org.interledger.connector.persistence.converters.InvoiceEntityConverter;
 import org.interledger.connector.persistence.converters.RateLimitSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.SettlementEngineDetailsEntityConverter;
 import org.interledger.connector.persistence.converters.StaticRouteEntityConverter;
@@ -52,4 +53,8 @@ public class ConvertersConfig {
     return new AccessTokenEntityConverter();
   }
 
+  @Bean
+  InvoiceEntityConverter invoiceEntityConverter() {
+    return new InvoiceEntityConverter();
+  }
 }
