@@ -71,6 +71,7 @@
     <module>connector-admin-client</module>
     <module>connector-pubsub</module>
     <module>connector-pubsub-api</module>
+    <module>connector-opa</module>
   </modules>
 
   <profiles>
@@ -195,6 +196,11 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>connector-fxrates</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>connector-opa</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

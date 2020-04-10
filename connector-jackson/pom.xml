@@ -23,6 +23,10 @@
       <artifactId>connector-accounts</artifactId>
     </dependency>
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>connector-opa</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
@@ -88,6 +92,12 @@
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>spsp-core</artifactId>
+      <version>1.2.0</version>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
 
