@@ -89,6 +89,7 @@ import org.interledger.connector.server.spring.settings.javamoney.JavaMoneyConfi
 import org.interledger.connector.server.spring.settings.link.LinkConfig;
 import org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
+import org.interledger.connector.server.wallet.spring.config.OpenPaymentsConfig;
 import org.interledger.connector.server.wallet.spring.config.WalletConfig;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
