@@ -18,6 +18,8 @@ import org.interledger.crypto.JavaKeystoreLoader;
 import org.interledger.crypto.KeyStoreType;
 import org.interledger.crypto.impl.JksEncryptionService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +28,8 @@ import org.springframework.context.annotation.Configuration;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.util.function.Supplier;
+
+import javax.annotation.PostConstruct;
 import javax.crypto.SecretKey;
 
 /**
@@ -34,6 +38,8 @@ import javax.crypto.SecretKey;
 @Configuration
 @ConditionalOnProperty(prefix = INTERLEDGER_CONNECTOR_KEYSTORE_JKS, name = ENABLED, havingValue = TRUE)
 public class JksCryptoConfig {
+
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   @Value("${" + INTERLEDGER_CONNECTOR_KEYSTORE_JKS_FILENAME + "}")
   private String jksFilename;
@@ -69,8 +75,9 @@ public class JksCryptoConfig {
   }
 
   @Bean
-  ConnectorEncryptionService jksConnectorEncryptionService(EncryptionService encryptionService,
-                                                        Supplier<ConnectorSettings> connectorSettings) {
+  ConnectorEncryptionService jksConnectorEncryptionService(
+    EncryptionService encryptionService, Supplier<ConnectorSettings> connectorSettings
+  ) {
     return new DefaultConnectorEncryptionService(encryptionService,
       KeyStoreType.JKS,
       jksFilename,
@@ -78,4 +85,16 @@ public class JksCryptoConfig {
       EncryptionAlgorithm.AES_GCM);
   }
 
+  @PostConstruct
+  public void init() {
+    // Log a warning if the default JKS filename and/or password is being used.
+    if ("crypto/crypto.p12".equals(jksFilename)) {
+      logger.warn("\n###################\n"
+        + "WARNING: Connector is using the DEV-MODE Java Keystore (JKS). The keys in this file are publicly known and "
+        + "should not be used in a production environment. Consider using a different JKS file or use a KMS. Consult "
+        + "the documentation for more details."
+        + "\n###################"
+      );
+    }
+  }
 }

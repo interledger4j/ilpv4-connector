@@ -48,6 +48,7 @@ import java.util.Map;
 @Configuration
 @EnableCaching
 public class IdempotenceCacheConfig extends CachingConfigurerSupport {
+
   // Used to store Idempotent ResponseEntity data for `/settlements` requests...
   // NOTE: This is both the cache name (in the JVM) as well as the prefix for the Redis key.
   public static final String SETTLEMENT_IDEMPOTENCE = "settlement_idempotence";
@@ -102,10 +103,12 @@ public class IdempotenceCacheConfig extends CachingConfigurerSupport {
           .build();
       } catch (RedisConnectionFailureException e) {
         logger.warn(
-          "Unable to communicate with Redis (HINT: Is Redis running on its configured port, by default 6379?). Using an" +
-            " in-memory cache instead. Note that the SettlementController requires a Cache for idempotent request " +
-            "tracking. If this Connector is running in an HA environment, a distributed cache such as Redis is " +
-            "required to avoid duplicate settlement engine requests."
+          "\n#############################\n"
+            + "WARNING: Using in-memory Settlement Cache. Unable to communicate with Redis (HINT: Is Redis running on"
+            + " its configured port, by default 6379?). Note that the SettlementController requires a Cache for  "
+            + "idempotent request tracking. If this Connector is running in an HA environment, a distributed cache "
+            + "such as Redis is required to avoid duplicate settlement engine requests.\n"
+            + "#############################"
         );
         return new SimpleCacheManager();
       }
