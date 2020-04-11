@@ -15,8 +15,10 @@ interledger:
     enabledFeatures:
       localSpspFulfillmentEnabled: true
     spsp:
-        urlPath: p
-        addressPrefixSegment: spsp-test
+      urlPath: p
+      addressPrefixSegment: spsp-test
+      # For testing only.
+      serverSecret: aQLR5IWAGV2vKnBhnFFsl2cXOCh9u0IWz3PiA64KlJ8=
     globalRoutingSettings:
       # A simulated routing secret, which is a seed used for generating routing table auth values.
       # Represents the plaintext value of `shh`, encrypted.
