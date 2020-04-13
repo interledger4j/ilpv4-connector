@@ -3,7 +3,7 @@ package org.interledger.connector.server.wallet.spring.config;
 import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 
 import org.interledger.connector.opa.InvoiceService;
-import org.interledger.connector.opa.ilp.IlpInvoiceService;
+import org.interledger.connector.wallet.IlpInvoiceService;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.settings.properties.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.settings.properties.converters.HttpUrlPropertyConverter;

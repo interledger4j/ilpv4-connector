@@ -222,7 +222,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .antMatchers(HttpMethod.PUT, PathConstants.SLASH_ROUTES_STATIC_PREFIX).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
       .antMatchers(HttpMethod.DELETE, PathConstants.SLASH_ROUTES_STATIC_PREFIX).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
 
+      // Open Payments
       .antMatchers(HttpMethod.OPTIONS, OpenPaymentsPathConstants.SLASH_INVOICE + "/**").hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+
       // encrypted
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ENCRYPTION + "/**").hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
 
