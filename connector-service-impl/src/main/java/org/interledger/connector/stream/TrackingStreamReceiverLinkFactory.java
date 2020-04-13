@@ -6,7 +6,6 @@ import org.interledger.link.LinkFactory;
 import org.interledger.link.LinkId;
 import org.interledger.link.LinkSettings;
 import org.interledger.link.LinkType;
-import org.interledger.link.PacketRejector;
 import org.interledger.link.exceptions.LinkException;
 
 import com.google.common.base.Preconditions;
@@ -19,19 +18,14 @@ import java.util.function.Supplier;
  */
 public class TrackingStreamReceiverLinkFactory implements LinkFactory {
 
-  private final PacketRejector packetRejector;
   private final TrackingStreamReceiverSupplier trackingStreamReceiverSupplier;
 
   /**
    * Required-args Constructor.
    *
-   * @param packetRejector                 An instance of {@link PacketRejector}.
    * @param trackingStreamReceiverSupplier A supplier for a {@link TrackingStreamReceiver}
    */
-  public TrackingStreamReceiverLinkFactory(
-    final PacketRejector packetRejector, final TrackingStreamReceiverSupplier trackingStreamReceiverSupplier
-  ) {
-    this.packetRejector = Objects.requireNonNull(packetRejector, "packetRejector must not be null");
+  public TrackingStreamReceiverLinkFactory(final TrackingStreamReceiverSupplier trackingStreamReceiverSupplier) {
     this.trackingStreamReceiverSupplier = Objects
       .requireNonNull(trackingStreamReceiverSupplier, "trackingStreamReceiverSupplier must not be null");
   }

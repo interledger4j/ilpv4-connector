@@ -34,18 +34,23 @@ public class GcpCryptoConfig {
   private String gcpKeyringId;
 
   @Bean
-  GcpEncryptionService gcpEncryptionService(GcpProjectIdProvider gcpProjectIdProvider, CredentialsProvider credentialsProvider) {
+  GcpEncryptionService gcpEncryptionService(
+    GcpProjectIdProvider gcpProjectIdProvider, CredentialsProvider credentialsProvider
+  ) {
     return new GcpEncryptionService(gcpProjectIdProvider.getProjectId(), gcpLocationId, credentialsProvider);
   }
 
   @Bean
-  ConnectorEncryptionService gcpConnectorEncryptionService(EncryptionService encryptionService,
-                                                        Supplier<ConnectorSettings> connectorSettings) {
-    return new DefaultConnectorEncryptionService(encryptionService,
+  ConnectorEncryptionService gcpConnectorEncryptionService(
+    EncryptionService encryptionService, Supplier<ConnectorSettings> connectorSettings
+  ) {
+    return new DefaultConnectorEncryptionService(
+      encryptionService,
       KeyStoreType.GCP,
       gcpKeyringId,
       connectorSettings.get().keys(),
-      EncryptionAlgorithm.GOOGLE_SYMMETRIC);
+      EncryptionAlgorithm.GOOGLE_SYMMETRIC
+    );
   }
 
 }

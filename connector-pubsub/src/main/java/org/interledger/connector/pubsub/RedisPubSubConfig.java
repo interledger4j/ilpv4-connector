@@ -45,8 +45,7 @@ public class RedisPubSubConfig {
 
   @Bean
   RedisMessageListenerContainer coordinationMessageListenerContainer() {
-    RedisMessageListenerContainer container
-      = new RedisMessageListenerContainer();
+    RedisMessageListenerContainer container = new RedisMessageListenerContainer();
     container.setConnectionFactory(lettuceConnectionFactory);
     container.addMessageListener(coordinationMessageListener(), coordinationTopic());
     return container;
