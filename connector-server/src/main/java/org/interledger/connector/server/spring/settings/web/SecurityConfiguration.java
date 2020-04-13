@@ -178,6 +178,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .antMatchers(HttpMethod.DELETE, PathConstants.SLASH_ACCOUNTS_TOKENS_PATH + "/**").authenticated()
       .antMatchers(HttpMethod.GET, METRICS_ENDPOINT_URL_PATH).permitAll() // permitAll if hidden by LB.
       .antMatchers(HttpMethod.GET, OpenPaymentsPathConstants.OPEN_PAYMENTS_METADATA).permitAll()
+
+      // Open Payments Invoices.  All open for now.
+      // TODO: put this in a request matcher to disable when opa is not enabled?
+      .antMatchers(HttpMethod.OPTIONS, OpenPaymentsPathConstants.SLASH_INVOICE + "/**").permitAll()
+      .antMatchers(HttpMethod.GET, OpenPaymentsPathConstants.SLASH_INVOICE + "/**").permitAll()
+      .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.SLASH_INVOICE + "/**").permitAll()
       // SPSP (if enabled)
       .requestMatchers(spspRequestMatcher).permitAll()
     ;
@@ -221,9 +227,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .antMatchers(HttpMethod.GET, PathConstants.SLASH_ROUTES_STATIC).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
       .antMatchers(HttpMethod.PUT, PathConstants.SLASH_ROUTES_STATIC_PREFIX).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
       .antMatchers(HttpMethod.DELETE, PathConstants.SLASH_ROUTES_STATIC_PREFIX).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
-
-      // Open Payments
-      .antMatchers(HttpMethod.OPTIONS, OpenPaymentsPathConstants.SLASH_INVOICE + "/**").hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
 
       // encrypted
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ENCRYPTION + "/**").hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)

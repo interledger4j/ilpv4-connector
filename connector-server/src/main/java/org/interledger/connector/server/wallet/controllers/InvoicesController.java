@@ -151,7 +151,8 @@ public class InvoicesController {
       final StreamConnectionDetails streamDetailsWithInvoiceIdTag =
         StreamConnectionDetails.builder()
           .from(streamConnectionDetails)
-          .destinationAddress(streamConnectionDetails.destinationAddress().with("~" + encodedInvoiceId))
+          .destinationAddress(InterledgerAddress
+            .of(streamConnectionDetails.destinationAddress().getValue() + "~" + encodedInvoiceId))
           .build();
 
       final HttpHeaders headers = new HttpHeaders();

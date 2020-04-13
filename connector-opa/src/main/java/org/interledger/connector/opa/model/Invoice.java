@@ -95,7 +95,10 @@ public interface Invoice {
    *
    * @return An {@link UnsignedLong} representing the amount that has been paid to this invoice.
    */
-  UnsignedLong received();
+  @Value.Default
+  default UnsignedLong received() {
+    return UnsignedLong.ZERO;
+  };
 
   /**
    * The identifier of the receiver of the funds from this invoice. For ILP payments this will be a Payment Pointer.
