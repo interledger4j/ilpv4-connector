@@ -155,7 +155,7 @@ public class IlpOpaPaymentService implements OpaPaymentService {
   }
 
   /**
-   * Need this to be extracted to a method so we can spy it from tests.
+   * Need this to be extracted to a method so we can mock SimpleStreamSender in tests
    * @param link
    * @return
    */

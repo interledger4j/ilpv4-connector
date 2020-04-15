@@ -26,3 +26,4 @@ interledger:
           -
             assetCode: "XRP"
             assetScale: 9
+    connector-url: https://test.jc1.dev
