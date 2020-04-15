@@ -182,7 +182,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
 //        .with(httpBasic("admin", "password")).with(csrf())
       )
       .andExpect(status().isOk())
-      .andExpect(jsonPath("$.destination_account").value(destinationAddress.with("~" + encodedInvoiceId).getValue()));
+      .andExpect(jsonPath("$.destination_account").value(destinationAddress.getValue() + "~" + encodedInvoiceId));
   }
 
 }

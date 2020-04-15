@@ -103,6 +103,15 @@ public class InvoicesController {
     return invoiceService.getInvoiceById(invoiceId);
   }
 
+  @RequestMapping(
+    path = OpenPaymentsPathConstants.SLASH_INVOICE,
+    method = RequestMethod.PUT,
+    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+  )
+  public @ResponseBody Invoice updateInvoice(@RequestBody Invoice invoice) {
+    return invoiceService.updateInvoice(invoice);
+  }
+
   /**
    * Generate payment details for any supported payment rail.
    *

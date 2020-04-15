@@ -19,6 +19,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.ConversionService;
 
 import java.util.function.Supplier;
 
@@ -49,14 +50,15 @@ public class OpenPaymentsConfig {
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     PaymentPointerResolver paymentPointerResolver,
     @Value("${" + SPSP__URL_PATH + ":}") final String opaUrlPath,
-    InvoicesRepository invoicesRepository
+    InvoicesRepository invoicesRepository,
+    ConversionService conversionService
   ) {
     return new IlpInvoiceService(
       openPaymentsSettingsSupplier,
       paymentPointerResolver,
       opaUrlPath,
-      invoicesRepository
-    );
+      invoicesRepository,
+      conversionService);
   }
 
   @Bean
