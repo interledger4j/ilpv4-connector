@@ -76,9 +76,9 @@ public class OpenPaymentsConfig {
                                                 final OpenPaymentsClient openPaymentsClient,
                                                 final OkHttpClient okHttpClient,
                                                 final ObjectMapper objectMapper,
-                                                @Value("${interledger.connector.connector-url}") final HttpUrl connectorUrl,
+                                                @Value("${interledger.connector.connector-url}") final String connectorUrl,
                                                 @Value("${interledger.connector.nodeIlpAddress}") final InterledgerAddressPrefix opaAddressPrefix) { // FIXME: Is this the right value, or should we have a separate opa address prefix config value?
-    return new IlpOpaPaymentService(paymentPointerResolver, accountSettingsRepository, openPaymentsClient, okHttpClient, objectMapper, connectorUrl, opaAddressPrefix);
+    return new IlpOpaPaymentService(paymentPointerResolver, accountSettingsRepository, openPaymentsClient, okHttpClient, objectMapper, HttpUrl.parse(connectorUrl), opaAddressPrefix);
   }
 
   @Bean

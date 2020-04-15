@@ -41,3 +41,4 @@ interledger:
         writeTimeoutMillis: 40000
         maxIdleConnections: 10
         keepAliveMinutes: 2
+    connector-url: https://test.jc1.dev
