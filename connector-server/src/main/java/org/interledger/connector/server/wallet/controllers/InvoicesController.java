@@ -59,12 +59,11 @@ public class InvoicesController {
     final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     final ServerSecretSupplier serverSecretSupplier,
     final StreamConnectionGenerator streamConnectionGenerator
-    ) {
+  ) {
     this.invoiceService = Objects.requireNonNull(invoiceService);
     this.streamConnectionGenerator = Objects.requireNonNull(streamConnectionGenerator);
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
     this.serverSecretSupplier = Objects.requireNonNull(serverSecretSupplier);
-    logger.info("Invoices controller starting the FUCK up");
   }
 
   /**

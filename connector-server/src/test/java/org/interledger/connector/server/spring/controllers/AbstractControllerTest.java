@@ -7,6 +7,7 @@ import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.opa.InvoiceService;
+import org.interledger.connector.opa.OpaPaymentService;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
@@ -108,6 +109,9 @@ public abstract class AbstractControllerTest {
 
   @MockBean
   protected StreamReceiver streamReceiverMock;
+
+  @MockBean
+  protected OpaPaymentService ilpOpenPaymentService;
 
   protected String asJsonString(final Object obj) throws JsonProcessingException {
     return this.objectMapper.writeValueAsString(obj);

@@ -45,7 +45,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>connector-jackson</artifactId>
-      <scope>test</scope>
+<!--      <scope>test</scope>-->
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -115,6 +115,10 @@
     <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>codecs-ildcp</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>codecs-ilp</artifactId>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>
@@ -239,6 +243,24 @@
       <artifactId>codecs-stream</artifactId>
       <version>1.2.0</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.github.openfeign</groupId>
+      <artifactId>feign-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.openfeign</groupId>
+      <artifactId>feign-jackson</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>stream-client</artifactId>
+      <version>1.2.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.zalando</groupId>
+      <artifactId>problem</artifactId>
     </dependency>
   </dependencies>
 
