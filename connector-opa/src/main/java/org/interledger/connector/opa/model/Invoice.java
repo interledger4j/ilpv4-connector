@@ -1,5 +1,7 @@
 package org.interledger.connector.opa.model;
 
+import org.interledger.spsp.PaymentPointer;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -13,9 +15,6 @@ import javax.annotation.Nullable;
 /**
  * Represents an amount payable that can be presented to a third party and/or a Mandate to pay.
  */
-@Value.Immutable
-@JsonSerialize(as = ImmutableInvoice.class)
-@JsonDeserialize(as = ImmutableInvoice.class)
 public interface Invoice {
 
   static ImmutableInvoice.Builder builder() {
@@ -32,6 +31,11 @@ public interface Invoice {
   @Value.Default
   default InvoiceId id() {
     return InvoiceId.of(UUID.randomUUID().toString());
+  }
+
+  @Value.Default
+  default PaymentNetwork paymentNetwork() {
+    return PaymentNetwork.ILP;
   }
 
   /**
@@ -153,4 +157,18 @@ public interface Invoice {
   @JsonIgnore
   @Nullable
   Instant finalizedAt();
+
+  @Value.Immutable
+  @JsonSerialize(as = ImmutableInvoice.class)
+  @JsonDeserialize(as = ImmutableInvoice.class)
+  abstract class AbstractInvoice implements Invoice {
+    @Value.Check
+    protected void checkInvoiceSubject() {
+      if (paymentNetwork().equals(PaymentNetwork.ILP)) {
+        PaymentPointer.of(subject());
+      } else {
+        // TODO: PayID.of(subject());
+      }
+    }
+  }
 }

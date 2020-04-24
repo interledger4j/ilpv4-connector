@@ -91,14 +91,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>io.github.openfeign</groupId>
-      <artifactId>feign-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.github.openfeign</groupId>
-      <artifactId>feign-jackson</artifactId>
-    </dependency>
-    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>connector-accounts</artifactId>
     </dependency>
@@ -204,7 +196,6 @@
     <dependency>
       <groupId>io.github.openfeign</groupId>
       <artifactId>feign-jackson</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.github.resilience4j</groupId>
@@ -300,7 +291,6 @@
     <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>stream-client</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.javamoney.moneta</groupId>
@@ -427,7 +417,6 @@
     <dependency>
       <groupId>io.github.openfeign</groupId>
       <artifactId>feign-core</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.cloud</groupId>

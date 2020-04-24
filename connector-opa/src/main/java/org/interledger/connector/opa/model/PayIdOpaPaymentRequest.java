@@ -6,15 +6,15 @@ import com.google.common.primitives.UnsignedLong;
 import org.immutables.value.Value;
 
 @Value.Immutable
-@JsonDeserialize(as = ImmutablePaymentRequest.class)
-@JsonSerialize(as = ImmutablePaymentRequest.class)
-public interface PaymentRequest {
+@JsonDeserialize(as = ImmutablePayIdOpaPaymentRequest.class)
+@JsonSerialize(as = ImmutablePayIdOpaPaymentRequest.class)
+public interface PayIdOpaPaymentRequest {
 
-  static ImmutablePaymentRequest.Builder builder() {
-    return ImmutablePaymentRequest.builder();
+  static ImmutablePayIdOpaPaymentRequest.Builder builder() {
+    return ImmutablePayIdOpaPaymentRequest.builder();
   }
 
-  String destinationPaymentPointer();
+  String destinationPayId();
   UnsignedLong amount();
 
 }

@@ -6,6 +6,7 @@ import static org.interledger.connector.core.ConfigConstants.TRUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.opa.InvoiceService;
+import org.interledger.connector.opa.PaymentDetailsService;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
@@ -49,6 +50,8 @@ public class InvoicesController {
   private InvoiceService invoiceService;
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
   private final ServerSecretSupplier serverSecretSupplier;
+  private final PaymentDetailsService ilpPaymentDetailsService;
+  private final PaymentDetailsService payIdPaymentDetailsService;
   private final StreamConnectionGenerator streamConnectionGenerator;
 
   @Autowired
@@ -56,11 +59,15 @@ public class InvoicesController {
 
   public InvoicesController(
     final InvoiceService invoiceService,
+    final PaymentDetailsService ilpPaymentDetailsService,
+    final PaymentDetailsService payIdPaymentDetailsService,
     final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     final ServerSecretSupplier serverSecretSupplier,
     final StreamConnectionGenerator streamConnectionGenerator
   ) {
     this.invoiceService = Objects.requireNonNull(invoiceService);
+    this.ilpPaymentDetailsService = Objects.requireNonNull(ilpPaymentDetailsService);
+    this.payIdPaymentDetailsService = Objects.requireNonNull(payIdPaymentDetailsService);
     this.streamConnectionGenerator = Objects.requireNonNull(streamConnectionGenerator);
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
     this.serverSecretSupplier = Objects.requireNonNull(serverSecretSupplier);
@@ -134,25 +141,32 @@ public class InvoicesController {
     @RequestHeader("Accept") String acceptHeaderValue,
     @PathVariable InvoiceId invoiceId
   ) {
+    final HttpHeaders headers = new HttpHeaders();
+    headers.setLocation(getInvoiceLocation(invoiceId));
+
+    // Get the existing invoice
+    final Invoice invoice = invoiceService.getInvoiceById(invoiceId);
+
     // XRP payment details are not supported yet, so just return a bad request status
     if (acceptHeaderValue.equals(APPLICATION_JSON_XRP_OPA_VALUE)) {
-      return new ResponseEntity(HttpStatus.BAD_REQUEST);
+      // Get XRP address from payment pointer and invoiceId
+      final String destinationAddress = payIdPaymentDetailsService.getAddressFromInvoiceSubject(invoice.subject());
+
+      // Encode invoice ID in destination tag.
+      // TODO
+
+      return new ResponseEntity(destinationAddress, headers, HttpStatus.OK);
     } else {
       // Otherwise get ILP payment details
 
-      // Get the existing invoice
-      final Invoice invoice = invoiceService.getInvoiceById(invoiceId);
-
       // Get ILP Address Prefix from payment pointer and invoiceId
-      final String destinationAddress = invoiceService.getAddressFromInvoiceSubject(invoice.subject());
-
-
+      final String destinationAddress = ilpPaymentDetailsService.getAddressFromInvoiceSubject(invoice.subject());
       // Get shared secret and address with connection tag
       final StreamConnectionDetails streamConnectionDetails =
         streamConnectionGenerator.generateConnectionDetails(serverSecretSupplier, InterledgerAddress.of(destinationAddress));
 
       // Base64 encode the invoiceId to add to the connection tag
-      final byte[] invoiceIdBytes = invoiceId.value().toString().getBytes();
+      final byte[] invoiceIdBytes = invoiceId.value().getBytes();
       final String encodedInvoiceId = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceIdBytes);
 
       // Append the encoded invoiceId to the connection tag and return
@@ -162,9 +176,6 @@ public class InvoicesController {
           .destinationAddress(InterledgerAddress
             .of(streamConnectionDetails.destinationAddress().getValue() + "~" + encodedInvoiceId))
           .build();
-
-      final HttpHeaders headers = new HttpHeaders();
-      headers.setLocation(getInvoiceLocation(invoiceId));
 
       return new ResponseEntity(streamDetailsWithInvoiceIdTag, headers, HttpStatus.OK);
     }

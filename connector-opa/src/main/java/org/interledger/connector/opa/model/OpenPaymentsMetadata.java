@@ -35,10 +35,16 @@ public interface OpenPaymentsMetadata {
    * This should be the base URL of the Authorization Server API, and should not give any information
    * on specific endpoints on the AS.
    *
+   * If {@link OpenPaymentsMetadata#issuer()} is also the Authorization Issuer,
+   * this will default to {@link OpenPaymentsMetadata#issuer()}.
+   *
    * @return An {@link HttpUrl} representing the base URL for the Authorization Server.
    */
+  @Value.Default
   @JsonProperty("authorization_issuer")
-  HttpUrl authorizationIssuer();
+  default HttpUrl authorizationIssuer() {
+    return this.issuer();
+  };
 
   /**
    * Endpoint on the AS where the client can create an authorization grant.

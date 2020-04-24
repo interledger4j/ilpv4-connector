@@ -1,76 +1,34 @@
 package org.interledger.connector.wallet;
 
-import org.interledger.connector.opa.InvoiceService;
+import org.interledger.connector.opa.PaymentDetailsService;
 import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
-import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
-import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.HttpUrl;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.core.convert.ConversionService;
 
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public class IlpInvoiceService implements InvoiceService {
+public class IlpPaymentDetailsService implements PaymentDetailsService {
 
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
   private final Optional<String> opaUrlPath;
   private final PaymentPointerResolver paymentPointerResolver;
-  private final InvoicesRepository invoicesRepository;
-  private ConversionService conversionService;
 
-  public IlpInvoiceService(
-    final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    final PaymentPointerResolver paymentPointerResolver,
-    final String opaUrlPath,
-    final InvoicesRepository invoicesRepository,
-    ConversionService conversionService
+  public IlpPaymentDetailsService(
+    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
+    String opaUrlPath,
+    PaymentPointerResolver paymentPointerResolver
   ) {
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
     this.opaUrlPath = PaymentDetailsUtils.cleanupUrlPath(opaUrlPath);
     this.paymentPointerResolver = Objects.requireNonNull(paymentPointerResolver);
-    this.invoicesRepository = Objects.requireNonNull(invoicesRepository);
-    this.conversionService = Objects.requireNonNull(conversionService);
-  }
-
-  @Override
-  public Invoice getInvoiceById(InvoiceId invoiceId) {
-    Objects.requireNonNull(invoiceId);
-
-    return invoicesRepository.findInvoiceByInvoiceId(invoiceId)
-      .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceId));
-  }
-
-  @Override
-  public Invoice createInvoice(Invoice invoice) {
-    Objects.requireNonNull(invoice);
-
-    validateInvoiceSubjectAndComputeAddressSuffix(invoice.subject());
-    return invoicesRepository.saveInvoice(invoice);
-  }
-
-  @Override
-  public Invoice updateInvoice(Invoice invoice) {
-    Objects.requireNonNull(invoice);
-
-    return invoicesRepository.findByInvoiceId(invoice.id())
-      .map(entity -> {
-        // Only allow update of amount received for now.
-        entity.setReceived(invoice.received().longValue());
-        invoicesRepository.save(entity);
-        return entity;
-      })
-      .map(entity -> conversionService.convert(entity, Invoice.class))
-      .orElseThrow(() -> new InvoiceNotFoundProblem(invoice.id()));
   }
 
   @Override

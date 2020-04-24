@@ -29,13 +29,10 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-public class IlpInvoiceServiceTest {
+public class DefaultInvoiceServiceTest {
 
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
-
-  @Mock
-  private OpenPaymentsSettings openPaymentsSettingsMock;
 
   @Mock
   private ConversionService conversionService;
@@ -43,29 +40,16 @@ public class IlpInvoiceServiceTest {
   @Mock
   private InvoicesRepository invoicesRepositoryMock;
 
-  private PaymentPointerResolver paymentPointerResolver;
+  private DefaultInvoiceService defaultInvoiceService;
 
-  private String opaUrlPath;
 
-  private IlpInvoiceService ilpInvoiceService;
-
-  private InterledgerAddress operatorAddress;
 
   @Before
   public void setUp() {
 
     initMocks(this);
 
-    operatorAddress = InterledgerAddress.of("test.jc1");
-    when(openPaymentsSettingsMock.ilpOperatorAddress()).thenReturn(operatorAddress);
-
-    paymentPointerResolver = PaymentPointerResolver.defaultResolver();
-
-    opaUrlPath = "/p/";
-    ilpInvoiceService = new IlpInvoiceService(
-      () -> openPaymentsSettingsMock,
-      paymentPointerResolver,
-      opaUrlPath,
+    defaultInvoiceService = new DefaultInvoiceService(
       invoicesRepositoryMock,
       conversionService);
   }
@@ -83,7 +67,7 @@ public class IlpInvoiceServiceTest {
       .build();
 
     when(invoicesRepositoryMock.findInvoiceByInvoiceId(eq(invoiceMock.id()))).thenReturn(Optional.of(invoiceMock));
-    Invoice invoiceReturned = ilpInvoiceService.getInvoiceById(invoiceMock.id());
+    Invoice invoiceReturned = defaultInvoiceService.getInvoiceById(invoiceMock.id());
     assertThat(invoiceMock).isEqualTo(invoiceReturned);
   }
 
@@ -91,7 +75,7 @@ public class IlpInvoiceServiceTest {
   public void getNonExistentInvoice() {
     when(invoicesRepositoryMock.findInvoiceByInvoiceId(any())).thenReturn(Optional.empty());
     expectedException.expect(InvoiceNotFoundProblem.class);
-    ilpInvoiceService.getInvoiceById(InvoiceId.of(UUID.randomUUID().toString()));
+    defaultInvoiceService.getInvoiceById(InvoiceId.of(UUID.randomUUID().toString()));
   }
 
   @Test
@@ -107,11 +91,11 @@ public class IlpInvoiceServiceTest {
       .build();
 
     when(invoicesRepositoryMock.saveInvoice(eq(invoice))).thenReturn(invoice);
-    Invoice createdInvoice = ilpInvoiceService.createInvoice(invoice);
+    Invoice createdInvoice = defaultInvoiceService.createInvoice(invoice);
     assertThat(invoice).isEqualTo(createdInvoice);
   }
 
-  @Test
+  /*@Test
   public void createInvoiceWithInvalidSubjectNoPath() {
     Invoice invoice = Invoice.builder()
       .accountId("foo")
@@ -125,62 +109,8 @@ public class IlpInvoiceServiceTest {
 
     expectedException.expect(InvalidInvoiceSubjectProblem.class);
     expectedException.expectMessage("Invoice subject did not include user identifying information.");
-    ilpInvoiceService.createInvoice(invoice);
-  }
-
-  @Test
-  public void createInvoiceWithInvalidSubjectPaymentPointer() {
-    Invoice invoice = Invoice.builder()
-      .accountId("foo")
-      .amount(UnsignedLong.valueOf(1000))
-      .assetCode("XRP")
-      .assetScale((short) 9)
-      .subject("wallet.com/p")
-      .expiresAt(Instant.MAX)
-      .received(UnsignedLong.valueOf(1000))
-      .build();
-
-    expectedException.expect(InvalidInvoiceSubjectProblem.class);
-    expectedException.expectMessage("Invoice subject was an invalid Payment Pointer.");
-    ilpInvoiceService.createInvoice(invoice);
-  }
-
-  @Test
-  public void getAddressFromInvoiceSubject() {
-    String subjectPaymentPointer = "$xpring.money/p/foo";
-
-    InterledgerAddress operatorAddress = InterledgerAddress.of("test.jc1");
-    when(openPaymentsSettingsMock.ilpOperatorAddress()).thenReturn(operatorAddress);
-
-    String resolvedAddress = ilpInvoiceService.getAddressFromInvoiceSubject(subjectPaymentPointer);
-    assertThat(resolvedAddress).isEqualTo(operatorAddress.with("foo").getValue());
-  }
-
-  @Test
-  public void getAddressFromInvoiceSubjectWithNoOpaPath() {
-    ilpInvoiceService = new IlpInvoiceService(
-      () -> openPaymentsSettingsMock,
-      paymentPointerResolver,
-      "",
-      invoicesRepositoryMock,
-      conversionService);
-
-    String subjectPaymentPointer = "$xpring.money/foo";
-
-    String resolvedAddress = ilpInvoiceService.getAddressFromInvoiceSubject(subjectPaymentPointer);
-    assertThat(resolvedAddress).isEqualTo(operatorAddress.with("foo").getValue());
-  }
-
-  @Test
-  public void getAddressFromInvalidInvoiceSubject() {
-    String subjectPaymentPointer = "$xpring.money";
-
-    InterledgerAddress operatorAddress = InterledgerAddress.of("test.jc1");
-    when(openPaymentsSettingsMock.ilpOperatorAddress()).thenReturn(operatorAddress);
-
-    expectedException.expect(InvalidInvoiceSubjectProblem.class);
-    ilpInvoiceService.getAddressFromInvoiceSubject(subjectPaymentPointer);
-  }
+    defaultInvoiceService.createInvoice(invoice);
+  }*/
 
   @Test
   public void updateInvoiceWithNewReceivedAmount() {
@@ -193,7 +123,7 @@ public class IlpInvoiceServiceTest {
         .amount(UnsignedLong.valueOf(1000))
         .assetCode("XRP")
         .assetScale((short) 9)
-        .subject("wallet.com/p")
+        .subject("$wallet.com/p")
         .expiresAt(Instant.MAX)
         .received(UnsignedLong.valueOf(0))
         .build()
@@ -205,7 +135,7 @@ public class IlpInvoiceServiceTest {
       .amount(UnsignedLong.valueOf(1000))
       .assetCode("XRP")
       .assetScale((short) 9)
-      .subject("wallet.com/p")
+      .subject("$wallet.com/p")
       .expiresAt(Instant.MAX)
       .received(UnsignedLong.valueOf(1000))
       .build();
@@ -215,7 +145,7 @@ public class IlpInvoiceServiceTest {
     when(invoicesRepositoryMock.findByInvoiceId(eq(invoiceId))).thenReturn(Optional.of(originalInvoiceEntity));
     when(conversionService.convert(eq(updatedInvoiceEntity), eq(Invoice.class))).thenReturn(invoiceToUpdate);
 
-    Invoice updatedInvoice = ilpInvoiceService.updateInvoice(invoiceToUpdate);
+    Invoice updatedInvoice = defaultInvoiceService.updateInvoice(invoiceToUpdate);
     assertThat(updatedInvoice).isEqualTo(invoiceToUpdate);
   }
 
@@ -227,6 +157,6 @@ public class IlpInvoiceServiceTest {
 
     when(invoicesRepositoryMock.findByInvoiceId(eq(invoiceId))).thenReturn(Optional.empty());
     expectedException.expect(InvoiceNotFoundProblem.class);
-    ilpInvoiceService.updateInvoice(invoiceMock);
+    defaultInvoiceService.updateInvoice(invoiceMock);
   }
 }

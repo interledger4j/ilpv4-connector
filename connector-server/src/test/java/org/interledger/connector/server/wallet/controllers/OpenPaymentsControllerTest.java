@@ -1,8 +1,5 @@
 package org.interledger.connector.server.wallet.controllers;
 
-import static org.interledger.connector.settings.properties.OpenPaymentsPathConstants.SLASH_ACCOUNT_ID;
-import static org.interledger.connector.settings.properties.OpenPaymentsPathConstants.SLASH_ILP;
-import static org.interledger.connector.settings.properties.OpenPaymentsPathConstants.SLASH_OPA;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -14,7 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import org.interledger.connector.opa.model.PaymentRequest;
+import org.interledger.connector.opa.model.PayIdOpaPaymentRequest;
 import org.interledger.connector.opa.model.PaymentResponse;
 import org.interledger.connector.server.spring.controllers.AbstractControllerTest;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
@@ -44,7 +41,7 @@ public class OpenPaymentsControllerTest extends AbstractControllerTest {
 
   @Test
   public void sendOpaPayment() throws Exception {
-    PaymentRequest paymentRequest = PaymentRequest.builder()
+    PayIdOpaPaymentRequest payIdOpaPaymentRequest = PayIdOpaPaymentRequest.builder()
       .amount(UnsignedLong.valueOf(1000))
       .destinationPaymentPointer("$example.com/foo")
       .build();
@@ -56,11 +53,11 @@ public class OpenPaymentsControllerTest extends AbstractControllerTest {
       .successfulPayment(true)
       .build();
 
-    when(ilpOpenPaymentService.sendOpaPayment(eq(paymentRequest), eq("foo"), any()))
+    when(ilpOpenPaymentService.sendOpaPayment(eq(payIdOpaPaymentRequest), eq("foo"), any()))
     .thenReturn(paymentResponse);
     mockMvc.perform(post(OpenPaymentsPathConstants.SLASH_ACCOUNTS + "/foo" + OpenPaymentsPathConstants.SLASH_OPA + OpenPaymentsPathConstants.SLASH_ILP)
       .headers(this.testJsonHeaders())
-      .content(objectMapper.writeValueAsString(paymentRequest))
+      .content(objectMapper.writeValueAsString(payIdOpaPaymentRequest))
       .with(httpBasic("admin", "password")).with(csrf())
     )
       .andExpect(status().isOk())

@@ -4,14 +4,17 @@ import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.OpaPaymentService;
+import org.interledger.connector.opa.PaymentDetailsService;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
-import org.interledger.connector.wallet.IlpInvoiceService;
+import org.interledger.connector.wallet.DefaultInvoiceService;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.settings.properties.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.settings.properties.converters.HttpUrlPropertyConverter;
 import org.interledger.connector.wallet.IlpOpaPaymentService;
+import org.interledger.connector.wallet.IlpPaymentDetailsService;
 import org.interledger.connector.wallet.OpenPaymentsClient;
+import org.interledger.connector.wallet.PayIdPaymentDetailsService;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.spsp.PaymentPointerResolver;
 
@@ -29,7 +32,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.ConversionService;
 
-import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 @Configuration
@@ -55,19 +57,25 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
-  public InvoiceService ilpInvoiceService(
-    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    PaymentPointerResolver paymentPointerResolver,
-    @Value("${" + SPSP__URL_PATH + ":}") final String opaUrlPath,
+  public InvoiceService defaultInvoiceService(
     InvoicesRepository invoicesRepository,
     ConversionService conversionService
   ) {
-    return new IlpInvoiceService(
-      openPaymentsSettingsSupplier,
-      paymentPointerResolver,
-      opaUrlPath,
-      invoicesRepository,
-      conversionService);
+    return new DefaultInvoiceService(invoicesRepository, conversionService);
+  }
+
+  @Bean
+  public PaymentDetailsService ilpPaymentDetailsService(
+    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
+    PaymentPointerResolver paymentPointerResolver,
+    @Value("${" + SPSP__URL_PATH + ":}") final String opaUrlPath
+  ) {
+    return new IlpPaymentDetailsService(openPaymentsSettingsSupplier, opaUrlPath, paymentPointerResolver);
+  }
+
+  @Bean
+  public PaymentDetailsService payIdPaymentDetailsService() {
+    return new PayIdPaymentDetailsService();
   }
 
   @Bean
