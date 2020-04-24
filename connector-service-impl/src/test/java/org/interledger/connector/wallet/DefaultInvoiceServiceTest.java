@@ -10,6 +10,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
@@ -55,7 +56,7 @@ public class DefaultInvoiceServiceTest {
   }
 
   @Test
-  public void getExistingInvoice() {
+  public void getExistingIlpInvoice() {
     Invoice invoiceMock = Invoice.builder()
       .accountId("foo")
       .amount(UnsignedLong.valueOf(1000))
@@ -79,7 +80,7 @@ public class DefaultInvoiceServiceTest {
   }
 
   @Test
-  public void createValidInvoice() {
+  public void createValidIlpInvoice() {
     Invoice invoice = Invoice.builder()
       .accountId("foo")
       .amount(UnsignedLong.valueOf(1000))
@@ -113,7 +114,7 @@ public class DefaultInvoiceServiceTest {
   }*/
 
   @Test
-  public void updateInvoiceWithNewReceivedAmount() {
+  public void updateInvoiceIlpWithNewReceivedAmount() {
     InvoiceId invoiceId = InvoiceId.of(UUID.randomUUID().toString());
 
     InvoiceEntity originalInvoiceEntity = new InvoiceEntity(
@@ -150,7 +151,7 @@ public class DefaultInvoiceServiceTest {
   }
 
   @Test
-  public void updateInvoiceNotFound() {
+  public void updateIlpInvoiceNotFound() {
     InvoiceId invoiceId = InvoiceId.of(UUID.randomUUID().toString());
     Invoice invoiceMock = mock(Invoice.class);
     when(invoiceMock.id()).thenReturn(invoiceId);
@@ -158,5 +159,97 @@ public class DefaultInvoiceServiceTest {
     when(invoicesRepositoryMock.findByInvoiceId(eq(invoiceId))).thenReturn(Optional.empty());
     expectedException.expect(InvoiceNotFoundProblem.class);
     defaultInvoiceService.updateInvoice(invoiceMock);
+  }
+
+  @Test
+  public void getExistingXrpInvoice() {
+    Invoice invoiceMock = Invoice.builder()
+      .accountId("foo")
+      .amount(UnsignedLong.valueOf(1000))
+      .assetCode("XRP")
+      .paymentNetwork(PaymentNetwork.XRPL)
+      .assetScale((short) 9)
+      .subject("foo$wallet.com")
+      .expiresAt(Instant.MAX)
+      .received(UnsignedLong.valueOf(1000))
+      .build();
+
+    when(invoicesRepositoryMock.findInvoiceByInvoiceId(eq(invoiceMock.id()))).thenReturn(Optional.of(invoiceMock));
+    Invoice invoiceReturned = defaultInvoiceService.getInvoiceById(invoiceMock.id());
+    assertThat(invoiceMock).isEqualTo(invoiceReturned);
+  }
+
+  @Test
+  public void createValidXrpInvoice() {
+    Invoice invoice = Invoice.builder()
+      .accountId("foo")
+      .amount(UnsignedLong.valueOf(1000))
+      .assetCode("XRP")
+      .assetScale((short) 9)
+      .subject("foo$wallet.com")
+      .expiresAt(Instant.MAX)
+      .received(UnsignedLong.valueOf(1000))
+      .paymentNetwork(PaymentNetwork.XRPL)
+      .build();
+
+    when(invoicesRepositoryMock.saveInvoice(eq(invoice))).thenReturn(invoice);
+    Invoice createdInvoice = defaultInvoiceService.createInvoice(invoice);
+    assertThat(invoice).isEqualTo(createdInvoice);
+  }
+
+  /*@Test
+  public void createInvoiceWithInvalidSubjectNoPath() {
+    Invoice invoice = Invoice.builder()
+      .accountId("foo")
+      .amount(UnsignedLong.valueOf(1000))
+      .assetCode("XRP")
+      .assetScale((short) 9)
+      .subject("$wallet.com/p")
+      .expiresAt(Instant.MAX)
+      .received(UnsignedLong.valueOf(1000))
+      .build();
+
+    expectedException.expect(InvalidInvoiceSubjectProblem.class);
+    expectedException.expectMessage("Invoice subject did not include user identifying information.");
+    defaultInvoiceService.createInvoice(invoice);
+  }*/
+
+  @Test
+  public void updateInvoiceXrpWithNewReceivedAmount() {
+    InvoiceId invoiceId = InvoiceId.of(UUID.randomUUID().toString());
+
+    InvoiceEntity originalInvoiceEntity = new InvoiceEntity(
+      Invoice.builder()
+        .id(invoiceId)
+        .accountId("foo")
+        .amount(UnsignedLong.valueOf(1000))
+        .assetCode("XRP")
+        .assetScale((short) 9)
+        .subject("foo$wallet.com")
+        .expiresAt(Instant.MAX)
+        .received(UnsignedLong.valueOf(0))
+        .paymentNetwork(PaymentNetwork.XRPL)
+        .build()
+    );
+
+    Invoice invoiceToUpdate = Invoice.builder()
+      .id(invoiceId)
+      .accountId("foo")
+      .amount(UnsignedLong.valueOf(1000))
+      .assetCode("XRP")
+      .assetScale((short) 9)
+      .subject("foo$wallet.com")
+      .expiresAt(Instant.MAX)
+      .received(UnsignedLong.valueOf(1000))
+      .paymentNetwork(PaymentNetwork.XRPL)
+      .build();
+
+    InvoiceEntity updatedInvoiceEntity = new InvoiceEntity(invoiceToUpdate);
+
+    when(invoicesRepositoryMock.findByInvoiceId(eq(invoiceId))).thenReturn(Optional.of(originalInvoiceEntity));
+    when(conversionService.convert(eq(updatedInvoiceEntity), eq(Invoice.class))).thenReturn(invoiceToUpdate);
+
+    Invoice updatedInvoice = defaultInvoiceService.updateInvoice(invoiceToUpdate);
+    assertThat(updatedInvoice).isEqualTo(invoiceToUpdate);
   }
 }

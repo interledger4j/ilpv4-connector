@@ -36,8 +36,14 @@ public class InvoiceRepositoryTest {
   private InvoicesRepository invoicesRepository;
 
   @Test
-  public void saveGetSaveGetDeleteGet() {
-    Invoice invoice = SampleObjectUtils.createNewInvoice();
+  public void saveGetSaveGetDeleteGetIlpInvoice() {
+    Invoice invoice = SampleObjectUtils.createNewIlpInvoice();
+    saveAndGetInvoice(invoice);
+  }
+
+  @Test
+  public void saveGetSaveGetDeleteGetXrpInvoice() {
+    Invoice invoice = SampleObjectUtils.createNewXrpInvoice();
     saveAndGetInvoice(invoice);
   }
 

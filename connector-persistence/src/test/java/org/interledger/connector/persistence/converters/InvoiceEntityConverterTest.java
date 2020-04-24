@@ -14,7 +14,7 @@ public class InvoiceEntityConverterTest {
   public void convert() {
     InvoiceEntityConverter converter = new InvoiceEntityConverter();
 
-    Invoice invoice = SampleObjectUtils.createNewInvoice();
+    Invoice invoice = SampleObjectUtils.createNewIlpInvoice();
 
     InvoiceEntity entity = new InvoiceEntity(invoice);
     Invoice converted = converter.convert(entity);

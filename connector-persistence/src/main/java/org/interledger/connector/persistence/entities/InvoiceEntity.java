@@ -24,7 +24,7 @@ import javax.persistence.Table;
 @Table(name = INVOICES, indexes = {
   @Index(name = INVOICES_ID_IDX, columnList = INVOICE_IDX_COLUMN_NAMES)
 })
-@SuppressWarnings( {"PMD"})
+@SuppressWarnings({"PMD"})
 public class InvoiceEntity extends AbstractEntity {
 
   @Id
@@ -63,10 +63,13 @@ public class InvoiceEntity extends AbstractEntity {
   @Column(name = "FINALIZED_AT")
   private Instant finalizedAt;
 
+  @Column(name = "PAYMENT_NETWORK")
+  private String paymentNetwork;
+
   /**
    * For Hibernate
    */
-  InvoiceEntity() {}
+  public InvoiceEntity() {}
 
   public InvoiceEntity(final Invoice invoice) {
     Objects.requireNonNull(invoice);
@@ -80,6 +83,7 @@ public class InvoiceEntity extends AbstractEntity {
     this.invoiceId = invoice.id().value();
     this.received = invoice.received().longValue();
     this.subject = invoice.subject();
+    this.paymentNetwork = invoice.paymentNetwork().toString();
   }
 
   public Long getId() {
@@ -168,6 +172,14 @@ public class InvoiceEntity extends AbstractEntity {
 
   public void setFinalizedAt(Instant finalizedAt) {
     this.finalizedAt = finalizedAt;
+  }
+
+  public String getPaymentNetwork() {
+    return paymentNetwork;
+  }
+
+  public void setPaymentNetwork(String paymentNetwork) {
+    this.paymentNetwork = paymentNetwork;
   }
 
   @Override
