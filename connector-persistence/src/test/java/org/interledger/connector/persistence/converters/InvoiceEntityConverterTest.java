@@ -11,10 +11,23 @@ import org.junit.Test;
 public class InvoiceEntityConverterTest {
 
   @Test
-  public void convert() {
+  public void convertIlpInvoice() {
     InvoiceEntityConverter converter = new InvoiceEntityConverter();
 
     Invoice invoice = SampleObjectUtils.createNewIlpInvoice();
+
+    InvoiceEntity entity = new InvoiceEntity(invoice);
+    Invoice converted = converter.convert(entity);
+
+    assertThat(converted).isEqualToIgnoringGivenFields(invoice, "createdAt", "updatedAt");
+    assertThat(entity).isEqualTo(new InvoiceEntity(converted));
+  }
+
+  @Test
+  public void convertXrpInvoice() {
+    InvoiceEntityConverter converter = new InvoiceEntityConverter();
+
+    Invoice invoice = SampleObjectUtils.createNewXrpInvoice();
 
     InvoiceEntity entity = new InvoiceEntity(invoice);
     Invoice converted = converter.convert(entity);

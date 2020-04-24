@@ -10,6 +10,7 @@ import org.interledger.connector.opa.PaymentDetailsService;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.spsp.StreamConnectionDetails;
@@ -45,8 +46,6 @@ import java.util.function.Supplier;
 public class InvoicesController {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  private static final String APPLICATION_JSON_XRP_OPA_VALUE = "application/json+xrp-opa";
-  private static final MediaType APPLICATION_JSON_XRP_OPA = MediaType.valueOf(APPLICATION_JSON_XRP_OPA_VALUE);
   private InvoiceService invoiceService;
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
   private final ServerSecretSupplier serverSecretSupplier;
@@ -135,10 +134,9 @@ public class InvoicesController {
   @RequestMapping(
     path = OpenPaymentsPathConstants.SLASH_INVOICE + "/{invoiceId}",
     method = RequestMethod.OPTIONS,
-    produces = {APPLICATION_JSON_XRP_OPA_VALUE, APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody ResponseEntity getPaymentDetails(
-    @RequestHeader("Accept") String acceptHeaderValue,
     @PathVariable InvoiceId invoiceId
   ) {
     final HttpHeaders headers = new HttpHeaders();
@@ -148,7 +146,7 @@ public class InvoicesController {
     final Invoice invoice = invoiceService.getInvoiceById(invoiceId);
 
     // XRP payment details are not supported yet, so just return a bad request status
-    if (acceptHeaderValue.equals(APPLICATION_JSON_XRP_OPA_VALUE)) {
+    if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
       // Get XRP address from payment pointer and invoiceId
       final String destinationAddress = payIdPaymentDetailsService.getAddressFromInvoiceSubject(invoice.subject());
 

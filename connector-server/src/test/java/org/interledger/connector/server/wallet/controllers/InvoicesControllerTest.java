@@ -158,14 +158,14 @@ public class InvoicesControllerTest extends AbstractControllerTest {
   }
 
   @Test
-  public void getPaymentDetailsForInvoice() throws Exception {
+  public void getPaymentDetailsForIlpInvoice() throws Exception {
     InvoiceId invoiceId = InvoiceId.of("66ce60d8-f4ba-4c60-ba6e-fc5e0aa99923");
     String encodedInvoiceId = "NjZjZTYwZDgtZjRiYS00YzYwLWJhNmUtZmM1ZTBhYTk5OTIz";
 
     Invoice mockInvoice = mock(Invoice.class);
     when(invoiceServiceMock.getInvoiceById(invoiceId)).thenReturn(mockInvoice);
     when(mockInvoice.subject()).thenReturn("$foo.bar/baz");
-    when(invoiceServiceMock.getAddressFromInvoiceSubject(mockInvoice.subject())).thenReturn("test.foo.bar.123456");
+    when(ilpPaymentDetailsService.getAddressFromInvoiceSubject(mockInvoice.subject())).thenReturn("test.foo.bar.123456");
 
     InterledgerAddress destinationAddress = InterledgerAddress.of("test.foo.bar.123456");
     StreamConnectionDetails streamConnectionDetails = StreamConnectionDetails.builder()
