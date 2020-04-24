@@ -12,6 +12,8 @@ import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PaymentNetwork;
+import org.interledger.connector.opa.model.XrpPayment;
+import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.spsp.StreamConnectionDetails;
@@ -39,6 +41,7 @@ import org.zalando.problem.spring.common.MediaTypes;
 import java.net.URI;
 import java.util.Base64;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 @RestController
@@ -110,21 +113,41 @@ public class InvoicesController {
   }
 
   /**
-   * This doesnt do what we want it to do.  Should be onXrpPayment or onIlpPayment and determine if an Invoice needs
-   * to be updated.
+   * Endpoint to notify the Open Payments Server that an XRP payment has been received on the XRPL.
    *
-   * Ledger listeners can call this endpoint to notify the OPS that a payment has been received.
+   * The Open Payments Server will then decode the destination tag of the receiver's address and determine
+   * if the payment was meant for an Invoice.
    *
-   * @param invoice
-   * @return
+   * @param xrpPayment an {@link XrpPayment} containing details about the received payment.
+   * @return The Invoice that was updated as a result of an XRP payment, or empty if the payment was not meant for
+   *          an invoice.
    */
   @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_INVOICE,
-    method = RequestMethod.PUT,
+    path = OpenPaymentsPathConstants.SLASH_INVOICE + "/payment/xrp",
+    method = RequestMethod.POST,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public @ResponseBody Invoice updateInvoice(@RequestBody Invoice invoice) {
-    return invoiceService.updateInvoice(invoice);
+  public Optional<Invoice> onXrpPayment(@RequestBody XrpPayment xrpPayment) {
+    return Optional.empty();
+  }
+
+  /**
+   * Endpoint to notify the Open Payments Server that ILP payment has been received.
+   *
+   * The Open Payments Server will then decode the connection tag of the destination address and determine
+   * if the payment was meant for an Invoice.
+   *
+   * @param streamPayment a {@link StreamPayment} containing details about the received ILP payment.
+   * @return The Invoice that was updated as a result of an ILP payment, or empty if the payment was not meant for
+   *          an invoice.
+   */
+  @RequestMapping(
+    path = OpenPaymentsPathConstants.SLASH_INVOICE + "/payment/ilp",
+    method = RequestMethod.POST,
+    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+  )
+  public Optional<Invoice> onIlpPayment(@RequestBody StreamPayment streamPayment) {
+    return Optional.empty();
   }
 
   /**
