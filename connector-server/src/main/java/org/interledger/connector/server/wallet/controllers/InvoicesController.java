@@ -7,6 +7,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.PaymentDetailsService;
+import org.interledger.connector.opa.model.ImmutableInvoice;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
@@ -108,6 +109,15 @@ public class InvoicesController {
     return invoiceService.getInvoiceById(invoiceId);
   }
 
+  /**
+   * This doesnt do what we want it to do.  Should be onXrpPayment or onIlpPayment and determine if an Invoice needs
+   * to be updated.
+   *
+   * Ledger listeners can call this endpoint to notify the OPS that a payment has been received.
+   *
+   * @param invoice
+   * @return
+   */
   @RequestMapping(
     path = OpenPaymentsPathConstants.SLASH_INVOICE,
     method = RequestMethod.PUT,

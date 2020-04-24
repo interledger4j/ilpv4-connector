@@ -3,7 +3,6 @@ package org.interledger.connector.server.wallet.spring.config;
 import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 
 import org.interledger.connector.opa.InvoiceService;
-import org.interledger.connector.opa.OpaPaymentService;
 import org.interledger.connector.opa.PaymentDetailsService;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
@@ -11,10 +10,9 @@ import org.interledger.connector.wallet.DefaultInvoiceService;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.settings.properties.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.settings.properties.converters.HttpUrlPropertyConverter;
-import org.interledger.connector.wallet.IlpOpaPaymentService;
 import org.interledger.connector.wallet.IlpPaymentDetailsService;
 import org.interledger.connector.wallet.OpenPaymentsClient;
-import org.interledger.connector.wallet.PayIdPaymentDetailsService;
+import org.interledger.connector.wallet.XrpPaymentDetailsService;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.spsp.PaymentPointerResolver;
 
@@ -75,20 +73,9 @@ public class OpenPaymentsConfig {
 
   @Bean
   public PaymentDetailsService payIdPaymentDetailsService() {
-    return new PayIdPaymentDetailsService();
+    return new XrpPaymentDetailsService();
   }
-
-  @Bean
-  public OpaPaymentService ilpOpaPaymentService(final PaymentPointerResolver paymentPointerResolver,
-                                                final AccountSettingsRepository accountSettingsRepository,
-                                                final OpenPaymentsClient openPaymentsClient,
-                                                final OkHttpClient okHttpClient,
-                                                final ObjectMapper objectMapper,
-                                                @Value("${interledger.connector.connector-url}") final String connectorUrl,
-                                                @Value("${interledger.connector.nodeIlpAddress}") final InterledgerAddressPrefix opaAddressPrefix) { // FIXME: Is this the right value, or should we have a separate opa address prefix config value?
-    return new IlpOpaPaymentService(paymentPointerResolver, accountSettingsRepository, openPaymentsClient, okHttpClient, objectMapper, HttpUrl.parse(connectorUrl), opaAddressPrefix);
-  }
-
+  
   @Bean
   public OpenPaymentsClient openPaymentsClient() {
     return OpenPaymentsClient.construct();

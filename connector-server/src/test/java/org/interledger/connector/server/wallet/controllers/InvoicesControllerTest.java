@@ -134,7 +134,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       .andExpect(jsonPath("$.description").value(invoiceMock.description()));
   }
 
-  @Test
+  /*@Test
   public void createInvoiceInvalidSubjectPaymentPointer() throws Exception {
     Invoice invoiceMock = Invoice.builder()
       .accountId("foo")
@@ -155,7 +155,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
         .content(objectMapper.writeValueAsString(invoiceMock))
       )
       .andExpect(status().isBadRequest());
-  }
+  }*/
 
   @Test
   public void getPaymentDetailsForIlpInvoice() throws Exception {

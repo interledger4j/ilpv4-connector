@@ -5,36 +5,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.jackson.ObjectMapperFactory;
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.OpenPaymentsMetadata;
-import org.interledger.connector.opa.model.PayIdOpaPaymentRequest;
-import org.interledger.connector.opa.model.PaymentResponse;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
-import org.interledger.core.SharedSecret;
 import org.interledger.spsp.PaymentPointerResolver;
-import org.interledger.spsp.StreamConnectionDetails;
-import org.interledger.stream.SendMoneyResult;
-import org.interledger.stream.sender.SimpleStreamSender;
 
-import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.junit.Before;
-import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-
-import java.time.Instant;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 public class IlpOpaPaymentServiceTest {
 

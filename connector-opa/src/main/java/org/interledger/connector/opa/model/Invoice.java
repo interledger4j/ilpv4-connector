@@ -15,6 +15,8 @@ import javax.annotation.Nullable;
 /**
  * Represents an amount payable that can be presented to a third party and/or a Mandate to pay.
  */
+@JsonSerialize(as = ImmutableInvoice.class)
+@JsonDeserialize(as = ImmutableInvoice.class)
 public interface Invoice {
 
   static ImmutableInvoice.Builder builder() {

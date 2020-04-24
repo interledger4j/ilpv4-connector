@@ -7,8 +7,6 @@ import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.opa.InvoiceService;
-import org.interledger.connector.opa.OpaPaymentService;
-import org.interledger.connector.opa.PaymentDetailsService;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
@@ -19,7 +17,7 @@ import org.interledger.connector.settings.properties.ConnectorSettingsFromProper
 import org.interledger.connector.settings.properties.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.connector.wallet.IlpPaymentDetailsService;
-import org.interledger.connector.wallet.PayIdPaymentDetailsService;
+import org.interledger.connector.wallet.XrpPaymentDetailsService;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.link.LinkFactoryProvider;
 import org.interledger.link.PacketRejector;
@@ -120,7 +118,7 @@ public abstract class AbstractControllerTest {
   protected IlpPaymentDetailsService ilpPaymentDetailsService;
 
   @MockBean
-  protected PayIdPaymentDetailsService payIdPaymentDetailsService;
+  protected XrpPaymentDetailsService xrpPaymentDetailsService;
 
   protected String asJsonString(final Object obj) throws JsonProcessingException {
     return this.objectMapper.writeValueAsString(obj);
