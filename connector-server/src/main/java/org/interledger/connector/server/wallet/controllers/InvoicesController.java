@@ -7,12 +7,12 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.PaymentDetailsService;
-import org.interledger.connector.opa.model.ImmutableInvoice;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.XrpPayment;
+import org.interledger.connector.opa.model.problems.InvoicePaymentDetailsProblem;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
 import org.interledger.core.InterledgerAddress;
@@ -20,24 +20,26 @@ import org.interledger.spsp.StreamConnectionDetails;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.spring.common.MediaTypes;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.Base64;
 import java.util.Objects;
@@ -56,9 +58,7 @@ public class InvoicesController {
   private final PaymentDetailsService ilpPaymentDetailsService;
   private final PaymentDetailsService payIdPaymentDetailsService;
   private final StreamConnectionGenerator streamConnectionGenerator;
-
-  @Autowired
-  ObjectMapper objectMapper;
+  private final OkHttpClient okHttpClient;
 
   public InvoicesController(
     final InvoiceService invoiceService,
@@ -66,7 +66,8 @@ public class InvoicesController {
     final PaymentDetailsService payIdPaymentDetailsService,
     final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     final ServerSecretSupplier serverSecretSupplier,
-    final StreamConnectionGenerator streamConnectionGenerator
+    final StreamConnectionGenerator streamConnectionGenerator,
+    final OkHttpClient okHttpClient
   ) {
     this.invoiceService = Objects.requireNonNull(invoiceService);
     this.ilpPaymentDetailsService = Objects.requireNonNull(ilpPaymentDetailsService);
@@ -74,6 +75,7 @@ public class InvoicesController {
     this.streamConnectionGenerator = Objects.requireNonNull(streamConnectionGenerator);
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
     this.serverSecretSupplier = Objects.requireNonNull(serverSecretSupplier);
+    this.okHttpClient = Objects.requireNonNull(okHttpClient);
   }
 
   /**
@@ -209,6 +211,47 @@ public class InvoicesController {
           .build();
 
       return new ResponseEntity(streamDetailsWithInvoiceIdTag, headers, HttpStatus.OK);
+    }
+  }
+
+  /**
+   * A sender's client will need to get a receiver's payment details in order to pay an invoice. However, if this
+   * client is a browser, they will not be able to do an OPTIONS call directly on the invoice subject's Open Payments
+   * Server if the sender UI and receiver OPS are hosted on different domains (CORS).
+   *
+   * This endpoint allows a client to get payment details for an invoice from a receiver's OPS by essentially making
+   * the OPTIONS request for them.
+   *
+   * @param invoiceLocation The unique HTTP URL of the invoice.
+   * @return A {@link ResponseEntity} containing the payment details for the payment rail specified in the Invoice.
+   */
+  @RequestMapping(
+    path = OpenPaymentsPathConstants.SLASH_INVOICE + "/{invoiceLocation}",
+    method = RequestMethod.OPTIONS,
+    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+  )
+  public @ResponseBody ResponseEntity getPaymentDetailsFromReceiver(
+    @PathVariable("invoiceLocation") String invoiceLocation
+  ) {
+    Request request = new Request.Builder()
+      .url(invoiceLocation)
+      .method("OPTIONS", null)
+      .build();
+
+    try (Response response = okHttpClient.newCall(request).execute()) {
+      if (!response.isSuccessful()) {
+        throw new InvoicePaymentDetailsProblem(HttpUrl.parse(invoiceLocation), response.code());
+      }
+
+      final HttpHeaders headers = new HttpHeaders();
+      headers.setLocation(URI.create(invoiceLocation));
+      return new ResponseEntity(response.body().string(), headers, HttpStatus.OK);
+    } catch (IOException e) {
+      throw new InvoicePaymentDetailsProblem(
+        "Unable to make payment details request to invoice location.",
+        HttpUrl.parse(invoiceLocation),
+        500
+      );
     }
   }
 
