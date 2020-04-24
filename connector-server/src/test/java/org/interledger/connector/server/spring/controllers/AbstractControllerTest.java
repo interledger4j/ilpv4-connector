@@ -112,9 +112,6 @@ public abstract class AbstractControllerTest {
   protected StreamReceiver streamReceiverMock;
 
   @MockBean
-  protected OpaPaymentService ilpOpenPaymentService;
-
-  @MockBean
   protected IlpPaymentDetailsService ilpPaymentDetailsService;
 
   @MockBean
