@@ -128,7 +128,7 @@ public class InvoicesController {
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public Optional<Invoice> onXrpPayment(@RequestBody XrpPayment xrpPayment) {
-    return Optional.empty();
+    return invoiceService.onPayment(xrpPayment);
   }
 
   /**
@@ -147,7 +147,7 @@ public class InvoicesController {
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public Optional<Invoice> onIlpPayment(@RequestBody StreamPayment streamPayment) {
-    return Optional.empty();
+    return invoiceService.onPayment(streamPayment);
   }
 
   /**

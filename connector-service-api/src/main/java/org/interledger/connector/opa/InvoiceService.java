@@ -3,6 +3,10 @@ package org.interledger.connector.opa;
 
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
+import org.interledger.connector.opa.model.XrpPayment;
+import org.interledger.connector.payments.StreamPayment;
+
+import java.util.Optional;
 
 /**
  * Service layer interface for dealing with {@link Invoice}s in different Open Payments flows.
@@ -26,10 +30,18 @@ public interface InvoiceService {
   Invoice createInvoice(final Invoice invoice);
 
   /**
-   * Update an existing invoice.
+   * Execute any actions necessary in the event of a received XRP payment.
    *
-   * @param invoice An {@link Invoice} with a non-null {@code Invoice#invoiceId} and some changed data.
-   * @return The updated invoice.
+   * @param xrpPayment An {@link XrpPayment} with details about the XRP payment.
+   * @return The updated invoice, if the XRP payment was determined to be for an invoice, otherwise empty.
    */
-  Invoice updateInvoice(final Invoice invoice);
+  Optional<Invoice> onPayment(final XrpPayment xrpPayment);
+
+  /**
+   * Execute any actions necessary in the event of a received ILP STREAM payment.
+   *
+   * @param streamPayment A {@link StreamPayment} with details about the ILP payment.
+   * @return The updated invoice, if the ILP payment was determined to be for an invoice, otherwise empty.
+   */
+  Optional<Invoice> onPayment(final StreamPayment streamPayment);
 }

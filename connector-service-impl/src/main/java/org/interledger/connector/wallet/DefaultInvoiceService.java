@@ -4,8 +4,10 @@ import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
+import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.spsp.PaymentPointer;
@@ -49,17 +51,12 @@ public class DefaultInvoiceService implements InvoiceService {
   }
 
   @Override
-  public Invoice updateInvoice(Invoice invoice) {
-    Objects.requireNonNull(invoice);
+  public Optional<Invoice> onPayment(XrpPayment xrpPayment) {
+    return Optional.empty();
+  }
 
-    return invoicesRepository.findByInvoiceId(invoice.id())
-      .map(entity -> {
-        // Only allow update of amount received for now.
-        entity.setReceived(invoice.received().longValue());
-        invoicesRepository.save(entity);
-        return entity;
-      })
-      .map(entity -> conversionService.convert(entity, Invoice.class))
-      .orElseThrow(() -> new InvoiceNotFoundProblem(invoice.id()));
+  @Override
+  public Optional<Invoice> onPayment(StreamPayment streamPayment) {
+    return Optional.empty();
   }
 }
