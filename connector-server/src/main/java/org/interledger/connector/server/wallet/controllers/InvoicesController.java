@@ -194,12 +194,11 @@ public class InvoicesController {
         // Get XRP address from payment pointer and invoiceId
         final String destinationAddress = xrpPaymentDetailsService.getAddressFromInvoiceSubject(invoice.subject());
 
-        // Encode invoice ID in destination tag.
-        // TODO
         XrpPaymentDetails xrpPaymentDetails = XrpPaymentDetails.builder()
           .address(destinationAddress)
-          .destinationTag("faketag")
+          .destinationTag(invoice.paymentIdentifier().get())
           .build();
+
         return new ResponseEntity(xrpPaymentDetails, headers, HttpStatus.OK);
       } catch (RuntimeException e) {
         throw new InvoicePaymentDetailsProblem(e.getCause().getMessage(), invoiceId);

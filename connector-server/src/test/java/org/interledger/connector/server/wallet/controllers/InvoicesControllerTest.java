@@ -207,12 +207,14 @@ public class InvoicesControllerTest extends AbstractControllerTest {
   @Test
   public void getXrpPaymentDetailsForOwnInvoice() throws Exception {
     InvoiceId invoiceId = InvoiceId.of("66ce60d8-f4ba-4c60-ba6e-fc5e0aa99923");
+    int destinationTag = 1234;
 
     Invoice mockInvoice = mock(Invoice.class);
     when(invoiceServiceMock.getInvoiceById(invoiceId)).thenReturn(mockInvoice);
     when(mockInvoice.subject()).thenReturn("foo$example.com");
     when(mockInvoice.accountId()).thenReturn(Optional.of("foo$example.com"));
     when(mockInvoice.paymentNetwork()).thenReturn(PaymentNetwork.XRPL);
+    when(mockInvoice.paymentIdentifier()).thenReturn(Optional.of(destinationTag));
     String destinationAddress = "afieuwnfasiudhfqepqjnecvapjnsd";
     when(xrpPaymentDetailsService.getAddressFromInvoiceSubject(mockInvoice.subject())).thenReturn(destinationAddress); // I'm aware this isnt an XRP address...
 
@@ -222,7 +224,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       )
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.address").value(destinationAddress))
-      .andExpect(jsonPath("$.destinationTag").value("faketag"));
+      .andExpect(jsonPath("$.destinationTag").value(destinationTag));
   }
 
   @Test
@@ -248,9 +250,10 @@ public class InvoicesControllerTest extends AbstractControllerTest {
     when(mockMetadata.invoicesEndpoint()).thenReturn(invoicesEndpoint);
 
     String destinationAddress = "afieuwnfasiudhfqepqjnecvapjnsd";
+    int destinationTag = 123456;
     XrpPaymentDetails xrpPaymentDetails = XrpPaymentDetails.builder()
       .address(destinationAddress)
-      .destinationTag("faketag")
+      .destinationTag(destinationTag)
       .build();
     when(openPaymentsClient.getXrpInvoicePaymentDetails(eq(invoicesEndpoint.uri()), eq(invoiceId.value())))
       .thenReturn(xrpPaymentDetails);
@@ -261,6 +264,6 @@ public class InvoicesControllerTest extends AbstractControllerTest {
         .headers(this.testJsonHeaders())
       )
       .andExpect(jsonPath("$.address").value(destinationAddress))
-      .andExpect(jsonPath("$.destinationTag").value("faketag"));
+      .andExpect(jsonPath("$.destinationTag").value(destinationTag));
   }
 }
