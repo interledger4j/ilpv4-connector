@@ -58,6 +58,9 @@
       <column name="PAYMENT_NETWORK" type="VARCHAR(10)">
         <constraints nullable="false"/>
       </column>
+      <column name="PAYMENT_ID" type="BIGINT">
+        <constraints nullable="true"/>
+      </column>
     </createTable>
     <createIndex indexName="INVOICES_ID_IDX"
                  tableName="INVOICES">

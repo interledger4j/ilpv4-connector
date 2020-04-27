@@ -5,6 +5,7 @@ import org.interledger.spsp.PaymentPointer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedLong;
 import org.immutables.value.Value;
 
@@ -42,7 +43,7 @@ public interface Invoice {
     return PaymentNetwork.ILP;
   }
 
-//  Optional<Integer> destinationTag();
+  Optional<Integer> paymentIdentifier();
 
   /**
    * Currency code or other asset identifier that this invoice is denominated in.
@@ -172,12 +173,24 @@ public interface Invoice {
   @JsonDeserialize(as = ImmutableInvoice.class)
   abstract class AbstractInvoice implements Invoice {
     @Value.Check
-    protected void checkInvoiceSubject() {
+    protected AbstractInvoice checkInvoiceSubject() {
       if (paymentNetwork().equals(PaymentNetwork.ILP)) {
         PaymentPointer.of(subject());
       } else {
         // TODO: PayID.of(subject());
       }
+
+      return this;
+    }
+
+    @Value.Check
+    protected AbstractInvoice checkDestinationTag() {
+      if (!paymentNetwork().equals(PaymentNetwork.ILP)) {
+        Preconditions.checkArgument(paymentIdentifier().isPresent(),
+          "Payment Identifier must be present for all non-ILP invoices."
+        );
+      }
+      return this;
     }
   }
 }
