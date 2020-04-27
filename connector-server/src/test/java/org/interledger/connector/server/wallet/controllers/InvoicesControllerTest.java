@@ -15,6 +15,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
+import org.interledger.connector.opa.model.OpenPaymentsMetadata;
+import org.interledger.connector.opa.model.PaymentNetwork;
+import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.server.spring.controllers.AbstractControllerTest;
@@ -27,6 +30,7 @@ import org.interledger.stream.crypto.Random;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.UnsignedLong;
+import okhttp3.HttpUrl;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,7 +76,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       .perform(get(OpenPaymentsPathConstants.SLASH_INVOICE + PathConstants.SLASH + invoiceMock.id())
         .headers(this.testJsonHeaders()))
       .andExpect(status().isOk())
-      .andExpect(jsonPath("$.accountId").value(invoiceMock.accountId()))
+      .andExpect(jsonPath("$.accountId").value(invoiceMock.accountId().get()))
       .andExpect(jsonPath("$.amount").value(invoiceMock.amount().longValue()))
       .andExpect(jsonPath("$.assetCode").value(invoiceMock.assetCode()))
       .andExpect(jsonPath("$.assetScale").value((int) invoiceMock.assetScale()))
@@ -111,7 +115,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       .assetCode("XRP")
       .assetScale((short) 9)
       .subject("$wallet.com/foo")
-      .expiresAt(Instant.MAX)
+//      .expiresAt(Instant.MAX)
       .received(UnsignedLong.valueOf(1000))
       .description("Test invoice")
       .build();
@@ -124,7 +128,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
         .content(objectMapper.writeValueAsString(invoiceMock))
       )
       .andExpect(status().isCreated())
-      .andExpect(jsonPath("$.accountId").value(invoiceMock.accountId()))
+      .andExpect(jsonPath("$.accountId").value(invoiceMock.accountId().get()))
       .andExpect(jsonPath("$.amount").value(invoiceMock.amount().longValue()))
       .andExpect(jsonPath("$.assetCode").value(invoiceMock.assetCode()))
       .andExpect(jsonPath("$.assetScale").value((int) invoiceMock.assetScale()))
@@ -134,37 +138,16 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       .andExpect(jsonPath("$.description").value(invoiceMock.description()));
   }
 
-  /*@Test
-  public void createInvoiceInvalidSubjectPaymentPointer() throws Exception {
-    Invoice invoiceMock = Invoice.builder()
-      .accountId("foo")
-      .amount(UnsignedLong.valueOf(1000))
-      .assetCode("XRP")
-      .assetScale((short) 9)
-      .subject("wallet.com$foo")
-      .expiresAt(Instant.MAX)
-      .received(UnsignedLong.valueOf(1000))
-      .description("Test invoice")
-      .build();
-
-    when(invoiceServiceMock.createInvoice(any())).thenThrow(new InvalidInvoiceSubjectProblem(invoiceMock.subject()));
-
-    mockMvc
-      .perform(post(OpenPaymentsPathConstants.SLASH_INVOICE)
-        .headers(this.testJsonHeaders())
-        .content(objectMapper.writeValueAsString(invoiceMock))
-      )
-      .andExpect(status().isBadRequest());
-  }*/
-
   @Test
-  public void getPaymentDetailsForIlpInvoice() throws Exception {
+  public void getPaymentDetailsForOwnIlpInvoice() throws Exception {
     InvoiceId invoiceId = InvoiceId.of("66ce60d8-f4ba-4c60-ba6e-fc5e0aa99923");
     String encodedInvoiceId = "NjZjZTYwZDgtZjRiYS00YzYwLWJhNmUtZmM1ZTBhYTk5OTIz";
 
     Invoice mockInvoice = mock(Invoice.class);
     when(invoiceServiceMock.getInvoiceById(invoiceId)).thenReturn(mockInvoice);
     when(mockInvoice.subject()).thenReturn("$foo.bar/baz");
+    when(mockInvoice.accountId()).thenReturn(Optional.of("$foo.bar/baz"));
+    when(mockInvoice.paymentNetwork()).thenReturn(PaymentNetwork.ILP);
     when(ilpPaymentDetailsService.getAddressFromInvoiceSubject(mockInvoice.subject())).thenReturn("test.foo.bar.123456");
 
     InterledgerAddress destinationAddress = InterledgerAddress.of("test.foo.bar.123456");
@@ -185,4 +168,104 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       .andExpect(jsonPath("$.destination_account").value(destinationAddress.getValue() + "~" + encodedInvoiceId));
   }
 
+  @Test
+  public void getPaymentDetailsForReceiverIlpInvoice() throws Exception {
+    InvoiceId invoiceId = InvoiceId.of("66ce60d8-f4ba-4c60-ba6e-fc5e0aa99923");
+    String encodedInvoiceId = "NjZjZTYwZDgtZjRiYS00YzYwLWJhNmUtZmM1ZTBhYTk5OTIz";
+
+    Invoice mockInvoice = mock(Invoice.class);
+    when(invoiceServiceMock.getInvoiceById(invoiceId)).thenReturn(mockInvoice);
+    when(mockInvoice.subject()).thenReturn("$foo.bar/baz");
+    when(mockInvoice.accountId()).thenReturn(Optional.of("$example.com/foo"));
+    when(mockInvoice.paymentNetwork()).thenReturn(PaymentNetwork.ILP);
+    when(mockInvoice.id()).thenReturn(invoiceId);
+
+    OpenPaymentsMetadata mockMetadata = mock(OpenPaymentsMetadata.class);
+    when(openPaymentsClient.getMetadata(any())).thenReturn(mockMetadata);
+
+    InterledgerAddress destinationAddress = InterledgerAddress.of("test.foo.bar.123456");
+    StreamConnectionDetails streamConnectionDetails = StreamConnectionDetails.builder()
+      .destinationAddress(InterledgerAddress.of(destinationAddress.getValue() + "~" + encodedInvoiceId))
+      .sharedSecret(SharedSecret.of(Random.randBytes(32)))
+      .build();
+
+
+    HttpUrl invoicesEndpoint = new HttpUrl.Builder()
+      .scheme("https")
+      .host("foo.bar")
+      .addPathSegment("invoices")
+      .build();
+
+    when(openPaymentsClient.getIlpInvoicePaymentDetails(eq(invoicesEndpoint.uri()), eq(invoiceId.value())))
+      .thenReturn(streamConnectionDetails);
+
+    when(mockMetadata.invoicesEndpoint()).thenReturn(invoicesEndpoint);
+
+    mockMvc
+      .perform(options(OpenPaymentsPathConstants.SLASH_INVOICE + PathConstants.SLASH + invoiceId)
+          .headers(this.testJsonHeaders())
+      )
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.destination_account").value(destinationAddress.getValue() + "~" + encodedInvoiceId));
+  }
+
+  @Test
+  public void getXrpPaymentDetailsForOwnInvoice() throws Exception {
+    InvoiceId invoiceId = InvoiceId.of("66ce60d8-f4ba-4c60-ba6e-fc5e0aa99923");
+
+    Invoice mockInvoice = mock(Invoice.class);
+    when(invoiceServiceMock.getInvoiceById(invoiceId)).thenReturn(mockInvoice);
+    when(mockInvoice.subject()).thenReturn("foo$example.com");
+    when(mockInvoice.accountId()).thenReturn(Optional.of("foo$example.com"));
+    when(mockInvoice.paymentNetwork()).thenReturn(PaymentNetwork.XRPL);
+    String destinationAddress = "afieuwnfasiudhfqepqjnecvapjnsd";
+    when(payIdPaymentDetailsService.getAddressFromInvoiceSubject(mockInvoice.subject())).thenReturn(destinationAddress); // I'm aware this isnt an XRP address...
+
+    mockMvc
+      .perform(options(OpenPaymentsPathConstants.SLASH_INVOICE + PathConstants.SLASH + invoiceId)
+          .headers(this.testJsonHeaders())
+      )
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.address").value(destinationAddress))
+      .andExpect(jsonPath("$.destinationTag").value("faketag"));
+  }
+
+  @Test
+  public void getXrpPaymentDetailsForReceiverInvoice() throws Exception {
+    InvoiceId invoiceId = InvoiceId.of("66ce60d8-f4ba-4c60-ba6e-fc5e0aa99923");
+
+    Invoice mockInvoice = mock(Invoice.class);
+    when(invoiceServiceMock.getInvoiceById(invoiceId)).thenReturn(mockInvoice);
+    when(mockInvoice.subject()).thenReturn("foo$example.com");
+    when(mockInvoice.accountId()).thenReturn(Optional.of("foo$anotherexample.com"));
+    when(mockInvoice.paymentNetwork()).thenReturn(PaymentNetwork.XRPL);
+    when(mockInvoice.id()).thenReturn(invoiceId);
+
+    OpenPaymentsMetadata mockMetadata = mock(OpenPaymentsMetadata.class);
+    when(openPaymentsClient.getMetadata(any())).thenReturn(mockMetadata);
+
+    HttpUrl invoicesEndpoint = new HttpUrl.Builder()
+      .scheme("https")
+      .host("example.com")
+      .addPathSegment("invoices")
+      .build();
+
+    when(mockMetadata.invoicesEndpoint()).thenReturn(invoicesEndpoint);
+
+    String destinationAddress = "afieuwnfasiudhfqepqjnecvapjnsd";
+    XrpPaymentDetails xrpPaymentDetails = XrpPaymentDetails.builder()
+      .address(destinationAddress)
+      .destinationTag("faketag")
+      .build();
+    when(openPaymentsClient.getXrpInvoicePaymentDetails(eq(invoicesEndpoint.uri()), eq(invoiceId.value())))
+      .thenReturn(xrpPaymentDetails);
+
+
+    mockMvc
+      .perform(options(OpenPaymentsPathConstants.SLASH_INVOICE + PathConstants.SLASH + invoiceId)
+        .headers(this.testJsonHeaders())
+      )
+      .andExpect(jsonPath("$.address").value(destinationAddress))
+      .andExpect(jsonPath("$.destinationTag").value("faketag"));
+  }
 }

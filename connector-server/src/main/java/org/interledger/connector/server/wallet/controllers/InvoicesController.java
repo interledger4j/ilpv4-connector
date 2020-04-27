@@ -9,17 +9,24 @@ import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.PaymentDetailsService;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
+import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.XrpPayment;
+import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.opa.model.problems.InvoicePaymentDetailsProblem;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
+import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.spsp.PaymentPointer;
+import org.interledger.spsp.PaymentPointerResolver;
 import org.interledger.spsp.StreamConnectionDetails;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
+import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
+import feign.FeignException;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -30,7 +37,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -58,7 +64,8 @@ public class InvoicesController {
   private final PaymentDetailsService ilpPaymentDetailsService;
   private final PaymentDetailsService payIdPaymentDetailsService;
   private final StreamConnectionGenerator streamConnectionGenerator;
-  private final OkHttpClient okHttpClient;
+  private final OpenPaymentsClient openPaymentsClient;
+  private final PaymentPointerResolver paymentPointerResolver;
 
   public InvoicesController(
     final InvoiceService invoiceService,
@@ -67,15 +74,17 @@ public class InvoicesController {
     final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     final ServerSecretSupplier serverSecretSupplier,
     final StreamConnectionGenerator streamConnectionGenerator,
-    final OkHttpClient okHttpClient
-  ) {
+    final OpenPaymentsClient openPaymentsClient,
+    final PaymentPointerResolver paymentPointerResolver
+    ) {
     this.invoiceService = Objects.requireNonNull(invoiceService);
     this.ilpPaymentDetailsService = Objects.requireNonNull(ilpPaymentDetailsService);
     this.payIdPaymentDetailsService = Objects.requireNonNull(payIdPaymentDetailsService);
     this.streamConnectionGenerator = Objects.requireNonNull(streamConnectionGenerator);
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
     this.serverSecretSupplier = Objects.requireNonNull(serverSecretSupplier);
-    this.okHttpClient = Objects.requireNonNull(okHttpClient);
+    this.openPaymentsClient = Objects.requireNonNull(openPaymentsClient);
+    this.paymentPointerResolver = Objects.requireNonNull(paymentPointerResolver);
   }
 
   /**
@@ -180,6 +189,11 @@ public class InvoicesController {
     // Get the existing invoice
     final Invoice invoice = invoiceService.getInvoiceById(invoiceId);
 
+    // This invoice is not "ours", so go get the payment details from the receiver's OPS
+    if (!isOurs(invoice)) {
+      return this.getReceiverPaymentDetails(invoice);
+    }
+
     // XRP payment details are not supported yet, so just return a bad request status
     if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
       // Get XRP address from payment pointer and invoiceId
@@ -187,8 +201,11 @@ public class InvoicesController {
 
       // Encode invoice ID in destination tag.
       // TODO
-
-      return new ResponseEntity(destinationAddress, headers, HttpStatus.OK);
+      XrpPaymentDetails xrpPaymentDetails = XrpPaymentDetails.builder()
+        .address(destinationAddress)
+        .destinationTag("faketag")
+        .build();
+      return new ResponseEntity(xrpPaymentDetails, headers, HttpStatus.OK);
     } else {
       // Otherwise get ILP payment details
 
@@ -214,45 +231,53 @@ public class InvoicesController {
     }
   }
 
-  /**
-   * A sender's client will need to get a receiver's payment details in order to pay an invoice. However, if this
-   * client is a browser, they will not be able to do an OPTIONS call directly on the invoice subject's Open Payments
-   * Server if the sender UI and receiver OPS are hosted on different domains (CORS).
-   *
-   * This endpoint allows a client to get payment details for an invoice from a receiver's OPS by essentially making
-   * the OPTIONS request for them.
-   *
-   * @param invoiceLocation The unique HTTP URL of the invoice.
-   * @return A {@link ResponseEntity} containing the payment details for the payment rail specified in the Invoice.
-   */
-  @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_INVOICE + "/{invoiceLocation}",
-    method = RequestMethod.OPTIONS,
-    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
-  )
-  public @ResponseBody ResponseEntity getPaymentDetailsFromReceiver(
-    @PathVariable("invoiceLocation") String invoiceLocation
-  ) {
-    Request request = new Request.Builder()
-      .url(invoiceLocation)
-      .method("OPTIONS", null)
-      .build();
+  protected ResponseEntity getReceiverPaymentDetails(Invoice invoice) {
+    HttpUrl receiverUrl;
+    receiverUrl = resolveSubjectToHttpUrl(invoice.subject());
 
-    try (Response response = okHttpClient.newCall(request).execute()) {
-      if (!response.isSuccessful()) {
-        throw new InvoicePaymentDetailsProblem(HttpUrl.parse(invoiceLocation), response.code());
-      }
+    // Get the invoices endpoint on the receiver
+    OpenPaymentsMetadata metadata = openPaymentsClient.getMetadata(receiverUrl.uri());
 
-      final HttpHeaders headers = new HttpHeaders();
-      headers.setLocation(URI.create(invoiceLocation));
-      return new ResponseEntity(response.body().string(), headers, HttpStatus.OK);
-    } catch (IOException e) {
-      throw new InvoicePaymentDetailsProblem(
-        "Unable to make payment details request to invoice location.",
-        HttpUrl.parse(invoiceLocation),
-        500
-      );
+    // Get and return the correct payment details.
+    if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
+      XrpPaymentDetails xrpInvoicePaymentDetails =
+        openPaymentsClient.getXrpInvoicePaymentDetails(metadata.invoicesEndpoint().uri(), invoice.id().value());
+      return new ResponseEntity(xrpInvoicePaymentDetails, HttpStatus.OK);
+    } else {
+      StreamConnectionDetails ilpInvoicePaymentDetails =
+        openPaymentsClient.getIlpInvoicePaymentDetails(metadata.invoicesEndpoint().uri(), invoice.id().value());
+
+      return new ResponseEntity(ilpInvoicePaymentDetails, HttpStatus.OK);
     }
+  }
+
+  private boolean isOurs(Invoice invoice) {
+    HttpUrl subjectUrl = resolveSubjectToHttpUrl(invoice.subject());
+
+    HttpUrl accountIdUrl = resolveSubjectToHttpUrl(invoice.accountId().orElse(""));
+    if (accountIdUrl != null) {
+      return subjectUrl.host().equals(accountIdUrl.host());
+    }
+
+    return false;
+  }
+  private HttpUrl resolveSubjectToHttpUrl(String subject) {
+    HttpUrl receiverUrl;// Try to parse invoice subject as a Payment Pointer, otherwise assume it's a PayID and parse that.
+    try {
+      PaymentPointer paymentPointer = PaymentPointer.of(subject);
+      receiverUrl = paymentPointerResolver.resolveHttpUrl(paymentPointer);
+    } catch (IllegalArgumentException e) {
+      try {
+        String subjectHost = subject.substring(subject.lastIndexOf("$") + 1);
+        receiverUrl = new HttpUrl.Builder()
+          .scheme("https")
+          .host(subjectHost)
+          .build();
+      } catch (IndexOutOfBoundsException oobe) {
+        return null;
+      }
+    }
+    return receiverUrl;
   }
 
   private URI getInvoiceLocation(InvoiceId invoiceId) {

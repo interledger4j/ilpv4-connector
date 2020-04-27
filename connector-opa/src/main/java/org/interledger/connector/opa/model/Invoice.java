@@ -8,7 +8,10 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.primitives.UnsignedLong;
 import org.immutables.value.Value;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.TemporalAmount;
+import java.util.Optional;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
@@ -83,7 +86,7 @@ public interface Invoice {
    *
    * @return A {@link String} representing the account ID of the user who created this invoice.
    */
-  String accountId();
+  Optional<String> accountId();
 
   /**
    * The amount that should be paid to this invoice, denominated in {@code assetCode()} and {@code assetScale()}.
@@ -119,7 +122,10 @@ public interface Invoice {
    *
    * @return The {@link Instant} at which this invoice is no longer valid.
    */
-  Instant expiresAt();
+  @Value.Default
+  default Instant expiresAt() {
+   return Instant.now().plus(Duration.ofDays(1));
+  };
 
   /**
    * The human readable description of this invoice.

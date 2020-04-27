@@ -1,5 +1,7 @@
 package org.interledger.connector.server.spring.controllers;
 
+import static org.interledger.connector.server.wallet.spring.config.OpenPaymentsConfig.OPA_ILP;
+import static org.interledger.connector.server.wallet.spring.config.OpenPaymentsConfig.PAY_ID;
 import static org.interledger.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
 
 import org.interledger.connector.accounts.AccessTokenManager;
@@ -7,6 +9,8 @@ import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.opa.InvoiceService;
+import org.interledger.connector.opa.PaymentDetailsService;
+import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
@@ -17,6 +21,7 @@ import org.interledger.connector.settings.properties.ConnectorSettingsFromProper
 import org.interledger.connector.settings.properties.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.connector.wallet.IlpPaymentDetailsService;
+import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.connector.wallet.XrpPaymentDetailsService;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.link.LinkFactoryProvider;
@@ -31,6 +36,7 @@ import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import io.prometheus.client.cache.caffeine.CacheMetricsCollector;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -112,10 +118,15 @@ public abstract class AbstractControllerTest {
   protected StreamReceiver streamReceiverMock;
 
   @MockBean
-  protected IlpPaymentDetailsService ilpPaymentDetailsService;
+  @Qualifier(OPA_ILP)
+  protected PaymentDetailsService ilpPaymentDetailsService;
 
   @MockBean
-  protected XrpPaymentDetailsService xrpPaymentDetailsService;
+  @Qualifier(PAY_ID)
+  protected PaymentDetailsService payIdPaymentDetailsService;
+
+  @MockBean
+  protected OpenPaymentsClient openPaymentsClient;
 
   protected String asJsonString(final Object obj) throws JsonProcessingException {
     return this.objectMapper.writeValueAsString(obj);

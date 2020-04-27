@@ -3,22 +3,22 @@ package org.interledger.connector.wallet;
 import org.interledger.connector.jackson.ObjectMapperFactory;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
+import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.spsp.StreamConnectionDetails;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Feign;
 import feign.Headers;
 import feign.Param;
-import feign.RequestInterceptor;
 import feign.RequestLine;
+import feign.Response;
 import feign.Target;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 import feign.optionals.OptionalDecoder;
-import okhttp3.HttpUrl;
 import org.zalando.problem.ThrowableProblem;
 
-import java.util.Objects;
+import java.net.URI;
 
 public interface OpenPaymentsClient {
   String ACCEPT = "Accept:";
@@ -44,37 +44,68 @@ public interface OpenPaymentsClient {
       .target(Target.HardCodedTarget.EmptyTarget.create(OpenPaymentsClient.class));
   }
 
-  @RequestLine("GET {baseUrl}/.well-known/open-payments")
+  @RequestLine("GET /.well-known/open-payments")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
   })
-  OpenPaymentsMetadata getMetadata(@Param("baseUrl") String baseUrl) throws ThrowableProblem;
+  OpenPaymentsMetadata getMetadata(URI baseUrl) throws ThrowableProblem;
 
-  @RequestLine("POST {invoiceEndpoint}")
+  @RequestLine("POST /")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
   })
-  Invoice createInvoice(@Param("invoiceEndpoint") String invoiceEndpoint, Invoice invoice) throws ThrowableProblem;
+  Invoice createInvoice(
+    URI invoiceEndpoint,
+    Invoice invoice
+  ) throws ThrowableProblem;
 
-  @RequestLine("GET {invoiceEndpoint}/{invoiceId}")
+  @RequestLine("GET /{invoiceId}")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
   })
   Invoice getInvoice(
-    @Param("invoiceEndpoint") String invoiceEndpoint,
+    URI invoiceEndpoint,
     @Param("invoiceId") String invoiceId
   ) throws ThrowableProblem;
 
-  @RequestLine("OPTIONS {invoiceEndpoint}/{invoiceId}")
+  @RequestLine("OPTIONS /{invoiceId}")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
   })
-  StreamConnectionDetails getInvoicePaymentDetails(
-    @Param("invoiceEndpoint") String invoiceEndpoint,
+  StreamConnectionDetails getIlpInvoicePaymentDetails(
+      URI invoiceEndpoint,
+      @Param("invoiceId") String invoiceId
+    ) throws ThrowableProblem;
+
+  @RequestLine("OPTIONS /")
+  @Headers({
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON
+  })
+  StreamConnectionDetails getIlpInvoicePaymentDetails(
+    URI invoiceEndpoint
+  ) throws ThrowableProblem;
+
+  @RequestLine("OPTIONS /{invoiceId}")
+  @Headers({
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON
+  })
+  XrpPaymentDetails getXrpInvoicePaymentDetails(
+    URI invoiceEndpoint,
     @Param("invoiceId") String invoiceId
+  ) throws ThrowableProblem;
+
+  @RequestLine("OPTIONS /")
+  @Headers({
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON
+  })
+  XrpPaymentDetails getXrpInvoicePaymentDetails(
+    URI invoiceEndpoint
   ) throws ThrowableProblem;
 }

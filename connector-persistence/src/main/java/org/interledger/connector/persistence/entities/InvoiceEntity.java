@@ -73,7 +73,7 @@ public class InvoiceEntity extends AbstractEntity {
 
   public InvoiceEntity(final Invoice invoice) {
     Objects.requireNonNull(invoice);
-    this.accountId = invoice.accountId();
+    this.accountId = invoice.accountId().orElse(null);
     this.amount = invoice.amount().longValue();
     this.assetCode = invoice.assetCode();
     this.assetScale = invoice.assetScale();

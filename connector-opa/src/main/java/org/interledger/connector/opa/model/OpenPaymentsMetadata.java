@@ -55,7 +55,7 @@ public interface OpenPaymentsMetadata {
    * @see "https://tools.ietf.org/html/rfc6749"
    * @return the {@link HttpUrl} of the endpoint on the Authorization Server which can create authorization grants.
    */
-  @Value.Derived
+  @Value.Default
   @JsonProperty("authorization_endpoint")
   default HttpUrl authorizationEndpoint() {
     return authorizationIssuer().newBuilder().addPathSegment("authorize").build();
@@ -71,7 +71,7 @@ public interface OpenPaymentsMetadata {
    * @see "https://tools.ietf.org/html/rfc6749"
    * @return The {@link HttpUrl} of the endpoint on the Authorization Server which gives clients access and refresh tokens.
    */
-  @Value.Derived
+  @Value.Default
   @JsonProperty("token_endpoint")
   default HttpUrl tokenEndpoint() {
     return authorizationIssuer().newBuilder().addPathSegment("token").build();
@@ -84,7 +84,7 @@ public interface OpenPaymentsMetadata {
    *
    * @return The {@link HttpUrl} of the endpoint on the Open Payments Server which handles invoices.
    */
-  @Value.Derived
+  @Value.Default
   @JsonProperty("invoices_endpoint")
   default HttpUrl invoicesEndpoint() {
     return issuer().newBuilder().addPathSegment("invoice").build();
@@ -97,7 +97,7 @@ public interface OpenPaymentsMetadata {
    *
    * @return The {@link HttpUrl} of the endpoint on the Open Payments Server which handles mandates.
    */
-  @Value.Derived
+  @Value.Default
   @JsonProperty("mandates_endpoint")
   default HttpUrl mandatesEndpoint() {
     return issuer().newBuilder().addPathSegment("mandate").build();
