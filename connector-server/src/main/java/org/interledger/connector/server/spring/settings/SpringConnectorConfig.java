@@ -27,6 +27,7 @@ import org.interledger.connector.config.CaffeineCacheConfig;
 import org.interledger.connector.config.RedisConfig;
 import org.interledger.connector.config.SettlementConfig;
 import org.interledger.connector.config.SpspReceiverConfig;
+import org.interledger.connector.config.XrplScanningConfig;
 import org.interledger.connector.events.DefaultPacketEventPublisher;
 import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.fx.JavaMoneyUtils;
@@ -89,7 +90,6 @@ import org.interledger.connector.server.spring.settings.javamoney.JavaMoneyConfi
 import org.interledger.connector.server.spring.settings.link.LinkConfig;
 import org.interledger.connector.server.spring.settings.metrics.MetricsConfiguration;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
-import org.interledger.connector.server.wallet.spring.config.OpenPaymentsConfig;
 import org.interledger.connector.server.wallet.spring.config.WalletConfig;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
@@ -162,7 +162,8 @@ import javax.annotation.PostConstruct;
   SpringConnectorWebMvc.class,
   WalletConfig.class,
   GcpPubSubConfig.class,
-  RedisPubSubConfig.class
+  RedisPubSubConfig.class,
+  XrplScanningConfig.class
 })
 // support extension by looking for annotated Component/Config classes under the configured extensions.basePackage
 @ComponentScan(basePackages = "${interledger.connector.extensions.basePackage:org.interledger.connector.extensions}",

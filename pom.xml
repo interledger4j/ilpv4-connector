@@ -300,6 +300,11 @@
         <version>0.10.2</version>
       </dependency>
       <dependency>
+        <groupId>io.xpring</groupId>
+        <artifactId>xpring4j</artifactId>
+        <version>5.0.0</version>
+      </dependency>
+      <dependency>
         <groupId>javax.inject</groupId>
         <artifactId>javax.inject</artifactId>
         <version>1</version>
