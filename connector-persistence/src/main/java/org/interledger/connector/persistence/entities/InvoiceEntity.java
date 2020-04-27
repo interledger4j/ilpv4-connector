@@ -67,7 +67,7 @@ public class InvoiceEntity extends AbstractEntity {
   private String paymentNetwork;
 
   @Column(name = "PAYMENT_ID")
-  private Integer paymentId;
+  private String paymentId;
 
   /**
    * For Hibernate
@@ -87,7 +87,7 @@ public class InvoiceEntity extends AbstractEntity {
     this.received = invoice.received().longValue();
     this.subject = invoice.subject();
     this.paymentNetwork = invoice.paymentNetwork().toString();
-    this.paymentId = invoice.paymentIdentifier().orElse(null);
+    this.paymentId = invoice.paymentId();
   }
 
   public Long getId() {
@@ -186,11 +186,11 @@ public class InvoiceEntity extends AbstractEntity {
     this.paymentNetwork = paymentNetwork;
   }
 
-  public Integer getPaymentId() {
+  public String getPaymentId() {
     return paymentId;
   }
 
-  public void setPaymentId(Integer paymentId) {
+  public void setPaymentId(String paymentId) {
     this.paymentId = paymentId;
   }
 

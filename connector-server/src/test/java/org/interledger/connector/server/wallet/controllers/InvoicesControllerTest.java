@@ -143,6 +143,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
     when(mockInvoice.subject()).thenReturn("$foo.bar/baz");
     when(mockInvoice.accountId()).thenReturn(Optional.of("$foo.bar/baz"));
     when(mockInvoice.paymentNetwork()).thenReturn(PaymentNetwork.ILP);
+    when(mockInvoice.paymentId()).thenReturn(encodedInvoiceId);
     when(ilpPaymentDetailsService.getAddressFromInvoiceSubject(mockInvoice.subject())).thenReturn("test.foo.bar.123456");
 
     InterledgerAddress destinationAddress = InterledgerAddress.of("test.foo.bar.123456");
@@ -207,14 +208,14 @@ public class InvoicesControllerTest extends AbstractControllerTest {
   @Test
   public void getXrpPaymentDetailsForOwnInvoice() throws Exception {
     InvoiceId invoiceId = InvoiceId.of("66ce60d8-f4ba-4c60-ba6e-fc5e0aa99923");
-    int destinationTag = 1234;
+    String destinationTag = "1234";
 
     Invoice mockInvoice = mock(Invoice.class);
     when(invoiceServiceMock.getInvoiceById(invoiceId)).thenReturn(mockInvoice);
     when(mockInvoice.subject()).thenReturn("foo$example.com");
     when(mockInvoice.accountId()).thenReturn(Optional.of("foo$example.com"));
     when(mockInvoice.paymentNetwork()).thenReturn(PaymentNetwork.XRPL);
-    when(mockInvoice.paymentIdentifier()).thenReturn(Optional.of(destinationTag));
+    when(mockInvoice.paymentId()).thenReturn(destinationTag);
     String destinationAddress = "afieuwnfasiudhfqepqjnecvapjnsd";
     when(xrpPaymentDetailsService.getAddressFromInvoiceSubject(mockInvoice.subject())).thenReturn(destinationAddress); // I'm aware this isnt an XRP address...
 
@@ -224,7 +225,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       )
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.address").value(destinationAddress))
-      .andExpect(jsonPath("$.destinationTag").value(destinationTag));
+      .andExpect(jsonPath("$.destinationTag").value(Integer.valueOf(destinationTag)));
   }
 
   @Test

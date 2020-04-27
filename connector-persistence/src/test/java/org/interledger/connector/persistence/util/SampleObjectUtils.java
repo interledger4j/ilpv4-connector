@@ -38,7 +38,6 @@ public final class SampleObjectUtils {
       .received(UnsignedLong.ZERO)
       .subject("paymebruh$xpring.money")
       .paymentNetwork(PaymentNetwork.XRPL)
-      .paymentIdentifier(123987234)
       .build();
   }
 }

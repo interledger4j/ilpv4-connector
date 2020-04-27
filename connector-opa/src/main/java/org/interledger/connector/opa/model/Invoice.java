@@ -6,11 +6,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.Preconditions;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
 import com.google.common.primitives.UnsignedLong;
 import org.immutables.value.Value;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 import javax.annotation.Nullable;
@@ -43,7 +47,22 @@ public interface Invoice {
     return PaymentNetwork.ILP;
   }
 
-  Optional<Integer> paymentIdentifier();
+  @Value.Default
+  default String paymentId() {
+    if (paymentNetwork().equals(PaymentNetwork.XRPL)) {
+      HashCode hashCode = Hashing.sha256()
+        .hashString(id().value(), StandardCharsets.UTF_8);
+      return hashCode.toString();
+    }
+
+    if (paymentNetwork().equals(PaymentNetwork.ILP)) {
+      // Base64 encode the invoiceId to add to the connection tag
+      final byte[] invoiceIdBytes = id().value().getBytes();
+      return Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceIdBytes);
+    }
+
+    return "";
+  };
 
   /**
    * Currency code or other asset identifier that this invoice is denominated in.
@@ -180,16 +199,6 @@ public interface Invoice {
         // TODO: PayID.of(subject());
       }
 
-      return this;
-    }
-
-    @Value.Check
-    protected AbstractInvoice checkDestinationTag() {
-      if (!paymentNetwork().equals(PaymentNetwork.ILP)) {
-        Preconditions.checkArgument(paymentIdentifier().isPresent(),
-          "Payment Identifier must be present for all non-ILP invoices."
-        );
-      }
       return this;
     }
   }

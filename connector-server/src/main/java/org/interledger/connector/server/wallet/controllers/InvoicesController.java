@@ -41,7 +41,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.spring.common.MediaTypes;
 
 import java.net.URI;
-import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -196,7 +195,7 @@ public class InvoicesController {
 
         XrpPaymentDetails xrpPaymentDetails = XrpPaymentDetails.builder()
           .address(destinationAddress)
-          .destinationTag(invoice.paymentIdentifier().get())
+          .destinationTag(Integer.valueOf(invoice.paymentId()))
           .build();
 
         return new ResponseEntity(xrpPaymentDetails, headers, HttpStatus.OK);
@@ -212,16 +211,14 @@ public class InvoicesController {
       final StreamConnectionDetails streamConnectionDetails =
         streamConnectionGenerator.generateConnectionDetails(serverSecretSupplier, InterledgerAddress.of(destinationAddress));
 
-      // Base64 encode the invoiceId to add to the connection tag
-      final byte[] invoiceIdBytes = invoiceId.value().getBytes();
-      final String encodedInvoiceId = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceIdBytes);
+
 
       // Append the encoded invoiceId to the connection tag and return
       final StreamConnectionDetails streamDetailsWithInvoiceIdTag =
         StreamConnectionDetails.builder()
           .from(streamConnectionDetails)
           .destinationAddress(InterledgerAddress
-            .of(streamConnectionDetails.destinationAddress().getValue() + "~" + encodedInvoiceId))
+            .of(streamConnectionDetails.destinationAddress().getValue() + "~" + invoice.paymentId()))
           .build();
 
       return new ResponseEntity(streamDetailsWithInvoiceIdTag, headers, HttpStatus.OK);
