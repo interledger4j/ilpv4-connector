@@ -10,7 +10,6 @@ import org.immutables.value.Value;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.TemporalAmount;
 import java.util.Optional;
 import java.util.UUID;
 import javax.annotation.Nullable;
@@ -42,6 +41,8 @@ public interface Invoice {
   default PaymentNetwork paymentNetwork() {
     return PaymentNetwork.ILP;
   }
+
+//  Optional<Integer> destinationTag();
 
   /**
    * Currency code or other asset identifier that this invoice is denominated in.

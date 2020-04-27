@@ -14,6 +14,8 @@ import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.connector.wallet.XrpPaymentDetailsService;
 import org.interledger.spsp.PaymentPointerResolver;
 
+import io.xpring.common.XRPLNetwork;
+import io.xpring.payid.PayIDClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +40,7 @@ public class OpenPaymentsConfig {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   public static final String OPA_ILP = "ILP";
-  public static final String PAY_ID = "PAY_ID";
+  public static final String XRP = "PAY_ID";
 
   @Autowired
   private ApplicationContext applicationContext;
@@ -72,9 +74,15 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
-  @Qualifier(PAY_ID)
-  public PaymentDetailsService payIdPaymentDetailsService() {
-    return new XrpPaymentDetailsService();
+  @Qualifier(XRP)
+  public PaymentDetailsService xrpPaymentDetailsService(PayIDClient payIDClient) {
+    return new XrpPaymentDetailsService(payIDClient);
+  }
+
+  @Bean
+  public PayIDClient payIDClient() {
+    // TODO: make network configurable
+    return new PayIDClient(XRPLNetwork.TEST);
   }
 
   @Bean

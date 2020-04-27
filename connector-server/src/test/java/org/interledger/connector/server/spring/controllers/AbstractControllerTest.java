@@ -1,7 +1,7 @@
 package org.interledger.connector.server.spring.controllers;
 
 import static org.interledger.connector.server.wallet.spring.config.OpenPaymentsConfig.OPA_ILP;
-import static org.interledger.connector.server.wallet.spring.config.OpenPaymentsConfig.PAY_ID;
+import static org.interledger.connector.server.wallet.spring.config.OpenPaymentsConfig.XRP;
 import static org.interledger.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
 
 import org.interledger.connector.accounts.AccessTokenManager;
@@ -10,7 +10,6 @@ import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.PaymentDetailsService;
-import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
@@ -20,9 +19,7 @@ import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
 import org.interledger.connector.settings.properties.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementService;
-import org.interledger.connector.wallet.IlpPaymentDetailsService;
 import org.interledger.connector.wallet.OpenPaymentsClient;
-import org.interledger.connector.wallet.XrpPaymentDetailsService;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.link.LinkFactoryProvider;
 import org.interledger.link.PacketRejector;
@@ -122,8 +119,8 @@ public abstract class AbstractControllerTest {
   protected PaymentDetailsService ilpPaymentDetailsService;
 
   @MockBean
-  @Qualifier(PAY_ID)
-  protected PaymentDetailsService payIdPaymentDetailsService;
+  @Qualifier(XRP)
+  protected PaymentDetailsService xrpPaymentDetailsService;
 
   @MockBean
   protected OpenPaymentsClient openPaymentsClient;

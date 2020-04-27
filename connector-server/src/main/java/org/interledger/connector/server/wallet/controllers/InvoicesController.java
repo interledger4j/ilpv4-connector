@@ -25,12 +25,7 @@ import org.interledger.spsp.StreamConnectionDetails;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
-import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
-import feign.FeignException;
 import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -45,7 +40,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.spring.common.MediaTypes;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.Base64;
 import java.util.Objects;
@@ -62,7 +56,7 @@ public class InvoicesController {
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
   private final ServerSecretSupplier serverSecretSupplier;
   private final PaymentDetailsService ilpPaymentDetailsService;
-  private final PaymentDetailsService payIdPaymentDetailsService;
+  private final PaymentDetailsService xrpPaymentDetailsService;
   private final StreamConnectionGenerator streamConnectionGenerator;
   private final OpenPaymentsClient openPaymentsClient;
   private final PaymentPointerResolver paymentPointerResolver;
@@ -70,7 +64,7 @@ public class InvoicesController {
   public InvoicesController(
     final InvoiceService invoiceService,
     final PaymentDetailsService ilpPaymentDetailsService,
-    final PaymentDetailsService payIdPaymentDetailsService,
+    final PaymentDetailsService xrpPaymentDetailsService,
     final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     final ServerSecretSupplier serverSecretSupplier,
     final StreamConnectionGenerator streamConnectionGenerator,
@@ -79,7 +73,7 @@ public class InvoicesController {
     ) {
     this.invoiceService = Objects.requireNonNull(invoiceService);
     this.ilpPaymentDetailsService = Objects.requireNonNull(ilpPaymentDetailsService);
-    this.payIdPaymentDetailsService = Objects.requireNonNull(payIdPaymentDetailsService);
+    this.xrpPaymentDetailsService = Objects.requireNonNull(xrpPaymentDetailsService);
     this.streamConnectionGenerator = Objects.requireNonNull(streamConnectionGenerator);
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
     this.serverSecretSupplier = Objects.requireNonNull(serverSecretSupplier);
@@ -196,16 +190,20 @@ public class InvoicesController {
 
     // XRP payment details are not supported yet, so just return a bad request status
     if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
-      // Get XRP address from payment pointer and invoiceId
-      final String destinationAddress = payIdPaymentDetailsService.getAddressFromInvoiceSubject(invoice.subject());
+      try {
+        // Get XRP address from payment pointer and invoiceId
+        final String destinationAddress = xrpPaymentDetailsService.getAddressFromInvoiceSubject(invoice.subject());
 
-      // Encode invoice ID in destination tag.
-      // TODO
-      XrpPaymentDetails xrpPaymentDetails = XrpPaymentDetails.builder()
-        .address(destinationAddress)
-        .destinationTag("faketag")
-        .build();
-      return new ResponseEntity(xrpPaymentDetails, headers, HttpStatus.OK);
+        // Encode invoice ID in destination tag.
+        // TODO
+        XrpPaymentDetails xrpPaymentDetails = XrpPaymentDetails.builder()
+          .address(destinationAddress)
+          .destinationTag("faketag")
+          .build();
+        return new ResponseEntity(xrpPaymentDetails, headers, HttpStatus.OK);
+      } catch (RuntimeException e) {
+        throw new InvoicePaymentDetailsProblem(e.getCause().getMessage(), invoiceId);
+      }
     } else {
       // Otherwise get ILP payment details
 

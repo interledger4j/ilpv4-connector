@@ -249,6 +249,10 @@
       <artifactId>feign-jackson</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.xpring</groupId>
+      <artifactId>xpring4j</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.zalando</groupId>
       <artifactId>problem</artifactId>
     </dependency>

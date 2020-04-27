@@ -5,8 +5,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -18,7 +16,6 @@ import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
-import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.server.spring.controllers.AbstractControllerTest;
 import org.interledger.connector.server.spring.controllers.PathConstants;
@@ -28,14 +25,12 @@ import org.interledger.core.SharedSecret;
 import org.interledger.spsp.StreamConnectionDetails;
 import org.interledger.stream.crypto.Random;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
@@ -219,7 +214,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
     when(mockInvoice.accountId()).thenReturn(Optional.of("foo$example.com"));
     when(mockInvoice.paymentNetwork()).thenReturn(PaymentNetwork.XRPL);
     String destinationAddress = "afieuwnfasiudhfqepqjnecvapjnsd";
-    when(payIdPaymentDetailsService.getAddressFromInvoiceSubject(mockInvoice.subject())).thenReturn(destinationAddress); // I'm aware this isnt an XRP address...
+    when(xrpPaymentDetailsService.getAddressFromInvoiceSubject(mockInvoice.subject())).thenReturn(destinationAddress); // I'm aware this isnt an XRP address...
 
     mockMvc
       .perform(options(OpenPaymentsPathConstants.SLASH_INVOICE + PathConstants.SLASH + invoiceId)

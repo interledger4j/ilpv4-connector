@@ -20,6 +20,16 @@ public class InvoicePaymentDetailsProblem extends InvoiceProblem {
     );
   }
 
+  public InvoicePaymentDetailsProblem(final String detail, final InvoiceId invoiceId) {
+    super(
+      URI.create(TYPE_PREFIX + INVOICES_PATH + "/payment-details"),
+      String.format("Payment details request failed for invoice %s", invoiceId),
+      Status.BAD_REQUEST,
+      detail,
+      Objects.requireNonNull(invoiceId)
+    );
+  }
+
   public InvoicePaymentDetailsProblem(final String detail, final HttpUrl invoiceLocation, final int errorCode) {
     super(
       URI.create(TYPE_PREFIX + INVOICES_PATH + "/payment-details"),
