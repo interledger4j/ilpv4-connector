@@ -25,6 +25,7 @@ import org.interledger.spsp.StreamConnectionDetails;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
+import feign.FeignException;
 import okhttp3.HttpUrl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,7 +114,19 @@ public class InvoicesController {
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody Invoice getInvoice(@PathVariable InvoiceId invoiceId) {
-    return invoiceService.getInvoiceById(invoiceId);
+    Invoice existingInvoice = invoiceService.getInvoiceById(invoiceId);
+    if (isOurs(existingInvoice) || existingInvoice.isPaid()) {
+      return existingInvoice;
+    } else {
+      HttpUrl subjectUrl = resolveSubjectToHttpUrl(existingInvoice.subject());
+      OpenPaymentsMetadata metadata = openPaymentsClient.getMetadata(subjectUrl.uri());
+      try {
+        Invoice invoiceOnReceiver = openPaymentsClient.getInvoice(metadata.invoicesEndpoint().uri(), invoiceId.value());
+        return invoiceService.updateInvoice(invoiceOnReceiver);
+      } catch (FeignException e) {
+        return existingInvoice;
+      }
+    }
   }
 
   /**

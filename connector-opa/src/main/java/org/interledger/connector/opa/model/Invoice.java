@@ -176,6 +176,11 @@ public interface Invoice {
     return Instant.now();
   }
 
+  @JsonIgnore
+  @Value.Derived
+  default boolean isPaid() {
+    return amount().longValue() <= received().longValue();
+  }
   /**
    * Represents the {@link Instant} in time when this invoice was finalized.
    *
