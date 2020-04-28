@@ -15,6 +15,6 @@ public interface XrpPaymentDetails {
 
   String address();
 
-  Integer destinationTag();
+  String invoiceIdHash();
 
 }

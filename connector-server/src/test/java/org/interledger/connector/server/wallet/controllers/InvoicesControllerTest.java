@@ -25,7 +25,6 @@ import org.interledger.core.SharedSecret;
 import org.interledger.spsp.StreamConnectionDetails;
 import org.interledger.stream.crypto.Random;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
 import org.junit.Before;
@@ -275,7 +274,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       )
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.address").value(destinationAddress))
-      .andExpect(jsonPath("$.destinationTag").value(Integer.valueOf(destinationTag)));
+      .andExpect(jsonPath("$.invoiceIdHash").value(Integer.valueOf(destinationTag)));
   }
 
   @Test
@@ -301,10 +300,10 @@ public class InvoicesControllerTest extends AbstractControllerTest {
     when(mockMetadata.invoicesEndpoint()).thenReturn(invoicesEndpoint);
 
     String destinationAddress = "afieuwnfasiudhfqepqjnecvapjnsd";
-    int destinationTag = 123456;
+    String destinationTag = "123456";
     XrpPaymentDetails xrpPaymentDetails = XrpPaymentDetails.builder()
       .address(destinationAddress)
-      .destinationTag(destinationTag)
+      .invoiceIdHash(destinationTag)
       .build();
     when(openPaymentsClientMock.getXrpInvoicePaymentDetails(eq(invoicesEndpoint.uri()), eq(invoiceId.value())))
       .thenReturn(xrpPaymentDetails);
@@ -315,6 +314,6 @@ public class InvoicesControllerTest extends AbstractControllerTest {
         .headers(this.testJsonHeaders())
       )
       .andExpect(jsonPath("$.address").value(destinationAddress))
-      .andExpect(jsonPath("$.destinationTag").value(destinationTag));
+      .andExpect(jsonPath("$.invoiceIdHash").value(destinationTag));
   }
 }

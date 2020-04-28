@@ -208,7 +208,7 @@ public class InvoicesController {
 
         XrpPaymentDetails xrpPaymentDetails = XrpPaymentDetails.builder()
           .address(destinationAddress)
-          .destinationTag(Integer.valueOf(invoice.paymentId()))
+          .invoiceIdHash(invoice.paymentId())
           .build();
 
         return new ResponseEntity(xrpPaymentDetails, headers, HttpStatus.OK);
