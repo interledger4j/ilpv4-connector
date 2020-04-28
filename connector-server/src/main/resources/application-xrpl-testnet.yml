@@ -1,0 +1,8 @@
+# Enables scanning of the XRP ledger in testnet
+interledger:
+  connector:
+    xrpl:
+      enabled: true
+      websocketUrl: wss://s.altnet.rippletest.net:51233
+      socketTimeoutInMillis: 5000
+      failureCountThreshold: 25
