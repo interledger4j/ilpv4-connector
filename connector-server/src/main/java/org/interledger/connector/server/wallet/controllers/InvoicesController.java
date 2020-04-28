@@ -25,6 +25,7 @@ import org.interledger.spsp.StreamConnectionDetails;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
+import feign.FeignException;
 import okhttp3.HttpUrl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +42,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.spring.common.MediaTypes;
 
 import java.net.URI;
-import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -114,7 +114,19 @@ public class InvoicesController {
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody Invoice getInvoice(@PathVariable InvoiceId invoiceId) {
-    return invoiceService.getInvoiceById(invoiceId);
+    Invoice existingInvoice = invoiceService.getInvoiceById(invoiceId);
+    if (isOurs(existingInvoice) || existingInvoice.isPaid()) {
+      return existingInvoice;
+    } else {
+      HttpUrl subjectUrl = resolveSubjectToHttpUrl(existingInvoice.subject());
+      OpenPaymentsMetadata metadata = openPaymentsClient.getMetadata(subjectUrl.uri());
+      try {
+        Invoice invoiceOnReceiver = openPaymentsClient.getInvoice(metadata.invoicesEndpoint().uri(), invoiceId.value());
+        return invoiceService.updateInvoice(invoiceOnReceiver);
+      } catch (FeignException e) {
+        return existingInvoice;
+      }
+    }
   }
 
   /**
@@ -194,12 +206,11 @@ public class InvoicesController {
         // Get XRP address from payment pointer and invoiceId
         final String destinationAddress = xrpPaymentDetailsService.getAddressFromInvoiceSubject(invoice.subject());
 
-        // Encode invoice ID in destination tag.
-        // TODO
         XrpPaymentDetails xrpPaymentDetails = XrpPaymentDetails.builder()
           .address(destinationAddress)
-          .destinationTag("faketag")
+          .invoiceIdHash(invoice.paymentId())
           .build();
+
         return new ResponseEntity(xrpPaymentDetails, headers, HttpStatus.OK);
       } catch (RuntimeException e) {
         throw new InvoicePaymentDetailsProblem(e.getCause().getMessage(), invoiceId);
@@ -213,16 +224,14 @@ public class InvoicesController {
       final StreamConnectionDetails streamConnectionDetails =
         streamConnectionGenerator.generateConnectionDetails(serverSecretSupplier, InterledgerAddress.of(destinationAddress));
 
-      // Base64 encode the invoiceId to add to the connection tag
-      final byte[] invoiceIdBytes = invoiceId.value().getBytes();
-      final String encodedInvoiceId = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceIdBytes);
+
 
       // Append the encoded invoiceId to the connection tag and return
       final StreamConnectionDetails streamDetailsWithInvoiceIdTag =
         StreamConnectionDetails.builder()
           .from(streamConnectionDetails)
           .destinationAddress(InterledgerAddress
-            .of(streamConnectionDetails.destinationAddress().getValue() + "~" + encodedInvoiceId))
+            .of(streamConnectionDetails.destinationAddress().getValue() + "~" + invoice.paymentId()))
           .build();
 
       return new ResponseEntity(streamDetailsWithInvoiceIdTag, headers, HttpStatus.OK);

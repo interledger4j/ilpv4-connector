@@ -29,6 +29,7 @@ public class InvoiceEntityConverter implements Converter<InvoiceEntity, Invoice>
       .subject(invoiceEntity.getSubject())
       .updatedAt(Optional.ofNullable(invoiceEntity.getModifiedDate()).orElse(Instant.now()))
       .paymentNetwork(PaymentNetwork.valueOf(invoiceEntity.getPaymentNetwork()))
+      .paymentId(invoiceEntity.getPaymentId())
       .build();
   }
 }

@@ -5,11 +5,16 @@ import org.interledger.spsp.PaymentPointer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.Preconditions;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
 import com.google.common.primitives.UnsignedLong;
 import org.immutables.value.Value;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 import javax.annotation.Nullable;
@@ -42,7 +47,22 @@ public interface Invoice {
     return PaymentNetwork.ILP;
   }
 
-//  Optional<Integer> destinationTag();
+  @Value.Default
+  default String paymentId() {
+    if (paymentNetwork().equals(PaymentNetwork.XRPL)) {
+      HashCode hashCode = Hashing.sha256()
+        .hashString(id().value(), StandardCharsets.UTF_8);
+      return hashCode.toString();
+    }
+
+    if (paymentNetwork().equals(PaymentNetwork.ILP)) {
+      // Base64 encode the invoiceId to add to the connection tag
+      final byte[] invoiceIdBytes = id().value().getBytes();
+      return Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceIdBytes);
+    }
+
+    return "";
+  };
 
   /**
    * Currency code or other asset identifier that this invoice is denominated in.
@@ -156,6 +176,11 @@ public interface Invoice {
     return Instant.now();
   }
 
+  @JsonIgnore
+  @Value.Derived
+  default boolean isPaid() {
+    return amount().longValue() <= received().longValue();
+  }
   /**
    * Represents the {@link Instant} in time when this invoice was finalized.
    *
@@ -172,12 +197,14 @@ public interface Invoice {
   @JsonDeserialize(as = ImmutableInvoice.class)
   abstract class AbstractInvoice implements Invoice {
     @Value.Check
-    protected void checkInvoiceSubject() {
+    protected AbstractInvoice checkInvoiceSubject() {
       if (paymentNetwork().equals(PaymentNetwork.ILP)) {
         PaymentPointer.of(subject());
       } else {
         // TODO: PayID.of(subject());
       }
+
+      return this;
     }
   }
 }

@@ -123,7 +123,7 @@ public abstract class AbstractControllerTest {
   protected PaymentDetailsService xrpPaymentDetailsService;
 
   @MockBean
-  protected OpenPaymentsClient openPaymentsClient;
+  protected OpenPaymentsClient openPaymentsClientMock;
 
   protected String asJsonString(final Object obj) throws JsonProcessingException {
     return this.objectMapper.writeValueAsString(obj);

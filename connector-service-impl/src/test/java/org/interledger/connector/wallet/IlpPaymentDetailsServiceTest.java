@@ -30,7 +30,7 @@ public class IlpPaymentDetailsServiceTest {
   private PaymentDetailsService ilpPaymentDetailsService;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     initMocks(this);
 
     operatorAddress = InterledgerAddress.of("test.jc1");
