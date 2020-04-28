@@ -28,6 +28,10 @@ public interface XrplTransaction {
 
   String hash();
 
+  @JsonProperty("InvoiceID")
+  @Nullable
+  String invoiceHash();
+
   static ImmutableXrplTransaction.Builder builder() {
     return ImmutableXrplTransaction.builder();
   }
