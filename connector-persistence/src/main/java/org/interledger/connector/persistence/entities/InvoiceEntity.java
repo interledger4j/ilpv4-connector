@@ -36,6 +36,9 @@ public class InvoiceEntity extends AbstractEntity {
   @Column(name = "INVOICE_ID") // Hibernate treats this as unique, but Liquibase is explicit about uniqueness.
   private String invoiceId;
 
+  @Column(name = "INVOICE_URL")
+  private String invoiceUrl;
+
   @Column(name = "ACCOUNT_ID")
   private String accountId;
 
@@ -88,6 +91,7 @@ public class InvoiceEntity extends AbstractEntity {
     this.subject = invoice.subject();
     this.paymentNetwork = invoice.paymentNetwork().toString();
     this.paymentId = invoice.paymentId();
+    this.invoiceUrl = invoice.invoiceUrl().toString();
   }
 
   public Long getId() {
@@ -192,6 +196,14 @@ public class InvoiceEntity extends AbstractEntity {
 
   public void setPaymentId(String paymentId) {
     this.paymentId = paymentId;
+  }
+
+  public String getInvoiceUrl() {
+    return invoiceUrl;
+  }
+
+  public void setInvoiceUrl(String invoiceUrl) {
+    this.invoiceUrl = invoiceUrl;
   }
 
   @Override

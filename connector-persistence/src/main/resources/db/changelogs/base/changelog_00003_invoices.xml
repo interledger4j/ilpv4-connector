@@ -17,6 +17,9 @@
       <column name="INVOICE_ID" type="VARCHAR(64)">
         <constraints nullable="false"/>
       </column>
+      <column name="INVOICE_URL" type="VARCHAR(2000)">
+        <constraints nullable="false"/>
+      </column>
       <column name="ACCOUNT_ID" type="VARCHAR(64)">
         <constraints nullable="false"/>
       </column>

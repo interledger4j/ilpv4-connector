@@ -6,6 +6,7 @@ import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 
 import com.google.common.primitives.UnsignedLong;
+import okhttp3.HttpUrl;
 import org.springframework.core.convert.converter.Converter;
 
 import java.time.Instant;
@@ -30,6 +31,7 @@ public class InvoiceEntityConverter implements Converter<InvoiceEntity, Invoice>
       .updatedAt(Optional.ofNullable(invoiceEntity.getModifiedDate()).orElse(Instant.now()))
       .paymentNetwork(PaymentNetwork.valueOf(invoiceEntity.getPaymentNetwork()))
       .paymentId(invoiceEntity.getPaymentId())
+      .invoiceUrl(HttpUrl.parse(invoiceEntity.getInvoiceUrl()))
       .build();
   }
 }
