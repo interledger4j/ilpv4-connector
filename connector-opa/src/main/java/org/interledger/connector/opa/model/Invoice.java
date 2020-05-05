@@ -33,7 +33,7 @@ public interface Invoice {
   }
 
   @JsonProperty("name")
-  @Value.Derived
+  @Value.Default
   default HttpUrl invoiceUrl() {
     // subject is a PaymentPointer
     if (subject().startsWith("$")) {

@@ -171,19 +171,6 @@ public abstract class AbstractControllerTest {
     return headers;
   }
 
-  protected HttpHeaders testInvoicePostHeaders() {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
-    headers.setContentType(OpenPaymentsMediaType.APPLICATION_INVOICE_JSON);
-    return headers;
-  }
-  protected HttpHeaders testInvoiceGetHeaders() {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setAccept(Lists.newArrayList(OpenPaymentsMediaType.APPLICATION_INVOICE_JSON));
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    return headers;
-  }
-
   /**
    * Because @MockMvcTest test classes do not load connector settings into the {@link org.springframework.context.ApplicationContext},
    * and because @MockBean fields are loaded into the {@link org.springframework.context.ApplicationContext} after all other

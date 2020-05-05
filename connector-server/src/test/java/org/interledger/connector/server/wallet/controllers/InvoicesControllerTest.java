@@ -67,7 +67,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       .amount(UnsignedLong.valueOf(1000))
       .assetCode("XRP")
       .assetScale((short) 9)
-      .subject("$wallet.com/foo")
+      .subject("$localhost:8080/foo")
       .expiresAt(Instant.MAX)
       .received(UnsignedLong.valueOf(1000))
       .description("Test invoice")
@@ -87,7 +87,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       .andExpect(jsonPath("$.expiresAt").value(invoiceMock.expiresAt().toString()))
       .andExpect(jsonPath("$.received").value(invoiceMock.received().longValue()))
       .andExpect(jsonPath("$.description").value(invoiceMock.description()))
-      .andExpect(jsonPath("$.name").value("https://wallet.com/foo/invoices/" + invoiceMock.id()));
+      .andExpect(jsonPath("$.name").value(invoiceMock.invoiceUrl().toString()));
   }
 
   @Test
@@ -97,7 +97,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       .amount(UnsignedLong.valueOf(1000))
       .assetCode("XRP")
       .assetScale((short) 9)
-      .subject("$wallet.com/foo")
+      .subject("$wallet.com/foo") // We are not the invoice owner
       .expiresAt(Instant.MAX)
       .received(UnsignedLong.valueOf(1000)) // paid
       .description("Test invoice")
@@ -106,7 +106,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
     when(invoiceServiceMock.getInvoiceById(eq(paidInvoice.id()))).thenReturn(paidInvoice);
 
     mockMvc
-      .perform(get("/foo" + OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + paidInvoice.id() + "?invoiceUrl=" + paidInvoice.invoiceUrl())
+      .perform(get("/foo" + OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + paidInvoice.id())
         .headers(this.testJsonHeaders()))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.accountId").value(paidInvoice.accountId().get()))
@@ -143,94 +143,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
     when(invoiceServiceMock.updateOrCreateInvoice(eq(paidInvoice))).thenReturn(paidInvoice);
 
     mockMvc
-      .perform(get("/foo" + OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + paidInvoice.id() + "?invoiceUrl=" + paidInvoice.invoiceUrl())
-        .headers(this.testJsonHeaders()))
-      .andExpect(status().isOk())
-      .andExpect(jsonPath("$.accountId").value(paidInvoice.accountId().get()))
-      .andExpect(jsonPath("$.amount").value(paidInvoice.amount().longValue()))
-      .andExpect(jsonPath("$.assetCode").value(paidInvoice.assetCode()))
-      .andExpect(jsonPath("$.assetScale").value((int) paidInvoice.assetScale()))
-      .andExpect(jsonPath("$.subject").value(paidInvoice.subject()))
-      .andExpect(jsonPath("$.expiresAt").value(paidInvoice.expiresAt().toString()))
-      .andExpect(jsonPath("$.received").value(paidInvoice.received().longValue()))
-      .andExpect(jsonPath("$.description").value(paidInvoice.description()));
-  }
-
-  @Test
-  public void getNonExistentInvoiceReceiptForExistentInvoice() throws Exception {
-    Invoice unpaidInvoice = Invoice.builder()
-      .accountId("foo")
-      .amount(UnsignedLong.valueOf(1000))
-      .assetCode("XRP")
-      .assetScale((short) 9)
-      .subject("$wallet.com/foo")
-      .expiresAt(Instant.MAX)
-      .received(UnsignedLong.ZERO) // Not paid
-      .description("Test invoice")
-      .build();
-
-    when(invoiceServiceMock.getInvoiceById(eq(unpaidInvoice.id()))).thenThrow(InvoiceNotFoundProblem.class);
-
-    when(openPaymentsClientMock.getInvoice(eq(unpaidInvoice.invoiceUrl().uri()))).thenReturn(unpaidInvoice);
-    when(invoiceServiceMock.updateOrCreateInvoice(eq(unpaidInvoice))).thenReturn(unpaidInvoice);
-
-    mockMvc
-      .perform(get("/foo" + OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + unpaidInvoice.id() + "?invoiceUrl=" + unpaidInvoice.invoiceUrl())
-        .headers(this.testJsonHeaders()))
-      .andExpect(status().isOk())
-      .andExpect(jsonPath("$.accountId").value(unpaidInvoice.accountId().get()))
-      .andExpect(jsonPath("$.amount").value(unpaidInvoice.amount().longValue()))
-      .andExpect(jsonPath("$.assetCode").value(unpaidInvoice.assetCode()))
-      .andExpect(jsonPath("$.assetScale").value((int) unpaidInvoice.assetScale()))
-      .andExpect(jsonPath("$.subject").value(unpaidInvoice.subject()))
-      .andExpect(jsonPath("$.expiresAt").value(unpaidInvoice.expiresAt().toString()))
-      .andExpect(jsonPath("$.received").value(unpaidInvoice.received().longValue()))
-      .andExpect(jsonPath("$.description").value(unpaidInvoice.description()));
-  }
-
-  @Test
-  public void getNonExistentInvoiceReceiptForNonExistentInvoice() throws Exception {
-    Invoice unpaidInvoice = Invoice.builder()
-      .accountId("foo")
-      .amount(UnsignedLong.valueOf(1000))
-      .assetCode("XRP")
-      .assetScale((short) 9)
-      .subject("$wallet.com/foo")
-      .expiresAt(Instant.MAX)
-      .received(UnsignedLong.ZERO) // Not paid
-      .description("Test invoice")
-      .build();
-
-    when(invoiceServiceMock.getInvoiceById(eq(unpaidInvoice.id()))).thenThrow(InvoiceNotFoundProblem.class);
-
-    FeignException feignExceptionMock = mock(FeignException.class);
-    when(feignExceptionMock.status()).thenReturn(404);
-
-    when(openPaymentsClientMock.getInvoice(eq(unpaidInvoice.invoiceUrl().uri()))).thenThrow(feignExceptionMock);
-
-    mockMvc
-      .perform(get("/foo" + OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + unpaidInvoice.id() + "?invoiceUrl=" + unpaidInvoice.invoiceUrl())
-        .headers(this.testJsonHeaders()))
-      .andExpect(status().isNotFound());
-  }
-
-  @Test
-  public void getExistingInvoiceReceiptFromSameWallet() throws Exception {
-    Invoice paidInvoice = Invoice.builder()
-      .accountId("foo")
-      .amount(UnsignedLong.valueOf(1000))
-      .assetCode("XRP")
-      .assetScale((short) 9)
-      .subject("$localhost:8080/foo")
-      .expiresAt(Instant.MAX)
-      .received(UnsignedLong.valueOf(1000)) // paid
-      .description("Test invoice")
-      .build();
-
-    when(invoiceServiceMock.getInvoiceById(eq(paidInvoice.id()))).thenReturn(paidInvoice);
-
-    mockMvc
-      .perform(get("/foo" + OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + paidInvoice.id() + "?invoiceUrl=" + paidInvoice.invoiceUrl())
+      .perform(get("/foo" + OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + paidInvoice.id())
         .headers(this.testJsonHeaders()))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.accountId").value(paidInvoice.accountId().get()))
@@ -312,7 +225,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       .andExpect(jsonPath("$.type").value("https://errors.interledger.org/invoices/invoice-not-found"));
   }
 
-  @Test
+  /*@Test
   public void createValidInvoice() throws Exception {
     Invoice invoiceMock = Invoice.builder()
       .accountId("foo")
@@ -342,7 +255,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       .andExpect(jsonPath("$.received").value(invoiceMock.received().longValue()))
       .andExpect(jsonPath("$.description").value(invoiceMock.description()))
       .andExpect(jsonPath("$.paymentId").hasJsonPath());
-  }
+  }*/
 
   /*@Test
   public void getPaymentDetailsForOwnIlpInvoice() throws Exception {

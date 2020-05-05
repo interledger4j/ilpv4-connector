@@ -100,54 +100,33 @@ public class InvoicesController {
   }
 
   /**
-   * Get an existing {@link Invoice}. If an invoice URL is provided as a request parameter, this will get an
-   * invoice receipt, otherwise it will assume that we are the invoice owner and just fetch from our records.
+   * Get an existing {@link Invoice}. If the invoice URL that we have for this invoiceID has a different host
+   * than this server, this will get the invoice from that location and update the local copy.
    *
-   * @param invoiceUrl The location of the original {@link Invoice}. If requesting an invoice that this server owns,
-   *                   this is not necessary.
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} being retrieved.
    * @return An existing {@link Invoice}
    */
-  // https://xpring.io/foo/invoices/1234?invoiceUrl=https://rafiki.money/invoices/1234
   @RequestMapping(
     path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES + OpenPaymentsPathConstants.SLASH_INVOICE_ID,
     method = RequestMethod.GET,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody Invoice getInvoice(
-    @RequestParam(name = "invoiceUrl", required = false) String invoiceUrl,
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId
   ) {
-    if (invoiceUrl != null) {
-      return this.getInvoiceReceipt(HttpUrl.parse(invoiceUrl), invoiceId);
-    }
-    return invoiceService.getInvoiceById(invoiceId);
-  }
+    Invoice existingInvoiceReceipt = invoiceService.getInvoiceById(invoiceId);
+    HttpUrl invoiceUrl = existingInvoiceReceipt.invoiceUrl();
 
-  /**
-   * Get an existing invoice receipt.  An invoice receipt is the sender wallet's copy of an {@link Invoice}.
-   * If we have a record of a paid invoice, we can just return that. If the invoice hasn't been fully paid,
-   * this endpoint will request an update from the invoice owner and update the invoice in our own records.
-   *
-   * @param invoiceUrl The location of the {@link Invoice}.
-   * @return An updated view of an {@link Invoice} which is owned by another wallet.
-   * @throws Exception
-   */
-  public Invoice getInvoiceReceipt(
-    HttpUrl invoiceUrl,
-    InvoiceId invoiceId
-  ) {
     // The sender and receiver wallets could be the same wallet, so the invoice and the invoice receipt could be
     // the same record. In this case, we should just return what we have.
     if (ServletUriComponentsBuilder.fromCurrentContextPath().build().getHost().equals(invoiceUrl.host())) {
-      return invoiceService.getInvoiceById(invoiceId);
+      return existingInvoiceReceipt;
     }
 
     // Otherwise, we can assume that some other wallet is the invoice owner.
     try {
       // Look at our own records. If, from our view, the invoice has been paid, no need to reach out to the receiver to
       // update it.
-      Invoice existingInvoiceReceipt = invoiceService.getInvoiceById(invoiceId);
       if (existingInvoiceReceipt.isPaid()) {
         return existingInvoiceReceipt;
       } else {
