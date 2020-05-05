@@ -1,5 +1,6 @@
 package org.interledger.connector.opa.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -26,7 +27,7 @@ public interface OpenPaymentsMetadata {
    *
    * @return an {@link HttpUrl} representing the URL of the issuer.
    */
-  @JsonProperty("issuer")
+  @JsonIgnore
   HttpUrl issuer();
 
   /**
@@ -41,7 +42,7 @@ public interface OpenPaymentsMetadata {
    * @return An {@link HttpUrl} representing the base URL for the Authorization Server.
    */
   @Value.Default
-  @JsonProperty("authorization_issuer")
+  @JsonIgnore
   default HttpUrl authorizationIssuer() {
     return this.issuer();
   };
@@ -85,7 +86,7 @@ public interface OpenPaymentsMetadata {
    * @return The {@link HttpUrl} of the endpoint on the Open Payments Server which handles invoices.
    */
   @Value.Default
-  @JsonProperty("invoices_endpoint")
+  @JsonIgnore
   default HttpUrl invoicesEndpoint() {
     return issuer().newBuilder().addPathSegment("invoice").build();
   };
@@ -98,7 +99,7 @@ public interface OpenPaymentsMetadata {
    * @return The {@link HttpUrl} of the endpoint on the Open Payments Server which handles mandates.
    */
   @Value.Default
-  @JsonProperty("mandates_endpoint")
+  @JsonIgnore
   default HttpUrl mandatesEndpoint() {
     return issuer().newBuilder().addPathSegment("mandate").build();
   };
