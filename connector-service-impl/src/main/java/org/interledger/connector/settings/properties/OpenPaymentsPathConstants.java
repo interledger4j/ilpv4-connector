@@ -2,7 +2,6 @@ package org.interledger.connector.settings.properties;
 
 public class OpenPaymentsPathConstants {
   private static final String SLASH = "/";
-  public static final String OPEN_PAYMENTS_METADATA = "/.well-known/open-payments";
 
   public static final String AUTHORIZE = "authorize";
   public static final String SLASH_AUTHORIZE = SLASH + AUTHORIZE;

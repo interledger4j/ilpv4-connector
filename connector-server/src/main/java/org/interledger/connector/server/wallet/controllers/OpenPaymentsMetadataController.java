@@ -33,7 +33,7 @@ public class OpenPaymentsMetadataController {
    * @return The {@link OpenPaymentsMetadata} for this server.
    */
   @RequestMapping(
-    path = OpenPaymentsPathConstants.OPEN_PAYMENTS_METADATA,
+    path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID,
     method = RequestMethod.GET,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )

@@ -44,7 +44,7 @@ public class OpenPaymentsMetadataControllerTest extends AbstractControllerTest {
     HttpHeaders headers = this.testJsonHeaders();
 
     this.mvc
-      .perform(get(OpenPaymentsPathConstants.OPEN_PAYMENTS_METADATA)
+      .perform(get("/alice")
         .headers(headers)
       )
       .andExpect(status().isOk())
