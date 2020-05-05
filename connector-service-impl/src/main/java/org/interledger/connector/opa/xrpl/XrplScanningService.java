@@ -1,6 +1,4 @@
-package org.interledger.connector.opa;
-
-import org.interledger.connector.opa.xrpl.XrplMessage;
+package org.interledger.connector.opa.xrpl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

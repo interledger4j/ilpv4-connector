@@ -1,6 +1,6 @@
 package org.interledger.connector.config;
 
-import org.interledger.connector.opa.XrplScanningService;
+import org.interledger.connector.opa.xrpl.XrplScanningService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;
