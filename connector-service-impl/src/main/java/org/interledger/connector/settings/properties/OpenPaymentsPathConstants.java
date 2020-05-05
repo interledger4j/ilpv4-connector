@@ -12,6 +12,9 @@ public class OpenPaymentsPathConstants {
   public static final String INVOICES = "invoices";
   public static final String SLASH_INVOICES = SLASH + INVOICES;
 
+  public static final String INVOICE_ID = "invoiceId";
+  public static final String SLASH_INVOICE_ID = "/{" + INVOICE_ID + ":.+}";
+
   public static final String MANDATES = "mandates";
   public static final String SLASH_MANDATES = SLASH + MANDATES;
 

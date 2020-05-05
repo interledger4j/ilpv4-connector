@@ -3,12 +3,14 @@ package org.interledger.connector.opa.model;
 import org.interledger.spsp.PaymentPointer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.Preconditions;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.primitives.UnsignedLong;
+import okhttp3.HttpUrl;
 import org.immutables.value.Value;
 
 import java.nio.charset.StandardCharsets;
@@ -28,6 +30,41 @@ public interface Invoice {
 
   static ImmutableInvoice.Builder builder() {
     return ImmutableInvoice.builder();
+  }
+
+  @JsonProperty("name")
+  @Value.Derived
+  default HttpUrl invoiceUrl() {
+    // subject is a PaymentPointer
+    if (subject().startsWith("$")) {
+      PaymentPointer paymentPointerSubject = PaymentPointer.of(subject());
+      String[] hostAndPort = paymentPointerSubject.host().split(":");
+
+      HttpUrl.Builder urlBuilder = new HttpUrl.Builder()
+        .scheme("https")
+        .host(hostAndPort[0]);
+
+      // For local testing...
+      if (hostAndPort.length > 1) {
+        urlBuilder.port(Integer.valueOf(hostAndPort[1]));
+      }
+
+      return urlBuilder
+        .addPathSegment(accountId().orElse(""))
+        .addPathSegment("invoices")
+        .addPathSegment(id().value())
+        .build();
+    } else {
+      // subject is a PayID
+      String[] payIdParts = subject().split("$");
+      return new HttpUrl.Builder()
+        .scheme("https")
+        .host(payIdParts[0])
+        .addPathSegment(accountId().orElse(""))
+        .addPathSegment("invoices")
+        .addPathSegment(id().value())
+        .build();
+    }
   }
 
   /**

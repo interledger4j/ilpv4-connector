@@ -31,6 +31,8 @@ public interface InvoiceService {
 
   Invoice updateInvoice(final Invoice invoice);
 
+  Invoice updateOrCreateInvoice(final Invoice invoice);
+
   /**
    * Execute any actions necessary in the event of a received XRP payment.
    *

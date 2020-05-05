@@ -17,7 +17,6 @@ import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMv
 import org.interledger.connector.server.wallet.spring.config.OpenPaymentsConfig;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
-import org.interledger.connector.settings.properties.OpenPaymentsMediaType;
 import org.interledger.connector.settings.properties.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.connector.wallet.OpenPaymentsClient;

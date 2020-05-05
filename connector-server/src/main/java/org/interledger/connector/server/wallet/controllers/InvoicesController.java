@@ -9,20 +9,14 @@ import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.PaymentDetailsService;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.XrpPayment;
-import org.interledger.connector.opa.model.XrpPaymentDetails;
-import org.interledger.connector.opa.model.problems.InvoicePaymentDetailsProblem;
+import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.payments.StreamPayment;
-import org.interledger.connector.settings.properties.OpenPaymentsMediaType;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
 import org.interledger.connector.wallet.OpenPaymentsClient;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
-import org.interledger.spsp.StreamConnectionDetails;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
@@ -38,8 +32,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.zalando.problem.spring.common.MediaTypes;
 
 import java.net.URI;
@@ -91,9 +87,8 @@ public class InvoicesController {
    * @return A 201 Created if successful, and the fully populated {@link Invoice} which was stored.
    */
   @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID,
+    path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES,
     method = RequestMethod.POST,
-    consumes = {OpenPaymentsMediaType.APPLICATION_INVOICE_JSON_VALUE},
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody ResponseEntity<Invoice> createInvoice(@RequestBody Invoice invoice) {
@@ -105,30 +100,71 @@ public class InvoicesController {
   }
 
   /**
-   * Get an existing {@link Invoice}.
+   * Get an existing {@link Invoice}. If an invoice URL is provided as a request parameter, this will get an
+   * invoice receipt, otherwise it will assume that we are the invoice owner and just fetch from our records.
    *
+   * @param invoiceUrl The location of the original {@link Invoice}. If requesting an invoice that this server owns,
+   *                   this is not necessary.
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} being retrieved.
    * @return An existing {@link Invoice}
    */
+  // https://xpring.io/foo/invoices/1234?invoiceUrl=https://rafiki.money/invoices/1234
   @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_INVOICES + "/{invoiceId}",
+    path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES + OpenPaymentsPathConstants.SLASH_INVOICE_ID,
     method = RequestMethod.GET,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  // TODO: We need the full invoice location as a parameter, since invoices endpoint is no longer discoverable via metadata
-  public @ResponseBody Invoice getInvoice(@PathVariable InvoiceId invoiceId) {
-    Invoice existingInvoice = invoiceService.getInvoiceById(invoiceId);
-    if (isOurs(existingInvoice) || existingInvoice.isPaid()) {
-      return existingInvoice;
-    } else {
-      HttpUrl subjectUrl = resolveSubjectToHttpUrl(existingInvoice.subject());
-      // TODO: No more OP metadata, use invoice location
-      OpenPaymentsMetadata metadata = openPaymentsClient.getMetadata(subjectUrl.uri());
+  public @ResponseBody Invoice getInvoice(
+    @RequestParam(name = "invoiceUrl", required = false) String invoiceUrl,
+    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId
+  ) {
+    if (invoiceUrl != null) {
+      return this.getInvoiceReceipt(HttpUrl.parse(invoiceUrl), invoiceId);
+    }
+    return invoiceService.getInvoiceById(invoiceId);
+  }
+
+  /**
+   * Get an existing invoice receipt.  An invoice receipt is the sender wallet's copy of an {@link Invoice}.
+   * If we have a record of a paid invoice, we can just return that. If the invoice hasn't been fully paid,
+   * this endpoint will request an update from the invoice owner and update the invoice in our own records.
+   *
+   * @param invoiceUrl The location of the {@link Invoice}.
+   * @return An updated view of an {@link Invoice} which is owned by another wallet.
+   * @throws Exception
+   */
+  public Invoice getInvoiceReceipt(
+    HttpUrl invoiceUrl,
+    InvoiceId invoiceId
+  ) {
+    // The sender and receiver wallets could be the same wallet, so the invoice and the invoice receipt could be
+    // the same record. In this case, we should just return what we have.
+    if (ServletUriComponentsBuilder.fromCurrentContextPath().build().getHost().equals(invoiceUrl.host())) {
+      return invoiceService.getInvoiceById(invoiceId);
+    }
+
+    // Otherwise, we can assume that some other wallet is the invoice owner.
+    try {
+      // Look at our own records. If, from our view, the invoice has been paid, no need to reach out to the receiver to
+      // update it.
+      Invoice existingInvoiceReceipt = invoiceService.getInvoiceById(invoiceId);
+      if (existingInvoiceReceipt.isPaid()) {
+        return existingInvoiceReceipt;
+      } else {
+        throw new Exception("Local invoice receipt has not been fully paid. Request an updated invoice from the invoice owner.");
+      }
+    } catch (Exception e) {
+      // If our copy of the invoice hasn't been paid, or we don't have a record of that invoice, try
+      // to reach out to the invoice owner to update/create our record
       try {
-        Invoice invoiceOnReceiver = openPaymentsClient.getInvoice(metadata.invoicesEndpoint().uri(), invoiceId.value());
-        return invoiceService.updateInvoice(invoiceOnReceiver);
-      } catch (FeignException e) {
-        return existingInvoice;
+        Invoice invoiceOnReceiver = openPaymentsClient.getInvoice(invoiceUrl.uri());
+        return invoiceService.updateOrCreateInvoice(invoiceOnReceiver);
+      } catch (FeignException fe) {
+        if (fe.status() == 404) {
+          throw new InvoiceNotFoundProblem("Original invoice was not found in invoice owner's records.", invoiceId);
+        }
+
+        throw new RuntimeException(e);
       }
     }
   }
@@ -185,13 +221,13 @@ public class InvoicesController {
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} this payment is being set up to pay.
    * @return The payment details necessary to pay an invoice.
    */
-  @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_INVOICES + "/{invoiceId}",
+  /*@RequestMapping(
+    path = OpenPaymentsPathConstants.SLASH_INVOICES + OpenPaymentsPathConstants.SLASH_INVOICE_ID,
     method = RequestMethod.OPTIONS,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody ResponseEntity getPaymentDetails(
-    @PathVariable InvoiceId invoiceId
+    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId
   ) {
     final HttpHeaders headers = new HttpHeaders();
     headers.setLocation(getInvoiceLocation(invoiceId));
@@ -261,7 +297,7 @@ public class InvoicesController {
 
       return new ResponseEntity(ilpInvoicePaymentDetails, HttpStatus.OK);
     }
-  }
+  }*/
 
   // TODO: Is this how we want to determine if an invoice is ours or not?
   private boolean isOurs(Invoice invoice) {

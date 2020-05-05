@@ -54,6 +54,15 @@ public class DefaultInvoiceService implements InvoiceService {
   }
 
   @Override
+  public Invoice updateOrCreateInvoice(Invoice invoice) {
+    try {
+      return this.updateInvoice(invoice);
+    } catch (InvoiceNotFoundProblem e) {
+      return this.createInvoice(invoice);
+    }
+  }
+
+  @Override
   public Optional<Invoice> onPayment(XrpPayment xrpPayment) {
     return Optional.empty();
   }

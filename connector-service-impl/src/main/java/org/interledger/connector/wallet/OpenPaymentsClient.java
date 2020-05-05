@@ -67,8 +67,7 @@ public interface OpenPaymentsClient {
     CONTENT_TYPE + APPLICATION_JSON
   })
   Invoice getInvoice(
-    URI invoiceEndpoint,
-    @Param("invoiceId") String invoiceId
+    URI invoiceUrl
   ) throws ThrowableProblem;
 
   @RequestLine("OPTIONS /{invoiceId}")
@@ -77,8 +76,7 @@ public interface OpenPaymentsClient {
     CONTENT_TYPE + APPLICATION_JSON
   })
   StreamConnectionDetails getIlpInvoicePaymentDetails(
-      URI invoiceEndpoint,
-      @Param("invoiceId") String invoiceId
+      URI invoiceUrl
     ) throws ThrowableProblem;
 
   @RequestLine("OPTIONS /")
@@ -86,26 +84,7 @@ public interface OpenPaymentsClient {
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
   })
-  StreamConnectionDetails getIlpInvoicePaymentDetails(
-    URI invoiceEndpoint
-  ) throws ThrowableProblem;
-
-  @RequestLine("OPTIONS /{invoiceId}")
-  @Headers({
-    ACCEPT + APPLICATION_JSON,
-    CONTENT_TYPE + APPLICATION_JSON
-  })
   XrpPaymentDetails getXrpInvoicePaymentDetails(
-    URI invoiceEndpoint,
-    @Param("invoiceId") String invoiceId
-  ) throws ThrowableProblem;
-
-  @RequestLine("OPTIONS /")
-  @Headers({
-    ACCEPT + APPLICATION_JSON,
-    CONTENT_TYPE + APPLICATION_JSON
-  })
-  XrpPaymentDetails getXrpInvoicePaymentDetails(
-    URI invoiceEndpoint
+    URI invoiceUrl
   ) throws ThrowableProblem;
 }
