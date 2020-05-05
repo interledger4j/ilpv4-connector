@@ -19,6 +19,7 @@ import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.server.spring.controllers.AbstractControllerTest;
 import org.interledger.connector.server.spring.controllers.PathConstants;
+import org.interledger.connector.settings.properties.OpenPaymentsMediaType;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.SharedSecret;
@@ -166,8 +167,8 @@ public class InvoicesControllerTest extends AbstractControllerTest {
     when(invoiceServiceMock.createInvoice(any())).thenReturn(invoiceMock);
 
     mockMvc
-      .perform(post(OpenPaymentsPathConstants.SLASH_INVOICE)
-        .headers(this.testJsonHeaders())
+      .perform(post("/foo")
+        .headers(this.testInvoicePostHeaders())
         .content(objectMapper.writeValueAsString(invoiceMock))
       )
       .andExpect(status().isCreated())

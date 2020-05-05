@@ -16,6 +16,7 @@ import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.opa.model.problems.InvoicePaymentDetailsProblem;
 import org.interledger.connector.payments.StreamPayment;
+import org.interledger.connector.settings.properties.OpenPaymentsMediaType;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
 import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.core.InterledgerAddress;
@@ -90,8 +91,9 @@ public class InvoicesController {
    * @return A 201 Created if successful, and the fully populated {@link Invoice} which was stored.
    */
   @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_INVOICE,
+    path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID,
     method = RequestMethod.POST,
+    consumes = {OpenPaymentsMediaType.APPLICATION_INVOICE_JSON_VALUE},
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody ResponseEntity<Invoice> createInvoice(@RequestBody Invoice invoice) {

@@ -17,6 +17,7 @@ import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMv
 import org.interledger.connector.server.wallet.spring.config.OpenPaymentsConfig;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
+import org.interledger.connector.settings.properties.OpenPaymentsMediaType;
 import org.interledger.connector.settings.properties.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.connector.wallet.OpenPaymentsClient;
@@ -168,6 +169,19 @@ public abstract class AbstractControllerTest {
     HttpHeaders headers = new HttpHeaders();
     headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_OCTET_STREAM));
     headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+    return headers;
+  }
+
+  protected HttpHeaders testInvoicePostHeaders() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
+    headers.setContentType(OpenPaymentsMediaType.APPLICATION_INVOICE_JSON);
+    return headers;
+  }
+  protected HttpHeaders testInvoiceGetHeaders() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setAccept(Lists.newArrayList(OpenPaymentsMediaType.APPLICATION_INVOICE_JSON));
+    headers.setContentType(MediaType.APPLICATION_JSON);
     return headers;
   }
 

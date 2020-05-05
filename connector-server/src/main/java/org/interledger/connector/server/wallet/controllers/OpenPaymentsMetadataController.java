@@ -28,7 +28,7 @@ public class OpenPaymentsMetadataController {
   }
 
   /**
-   * Get the metadata for the Open Payments server at /.well-known/open-payments.
+   * Get the metadata for the Open Payments server.
    *
    * @return The {@link OpenPaymentsMetadata} for this server.
    */
