@@ -9,11 +9,11 @@ public class OpenPaymentsPathConstants {
   public static final String TOKEN = "token";
   public static final String SLASH_TOKEN = SLASH + TOKEN;
 
-  public static final String INVOICE = "invoice";
-  public static final String SLASH_INVOICE = SLASH + INVOICE;
+  public static final String INVOICES = "invoices";
+  public static final String SLASH_INVOICES = SLASH + INVOICES;
 
-  public static final String MANDATE = "mandate";
-  public static final String SLASH_MANDATE = SLASH + MANDATE;
+  public static final String MANDATES = "mandates";
+  public static final String SLASH_MANDATES = SLASH + MANDATES;
 
   public static final String ACCOUNTS = "accounts";
   public static final String SLASH_ACCOUNTS = SLASH + ACCOUNTS;

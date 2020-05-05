@@ -111,16 +111,18 @@ public class InvoicesController {
    * @return An existing {@link Invoice}
    */
   @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_INVOICE + "/{invoiceId}",
+    path = OpenPaymentsPathConstants.SLASH_INVOICES + "/{invoiceId}",
     method = RequestMethod.GET,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
+  // TODO: We need the full invoice location as a parameter, since invoices endpoint is no longer discoverable via metadata
   public @ResponseBody Invoice getInvoice(@PathVariable InvoiceId invoiceId) {
     Invoice existingInvoice = invoiceService.getInvoiceById(invoiceId);
     if (isOurs(existingInvoice) || existingInvoice.isPaid()) {
       return existingInvoice;
     } else {
       HttpUrl subjectUrl = resolveSubjectToHttpUrl(existingInvoice.subject());
+      // TODO: No more OP metadata, use invoice location
       OpenPaymentsMetadata metadata = openPaymentsClient.getMetadata(subjectUrl.uri());
       try {
         Invoice invoiceOnReceiver = openPaymentsClient.getInvoice(metadata.invoicesEndpoint().uri(), invoiceId.value());
@@ -142,7 +144,7 @@ public class InvoicesController {
    *          an invoice.
    */
   @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_INVOICE + "/payment/xrp",
+    path = OpenPaymentsPathConstants.SLASH_INVOICES + "/payment/xrp",
     method = RequestMethod.POST,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
@@ -161,7 +163,7 @@ public class InvoicesController {
    *          an invoice.
    */
   @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_INVOICE + "/payment/ilp",
+    path = OpenPaymentsPathConstants.SLASH_INVOICES + "/payment/ilp",
     method = RequestMethod.POST,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
@@ -184,7 +186,7 @@ public class InvoicesController {
    * @return The payment details necessary to pay an invoice.
    */
   @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_INVOICE + "/{invoiceId}",
+    path = OpenPaymentsPathConstants.SLASH_INVOICES + "/{invoiceId}",
     method = RequestMethod.OPTIONS,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
@@ -245,6 +247,7 @@ public class InvoicesController {
     receiverUrl = resolveSubjectToHttpUrl(invoice.subject());
 
     // Get the invoices endpoint on the receiver
+    // TODO: use invoice location instead of metadata
     OpenPaymentsMetadata metadata = openPaymentsClient.getMetadata(receiverUrl.uri());
 
     // Get and return the correct payment details.
@@ -260,6 +263,7 @@ public class InvoicesController {
     }
   }
 
+  // TODO: Is this how we want to determine if an invoice is ours or not?
   private boolean isOurs(Invoice invoice) {
     HttpUrl subjectUrl = resolveSubjectToHttpUrl(invoice.subject());
 
@@ -270,6 +274,7 @@ public class InvoicesController {
 
     return false;
   }
+
   private HttpUrl resolveSubjectToHttpUrl(String subject) {
     HttpUrl receiverUrl;// Try to parse invoice subject as a Payment Pointer, otherwise assume it's a PayID and parse that.
     try {

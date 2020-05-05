@@ -88,7 +88,7 @@ public interface OpenPaymentsMetadata {
   @Value.Default
   @JsonIgnore
   default HttpUrl invoicesEndpoint() {
-    return issuer().newBuilder().addPathSegment("invoice").build();
+    return issuer().newBuilder().addPathSegment("invoices").build();
   };
 
   /**
@@ -101,7 +101,7 @@ public interface OpenPaymentsMetadata {
   @Value.Default
   @JsonIgnore
   default HttpUrl mandatesEndpoint() {
-    return issuer().newBuilder().addPathSegment("mandate").build();
+    return issuer().newBuilder().addPathSegment("mandates").build();
   };
 
   /**

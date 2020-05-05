@@ -19,7 +19,6 @@ import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.server.spring.controllers.AbstractControllerTest;
 import org.interledger.connector.server.spring.controllers.PathConstants;
-import org.interledger.connector.settings.properties.OpenPaymentsMediaType;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.SharedSecret;
@@ -69,7 +68,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
     when(invoiceServiceMock.getInvoiceById(invoiceMock.id())).thenReturn(invoiceMock);
 
     mockMvc
-      .perform(get(OpenPaymentsPathConstants.SLASH_INVOICE + PathConstants.SLASH + invoiceMock.id())
+      .perform(get(OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + invoiceMock.id())
         .headers(this.testJsonHeaders()))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.accountId").value(invoiceMock.accountId().get()))
@@ -116,7 +115,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
     when(invoiceServiceMock.updateInvoice(eq(updatedInvoiceMock))).thenReturn(updatedInvoiceMock);
 
     mockMvc
-      .perform(get(OpenPaymentsPathConstants.SLASH_INVOICE + PathConstants.SLASH + invoiceMock.id())
+      .perform(get(OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + invoiceMock.id())
         .headers(this.testJsonHeaders()))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.accountId").value(updatedInvoiceMock.accountId().get()))
@@ -145,7 +144,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
 
     when(invoiceServiceMock.getInvoiceById(invoiceMock.id())).thenThrow(new InvoiceNotFoundProblem(invoiceMock.id()));
     mockMvc
-      .perform(get(OpenPaymentsPathConstants.SLASH_INVOICE + PathConstants.SLASH + invoiceMock.id())
+      .perform(get(OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + invoiceMock.id())
         .headers(this.testJsonHeaders()))
       .andExpect(status().isNotFound())
       .andExpect(jsonPath("$.type").value("https://errors.interledger.org/invoices/invoice-not-found"));
@@ -206,7 +205,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       .thenReturn(streamConnectionDetails);
 
     mockMvc
-      .perform(options(OpenPaymentsPathConstants.SLASH_INVOICE + PathConstants.SLASH + invoiceId)
+      .perform(options(OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + invoiceId)
         .headers(this.testJsonHeaders())
 //        .with(httpBasic("admin", "password")).with(csrf())
       )
@@ -248,7 +247,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
     when(mockMetadata.invoicesEndpoint()).thenReturn(invoicesEndpoint);
 
     mockMvc
-      .perform(options(OpenPaymentsPathConstants.SLASH_INVOICE + PathConstants.SLASH + invoiceId)
+      .perform(options(OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + invoiceId)
           .headers(this.testJsonHeaders())
       )
       .andExpect(status().isOk())
@@ -270,7 +269,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
     when(xrpPaymentDetailsService.getAddressFromInvoiceSubject(mockInvoice.subject())).thenReturn(destinationAddress); // I'm aware this isnt an XRP address...
 
     mockMvc
-      .perform(options(OpenPaymentsPathConstants.SLASH_INVOICE + PathConstants.SLASH + invoiceId)
+      .perform(options(OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + invoiceId)
           .headers(this.testJsonHeaders())
       )
       .andExpect(status().isOk())
@@ -311,7 +310,7 @@ public class InvoicesControllerTest extends AbstractControllerTest {
 
 
     mockMvc
-      .perform(options(OpenPaymentsPathConstants.SLASH_INVOICE + PathConstants.SLASH + invoiceId)
+      .perform(options(OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + invoiceId)
         .headers(this.testJsonHeaders())
       )
       .andExpect(jsonPath("$.address").value(destinationAddress))
