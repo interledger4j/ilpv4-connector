@@ -77,7 +77,7 @@ public interface OpenPaymentsClient {
   })
   StreamConnectionDetails getIlpInvoicePaymentDetails(
       URI invoiceUrl
-    ) throws ThrowableProblem;
+  ) throws ThrowableProblem;
 
   @RequestLine("OPTIONS /")
   @Headers({

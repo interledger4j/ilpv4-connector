@@ -4,6 +4,7 @@ import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.PaymentDetailsService;
+import org.interledger.connector.opa.model.InvoiceFactory;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.wallet.DefaultInvoiceService;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
@@ -58,9 +59,12 @@ public class OpenPaymentsConfig {
   @Bean
   public InvoiceService defaultInvoiceService(
     InvoicesRepository invoicesRepository,
-    ConversionService conversionService
+    ConversionService conversionService,
+    InvoiceFactory invoiceFactory,
+    OpenPaymentsClient openPaymentsClient,
+    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier
   ) {
-    return new DefaultInvoiceService(invoicesRepository, conversionService);
+    return new DefaultInvoiceService(invoicesRepository, conversionService, invoiceFactory, openPaymentsClient, openPaymentsSettingsSupplier);
   }
 
   @Bean
@@ -93,6 +97,11 @@ public class OpenPaymentsConfig {
   @Bean
   public PaymentPointerResolver opaPaymentPointerResolver() {
     return PaymentPointerResolver.defaultResolver();
+  }
+
+  @Bean
+  public InvoiceFactory invoiceFactory(PaymentPointerResolver paymentPointerResolver) {
+    return new InvoiceFactory(paymentPointerResolver);
   }
 
 }

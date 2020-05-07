@@ -8,6 +8,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.PaymentDetailsService;
 import org.interledger.connector.opa.model.Invoice;
+import org.interledger.connector.opa.model.InvoiceFactory;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.XrpPayment;
@@ -32,10 +33,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.UriComponents;
 import org.zalando.problem.spring.common.MediaTypes;
 
 import java.net.URI;
@@ -67,7 +68,7 @@ public class InvoicesController {
     final StreamConnectionGenerator streamConnectionGenerator,
     final OpenPaymentsClient openPaymentsClient,
     final PaymentPointerResolver paymentPointerResolver
-    ) {
+  ) {
     this.invoiceService = Objects.requireNonNull(invoiceService);
     this.ilpPaymentDetailsService = Objects.requireNonNull(ilpPaymentDetailsService);
     this.xrpPaymentDetailsService = Objects.requireNonNull(xrpPaymentDetailsService);
@@ -91,7 +92,10 @@ public class InvoicesController {
     method = RequestMethod.POST,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public @ResponseBody ResponseEntity<Invoice> createInvoice(@RequestBody Invoice invoice) {
+  public @ResponseBody ResponseEntity<Invoice> createInvoice(
+    @PathVariable String accountId,
+    @RequestBody Invoice invoice
+  ) {
     Invoice createdInvoice = invoiceService.createInvoice(invoice);
 
     final HttpHeaders headers = new HttpHeaders();
@@ -114,38 +118,7 @@ public class InvoicesController {
   public @ResponseBody Invoice getInvoice(
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId
   ) {
-    Invoice existingInvoiceReceipt = invoiceService.getInvoiceById(invoiceId);
-    HttpUrl invoiceUrl = existingInvoiceReceipt.invoiceUrl();
-
-    // The sender and receiver wallets could be the same wallet, so the invoice and the invoice receipt could be
-    // the same record. In this case, we should just return what we have.
-    if (ServletUriComponentsBuilder.fromCurrentContextPath().build().getHost().equals(invoiceUrl.host())) {
-      return existingInvoiceReceipt;
-    }
-
-    // Otherwise, we can assume that some other wallet is the invoice owner.
-    try {
-      // Look at our own records. If, from our view, the invoice has been paid, no need to reach out to the receiver to
-      // update it.
-      if (existingInvoiceReceipt.isPaid()) {
-        return existingInvoiceReceipt;
-      } else {
-        throw new Exception("Local invoice receipt has not been fully paid. Request an updated invoice from the invoice owner.");
-      }
-    } catch (Exception e) {
-      // If our copy of the invoice hasn't been paid, or we don't have a record of that invoice, try
-      // to reach out to the invoice owner to update/create our record
-      try {
-        Invoice invoiceOnReceiver = openPaymentsClient.getInvoice(invoiceUrl.uri());
-        return invoiceService.updateOrCreateInvoice(invoiceOnReceiver);
-      } catch (FeignException fe) {
-        if (fe.status() == 404) {
-          throw new InvoiceNotFoundProblem("Original invoice was not found in invoice owner's records.", invoiceId);
-        }
-
-        throw new RuntimeException(e);
-      }
-    }
+    return invoiceService.getInvoiceById(invoiceId);
   }
 
   /**
@@ -278,18 +251,6 @@ public class InvoicesController {
     }
   }*/
 
-  // TODO: Is this how we want to determine if an invoice is ours or not?
-  private boolean isOurs(Invoice invoice) {
-    HttpUrl subjectUrl = resolveSubjectToHttpUrl(invoice.subject());
-
-    HttpUrl accountIdUrl = resolveSubjectToHttpUrl(invoice.accountId().orElse(""));
-    if (accountIdUrl != null) {
-      return subjectUrl.host().equals(accountIdUrl.host());
-    }
-
-    return false;
-  }
-
   private HttpUrl resolveSubjectToHttpUrl(String subject) {
     HttpUrl receiverUrl;// Try to parse invoice subject as a Payment Pointer, otherwise assume it's a PayID and parse that.
     try {
@@ -307,6 +268,17 @@ public class InvoicesController {
       }
     }
     return receiverUrl;
+  }
+
+  private boolean isForThisWallet(HttpUrl invoiceUrl) {
+    UriComponents localUri = ServletUriComponentsBuilder.fromCurrentContextPath().build();
+
+    // For testing. If we run two wallet connectors in the same test, they will only be differentiated by port.
+    if (localUri.getHost().equals("localhost")) {
+      return localUri.getHost().equals(invoiceUrl.host()) && localUri.getPort() == invoiceUrl.port();
+    }
+
+    return localUri.getHost().equals(invoiceUrl.host());
   }
 
   private URI getInvoiceLocation(InvoiceId invoiceId) {

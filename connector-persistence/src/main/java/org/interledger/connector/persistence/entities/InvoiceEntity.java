@@ -79,7 +79,7 @@ public class InvoiceEntity extends AbstractEntity {
 
   public InvoiceEntity(final Invoice invoice) {
     Objects.requireNonNull(invoice);
-    this.accountId = invoice.accountId().orElse("");
+    this.accountId = invoice.accountId();
     this.amount = invoice.amount().longValue();
     this.assetCode = invoice.assetCode();
     this.assetScale = invoice.assetScale();
@@ -91,7 +91,7 @@ public class InvoiceEntity extends AbstractEntity {
     this.subject = invoice.subject();
     this.paymentNetwork = invoice.paymentNetwork().toString();
     this.paymentId = invoice.paymentId();
-    this.invoiceUrl = invoice.invoiceUrl().toString();
+    this.invoiceUrl = invoice.invoiceUrl().get().toString();
   }
 
   public Long getId() {

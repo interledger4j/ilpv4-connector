@@ -79,7 +79,6 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       .perform(get("/foo" + OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + invoiceMock.id())
         .headers(this.testJsonHeaders()))
       .andExpect(status().isOk())
-      .andExpect(jsonPath("$.accountId").value(invoiceMock.accountId().get()))
       .andExpect(jsonPath("$.amount").value(invoiceMock.amount().longValue()))
       .andExpect(jsonPath("$.assetCode").value(invoiceMock.assetCode()))
       .andExpect(jsonPath("$.assetScale").value((int) invoiceMock.assetScale()))
@@ -109,7 +108,6 @@ public class InvoicesControllerTest extends AbstractControllerTest {
       .perform(get("/foo" + OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + paidInvoice.id())
         .headers(this.testJsonHeaders()))
       .andExpect(status().isOk())
-      .andExpect(jsonPath("$.accountId").value(paidInvoice.accountId().get()))
       .andExpect(jsonPath("$.amount").value(paidInvoice.amount().longValue()))
       .andExpect(jsonPath("$.assetCode").value(paidInvoice.assetCode()))
       .andExpect(jsonPath("$.assetScale").value((int) paidInvoice.assetScale()))
@@ -139,14 +137,13 @@ public class InvoicesControllerTest extends AbstractControllerTest {
 
     when(invoiceServiceMock.getInvoiceById(eq(unpaidInvoice.id()))).thenReturn(unpaidInvoice);
 
-    when(openPaymentsClientMock.getInvoice(eq(unpaidInvoice.invoiceUrl().uri()))).thenReturn(paidInvoice);
+    when(openPaymentsClientMock.getInvoice(eq(unpaidInvoice.invoiceUrl().get().uri()))).thenReturn(paidInvoice);
     when(invoiceServiceMock.updateOrCreateInvoice(eq(paidInvoice))).thenReturn(paidInvoice);
 
     mockMvc
       .perform(get("/foo" + OpenPaymentsPathConstants.SLASH_INVOICES + PathConstants.SLASH + paidInvoice.id())
         .headers(this.testJsonHeaders()))
       .andExpect(status().isOk())
-      .andExpect(jsonPath("$.accountId").value(paidInvoice.accountId().get()))
       .andExpect(jsonPath("$.amount").value(paidInvoice.amount().longValue()))
       .andExpect(jsonPath("$.assetCode").value(paidInvoice.assetCode()))
       .andExpect(jsonPath("$.assetScale").value((int) paidInvoice.assetScale()))

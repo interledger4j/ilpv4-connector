@@ -8,15 +8,12 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import org.interledger.connector.opa.model.Invoice;
+import org.interledger.connector.opa.model.InvoiceFactory;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PaymentNetwork;
-import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
-import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
-import org.interledger.core.InterledgerAddress;
-import org.interledger.spsp.PaymentPointerResolver;
 
 import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
@@ -29,6 +26,7 @@ import org.springframework.core.convert.ConversionService;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 public class DefaultInvoiceServiceTest {
 
@@ -43,7 +41,14 @@ public class DefaultInvoiceServiceTest {
 
   private DefaultInvoiceService defaultInvoiceService;
 
+  @Mock
+  private InvoiceFactory invoiceFactoryMock;
 
+  @Mock
+  private OpenPaymentsClient openPaymentsClientMock;
+
+  @Mock
+  private Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplierMock;
 
   @Before
   public void setUp() {
@@ -52,7 +57,11 @@ public class DefaultInvoiceServiceTest {
 
     defaultInvoiceService = new DefaultInvoiceService(
       invoicesRepositoryMock,
-      conversionService);
+      conversionService,
+      invoiceFactoryMock,
+      openPaymentsClientMock,
+      openPaymentsSettingsSupplierMock
+    );
   }
 
   @Test
