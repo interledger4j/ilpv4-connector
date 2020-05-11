@@ -14,6 +14,9 @@ import org.interledger.connector.wallet.IlpPaymentDetailsService;
 import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.connector.wallet.XrpPaymentDetailsService;
 import org.interledger.spsp.PaymentPointerResolver;
+import org.interledger.stream.receiver.ServerSecretSupplier;
+import org.interledger.stream.receiver.SpspStreamConnectionGenerator;
+import org.interledger.stream.receiver.StreamConnectionGenerator;
 
 import io.xpring.common.XRPLNetwork;
 import io.xpring.payid.PayIDClient;
@@ -61,9 +64,11 @@ public class OpenPaymentsConfig {
     ConversionService conversionService,
     InvoiceFactory invoiceFactory,
     OpenPaymentsClient openPaymentsClient,
-    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier
+    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
+    PaymentDetailsService xrpPaymentDetailsService,
+    PaymentDetailsService ilpPaymentDetailsService
   ) {
-    return new DefaultInvoiceService(invoicesRepository, conversionService, invoiceFactory, openPaymentsClient, openPaymentsSettingsSupplier);
+    return new DefaultInvoiceService(invoicesRepository, conversionService, invoiceFactory, openPaymentsClient, openPaymentsSettingsSupplier, xrpPaymentDetailsService, ilpPaymentDetailsService);
   }
 
   @Bean
@@ -71,9 +76,11 @@ public class OpenPaymentsConfig {
   public PaymentDetailsService ilpPaymentDetailsService(
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     PaymentPointerResolver paymentPointerResolver,
-    @Value("${" + SPSP__URL_PATH + ":}") final String opaUrlPath
+    @Value("${" + SPSP__URL_PATH + ":}") final String opaUrlPath,
+    StreamConnectionGenerator streamConnectionGenerator,
+    ServerSecretSupplier serverSecretSupplier
   ) {
-    return new IlpPaymentDetailsService(openPaymentsSettingsSupplier, opaUrlPath, paymentPointerResolver);
+    return new IlpPaymentDetailsService(openPaymentsSettingsSupplier, opaUrlPath, paymentPointerResolver, streamConnectionGenerator, serverSecretSupplier);
   }
 
   @Bean

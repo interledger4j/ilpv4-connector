@@ -1,15 +1,19 @@
 package org.interledger.connector.opa;
 
+import org.interledger.connector.opa.model.Invoice;
+import org.interledger.connector.opa.model.PaymentDetails;
+
 public interface PaymentDetailsService {
 
   /**
-   * Get the payment address of an invoice subject in order to pay an invoice.
+   * Get the details necessary to make a payment for an invoice.
    *
-   * For ILP payments, this will be an ILP address.  For XRP payments, this will be an XRP address.
+   * For ILP payments, this will be an ILP address and shared secret.  For XRP payments, this will be an XRP address
+   * and a hash of the invoice ID.
    *
-   * @param subject The subject of the invoice.
-   * @return The address at which a sender can send money to pay off an invoice.
+   * @param invoice The subject of the invoice.
+   * @return The {@link PaymentDetails} needed to pay an {@link Invoice}.
    */
-  String getAddressFromInvoiceSubject(final String subject);
+  PaymentDetails getPaymentDetails(final Invoice invoice);
 
 }

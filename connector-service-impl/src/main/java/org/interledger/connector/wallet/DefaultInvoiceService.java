@@ -1,10 +1,13 @@
 package org.interledger.connector.wallet;
 
 import org.interledger.connector.opa.InvoiceService;
+import org.interledger.connector.opa.PaymentDetailsService;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceFactory;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.PaymentDetails;
+import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.payments.StreamPayment;
@@ -26,19 +29,25 @@ public class DefaultInvoiceService implements InvoiceService {
   private final InvoiceFactory invoiceFactory;
   private final OpenPaymentsClient openPaymentsClient;
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
+  private final PaymentDetailsService xrpPaymentDetailsService;
+  private final PaymentDetailsService ilpPaymentDetailsService;
 
   public DefaultInvoiceService(
     final InvoicesRepository invoicesRepository,
     ConversionService conversionService,
     InvoiceFactory invoiceFactory,
     OpenPaymentsClient openPaymentsClient,
-    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier
+    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
+    PaymentDetailsService xrpPaymentDetailsService,
+    PaymentDetailsService ilpPaymentDetailsService
   ) {
     this.invoicesRepository = Objects.requireNonNull(invoicesRepository);
     this.conversionService = Objects.requireNonNull(conversionService);
     this.invoiceFactory = Objects.requireNonNull(invoiceFactory);
     this.openPaymentsClient = Objects.requireNonNull(openPaymentsClient);
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
+    this.xrpPaymentDetailsService = Objects.requireNonNull(xrpPaymentDetailsService);
+    this.ilpPaymentDetailsService = Objects.requireNonNull(ilpPaymentDetailsService);
   }
 
   @Override
@@ -123,6 +132,32 @@ public class DefaultInvoiceService implements InvoiceService {
       return this.updateInvoice(invoice);
     } catch (InvoiceNotFoundProblem e) {
       return this.createInvoice(invoice);
+    }
+  }
+
+  @Override
+  public PaymentDetails getPaymentDetails(InvoiceId invoiceId) {
+    final Invoice invoice = this.getInvoiceById(invoiceId);
+
+    final HttpUrl invoiceUrl = invoice.invoiceUrl()
+      .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
+
+    if (!isForThisWallet(invoiceUrl)) {
+      return this.proxyPaymentDetails(invoice);
+    }
+
+    if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
+      return xrpPaymentDetailsService.getPaymentDetails(invoice);
+    } else {
+      return ilpPaymentDetailsService.getPaymentDetails(invoice);
+    }
+  }
+
+  private PaymentDetails proxyPaymentDetails(Invoice invoice) {
+    if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
+      return openPaymentsClient.getXrpInvoicePaymentDetails(invoice.invoiceUrl().get().uri());
+    } else {
+      return openPaymentsClient.getIlpInvoicePaymentDetails(invoice.invoiceUrl().get().uri());
     }
   }
 
