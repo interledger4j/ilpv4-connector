@@ -6,9 +6,9 @@ import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.PaymentDetailsService;
 import org.interledger.connector.opa.model.InvoiceFactory;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
+import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.wallet.DefaultInvoiceService;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.connector.settings.properties.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.settings.properties.converters.HttpUrlPropertyConverter;
 import org.interledger.connector.wallet.IlpPaymentDetailsService;
 import org.interledger.connector.wallet.OpenPaymentsClient;
@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -32,7 +31,7 @@ import org.springframework.core.convert.ConversionService;
 import java.util.function.Supplier;
 
 @Configuration
-@EnableConfigurationProperties(OpenPaymentsSettingsFromPropertyFile.class)
+//@EnableConfigurationProperties(OpenPaymentsSettingsFromPropertyFile.class)
 @ComponentScan(basePackages = {
   "org.interledger.connector.server.wallet.controllers", // For Wallet
 })
@@ -48,7 +47,7 @@ public class OpenPaymentsConfig {
 
   @Bean
   public Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier() {
-    return () -> applicationContext.getBean(OpenPaymentsSettings.class);
+    return () -> applicationContext.getBean(ConnectorSettings.class).openPayments();
   }
 
   @Bean

@@ -58,6 +58,8 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   private SpspSettingsFromPropertyFile spsp = new SpspSettingsFromPropertyFile();
 
+  private OpenPaymentsSettingsFromPropertyFile openPayments = new OpenPaymentsSettingsFromPropertyFile();
+
   @Override
   public InterledgerAddress operatorAddress() {
     return nodeIlpAddress;
@@ -184,6 +186,15 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   public void setSpsp(SpspSettingsFromPropertyFile spsp) {
     this.spsp = spsp;
+  }
+
+  @Override
+  public OpenPaymentsSettingsFromPropertyFile openPayments() {
+    return openPayments;
+  }
+
+  public void setOpenPayments(OpenPaymentsSettingsFromPropertyFile openPayments) {
+    this.openPayments = openPayments;
   }
 
   /**
