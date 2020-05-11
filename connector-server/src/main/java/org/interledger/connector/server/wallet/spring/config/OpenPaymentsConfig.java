@@ -3,19 +3,18 @@ package org.interledger.connector.server.wallet.spring.config;
 import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 
 import org.interledger.connector.opa.InvoiceService;
-import org.interledger.connector.opa.PaymentDetailsService;
+import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.InvoiceFactory;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.wallet.DefaultInvoiceService;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.settings.properties.converters.HttpUrlPropertyConverter;
-import org.interledger.connector.wallet.IlpPaymentDetailsService;
+import org.interledger.connector.wallet.IlpOpenPaymentsPaymentService;
 import org.interledger.connector.wallet.OpenPaymentsClient;
-import org.interledger.connector.wallet.XrpPaymentDetailsService;
+import org.interledger.connector.wallet.XrpOpenPaymentsPaymentService;
 import org.interledger.spsp.PaymentPointerResolver;
 import org.interledger.stream.receiver.ServerSecretSupplier;
-import org.interledger.stream.receiver.SpspStreamConnectionGenerator;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
 import io.xpring.common.XRPLNetwork;
@@ -65,28 +64,28 @@ public class OpenPaymentsConfig {
     InvoiceFactory invoiceFactory,
     OpenPaymentsClient openPaymentsClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    PaymentDetailsService xrpPaymentDetailsService,
-    PaymentDetailsService ilpPaymentDetailsService
+    OpenPaymentsPaymentService xrpOpenPaymentsPaymentService,
+    OpenPaymentsPaymentService ilpOpenPaymentsPaymentService
   ) {
-    return new DefaultInvoiceService(invoicesRepository, conversionService, invoiceFactory, openPaymentsClient, openPaymentsSettingsSupplier, xrpPaymentDetailsService, ilpPaymentDetailsService);
+    return new DefaultInvoiceService(invoicesRepository, conversionService, invoiceFactory, openPaymentsClient, openPaymentsSettingsSupplier, xrpOpenPaymentsPaymentService, ilpOpenPaymentsPaymentService);
   }
 
   @Bean
   @Qualifier(OPA_ILP)
-  public PaymentDetailsService ilpPaymentDetailsService(
+  public OpenPaymentsPaymentService ilpPaymentDetailsService(
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     PaymentPointerResolver paymentPointerResolver,
     @Value("${" + SPSP__URL_PATH + ":}") final String opaUrlPath,
     StreamConnectionGenerator streamConnectionGenerator,
     ServerSecretSupplier serverSecretSupplier
   ) {
-    return new IlpPaymentDetailsService(openPaymentsSettingsSupplier, opaUrlPath, paymentPointerResolver, streamConnectionGenerator, serverSecretSupplier);
+    return new IlpOpenPaymentsPaymentService(openPaymentsSettingsSupplier, opaUrlPath, paymentPointerResolver, streamConnectionGenerator, serverSecretSupplier);
   }
 
   @Bean
   @Qualifier(XRP)
-  public PaymentDetailsService xrpPaymentDetailsService(PayIDClient payIDClient) {
-    return new XrpPaymentDetailsService(payIDClient);
+  public OpenPaymentsPaymentService xrpPaymentDetailsService(PayIDClient payIDClient) {
+    return new XrpOpenPaymentsPaymentService(payIDClient);
   }
 
   @Bean

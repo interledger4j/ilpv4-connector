@@ -9,7 +9,7 @@ import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.opa.InvoiceService;
-import org.interledger.connector.opa.PaymentDetailsService;
+import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
@@ -116,11 +116,11 @@ public abstract class AbstractControllerTest {
 
   @MockBean
   @Qualifier(OPA_ILP)
-  protected PaymentDetailsService ilpPaymentDetailsService;
+  protected OpenPaymentsPaymentService ilpOpenPaymentsPaymentService;
 
   @MockBean
   @Qualifier(XRP)
-  protected PaymentDetailsService xrpPaymentDetailsService;
+  protected OpenPaymentsPaymentService xrpOpenPaymentsPaymentService;
 
   @MockBean
   protected OpenPaymentsClient openPaymentsClientMock;

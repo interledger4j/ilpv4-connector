@@ -1,6 +1,6 @@
 package org.interledger.connector.wallet;
 
-import org.interledger.connector.opa.PaymentDetailsService;
+import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
@@ -11,11 +11,11 @@ import io.xpring.payid.PayIDException;
 
 import java.util.Objects;
 
-public class XrpPaymentDetailsService implements PaymentDetailsService {
+public class XrpOpenPaymentsPaymentService implements OpenPaymentsPaymentService {
 
   private PayIDClient payIDClient;
 
-  public XrpPaymentDetailsService(PayIDClient payIDClient) {
+  public XrpOpenPaymentsPaymentService(PayIDClient payIDClient) {
     this.payIDClient = Objects.requireNonNull(payIDClient);
   }
 

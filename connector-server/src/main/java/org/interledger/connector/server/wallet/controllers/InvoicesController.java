@@ -11,9 +11,11 @@ import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsMediaType;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PaymentDetails;
+import org.interledger.connector.opa.model.PaymentResponse;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
+import org.interledger.spsp.server.grpc.SendPaymentResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,6 +124,24 @@ public class InvoicesController {
     final PaymentDetails paymentDetails = invoiceService.getPaymentDetails(invoiceId);
 
     return new ResponseEntity(paymentDetails, headers, HttpStatus.OK);
+  }
+
+  /**
+   *
+   * @param accountId
+   * @param invoiceId
+   * @return
+   */
+  @RequestMapping(
+    path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES + OpenPaymentsPathConstants.SLASH_INVOICE_ID + OpenPaymentsPathConstants.SLASH_PAY,
+    method = RequestMethod.POST,
+    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+  )
+  public PaymentResponse payInvoice(
+    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) String accountId,
+    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId
+  ) {
+    return null;
   }
 
   /**

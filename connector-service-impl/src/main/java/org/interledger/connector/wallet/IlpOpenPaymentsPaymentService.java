@@ -1,6 +1,6 @@
 package org.interledger.connector.wallet;
 
-import org.interledger.connector.opa.PaymentDetailsService;
+import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public class IlpPaymentDetailsService implements PaymentDetailsService {
+public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService {
 
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
   private final Optional<String> opaUrlPath;
@@ -28,7 +28,7 @@ public class IlpPaymentDetailsService implements PaymentDetailsService {
   private StreamConnectionGenerator streamConnectionGenerator;
   private ServerSecretSupplier serverSecretSupplier;
 
-  public IlpPaymentDetailsService(
+  public IlpOpenPaymentsPaymentService(
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     String opaUrlPath,
     PaymentPointerResolver paymentPointerResolver,

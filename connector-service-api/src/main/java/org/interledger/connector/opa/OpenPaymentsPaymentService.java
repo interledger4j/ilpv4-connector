@@ -3,7 +3,7 @@ package org.interledger.connector.opa;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.PaymentDetails;
 
-public interface PaymentDetailsService {
+public interface OpenPaymentsPaymentService {
 
   /**
    * Get the details necessary to make a payment for an invoice.
