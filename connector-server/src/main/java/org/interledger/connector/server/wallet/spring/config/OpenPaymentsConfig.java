@@ -72,7 +72,7 @@ public class OpenPaymentsConfig {
 
   @Bean
   @Qualifier(OPA_ILP)
-  public OpenPaymentsPaymentService ilpPaymentDetailsService(
+  public OpenPaymentsPaymentService ilpOpenPaymentsPaymentService(
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     PaymentPointerResolver paymentPointerResolver,
     @Value("${" + SPSP__URL_PATH + ":}") final String opaUrlPath,
@@ -84,7 +84,7 @@ public class OpenPaymentsConfig {
 
   @Bean
   @Qualifier(XRP)
-  public OpenPaymentsPaymentService xrpPaymentDetailsService(PayIDClient payIDClient) {
+  public OpenPaymentsPaymentService xrpOpenPaymentsPaymentService(PayIDClient payIDClient) {
     return new XrpOpenPaymentsPaymentService(payIDClient);
   }
 
