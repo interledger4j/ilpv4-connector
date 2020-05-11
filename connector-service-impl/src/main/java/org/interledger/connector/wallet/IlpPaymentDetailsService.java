@@ -1,12 +1,17 @@
 package org.interledger.connector.wallet;
 
 import org.interledger.connector.opa.PaymentDetailsService;
+import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
+import org.interledger.spsp.StreamConnectionDetails;
+import org.interledger.stream.receiver.ServerSecretSupplier;
+import org.interledger.stream.receiver.StreamConnectionGenerator;
 
 import okhttp3.HttpUrl;
 import org.apache.commons.lang3.StringUtils;
@@ -20,24 +25,40 @@ public class IlpPaymentDetailsService implements PaymentDetailsService {
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
   private final Optional<String> opaUrlPath;
   private final PaymentPointerResolver paymentPointerResolver;
+  private StreamConnectionGenerator streamConnectionGenerator;
+  private ServerSecretSupplier serverSecretSupplier;
 
   public IlpPaymentDetailsService(
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     String opaUrlPath,
-    PaymentPointerResolver paymentPointerResolver
+    PaymentPointerResolver paymentPointerResolver,
+    StreamConnectionGenerator streamConnectionGenerator,
+    ServerSecretSupplier serverSecretSupplier
   ) {
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
     this.opaUrlPath = PaymentDetailsUtils.cleanupUrlPath(opaUrlPath);
     this.paymentPointerResolver = Objects.requireNonNull(paymentPointerResolver);
+    this.streamConnectionGenerator = Objects.requireNonNull(streamConnectionGenerator);
+    this.serverSecretSupplier = Objects.requireNonNull(serverSecretSupplier);
   }
 
   @Override
-  public String getAddressFromInvoiceSubject(String subject) {
+  public PaymentDetails getPaymentDetails(Invoice invoice) {
 
-    final String ilpIntermediateSuffix = this.validateInvoiceSubjectAndComputeAddressSuffix(subject);
+    final String ilpIntermediateSuffix = this.validateInvoiceSubjectAndComputeAddressSuffix(invoice.subject());
 
-    return openPaymentsSettingsSupplier.get().ilpOperatorAddress()
+    String destinationAddress = openPaymentsSettingsSupplier.get().ilpOperatorAddress()
       .with(ilpIntermediateSuffix).getValue();
+
+    // Get shared secret and address with connection tag
+    final StreamConnectionDetails streamConnectionDetails =
+      streamConnectionGenerator.generateConnectionDetails(serverSecretSupplier, InterledgerAddress.of(destinationAddress));
+
+    InterledgerAddress finalDestinationAddress = InterledgerAddress.of(streamConnectionDetails.destinationAddress().getValue() + "~" + invoice.paymentId());
+    return IlpPaymentDetails.builder()
+      .destinationAddress(finalDestinationAddress)
+      .sharedSecret(streamConnectionDetails.sharedSecret())
+      .build();
   }
 
   /**

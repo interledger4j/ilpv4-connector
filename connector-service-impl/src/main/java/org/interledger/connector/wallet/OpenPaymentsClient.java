@@ -1,6 +1,9 @@
 package org.interledger.connector.wallet;
 
+import static org.interledger.connector.opa.model.OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE;
+
 import org.interledger.connector.jackson.ObjectMapperFactory;
+import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
@@ -70,18 +73,18 @@ public interface OpenPaymentsClient {
     URI invoiceUrl
   ) throws ThrowableProblem;
 
-  @RequestLine("OPTIONS /{invoiceId}")
+  @RequestLine("GET /{invoiceId}")
   @Headers({
-    ACCEPT + APPLICATION_JSON,
+    ACCEPT + APPLICATION_CONNECTION_JSON_VALUE,
     CONTENT_TYPE + APPLICATION_JSON
   })
-  StreamConnectionDetails getIlpInvoicePaymentDetails(
+  IlpPaymentDetails getIlpInvoicePaymentDetails(
       URI invoiceUrl
   ) throws ThrowableProblem;
 
-  @RequestLine("OPTIONS /")
+  @RequestLine("GET /")
   @Headers({
-    ACCEPT + APPLICATION_JSON,
+    ACCEPT + APPLICATION_CONNECTION_JSON_VALUE,
     CONTENT_TYPE + APPLICATION_JSON
   })
   XrpPaymentDetails getXrpInvoicePaymentDetails(

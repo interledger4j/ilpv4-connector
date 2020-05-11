@@ -1,6 +1,10 @@
 package org.interledger.connector.wallet;
 
 import org.interledger.connector.opa.PaymentDetailsService;
+import org.interledger.connector.opa.model.Invoice;
+import org.interledger.connector.opa.model.PaymentDetails;
+import org.interledger.connector.opa.model.XrpPaymentDetails;
+import org.interledger.connector.opa.model.problems.InvoicePaymentDetailsProblem;
 
 import io.xpring.payid.PayIDClient;
 import io.xpring.payid.PayIDException;
@@ -16,11 +20,15 @@ public class XrpPaymentDetailsService implements PaymentDetailsService {
   }
 
   @Override
-  public String getAddressFromInvoiceSubject(String subject) {
+  public PaymentDetails getPaymentDetails(Invoice invoice) {
     try {
-      return payIDClient.xrpAddressForPayID(subject);
+      String xrpAddress = payIDClient.xrpAddressForPayID(invoice.subject());
+      return XrpPaymentDetails.builder()
+        .address(xrpAddress)
+        .invoiceIdHash(invoice.paymentId())
+        .build();
     } catch (PayIDException e) {
-      throw new RuntimeException(e);
+      throw new InvoicePaymentDetailsProblem("Could not get destination address for given invoice subject.", invoice.id());
     }
   }
 }

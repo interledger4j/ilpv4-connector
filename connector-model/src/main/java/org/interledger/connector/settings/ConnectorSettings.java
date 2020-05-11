@@ -1,6 +1,7 @@
 package org.interledger.connector.settings;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.crypto.CryptoKey;
@@ -64,6 +65,11 @@ public interface ConnectorSettings {
   @Value.Default
   default SpspSettings spspSettings() {
     return SpspSettings.builder().build();
+  }
+
+  @Value.Default
+  default OpenPaymentsSettings openPayments() {
+    return OpenPaymentsSettings.builder().build();
   }
 
   /**

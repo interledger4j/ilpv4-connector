@@ -6,23 +6,15 @@ import static org.interledger.connector.core.ConfigConstants.TRUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.opa.InvoiceService;
-import org.interledger.connector.opa.PaymentDetailsService;
 import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.InvoiceFactory;
 import org.interledger.connector.opa.model.InvoiceId;
+import org.interledger.connector.opa.model.OpenPaymentsMediaType;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.XrpPayment;
-import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
-import org.interledger.connector.wallet.OpenPaymentsClient;
-import org.interledger.spsp.PaymentPointer;
-import org.interledger.spsp.PaymentPointerResolver;
-import org.interledger.stream.receiver.ServerSecretSupplier;
-import org.interledger.stream.receiver.StreamConnectionGenerator;
 
-import feign.FeignException;
-import okhttp3.HttpUrl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -35,8 +27,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.springframework.web.util.UriComponents;
 import org.zalando.problem.spring.common.MediaTypes;
 
 import java.net.URI;
@@ -52,31 +42,13 @@ public class InvoicesController {
 
   private InvoiceService invoiceService;
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
-  private final ServerSecretSupplier serverSecretSupplier;
-  private final PaymentDetailsService ilpPaymentDetailsService;
-  private final PaymentDetailsService xrpPaymentDetailsService;
-  private final StreamConnectionGenerator streamConnectionGenerator;
-  private final OpenPaymentsClient openPaymentsClient;
-  private final PaymentPointerResolver paymentPointerResolver;
 
   public InvoicesController(
     final InvoiceService invoiceService,
-    final PaymentDetailsService ilpPaymentDetailsService,
-    final PaymentDetailsService xrpPaymentDetailsService,
-    final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    final ServerSecretSupplier serverSecretSupplier,
-    final StreamConnectionGenerator streamConnectionGenerator,
-    final OpenPaymentsClient openPaymentsClient,
-    final PaymentPointerResolver paymentPointerResolver
+    final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier
   ) {
     this.invoiceService = Objects.requireNonNull(invoiceService);
-    this.ilpPaymentDetailsService = Objects.requireNonNull(ilpPaymentDetailsService);
-    this.xrpPaymentDetailsService = Objects.requireNonNull(xrpPaymentDetailsService);
-    this.streamConnectionGenerator = Objects.requireNonNull(streamConnectionGenerator);
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
-    this.serverSecretSupplier = Objects.requireNonNull(serverSecretSupplier);
-    this.openPaymentsClient = Objects.requireNonNull(openPaymentsClient);
-    this.paymentPointerResolver = Objects.requireNonNull(paymentPointerResolver);
   }
 
   /**
@@ -122,6 +94,37 @@ public class InvoicesController {
   }
 
   /**
+   * Generate payment details for any supported payment rail.
+   *
+   * For ILP payments, this logic will largely be the same as an SPSP server's setup logic,
+   * except that the connection tag on the destination address will be in the form:
+   * (randomToken) + '~' + (invoiceId in Base64).
+   *
+   * For XRP payments, this will return an XRP address and the invoiceId encoded in Base64 as a destination tag.
+   *
+   * XRP payment details can be requested by using the "application/json+xrp-opa" MIME type in the Accept header.
+   *
+   * @param invoiceId The {@link InvoiceId} of the {@link Invoice} this payment is being set up to pay.
+   * @return The payment details necessary to pay an invoice.
+   */
+  @RequestMapping(
+    path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES + OpenPaymentsPathConstants.SLASH_INVOICE_ID,
+    method = RequestMethod.GET,
+    produces = {OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE, APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+  )
+  public @ResponseBody ResponseEntity getPaymentDetails(
+    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) String accountId,
+    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId
+  ) {
+    final HttpHeaders headers = new HttpHeaders();
+    headers.setLocation(getInvoiceLocation(invoiceId));
+
+    final PaymentDetails paymentDetails = invoiceService.getPaymentDetails(invoiceId);
+
+    return new ResponseEntity(paymentDetails, headers, HttpStatus.OK);
+  }
+
+  /**
    * Endpoint to notify the Open Payments Server that an XRP payment has been received on the XRPL.
    *
    * The Open Payments Server will then decode the destination tag of the receiver's address and determine
@@ -157,128 +160,6 @@ public class InvoicesController {
   )
   public Optional<Invoice> onIlpPayment(@RequestBody StreamPayment streamPayment) {
     return invoiceService.onPayment(streamPayment);
-  }
-
-  /**
-   * Generate payment details for any supported payment rail.
-   *
-   * For ILP payments, this logic will largely be the same as an SPSP server's setup logic,
-   * except that the connection tag on the destination address will be in the form:
-   * (randomToken) + '~' + (invoiceId in Base64).
-   *
-   * For XRP payments, this will return an XRP address and the invoiceId encoded in Base64 as a destination tag.
-   *
-   * XRP payment details can be requested by using the "application/json+xrp-opa" MIME type in the Accept header.
-   *
-   * @param invoiceId The {@link InvoiceId} of the {@link Invoice} this payment is being set up to pay.
-   * @return The payment details necessary to pay an invoice.
-   */
-  /*@RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_INVOICES + OpenPaymentsPathConstants.SLASH_INVOICE_ID,
-    method = RequestMethod.OPTIONS,
-    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
-  )
-  public @ResponseBody ResponseEntity getPaymentDetails(
-    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId
-  ) {
-    final HttpHeaders headers = new HttpHeaders();
-    headers.setLocation(getInvoiceLocation(invoiceId));
-
-    // Get the existing invoice
-    final Invoice invoice = invoiceService.getInvoiceById(invoiceId);
-
-    // This invoice is not "ours", so go get the payment details from the receiver's OPS
-    if (!isOurs(invoice)) {
-      return this.getReceiverPaymentDetails(invoice);
-    }
-
-    // XRP payment details are not supported yet, so just return a bad request status
-    if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
-      try {
-        // Get XRP address from payment pointer and invoiceId
-        final String destinationAddress = xrpPaymentDetailsService.getAddressFromInvoiceSubject(invoice.subject());
-
-        XrpPaymentDetails xrpPaymentDetails = XrpPaymentDetails.builder()
-          .address(destinationAddress)
-          .invoiceIdHash(invoice.paymentId())
-          .build();
-
-        return new ResponseEntity(xrpPaymentDetails, headers, HttpStatus.OK);
-      } catch (RuntimeException e) {
-        throw new InvoicePaymentDetailsProblem(e.getCause().getMessage(), invoiceId);
-      }
-    } else {
-      // Otherwise get ILP payment details
-
-      // Get ILP Address Prefix from payment pointer and invoiceId
-      final String destinationAddress = ilpPaymentDetailsService.getAddressFromInvoiceSubject(invoice.subject());
-      // Get shared secret and address with connection tag
-      final StreamConnectionDetails streamConnectionDetails =
-        streamConnectionGenerator.generateConnectionDetails(serverSecretSupplier, InterledgerAddress.of(destinationAddress));
-
-
-
-      // Append the encoded invoiceId to the connection tag and return
-      final StreamConnectionDetails streamDetailsWithInvoiceIdTag =
-        StreamConnectionDetails.builder()
-          .from(streamConnectionDetails)
-          .destinationAddress(InterledgerAddress
-            .of(streamConnectionDetails.destinationAddress().getValue() + "~" + invoice.paymentId()))
-          .build();
-
-      return new ResponseEntity(streamDetailsWithInvoiceIdTag, headers, HttpStatus.OK);
-    }
-  }
-
-  protected ResponseEntity getReceiverPaymentDetails(Invoice invoice) {
-    HttpUrl receiverUrl;
-    receiverUrl = resolveSubjectToHttpUrl(invoice.subject());
-
-    // Get the invoices endpoint on the receiver
-    // TODO: use invoice location instead of metadata
-    OpenPaymentsMetadata metadata = openPaymentsClient.getMetadata(receiverUrl.uri());
-
-    // Get and return the correct payment details.
-    if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
-      XrpPaymentDetails xrpInvoicePaymentDetails =
-        openPaymentsClient.getXrpInvoicePaymentDetails(metadata.invoicesEndpoint().uri(), invoice.id().value());
-      return new ResponseEntity(xrpInvoicePaymentDetails, HttpStatus.OK);
-    } else {
-      StreamConnectionDetails ilpInvoicePaymentDetails =
-        openPaymentsClient.getIlpInvoicePaymentDetails(metadata.invoicesEndpoint().uri(), invoice.id().value());
-
-      return new ResponseEntity(ilpInvoicePaymentDetails, HttpStatus.OK);
-    }
-  }*/
-
-  private HttpUrl resolveSubjectToHttpUrl(String subject) {
-    HttpUrl receiverUrl;// Try to parse invoice subject as a Payment Pointer, otherwise assume it's a PayID and parse that.
-    try {
-      PaymentPointer paymentPointer = PaymentPointer.of(subject);
-      receiverUrl = paymentPointerResolver.resolveHttpUrl(paymentPointer);
-    } catch (IllegalArgumentException e) {
-      try {
-        String subjectHost = subject.substring(subject.lastIndexOf("$") + 1);
-        receiverUrl = new HttpUrl.Builder()
-          .scheme("https")
-          .host(subjectHost)
-          .build();
-      } catch (IndexOutOfBoundsException oobe) {
-        return null;
-      }
-    }
-    return receiverUrl;
-  }
-
-  private boolean isForThisWallet(HttpUrl invoiceUrl) {
-    UriComponents localUri = ServletUriComponentsBuilder.fromCurrentContextPath().build();
-
-    // For testing. If we run two wallet connectors in the same test, they will only be differentiated by port.
-    if (localUri.getHost().equals("localhost")) {
-      return localUri.getHost().equals(invoiceUrl.host()) && localUri.getPort() == invoiceUrl.port();
-    }
-
-    return localUri.getHost().equals(invoiceUrl.host());
   }
 
   private URI getInvoiceLocation(InvoiceId invoiceId) {
