@@ -1,21 +1,33 @@
 package org.interledger.connector.wallet;
 
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.AccountNotFoundProblem;
+import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PaymentDetails;
+import org.interledger.connector.opa.model.PaymentResponse;
 import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.SharedSecret;
+import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
 import org.interledger.spsp.StreamConnectionDetails;
+import org.interledger.stream.Denomination;
+import org.interledger.stream.SendMoneyRequest;
+import org.interledger.stream.crypto.JavaxStreamEncryptionService;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
+import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
 import org.apache.commons.lang3.StringUtils;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -59,6 +71,17 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
       .destinationAddress(finalDestinationAddress)
       .sharedSecret(streamConnectionDetails.sharedSecret())
       .build();
+  }
+
+  @Override
+  public PaymentResponse payInvoice(
+    PaymentDetails paymentDetails,
+    AccountId senderAccountId,
+    UnsignedLong amount,
+    String bearerToken
+  ) {
+    // TODO: create a STREAM sender here or use neil's API?
+    return null;
   }
 
   /**

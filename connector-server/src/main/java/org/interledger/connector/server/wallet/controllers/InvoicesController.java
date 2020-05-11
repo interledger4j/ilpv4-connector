@@ -5,6 +5,7 @@ import static org.interledger.connector.core.ConfigConstants.SPSP_ENABLED;
 import static org.interledger.connector.core.ConfigConstants.TRUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
@@ -15,7 +16,6 @@ import org.interledger.connector.opa.model.PaymentResponse;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
-import org.interledger.spsp.server.grpc.SendPaymentResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -139,9 +140,10 @@ public class InvoicesController {
   )
   public PaymentResponse payInvoice(
     @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) String accountId,
-    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId
+    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
+    @RequestHeader("Authorization") String bearerToken // TODO: What do here?
   ) {
-    return null;
+    return invoiceService.payInvoice(invoiceId, AccountId.of(accountId), bearerToken);
   }
 
   /**

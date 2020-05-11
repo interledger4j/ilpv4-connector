@@ -1,11 +1,14 @@
 package org.interledger.connector.wallet;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.PaymentDetails;
+import org.interledger.connector.opa.model.PaymentResponse;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.opa.model.problems.InvoicePaymentDetailsProblem;
 
+import com.google.common.primitives.UnsignedLong;
 import io.xpring.payid.PayIDClient;
 import io.xpring.payid.PayIDException;
 
@@ -30,5 +33,11 @@ public class XrpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
     } catch (PayIDException e) {
       throw new InvoicePaymentDetailsProblem("Could not get destination address for given invoice subject.", invoice.id());
     }
+  }
+
+  @Override
+  public PaymentResponse payInvoice(PaymentDetails paymentDetails, AccountId senderAccountId, UnsignedLong amount, String bearerToken) {
+    // TODO: Throw an exception here because we can't send XRP from OPS
+    return null;
   }
 }

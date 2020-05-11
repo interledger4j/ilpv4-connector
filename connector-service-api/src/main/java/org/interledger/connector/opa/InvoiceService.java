@@ -1,9 +1,11 @@
 package org.interledger.connector.opa;
 
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.PaymentDetails;
+import org.interledger.connector.opa.model.PaymentResponse;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.payments.StreamPayment;
 
@@ -35,6 +37,8 @@ public interface InvoiceService {
   Invoice updateOrCreateInvoice(final Invoice invoice);
 
   PaymentDetails getPaymentDetails(final InvoiceId invoiceId);
+
+  PaymentResponse payInvoice(final InvoiceId invoiceId, AccountId senderAccountId, String bearerToken);
 
   /**
    * Execute any actions necessary in the event of a received XRP payment.

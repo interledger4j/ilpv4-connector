@@ -1,7 +1,11 @@
 package org.interledger.connector.opa;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.PaymentDetails;
+import org.interledger.connector.opa.model.PaymentResponse;
+
+import com.google.common.primitives.UnsignedLong;
 
 public interface OpenPaymentsPaymentService {
 
@@ -16,4 +20,10 @@ public interface OpenPaymentsPaymentService {
    */
   PaymentDetails getPaymentDetails(final Invoice invoice);
 
+  PaymentResponse payInvoice(
+    final PaymentDetails paymentDetails,
+    final AccountId senderAccountId,
+    final UnsignedLong amount,
+    final String bearerToken
+  );
 }

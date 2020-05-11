@@ -1,5 +1,6 @@
 package org.interledger.connector.wallet;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.Invoice;
@@ -8,12 +9,14 @@ import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.PaymentNetwork;
+import org.interledger.connector.opa.model.PaymentResponse;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 
+import com.google.common.primitives.UnsignedLong;
 import feign.FeignException;
 import okhttp3.HttpUrl;
 import org.springframework.core.convert.ConversionService;
@@ -57,8 +60,8 @@ public class DefaultInvoiceService implements InvoiceService {
     Invoice invoice = invoicesRepository.findInvoiceByInvoiceId(invoiceId)
       .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceId));
 
-    // TODO: throw an exception if the invoice hasn't been given a name
-    HttpUrl invoiceUrl = invoice.invoiceUrl().get();
+    HttpUrl invoiceUrl = invoice.invoiceUrl()
+      .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
 
     // The sender and receiver wallets could be the same wallet, so the invoice and the invoice receipt could be
     // the same record. In this case, we should just return what we have.
@@ -143,7 +146,11 @@ public class DefaultInvoiceService implements InvoiceService {
       .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
 
     if (!isForThisWallet(invoiceUrl)) {
-      return this.proxyPaymentDetails(invoice);
+      if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
+        return openPaymentsClient.getXrpInvoicePaymentDetails(invoiceUrl.uri());
+      } else {
+        return openPaymentsClient.getIlpInvoicePaymentDetails(invoiceUrl.uri());
+      }
     }
 
     if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
@@ -153,12 +160,27 @@ public class DefaultInvoiceService implements InvoiceService {
     }
   }
 
-  private PaymentDetails proxyPaymentDetails(Invoice invoice) {
-    if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
-      return openPaymentsClient.getXrpInvoicePaymentDetails(invoice.invoiceUrl().get().uri());
-    } else {
-      return openPaymentsClient.getIlpInvoicePaymentDetails(invoice.invoiceUrl().get().uri());
+  @Override
+  public PaymentResponse payInvoice(InvoiceId invoiceId, AccountId senderAccountId, String bearerToken) {
+    final Invoice invoice = this.getInvoiceById(invoiceId);
+
+    if (!invoice.paymentNetwork().equals(PaymentNetwork.ILP)) {
+      throw new IllegalStateException("Unable to pay invoice from Open Payment Server over non-ILP payment network.");
     }
+
+    final HttpUrl invoiceUrl = invoice.invoiceUrl()
+      .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
+
+    PaymentDetails ilpPaymentDetails;
+
+    if (!isForThisWallet(invoiceUrl)) {
+      ilpPaymentDetails = openPaymentsClient.getIlpInvoicePaymentDetails(invoiceUrl.uri());
+    } else {
+      ilpPaymentDetails = ilpOpenPaymentsPaymentService.getPaymentDetails(invoice);
+    }
+
+    UnsignedLong amountLeftToSend = invoice.amount().minus(invoice.received());
+    return ilpOpenPaymentsPaymentService.payInvoice(ilpPaymentDetails, senderAccountId, amountLeftToSend, bearerToken);
   }
 
   @Override
