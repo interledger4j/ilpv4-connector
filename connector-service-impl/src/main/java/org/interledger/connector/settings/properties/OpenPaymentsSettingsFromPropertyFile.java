@@ -5,6 +5,7 @@ import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.link.Link;
 
+import okhttp3.HttpUrl;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -15,6 +16,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class OpenPaymentsSettingsFromPropertyFile implements OpenPaymentsSettings {
 
   private InterledgerAddress ilpOperatorAddress = Link.SELF;
+
+  private HttpUrl connectorUrl;
 
   private OpenPaymentsMetadataFromPropertyFile metadata = new OpenPaymentsMetadataFromPropertyFile();
 
@@ -28,8 +31,17 @@ public class OpenPaymentsSettingsFromPropertyFile implements OpenPaymentsSetting
     return metadata;
   }
 
+  @Override
+  public HttpUrl connectorUrl() {
+    return connectorUrl;
+  }
+
   public void setIlpOperatorAddress(InterledgerAddress ilpOperatorAddress) {
     this.ilpOperatorAddress = ilpOperatorAddress;
+  }
+
+  public void setConnectorUrl(HttpUrl connectorUrl) {
+    this.connectorUrl = connectorUrl;
   }
 
   public void setMetadata(OpenPaymentsMetadataFromPropertyFile metadata) {

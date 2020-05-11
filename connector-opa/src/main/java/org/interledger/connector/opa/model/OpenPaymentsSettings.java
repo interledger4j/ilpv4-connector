@@ -4,6 +4,7 @@ import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.link.Link;
 
+import okhttp3.HttpUrl;
 import org.immutables.value.Value;
 
 /**
@@ -29,6 +30,7 @@ public interface OpenPaymentsSettings {
     return Link.SELF;
   }
 
+  HttpUrl connectorUrl();
 
   /**
    * Discoverable Open Payments Metadata that can be used to set up Open Payments flows.

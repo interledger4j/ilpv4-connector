@@ -9,12 +9,12 @@ import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.PaymentNetwork;
-import org.interledger.connector.opa.model.PaymentResponse;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
+import org.interledger.stream.SendMoneyResult;
 
 import com.google.common.primitives.UnsignedLong;
 import feign.FeignException;
@@ -23,6 +23,7 @@ import org.springframework.core.convert.ConversionService;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 public class DefaultInvoiceService implements InvoiceService {
@@ -161,7 +162,7 @@ public class DefaultInvoiceService implements InvoiceService {
   }
 
   @Override
-  public PaymentResponse payInvoice(InvoiceId invoiceId, AccountId senderAccountId, String bearerToken) {
+  public SendMoneyResult payInvoice(InvoiceId invoiceId, AccountId senderAccountId, String bearerToken) {
     final Invoice invoice = this.getInvoiceById(invoiceId);
 
     if (!invoice.paymentNetwork().equals(PaymentNetwork.ILP)) {
@@ -180,7 +181,12 @@ public class DefaultInvoiceService implements InvoiceService {
     }
 
     UnsignedLong amountLeftToSend = invoice.amount().minus(invoice.received());
-    return ilpOpenPaymentsPaymentService.payInvoice(ilpPaymentDetails, senderAccountId, amountLeftToSend, bearerToken);
+    try {
+      return ilpOpenPaymentsPaymentService.payInvoice(ilpPaymentDetails, senderAccountId, amountLeftToSend, bearerToken);
+    } catch (InterruptedException | ExecutionException e) {
+      // TODO: Throw an invoice problem
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

@@ -19,11 +19,11 @@ interledger:
       spspEnabled: true
     open-payments:
       ilpOperatorAddress: "test.jc1"
+      connector-url: https://test.jc1.dev
       metadata:
         issuer: "https://localhost:8080"
         authorizationIssuer: "https://localhost:3000"
         assetsSupported:
-          -
-            assetCode: "XRP"
-            assetScale: 9
-    connector-url: https://test.jc1.dev
+        -
+          assetCode: "XRP"
+          assetScale: 9

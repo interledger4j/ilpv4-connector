@@ -5,9 +5,9 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.PaymentDetails;
-import org.interledger.connector.opa.model.PaymentResponse;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.payments.StreamPayment;
+import org.interledger.stream.SendMoneyResult;
 
 import java.util.Optional;
 
@@ -38,7 +38,7 @@ public interface InvoiceService {
 
   PaymentDetails getPaymentDetails(final InvoiceId invoiceId);
 
-  PaymentResponse payInvoice(final InvoiceId invoiceId, AccountId senderAccountId, String bearerToken);
+  SendMoneyResult payInvoice(final InvoiceId invoiceId, AccountId senderAccountId, String bearerToken);
 
   /**
    * Execute any actions necessary in the event of a received XRP payment.

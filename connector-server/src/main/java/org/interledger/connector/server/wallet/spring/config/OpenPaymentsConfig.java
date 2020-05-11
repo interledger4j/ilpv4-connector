@@ -5,6 +5,7 @@ import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.InvoiceFactory;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.wallet.DefaultInvoiceService;
@@ -17,8 +18,10 @@ import org.interledger.spsp.PaymentPointerResolver;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.xpring.common.XRPLNetwork;
 import io.xpring.payid.PayIDClient;
+import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,9 +80,21 @@ public class OpenPaymentsConfig {
     PaymentPointerResolver paymentPointerResolver,
     @Value("${" + SPSP__URL_PATH + ":}") final String opaUrlPath,
     StreamConnectionGenerator streamConnectionGenerator,
-    ServerSecretSupplier serverSecretSupplier
+    ServerSecretSupplier serverSecretSupplier,
+    AccountSettingsRepository accountSettingsRepository,
+    OkHttpClient okHttpClient,
+    ObjectMapper objectMapper
   ) {
-    return new IlpOpenPaymentsPaymentService(openPaymentsSettingsSupplier, opaUrlPath, paymentPointerResolver, streamConnectionGenerator, serverSecretSupplier);
+    return new IlpOpenPaymentsPaymentService(
+      openPaymentsSettingsSupplier,
+      opaUrlPath,
+      paymentPointerResolver,
+      streamConnectionGenerator,
+      serverSecretSupplier,
+      accountSettingsRepository,
+      okHttpClient,
+      objectMapper
+    );
   }
 
   @Bean
