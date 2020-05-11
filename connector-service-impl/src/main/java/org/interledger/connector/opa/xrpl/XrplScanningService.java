@@ -71,7 +71,9 @@ public class XrplScanningService {
   public void preDestroy() {
     // Trigger shutdown of the dispatcher's executor so this process can exit cleanly.
     try {
-      xrplWebSocket.get().close(1001, "Terminating server");
+      if (xrplWebSocket.get() != null) {
+        xrplWebSocket.get().close(1001, "Terminating server");
+      }
     }
     catch (Exception e) {
       logger.warn("Couldn't close XRPL websocket gracefully", e);

@@ -88,6 +88,12 @@ public interface EnabledProtocolSettings {
     public boolean isIldcpEnabled() {
       return true;
     }
+
+    @Override
+    @Value.Default
+    public boolean isSpspEnabled() {
+      return false;
+    }
   }
 
 }

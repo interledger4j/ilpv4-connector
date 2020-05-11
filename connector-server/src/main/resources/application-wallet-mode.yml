@@ -20,7 +20,7 @@ interledger:
     open-payments:
       ilpOperatorAddress: "test.jc1"
       metadata:
-        issuer: "https://localhost:8080"
+        issuer: "https://localhost:8000"
         authorizationIssuer: "https://localhost:3000"
         assetsSupported:
           -

@@ -107,6 +107,9 @@ public abstract class AbstractIlpOverHttpIT {
 
     // Required to get the conditional-config to work for this topology...
     System.setProperty(ConfigConstants.ENABLED_PROTOCOLS + DOT + ConfigConstants.ILP_OVER_HTTP_ENABLED, "true");
+    System.setProperty(ConfigConstants.ENABLED_PROTOCOLS + DOT + ConfigConstants.SPSP_ENABLED, "true");
+    System.setProperty(ConfigConstants.ENABLED_FEATURES + DOT + ConfigConstants.LOCAL_SPSP_FULFILLMENT_ENABLED, "true");
+    System.setProperty("interledger.connector.open-payments.metadata.issuer", "http://localhost:8081");
     pubsub.start();
   }
 

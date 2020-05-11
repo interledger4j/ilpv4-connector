@@ -97,6 +97,10 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
             paulAtAliceDenomination, alicePort);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(paulAccountSettingsAtAlice);
 
+          // Add Peter's account on Bob (Peter is used for sending pings)
+          final AccountSettings peterAccountSettingsAtBob = constructPeterAccountSettingsOnBob(bobPort);
+          bobServerNode.getILPv4Connector().getAccountManager().createAccount(peterAccountSettingsAtBob);
+
           // Add Alice's account on Bob...
           final AccountSettings aliceAccountSettingsAtBob = constructAliceAccountSettingsOnBob(alicePort,
             aliceBobDenomination, maxPacketAmount);
@@ -137,6 +141,7 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
       topology.addNode(BOB_CONNECTOR_ADDRESS, new ConnectorServerNode(BOB, bobServer, constructStaticRoutesForBob()));
     }
 
+    // FIXME we've added PETER at BOB so this needs to be updated
     LOGGER.info("\n" +
       "\nSTARTING ILP-OVER-HTTP TOPOLOGY\n" +
       "                                      ┌──────────────┐                     ┌──────────────┐\n" +
@@ -217,6 +222,35 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
   }
 
   /**
+   * An AccountSettings object that represents Paul's account at Alice. Since this account is only used to send, it does
+   * not require any incoming connection settings.
+   */
+  private static AccountSettings constructPeterAccountSettingsOnBob(int bobPort) {
+    return AccountSettings.builder()
+      .accountId(PETER_ACCOUNT)
+      .description("ILP-over-HTTP sender account for Peter")
+      .accountRelationship(AccountRelationship.CHILD)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
+      .assetScale(9)
+      .assetCode(XRP)
+
+      // Incoming
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_SUBJECT, PETER)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
+
+      // Outgoing settings needed by testPing
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, PETER)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, createOutgoingLinkUrl(bobPort, PETER_ACCOUNT)
+      )
+
+      .build();
+  }
+
+  /**
    * Construct a {@link ConnectorSettings} with a Connector properly configured to represent <tt>Alice</tt>.
    */
   private static ConnectorSettings constructConnectorSettingsForAlice() {
@@ -224,12 +258,14 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
       .operatorAddress(ALICE_CONNECTOR_ADDRESS)
       .enabledFeatures(EnabledFeatureSettings.builder()
         .isRequire32ByteSharedSecrets(false)
+        .isLocalSpspFulfillmentEnabled(true)
         .build())
       .enabledProtocols(EnabledProtocolSettings.builder()
         .isIlpOverHttpEnabled(true)
         .isPingProtocolEnabled(true)
         .isPeerRoutingEnabled(false)
         .isIldcpEnabled(false)
+        .isSpspEnabled(true)
         .build())
       .globalPrefix(InterledgerAddressPrefix.TEST)
       .globalRoutingSettings(GlobalRoutingSettings.builder()
@@ -292,12 +328,14 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
       .operatorAddress(BOB_CONNECTOR_ADDRESS)
       .enabledFeatures(EnabledFeatureSettings.builder()
         .isRequire32ByteSharedSecrets(false)
+        .isLocalSpspFulfillmentEnabled(true)
         .build())
       .enabledProtocols(EnabledProtocolSettings.builder()
         .isIlpOverHttpEnabled(true)
         .isPingProtocolEnabled(true)
         .isIldcpEnabled(false)
         .isPeerRoutingEnabled(false)
+        .isSpspEnabled(true)
         .build())
       .globalPrefix(InterledgerAddressPrefix.TEST)
       .globalRoutingSettings(GlobalRoutingSettings.builder()
