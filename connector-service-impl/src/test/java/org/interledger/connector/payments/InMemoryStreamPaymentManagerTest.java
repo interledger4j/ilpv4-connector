@@ -6,6 +6,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.data.domain.PageRequest;
@@ -20,11 +21,11 @@ public class InMemoryStreamPaymentManagerTest {
 
   public static final PageRequest DEFAULT_PAGE = PageRequest.of(0, 100);
 
-  private InMemoryStreamPaymentnManager paymentTransactionManager;
+  private InMemoryStreamPaymentManager paymentTransactionManager;
 
   @Before
   public void setUp() {
-    paymentTransactionManager = new InMemoryStreamPaymentnManager();
+    paymentTransactionManager = new InMemoryStreamPaymentManager();
   }
 
   @Test
@@ -112,6 +113,8 @@ public class InMemoryStreamPaymentManagerTest {
       .packetCount(1)
       .streamPaymentId(streamPaymentId)
       .amount(BigInteger.valueOf(amount))
+      .expectedAmount(BigInteger.valueOf(amount))
+      .deliveredAmount(UnsignedLong.valueOf(amount))
       .assetScale((short) 9)
       .assetCode("XRP")
       .status(StreamPaymentStatus.PENDING)

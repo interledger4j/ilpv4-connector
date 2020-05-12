@@ -1,13 +1,13 @@
 package org.interledger.connector.links;
 
 import org.interledger.connector.accounts.AccountSettings;
-import org.interledger.connector.stream.TrackingStreamReceiverLink;
-import org.interledger.connector.stream.TrackingStreamReceiverLinkSettings;
 import org.interledger.link.LinkSettings;
 import org.interledger.link.LoopbackLink;
 import org.interledger.link.PingLoopbackLink;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
+import org.interledger.link.spsp.StatelessSpspReceiverLink;
+import org.interledger.link.spsp.StatelessSpspReceiverLinkSettings;
 
 import java.util.Objects;
 
@@ -31,11 +31,10 @@ public class DefaultLinkSettingsFactory implements LinkSettingsFactory {
         return LinkSettings.builder().customSettings(accountSettings.customSettings())
           .linkType(PingLoopbackLink.LINK_TYPE).build();
       }
-      case TrackingStreamReceiverLink.LINK_TYPE_STRING: {
-        return TrackingStreamReceiverLinkSettings.builder()
+      case StatelessSpspReceiverLink.LINK_TYPE_STRING: {
+        return StatelessSpspReceiverLinkSettings.builder()
           .assetScale(accountSettings.assetScale())
           .assetCode(accountSettings.assetCode())
-          .accountId(accountSettings.accountId())
           .build();
       }
       default: {

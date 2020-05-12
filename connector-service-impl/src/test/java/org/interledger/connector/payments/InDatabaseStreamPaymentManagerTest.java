@@ -13,6 +13,7 @@ import org.interledger.connector.persistence.repositories.StreamPaymentsReposito
 import org.interledger.core.InterledgerAddress;
 
 import com.google.common.collect.Lists;
+import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -135,6 +136,7 @@ public class InDatabaseStreamPaymentManagerTest {
       .assetScale((short) 1)
       .createdAt(Instant.now())
       .destinationAddress(InterledgerAddress.of("test.receiver"))
+      .deliveredAmount(UnsignedLong.valueOf(100))
       .modifiedAt(Instant.now())
       .packetCount(1)
       .status(StreamPaymentStatus.PENDING)

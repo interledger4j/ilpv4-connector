@@ -7,8 +7,6 @@ import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.link.CircuitBreakingLink;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
-import org.interledger.connector.stream.TrackingStreamReceiverLink;
-import org.interledger.connector.stream.TrackingStreamReceiverLinkSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.link.Link;
 import org.interledger.link.LinkFactoryProvider;
@@ -19,6 +17,8 @@ import org.interledger.link.StatefulLink;
 import org.interledger.link.events.LinkConnectedEvent;
 import org.interledger.link.events.LinkConnectionEventListener;
 import org.interledger.link.events.LinkDisconnectedEvent;
+import org.interledger.link.spsp.StatelessSpspReceiverLink;
+import org.interledger.link.spsp.StatelessSpspReceiverLinkSettings;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
@@ -167,13 +167,12 @@ public class DefaultLinkManager implements LinkManager, LinkConnectionEventListe
   @Override
   public Link<? extends LinkSettings> getOrCreateSpspReceiverLink(final AccountSettings accountSettings) {
     Objects.requireNonNull(accountSettings);
-    return linkFactoryProvider.getLinkFactory(TrackingStreamReceiverLink.LINK_TYPE)
+    return linkFactoryProvider.getLinkFactory(StatelessSpspReceiverLink.LINK_TYPE)
       .constructLink(
         operatorAddressSupplier,
-        TrackingStreamReceiverLinkSettings.builder()
+        StatelessSpspReceiverLinkSettings.builder()
           .assetCode(accountSettings.assetCode())
           .assetScale(accountSettings.assetScale())
-          .accountId(accountSettings.accountId())
           .build()
       );
   }

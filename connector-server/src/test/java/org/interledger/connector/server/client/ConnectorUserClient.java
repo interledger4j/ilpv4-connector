@@ -1,10 +1,16 @@
 package org.interledger.connector.server.client;
 
+import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS_PAYMENTS_PATH;
+
 import org.interledger.connector.accounts.AccessToken;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.balances.AccountBalanceResponse;
 import org.interledger.connector.client.ConnectorAdminClient;
 import org.interledger.connector.jackson.ObjectMapperFactory;
+import org.interledger.connector.payments.StreamPayment;
+import org.interledger.connector.server.spring.controllers.pay.ListPaymentsResponse;
+import org.interledger.connector.server.spring.controllers.pay.PaymentRequest;
+import org.interledger.connector.server.spring.controllers.pay.PaymentResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Feign;
@@ -19,6 +25,7 @@ import org.zalando.problem.ThrowableProblem;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Internally for testing the connector from spring boot tests. Note that all methods require
@@ -83,5 +90,28 @@ public interface ConnectorUserClient {
   void deleteToken(@Param("auth") String authorizationHeader,
                    @Param("accountId") AccountId accountId,
                    @Param("tokenId") long tokenId) throws ThrowableProblem;
+
+
+  @RequestLine("GET /accounts/{accountId}/payments")
+  @Headers( {AUTHORIZATION, ACCEPT_JSON})
+  ListPaymentsResponse listTokens(@Param("auth") String authorizationHeader,
+                                  @Param("accountId") AccountId accountId) throws ThrowableProblem;
+
+  @RequestLine("GET /accounts/{accountId}/payments/{paymentId}")
+  @Headers( {AUTHORIZATION, ACCEPT_JSON})
+  Optional<StreamPayment> findById(@Param("auth") String authorizationHeader,
+                                   @Param("accountId") AccountId accountId,
+                                   @Param("paymentId") String paymentId) throws ThrowableProblem;
+
+  @RequestLine("POST /accounts/{accountId}/payments")
+  @Headers( {AUTHORIZATION, ACCEPT_JSON, CONTENT_TYPE_JSON})
+  PaymentResponse sendPayment(@Param("auth") String authorizationHeader,
+                              @Param("accountId") AccountId accountId,
+                              PaymentRequest request) throws ThrowableProblem;
+
+  @RequestLine("GET " + SLASH_ACCOUNTS_PAYMENTS_PATH)
+  @Headers( {AUTHORIZATION, ACCEPT_JSON, CONTENT_TYPE_JSON})
+  ListPaymentsResponse listPayments(@Param("auth") String authorizationHeader,
+                                    @Param("accountId") AccountId accountId) throws ThrowableProblem;
 
 }

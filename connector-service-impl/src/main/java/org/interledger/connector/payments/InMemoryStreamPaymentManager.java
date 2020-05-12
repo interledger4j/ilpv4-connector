@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * Implementation of {@link StreamPaymentManager} that store payments in memory and does not persist
  * across restarts. Intended for local dev where a persistent datastore is not being used.
  */
-public class InMemoryStreamPaymentnManager implements StreamPaymentManager {
+public class InMemoryStreamPaymentManager implements StreamPaymentManager {
 
   // merge is synchronized so no need for concurrent hashmap
   private final Map<MapKey, StreamPayment> transactionsMap = new HashMap<>();
@@ -40,9 +40,10 @@ public class InMemoryStreamPaymentnManager implements StreamPaymentManager {
   @Override
   public synchronized void merge(StreamPayment streamPayment) {
     StreamPayment merged = upsertAmounts(streamPayment);
-    if (streamPayment.sourceAddress().isPresent()) {
+    if (streamPayment.deliveredAssetCode().isPresent()) {
       merged = put(StreamPayment.builder().from(merged)
-        .sourceAddress(streamPayment.sourceAddress())
+        .deliveredAssetCode(streamPayment.deliveredAssetCode())
+        .deliveredAssetScale(streamPayment.deliveredAssetScale())
         .build());
     }
     if (!streamPayment.status().equals(StreamPaymentStatus.PENDING)) {
@@ -56,6 +57,7 @@ public class InMemoryStreamPaymentnManager implements StreamPaymentManager {
     return findByAccountIdAndStreamPaymentId(streamPayment.accountId(), streamPayment.streamPaymentId())
       .map(existing -> put(StreamPayment.builder().from(existing)
         .amount(existing.amount().add(streamPayment.amount()))
+        .deliveredAmount(existing.deliveredAmount().plus(streamPayment.deliveredAmount()))
         .packetCount(existing.packetCount() + streamPayment.packetCount())
         .modifiedAt(Instant.now())
         .build()))

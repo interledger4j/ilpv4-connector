@@ -1,10 +1,10 @@
 package org.interledger.connector.events;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.core.InterledgerFulfillment;
+import org.interledger.connector.payments.StreamPaymentType;
+import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.stream.Denomination;
-import org.interledger.stream.StreamPacket;
 
 import org.immutables.value.Value;
 
@@ -24,11 +24,7 @@ public interface FulfillmentGeneratedEvent {
    */
   InterledgerPreparePacket incomingPreparePacket();
 
-  /**
-   * Fulfillment condition from the receiver
-   * @return
-   */
-  InterledgerFulfillment fulfillment();
+  InterledgerFulfillPacket fulfillPacket();
 
   /**
    * Connector account for the next hop
@@ -38,6 +34,6 @@ public interface FulfillmentGeneratedEvent {
 
   Denomination denomination();
 
-  StreamPacket streamPacket();
+  StreamPaymentType paymentType();
 
 }

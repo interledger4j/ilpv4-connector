@@ -6,22 +6,23 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.events.FulfillmentGeneratedEvent;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
+import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerFulfillment;
 import org.interledger.core.InterledgerPacketType;
 import org.interledger.core.InterledgerPreparePacket;
+import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.stream.Denomination;
 import org.interledger.stream.StreamPacket;
+import org.interledger.stream.crypto.StreamEncryptionService;
 import org.interledger.stream.frames.ConnectionNewAddressFrame;
 import org.interledger.stream.frames.ErrorCodes;
 import org.interledger.stream.frames.StreamCloseFrame;
 import org.interledger.stream.frames.StreamMoneyFrame;
 
-import com.google.common.hash.Hashing;
 import com.google.common.primitives.UnsignedLong;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 public class FulfillmentGeneratedEventConverterTest {
@@ -33,7 +34,11 @@ public class FulfillmentGeneratedEventConverterTest {
     .build();
   public static final InterledgerAddress DESTINATION_ADDRESS = InterledgerAddress.of("g.destination");
 
-  private FulfillmentGeneratedEventConverter converter = new FulfillmentGeneratedEventConverter();
+  private StreamEncryptionService streamEncryptionService;
+  private CodecContext streamCodecContext
+    ;
+  private FulfillmentGeneratedEventConverter converter = new FulfillmentGeneratedEventConverter(
+    streamEncryptionService, streamCodecContext);
 
   @Test
   public void convert() {
@@ -45,11 +50,15 @@ public class FulfillmentGeneratedEventConverterTest {
       .addFrames(moneyFrame())
       .build();
     FulfillmentGeneratedEvent event = FulfillmentGeneratedEvent.builder()
-      .streamPacket(streamPacket)
-      .incomingPreparePacket(preparePacket(amount))
+      .incomingPreparePacket(preparePacket(amount, streamPacket))
       .accountId(ACCOUNT_ID)
       .denomination(DENOMINATION)
-      .fulfillment(InterledgerFulfillment.of(new byte[32]))
+      .paymentType(StreamPaymentType.PAYMENT_RECEIVED)
+      .fulfillPacket(InterledgerFulfillPacket.builder()
+        .fulfillment(InterledgerFulfillment.of(new byte[32]))
+        .data(new byte[0])
+        .build()
+      )
       .build();
 
     StreamPayment streamPayment = converter.convert(event);
@@ -60,7 +69,9 @@ public class FulfillmentGeneratedEventConverterTest {
       .accountId(ACCOUNT_ID)
       .amount(BigInteger.valueOf(amount))
       .packetCount(1)
-      .streamPaymentId(Hashing.sha256().hashString(DESTINATION_ADDRESS.getValue(), StandardCharsets.UTF_8).toString())
+      .deliveredAmount(UnsignedLong.valueOf(amount))
+      .deliveredAssetScale(DENOMINATION.assetScale())
+      .deliveredAssetCode(DENOMINATION.assetCode())
       .destinationAddress(DESTINATION_ADDRESS)
       .createdAt(streamPayment.createdAt())
       .modifiedAt(streamPayment.modifiedAt())
@@ -81,11 +92,15 @@ public class FulfillmentGeneratedEventConverterTest {
       .addFrames(StreamCloseFrame.builder().errorCode(ErrorCodes.NoError).streamId(UnsignedLong.ONE).build())
       .build();
     FulfillmentGeneratedEvent event = FulfillmentGeneratedEvent.builder()
-      .streamPacket(streamPacket)
-      .incomingPreparePacket(preparePacket(amount))
+      .incomingPreparePacket(preparePacket(amount, streamPacket))
       .accountId(ACCOUNT_ID)
       .denomination(DENOMINATION)
-      .fulfillment(InterledgerFulfillment.of(new byte[32]))
+      .paymentType(StreamPaymentType.PAYMENT_RECEIVED)
+      .fulfillPacket(InterledgerFulfillPacket.builder()
+        .fulfillment(InterledgerFulfillment.of(new byte[32]))
+        .data(new byte[0])
+        .build()
+      )
       .build();
 
     StreamPayment streamPayment = converter.convert(event);
@@ -96,7 +111,9 @@ public class FulfillmentGeneratedEventConverterTest {
       .accountId(ACCOUNT_ID)
       .amount(BigInteger.valueOf(amount))
       .packetCount(1)
-      .streamPaymentId(Hashing.sha256().hashString(DESTINATION_ADDRESS.getValue(), StandardCharsets.UTF_8).toString())
+      .deliveredAmount(UnsignedLong.valueOf(amount))
+      .deliveredAssetScale(DENOMINATION.assetScale())
+      .deliveredAssetCode(DENOMINATION.assetCode())
       .destinationAddress(DESTINATION_ADDRESS)
       .createdAt(streamPayment.createdAt())
       .modifiedAt(streamPayment.modifiedAt())
@@ -118,11 +135,15 @@ public class FulfillmentGeneratedEventConverterTest {
       .addFrames(ConnectionNewAddressFrame.builder().sourceAddress(source).build())
       .build();
     FulfillmentGeneratedEvent event = FulfillmentGeneratedEvent.builder()
-      .streamPacket(streamPacket)
-      .incomingPreparePacket(preparePacket(amount))
+      .incomingPreparePacket(preparePacket(amount, streamPacket))
       .accountId(ACCOUNT_ID)
       .denomination(DENOMINATION)
-      .fulfillment(InterledgerFulfillment.of(new byte[32]))
+      .paymentType(StreamPaymentType.PAYMENT_RECEIVED)
+      .fulfillPacket(InterledgerFulfillPacket.builder()
+        .fulfillment(InterledgerFulfillment.of(new byte[32]))
+        .data(new byte[0])
+        .build()
+      )
       .build();
 
     StreamPayment streamPayment = converter.convert(event);
@@ -133,7 +154,9 @@ public class FulfillmentGeneratedEventConverterTest {
       .accountId(ACCOUNT_ID)
       .amount(BigInteger.valueOf(amount))
       .packetCount(1)
-      .streamPaymentId(Hashing.sha256().hashString(DESTINATION_ADDRESS.getValue(), StandardCharsets.UTF_8).toString())
+      .deliveredAmount(UnsignedLong.valueOf(amount))
+      .deliveredAssetScale(DENOMINATION.assetScale())
+      .deliveredAssetCode(DENOMINATION.assetCode())
       .destinationAddress(DESTINATION_ADDRESS)
       .createdAt(streamPayment.createdAt())
       .modifiedAt(streamPayment.modifiedAt())
@@ -144,17 +167,25 @@ public class FulfillmentGeneratedEventConverterTest {
     assertThat(streamPayment).isEqualTo(expected);
   }
 
-  private InterledgerPreparePacket.AbstractInterledgerPreparePacket preparePacket(long amount) {
+  private InterledgerPreparePacket.AbstractInterledgerPreparePacket preparePacket(long amount,
+                                                                                  StreamPacket streamPacket) {
     return InterledgerPreparePacket.builder()
       .amount(UnsignedLong.valueOf(amount))
       .expiresAt(Instant.now())
       .destination(DESTINATION_ADDRESS)
       .executionCondition(InterledgerCondition.of(new byte[32]))
+      .typedData(streamPacket)
       .build();
   }
 
   private StreamMoneyFrame moneyFrame() {
     return StreamMoneyFrame.builder().shares(UnsignedLong.ONE)
+      .streamId(UnsignedLong.ONE)
+      .build();
+  }
+
+  private StreamCloseFrame closeFrame() {
+    return StreamCloseFrame.builder()
       .streamId(UnsignedLong.ONE)
       .build();
   }

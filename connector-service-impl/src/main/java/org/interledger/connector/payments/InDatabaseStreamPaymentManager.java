@@ -53,6 +53,12 @@ public class InDatabaseStreamPaymentManager implements StreamPaymentManager {
         streamPayment.streamPaymentId(),
         sourceAddress.getValue());
     });
+    streamPayment.deliveredAssetScale().ifPresent(assetScale -> {
+      streamPaymentsRepository.updateDestinationDenomination(streamPayment.accountId(),
+        streamPayment.streamPaymentId(),
+          streamPayment.deliveredAssetCode().orElse("unknown"),
+          assetScale);
+    });
     if (!streamPayment.status().equals(StreamPaymentStatus.PENDING)) {
       streamPaymentsRepository.updateStatus(streamPayment.accountId(),
         streamPayment.streamPaymentId(),
