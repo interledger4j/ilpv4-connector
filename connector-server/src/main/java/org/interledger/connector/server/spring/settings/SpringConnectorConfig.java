@@ -45,6 +45,7 @@ import org.interledger.connector.links.filters.OutgoingBalanceLinkFilter;
 import org.interledger.connector.links.filters.OutgoingMaxPacketAmountLinkFilter;
 import org.interledger.connector.links.filters.OutgoingMetricsLinkFilter;
 import org.interledger.connector.metrics.MetricsService;
+import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.packetswitch.DefaultILPv4PacketSwitch;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.packetswitch.InterledgerAddressUtils;
@@ -573,7 +574,8 @@ public class SpringConnectorConfig {
     BalanceTracker balanceTracker,
     EventBus eventBus,
     SettlementService settlementService,
-    AccountSettingsCache accountSettingsCache
+    AccountSettingsCache accountSettingsCache,
+    InvoiceService invoiceService
   ) {
     return new DefaultILPv4Connector(
       connectorSettingsSupplier,
@@ -586,6 +588,7 @@ public class SpringConnectorConfig {
       balanceTracker,
       settlementService,
       accountSettingsCache,
+      invoiceService,
       eventBus
     );
   }
