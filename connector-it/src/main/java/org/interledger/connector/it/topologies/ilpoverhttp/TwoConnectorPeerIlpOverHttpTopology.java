@@ -288,6 +288,7 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
   private static ImmutableOpenPaymentsSettings constructOpenPaymentsSettings(InterledgerAddress interledgerAddress, int port) {
     return OpenPaymentsSettings.builder()
       .ilpOperatorAddress(interledgerAddress)
+      .connectorUrl(HttpUrl.parse("http://localhost:" + port))
       .metadata(
         OpenPaymentsMetadata.builder()
           .assetsSupported(Collections.singleton(SupportedAssets.XRP))

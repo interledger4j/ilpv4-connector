@@ -113,9 +113,10 @@ public class InvoicesController {
   @RequestMapping(
     path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES + OpenPaymentsPathConstants.SLASH_INVOICE_ID,
     method = RequestMethod.GET,
-    produces = {OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE, APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    consumes = {OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE},
+    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public @ResponseBody ResponseEntity getPaymentDetails(
+  public @ResponseBody ResponseEntity<PaymentDetails> getPaymentDetails(
     @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) String accountId,
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId
   ) {
