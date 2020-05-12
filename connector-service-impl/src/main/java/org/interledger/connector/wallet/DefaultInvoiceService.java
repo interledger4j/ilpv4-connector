@@ -104,6 +104,7 @@ public class DefaultInvoiceService implements InvoiceService {
       HttpUrl createUrl = new HttpUrl.Builder()
         .scheme(invoiceUrl.scheme())
         .host(invoiceUrl.host())
+        .port(invoiceUrl.port())
         .addPathSegment(invoice.accountId())
         .addPathSegment("invoices")
         .build();

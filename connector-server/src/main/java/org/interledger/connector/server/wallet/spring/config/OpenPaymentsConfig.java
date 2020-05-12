@@ -5,27 +5,24 @@ import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.PaymentDetailsService;
 import org.interledger.connector.opa.model.InvoiceFactory;
+import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.settings.ConnectorSettings;
-import org.interledger.connector.wallet.DefaultInvoiceService;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.settings.properties.converters.HttpUrlPropertyConverter;
+import org.interledger.connector.wallet.DefaultInvoiceService;
 import org.interledger.connector.wallet.IlpPaymentDetailsService;
 import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.connector.wallet.XrpPaymentDetailsService;
 import org.interledger.spsp.PaymentPointerResolver;
 import org.interledger.stream.receiver.ServerSecretSupplier;
-import org.interledger.stream.receiver.SpspStreamConnectionGenerator;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
 import io.xpring.common.XRPLNetwork;
 import io.xpring.payid.PayIDClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -45,12 +42,9 @@ public class OpenPaymentsConfig {
   public static final String OPA_ILP = "ILP";
   public static final String XRP = "PAY_ID";
 
-  @Autowired
-  private ApplicationContext applicationContext;
-
   @Bean
-  public Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier() {
-    return () -> applicationContext.getBean(ConnectorSettings.class).openPayments();
+  public Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier(Supplier<ConnectorSettings> connectorSettings) {
+    return () -> connectorSettings.get().openPayments();
   }
 
   @Bean
@@ -106,8 +100,8 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
-  public InvoiceFactory invoiceFactory(PaymentPointerResolver paymentPointerResolver) {
-    return new InvoiceFactory(paymentPointerResolver);
+  public InvoiceFactory invoiceFactory(PaymentPointerResolver paymentPointerResolver, Supplier<ConnectorSettings> connectorSettings) {
+    return new InvoiceFactory(paymentPointerResolver, openPaymentsSettingsSupplier(connectorSettings));
   }
 
 }

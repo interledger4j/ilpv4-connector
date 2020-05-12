@@ -31,6 +31,16 @@ public interface OpenPaymentsMetadata {
   HttpUrl issuer();
 
   /**
+   * The default scheme used when deriving a URL for an invoice.
+   * @return a compatible URL scheme
+   */
+  @Value.Default
+  @JsonProperty
+  default String defaultScheme() {
+    return "https";
+  }
+
+  /**
    * URL of the Authorization Server that can authorize new sessions with the issuer.
    *
    * This should be the base URL of the Authorization Server API, and should not give any information
