@@ -14,11 +14,14 @@ import org.interledger.connector.it.markers.OpenPayments;
 import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerIlpOverHttpTopology;
 import org.interledger.connector.it.topology.AbstractBaseTopology;
 import org.interledger.connector.it.topology.Topology;
+import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
+import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.stream.Denominations;
+import org.interledger.stream.SendMoneyResult;
 
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
@@ -35,7 +38,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 
 import java.io.IOException;
-import java.util.Optional;
+import java.util.Base64;
 import java.util.concurrent.TimeoutException;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -91,17 +94,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
 
   @Test
   public void createPeterInvoiceOnBob() {
-    Invoice invoice = Invoice.builder()
-      .accountId("peter")
-      .assetCode(Denominations.XRP.assetCode())
-      .assetScale(Denominations.XRP.assetScale())
-      .amount(UnsignedLong.valueOf(100))
-      .description("IT payment")
-      .paymentNetwork(PaymentNetwork.ILP)
-      .subject("$localhost:8081/peter")
-      .build();
-
-    Invoice createdInvoice = client.createInvoice(peterAtBobInvoicesUri.uri(), invoice);
+    Invoice createdInvoice = createInvoice(peterAtBobInvoicesUri);
     assertThat(createdInvoice.invoiceUrl())
       .isNotEmpty()
       .get()
@@ -110,17 +103,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
 
   @Test
   public void createPeterInvoiceViaAliceOnBob() {
-    Invoice invoice = Invoice.builder()
-      .accountId("peter")
-      .assetCode(Denominations.XRP.assetCode())
-      .assetScale(Denominations.XRP.assetScale())
-      .amount(UnsignedLong.valueOf(100))
-      .description("IT payment")
-      .paymentNetwork(PaymentNetwork.ILP)
-      .subject("$localhost:8081/peter")
-      .build();
-
-    Invoice createdInvoice = client.createInvoice(peterAtAliceInvoicesUri.uri(), invoice);
+    Invoice createdInvoice = createInvoice(peterAtAliceInvoicesUri);
     assertThat(createdInvoice.invoiceUrl())
       .isNotEmpty()
       .get()
@@ -129,26 +112,68 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
 
   @Test
   public void getPeterInvoiceOnBob() {
-    Invoice invoice = Invoice.builder()
-      .accountId("peter")
-      .assetCode(Denominations.XRP.assetCode())
-      .assetScale(Denominations.XRP.assetScale())
-      .amount(UnsignedLong.valueOf(100))
-      .description("IT payment")
-      .paymentNetwork(PaymentNetwork.ILP)
-      .subject("$localhost:8081/peter")
-      .build();
-
-    Invoice createdInvoice = client.createInvoice(peterAtBobInvoicesUri.uri(), invoice);
+    Invoice createdInvoice = createInvoice(peterAtBobInvoicesUri);
     Invoice getInvoice = client.getInvoice(createdInvoice.invoiceUrl().get().uri());
 
-    assertThat(createdInvoice).isEqualToIgnoringGivenFields(getInvoice, "createdAt", "updatedAt");
+    assertThat(createdInvoice).isEqualTo(getInvoice);
   }
 
   @Test
   public void getPeterInvoiceViaAliceOnBob() {
+    Invoice createdInvoice = createInvoice(peterAtAliceInvoicesUri);
+
+    HttpUrl localInvoiceEndpoint = peterAtAliceInvoicesUri.newBuilder().addPathSegment(createdInvoice.id().value()).build();
+    Invoice getInvoice = client.getInvoice(localInvoiceEndpoint.uri());
+    assertThat(createdInvoice).isEqualTo(getInvoice);
+  }
+
+  @Test
+  public void getPeterInvoicePaymentDetailsOnBob() {
+    Invoice createdInvoice = createInvoice(peterAtBobInvoicesUri);
+    PaymentDetails paymentDetails = client.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
+    assertThat(paymentDetails).isInstanceOf(IlpPaymentDetails.class);
+    IlpPaymentDetails ilpPaymentDetails = (IlpPaymentDetails) paymentDetails;
+
+    String encodedInvoiceId = Base64.getEncoder().encodeToString(createdInvoice.id().value().getBytes());
+    assertThat(ilpPaymentDetails.destinationAddress().getValue()).startsWith("test.bob.peter");
+    assertThat(ilpPaymentDetails.destinationAddress().getValue()).endsWith(encodedInvoiceId);
+  }
+
+  @Test
+  public void getPeterInvoicePaymentDetailsViaAliceOnBob() {
+    Invoice createdInvoice = createInvoice(peterAtAliceInvoicesUri);
+    PaymentDetails paymentDetails = client.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
+    assertThat(paymentDetails).isInstanceOf(IlpPaymentDetails.class);
+    IlpPaymentDetails ilpPaymentDetails = (IlpPaymentDetails) paymentDetails;
+
+    String encodedInvoiceId = Base64.getEncoder().encodeToString(createdInvoice.id().value().getBytes());
+    assertThat(ilpPaymentDetails.destinationAddress().getValue()).startsWith("test.bob.peter");
+    assertThat(ilpPaymentDetails.destinationAddress().getValue()).endsWith(encodedInvoiceId);
+  }
+
+  @Test
+  public void domingoPaysInvoiceForPeterViaAliceOnBob() {
+    Invoice createdInvoice = createInvoice(peterAtBobInvoicesUri);
+
+    HttpUrl localInvoicePaymentEndpoint = new HttpUrl.Builder()
+    .scheme(peterAtAliceInvoicesUri.scheme())
+    .host(peterAtAliceInvoicesUri.host())
+    .port(peterAtAliceInvoicesUri.port())
+    .build();
+
+    SendMoneyResult sendMoneyResult = client.payInvoice(
+      localInvoicePaymentEndpoint.uri(),
+      createdInvoice.accountId(),
+      createdInvoice.id().value(),
+      "Basic YWRtaW46cGFzc3dvcmQ="
+    );
+
+    getLogger().info(sendMoneyResult.toString());
+  }
+
+  private Invoice createInvoice(HttpUrl invoiceUri) {
     Invoice invoice = Invoice.builder()
-      .accountId("peter")
+      .accountId("paul")
       .assetCode(Denominations.XRP.assetCode())
       .assetScale(Denominations.XRP.assetScale())
       .amount(UnsignedLong.valueOf(100))
@@ -157,9 +182,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
       .subject("$localhost:8081/peter")
       .build();
 
-    Invoice createdInvoice = client.createInvoice(peterAtAliceInvoicesUri.uri(), invoice);
-    Invoice getInvoice = client.getInvoice(peterAtAliceInvoicesUri.newBuilder().addPathSegment(createdInvoice.id().value()).build().uri());
-    assertThat(createdInvoice).isEqualToIgnoringGivenFields(getInvoice, "createdAt", "updatedAt");
+    return client.createInvoice(invoiceUri.uri(), invoice);
   }
 
   @Override

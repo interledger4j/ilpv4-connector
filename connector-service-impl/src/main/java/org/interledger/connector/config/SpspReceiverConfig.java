@@ -57,7 +57,7 @@ public class SpspReceiverConfig {
 
   @Bean
   protected ServerSecretSupplier serverSecretSupplier() {
-    if (spspServerSecretB64 != null) {
+    if (spspServerSecretB64 != null && !spspServerSecretB64.isEmpty()) {
       try {
         final byte[] serverSecret = Base64.getDecoder().decode(spspServerSecretB64);
         return () -> serverSecret;
