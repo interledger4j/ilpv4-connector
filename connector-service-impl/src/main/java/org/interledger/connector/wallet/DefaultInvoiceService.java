@@ -1,7 +1,8 @@
 package org.interledger.connector.wallet;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.InvoiceService;
-import org.interledger.connector.opa.PaymentDetailsService;
+import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceFactory;
 import org.interledger.connector.opa.model.InvoiceId;
@@ -13,13 +14,16 @@ import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
+import org.interledger.stream.SendMoneyResult;
 
+import com.google.common.primitives.UnsignedLong;
 import feign.FeignException;
 import okhttp3.HttpUrl;
 import org.springframework.core.convert.ConversionService;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 public class DefaultInvoiceService implements InvoiceService {
@@ -29,8 +33,8 @@ public class DefaultInvoiceService implements InvoiceService {
   private final InvoiceFactory invoiceFactory;
   private final OpenPaymentsClient openPaymentsClient;
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
-  private final PaymentDetailsService xrpPaymentDetailsService;
-  private final PaymentDetailsService ilpPaymentDetailsService;
+  private final OpenPaymentsPaymentService xrpOpenPaymentsPaymentService;
+  private final OpenPaymentsPaymentService ilpOpenPaymentsPaymentService;
 
   public DefaultInvoiceService(
     final InvoicesRepository invoicesRepository,
@@ -38,16 +42,16 @@ public class DefaultInvoiceService implements InvoiceService {
     InvoiceFactory invoiceFactory,
     OpenPaymentsClient openPaymentsClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    PaymentDetailsService xrpPaymentDetailsService,
-    PaymentDetailsService ilpPaymentDetailsService
+    OpenPaymentsPaymentService xrpOpenPaymentsPaymentService,
+    OpenPaymentsPaymentService ilpOpenPaymentsPaymentService
   ) {
     this.invoicesRepository = Objects.requireNonNull(invoicesRepository);
     this.conversionService = Objects.requireNonNull(conversionService);
     this.invoiceFactory = Objects.requireNonNull(invoiceFactory);
     this.openPaymentsClient = Objects.requireNonNull(openPaymentsClient);
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
-    this.xrpPaymentDetailsService = Objects.requireNonNull(xrpPaymentDetailsService);
-    this.ilpPaymentDetailsService = Objects.requireNonNull(ilpPaymentDetailsService);
+    this.xrpOpenPaymentsPaymentService = Objects.requireNonNull(xrpOpenPaymentsPaymentService);
+    this.ilpOpenPaymentsPaymentService = Objects.requireNonNull(ilpOpenPaymentsPaymentService);
   }
 
   @Override
@@ -57,8 +61,8 @@ public class DefaultInvoiceService implements InvoiceService {
     Invoice invoice = invoicesRepository.findInvoiceByInvoiceId(invoiceId)
       .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceId));
 
-    // TODO: throw an exception if the invoice hasn't been given a name
-    HttpUrl invoiceUrl = invoice.invoiceUrl().get();
+    HttpUrl invoiceUrl = invoice.invoiceUrl()
+      .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
 
     // The sender and receiver wallets could be the same wallet, so the invoice and the invoice receipt could be
     // the same record. In this case, we should just return what we have.
@@ -144,21 +148,45 @@ public class DefaultInvoiceService implements InvoiceService {
       .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
 
     if (!isForThisWallet(invoiceUrl)) {
-      return this.proxyPaymentDetails(invoice);
+      if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
+        return openPaymentsClient.getXrpInvoicePaymentDetails(invoiceUrl.uri());
+      } else {
+        return openPaymentsClient.getIlpInvoicePaymentDetails(invoiceUrl.uri());
+      }
     }
 
     if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
-      return xrpPaymentDetailsService.getPaymentDetails(invoice);
+      return xrpOpenPaymentsPaymentService.getPaymentDetails(invoice);
     } else {
-      return ilpPaymentDetailsService.getPaymentDetails(invoice);
+      return ilpOpenPaymentsPaymentService.getPaymentDetails(invoice);
     }
   }
 
-  private PaymentDetails proxyPaymentDetails(Invoice invoice) {
-    if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
-      return openPaymentsClient.getXrpInvoicePaymentDetails(invoice.invoiceUrl().get().uri());
+  @Override
+  public SendMoneyResult payInvoice(InvoiceId invoiceId, AccountId senderAccountId, String bearerToken) {
+    final Invoice invoice = this.getInvoiceById(invoiceId);
+
+    if (!invoice.paymentNetwork().equals(PaymentNetwork.ILP)) {
+      throw new IllegalStateException("Unable to pay invoice from Open Payment Server over non-ILP payment network.");
+    }
+
+    final HttpUrl invoiceUrl = invoice.invoiceUrl()
+      .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
+
+    PaymentDetails ilpPaymentDetails;
+
+    if (!isForThisWallet(invoiceUrl)) {
+      ilpPaymentDetails = openPaymentsClient.getIlpInvoicePaymentDetails(invoiceUrl.uri());
     } else {
-      return openPaymentsClient.getIlpInvoicePaymentDetails(invoice.invoiceUrl().get().uri());
+      ilpPaymentDetails = ilpOpenPaymentsPaymentService.getPaymentDetails(invoice);
+    }
+
+    UnsignedLong amountLeftToSend = invoice.amount().minus(invoice.received());
+    try {
+      return ilpOpenPaymentsPaymentService.payInvoice(ilpPaymentDetails, senderAccountId, amountLeftToSend, bearerToken);
+    } catch (InterruptedException | ExecutionException e) {
+      // TODO: Throw an invoice problem
+      throw new RuntimeException(e);
     }
   }
 

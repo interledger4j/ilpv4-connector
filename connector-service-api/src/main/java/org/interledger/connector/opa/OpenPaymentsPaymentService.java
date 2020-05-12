@@ -1,9 +1,15 @@
 package org.interledger.connector.opa;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.PaymentDetails;
+import org.interledger.stream.SendMoneyResult;
 
-public interface PaymentDetailsService {
+import com.google.common.primitives.UnsignedLong;
+
+import java.util.concurrent.ExecutionException;
+
+public interface OpenPaymentsPaymentService {
 
   /**
    * Get the details necessary to make a payment for an invoice.
@@ -16,4 +22,10 @@ public interface PaymentDetailsService {
    */
   PaymentDetails getPaymentDetails(final Invoice invoice);
 
+  SendMoneyResult payInvoice(
+    final PaymentDetails paymentDetails,
+    final AccountId senderAccountId,
+    final UnsignedLong amount,
+    final String bearerToken
+  ) throws ExecutionException, InterruptedException;
 }
