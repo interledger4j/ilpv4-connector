@@ -24,7 +24,7 @@ import java.util.Objects;
  * An in-memory bridge between the OpenPayments server and the Connector that uses an async {@link EventBus} so that the
  * packet-switch doesn't have to wait for the bridge to complete.
  */
-public class AsyncInMemoryOpenPaymentsBridge
+public class InMemoryOpenPaymentsBridge
   implements OpenPaymentsEventHandler, PaymentSystemEventHandler, OpenPaymentsFacade, PaymentSystemFacade {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -39,7 +39,7 @@ public class AsyncInMemoryOpenPaymentsBridge
    * @param openPaymentsEventHandlerDelegate  A {@link OpenPaymentsEventHandler} to delegate to.
    * @param paymentSystemEventHandlerDelegate A {@link PaymentSystemEventHandler} to delegate to
   ¬ */
-  public AsyncInMemoryOpenPaymentsBridge(
+  public InMemoryOpenPaymentsBridge(
     final OpenPaymentsEventHandler openPaymentsEventHandlerDelegate,
     final PaymentSystemEventHandler paymentSystemEventHandlerDelegate
   ) {

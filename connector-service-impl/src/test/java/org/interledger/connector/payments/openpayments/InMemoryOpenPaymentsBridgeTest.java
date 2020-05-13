@@ -41,11 +41,11 @@ import java.util.stream.IntStream;
 /**
  * Unit test for validating the OpenPayments/Connector bridge.
  */
-public class AsyncInMemoryOpenPaymentsBridgeTest {
+public class InMemoryOpenPaymentsBridgeTest {
 
   private static final int NUM_EVENT_BUS_THREADS = 10;
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
-  private AsyncInMemoryOpenPaymentsBridge openPaymentsBridge;
+  private InMemoryOpenPaymentsBridge openPaymentsBridge;
 
   private CountDownLatch numInvoiceCreatedInvocations;
   private CountDownLatch numPaymentCompletedInvocations;
@@ -84,7 +84,7 @@ public class AsyncInMemoryOpenPaymentsBridgeTest {
     };
 
     // InMemoryOpenPaymentsBridge is both a PaymentsSystemFacade AND a OpenPaymentsFacade
-    this.openPaymentsBridge = new AsyncInMemoryOpenPaymentsBridge(openPaymentsEventHandler, paymentSystemEventHandler);
+    this.openPaymentsBridge = new InMemoryOpenPaymentsBridge(openPaymentsEventHandler, paymentSystemEventHandler);
   }
 
   /**
