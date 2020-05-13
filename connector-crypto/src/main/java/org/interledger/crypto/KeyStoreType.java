@@ -2,7 +2,8 @@ package org.interledger.crypto;
 
 import static org.interledger.crypto.CryptoConstants.KEYSTORE_ID_GCP_KMS;
 import static org.interledger.crypto.CryptoConstants.KEYSTORE_ID_JKS;
-import static org.interledger.crypto.CryptoConstants.KEYSTORE_ID_VAULT;
+
+import java.util.Objects;
 
 /**
  * <p>Defines unique identifiers for the providers of underlying key-storage, which typically treat key-material as
@@ -26,12 +27,13 @@ public enum KeyStoreType {
   /**
    * Private keys and symmetric secrets are stored in Hashicorp's Vault
    */
-  VAULT(KEYSTORE_ID_VAULT);
+  //VAULT(KEYSTORE_ID_VAULT),
+  ;
 
   private String keystoreId;
 
   KeyStoreType(final String keystoreId) {
-    this.keystoreId = keystoreId;
+    this.keystoreId = Objects.requireNonNull(keystoreId);
   }
 
   public static KeyStoreType fromKeystoreTypeId(final String keystoreTypeId) {
@@ -42,9 +44,9 @@ public enum KeyStoreType {
       case KEYSTORE_ID_GCP_KMS: {
         return GCP;
       }
-      case KEYSTORE_ID_VAULT: {
-        return VAULT;
-      }
+//      case KEYSTORE_ID_VAULT: {
+//        return VAULT;
+//      }
       default: {
         throw new RuntimeException("Invalid KeyStoreType: " + keystoreTypeId);
       }

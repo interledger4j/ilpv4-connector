@@ -47,14 +47,12 @@ import java.util.Objects;
  * <p>An implementation of {@link StreamReceiver} that tracks state related to packets received and fulfillments
  * generated for a given account on the connector.
  *
- * <p>NOTE: This implementation does not currently support handling data sent via STREAM.</p>
+ * <p>NOTE: This implementation does not currently support handling data frames sent via STREAM (only money
+ * frames).</p>
  *
- * <p>Note that, per https://github.com/hyperledger/quilt/issues/242, as of the publication of this client,
- * connectors will reject ILP packets that exceed 32kb. This implementation does not overtly check to restrict the size
- * of thedatafield in any particular {@link InterledgerPreparePacket}, for two reasons. First, this implementation never
- * packs a sufficient number of STREAM frames into a single Prepare packet for this 32kb limit to be an issue; Second,
- * if the ILPv4 RFC ever changes to increase this size limitation, we don't want sender/receiver software to have to be
- * updated across the Interledger.</p>
+ * <p>Note that because this Connector implementation will reject ILP packets that exceed 32kb, this StreamReceiver
+ * implementation does not overtly check to restrict the size of the data field in any particular {@link
+ * InterledgerPreparePacket} so that the Connector can decide the size of packets it wishes to accept or reject.</p>
  */
 public class TrackingStreamReceiver implements StreamReceiver {
 
@@ -72,7 +70,8 @@ public class TrackingStreamReceiver implements StreamReceiver {
     final StreamEncryptionService streamEncryptionService,
     final CodecContext streamCodecContext,
     final AccountId accountId,
-    final FulfillmentGeneratedEventAggregator fulfillmentGeneratedEventAggregator) {
+    final FulfillmentGeneratedEventAggregator fulfillmentGeneratedEventAggregator
+  ) {
     this.serverSecretSupplier = Objects.requireNonNull(serverSecretSupplier, "serverSecretSupplier must not be null");
     this.streamConnectionGenerator = Objects
         .requireNonNull(streamConnectionGenerator, "connectionGenerator must not be null");

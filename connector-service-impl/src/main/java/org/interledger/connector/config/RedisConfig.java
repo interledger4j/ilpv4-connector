@@ -18,6 +18,9 @@ import java.nio.charset.Charset;
 @Configuration
 public class RedisConfig {
 
+  private static final String REDIS_CONNECTION_WARNING
+    = "### (RedisConfig) WARNING ###: Unable to connect to Redis at {}:{}";
+
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   @Value("${redis.host:localhost}")
@@ -65,10 +68,10 @@ public class RedisConfig {
     try {
       // Try to connect to Redis, but default to InMemoryBalanceTracker if there's no Redis...
       if (!lettuceConnectionFactory.getConnection().ping().equalsIgnoreCase("PONG")) {
-        logger.warn("WARNING: Unable to connect to Redis.");
+        logger.warn(REDIS_CONNECTION_WARNING, redisHost, redisPort);
       }
     } catch (RedisConnectionFailureException e) {
-      logger.warn("WARNING: Unable to connect to Redis!");
+      logger.warn(REDIS_CONNECTION_WARNING, redisHost, redisPort);
       // If debug-output is enabled, then emit the stack-trace.
       if (logger.isDebugEnabled()) {
         logger.debug(e.getMessage(), e);
