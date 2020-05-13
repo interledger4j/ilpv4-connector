@@ -67,10 +67,12 @@ public interface ConnectorSettings {
     return SpspSettings.builder().build();
   }
 
-  @Value.Default
-  default OpenPaymentsSettings openPayments() {
-    return OpenPaymentsSettings.builder().build();
-  }
+  /**
+   * Settings for the OpenPayments server that is available to be run in this Connector.
+   *
+   * @return
+   */
+  OpenPaymentsSettings openPayments();
 
   /**
    * Connection settings/defaults used for FX pools and clients

@@ -17,8 +17,6 @@ interledger:
     spsp:
         urlPath: p
         addressPrefixSegment: spsp-test
-        # For testing only (TODO: Remove?)
-        # serverSecret: aQLR5IWAGV2vKnBhnFFsl2cXOCh9u0IWz3PiA64KlJ8=
     open-payments:
       ilpOperatorAddress: "test.connie"
       metadata:
