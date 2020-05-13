@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -72,6 +73,9 @@
     <module>connector-pubsub</module>
     <module>connector-pubsub-api</module>
     <module>connector-opa</module>
+    <module>openpayments-model</module>
+    <module>openpayments-service-api</module>
+    <module>openpayments-service-impl</module>
   </modules>
 
   <profiles>
@@ -107,11 +111,6 @@
         <version>${spring-cloud.version}</version>
         <type>pom</type>
         <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>io.xpring</groupId>
-        <artifactId>xpring4j</artifactId>
-        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
@@ -203,9 +202,25 @@
         <artifactId>connector-fxrates</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <!-- TODO: Remove this dependency when connector-opa goes away -->
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>connector-opa</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>openpayments-model</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>openpayments-service-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>openpayments-service-impl</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -303,6 +318,12 @@
         <groupId>io.xpring</groupId>
         <artifactId>xpring4j</artifactId>
         <version>5.0.0</version>
+        <exclusions>
+          <exclusion>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>javax.inject</groupId>
@@ -339,7 +360,7 @@
       <dependency>
         <groupId>org.immutables</groupId>
         <artifactId>value</artifactId>
-        <version>2.7.5</version>
+        <version>2.8.3</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
