@@ -7,7 +7,6 @@ import org.interledger.link.LinkFactoryProvider;
 import org.interledger.link.PacketRejector;
 import org.interledger.link.spsp.StatelessSpspReceiverLink;
 import org.interledger.link.spsp.StatelessSpspReceiverLinkFactory;
-import org.interledger.stream.crypto.JavaxStreamEncryptionService;
 import org.interledger.stream.crypto.Random;
 import org.interledger.stream.crypto.StreamEncryptionService;
 import org.interledger.stream.receiver.ServerSecretSupplier;
@@ -87,11 +86,6 @@ public class SpspReceiverConfig {
   @Bean
   protected StreamConnectionGenerator streamConnectionGenerator() {
     return new SpspStreamConnectionGenerator();
-  }
-
-  @Bean
-  protected StreamEncryptionService streamEncryptionService() {
-    return new JavaxStreamEncryptionService();
   }
 
   @Bean

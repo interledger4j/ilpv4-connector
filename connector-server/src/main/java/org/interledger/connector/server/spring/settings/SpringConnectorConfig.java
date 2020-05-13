@@ -111,6 +111,7 @@ import org.interledger.link.PacketRejector;
 import org.interledger.link.PingLoopbackLink;
 import org.interledger.spsp.client.SpspClient;
 import org.interledger.stream.calculators.ExchangeRateCalculator;
+import org.interledger.stream.crypto.JavaxStreamEncryptionService;
 import org.interledger.stream.crypto.StreamEncryptionService;
 import org.interledger.stream.sender.StreamConnectionManager;
 
@@ -681,6 +682,11 @@ public class SpringConnectorConfig {
 
   @Bean LocalPacketSwitchLinkFactory localPacketSwitchLinkFactory(ILPv4PacketSwitch ilpPacketSwitch) {
     return new LocalPacketSwitchLinkFactory(ilpPacketSwitch);
+  }
+
+  @Bean
+  protected StreamEncryptionService streamEncryptionService() {
+    return new JavaxStreamEncryptionService();
   }
 
   @Bean
