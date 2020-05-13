@@ -9,6 +9,8 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.link.PacketRejector;
 import org.interledger.stream.Denomination;
 
+import com.google.common.primitives.UnsignedLong;
+
 import java.util.Objects;
 
 /**
@@ -35,6 +37,10 @@ public class StreamPaymentIlpPacketFilter extends AbstractPacketFilter implement
       // If FulfillPacket...
       //////////////////////
       (interledgerFulfillPacket) -> {
+        if (UnsignedLong.ZERO.equals(sourcePreparePacket.getAmount())) {
+          // No need to track 0-value packets...
+          return interledgerFulfillPacket;
+        }
         // If a packet is fulfilled, then the Receiver's balance is always adjusted in the outgoing LinkFilter, so
         // there's nothing to do here.
         fulfillmentGeneratedEventAggregator.aggregate(FulfillmentGeneratedEvent.builder()
@@ -44,7 +50,7 @@ public class StreamPaymentIlpPacketFilter extends AbstractPacketFilter implement
             .assetCode(sourceAccountSettings.assetCode())
             .build()
           )
-          .incomingPreparePacket(sourcePreparePacket)
+          .preparePacket(sourcePreparePacket)
           .fulfillPacket(interledgerFulfillPacket)
           .paymentType(StreamPaymentType.PAYMENT_SENT)
           .build()

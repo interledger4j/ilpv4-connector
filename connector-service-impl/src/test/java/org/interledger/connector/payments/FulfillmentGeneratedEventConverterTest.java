@@ -69,7 +69,7 @@ public class FulfillmentGeneratedEventConverterTest {
       .addFrames(moneyFrame())
       .build();
     FulfillmentGeneratedEvent event = FulfillmentGeneratedEvent.builder()
-      .incomingPreparePacket(preparePacket(amount, streamPacket))
+      .preparePacket(preparePacket(amount, streamPacket))
       .accountId(ACCOUNT_ID)
       .denomination(DENOMINATION)
       .paymentType(StreamPaymentType.PAYMENT_RECEIVED)
@@ -104,7 +104,7 @@ public class FulfillmentGeneratedEventConverterTest {
   public void convertPaymentReceivedWithoutTypedData() {
     long amount = 100;
     FulfillmentGeneratedEvent event = FulfillmentGeneratedEvent.builder()
-      .incomingPreparePacket(preparePacket(amount, Optional.empty()))
+      .preparePacket(preparePacket(amount, Optional.empty()))
       .accountId(ACCOUNT_ID)
       .denomination(DENOMINATION)
       .paymentType(StreamPaymentType.PAYMENT_RECEIVED)
@@ -146,7 +146,7 @@ public class FulfillmentGeneratedEventConverterTest {
       .addFrames(closeFrame())
       .build();
     FulfillmentGeneratedEvent event = FulfillmentGeneratedEvent.builder()
-      .incomingPreparePacket(preparePacket(amount, streamPacket))
+      .preparePacket(preparePacket(amount, streamPacket))
       .accountId(ACCOUNT_ID)
       .denomination(DENOMINATION)
       .paymentType(StreamPaymentType.PAYMENT_RECEIVED)
@@ -196,7 +196,7 @@ public class FulfillmentGeneratedEventConverterTest {
       .build();
 
     FulfillmentGeneratedEvent event = FulfillmentGeneratedEvent.builder()
-      .incomingPreparePacket(preparePacket(amount, streamPacket))
+      .preparePacket(preparePacket(amount, streamPacket))
       .accountId(ACCOUNT_ID)
       .denomination(DENOMINATION)
       .paymentType(StreamPaymentType.PAYMENT_SENT)
@@ -239,7 +239,7 @@ public class FulfillmentGeneratedEventConverterTest {
       .addFrames(ConnectionNewAddressFrame.builder().sourceAddress(source).build())
       .build();
     FulfillmentGeneratedEvent event = FulfillmentGeneratedEvent.builder()
-      .incomingPreparePacket(preparePacket(amount, streamPacket))
+      .preparePacket(preparePacket(amount, streamPacket))
       .accountId(ACCOUNT_ID)
       .denomination(DENOMINATION)
       .paymentType(StreamPaymentType.PAYMENT_RECEIVED)
@@ -293,7 +293,7 @@ public class FulfillmentGeneratedEventConverterTest {
       .build();
 
     FulfillmentGeneratedEvent event = FulfillmentGeneratedEvent.builder()
-      .incomingPreparePacket(preparePacket(sentAmount.longValue(), streamPreparePacket))
+      .preparePacket(preparePacket(sentAmount.longValue(), streamPreparePacket))
       .accountId(ACCOUNT_ID)
       .denomination(DENOMINATION)
       .paymentType(StreamPaymentType.PAYMENT_SENT)
@@ -346,7 +346,7 @@ public class FulfillmentGeneratedEventConverterTest {
       .build();
 
     FulfillmentGeneratedEvent event = FulfillmentGeneratedEvent.builder()
-      .incomingPreparePacket(preparePacket(sentAmount.longValue(), streamPreparePacket))
+      .preparePacket(preparePacket(sentAmount.longValue(), streamPreparePacket))
       .accountId(ACCOUNT_ID)
       .denomination(DENOMINATION)
       .paymentType(StreamPaymentType.PAYMENT_SENT)

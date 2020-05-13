@@ -38,14 +38,14 @@ public class FulfillmentGeneratedEventConverter implements Converter<Fulfillment
   @Override
   public StreamPayment convert(FulfillmentGeneratedEvent source) {
     Optional<StreamPacket> prepareStreamPacket =
-      streamPreparePacket(source.incomingPreparePacket(), source.fulfillPacket());
+      streamPreparePacket(source.preparePacket(), source.fulfillPacket());
 
     Optional<StreamPacket> fulfillStreamPacket =
-      streamFulfillPacket(source.incomingPreparePacket(), source.fulfillPacket());
+      streamFulfillPacket(source.preparePacket(), source.fulfillPacket());
 
     Optional<InterledgerAddress> sourceAddress = prepareStreamPacket.flatMap(StreamPacketUtils::getSourceAddress);
     ImmutableStreamPayment.Builder builder = StreamPayment.builder()
-      .destinationAddress(source.incomingPreparePacket().getDestination())
+      .destinationAddress(source.preparePacket().getDestination())
       .sourceAddress(sourceAddress)
       .status(getTransactionStatus(prepareStreamPacket).orElseGet(
         () -> getTransactionStatus(fulfillStreamPacket).orElse(StreamPaymentStatus.PENDING)
@@ -60,8 +60,8 @@ public class FulfillmentGeneratedEventConverter implements Converter<Fulfillment
 
     switch (source.paymentType()) {
       case PAYMENT_RECEIVED: {
-        return builder.amount(source.incomingPreparePacket().getAmount().bigIntegerValue())
-          .deliveredAmount(source.incomingPreparePacket().getAmount())
+        return builder.amount(source.preparePacket().getAmount().bigIntegerValue())
+          .deliveredAmount(source.preparePacket().getAmount())
           .deliveredAssetScale(source.denomination().assetScale())
           .deliveredAssetCode(source.denomination().assetCode())
           .type(StreamPaymentType.PAYMENT_RECEIVED)
@@ -69,7 +69,7 @@ public class FulfillmentGeneratedEventConverter implements Converter<Fulfillment
       }
       case PAYMENT_SENT: {
         Optional<Denomination> deliveredDenomination = fulfillStreamPacket.flatMap(StreamPacketUtils::getDenomination);
-        return builder.amount(source.incomingPreparePacket().getAmount().bigIntegerValue().negate())
+        return builder.amount(source.preparePacket().getAmount().bigIntegerValue().negate())
           .deliveredAmount(fulfillStreamPacket.map(StreamPacket::prepareAmount).orElse(UnsignedLong.ZERO))
           .deliveredAssetScale(deliveredDenomination.map(Denomination::assetScale))
           .deliveredAssetCode(deliveredDenomination.map(Denomination::assetCode))

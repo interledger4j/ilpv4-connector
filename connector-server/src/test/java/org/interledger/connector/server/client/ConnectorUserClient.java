@@ -91,12 +91,6 @@ public interface ConnectorUserClient {
                    @Param("accountId") AccountId accountId,
                    @Param("tokenId") long tokenId) throws ThrowableProblem;
 
-
-  @RequestLine("GET /accounts/{accountId}/payments")
-  @Headers( {AUTHORIZATION, ACCEPT_JSON})
-  ListStreamPaymentsResponse listTokens(@Param("auth") String authorizationHeader,
-                                        @Param("accountId") AccountId accountId) throws ThrowableProblem;
-
   @RequestLine("GET /accounts/{accountId}/payments/{paymentId}")
   @Headers( {AUTHORIZATION, ACCEPT_JSON})
   Optional<StreamPayment> findById(@Param("auth") String authorizationHeader,

@@ -50,14 +50,14 @@ public class OutgoingStreamPaymentLinkFilter extends AbstractLinkFilter implemen
 
     final InterledgerResponsePacket responsePacket
         = filterChain.doFilter(destinationAccountSettings, outgoingPreparePacket);
-
-    responsePacket.handle(
+    try {
+      return responsePacket.handleAndReturn(
         //////////////////////
         // If FulfillPacket...
         //////////////////////
         (interledgerFulfillPacket) -> {
           if (UnsignedLong.ZERO.equals(outgoingPreparePacket.getAmount())) {
-            // No need to settle 0-value packets...
+            // No need to track 0-value packets...
             return;
           }
           fulfillmentGeneratedEventAggregator.aggregate(FulfillmentGeneratedEvent.builder()
@@ -67,7 +67,7 @@ public class OutgoingStreamPaymentLinkFilter extends AbstractLinkFilter implemen
               .assetCode(destinationAccountSettings.assetCode())
               .build()
             )
-            .incomingPreparePacket(outgoingPreparePacket)
+            .preparePacket(outgoingPreparePacket)
             .fulfillPacket(interledgerFulfillPacket)
             .paymentType(StreamPaymentType.PAYMENT_RECEIVED)
             .build()
@@ -77,10 +77,12 @@ public class OutgoingStreamPaymentLinkFilter extends AbstractLinkFilter implemen
         // only fulfillments are tracked on stream payments. nothing to do on reject.
         //////////////////////
         (interledgerRejectPacket) ->{}
-    );
-
-    // ALWAYS return the Response packet _AT ANY COST_ so this connector doesn't lose money.
-    return responsePacket;
+      );
+    } catch (Exception e) {
+      logger.error("Failed to aggregate fulfillment. Packet will still be fulfilled by payment tracking data will" +
+        "be out of sync with balance tracking. Prepare={}, Response={}", outgoingPreparePacket, responsePacket, e);
+      return responsePacket;
+    }
   }
 
 }

@@ -9,7 +9,8 @@ import org.immutables.value.Value;
 import org.immutables.value.Value.Derived;
 
 /**
- * An extension of {@link LinkSettings} for {@link LocalPacketSwitchLink}.
+ * An extension of {@link LinkSettings} for {@link LocalPacketSwitchLink}. An instance of this class is created for
+ * every local send operation.
  */
 @Value.Immutable
 public interface LocalPacketSwitchLinkSettings extends LinkSettings {
@@ -23,6 +24,10 @@ public interface LocalPacketSwitchLinkSettings extends LinkSettings {
     return LocalPacketSwitchLink.LINK_TYPE;
   }
 
+  /**
+   * Incoming account id
+   * @return
+   */
   AccountId accountId();
 
   SharedSecret sharedSecret();

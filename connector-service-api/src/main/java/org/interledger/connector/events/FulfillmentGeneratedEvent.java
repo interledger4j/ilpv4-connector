@@ -22,7 +22,7 @@ public interface FulfillmentGeneratedEvent {
    * Incoming prepare packet from the previous hop
    * @return
    */
-  InterledgerPreparePacket incomingPreparePacket();
+  InterledgerPreparePacket preparePacket();
 
   InterledgerFulfillPacket fulfillPacket();
 

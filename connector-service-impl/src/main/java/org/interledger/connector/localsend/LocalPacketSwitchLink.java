@@ -16,6 +16,7 @@ import java.util.function.Supplier;
 
 /**
  * Link for sending packets directly to the local connectors {@link ILPv4PacketSwitch}. Used for local payment send.
+ *  A new instance of this class is created for every local send operation.
  */
 public class LocalPacketSwitchLink extends AbstractLink<LocalPacketSwitchLinkSettings> {
 
