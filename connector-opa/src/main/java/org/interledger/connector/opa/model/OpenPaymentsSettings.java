@@ -1,7 +1,6 @@
 package org.interledger.connector.opa.model;
 
 import org.interledger.core.InterledgerAddress;
-import org.interledger.link.Link;
 
 import okhttp3.HttpUrl;
 import org.immutables.value.Value;
@@ -19,23 +18,17 @@ public interface OpenPaymentsSettings {
   /**
    * The ILP address of the connector that this Open Payments server sits next to.
    *
-   * Note that this is a different configuration property than the node address in a connector config,
-   * but they should hold the same value.
+   * Note that this is a different configuration property than the node address in a connector config, but they should
+   * hold the same value.
    *
    * @return The {@link InterledgerAddress} of the Connector that Open Payments server sits next to.
    */
-  @Value.Default
-  default InterledgerAddress ilpOperatorAddress() {
-    return Link.SELF;
-  }
+  InterledgerAddress ilpOperatorAddress();
 
   HttpUrl connectorUrl();
 
   /**
    * Discoverable Open Payments Metadata that can be used to set up Open Payments flows.
    */
-  @Value.Default
-  default OpenPaymentsMetadata metadata() {
-    return OpenPaymentsMetadata.builder().build();
-  }
+  OpenPaymentsMetadata metadata();
 }

@@ -109,11 +109,6 @@
         <scope>import</scope>
       </dependency>
       <dependency>
-        <groupId>io.xpring</groupId>
-        <artifactId>xpring4j</artifactId>
-        <version>5.0.0</version>
-      </dependency>
-      <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>connector-ilpv4-api</artifactId>
         <version>${project.version}</version>
@@ -303,6 +298,12 @@
         <groupId>io.xpring</groupId>
         <artifactId>xpring4j</artifactId>
         <version>5.0.0</version>
+        <exclusions>
+          <exclusion>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>javax.inject</groupId>
