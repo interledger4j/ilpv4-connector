@@ -26,6 +26,7 @@ import org.interledger.connector.config.BalanceTrackerConfig;
 import org.interledger.connector.config.CaffeineCacheConfig;
 import org.interledger.connector.config.RedisConfig;
 import org.interledger.connector.config.SettlementConfig;
+import org.interledger.connector.config.SpspClientConfig;
 import org.interledger.connector.config.SpspReceiverConfig;
 import org.interledger.connector.events.DefaultPacketEventPublisher;
 import org.interledger.connector.events.PacketEventPublisher;
@@ -43,6 +44,8 @@ import org.interledger.connector.links.filters.LinkFilter;
 import org.interledger.connector.links.filters.OutgoingBalanceLinkFilter;
 import org.interledger.connector.links.filters.OutgoingMaxPacketAmountLinkFilter;
 import org.interledger.connector.links.filters.OutgoingMetricsLinkFilter;
+import org.interledger.connector.links.filters.OutgoingStreamPaymentLinkFilter;
+import org.interledger.connector.localsend.LocalPacketSwitchLinkFactory;
 import org.interledger.connector.metrics.MetricsService;
 import org.interledger.connector.packetswitch.DefaultILPv4PacketSwitch;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
@@ -55,14 +58,20 @@ import org.interledger.connector.packetswitch.filters.PacketMetricsFilter;
 import org.interledger.connector.packetswitch.filters.PacketSwitchFilter;
 import org.interledger.connector.packetswitch.filters.PeerProtocolPacketFilter;
 import org.interledger.connector.packetswitch.filters.RateLimitIlpPacketFilter;
+import org.interledger.connector.packetswitch.filters.StreamPaymentIlpPacketFilter;
 import org.interledger.connector.packetswitch.filters.ValidateFulfillmentPacketFilter;
+import org.interledger.connector.payments.DefaultSendPaymentService;
 import org.interledger.connector.payments.FulfillmentGeneratedEventAggregator;
 import org.interledger.connector.payments.FulfillmentGeneratedEventConverter;
 import org.interledger.connector.payments.InDatabaseStreamPaymentManager;
-import org.interledger.connector.payments.InMemoryStreamPaymentnManager;
+import org.interledger.connector.payments.InMemoryStreamPaymentManager;
+import org.interledger.connector.payments.SendPaymentService;
+import org.interledger.connector.payments.SimpleExchangeRateCalculator;
+import org.interledger.connector.payments.SimpleStreamSenderFactory;
 import org.interledger.connector.payments.StreamPaymentFromEntityConverter;
 import org.interledger.connector.payments.StreamPaymentManager;
 import org.interledger.connector.payments.StreamPaymentToEntityConverter;
+import org.interledger.connector.payments.StreamSenderFactory;
 import org.interledger.connector.payments.SynchronousFulfillmentGeneratedEventAggregator;
 import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
@@ -100,6 +109,11 @@ import org.interledger.crypto.Decryptor;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.link.PacketRejector;
 import org.interledger.link.PingLoopbackLink;
+import org.interledger.spsp.client.SpspClient;
+import org.interledger.stream.calculators.ExchangeRateCalculator;
+import org.interledger.stream.crypto.JavaxStreamEncryptionService;
+import org.interledger.stream.crypto.StreamEncryptionService;
+import org.interledger.stream.sender.StreamConnectionManager;
 
 import ch.qos.logback.classic.LoggerContext;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -154,6 +168,7 @@ import javax.annotation.PostConstruct;
   CaffeineCacheConfig.class,
   RedisConfig.class,
   SpspReceiverConfig.class,
+  SpspClientConfig.class,
   SettlementConfig.class,
   BalanceTrackerConfig.class,
   LinkConfig.class,
@@ -447,8 +462,8 @@ public class SpringConnectorConfig {
     MetricsService metricsService,
     @Qualifier(CodecContextConfig.CCP) CodecContext ccpCodecContext,
     @Qualifier(CodecContextConfig.ILDCP) CodecContext ildcpCodecContext,
-    Cache<AccountId, Optional<RateLimiter>> rateLimiterCache
-  ) {
+    Cache<AccountId, Optional<RateLimiter>> rateLimiterCache,
+    FulfillmentGeneratedEventAggregator fulfillmentGeneratedEventAggregator) {
     final ConnectorSettings connectorSettings = connectorSettingsSupplier().get();
     final ImmutableList.Builder<PacketSwitchFilter> filterList = ImmutableList.builder();
 
@@ -482,7 +497,8 @@ public class SpringConnectorConfig {
         ccpCodecContext,
         ildcpCodecContext,
         settlementService
-      )
+      ),
+      new StreamPaymentIlpPacketFilter(packetRejector, fulfillmentGeneratedEventAggregator)
     );
 
     // TODO: Throughput for Money...
@@ -496,8 +512,8 @@ public class SpringConnectorConfig {
 
   @Bean
   List<LinkFilter> linkFilters(
-    BalanceTracker balanceTracker, SettlementService settlementService, MetricsService metricsService, EventBus eventBus
-  ) {
+    BalanceTracker balanceTracker, SettlementService settlementService, MetricsService metricsService, EventBus eventBus,
+    FulfillmentGeneratedEventAggregator fulfillmentGeneratedEventAggregator) {
     final Supplier<InterledgerAddress> operatorAddressSupplier =
       () -> connectorSettingsSupplier().get().operatorAddress();
 
@@ -505,7 +521,8 @@ public class SpringConnectorConfig {
       // TODO: Throughput for Money...
       new OutgoingMetricsLinkFilter(operatorAddressSupplier, metricsService),
       new OutgoingMaxPacketAmountLinkFilter(operatorAddressSupplier),
-      new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker, settlementService, eventBus)
+      new OutgoingBalanceLinkFilter(operatorAddressSupplier, balanceTracker, settlementService, eventBus),
+      new OutgoingStreamPaymentLinkFilter(operatorAddressSupplier, fulfillmentGeneratedEventAggregator)
     );
   }
 
@@ -642,15 +659,54 @@ public class SpringConnectorConfig {
         new StreamPaymentFromEntityConverter(),
         new StreamPaymentToEntityConverter());
       default:
-        return new InMemoryStreamPaymentnManager();
+        return new InMemoryStreamPaymentManager();
     }
   }
 
   @Bean
   protected FulfillmentGeneratedEventAggregator fulfilledTransactionAggregator(
-    StreamPaymentManager streamPaymentManager) {
+    StreamPaymentManager streamPaymentManager, StreamEncryptionService streamEncryptionService, CodecContext streamCodecContext) {
     return new SynchronousFulfillmentGeneratedEventAggregator(streamPaymentManager,
-      new FulfillmentGeneratedEventConverter());
+      new FulfillmentGeneratedEventConverter(streamEncryptionService, streamCodecContext));
+  }
+
+  @Bean
+  protected StreamSenderFactory streamSenderFactory(StreamEncryptionService streamEncryptionService) {
+    return new SimpleStreamSenderFactory(streamEncryptionService, new StreamConnectionManager());
+  }
+
+  @Bean
+  protected ExchangeRateCalculator exchangeRateCalculator() {
+    return new SimpleExchangeRateCalculator();
+  }
+
+  @Bean LocalPacketSwitchLinkFactory localPacketSwitchLinkFactory(ILPv4PacketSwitch ilpPacketSwitch) {
+    return new LocalPacketSwitchLinkFactory(ilpPacketSwitch);
+  }
+
+  @Bean
+  protected StreamEncryptionService streamEncryptionService() {
+    return new JavaxStreamEncryptionService();
+  }
+
+  @Bean
+  protected SendPaymentService streamPaymentService(StreamSenderFactory streamSenderFactory,
+                                                    SpspClient spspClient,
+                                                    ExchangeRateCalculator exchangeRateCalculator,
+                                                    Supplier<ConnectorSettings> connectorSettingsSupplier,
+                                                    StreamPaymentManager streamPaymentManager,
+                                                    AccountManager accountManager,
+                                                    LocalPacketSwitchLinkFactory localPacketSwitchLinkFactory) {
+    return new DefaultSendPaymentService(
+      streamSenderFactory,
+      spspClient,
+      exchangeRateCalculator,
+      () -> connectorSettingsSupplier.get().operatorAddress(),
+      streamPaymentManager,
+      accountManager,
+      localPacketSwitchLinkFactory,
+      20 // FIXME add to configuration
+    );
   }
 
 }

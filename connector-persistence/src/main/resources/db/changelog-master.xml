@@ -18,5 +18,6 @@
     <include file="db/changelogs/base/changelog.xml"/>
     <include file="db/changelogs/base/changelog_00001_access_token.xml"/>
     <include file="db/changelogs/base/changelog_00002_stream_payments.xml"/>
+    <include file="db/changelogs/base/changelog_00003_alter_stream_payments.xml"/>
 
 </databaseChangeLog>

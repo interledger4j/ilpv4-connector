@@ -6,6 +6,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.data.domain.PageRequest;
@@ -20,11 +21,11 @@ public class InMemoryStreamPaymentManagerTest {
 
   public static final PageRequest DEFAULT_PAGE = PageRequest.of(0, 100);
 
-  private InMemoryStreamPaymentnManager paymentTransactionManager;
+  private InMemoryStreamPaymentManager paymentTransactionManager;
 
   @Before
   public void setUp() {
-    paymentTransactionManager = new InMemoryStreamPaymentnManager();
+    paymentTransactionManager = new InMemoryStreamPaymentManager();
   }
 
   @Test
@@ -100,6 +101,31 @@ public class InMemoryStreamPaymentManagerTest {
     assertThat(transaction2.get().packetCount()).isEqualTo(1);
   }
 
+  @Test
+  public void mergeAndUpdateDeliveredDetails() {
+    String assetCode = "XRP";
+    short assetScale = 9;
+    UnsignedLong deliveredAmount = UnsignedLong.valueOf(100);
+    AccountId accountId = AccountId.of(generateUuid());
+    String streamPaymentId = generateUuid();
+    StreamPayment payment = StreamPayment.builder().from(newTransaction(accountId, streamPaymentId, 10))
+      .deliveredAssetCode(assetCode)
+      .deliveredAssetScale(assetScale)
+      .deliveredAmount(deliveredAmount)
+      .build();
+
+    paymentTransactionManager.merge(payment);
+
+    Optional<StreamPayment> merged =
+      paymentTransactionManager.findByAccountIdAndStreamPaymentId(accountId, streamPaymentId);
+
+    assertThat(merged).isPresent();
+    assertThat(merged.get().deliveredAssetCode()).hasValue(assetCode);
+    assertThat(merged.get().deliveredAssetScale()).hasValue(assetScale);
+    assertThat(merged.get().deliveredAmount()).isEqualTo(deliveredAmount);
+  }
+
+
   private void assertEqual(StreamPayment loadedAccessTokenEntity, StreamPayment entity1) {
     assertThat(loadedAccessTokenEntity).isEqualTo(entity1);
   }
@@ -112,6 +138,8 @@ public class InMemoryStreamPaymentManagerTest {
       .packetCount(1)
       .streamPaymentId(streamPaymentId)
       .amount(BigInteger.valueOf(amount))
+      .expectedAmount(BigInteger.valueOf(amount))
+      .deliveredAmount(UnsignedLong.valueOf(amount))
       .assetScale((short) 9)
       .assetCode("XRP")
       .status(StreamPaymentStatus.PENDING)

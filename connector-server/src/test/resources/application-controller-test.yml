@@ -1,0 +1,6 @@
+# only initialize the controller being tested in controller tests to avoid every controller having to
+# define every other controllers dependencies
+# See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
+spring:
+  main:
+    lazy-initialization: true

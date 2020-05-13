@@ -147,10 +147,6 @@ public class AccountAccessTokenSpringBootTest extends AbstractEndpointTest {
     }
   }
 
-  private String bearer(String password) {
-    return "Bearer " + password;
-  }
-
   protected AccountSettings createAccount(AccountId accountId, Map<String, Object> customSettings) {
     final AccountSettings accountSettings = AccountSettings.builder()
       .accountId(accountId)
