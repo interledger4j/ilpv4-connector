@@ -7,14 +7,13 @@ import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
-import org.interledger.spsp.StreamConnectionDetails;
+import org.interledger.stream.SendMoneyResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Feign;
 import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
-import feign.Response;
 import feign.Target;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
@@ -26,6 +25,7 @@ import java.net.URI;
 public interface OpenPaymentsClient {
   String ACCEPT = "Accept:";
   String CONTENT_TYPE = "Content-Type:";
+  String AUTHORIZATION = "Authorization:";
 
   String ID = "id";
   String PREFIX = "prefix";
@@ -64,7 +64,7 @@ public interface OpenPaymentsClient {
     Invoice invoice
   ) throws ThrowableProblem;
 
-  @RequestLine("GET /{invoiceId}")
+  @RequestLine("GET /")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
@@ -73,7 +73,7 @@ public interface OpenPaymentsClient {
     URI invoiceUrl
   ) throws ThrowableProblem;
 
-  @RequestLine("GET /{invoiceId}")
+  @RequestLine("GET /")
   @Headers({
     ACCEPT + APPLICATION_CONNECTION_JSON_VALUE,
     CONTENT_TYPE + APPLICATION_JSON
@@ -89,5 +89,18 @@ public interface OpenPaymentsClient {
   })
   XrpPaymentDetails getXrpInvoicePaymentDetails(
     URI invoiceUrl
+  ) throws ThrowableProblem;
+
+  @RequestLine("POST /accounts/{accountId}/invoices/{invoiceId}/pay")
+  @Headers({
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON,
+    AUTHORIZATION + "{authorization}"
+  })
+  SendMoneyResult payInvoice(
+    URI invoiceUrl,
+    @Param("accountId") String accountId,
+    @Param("invoiceId") String invoiceId,
+    @Param("authorization") String authorization
   ) throws ThrowableProblem;
 }

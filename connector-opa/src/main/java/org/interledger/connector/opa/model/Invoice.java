@@ -114,7 +114,6 @@ public interface Invoice {
    * @return A {@link String} representing the account ID of the user who created this invoice.
    */
   @Value.Default
-  @JsonIgnore
   default String accountId() {
     try {
       PaymentPointer paymentPointerSubject = PaymentPointer.of(subject());
@@ -177,7 +176,6 @@ public interface Invoice {
   /**
    * @return The {@link Instant} that this invoice was created.
    */
-  @JsonIgnore
   @Value.Default
   default Instant createdAt() {
     return Instant.now();
@@ -186,7 +184,6 @@ public interface Invoice {
   /**
    * @return The {@link Instant} that this invoice was updated.
    */
-  @JsonIgnore
   @Value.Default
   default Instant updatedAt() {
     return Instant.now();

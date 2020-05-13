@@ -14,6 +14,7 @@ import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.payments.StreamPayment;
+import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
 import org.interledger.stream.SendMoneyResult;
 
@@ -78,6 +79,25 @@ public class InvoicesController {
     return new ResponseEntity(createdInvoice, headers, HttpStatus.CREATED);
   }
 
+  @RequestMapping(
+    path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES + OpenPaymentsPathConstants.SLASH_INVOICE_ID,
+    method = RequestMethod.GET,
+    produces = {OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE, APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+  )
+  public @ResponseBody ResponseEntity getInvoiceDetails(
+    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
+    @RequestHeader("Accept") String acceptHeader
+  ) {
+    final HttpHeaders headers = new HttpHeaders();
+    headers.setLocation(getInvoiceLocation(invoiceId));
+
+    if (acceptHeader.equals(OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE)) {
+      return new ResponseEntity(getPaymentDetails(invoiceId), headers, HttpStatus.OK);
+    } else {
+      return new ResponseEntity(getInvoice(invoiceId), headers, HttpStatus.OK);
+    }
+  }
+
   /**
    * Get an existing {@link Invoice}. If the invoice URL that we have for this invoiceID has a different host
    * than this server, this will get the invoice from that location and update the local copy.
@@ -85,14 +105,7 @@ public class InvoicesController {
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} being retrieved.
    * @return An existing {@link Invoice}
    */
-  @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES + OpenPaymentsPathConstants.SLASH_INVOICE_ID,
-    method = RequestMethod.GET,
-    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
-  )
-  public @ResponseBody Invoice getInvoice(
-    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId
-  ) {
+  public Invoice getInvoice(InvoiceId invoiceId) {
     return invoiceService.getInvoiceById(invoiceId);
   }
 
@@ -110,21 +123,8 @@ public class InvoicesController {
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} this payment is being set up to pay.
    * @return The payment details necessary to pay an invoice.
    */
-  @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES + OpenPaymentsPathConstants.SLASH_INVOICE_ID,
-    method = RequestMethod.GET,
-    produces = {OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE, APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
-  )
-  public @ResponseBody ResponseEntity getPaymentDetails(
-    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) String accountId,
-    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId
-  ) {
-    final HttpHeaders headers = new HttpHeaders();
-    headers.setLocation(getInvoiceLocation(invoiceId));
-
-    final PaymentDetails paymentDetails = invoiceService.getPaymentDetails(invoiceId);
-
-    return new ResponseEntity(paymentDetails, headers, HttpStatus.OK);
+  private PaymentDetails getPaymentDetails(InvoiceId invoiceId) {
+    return invoiceService.getPaymentDetails(invoiceId);
   }
 
   /**
@@ -134,7 +134,7 @@ public class InvoicesController {
    * @return
    */
   @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES + OpenPaymentsPathConstants.SLASH_INVOICE_ID + OpenPaymentsPathConstants.SLASH_PAY,
+    path = PathConstants.SLASH_ACCOUNTS + OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES + OpenPaymentsPathConstants.SLASH_INVOICE_ID + OpenPaymentsPathConstants.SLASH_PAY,
     method = RequestMethod.POST,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )

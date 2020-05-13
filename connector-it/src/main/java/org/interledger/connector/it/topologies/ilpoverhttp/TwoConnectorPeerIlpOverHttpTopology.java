@@ -281,13 +281,17 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
         .routingSecret("enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=")
         .build()
       )
-      .openPayments(constructOpenPaymentsSettings(ALICE_CONNECTOR_ADDRESS, ALICE_PORT))
+      .openPayments(constructOpenPaymentsSettings(ALICE_CONNECTOR_ADDRESS, ALICE_PORT, ALICE_HTTP_BASE_URL))
       .build();
   }
 
-  private static ImmutableOpenPaymentsSettings constructOpenPaymentsSettings(InterledgerAddress interledgerAddress, int port) {
+  private static ImmutableOpenPaymentsSettings constructOpenPaymentsSettings(
+    InterledgerAddress interledgerAddress,
+    int port,
+    String connectorUrl) {
     return OpenPaymentsSettings.builder()
       .ilpOperatorAddress(interledgerAddress)
+      .connectorUrl(HttpUrl.parse("http://localhost:" + port))
       .metadata(
         OpenPaymentsMetadata.builder()
           .assetsSupported(Collections.singleton(SupportedAssets.XRP))
@@ -295,6 +299,7 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
           .defaultScheme("http")
           .build()
       )
+      .connectorUrl(HttpUrl.get(connectorUrl))
       .build();
   }
 
@@ -365,7 +370,7 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
         .routingSecret("enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=")
         .build()
       )
-      .openPayments(constructOpenPaymentsSettings(BOB_CONNECTOR_ADDRESS, BOB_PORT))
+      .openPayments(constructOpenPaymentsSettings(BOB_CONNECTOR_ADDRESS, BOB_PORT, BOB_HTTP_BASE_URL))
       .build();
   }
 

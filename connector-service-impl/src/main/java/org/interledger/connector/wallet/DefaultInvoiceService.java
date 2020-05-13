@@ -71,28 +71,25 @@ public class DefaultInvoiceService implements InvoiceService {
     }
 
     // Otherwise, we can assume that some other wallet is the invoice owner.
-    try {
-      // Look at our own records. If, from our view, the invoice has been paid, no need to reach out to the receiver to
-      // update it.
-      if (invoice.isPaid()) {
-        return invoice;
-      } else {
-        throw new Exception("Local invoice receipt has not been fully paid. Request an updated invoice from the invoice owner.");
-      }
-    } catch (Exception e) {
+    // Look at our own records. If, from our view, the invoice has been paid, no need to reach out to the receiver to
+    // update it.
+    if (invoice.isPaid()) {
+      return invoice;
+    } else {
       // If our copy of the invoice hasn't been paid, or we don't have a record of that invoice, try
       // to reach out to the invoice owner to update/create our record
       try {
         Invoice invoiceOnReceiver = openPaymentsClient.getInvoice(invoiceUrl.uri());
         return this.updateOrCreateInvoice(invoiceOnReceiver);
-      } catch (FeignException fe) {
-        if (fe.status() == 404) {
+      } catch (FeignException e) {
+        if (e.status() == 404) {
           throw new InvoiceNotFoundProblem("Original invoice was not found in invoice owner's records.", invoiceId);
         }
 
-        throw new RuntimeException(e);
+        throw e;
       }
     }
+
   }
 
   @Override
