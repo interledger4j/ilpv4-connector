@@ -47,9 +47,15 @@ public class LocalPacketSwitchLink extends AbstractLink<LocalPacketSwitchLinkSet
       .from(interledgerPreparePacket)
       .typedData(
         interledgerPreparePacket.typedData().map(
-          typedData -> StreamPacketWithSharedSecret.builder().from((StreamPacket) typedData)
-            .sharedSecret(linkSettings.sharedSecret())
-            .build()
+          typedData -> {
+            if (typedData instanceof StreamPacket) {
+              return StreamPacketWithSharedSecret.builder().from((StreamPacket) typedData)
+                .sharedSecret(linkSettings.sharedSecret())
+                .build();
+            } else {
+              return typedData;
+            }
+          }
         )
       )
       .build();
