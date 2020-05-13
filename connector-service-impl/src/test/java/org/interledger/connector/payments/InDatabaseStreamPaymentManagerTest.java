@@ -105,6 +105,20 @@ public class InDatabaseStreamPaymentManagerTest {
   }
 
   @Test
+  public void mergeAndUpdateDeliveredDetails() {
+    String assetCode = "XRP";
+    short assetScale = 9;
+    StreamPayment trx = transactionBuilder()
+      .deliveredAssetScale(assetScale)
+      .deliveredAssetCode(assetCode)
+      .build();
+    transactionManager.merge(trx);
+    verify(mockRepo, times(1)).upsertAmounts(streamPaymentToEntityConverter.convert(trx));
+    verify(mockRepo, times(1)).udpdateDeliveredDenomination(trx.accountId(), trx.streamPaymentId(), assetCode, assetScale);
+    verifyNoMoreInteractions(mockRepo);
+  }
+
+  @Test
   public void mergeRejectsNegativePaymentReceived() {
     // payments received should not be negative (debit)
     expectedException.expect(IllegalArgumentException.class);
@@ -115,7 +129,7 @@ public class InDatabaseStreamPaymentManagerTest {
   }
 
   @Test
-  public void mergeRejectsPostivePaymentSent() {
+  public void mergeRejectsPositivePaymentSent() {
     // payments sent should be a debit (negative amount)
     expectedException.expect(IllegalArgumentException.class);
     transactionBuilder()

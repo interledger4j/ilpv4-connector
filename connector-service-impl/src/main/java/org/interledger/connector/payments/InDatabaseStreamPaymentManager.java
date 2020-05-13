@@ -3,10 +3,8 @@ package org.interledger.connector.payments;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.repositories.StreamPaymentsRepository;
 
-import com.google.common.base.Preconditions;
 import org.springframework.data.domain.PageRequest;
 
-import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -46,7 +44,6 @@ public class InDatabaseStreamPaymentManager implements StreamPaymentManager {
 
   @Override
   public void merge(StreamPayment streamPayment) {
-    validateAmount(streamPayment.amount(), streamPayment.type().getAdjustmentType());
     streamPaymentsRepository.upsertAmounts(streamPaymentToEntityConverter.convert(streamPayment));
     streamPayment.sourceAddress().ifPresent(sourceAddress -> {
       streamPaymentsRepository.updateSourceAddress(streamPayment.accountId(),
@@ -54,7 +51,7 @@ public class InDatabaseStreamPaymentManager implements StreamPaymentManager {
         sourceAddress.getValue());
     });
     streamPayment.deliveredAssetScale().ifPresent(assetScale -> {
-      streamPaymentsRepository.updateDestinationDenomination(streamPayment.accountId(),
+      streamPaymentsRepository.udpdateDeliveredDenomination(streamPayment.accountId(),
         streamPayment.streamPaymentId(),
           streamPayment.deliveredAssetCode().orElse("unknown"),
           assetScale);
@@ -63,22 +60,6 @@ public class InDatabaseStreamPaymentManager implements StreamPaymentManager {
       streamPaymentsRepository.updateStatus(streamPayment.accountId(),
         streamPayment.streamPaymentId(),
         streamPayment.status());
-    }
-  }
-
-  /**
-   * Validates the amount is correctly negative or positive based on CREDIT vs DEBIT types.
-   * @param amount
-   * @param balanceAdjustmentType
-   */
-  private static void validateAmount(BigInteger amount, StreamPaymentType.BalanceAdjustmentType balanceAdjustmentType) {
-    switch (balanceAdjustmentType) {
-      case CREDIT:
-        Preconditions.checkArgument(amount.longValue() >= 0, "amount cannot be negative for a credit adjustment");
-        break;
-      case DEBIT:
-        Preconditions.checkArgument(amount.longValue() <= 0, "amount cannot be positive for a debit adjustment");
-        break;
     }
   }
 

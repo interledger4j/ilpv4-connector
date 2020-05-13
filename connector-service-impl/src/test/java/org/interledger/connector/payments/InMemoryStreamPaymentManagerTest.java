@@ -101,6 +101,31 @@ public class InMemoryStreamPaymentManagerTest {
     assertThat(transaction2.get().packetCount()).isEqualTo(1);
   }
 
+  @Test
+  public void mergeAndUpdateDeliveredDetails() {
+    String assetCode = "XRP";
+    short assetScale = 9;
+    UnsignedLong deliveredAmount = UnsignedLong.valueOf(100);
+    AccountId accountId = AccountId.of(generateUuid());
+    String streamPaymentId = generateUuid();
+    StreamPayment payment = StreamPayment.builder().from(newTransaction(accountId, streamPaymentId, 10))
+      .deliveredAssetCode(assetCode)
+      .deliveredAssetScale(assetScale)
+      .deliveredAmount(deliveredAmount)
+      .build();
+
+    paymentTransactionManager.merge(payment);
+
+    Optional<StreamPayment> merged =
+      paymentTransactionManager.findByAccountIdAndStreamPaymentId(accountId, streamPaymentId);
+
+    assertThat(merged).isPresent();
+    assertThat(merged.get().deliveredAssetCode()).hasValue(assetCode);
+    assertThat(merged.get().deliveredAssetScale()).hasValue(assetScale);
+    assertThat(merged.get().deliveredAmount()).isEqualTo(deliveredAmount);
+  }
+
+
   private void assertEqual(StreamPayment loadedAccessTokenEntity, StreamPayment entity1) {
     assertThat(loadedAccessTokenEntity).isEqualTo(entity1);
   }

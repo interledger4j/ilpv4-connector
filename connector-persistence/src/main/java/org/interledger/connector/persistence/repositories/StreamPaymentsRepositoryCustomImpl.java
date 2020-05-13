@@ -90,10 +90,10 @@ public class StreamPaymentsRepositoryCustomImpl implements StreamPaymentsReposit
   }
 
   @Override
-  public int updateDestinationDenomination(AccountId accountId, 
-                                           String streamPaymentId, 
-                                           String deliveredAssetCode,
-                                           short deliveredAssetScale) {
+  public int udpdateDeliveredDenomination(AccountId accountId,
+                                          String streamPaymentId,
+                                          String deliveredAssetCode,
+                                          short deliveredAssetScale) {
     Map<String, Object> parameters = new HashMap<>();
     parameters.put("accountId", accountId.value());
     parameters.put("streamPaymentId", streamPaymentId);
