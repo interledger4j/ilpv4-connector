@@ -15,12 +15,12 @@ import java.math.BigInteger;
  * or payments that were sent via external ILP client.
  */
 @Value.Immutable
-@JsonDeserialize(as = ImmutablePaymentResponse.class)
-@JsonSerialize(as = ImmutablePaymentResponse.class)
-public interface PaymentResponse extends StreamPayment {
+@JsonDeserialize(as = ImmutableLocalSendPaymentResponse.class)
+@JsonSerialize(as = ImmutableLocalSendPaymentResponse.class)
+public interface LocalSendPaymentResponse extends StreamPayment {
 
-  static ImmutablePaymentResponse.Builder builder() {
-    return ImmutablePaymentResponse.builder();
+  static ImmutableLocalSendPaymentResponse.Builder builder() {
+    return ImmutableLocalSendPaymentResponse.builder();
   }
 
   @Value.Derived
@@ -47,7 +47,7 @@ public interface PaymentResponse extends StreamPayment {
   }
 
   @Value.Check
-  default PaymentResponse validate() {
+  default LocalSendPaymentResponse validate() {
     return this;
   }
 

@@ -8,8 +8,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 
 /**
- * Simple exchange rate calculator that does no FX rate calculations. But makes sure that the receiver always
- * receives at least 1 unit of value.
+ * Simple exchange rate calculator that does no FX rate calculations.
  */
 public class SimpleExchangeRateCalculator implements ExchangeRateCalculator {
 
@@ -26,7 +25,7 @@ public class SimpleExchangeRateCalculator implements ExchangeRateCalculator {
   ) {
     Objects.requireNonNull(sendAmount);
     Objects.requireNonNull(sendAmountDenomination);
-    return UnsignedLong.ONE;
+    return UnsignedLong.ZERO; // must be zero because Quilt can send a very low value payment to start
   }
 
 }

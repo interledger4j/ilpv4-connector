@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import javax.annotation.PreDestroy;
 
 public class DefaultSendPaymentService implements SendPaymentService {
 
@@ -43,7 +44,7 @@ public class DefaultSendPaymentService implements SendPaymentService {
   private final StreamPaymentManager streamPaymentManager;
   private final AccountManager accountManager;
   private final LocalPacketSwitchLinkFactory localPacketSwitchLinkFactory;
-  private final int maxConcurrentPackets;
+  private final ExecutorService executorService;
 
   public DefaultSendPaymentService(StreamSenderFactory streamSenderFactory,
                                    SpspClient spspClient, ExchangeRateCalculator exchangeRateCalculator,
@@ -59,7 +60,12 @@ public class DefaultSendPaymentService implements SendPaymentService {
     this.streamPaymentManager = streamPaymentManager;
     this.accountManager = accountManager;
     this.localPacketSwitchLinkFactory = localPacketSwitchLinkFactory;
-    this.maxConcurrentPackets = maxConcurrentPackets;
+    this.executorService = Executors.newFixedThreadPool(maxConcurrentPackets);
+  }
+
+  @PreDestroy
+  public void onDestroy() {
+    executorService.shutdown();
   }
 
   @Override
@@ -83,7 +89,6 @@ public class DefaultSendPaymentService implements SendPaymentService {
       }
     }
 
-    ExecutorService executorService = Executors.newFixedThreadPool(maxConcurrentPackets);
     Duration timeout = Duration.ofSeconds(50);
     try {
       LocalPacketSwitchLinkSettings linkSettings = LocalPacketSwitchLinkSettings.builder()
@@ -113,9 +118,6 @@ public class DefaultSendPaymentService implements SendPaymentService {
       sender.sendMoney(sendMoneyRequest).get(timeout.getSeconds(), TimeUnit.SECONDS);
     } catch (Exception e) {
       LOGGER.error("unexpected error sending payment, request={}.", request, e);
-    }
-    finally {
-      executorService.shutdown();
     }
     return streamPaymentManager.findByAccountIdAndStreamPaymentId(request.accountId(), placeHolder.streamPaymentId())
       .orElse(placeHolder);

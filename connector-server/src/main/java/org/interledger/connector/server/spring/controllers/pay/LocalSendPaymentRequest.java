@@ -5,13 +5,16 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.primitives.UnsignedLong;
 import org.immutables.value.Value;
 
+/**
+ * API request object for a request to initiate a local send from the connector
+ */
 @Value.Immutable
-@JsonDeserialize(as = ImmutablePaymentRequest.class)
-@JsonSerialize(as = ImmutablePaymentRequest.class)
-public interface PaymentRequest {
+@JsonDeserialize(as = ImmutableLocalSendPaymentRequest.class)
+@JsonSerialize(as = ImmutableLocalSendPaymentRequest.class)
+public interface LocalSendPaymentRequest {
 
-  static ImmutablePaymentRequest.Builder builder() {
-    return ImmutablePaymentRequest.builder();
+  static ImmutableLocalSendPaymentRequest.Builder builder() {
+    return ImmutableLocalSendPaymentRequest.builder();
   }
 
   String destinationPaymentPointer();

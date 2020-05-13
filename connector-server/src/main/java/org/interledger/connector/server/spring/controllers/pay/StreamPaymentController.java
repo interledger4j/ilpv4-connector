@@ -33,7 +33,6 @@ public class StreamPaymentController {
 
   @RequestMapping(
     value = SLASH_ACCOUNTS_PAYMENTS_PATH + "/{paymentId}", method = {RequestMethod.GET},
-    consumes = MediaType.APPLICATION_JSON_VALUE,
     produces = {MediaType.APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public Optional<StreamPayment> findPaymentById(
@@ -45,15 +44,14 @@ public class StreamPaymentController {
 
   @RequestMapping(
     value = SLASH_ACCOUNTS_PAYMENTS_PATH, method = {RequestMethod.GET},
-    consumes = MediaType.APPLICATION_JSON_VALUE,
     produces = {MediaType.APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public ListPaymentsResponse listPayments(
+  public ListStreamPaymentsResponse listPayments(
     @PathVariable("accountId") AccountId accountId,
     @RequestParam(value = "page", defaultValue = "0") int page
   ) {
     PageRequest pageRequest = PageRequest.of(page, 100);
-    return ListPaymentsResponse.builder()
+    return ListStreamPaymentsResponse.builder()
         .payments(streamPaymentManager.findByAccountId(accountId, pageRequest))
       .pageSize(pageRequest.getPageSize())
       .pageNumber(pageRequest.getPageNumber())
@@ -64,7 +62,7 @@ public class StreamPaymentController {
    * Sends payment from the given account.
    *
    * @param accountId      The ILP Connector account identifier for this request.
-   * @param paymentRequest A {@link PaymentRequest}.
+   * @param paymentRequest A {@link LocalSendPaymentRequest}.
    * @return payment result
    */
   @RequestMapping(
@@ -72,11 +70,11 @@ public class StreamPaymentController {
     consumes = MediaType.APPLICATION_JSON_VALUE,
     produces = {MediaType.APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public PaymentResponse sendPayment(
+  public LocalSendPaymentResponse sendPayment(
     @PathVariable("accountId") AccountId accountId,
-    @RequestBody PaymentRequest paymentRequest
+    @RequestBody LocalSendPaymentRequest paymentRequest
   ) {
-    return PaymentResponse.builder().from(sendPaymentService.sendMoney(
+    return LocalSendPaymentResponse.builder().from(sendPaymentService.sendMoney(
       SendPaymentRequest.builder()
         .accountId(accountId)
         .amount(paymentRequest.amount())

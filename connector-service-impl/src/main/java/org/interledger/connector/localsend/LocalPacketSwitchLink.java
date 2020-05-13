@@ -14,6 +14,9 @@ import org.slf4j.Logger;
 
 import java.util.function.Supplier;
 
+/**
+ * Link for sending packets directly to the local connectors {@link ILPv4PacketSwitch}. Used for local payment send.
+ */
 public class LocalPacketSwitchLink extends AbstractLink<LocalPacketSwitchLinkSettings> {
 
   public static final String LINK_TYPE_STRING = "LOCAL_PACKET_SWITCH_LINK";

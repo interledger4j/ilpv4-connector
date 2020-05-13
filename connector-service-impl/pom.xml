@@ -233,7 +233,6 @@
     <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>codecs-stream</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.interledger</groupId>

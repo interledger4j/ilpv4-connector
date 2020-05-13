@@ -4,7 +4,9 @@ import org.interledger.connector.events.FulfillmentGeneratedEvent;
 import org.interledger.connector.localsend.StreamPacketWithSharedSecret;
 import org.interledger.connector.stream.StreamPacketUtils;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerPacket;
+import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.SharedSecret;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.stream.Denomination;
@@ -13,6 +15,7 @@ import org.interledger.stream.crypto.StreamEncryptionService;
 import org.interledger.stream.sender.StreamSenderException;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.common.primitives.UnsignedLong;
 import org.springframework.core.convert.converter.Converter;
 
@@ -34,61 +37,59 @@ public class FulfillmentGeneratedEventConverter implements Converter<Fulfillment
 
   @Override
   public StreamPayment convert(FulfillmentGeneratedEvent source) {
-    switch (source.paymentType()) {
-      case PAYMENT_RECEIVED: return convertToPaymentReceived(source);
-      case PAYMENT_SENT: return convertToPaymentSent(source);
-      default: throw new IllegalArgumentException("found unmapped paymentType " + source.paymentType() +
-        " for event: " + source);
-    }
-  }
+    Optional<StreamPacket> prepareStreamPacket =
+      streamPreparePacket(source.incomingPreparePacket(), source.fulfillPacket());
 
-  public StreamPayment convertToPaymentReceived(FulfillmentGeneratedEvent event) {
-    ImmutableStreamPayment.Builder builder = newBuilder(event);
+    Optional<StreamPacket> fulfillStreamPacket =
+      streamFulfillPacket(source.incomingPreparePacket(), source.fulfillPacket());
 
-    builder.amount(event.incomingPreparePacket().getAmount().bigIntegerValue())
-      .deliveredAmount(event.incomingPreparePacket().getAmount())
-      .deliveredAssetScale(event.denomination().assetScale())
-      .deliveredAssetCode(event.denomination().assetCode())
-      .type(StreamPaymentType.PAYMENT_RECEIVED);
-    return builder.build();
-  }
-
-  public StreamPayment convertToPaymentSent(FulfillmentGeneratedEvent event) {
-    Optional<StreamPacket> responseStreamPacket = streamPacket(event.fulfillPacket());
-    Optional<Denomination> deliveredDenomination = responseStreamPacket.flatMap(StreamPacketUtils::getDenomination);
-    ImmutableStreamPayment.Builder builder = newBuilder(event);
-
-    builder.amount(event.incomingPreparePacket().getAmount().bigIntegerValue().negate())
-      .deliveredAmount(responseStreamPacket.map(StreamPacket::prepareAmount).orElse(UnsignedLong.ZERO))
-      .deliveredAssetScale(deliveredDenomination.map(Denomination::assetScale))
-      .deliveredAssetCode(deliveredDenomination.map(Denomination::assetCode))
-      .type(StreamPaymentType.PAYMENT_SENT);
-    return builder.build();
-  }
-
-  private ImmutableStreamPayment.Builder newBuilder(FulfillmentGeneratedEvent event) {
-    Optional<StreamPacket> prepareStreamPacket = streamPacket(event.incomingPreparePacket());
     Optional<InterledgerAddress> sourceAddress = prepareStreamPacket.flatMap(StreamPacketUtils::getSourceAddress);
-    return StreamPayment.builder()
-      .destinationAddress(event.incomingPreparePacket().getDestination())
+    ImmutableStreamPayment.Builder builder = StreamPayment.builder()
+      .destinationAddress(source.incomingPreparePacket().getDestination())
       .sourceAddress(sourceAddress)
-      .status(getTransactionStatus(prepareStreamPacket))
+      .status(getTransactionStatus(prepareStreamPacket).orElseGet(
+        () -> getTransactionStatus(fulfillStreamPacket).orElse(StreamPaymentStatus.PENDING)
+      ))
       .packetCount(1)
       .modifiedAt(Instant.now())
       .createdAt(Instant.now())
-      .assetScale(event.denomination().assetScale())
-      .assetCode(event.denomination().assetCode())
-      .accountId(event.accountId());
+      .assetScale(source.denomination().assetScale())
+      .assetCode(source.denomination().assetCode())
+      .accountId(source.accountId());
+
+
+    switch (source.paymentType()) {
+      case PAYMENT_RECEIVED: {
+        return builder.amount(source.incomingPreparePacket().getAmount().bigIntegerValue())
+          .deliveredAmount(source.incomingPreparePacket().getAmount())
+          .deliveredAssetScale(source.denomination().assetScale())
+          .deliveredAssetCode(source.denomination().assetCode())
+          .type(StreamPaymentType.PAYMENT_RECEIVED)
+          .build();
+      }
+      case PAYMENT_SENT: {
+        Optional<Denomination> deliveredDenomination = fulfillStreamPacket.flatMap(StreamPacketUtils::getDenomination);
+        return builder.amount(source.incomingPreparePacket().getAmount().bigIntegerValue().negate())
+          .deliveredAmount(fulfillStreamPacket.map(StreamPacket::prepareAmount).orElse(UnsignedLong.ZERO))
+          .deliveredAssetScale(deliveredDenomination.map(Denomination::assetScale))
+          .deliveredAssetCode(deliveredDenomination.map(Denomination::assetCode))
+          .type(StreamPaymentType.PAYMENT_SENT)
+          .build();
+      }
+      default:
+        throw new IllegalArgumentException("found unmapped paymentType " + source.paymentType() +
+          " for event: " + source);
+    }
   }
 
-  private StreamPaymentStatus getTransactionStatus(Optional<StreamPacket> maybeStreamPacket) {
-    return maybeStreamPacket.map(streamPacket -> {
+  private Optional<StreamPaymentStatus> getTransactionStatus(Optional<StreamPacket> maybeStreamPacket) {
+    return maybeStreamPacket.flatMap(streamPacket -> {
       if (StreamPacketUtils.hasCloseFrame(streamPacket)) {
-        return StreamPaymentStatus.CLOSED_BY_STREAM;
+        return Optional.of(StreamPaymentStatus.CLOSED_BY_STREAM);
       } else {
-        return StreamPaymentStatus.PENDING;
+        return Optional.empty();
       }
-    }).orElse(StreamPaymentStatus.PENDING);
+    });
   }
 
   /**
@@ -114,18 +115,43 @@ public class FulfillmentGeneratedEventConverter implements Converter<Fulfillment
     }
   }
 
-  private Optional<StreamPacket> streamPacket(InterledgerPacket interledgerPacket) {
-    return interledgerPacket.typedData().flatMap(typedData -> {
-      if (typedData instanceof StreamPacketWithSharedSecret) {
-        return Optional.of(
-          fromEncrypted(((StreamPacketWithSharedSecret) typedData).sharedSecret(), interledgerPacket.getData()));
-      }
-      else if (typedData instanceof StreamPacket) {
+  private Optional<StreamPacket> streamPreparePacket(InterledgerPreparePacket preparePacket,
+                                                     InterledgerFulfillPacket fulfillPacket) {
+    return findStreamPacket(preparePacket, fulfillPacket);
+  }
+
+  private Optional<StreamPacket> streamFulfillPacket(InterledgerPreparePacket preparePacket,
+                                                     InterledgerFulfillPacket fulfillPacket) {
+    return findStreamPacket(fulfillPacket, preparePacket);
+  }
+
+
+  private Optional<StreamPacket> findStreamPacket(InterledgerPacket primary,
+                                                  InterledgerPacket secondary) {
+    Optional<StreamPacket> fromTypedData = primary.typedData().flatMap(typedData -> {
+      if (typedData instanceof StreamPacket) {
         return Optional.of((StreamPacket) typedData);
       } else {
         return Optional.empty();
       }
     });
+    if (fromTypedData.isPresent()) {
+      return fromTypedData;
+    } else {
+      return getSharedSecret(primary, secondary)
+        .map(sharedSecret -> fromEncrypted(sharedSecret, primary.getData()));
+    }
+  }
+
+  private Optional<SharedSecret> getSharedSecret(InterledgerPacket... packets) {
+    return Lists.newArrayList(packets).stream()
+      .map(InterledgerPacket::typedData)
+      .filter(Optional::isPresent)
+      .map(Optional::get)
+      .filter(typedData -> typedData instanceof StreamPacketWithSharedSecret)
+      .map(typedData -> (StreamPacketWithSharedSecret) typedData)
+      .map(StreamPacketWithSharedSecret::sharedSecret)
+      .findFirst();
   }
 
 }

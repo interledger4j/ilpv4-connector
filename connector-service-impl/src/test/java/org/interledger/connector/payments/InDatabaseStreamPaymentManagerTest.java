@@ -107,25 +107,21 @@ public class InDatabaseStreamPaymentManagerTest {
   @Test
   public void mergeRejectsNegativePaymentReceived() {
     // payments received should not be negative (debit)
-    StreamPayment trx = transactionBuilder()
+    expectedException.expect(IllegalArgumentException.class);
+    transactionBuilder()
       .amount(BigInteger.valueOf(-1))
       .type(StreamPaymentType.PAYMENT_RECEIVED)
       .build();
-
-    expectedException.expect(IllegalArgumentException.class);
-    transactionManager.merge(trx);
   }
 
   @Test
   public void mergeRejectsPostivePaymentSent() {
     // payments sent should be a debit (negative amount)
-    StreamPayment trx = transactionBuilder()
+    expectedException.expect(IllegalArgumentException.class);
+    transactionBuilder()
       .amount(BigInteger.valueOf(1))
       .type(StreamPaymentType.PAYMENT_SENT)
       .build();
-
-    expectedException.expect(IllegalArgumentException.class);
-    transactionManager.merge(trx);
   }
 
   private ImmutableStreamPayment.Builder transactionBuilder() {

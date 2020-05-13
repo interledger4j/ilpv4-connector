@@ -9,7 +9,7 @@ import org.immutables.value.Value;
 import org.immutables.value.Value.Derived;
 
 /**
- * An extension of {@link LinkSettings} for Tracking receiver links.
+ * An extension of {@link LinkSettings} for {@link LocalPacketSwitchLink}.
  */
 @Value.Immutable
 public interface LocalPacketSwitchLinkSettings extends LinkSettings {

@@ -8,9 +8,9 @@ import org.interledger.connector.balances.AccountBalanceResponse;
 import org.interledger.connector.client.ConnectorAdminClient;
 import org.interledger.connector.jackson.ObjectMapperFactory;
 import org.interledger.connector.payments.StreamPayment;
-import org.interledger.connector.server.spring.controllers.pay.ListPaymentsResponse;
-import org.interledger.connector.server.spring.controllers.pay.PaymentRequest;
-import org.interledger.connector.server.spring.controllers.pay.PaymentResponse;
+import org.interledger.connector.server.spring.controllers.pay.ListStreamPaymentsResponse;
+import org.interledger.connector.server.spring.controllers.pay.LocalSendPaymentRequest;
+import org.interledger.connector.server.spring.controllers.pay.LocalSendPaymentResponse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Feign;
@@ -94,8 +94,8 @@ public interface ConnectorUserClient {
 
   @RequestLine("GET /accounts/{accountId}/payments")
   @Headers( {AUTHORIZATION, ACCEPT_JSON})
-  ListPaymentsResponse listTokens(@Param("auth") String authorizationHeader,
-                                  @Param("accountId") AccountId accountId) throws ThrowableProblem;
+  ListStreamPaymentsResponse listTokens(@Param("auth") String authorizationHeader,
+                                        @Param("accountId") AccountId accountId) throws ThrowableProblem;
 
   @RequestLine("GET /accounts/{accountId}/payments/{paymentId}")
   @Headers( {AUTHORIZATION, ACCEPT_JSON})
@@ -105,13 +105,20 @@ public interface ConnectorUserClient {
 
   @RequestLine("POST /accounts/{accountId}/payments")
   @Headers( {AUTHORIZATION, ACCEPT_JSON, CONTENT_TYPE_JSON})
-  PaymentResponse sendPayment(@Param("auth") String authorizationHeader,
-                              @Param("accountId") AccountId accountId,
-                              PaymentRequest request) throws ThrowableProblem;
+  LocalSendPaymentResponse sendPayment(@Param("auth") String authorizationHeader,
+                                       @Param("accountId") AccountId accountId,
+                                       LocalSendPaymentRequest request) throws ThrowableProblem;
 
   @RequestLine("GET " + SLASH_ACCOUNTS_PAYMENTS_PATH)
   @Headers( {AUTHORIZATION, ACCEPT_JSON, CONTENT_TYPE_JSON})
-  ListPaymentsResponse listPayments(@Param("auth") String authorizationHeader,
-                                    @Param("accountId") AccountId accountId) throws ThrowableProblem;
+  ListStreamPaymentsResponse listPayments(@Param("auth") String authorizationHeader,
+                                          @Param("accountId") AccountId accountId) throws ThrowableProblem;
+
+  @RequestLine("GET " + SLASH_ACCOUNTS_PAYMENTS_PATH + "?page={page}")
+  @Headers( {AUTHORIZATION, ACCEPT_JSON, CONTENT_TYPE_JSON})
+  ListStreamPaymentsResponse listPayments(@Param("auth") String authorizationHeader,
+                                          @Param("accountId") AccountId accountId,
+                                          @Param("page") int page) throws ThrowableProblem;
+
 
 }
