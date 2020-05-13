@@ -9,7 +9,6 @@ import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.stream.Denomination;
 
-import com.google.common.primitives.UnsignedLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,10 +55,6 @@ public class OutgoingStreamPaymentLinkFilter extends AbstractLinkFilter implemen
         // If FulfillPacket...
         //////////////////////
         (interledgerFulfillPacket) -> {
-          if (UnsignedLong.ZERO.equals(outgoingPreparePacket.getAmount())) {
-            // No need to track 0-value packets...
-            return;
-          }
           fulfillmentGeneratedEventAggregator.aggregate(FulfillmentGeneratedEvent.builder()
             .accountId(destinationAccountSettings.accountId())
             .denomination(Denomination.builder()
