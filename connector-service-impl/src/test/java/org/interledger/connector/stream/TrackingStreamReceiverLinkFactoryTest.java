@@ -8,10 +8,8 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.payments.FulfillmentGeneratedEventAggregator;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.encoding.asn.framework.CodecContext;
-import org.interledger.link.LinkId;
 import org.interledger.link.LinkSettings;
 import org.interledger.link.LinkType;
-import org.interledger.link.PacketRejector;
 import org.interledger.link.exceptions.LinkException;
 import org.interledger.stream.crypto.StreamEncryptionService;
 import org.interledger.stream.receiver.ServerSecretSupplier;
@@ -30,16 +28,12 @@ import org.mockito.MockitoAnnotations;
 public class TrackingStreamReceiverLinkFactoryTest {
 
   private static final InterledgerAddress OPERATOR_ADDRESS = InterledgerAddress.of("test.operator");
-  private final LinkId linkId = LinkId.of("foo");
 
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
 
   @Mock
   private LinkSettings linkSettingsMock;
-
-  @Mock
-  private PacketRejector packetRejectorMock;
 
   @Mock
   private TrackingStreamReceiverSupplier trackingStreamReceiverSupplierMock;
@@ -49,18 +43,7 @@ public class TrackingStreamReceiverLinkFactoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    this.trackingStreamReceiverLinkFactory = new TrackingStreamReceiverLinkFactory(
-      packetRejectorMock,
-      trackingStreamReceiverSupplierMock
-    );
-  }
-
-  @Test
-  public void constructWithNulPacketRejector() {
-    expectedException.expect(NullPointerException.class);
-    expectedException.expectMessage("packetRejector must not be null");
-
-    new TrackingStreamReceiverLinkFactory(null, trackingStreamReceiverSupplierMock);
+    this.trackingStreamReceiverLinkFactory = new TrackingStreamReceiverLinkFactory(trackingStreamReceiverSupplierMock);
   }
 
   @Test
@@ -68,7 +51,7 @@ public class TrackingStreamReceiverLinkFactoryTest {
     expectedException.expect(NullPointerException.class);
     expectedException.expectMessage("trackingStreamReceiverSupplier must not be null");
 
-    new TrackingStreamReceiverLinkFactory(packetRejectorMock, null);
+    new TrackingStreamReceiverLinkFactory(null);
   }
 
   @Test

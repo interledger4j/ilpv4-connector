@@ -25,6 +25,7 @@ import java.util.List;
 
 @Configuration
 public class BalanceTrackerConfig {
+
   public static final String BALANCE_TRACKING = "BALANCE_TRACKING";
 
   public static final String BALANCE_TRACKING_JACKSON_REDIS_TEMPLATE_BEAN_NAME = "balanceTrackingJacksonRedisTemplate";
@@ -65,10 +66,11 @@ public class BalanceTrackerConfig {
         );
       }
     } catch (RedisConnectionFailureException e) {
-      logger.warn(
-        "WARNING: Using InMemoryBalanceTracker. Because this configuration is not durable, it should not be used in " +
-          "production deployments. Configure RedisBalanceTracker instead. " +
-          "HINT: is Redis running on its configured port, by default 6379?"
+      logger.warn("\n#############################\n"
+        + "WARNING: Using InMemoryBalanceTracker. Because this configuration is not durable, it should not be used "
+        + "in production deployments. Configure RedisBalanceTracker instead. HINT: is Redis running on its "
+        + "configured port, by default 6379?\n"
+        + "#############################"
       );
       // If debug-output is enabled, then emit the stack-trace.
       if (logger.isDebugEnabled()) {
@@ -121,7 +123,7 @@ public class BalanceTrackerConfig {
 
   @Bean
   protected AccountBalanceService accountBalanceService(BalanceTracker balanceTracker,
-                                                        AccountSettingsRepository accountSettingsRepository) {
+    AccountSettingsRepository accountSettingsRepository) {
     return new AccountBalanceService(balanceTracker, accountSettingsRepository);
   }
 
