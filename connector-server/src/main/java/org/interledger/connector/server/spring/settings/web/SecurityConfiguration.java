@@ -191,6 +191,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     // for Spring Security (e.g.,  org.springframework.security: DEBUG) and look at the security filter chain).
 
     http
+      // See https://docs.spring.io/spring-security/site/docs/5.3.2.BUILD-SNAPSHOT/reference/html5/#servlet-headers-csp
+      // See https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
+      .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(
+        "default-src 'self'" // --> No reporting.
+        //"default-src 'self'; report-uri /_/csp-reports/" --> To enable reporting.
+      )))
       .httpBasic()
       .and()
       .authorizeRequests()

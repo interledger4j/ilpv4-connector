@@ -38,7 +38,7 @@ public interface RuntimeProperties {
   interface Keystores {
     String GCP_KMS = KeyStoreType.GCP.getKeystoreId();
     String JAVA_KEY_STORE = KeyStoreType.JKS.getKeystoreId();
-    String VAULT = KeyStoreType.VAULT.getKeystoreId();
+    //String VAULT = KeyStoreType.VAULT.getKeystoreId();
   }
 
   interface Databases {

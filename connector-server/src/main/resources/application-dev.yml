@@ -3,3 +3,13 @@
 spring:
   profiles:
     include: insecure, h2, management, local-spsp-fulfillment
+  banner:
+    location: banner-dev-mode.txt
+  redis:
+    host: localhost
+
+interledger:
+  connector:
+    spsp:
+      # (Dev-mode only)
+      addressPrefixSegment: spsp

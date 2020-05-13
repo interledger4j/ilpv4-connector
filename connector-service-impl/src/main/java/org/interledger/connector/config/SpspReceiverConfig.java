@@ -8,7 +8,6 @@ import org.interledger.connector.stream.TrackingStreamReceiverLink;
 import org.interledger.connector.stream.TrackingStreamReceiverLinkFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.link.LinkFactoryProvider;
-import org.interledger.link.PacketRejector;
 import org.interledger.stream.crypto.JavaxStreamEncryptionService;
 import org.interledger.stream.crypto.Random;
 import org.interledger.stream.crypto.StreamEncryptionService;
@@ -27,6 +26,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 
 import java.util.Base64;
+
 import javax.annotation.PostConstruct;
 
 /**
@@ -108,11 +108,10 @@ public class SpspReceiverConfig {
     final StreamConnectionGenerator streamConnectionGenerator,
     final StreamEncryptionService streamEncryptionService,
     final CodecContext streamCodecContext,
-    final PacketRejector packetRejector,
-    final FulfillmentGeneratedEventAggregator fulfillmentGeneratedEventAggregator) {
-
-    return new TrackingStreamReceiverLinkFactory(packetRejector,
-      (linkSettings) ->  new TrackingStreamReceiver(
+    final FulfillmentGeneratedEventAggregator fulfillmentGeneratedEventAggregator
+  ) {
+    return new TrackingStreamReceiverLinkFactory(
+      (linkSettings) -> new TrackingStreamReceiver(
         serverSecretSupplier,
         streamConnectionGenerator,
         streamEncryptionService, streamCodecContext,
