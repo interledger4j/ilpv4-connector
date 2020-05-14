@@ -3,6 +3,8 @@ package org.interledger.connector.persistence.repositories;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 
+import okhttp3.HttpUrl;
+
 import java.util.Optional;
 
 /**
@@ -15,4 +17,6 @@ public interface InvoicesRepositoryCustom {
   Invoice saveInvoice(Invoice invoice);
 
   Optional<Invoice> findInvoiceByInvoiceId(InvoiceId invoiceId);
+
+  Optional<Invoice> findInvoiceByInvoiceUrl(HttpUrl invoiceUrl);
 }

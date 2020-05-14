@@ -47,6 +47,17 @@ public class InvoiceRepositoryTest {
     saveAndGetInvoice(invoice);
   }
 
+  @Test
+  public void saveAndGetInvoiceByUrl() {
+    Invoice invoice = SampleObjectUtils.createNewIlpInvoice();
+    Invoice saved = invoicesRepository.saveInvoice(invoice);
+    assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(invoice,
+      "id", "createdAt", "updatedAt");
+
+    Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceUrl(invoice.invoiceUrl().get());
+    assertThat(fetched).isNotEmpty().get().isEqualTo(saved);
+  }
+
   private void saveAndGetInvoice(Invoice invoice) {
     Invoice saved = invoicesRepository.saveInvoice(invoice);
     assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(invoice,

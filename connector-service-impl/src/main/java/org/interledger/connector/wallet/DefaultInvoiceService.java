@@ -16,6 +16,7 @@ import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.stream.SendMoneyResult;
 
+import com.google.api.Http;
 import com.google.common.primitives.UnsignedLong;
 import feign.FeignException;
 import okhttp3.HttpUrl;
@@ -58,38 +59,53 @@ public class DefaultInvoiceService implements InvoiceService {
   public Invoice getInvoiceById(InvoiceId invoiceId) {
     Objects.requireNonNull(invoiceId);
 
-    Invoice invoice = invoicesRepository.findInvoiceByInvoiceId(invoiceId)
+    return invoicesRepository.findInvoiceByInvoiceId(invoiceId)
       .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceId));
+  }
 
-    HttpUrl invoiceUrl = invoice.invoiceUrl()
-      .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
+  @Override
+  public Invoice getOrSyncInvoice(HttpUrl invoiceUrl) {
+    Objects.requireNonNull(invoiceUrl);
 
-    // The sender and receiver wallets could be the same wallet, so the invoice and the invoice receipt could be
-    // the same record. In this case, we should just return what we have.
-    if (isForThisWallet(invoiceUrl)) {
-      return invoice;
-    }
+    // See if we have that invoice already
+    return invoicesRepository.findInvoiceByInvoiceUrl(invoiceUrl)
+      .map(i -> {
+        // if we do:
 
-    // Otherwise, we can assume that some other wallet is the invoice owner.
-    // Look at our own records. If, from our view, the invoice has been paid, no need to reach out to the receiver to
-    // update it.
-    if (invoice.isPaid()) {
-      return invoice;
-    } else {
-      // If our copy of the invoice hasn't been paid, or we don't have a record of that invoice, try
-      // to reach out to the invoice owner to update/create our record
-      try {
-        Invoice invoiceOnReceiver = openPaymentsClient.getInvoice(invoiceUrl.uri());
-        return this.updateOrCreateInvoice(invoiceOnReceiver);
-      } catch (FeignException e) {
-        if (e.status() == 404) {
-          throw new InvoiceNotFoundProblem("Original invoice was not found in invoice owner's records.", invoiceId);
+        // The sender and receiver wallets could be the same wallet, so the invoice and the invoice receipt could be
+        // the same record. In this case, we should just return what we have.
+        if (isForThisWallet(invoiceUrl)) {
+          return i;
         }
 
-        throw e;
-      }
-    }
+        // Otherwise, we can assume that some other wallet is the invoice owner.
+        // Look at our own records. If, from our view, the invoice has been paid, no need to reach out to the receiver to
+        // update it.
+        if (i.isPaid()) {
+          return i;
+        } else {
+          // If our copy of the invoice hasn't been paid, try
+          // to reach out to the invoice owner to update our record
+          Invoice invoiceOnReceiver = this.getRemoteInvoice(invoiceUrl);
+          return this.updateInvoice(invoiceOnReceiver);
+        }
+      })
+      .orElseGet(() -> {
+        Invoice invoiceOnReceiver = this.getRemoteInvoice(invoiceUrl);
+        return invoicesRepository.saveInvoice(invoiceOnReceiver);
+      });
+  }
 
+  private Invoice getRemoteInvoice(HttpUrl invoiceUrl) {
+    try {
+      return openPaymentsClient.getInvoice(invoiceUrl.uri());
+    } catch (FeignException e) {
+      if (e.status() == 404) {
+        throw new InvoiceNotFoundProblem("Original invoice was not found in invoice owner's records.", invoiceUrl);
+      }
+
+      throw e;
+    }
   }
 
   @Override

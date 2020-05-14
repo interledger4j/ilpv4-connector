@@ -18,6 +18,8 @@ import feign.Target;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 import feign.optionals.OptionalDecoder;
+import okhttp3.HttpUrl;
+import org.aspectj.apache.bcel.classfile.Module;
 import org.zalando.problem.ThrowableProblem;
 
 import java.net.URI;
@@ -37,14 +39,15 @@ public interface OpenPaymentsClient {
    *
    * @return A {@link OpenPaymentsClient}.
    */
-  static OpenPaymentsClient construct() {
+  static OpenPaymentsClient construct(final String httpUrl) {
 
     final ObjectMapper objectMapper = ObjectMapperFactory.createObjectMapperForProblemsJson();
     return Feign.builder()
       .encoder(new JacksonEncoder(objectMapper))
       .decode404()
       .decoder(new OptionalDecoder(new JacksonDecoder(objectMapper)))
-      .target(Target.HardCodedTarget.EmptyTarget.create(OpenPaymentsClient.class));
+      .target(OpenPaymentsClient.class, httpUrl);
+//      .target(Target.HardCodedTarget.EmptyTarget.create(OpenPaymentsClient.class));
   }
 
   @RequestLine("GET /.well-known/open-payments")
@@ -73,6 +76,16 @@ public interface OpenPaymentsClient {
     URI invoiceUrl
   ) throws ThrowableProblem;
 
+  @RequestLine("POST {accountId}/invoices/sync?name={invoiceUrl}")
+  @Headers({
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON
+  })
+  Invoice getOrSyncInvoice(
+    @Param("accountId") String accountId,
+    @Param("invoiceUrl") String invoiceUrl
+  );
+
   @RequestLine("GET /")
   @Headers({
     ACCEPT + APPLICATION_CONNECTION_JSON_VALUE,
@@ -98,7 +111,6 @@ public interface OpenPaymentsClient {
     AUTHORIZATION + "{authorization}"
   })
   SendMoneyResult payInvoice(
-    URI invoiceUrl,
     @Param("accountId") String accountId,
     @Param("invoiceId") String invoiceId,
     @Param("authorization") String authorization

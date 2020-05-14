@@ -29,7 +29,7 @@ public class OpenPaymentsClientTest {
 
   @Before
   public void setUp() {
-    openPaymentsClient = OpenPaymentsClient.construct();
+    openPaymentsClient = OpenPaymentsClient.construct("");
 
     paymentPointerResolver = PaymentPointerResolver.defaultResolver();
 
