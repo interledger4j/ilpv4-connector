@@ -7,8 +7,9 @@ import static org.interledger.connector.core.ConfigConstants.TRUE;
 import static org.interledger.spsp.client.SpspClient.APPLICATION_SPSP4_JSON_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.problems.spsp.InvalidSpspRequestProblem;
-import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.wallet.PaymentDetailsUtils;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.spsp.StreamConnectionDetails;
@@ -29,7 +30,6 @@ import org.zalando.problem.spring.common.MediaTypes;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -45,16 +45,16 @@ public class SpspController {
 
   private final StreamReceiver streamReceiver;
   private final UrlPathHelper urlPathHelper;
-  private final Supplier<ConnectorSettings> connectorSettingsSupplier;
+  private final LocalDestinationAddressUtils localDestinationAddressUtils;
   private final Optional<String> spspUrlPath;
 
   public SpspController(
-    final Supplier<ConnectorSettings> connectorSettingsSupplier,
+    final LocalDestinationAddressUtils localDestinationAddressUtils,
     final StreamReceiver streamReceiver,
     @Value("${" + SPSP__URL_PATH + ":}") final String spspUrlPath
   ) {
     this.streamReceiver = Objects.requireNonNull(streamReceiver);
-    this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
+    this.localDestinationAddressUtils = Objects.requireNonNull(localDestinationAddressUtils);
     this.spspUrlPath = PaymentDetailsUtils.cleanupUrlPath(spspUrlPath);
     this.urlPathHelper = new UrlPathHelper();
   }
@@ -84,9 +84,8 @@ public class SpspController {
       throw new InvalidSpspRequestProblem();
     }
 
-    final InterledgerAddress paymentReceiverAddress = connectorSettingsSupplier.get().operatorAddress()
-      .with(connectorSettingsSupplier.get().spspSettings().addressPrefixSegment())
-      .with(ilpIntermediateSuffix);
+    final InterledgerAddress paymentReceiverAddress =
+      localDestinationAddressUtils.getLocalFulfillmentAddress(AccountId.of(ilpIntermediateSuffix));
 
     final StreamConnectionDetails streamConnectionDetails = streamReceiver.setupStream(paymentReceiverAddress);
 

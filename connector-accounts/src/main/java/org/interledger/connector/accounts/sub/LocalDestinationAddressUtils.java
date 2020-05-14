@@ -225,4 +225,11 @@ public interface LocalDestinationAddressUtils {
 
 
   }
+
+  default InterledgerAddress getLocalFulfillmentAddress(AccountId accountId) {
+    return getConnectorOperatorAddress().get()
+      .with(getSpspAddressPrefixSegment())
+      .with(accountId.value());
+  }
+
 }

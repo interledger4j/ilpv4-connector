@@ -7,19 +7,16 @@ import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
-import org.interledger.stream.SendMoneyResult;
+import org.interledger.connector.payments.StreamPayment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Feign;
 import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
-import feign.Target;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 import feign.optionals.OptionalDecoder;
-import okhttp3.HttpUrl;
-import org.aspectj.apache.bcel.classfile.Module;
 import org.zalando.problem.ThrowableProblem;
 
 import java.net.URI;
@@ -110,7 +107,7 @@ public interface OpenPaymentsClient {
     CONTENT_TYPE + APPLICATION_JSON,
     AUTHORIZATION + "{authorization}"
   })
-  SendMoneyResult payInvoice(
+  StreamPayment payInvoice(
     @Param("accountId") String accountId,
     @Param("invoiceId") String invoiceId,
     @Param("authorization") String authorization

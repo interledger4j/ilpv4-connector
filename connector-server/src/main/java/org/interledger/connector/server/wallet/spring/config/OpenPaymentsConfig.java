@@ -2,6 +2,7 @@ package org.interledger.connector.server.wallet.spring.config;
 
 import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.InvoiceFactory;
@@ -84,14 +85,16 @@ public class OpenPaymentsConfig {
     @Value("${" + SPSP__URL_PATH + ":}") final String opaUrlPath,
     StreamConnectionGenerator streamConnectionGenerator,
     ServerSecretSupplier serverSecretSupplier,
-    SendPaymentService sendPaymentService) {
+    SendPaymentService sendPaymentService,
+    LocalDestinationAddressUtils localDestinationAddressUtils) {
     return new IlpOpenPaymentsPaymentService(
       openPaymentsSettingsSupplier,
       opaUrlPath,
       paymentPointerResolver,
       streamConnectionGenerator,
       serverSecretSupplier,
-      sendPaymentService);
+      sendPaymentService,
+      localDestinationAddressUtils);
   }
 
   @Bean

@@ -1,6 +1,7 @@
 package org.interledger.connector.wallet;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
@@ -32,6 +33,7 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
   private StreamConnectionGenerator streamConnectionGenerator;
   private ServerSecretSupplier serverSecretSupplier;
   private final SendPaymentService sendPaymentService;
+  private LocalDestinationAddressUtils localDestinationAddressUtils;
 
   public IlpOpenPaymentsPaymentService(
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
@@ -39,13 +41,14 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
     PaymentPointerResolver paymentPointerResolver,
     StreamConnectionGenerator streamConnectionGenerator,
     ServerSecretSupplier serverSecretSupplier,
-    SendPaymentService sendPaymentService) {
+    SendPaymentService sendPaymentService, LocalDestinationAddressUtils localDestinationAddressUtils) {
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
     this.opaUrlPath = PaymentDetailsUtils.cleanupUrlPath(opaUrlPath);
     this.paymentPointerResolver = Objects.requireNonNull(paymentPointerResolver);
     this.streamConnectionGenerator = Objects.requireNonNull(streamConnectionGenerator);
     this.serverSecretSupplier = Objects.requireNonNull(serverSecretSupplier);
     this.sendPaymentService = sendPaymentService;
+    this.localDestinationAddressUtils = localDestinationAddressUtils;
   }
 
   @Override
@@ -53,16 +56,15 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
 
     final String ilpIntermediateSuffix = this.validateInvoiceSubjectAndComputeAddressSuffix(invoice.subject());
 
-    String destinationAddress = openPaymentsSettingsSupplier.get().ilpOperatorAddress()
-      .with(ilpIntermediateSuffix).getValue();
+    final InterledgerAddress paymentReceiverAddress =
+      localDestinationAddressUtils.getLocalFulfillmentAddress(AccountId.of(ilpIntermediateSuffix));
 
     // Get shared secret and address with connection tag
     final StreamConnectionDetails streamConnectionDetails =
-      streamConnectionGenerator.generateConnectionDetails(serverSecretSupplier, InterledgerAddress.of(destinationAddress));
+      streamConnectionGenerator.generateConnectionDetails(serverSecretSupplier, paymentReceiverAddress);
 
-    InterledgerAddress finalDestinationAddress = InterledgerAddress.of(streamConnectionDetails.destinationAddress().getValue() + "~" + invoice.paymentId());
     return IlpPaymentDetails.builder()
-      .destinationAddress(finalDestinationAddress)
+      .destinationAddress(streamConnectionDetails.destinationAddress())
       .sharedSecret(streamConnectionDetails.sharedSecret())
       .build();
   }
