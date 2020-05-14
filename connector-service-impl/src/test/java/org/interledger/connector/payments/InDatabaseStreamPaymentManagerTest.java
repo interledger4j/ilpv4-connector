@@ -13,6 +13,7 @@ import org.interledger.connector.persistence.repositories.StreamPaymentsReposito
 import org.interledger.core.InterledgerAddress;
 
 import com.google.common.collect.Lists;
+import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -104,27 +105,37 @@ public class InDatabaseStreamPaymentManagerTest {
   }
 
   @Test
-  public void mergeRejectsNegativePaymentReceived() {
-    // payments received should not be negative (debit)
+  public void mergeAndUpdateDeliveredDetails() {
+    String assetCode = "XRP";
+    short assetScale = 9;
     StreamPayment trx = transactionBuilder()
-      .amount(BigInteger.valueOf(-1))
-      .type(StreamPaymentType.PAYMENT_RECEIVED)
+      .deliveredAssetScale(assetScale)
+      .deliveredAssetCode(assetCode)
       .build();
-
-    expectedException.expect(IllegalArgumentException.class);
     transactionManager.merge(trx);
+    verify(mockRepo, times(1)).upsertAmounts(streamPaymentToEntityConverter.convert(trx));
+    verify(mockRepo, times(1)).udpdateDeliveredDenomination(trx.accountId(), trx.streamPaymentId(), assetCode, assetScale);
+    verifyNoMoreInteractions(mockRepo);
   }
 
   @Test
-  public void mergeRejectsPostivePaymentSent() {
+  public void mergeRejectsNegativePaymentReceived() {
+    // payments received should not be negative (debit)
+    expectedException.expect(IllegalArgumentException.class);
+    transactionBuilder()
+      .amount(BigInteger.valueOf(-1))
+      .type(StreamPaymentType.PAYMENT_RECEIVED)
+      .build();
+  }
+
+  @Test
+  public void mergeRejectsPositivePaymentSent() {
     // payments sent should be a debit (negative amount)
-    StreamPayment trx = transactionBuilder()
+    expectedException.expect(IllegalArgumentException.class);
+    transactionBuilder()
       .amount(BigInteger.valueOf(1))
       .type(StreamPaymentType.PAYMENT_SENT)
       .build();
-
-    expectedException.expect(IllegalArgumentException.class);
-    transactionManager.merge(trx);
   }
 
   private ImmutableStreamPayment.Builder transactionBuilder() {
@@ -135,6 +146,7 @@ public class InDatabaseStreamPaymentManagerTest {
       .assetScale((short) 1)
       .createdAt(Instant.now())
       .destinationAddress(InterledgerAddress.of("test.receiver"))
+      .deliveredAmount(UnsignedLong.valueOf(100))
       .modifiedAt(Instant.now())
       .packetCount(1)
       .status(StreamPaymentStatus.PENDING)

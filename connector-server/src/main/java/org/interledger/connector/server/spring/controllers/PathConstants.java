@@ -23,6 +23,7 @@ public class PathConstants {
   public static final String SLASH_ACCOUNTS_ILP_PATH = SLASH_ACCOUNTS + SLASH_ACCOUNT_ID + "/ilp";
   public static final String SLASH_ACCOUNTS_BALANCE_PATH = SLASH_ACCOUNTS + SLASH_ACCOUNT_ID + "/balance";
   public static final String SLASH_ACCOUNTS_TOKENS_PATH = SLASH_ACCOUNTS + SLASH_ACCOUNT_ID + "/tokens";
+  public static final String SLASH_ACCOUNTS_PAYMENTS_PATH = SLASH_ACCOUNTS + SLASH_ACCOUNT_ID + "/payments";
   public static final String PREFIX = "prefix";
   public static final String SLASH_ROUTES_STATIC_PREFIX = SLASH_ROUTES_STATIC + "/{" + PREFIX + ":.+}";
 }

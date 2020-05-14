@@ -54,7 +54,7 @@ import java.util.function.Supplier;
   SpringConnectorWebMvc.class,
   AbstractControllerTest.TestConfiguration.class
 })
-@ActiveProfiles( {"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
+@ActiveProfiles( {"controller-test", "test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 public abstract class AbstractControllerTest {
 
   @Autowired

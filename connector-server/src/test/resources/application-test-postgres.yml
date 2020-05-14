@@ -1,9 +1,7 @@
 # See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
 spring:
   profiles:
-    include: insecure, h2, h2-in-memory, local-spsp-fulfillment
-  flyway:
-    enabled: false
+    include: insecure, postgres, migrate, local-spsp-fulfillment
   output:
     ansi:
       enabled: ALWAYS
@@ -17,22 +15,10 @@ interledger:
     enabledFeatures:
       localSpspFulfillmentEnabled: true
     spsp:
-        urlPath: p
-        addressPrefixSegment: spsp-test
-        # For testing only. (TODO: Remove?)
-        serverSecret: aQLR5IWAGV2vKnBhnFFsl2cXOCh9u0IWz3PiA64KlJ8=
-    open-payments:
-      ilpOperatorAddress: "test.connie"
-      metadata:
-        issuer: "https://localhost:8080"
-        authorizationIssuer: "https://localhost:8000"
-        assetsSupported:
-          -
-            assetCode: "XRP"
-            assetScale: 9
-          -
-            assetCode: "USD"
-            assetScale: 2
+      urlPath: p
+      addressPrefixSegment: spsp-test
+      # For testing only.
+      serverSecret: aQLR5IWAGV2vKnBhnFFsl2cXOCh9u0IWz3PiA64KlJ8=
     globalRoutingSettings:
       # A simulated routing secret, which is a seed used for generating routing table auth values.
       # Represents the plaintext value of `shh`, encrypted.
@@ -45,4 +31,3 @@ interledger:
         writeTimeoutMillis: 40000
         maxIdleConnections: 10
         keepAliveMinutes: 2
-    connector-url: https://test.jc1.dev

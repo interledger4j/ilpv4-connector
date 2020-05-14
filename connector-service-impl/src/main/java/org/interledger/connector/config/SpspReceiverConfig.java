@@ -2,12 +2,11 @@ package org.interledger.connector.config;
 
 import static org.interledger.connector.core.ConfigConstants.SPSP__SERVER_SECRET;
 
-import org.interledger.connector.payments.FulfillmentGeneratedEventAggregator;
-import org.interledger.connector.stream.TrackingStreamReceiver;
-import org.interledger.connector.stream.TrackingStreamReceiverLink;
-import org.interledger.connector.stream.TrackingStreamReceiverLinkFactory;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.link.LinkFactoryProvider;
+import org.interledger.link.PacketRejector;
+import org.interledger.link.spsp.StatelessSpspReceiverLink;
+import org.interledger.link.spsp.StatelessSpspReceiverLinkFactory;
 import org.interledger.stream.crypto.JavaxStreamEncryptionService;
 import org.interledger.stream.crypto.Random;
 import org.interledger.stream.crypto.StreamEncryptionService;
@@ -47,12 +46,18 @@ public class SpspReceiverConfig {
   private LinkFactoryProvider linkFactoryProvider;
 
   @Autowired
+  private PacketRejector packetRejector;
+
+  @Autowired
   @Lazy
-  private TrackingStreamReceiverLinkFactory trackingStreamReceiverLinkFactory;
+  private StatelessStreamReceiver statelessStreamReceiver;
 
   @PostConstruct
   public void init() {
-    linkFactoryProvider.registerLinkFactory(TrackingStreamReceiverLink.LINK_TYPE, trackingStreamReceiverLinkFactory);
+    linkFactoryProvider.registerLinkFactory(
+      StatelessSpspReceiverLink.LINK_TYPE,
+      statelessSpspReceiverLinkFactory(packetRejector, statelessStreamReceiver)
+    );
   }
 
   @Bean
@@ -86,11 +91,6 @@ public class SpspReceiverConfig {
   }
 
   @Bean
-  protected StreamEncryptionService streamEncryptionService() {
-    return new JavaxStreamEncryptionService();
-  }
-
-  @Bean
   protected StatelessStreamReceiver statelessStreamReceiver(
     final ServerSecretSupplier serverSecretSupplier,
     final StreamConnectionGenerator streamConnectionGenerator,
@@ -103,21 +103,10 @@ public class SpspReceiverConfig {
   }
 
   @Bean
-  protected TrackingStreamReceiverLinkFactory trackingStreamReceiverLinkFactory(
-    final ServerSecretSupplier serverSecretSupplier,
-    final StreamConnectionGenerator streamConnectionGenerator,
-    final StreamEncryptionService streamEncryptionService,
-    final CodecContext streamCodecContext,
-    final FulfillmentGeneratedEventAggregator fulfillmentGeneratedEventAggregator
+  protected StatelessSpspReceiverLinkFactory statelessSpspReceiverLinkFactory(
+    final PacketRejector packetRejector, final StatelessStreamReceiver statelessStreamReceiver
   ) {
-    return new TrackingStreamReceiverLinkFactory(
-      (linkSettings) -> new TrackingStreamReceiver(
-        serverSecretSupplier,
-        streamConnectionGenerator,
-        streamEncryptionService, streamCodecContext,
-        linkSettings.accountId(),
-        fulfillmentGeneratedEventAggregator
-      ));
+    return new StatelessSpspReceiverLinkFactory(packetRejector, statelessStreamReceiver);
   }
 
 }

@@ -176,6 +176,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .antMatchers(HttpMethod.GET, PathConstants.SLASH_ACCOUNTS_TOKENS_PATH + "/**").authenticated()
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS_TOKENS_PATH).authenticated()
       .antMatchers(HttpMethod.DELETE, PathConstants.SLASH_ACCOUNTS_TOKENS_PATH + "/**").authenticated()
+      .antMatchers(HttpMethod.GET, PathConstants.SLASH_ACCOUNTS_PAYMENTS_PATH + "/**").authenticated()
+      .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS_PAYMENTS_PATH).authenticated()
+
       .antMatchers(HttpMethod.GET, METRICS_ENDPOINT_URL_PATH).permitAll() // permitAll if hidden by LB.
 
       // Open Payments Invoices.  All open for now.
