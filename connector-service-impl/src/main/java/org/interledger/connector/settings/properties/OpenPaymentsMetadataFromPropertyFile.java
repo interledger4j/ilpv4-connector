@@ -22,6 +22,7 @@ public class OpenPaymentsMetadataFromPropertyFile implements OpenPaymentsMetadat
   private HttpUrl tokenEndpoint;
   private HttpUrl invoicesEndpoint;
   private HttpUrl mandatesEndpoint;
+  private HttpUrl accountServicer;
   private List<SupportedAsset> assetsSupported;
 
   @Override
@@ -55,6 +56,11 @@ public class OpenPaymentsMetadataFromPropertyFile implements OpenPaymentsMetadat
   }
 
   @Override
+  public HttpUrl accountServicer() {
+    return accountServicer;
+  }
+
+  @Override
   public List<SupportedAsset> assetsSupported() {
     return assetsSupported;
   }
@@ -85,5 +91,9 @@ public class OpenPaymentsMetadataFromPropertyFile implements OpenPaymentsMetadat
 
   public void setAssetsSupported(List<SupportedAsset> assetsSupported) {
     this.assetsSupported = assetsSupported;
+  }
+
+  public void setAccountServicer(HttpUrl accountServicer) {
+    this.accountServicer = accountServicer;
   }
 }
