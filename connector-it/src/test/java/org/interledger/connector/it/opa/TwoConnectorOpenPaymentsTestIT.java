@@ -154,14 +154,14 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   }
 
   @Test
-  public void domingoPaysInvoiceForPeterViaAliceOnBob() {
+  public void paulPaysInvoiceForPeterViaAliceOnBob() {
     Invoice createdInvoiceOnBob = createInvoice(peterAtBobInvoicesUri);
 
     Invoice createInvoiceOnAlice = aliceClient.getOrSyncInvoice(createdInvoiceOnBob.accountId(), createdInvoiceOnBob.invoiceUrl().get().toString());
     SendMoneyResult sendMoneyResult = aliceClient.payInvoice(
       createInvoiceOnAlice.accountId(),
       createInvoiceOnAlice.id().value(),
-      "password"
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXVsIiwibmFtZSI6InBhdWwiLCJpYXQiOjE1MTYyMzkwMjJ9.rdYwzQKAG8tFC2aRvG3XsW8BFsHxEFnOwcY-17KAA7g"
     );
 
     getLogger().info(sendMoneyResult.toString());
