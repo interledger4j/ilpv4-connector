@@ -376,10 +376,16 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
 
   private static Set<StaticRoute> constructStaticRoutesForBob() {
     // Always route packets to Alice...
-    return Sets.newHashSet(StaticRoute.builder()
+    return Sets.newHashSet(
+      StaticRoute.builder()
       .routePrefix(InterledgerAddressPrefix.from(ALICE_CONNECTOR_ADDRESS))
       .nextHopAccountId(ALICE_ACCOUNT)
-      .build());
+      .build(),
+      StaticRoute.builder()
+      .routePrefix(InterledgerAddressPrefix.from(PETER_AT_BOB_ADDRESS))
+      .nextHopAccountId(PETER_ACCOUNT)
+      .build()
+    );
   }
 
 }

@@ -2,6 +2,8 @@
 spring:
   profiles:
     include: insecure, h2, h2-in-memory, local-spsp-fulfillment
+  flyway:
+    enabled: false
   output:
     ansi:
       enabled: ALWAYS
@@ -18,7 +20,7 @@ interledger:
         urlPath: p
         addressPrefixSegment: spsp-test
         # For testing only. (TODO: Remove?)
-        # serverSecret: aQLR5IWAGV2vKnBhnFFsl2cXOCh9u0IWz3PiA64KlJ8=
+        serverSecret: aQLR5IWAGV2vKnBhnFFsl2cXOCh9u0IWz3PiA64KlJ8=
     open-payments:
       ilpOperatorAddress: "test.connie"
       metadata:

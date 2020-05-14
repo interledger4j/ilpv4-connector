@@ -70,6 +70,46 @@ public class StreamPaymentsRepositoryTest {
   }
 
   @Test
+  public void upsertDestinationDetails() {
+    AccountId accountId = AccountId.of(generateUuid());
+    String streamPaymentId = generateUuid();
+    short assetScale = 9;
+    String assetCode = "XRP";
+
+    for (int i = 0; i < 3; i++) {
+      final StreamPaymentEntity entity1 = newEntity(accountId, streamPaymentId, 1);
+      entity1.setAssetScale(assetScale);
+      entity1.setAssetCode(assetCode);
+      entity1.setDeliveredAmount(BigInteger.valueOf(10));
+      streamPaymentsRepository.upsertAmounts(entity1);
+    }
+    final StreamPaymentEntity loadedAccessTokenEntity =
+      streamPaymentsRepository.findByAccountIdAndStreamPaymentId(accountId, streamPaymentId).get();
+
+    assertThat(loadedAccessTokenEntity.getAmount()).isEqualTo(BigInteger.valueOf(3));
+    assertThat(loadedAccessTokenEntity.getDeliveredAmount()).isEqualTo(BigInteger.valueOf(30));
+    assertThat(loadedAccessTokenEntity.getAssetCode()).isEqualTo(assetCode);
+    assertThat(loadedAccessTokenEntity.getAssetScale()).isEqualTo(assetScale);
+  }
+
+  @Test
+  public void updateSourceAddress() {
+    AccountId accountId = AccountId.of(generateUuid());
+    String streamPaymentId = generateUuid();
+    String sourceAddress = "test.source";
+
+    final StreamPaymentEntity entity1 = newEntity(accountId, streamPaymentId, 10);
+
+    streamPaymentsRepository.upsertAmounts(entity1);
+
+    streamPaymentsRepository.updateSourceAddress(accountId, streamPaymentId, sourceAddress);
+
+    StreamPaymentEntity streamPayment1 =
+      streamPaymentsRepository.findByAccountIdAndStreamPaymentId(accountId, streamPaymentId).get();
+    assertThat(streamPayment1.getSourceAddress()).isEqualTo(sourceAddress);
+  }
+
+  @Test
   public void updateStatus() {
     AccountId accountId = AccountId.of(generateUuid());
     String streamPaymentId = generateUuid();
@@ -136,7 +176,7 @@ public class StreamPaymentsRepositoryTest {
   }
 
   @Test
-  public void upsertMultipleStreamPayments() throws InterruptedException {
+  public void upsertMultipleStreamPayments() {
     AccountId accountId = AccountId.of(generateUuid());
     String streamPaymentId = generateUuid();
     String streamPaymentId2 = generateUuid();
@@ -196,6 +236,7 @@ public class StreamPaymentsRepositoryTest {
     entity.setPacketCount(1);
     entity.setStreamPaymentId(streamPaymentId);
     entity.setAmount(BigInteger.valueOf(amount));
+    entity.setExpectedAmount(BigInteger.valueOf(amount));
     entity.setAssetCode("XRP");
     entity.setAssetScale((short) 9);
     entity.setDestinationAddress("test." + streamPaymentId);

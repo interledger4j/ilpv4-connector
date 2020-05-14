@@ -40,4 +40,8 @@ public interface StreamPaymentsRepositoryCustom {
    */
   int updateSourceAddress(AccountId accountId, String streamPaymentId, String sourceAddress);
 
+  int udpdateDeliveredDenomination(AccountId accountId,
+                                   String streamPaymentId,
+                                   String deliveredAssetCode,
+                                   short deliveredAssetScale);
 }

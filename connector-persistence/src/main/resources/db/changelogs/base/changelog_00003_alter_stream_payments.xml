@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+  <changeSet id="alter_stream_payments" author="nhartner">
+    <addColumn tableName="STREAM_PAYMENTS">
+      <column name="EXPECTED_AMOUNT" type="BIGINT"></column>
+    </addColumn>
+    <addColumn tableName="STREAM_PAYMENTS">
+      <column name="DELIVERED_AMOUNT" type="BIGINT"></column>
+    </addColumn>
+    <addColumn tableName="STREAM_PAYMENTS">
+      <column name="DELIVERED_ASSET_CODE" type="VARCHAR(20)"></column>
+    </addColumn>
+    <addColumn tableName="STREAM_PAYMENTS">
+      <column name="DELIVERED_ASSET_SCALE" type="SMALLINT"></column>
+    </addColumn>
+
+    <!-- back populate new DESTINATION* columns -->
+    <sql>
+      UPDATE stream_payments SET delivered_amount = amount,
+      delivered_asset_code = asset_code,
+      delivered_asset_scale = asset_scale
+      WHERE type='PAYMENT_RECEIVED'
+    </sql>
+  </changeSet>
+</databaseChangeLog>

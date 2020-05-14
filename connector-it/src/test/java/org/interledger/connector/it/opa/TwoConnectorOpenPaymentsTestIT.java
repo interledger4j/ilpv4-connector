@@ -59,7 +59,8 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
 
-  private OpenPaymentsClient client;
+  private OpenPaymentsClient aliceClient;
+  private OpenPaymentsClient bobClient;
 
   private HttpUrl paulAtAliceInvoicesUri = HttpUrl.get(ALICE_HTTP_BASE_URL + "/paul/invoices");
   private HttpUrl peterAtAliceInvoicesUri = HttpUrl.get(ALICE_HTTP_BASE_URL + "/peter/invoices");
@@ -89,7 +90,8 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
     // Note Bob's Connector's address is purposefully a child of Alice due to IL-DCP
     bobConnector = this.getILPv4NodeFromGraph(getBobConnectorAddress());
     this.resetBalanceTracking();
-    client = OpenPaymentsClient.construct();
+    aliceClient = OpenPaymentsClient.construct(ALICE_HTTP_BASE_URL);
+    bobClient = OpenPaymentsClient.construct(BOB_HTTP_BASE_URL);
   }
 
   @Test
@@ -113,7 +115,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   @Test
   public void getPeterInvoiceOnBob() {
     Invoice createdInvoice = createInvoice(peterAtBobInvoicesUri);
-    Invoice getInvoice = client.getInvoice(createdInvoice.invoiceUrl().get().uri());
+    Invoice getInvoice = aliceClient.getInvoice(createdInvoice.invoiceUrl().get().uri());
 
     assertThat(createdInvoice).isEqualTo(getInvoice);
   }
@@ -123,14 +125,14 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
     Invoice createdInvoice = createInvoice(peterAtAliceInvoicesUri);
 
     HttpUrl localInvoiceEndpoint = peterAtAliceInvoicesUri.newBuilder().addPathSegment(createdInvoice.id().value()).build();
-    Invoice getInvoice = client.getInvoice(localInvoiceEndpoint.uri());
+    Invoice getInvoice = aliceClient.getInvoice(localInvoiceEndpoint.uri());
     assertThat(createdInvoice).isEqualTo(getInvoice);
   }
 
   @Test
   public void getPeterInvoicePaymentDetailsOnBob() {
     Invoice createdInvoice = createInvoice(peterAtBobInvoicesUri);
-    PaymentDetails paymentDetails = client.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
+    PaymentDetails paymentDetails = aliceClient.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
     assertThat(paymentDetails).isInstanceOf(IlpPaymentDetails.class);
     IlpPaymentDetails ilpPaymentDetails = (IlpPaymentDetails) paymentDetails;
 
@@ -142,7 +144,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   @Test
   public void getPeterInvoicePaymentDetailsViaAliceOnBob() {
     Invoice createdInvoice = createInvoice(peterAtAliceInvoicesUri);
-    PaymentDetails paymentDetails = client.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
+    PaymentDetails paymentDetails = aliceClient.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
     assertThat(paymentDetails).isInstanceOf(IlpPaymentDetails.class);
     IlpPaymentDetails ilpPaymentDetails = (IlpPaymentDetails) paymentDetails;
 
@@ -152,20 +154,14 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   }
 
   @Test
-  public void domingoPaysInvoiceForPeterViaAliceOnBob() {
-    Invoice createdInvoice = createInvoice(peterAtBobInvoicesUri);
+  public void paulPaysInvoiceForPeterViaAliceOnBob() {
+    Invoice createdInvoiceOnBob = createInvoice(peterAtBobInvoicesUri);
 
-    HttpUrl localInvoicePaymentEndpoint = new HttpUrl.Builder()
-    .scheme(peterAtAliceInvoicesUri.scheme())
-    .host(peterAtAliceInvoicesUri.host())
-    .port(peterAtAliceInvoicesUri.port())
-    .build();
-
-    SendMoneyResult sendMoneyResult = client.payInvoice(
-      localInvoicePaymentEndpoint.uri(),
-      createdInvoice.accountId(),
-      createdInvoice.id().value(),
-      "Basic YWRtaW46cGFzc3dvcmQ="
+    Invoice createInvoiceOnAlice = aliceClient.getOrSyncInvoice(createdInvoiceOnBob.accountId(), createdInvoiceOnBob.invoiceUrl().get().toString());
+    SendMoneyResult sendMoneyResult = aliceClient.payInvoice(
+      createInvoiceOnAlice.accountId(),
+      createInvoiceOnAlice.id().value(),
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXVsIiwibmFtZSI6InBhdWwiLCJpYXQiOjE1MTYyMzkwMjJ9.rdYwzQKAG8tFC2aRvG3XsW8BFsHxEFnOwcY-17KAA7g"
     );
 
     getLogger().info(sendMoneyResult.toString());
@@ -182,7 +178,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
       .subject("$localhost:8081/peter")
       .build();
 
-    return client.createInvoice(invoiceUri.uri(), invoice);
+    return bobClient.createInvoice(invoiceUri.uri(), invoice);
   }
 
   @Override
