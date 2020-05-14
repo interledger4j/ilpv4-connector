@@ -113,8 +113,8 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
-  public OpenPaymentsClient openPaymentsClient() {
-    return OpenPaymentsClient.construct();
+  public OpenPaymentsClient openPaymentsClient(Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier) {
+    return OpenPaymentsClient.construct(openPaymentsSettingsSupplier.get().metadata().issuer().toString());
   }
 
   @Bean

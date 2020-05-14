@@ -3,6 +3,7 @@ package org.interledger.connector.opa.model.problems;
 import org.interledger.connector.core.problems.AbstractConnectorProblem;
 import org.interledger.connector.opa.model.InvoiceId;
 
+import okhttp3.HttpUrl;
 import org.zalando.problem.StatusType;
 
 import java.net.URI;
@@ -19,14 +20,30 @@ public class InvoiceProblem extends AbstractConnectorProblem {
    */
   private final InvoiceId invoiceId;
 
+  private final HttpUrl invoiceUrl;
+
   public InvoiceProblem(URI type, String title, StatusType status, InvoiceId invoiceId) {
     super(type, title, status);
     this.invoiceId = invoiceId;
+    this.invoiceUrl = null;
   }
 
   public InvoiceProblem(URI type, String title, StatusType status, String detail, InvoiceId invoiceId) {
     super(type, title, status, detail);
     this.invoiceId = invoiceId;
+    this.invoiceUrl = null;
+  }
+
+  public InvoiceProblem(URI type, String title, StatusType status, HttpUrl invoiceUrl) {
+    super(type, title, status);
+    this.invoiceUrl = invoiceUrl;
+    this.invoiceId = null;
+  }
+
+  public InvoiceProblem(URI type, String title, StatusType status, String detail, HttpUrl invoiceUrl) {
+    super(type, title, status, detail);
+    this.invoiceUrl = invoiceUrl;
+    this.invoiceId = null;
   }
 
   /**
