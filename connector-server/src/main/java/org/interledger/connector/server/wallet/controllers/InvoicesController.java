@@ -16,7 +16,6 @@ import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
-import org.interledger.stream.SendMoneyResult;
 
 import okhttp3.HttpUrl;
 import org.slf4j.Logger;
@@ -155,7 +154,7 @@ public class InvoicesController {
     method = RequestMethod.POST,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public SendMoneyResult payInvoice(
+  public StreamPayment payInvoice(
     @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) String accountId,
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
     @RequestHeader("Authorization") String bearerToken // TODO: What do here?

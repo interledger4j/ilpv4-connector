@@ -14,7 +14,7 @@ import io.xpring.payid.PayIDException;
 
 import java.util.Objects;
 
-public class XrpOpenPaymentsPaymentService implements OpenPaymentsPaymentService {
+public class XrpOpenPaymentsPaymentService implements OpenPaymentsPaymentService<SendMoneyResult> {
 
   private PayIDClient payIDClient;
 

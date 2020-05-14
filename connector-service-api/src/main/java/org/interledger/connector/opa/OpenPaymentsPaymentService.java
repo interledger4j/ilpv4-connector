@@ -3,13 +3,12 @@ package org.interledger.connector.opa;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.PaymentDetails;
-import org.interledger.stream.SendMoneyResult;
 
 import com.google.common.primitives.UnsignedLong;
 
 import java.util.concurrent.ExecutionException;
 
-public interface OpenPaymentsPaymentService {
+public interface OpenPaymentsPaymentService<T> {
 
   /**
    * Get the details necessary to make a payment for an invoice.
@@ -22,7 +21,7 @@ public interface OpenPaymentsPaymentService {
    */
   PaymentDetails getPaymentDetails(final Invoice invoice);
 
-  SendMoneyResult payInvoice(
+  T payInvoice(
     final PaymentDetails paymentDetails,
     final AccountId senderAccountId,
     final UnsignedLong amount,

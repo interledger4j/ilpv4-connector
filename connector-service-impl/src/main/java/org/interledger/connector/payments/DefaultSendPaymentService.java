@@ -2,6 +2,7 @@ package org.interledger.connector.payments;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.accounts.AccountNotFoundProblem;
 import org.interledger.connector.accounts.AccountSettings;
@@ -70,29 +71,33 @@ public class DefaultSendPaymentService implements SendPaymentService {
 
   @Override
   public StreamPayment sendMoney(SendPaymentRequest request) {
-    AccountSettings settings = accountManager.findAccountById(request.accountId())
-      .orElseThrow(() -> new AccountNotFoundProblem(request.accountId()));
-
     StreamConnectionDetails connectionDetails =
       spspClient.getStreamConnectionDetails(PaymentPointer.of(request.destinationPaymentPointer()));
+    return sendMoney(request.accountId(), connectionDetails, request.amount());
+  }
 
-    StreamPayment placeHolder = newStreamPaymentPlaceholder(request, settings, connectionDetails.destinationAddress());
+  @Override
+  public StreamPayment sendMoney(AccountId accountId, StreamConnectionDetails connectionDetails, UnsignedLong amount) {
+    AccountSettings settings = accountManager.findAccountById(accountId)
+      .orElseThrow(() -> new AccountNotFoundProblem(accountId));
+
+    StreamPayment placeHolder = newStreamPaymentPlaceholder(settings, connectionDetails.destinationAddress(), amount);
 
     Optional<StreamPayment> maybeExistingPayment =
-      streamPaymentManager.findByAccountIdAndStreamPaymentId(request.accountId(), placeHolder.streamPaymentId());
+      streamPaymentManager.findByAccountIdAndStreamPaymentId(accountId, placeHolder.streamPaymentId());
     if (maybeExistingPayment.isPresent()) {
       StreamPayment existingPayment = maybeExistingPayment.get();
-      if (isDuplicateSend(existingPayment, request.amount(), connectionDetails.destinationAddress())) {
+      if (isDuplicateSend(existingPayment, amount, connectionDetails.destinationAddress())) {
         return existingPayment;
       } else {
-        throw new PaymentAlreadyExistsProblem(request.accountId(), placeHolder.streamPaymentId());
+        throw new PaymentAlreadyExistsProblem(accountId, placeHolder.streamPaymentId());
       }
     }
 
     Duration timeout = Duration.ofSeconds(50);
     try {
       LocalPacketSwitchLinkSettings linkSettings = LocalPacketSwitchLinkSettings.builder()
-        .accountId(request.accountId())
+        .accountId(accountId)
         .sharedSecret(connectionDetails.sharedSecret())
         .build();
 
@@ -101,11 +106,11 @@ public class DefaultSendPaymentService implements SendPaymentService {
       StreamSender sender = streamSenderFactory.newStreamSender(link, executorService);
 
       SendMoneyRequest sendMoneyRequest = SendMoneyRequest.builder()
-        .amount(request.amount())
+        .amount(amount)
         .denomination(Denomination.builder().assetCode(settings.assetCode())
           .assetScale((short) settings.assetScale())
           .build())
-        .paymentTracker(new FixedSenderAmountPaymentTracker(request.amount(), exchangeRateCalculator))
+        .paymentTracker(new FixedSenderAmountPaymentTracker(amount, exchangeRateCalculator))
         .sharedSecret(connectionDetails.sharedSecret())
         .destinationAddress(connectionDetails.destinationAddress())
         .timeout(timeout)
@@ -117,9 +122,10 @@ public class DefaultSendPaymentService implements SendPaymentService {
 
       sender.sendMoney(sendMoneyRequest).get(timeout.getSeconds(), TimeUnit.SECONDS);
     } catch (Exception e) {
-      LOGGER.error("unexpected error sending payment, request={}.", request, e);
+      LOGGER.error("unexpected error sending payment, accountId={}, destination={}, amount={}.",
+        accountId, connectionDetails.destinationAddress(), amount, e);
     }
-    return streamPaymentManager.findByAccountIdAndStreamPaymentId(request.accountId(), placeHolder.streamPaymentId())
+    return streamPaymentManager.findByAccountIdAndStreamPaymentId(accountId, placeHolder.streamPaymentId())
       .orElse(placeHolder);
   }
 
@@ -129,13 +135,13 @@ public class DefaultSendPaymentService implements SendPaymentService {
       existing.destinationAddress().equals(destination);
   }
 
-  private StreamPayment newStreamPaymentPlaceholder(SendPaymentRequest request,
-                                                    AccountSettings settings,
-                                                    InterledgerAddress destinationAddress) {
+  private StreamPayment newStreamPaymentPlaceholder(AccountSettings settings,
+                                                    InterledgerAddress destinationAddress,
+                                                    UnsignedLong amount) {
     return StreamPayment.builder()
-      .accountId(request.accountId())
+      .accountId(settings.accountId())
       .amount(BigInteger.ZERO)
-      .expectedAmount(request.amount().bigIntegerValue().negate())
+      .expectedAmount(amount.bigIntegerValue().negate())
       .deliveredAmount(UnsignedLong.ZERO)
       .createdAt(Instant.now())
       .modifiedAt(Instant.now())
