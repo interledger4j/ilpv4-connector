@@ -75,7 +75,7 @@ import java.util.concurrent.TimeUnit;
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   classes = {ConnectorServerConfig.class, LocalSpspClientTestConfig.class, StreamPaymentEndpointTest.TestConfig.class}
 )
-@ActiveProfiles( {"test-postgres"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
+@ActiveProfiles( {"test","test-postgres"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 @TestPropertySource(
   properties = {
     ConfigConstants.ENABLED_FEATURES + "." + ConfigConstants.LOCAL_SPSP_FULFILLMENT_ENABLED + "=true",
