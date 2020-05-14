@@ -16,7 +16,6 @@ import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.stream.SendMoneyResult;
 
-import com.google.api.Http;
 import com.google.common.primitives.UnsignedLong;
 import feign.FeignException;
 import okhttp3.HttpUrl;
@@ -34,8 +33,8 @@ public class DefaultInvoiceService implements InvoiceService {
   private final InvoiceFactory invoiceFactory;
   private final OpenPaymentsClient openPaymentsClient;
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
-  private final OpenPaymentsPaymentService xrpOpenPaymentsPaymentService;
-  private final OpenPaymentsPaymentService ilpOpenPaymentsPaymentService;
+  private final OpenPaymentsPaymentService<SendMoneyResult> xrpOpenPaymentsPaymentService;
+  private final OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService;
 
   public DefaultInvoiceService(
     final InvoicesRepository invoicesRepository,
@@ -43,8 +42,8 @@ public class DefaultInvoiceService implements InvoiceService {
     InvoiceFactory invoiceFactory,
     OpenPaymentsClient openPaymentsClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    OpenPaymentsPaymentService xrpOpenPaymentsPaymentService,
-    OpenPaymentsPaymentService ilpOpenPaymentsPaymentService
+    OpenPaymentsPaymentService<SendMoneyResult> xrpOpenPaymentsPaymentService,
+    OpenPaymentsPaymentService<StreamPayment>  ilpOpenPaymentsPaymentService
   ) {
     this.invoicesRepository = Objects.requireNonNull(invoicesRepository);
     this.conversionService = Objects.requireNonNull(conversionService);
@@ -176,7 +175,7 @@ public class DefaultInvoiceService implements InvoiceService {
   }
 
   @Override
-  public SendMoneyResult payInvoice(InvoiceId invoiceId, AccountId senderAccountId, String bearerToken) {
+  public StreamPayment payInvoice(InvoiceId invoiceId, AccountId senderAccountId, String bearerToken) {
     final Invoice invoice = this.getInvoiceById(invoiceId);
 
     if (!invoice.paymentNetwork().equals(PaymentNetwork.ILP)) {

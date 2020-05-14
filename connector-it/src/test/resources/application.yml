@@ -1,7 +1,7 @@
 # These setting MUST be overridden in order for the docker-based Postgres and Redis ITs to work properly.
 spring:
   profiles:
-    include: insecure, migrate, management
+    include: insecure, migrate, management, local
   datasource:
     url: jdbc:postgresql://localhost:35432/connector
     username: connector
