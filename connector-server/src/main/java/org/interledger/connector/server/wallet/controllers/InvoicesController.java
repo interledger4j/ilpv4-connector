@@ -68,7 +68,7 @@ public class InvoicesController {
    * @return A 201 Created if successful, and the fully populated {@link Invoice} which was stored.
    */
   @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES,
+    path = OpenPaymentsPathConstants.INVOICES_BASE,
     method = RequestMethod.POST,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
@@ -84,7 +84,7 @@ public class InvoicesController {
   }
 
   @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES + "/sync",
+    path = OpenPaymentsPathConstants.SYNC_INVOICE,
     method = RequestMethod.POST,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
@@ -96,7 +96,7 @@ public class InvoicesController {
   }
 
   @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES + OpenPaymentsPathConstants.SLASH_INVOICE_ID,
+    path = OpenPaymentsPathConstants.INVOICES_WITH_ID,
     method = RequestMethod.GET,
     produces = {OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE, APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
@@ -150,54 +150,15 @@ public class InvoicesController {
    * @return
    */
   @RequestMapping(
-    path = PathConstants.SLASH_ACCOUNTS + OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES + OpenPaymentsPathConstants.SLASH_INVOICE_ID + OpenPaymentsPathConstants.SLASH_PAY,
+    path = OpenPaymentsPathConstants.PAY_INVOICE,
     method = RequestMethod.POST,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public StreamPayment payInvoice(
     @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) String accountId,
-    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
-    @RequestHeader("Authorization") String bearerToken // TODO: What do here?
+    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId
   ) {
-    return invoiceService.payInvoice(invoiceId, AccountId.of(accountId), bearerToken);
-  }
-
-  /**
-   * Endpoint to notify the Open Payments Server that an XRP payment has been received on the XRPL.
-   *
-   * The Open Payments Server will then decode the destination tag of the receiver's address and determine
-   * if the payment was meant for an Invoice.
-   *
-   * @param xrpPayment an {@link XrpPayment} containing details about the received payment.
-   * @return The Invoice that was updated as a result of an XRP payment, or empty if the payment was not meant for
-   *          an invoice.
-   */
-  @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_INVOICES + "/payment/xrp",
-    method = RequestMethod.POST,
-    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
-  )
-  public Optional<Invoice> onXrpPayment(@RequestBody XrpPayment xrpPayment) {
-    return invoiceService.onPayment(xrpPayment);
-  }
-
-  /**
-   * Endpoint to notify the Open Payments Server that ILP payment has been received.
-   *
-   * The Open Payments Server will then decode the connection tag of the destination address and determine
-   * if the payment was meant for an Invoice.
-   *
-   * @param streamPayment a {@link StreamPayment} containing details about the received ILP payment.
-   * @return The Invoice that was updated as a result of an ILP payment, or empty if the payment was not meant for
-   *          an invoice.
-   */
-  @RequestMapping(
-    path = OpenPaymentsPathConstants.SLASH_INVOICES + "/payment/ilp",
-    method = RequestMethod.POST,
-    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
-  )
-  public Optional<Invoice> onIlpPayment(@RequestBody StreamPayment streamPayment) {
-    return invoiceService.onPayment(streamPayment);
+    return invoiceService.payInvoice(invoiceId, AccountId.of(accountId));
   }
 
   private URI getInvoiceLocation(InvoiceId invoiceId) {

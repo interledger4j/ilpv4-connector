@@ -40,7 +40,7 @@ public interface InvoiceService {
 
   PaymentDetails getPaymentDetails(final InvoiceId invoiceId);
 
-  StreamPayment payInvoice(final InvoiceId invoiceId, AccountId senderAccountId, String bearerToken);
+  StreamPayment payInvoice(final InvoiceId invoiceId, AccountId senderAccountId);
 
   /**
    * Execute any actions necessary in the event of a received XRP payment.

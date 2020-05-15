@@ -62,6 +62,8 @@ public class DefaultInvoiceService implements InvoiceService {
   public Invoice getInvoiceById(InvoiceId invoiceId) {
     Objects.requireNonNull(invoiceId);
 
+    // TODO(bridge): If the invoice hasn't been paid, ask the bridge for any payments that have been sent for the invoice
+    //  and update the invoice received amount.
     return invoicesRepository.findInvoiceByInvoiceId(invoiceId)
       .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceId));
   }
@@ -73,7 +75,8 @@ public class DefaultInvoiceService implements InvoiceService {
     // See if we have that invoice already
     return invoicesRepository.findInvoiceByInvoiceUrl(invoiceUrl)
       .map(i -> {
-        // if we do:
+        // TODO(bridge): When the sender already has the invoice, we should throw an error and return a 409(?), which
+        //  will let the client know they can just do a get on the invoice ID.
 
         // The sender and receiver wallets could be the same wallet, so the invoice and the invoice receipt could be
         // the same record. In this case, we should just return what we have.
@@ -179,7 +182,7 @@ public class DefaultInvoiceService implements InvoiceService {
   }
 
   @Override
-  public StreamPayment payInvoice(InvoiceId invoiceId, AccountId senderAccountId, String bearerToken) {
+  public StreamPayment payInvoice(InvoiceId invoiceId, AccountId senderAccountId) {
     final Invoice invoice = this.getInvoiceById(invoiceId);
 
     if (!invoice.paymentNetwork().equals(PaymentNetwork.ILP)) {

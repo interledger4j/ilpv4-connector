@@ -85,6 +85,8 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
     // Send payment using STREAM
     IlpPaymentDetails ilpPaymentDetails = (IlpPaymentDetails) paymentDetails;
 
+    // TODO(bridge): Let the bridge know that an invoice payment is being sent instead of this
+    //                direct call?
     return sendPaymentService.sendMoney(
       SendPaymentRequest.builder()
       .accountId(senderAccountId)
