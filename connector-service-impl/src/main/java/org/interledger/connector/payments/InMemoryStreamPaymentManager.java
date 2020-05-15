@@ -1,8 +1,12 @@
 package org.interledger.connector.payments;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 import org.interledger.connector.accounts.AccountId;
 
+import com.google.common.eventbus.EventBus;
 import org.immutables.value.Value;
+import org.slf4j.Logger;
 import org.springframework.data.domain.PageRequest;
 
 import java.time.Instant;
@@ -18,8 +22,16 @@ import java.util.stream.Collectors;
  */
 public class InMemoryStreamPaymentManager implements StreamPaymentManager {
 
+  private static final Logger LOGGER = getLogger(InMemoryStreamPaymentManager.class);
+
   // merge is synchronized so no need for concurrent hashmap
   private final Map<MapKey, StreamPayment> transactionsMap = new HashMap<>();
+  
+  private final EventBus eventBus;
+
+  public InMemoryStreamPaymentManager(EventBus eventBus) {
+    this.eventBus = eventBus;
+  }
 
   @Override
   public List<StreamPayment> findByAccountId(AccountId accountId, PageRequest pageRequest) {
@@ -38,6 +50,19 @@ public class InMemoryStreamPaymentManager implements StreamPaymentManager {
   }
 
   @Override
+  public List<StreamPayment> findByAccountIdAndCorrelationId(AccountId accountId,
+                                                             String correlationId,
+                                                             PageRequest pageRequest) {
+    return transactionsMap.values()
+      .stream()
+      .filter(trx -> trx.accountId().equals(accountId))
+      .filter(trx -> trx.correlationId().equals(correlationId))
+      .skip(pageRequest.getOffset())
+      .limit(pageRequest.getPageSize())
+      .collect(Collectors.toList());
+  }
+
+  @Override
   public synchronized void merge(StreamPayment streamPayment) {
     StreamPayment merged = upsertAmounts(streamPayment);
     if (streamPayment.deliveredAssetCode().isPresent()) {
@@ -50,6 +75,14 @@ public class InMemoryStreamPaymentManager implements StreamPaymentManager {
       put(StreamPayment.builder().from(merged)
         .status(streamPayment.status())
         .build());
+      merged = transactionsMap.get(MapKey.of(streamPayment.accountId(), streamPayment.streamPaymentId()));
+    }
+    if (merged.status().equals(StreamPaymentStatus.CLOSED_BY_STREAM)) {
+      try {
+        eventBus.post(ClosedPaymentEvent.builder().payment(merged).build());
+      } catch (Exception e) {
+        LOGGER.error("Error notifying invoiceService about payment {}", streamPayment, e);
+      }
     }
   }
 

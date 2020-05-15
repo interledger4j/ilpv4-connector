@@ -69,6 +69,9 @@ public class StreamPaymentEntity {
   @Column(name = "DELIVERED_ASSET_SCALE")
   private Short deliveredAssetScale;
 
+  @Column(name = "CORRELATION_ID")
+  private String correlationId;
+
   @Column(name = "STATUS")
   @Enumerated(EnumType.STRING)
   private StreamPaymentStatus status;
@@ -182,6 +185,14 @@ public class StreamPaymentEntity {
     this.deliveredAssetScale = deliveredAssetScale;
   }
 
+  public String getCorrelationId() {
+    return correlationId;
+  }
+
+  public void setCorrelationId(String correlationId) {
+    this.correlationId = correlationId;
+  }
+
   public StreamPaymentStatus getStatus() {
     return status;
   }
@@ -259,6 +270,7 @@ public class StreamPaymentEntity {
       ", deliveredAmount=" + deliveredAmount +
       ", deliveredAssetCode='" + deliveredAssetCode + '\'' +
       ", deliveredAssetScale=" + deliveredAssetScale +
+      ", correlationId=" + correlationId +
       ", status=" + status +
       ", type=" + type +
       ", createdDate=" + createdDate +

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.spring.common.MediaTypes;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -48,11 +49,15 @@ public class StreamPaymentController {
   )
   public ListStreamPaymentsResponse listPayments(
     @PathVariable("accountId") AccountId accountId,
+    @RequestParam(value = "correlationId") Optional<String> correlationId,
     @RequestParam(value = "page", defaultValue = "0") int page
   ) {
     PageRequest pageRequest = PageRequest.of(page, 100);
+    List<StreamPayment> payments =
+      correlationId.map($ -> streamPaymentManager.findByAccountIdAndCorrelationId(accountId, $, pageRequest))
+      .orElseGet(() -> streamPaymentManager.findByAccountId(accountId, pageRequest));
     return ListStreamPaymentsResponse.builder()
-        .payments(streamPaymentManager.findByAccountId(accountId, pageRequest))
+        .payments(payments)
       .pageSize(pageRequest.getPageSize())
       .pageNumber(pageRequest.getPageNumber())
       .build();
@@ -79,6 +84,7 @@ public class StreamPaymentController {
         .accountId(accountId)
         .amount(paymentRequest.amount())
         .destinationPaymentPointer(paymentRequest.destinationPaymentPointer())
+        .correlationId(paymentRequest.correlationId())
         .build()
     )).build();
   }

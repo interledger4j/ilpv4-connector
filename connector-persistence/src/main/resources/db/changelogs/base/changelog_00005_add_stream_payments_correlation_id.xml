@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+  <changeSet id="add_stream_payments_correlation_id" author="nhartner">
+    <addColumn tableName="STREAM_PAYMENTS">
+      <column name="CORRELATION_ID" type="VARCHAR(1024)"></column>
+    </addColumn>
+    <createIndex indexName="STREAM_PAYMENTS_ACCT_ID_CORR_ID_IDX"
+                 tableName="STREAM_PAYMENTS">
+      <column name="ACCOUNT_ID"/>
+      <column name="CORRELATION_ID"/>
+    </createIndex>
+  </changeSet>
+</databaseChangeLog>

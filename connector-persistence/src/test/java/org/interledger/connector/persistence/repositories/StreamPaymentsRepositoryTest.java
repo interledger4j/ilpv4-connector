@@ -157,6 +157,34 @@ public class StreamPaymentsRepositoryTest {
   }
 
   @Test
+  public void findByAccountIdCorrelationId() {
+    AccountId accountId = AccountId.of(generateUuid());
+    String invoice1 = "invoice1";
+    String invoice2 = "invoice2";
+    PageRequest pageRequest = PageRequest.of(0, 50);
+
+    StreamPaymentEntity invoice1Payment1 = newEntity(accountId, generateUuid(), 10);
+    invoice1Payment1.setCorrelationId(invoice1);
+    streamPaymentsRepository.upsertAmounts(invoice1Payment1);
+
+    StreamPaymentEntity invoice1Payment2 = newEntity(accountId, generateUuid(), 10);
+    invoice1Payment2.setCorrelationId(invoice1);
+    streamPaymentsRepository.upsertAmounts(invoice1Payment2);
+
+    StreamPaymentEntity invoice2Payment1 = newEntity(accountId, generateUuid(), 10);
+    invoice2Payment1.setCorrelationId(invoice2);
+    streamPaymentsRepository.upsertAmounts(invoice2Payment1);
+
+    List<StreamPaymentEntity> invoice1Payments =
+      streamPaymentsRepository.findByAccountIdAndCorrelationIdOrderByCreatedDateDesc(accountId, invoice1, pageRequest);
+    assertThat(invoice1Payments).hasSize(2);
+
+    List<StreamPaymentEntity> invoice2Payments =
+      streamPaymentsRepository.findByAccountIdAndCorrelationIdOrderByCreatedDateDesc(accountId, invoice2, pageRequest);
+    assertThat(invoice2Payments).hasSize(1);
+  }
+
+  @Test
   public void findByAccountIdWithWrongAccountIdReturnsEmpty() {
     AccountId accountId = AccountId.of(generateUuid());
     streamPaymentsRepository.upsertAmounts(newEntity(accountId, generateUuid(), 10));
@@ -233,6 +261,7 @@ public class StreamPaymentsRepositoryTest {
     StreamPaymentEntity entity = new StreamPaymentEntity();
     entity.setSourceAddress("test.foo.bar");
     entity.setAccountId(accountId);
+    entity.setCorrelationId("correlation is not causation");
     entity.setPacketCount(1);
     entity.setStreamPaymentId(streamPaymentId);
     entity.setAmount(BigInteger.valueOf(amount));

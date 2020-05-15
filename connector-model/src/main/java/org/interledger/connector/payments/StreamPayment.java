@@ -141,6 +141,13 @@ public interface StreamPayment {
   Optional<Short> deliveredAssetScale();
 
   /**
+   * Correlation id provided by external clients to correlate this stream payment to their systems.
+   * Not required and does not need to be unique.
+   * @return
+   */
+  Optional<String> correlationId();
+
+  /**
    * When first packet on stream payment was received and aggregated into this payment
    *
    * @return

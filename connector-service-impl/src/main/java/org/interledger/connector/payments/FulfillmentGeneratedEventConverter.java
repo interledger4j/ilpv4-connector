@@ -1,7 +1,6 @@
 package org.interledger.connector.payments;
 
 import org.interledger.connector.events.FulfillmentGeneratedEvent;
-import org.interledger.connector.localsend.StreamPacketWithSharedSecret;
 import org.interledger.connector.stream.StreamPacketUtils;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerFulfillPacket;
@@ -148,9 +147,11 @@ public class FulfillmentGeneratedEventConverter implements Converter<Fulfillment
       .map(InterledgerPacket::typedData)
       .filter(Optional::isPresent)
       .map(Optional::get)
-      .filter(typedData -> typedData instanceof StreamPacketWithSharedSecret)
-      .map(typedData -> (StreamPacketWithSharedSecret) typedData)
-      .map(StreamPacketWithSharedSecret::sharedSecret)
+      .filter(typedData -> typedData instanceof StreamPacket)
+      .map(typedData -> (StreamPacket) typedData)
+      .map(StreamPacket::sharedSecret)
+      .filter(Optional::isPresent)
+      .map(Optional::get)
       .findFirst();
   }
 

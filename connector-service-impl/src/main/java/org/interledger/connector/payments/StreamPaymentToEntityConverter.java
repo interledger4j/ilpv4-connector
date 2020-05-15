@@ -15,6 +15,7 @@ public class StreamPaymentToEntityConverter implements Converter<StreamPayment, 
     entity.setExpectedAmount(source.expectedAmount().orElse(null));
     entity.setAssetScale(source.assetScale());
     entity.setAssetCode(source.assetCode());
+    entity.setCorrelationId(source.correlationId().orElse(null));
     entity.setCreatedDate(source.createdAt());
     entity.setDestinationAddress(source.destinationAddress().getValue());
     entity.setModifiedDate(source.modifiedAt());

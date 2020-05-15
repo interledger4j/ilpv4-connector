@@ -16,10 +16,10 @@ public class StreamPaymentsRepositoryCustomImpl implements StreamPaymentsReposit
   private static final String UPSERT = "INSERT INTO stream_payments " +
     "(account_id, amount, asset_code, asset_scale, destination_address, packet_count, stream_payment_id, " +
     "expected_amount, delivered_amount, delivered_asset_code, delivered_asset_scale, " +
-    "source_address, status, type) values " +
+    "correlation_id, source_address, status, type) values " +
     "(:accountId, :amount, :assetCode, :assetScale, :destinationAddress, :packetCount, :streamPaymentId, " +
     ":expectedAmount, :deliveredAmount, :deliveredAssetCode, :deliveredAssetScale, " +
-    ":sourceAddress, :status, :type) " +
+    ":correlationId, :sourceAddress, :status, :type) " +
     "ON CONFLICT(account_id, stream_payment_id) DO " +
     "UPDATE SET amount=stream_payments.amount + excluded.amount, " +
     "  delivered_amount=stream_payments.delivered_amount + excluded.delivered_amount, " +
@@ -53,6 +53,7 @@ public class StreamPaymentsRepositoryCustomImpl implements StreamPaymentsReposit
     parameters.put("expectedAmount", streamPayment.getExpectedAmount());
     parameters.put("assetCode", streamPayment.getAssetCode());
     parameters.put("assetScale", streamPayment.getAssetScale());
+    parameters.put("correlationId", streamPayment.getCorrelationId());
     parameters.put("destinationAddress", streamPayment.getDestinationAddress());
     parameters.put("deliveredAmount", streamPayment.getDeliveredAmount());
     parameters.put("deliveredAssetCode", streamPayment.getDeliveredAssetCode());

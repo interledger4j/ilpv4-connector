@@ -11,11 +11,14 @@ import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
+import org.interledger.connector.payments.ClosedPaymentEvent;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.stream.SendMoneyResult;
 
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import feign.FeignException;
 import okhttp3.HttpUrl;
@@ -43,8 +46,8 @@ public class DefaultInvoiceService implements InvoiceService {
     OpenPaymentsClient openPaymentsClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     OpenPaymentsPaymentService<SendMoneyResult> xrpOpenPaymentsPaymentService,
-    OpenPaymentsPaymentService<StreamPayment>  ilpOpenPaymentsPaymentService
-  ) {
+    OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService,
+    EventBus eventBus) {
     this.invoicesRepository = Objects.requireNonNull(invoicesRepository);
     this.conversionService = Objects.requireNonNull(conversionService);
     this.invoiceFactory = Objects.requireNonNull(invoiceFactory);
@@ -52,6 +55,7 @@ public class DefaultInvoiceService implements InvoiceService {
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
     this.xrpOpenPaymentsPaymentService = Objects.requireNonNull(xrpOpenPaymentsPaymentService);
     this.ilpOpenPaymentsPaymentService = Objects.requireNonNull(ilpOpenPaymentsPaymentService);
+    eventBus.register(this);
   }
 
   @Override
@@ -212,6 +216,14 @@ public class DefaultInvoiceService implements InvoiceService {
     return Optional.empty();
   }
 
+  @Subscribe
+  private void onClosedPayment(ClosedPaymentEvent closedPaymentEvent) {
+    StreamPayment payment = closedPaymentEvent.payment();
+    if (payment.correlationId().isPresent()) {
+      onPayment(payment);
+    }
+  }
+
   private boolean isForThisWallet(HttpUrl invoiceUrl) {
     HttpUrl issuer = openPaymentsSettingsSupplier.get().metadata().issuer();
     if (issuer.host().equals("localhost")) {
@@ -220,4 +232,5 @@ public class DefaultInvoiceService implements InvoiceService {
 
     return issuer.host().equals(invoiceUrl.host());
   }
+
 }

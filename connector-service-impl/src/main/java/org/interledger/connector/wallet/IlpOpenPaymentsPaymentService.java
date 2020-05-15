@@ -5,11 +5,12 @@ import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
+import org.interledger.connector.payments.SendPaymentRequest;
 import org.interledger.connector.payments.SendPaymentService;
 import org.interledger.connector.payments.StreamPayment;
+import org.interledger.connector.payments.StreamPaymentType;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
@@ -23,11 +24,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService<StreamPayment> {
 
-  private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
   private final Optional<String> opaUrlPath;
   private final PaymentPointerResolver paymentPointerResolver;
   private StreamConnectionGenerator streamConnectionGenerator;
@@ -36,13 +35,11 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
   private LocalDestinationAddressUtils localDestinationAddressUtils;
 
   public IlpOpenPaymentsPaymentService(
-    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     String opaUrlPath,
     PaymentPointerResolver paymentPointerResolver,
     StreamConnectionGenerator streamConnectionGenerator,
     ServerSecretSupplier serverSecretSupplier,
     SendPaymentService sendPaymentService, LocalDestinationAddressUtils localDestinationAddressUtils) {
-    this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
     this.opaUrlPath = PaymentDetailsUtils.cleanupUrlPath(opaUrlPath);
     this.paymentPointerResolver = Objects.requireNonNull(paymentPointerResolver);
     this.streamConnectionGenerator = Objects.requireNonNull(streamConnectionGenerator);
@@ -56,12 +53,20 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
 
     final String ilpIntermediateSuffix = this.validateInvoiceSubjectAndComputeAddressSuffix(invoice.subject());
 
+    AccountId receiverAccountId = AccountId.of(ilpIntermediateSuffix);
     final InterledgerAddress paymentReceiverAddress =
-      localDestinationAddressUtils.getLocalFulfillmentAddress(AccountId.of(ilpIntermediateSuffix));
+      localDestinationAddressUtils.getLocalFulfillmentAddress(receiverAccountId);
 
     // Get shared secret and address with connection tag
     final StreamConnectionDetails streamConnectionDetails =
       streamConnectionGenerator.generateConnectionDetails(serverSecretSupplier, paymentReceiverAddress);
+
+    sendPaymentService.createPlaceholderPayment(receiverAccountId,
+      StreamPaymentType.PAYMENT_RECEIVED,
+      streamConnectionDetails.destinationAddress(),
+      Optional.of(invoice.id().value()),
+      Optional.of(invoice.amount().minus(invoice.received()).bigIntegerValue())
+    );
 
     return IlpPaymentDetails.builder()
       .destinationAddress(streamConnectionDetails.destinationAddress())
@@ -80,12 +85,15 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
     IlpPaymentDetails ilpPaymentDetails = (IlpPaymentDetails) paymentDetails;
 
     return sendPaymentService.sendMoney(
-      senderAccountId,
-      StreamConnectionDetails.builder()
-        .destinationAddress(ilpPaymentDetails.destinationAddress())
-      .sharedSecret(ilpPaymentDetails.sharedSecret())
-      .build(),
-      amount
+      SendPaymentRequest.builder()
+      .accountId(senderAccountId)
+      .amount(amount)
+      .streamConnectionDetails(
+        StreamConnectionDetails.builder()
+          .destinationAddress(ilpPaymentDetails.destinationAddress())
+        .sharedSecret(ilpPaymentDetails.sharedSecret())
+        .build())
+      .build()
     );
   }
 

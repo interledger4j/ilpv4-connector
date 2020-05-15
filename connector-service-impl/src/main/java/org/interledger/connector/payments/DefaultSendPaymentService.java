@@ -71,17 +71,20 @@ public class DefaultSendPaymentService implements SendPaymentService {
 
   @Override
   public StreamPayment sendMoney(SendPaymentRequest request) {
-    StreamConnectionDetails connectionDetails =
-      spspClient.getStreamConnectionDetails(PaymentPointer.of(request.destinationPaymentPointer()));
-    return sendMoney(request.accountId(), connectionDetails, request.amount());
-  }
+    StreamConnectionDetails connectionDetails = request.streamConnectionDetails()
+      .orElseGet(() ->
+        spspClient.getStreamConnectionDetails(PaymentPointer.of(request.destinationPaymentPointer().get())));
 
-  @Override
-  public StreamPayment sendMoney(AccountId accountId, StreamConnectionDetails connectionDetails, UnsignedLong amount) {
+    AccountId accountId = request.accountId();
+    UnsignedLong amount = request.amount();
     AccountSettings settings = accountManager.findAccountById(accountId)
       .orElseThrow(() -> new AccountNotFoundProblem(accountId));
 
-    StreamPayment placeHolder = newStreamPaymentPlaceholder(settings, connectionDetails.destinationAddress(), amount);
+    StreamPayment placeHolder = newStreamPaymentPlaceholder(settings,
+      StreamPaymentType.PAYMENT_SENT,
+      connectionDetails.destinationAddress(),
+      Optional.of(amount.bigIntegerValue().negate()),
+      request.correlationId());
 
     Optional<StreamPayment> maybeExistingPayment =
       streamPaymentManager.findByAccountIdAndStreamPaymentId(accountId, placeHolder.streamPaymentId());
@@ -129,6 +132,20 @@ public class DefaultSendPaymentService implements SendPaymentService {
       .orElse(placeHolder);
   }
 
+  @Override
+  public StreamPayment createPlaceholderPayment(AccountId accountId,
+                                                StreamPaymentType type,
+                                                InterledgerAddress destinationAddress,
+                                                Optional<String> correlationId,
+                                                Optional<BigInteger> expectedAmount) {
+    AccountSettings settings = accountManager.findAccountById(accountId)
+      .orElseThrow(() -> new AccountNotFoundProblem(accountId));
+    StreamPayment placeholder = newStreamPaymentPlaceholder(settings, type, destinationAddress, expectedAmount, correlationId);
+    streamPaymentManager.merge(placeholder);
+    return streamPaymentManager.findByAccountIdAndStreamPaymentId(accountId, placeholder.streamPaymentId())
+      .orElseThrow(() -> new IllegalStateException("placeholder payment did not save to database"));
+  }
+
   private boolean isDuplicateSend(StreamPayment existing, UnsignedLong amount, InterledgerAddress destination) {
     return existing.type().equals(StreamPaymentType.PAYMENT_SENT) &&
       existing.expectedAmount().equals(Optional.of(amount.bigIntegerValue())) &&
@@ -136,12 +153,14 @@ public class DefaultSendPaymentService implements SendPaymentService {
   }
 
   private StreamPayment newStreamPaymentPlaceholder(AccountSettings settings,
+                                                    StreamPaymentType type,
                                                     InterledgerAddress destinationAddress,
-                                                    UnsignedLong amount) {
+                                                    Optional<BigInteger> expectedAmount,
+                                                    Optional<String> correlationId) {
     return StreamPayment.builder()
       .accountId(settings.accountId())
       .amount(BigInteger.ZERO)
-      .expectedAmount(amount.bigIntegerValue().negate())
+      .expectedAmount(expectedAmount)
       .deliveredAmount(UnsignedLong.ZERO)
       .createdAt(Instant.now())
       .modifiedAt(Instant.now())
@@ -150,7 +169,8 @@ public class DefaultSendPaymentService implements SendPaymentService {
       .packetCount(0)
       .destinationAddress(destinationAddress)
       .status(StreamPaymentStatus.PENDING)
-      .type(StreamPaymentType.PAYMENT_SENT)
+      .type(type)
+      .correlationId(correlationId)
       .build();
   }
 

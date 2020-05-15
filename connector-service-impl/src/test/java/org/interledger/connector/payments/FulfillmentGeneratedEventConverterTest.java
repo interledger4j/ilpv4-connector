@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.interledger.codecs.stream.StreamCodecContextFactory;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.events.FulfillmentGeneratedEvent;
-import org.interledger.connector.localsend.StreamPacketWithSharedSecret;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerFulfillPacket;
@@ -277,7 +276,7 @@ public class FulfillmentGeneratedEventConverterTest {
     UnsignedLong sentAmount = UnsignedLong.valueOf(20);
     UnsignedLong deliveredAmount = UnsignedLong.valueOf(15);
 
-    StreamPacket streamPreparePacket = StreamPacketWithSharedSecret.builder()
+    StreamPacket streamPreparePacket = StreamPacket.builder()
       .interledgerPacketType(InterledgerPacketType.PREPARE)
       .sequence(UnsignedLong.ONE)
       .prepareAmount(UnsignedLong.valueOf(10))
@@ -330,7 +329,7 @@ public class FulfillmentGeneratedEventConverterTest {
     UnsignedLong sentAmount = UnsignedLong.valueOf(20);
     UnsignedLong deliveredAmount = UnsignedLong.valueOf(20);
 
-    StreamPacket streamPreparePacket = StreamPacketWithSharedSecret.builder()
+    StreamPacket streamPreparePacket = StreamPacket.builder()
       .interledgerPacketType(InterledgerPacketType.PREPARE)
       .sequence(UnsignedLong.ONE)
       .prepareAmount(UnsignedLong.valueOf(10))
