@@ -152,15 +152,18 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   public void paulPaysInvoiceForPeterViaAliceOnBob() {
     Invoice createdInvoiceOnBob = createInvoice(peterAtBobInvoicesUri);
 
-    Invoice createInvoiceOnAlice = aliceClient.getOrSyncInvoice(createdInvoiceOnBob.accountId(), createdInvoiceOnBob.invoiceUrl().get().toString());
+    Invoice createdInvoiceOnAlice = aliceClient.getOrSyncInvoice(createdInvoiceOnBob.accountId(), createdInvoiceOnBob.invoiceUrl().get().toString());
     StreamPayment payment = aliceClient.payInvoice(
-      createInvoiceOnAlice.accountId(),
-      createInvoiceOnAlice.id().value(),
+      createdInvoiceOnAlice.accountId(),
+      createdInvoiceOnAlice.id().value(),
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXVsIiwibmFtZSI6InBhdWwiLCJpYXQiOjE1MTYyMzkwMjJ9.rdYwzQKAG8tFC2aRvG3XsW8BFsHxEFnOwcY-17KAA7g"
     );
 
-    assertThat(payment.amount().abs()).isEqualTo(createInvoiceOnAlice.amount().bigIntegerValue());
+    assertThat(payment.amount().abs()).isEqualTo(createdInvoiceOnAlice.amount().bigIntegerValue());
     assertThat(payment.deliveredAmount()).isEqualTo(createdInvoiceOnBob.amount());
+
+    Invoice invoiceOnAliceAfterPayment = bobClient.getInvoice(createdInvoiceOnBob.invoiceUrl().get().uri());
+    assertThat(invoiceOnAliceAfterPayment.isPaid());
   }
 
   private Invoice createInvoice(HttpUrl invoiceUri) {

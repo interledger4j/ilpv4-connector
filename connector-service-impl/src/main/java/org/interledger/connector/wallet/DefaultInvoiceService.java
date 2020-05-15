@@ -17,6 +17,7 @@ import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.stream.SendMoneyResult;
 
+import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -213,7 +214,23 @@ public class DefaultInvoiceService implements InvoiceService {
 
   @Override
   public Optional<Invoice> onPayment(StreamPayment streamPayment) {
-    return Optional.empty();
+    InvoiceId invoiceIdFromCorrelationId = streamPayment.correlationId()
+      .map(InvoiceId::of)
+      .orElseThrow(() -> new IllegalArgumentException("StreamPayment did not have a correlationId.  Unable to update invoice for payment."));
+
+    Invoice existingInvoice = this.getInvoiceById(invoiceIdFromCorrelationId);
+
+    if (!existingInvoice.assetCode().equals(streamPayment.assetCode())) {
+      throw new IllegalStateException(String.format("Invoice asset code was different than the StreamPayment asset code." +
+        "Unable to accurately credit invoice. Invoice assetCode: %s ; Payment assetCode: %s", existingInvoice.assetCode(), streamPayment.assetCode()));
+    }
+
+    Invoice updatedInvoice = Invoice.builder()
+      .from(existingInvoice)
+      .received(existingInvoice.received().plus(streamPayment.deliveredAmount()))
+      .build();
+
+    return Optional.of(this.updateInvoice(updatedInvoice));
   }
 
   @Subscribe
