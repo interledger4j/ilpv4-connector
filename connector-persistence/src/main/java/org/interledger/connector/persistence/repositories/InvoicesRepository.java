@@ -3,6 +3,7 @@ package org.interledger.connector.persistence.repositories;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 
+import okhttp3.HttpUrl;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
@@ -32,6 +33,12 @@ public interface InvoicesRepository extends CrudRepository<InvoiceEntity, Long>,
    */
   default Optional<InvoiceEntity> findByInvoiceId(InvoiceId invoiceId) {
     return findByInvoiceId(invoiceId.value());
+  }
+
+  Optional<InvoiceEntity> findByInvoiceUrl(String invoiceUrl);
+
+  default Optional<InvoiceEntity> findByInvoiceUrl(HttpUrl invoiceUrl) {
+    return findByInvoiceUrl(invoiceUrl.toString());
   }
 
 }

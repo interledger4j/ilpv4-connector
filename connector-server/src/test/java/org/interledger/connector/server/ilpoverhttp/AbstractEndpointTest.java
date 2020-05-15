@@ -167,4 +167,8 @@ public abstract class AbstractEndpointTest {
     link.setLinkId(LinkId.of(accountId.value()));
     return link;
   }
+
+  protected String bearer(String password) {
+    return "Bearer " + password;
+  }
 }

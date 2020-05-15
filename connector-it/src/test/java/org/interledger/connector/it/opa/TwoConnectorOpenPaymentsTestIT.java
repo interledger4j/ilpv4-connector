@@ -18,10 +18,10 @@ import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.PaymentNetwork;
+import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.stream.Denominations;
-import org.interledger.stream.SendMoneyResult;
 
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
@@ -38,7 +38,6 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 
 import java.io.IOException;
-import java.util.Base64;
 import java.util.concurrent.TimeoutException;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -50,7 +49,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   private static final Logger LOGGER = LoggerFactory.getLogger(TwoConnectorMixedAssetCodeTestIT.class);
 
   private static Topology topology = TwoConnectorPeerIlpOverHttpTopology.init(
-    Denominations.XRP, Denominations.XRP, UnsignedLong.valueOf(1000000000L)
+    Denominations.XRP_MILLI_DROPS, Denominations.XRP_MILLI_DROPS, UnsignedLong.valueOf(1000000000L)
   );
 
   private static GenericContainer redis = ContainerHelper.redis(network);
@@ -59,7 +58,8 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   private ILPv4Connector aliceConnector;
   private ILPv4Connector bobConnector;
 
-  private OpenPaymentsClient client;
+  private OpenPaymentsClient aliceClient;
+  private OpenPaymentsClient bobClient;
 
   private HttpUrl paulAtAliceInvoicesUri = HttpUrl.get(ALICE_HTTP_BASE_URL + "/paul/invoices");
   private HttpUrl peterAtAliceInvoicesUri = HttpUrl.get(ALICE_HTTP_BASE_URL + "/peter/invoices");
@@ -89,7 +89,8 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
     // Note Bob's Connector's address is purposefully a child of Alice due to IL-DCP
     bobConnector = this.getILPv4NodeFromGraph(getBobConnectorAddress());
     this.resetBalanceTracking();
-    client = OpenPaymentsClient.construct();
+    aliceClient = OpenPaymentsClient.construct(ALICE_HTTP_BASE_URL);
+    bobClient = OpenPaymentsClient.construct(BOB_HTTP_BASE_URL);
   }
 
   @Test
@@ -113,7 +114,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   @Test
   public void getPeterInvoiceOnBob() {
     Invoice createdInvoice = createInvoice(peterAtBobInvoicesUri);
-    Invoice getInvoice = client.getInvoice(createdInvoice.invoiceUrl().get().uri());
+    Invoice getInvoice = aliceClient.getInvoice(createdInvoice.invoiceUrl().get().uri());
 
     assertThat(createdInvoice).isEqualTo(getInvoice);
   }
@@ -123,66 +124,60 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
     Invoice createdInvoice = createInvoice(peterAtAliceInvoicesUri);
 
     HttpUrl localInvoiceEndpoint = peterAtAliceInvoicesUri.newBuilder().addPathSegment(createdInvoice.id().value()).build();
-    Invoice getInvoice = client.getInvoice(localInvoiceEndpoint.uri());
+    Invoice getInvoice = aliceClient.getInvoice(localInvoiceEndpoint.uri());
     assertThat(createdInvoice).isEqualTo(getInvoice);
   }
 
   @Test
   public void getPeterInvoicePaymentDetailsOnBob() {
     Invoice createdInvoice = createInvoice(peterAtBobInvoicesUri);
-    PaymentDetails paymentDetails = client.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
+    PaymentDetails paymentDetails = aliceClient.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
     assertThat(paymentDetails).isInstanceOf(IlpPaymentDetails.class);
     IlpPaymentDetails ilpPaymentDetails = (IlpPaymentDetails) paymentDetails;
 
-    String encodedInvoiceId = Base64.getEncoder().encodeToString(createdInvoice.id().value().getBytes());
-    assertThat(ilpPaymentDetails.destinationAddress().getValue()).startsWith("test.bob.peter");
-    assertThat(ilpPaymentDetails.destinationAddress().getValue()).endsWith(encodedInvoiceId);
+    assertThat(ilpPaymentDetails.destinationAddress().getValue()).startsWith("test.bob.spsp.peter");
   }
 
   @Test
   public void getPeterInvoicePaymentDetailsViaAliceOnBob() {
     Invoice createdInvoice = createInvoice(peterAtAliceInvoicesUri);
-    PaymentDetails paymentDetails = client.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
+    PaymentDetails paymentDetails = aliceClient.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
     assertThat(paymentDetails).isInstanceOf(IlpPaymentDetails.class);
     IlpPaymentDetails ilpPaymentDetails = (IlpPaymentDetails) paymentDetails;
 
-    String encodedInvoiceId = Base64.getEncoder().encodeToString(createdInvoice.id().value().getBytes());
-    assertThat(ilpPaymentDetails.destinationAddress().getValue()).startsWith("test.bob.peter");
-    assertThat(ilpPaymentDetails.destinationAddress().getValue()).endsWith(encodedInvoiceId);
+    assertThat(ilpPaymentDetails.destinationAddress().getValue()).startsWith("test.bob.spsp.peter");
   }
 
   @Test
-  public void domingoPaysInvoiceForPeterViaAliceOnBob() {
-    Invoice createdInvoice = createInvoice(peterAtBobInvoicesUri);
+  public void paulPaysInvoiceForPeterViaAliceOnBob() {
+    Invoice createdInvoiceOnBob = createInvoice(peterAtBobInvoicesUri);
 
-    HttpUrl localInvoicePaymentEndpoint = new HttpUrl.Builder()
-    .scheme(peterAtAliceInvoicesUri.scheme())
-    .host(peterAtAliceInvoicesUri.host())
-    .port(peterAtAliceInvoicesUri.port())
-    .build();
-
-    SendMoneyResult sendMoneyResult = client.payInvoice(
-      localInvoicePaymentEndpoint.uri(),
-      createdInvoice.accountId(),
-      createdInvoice.id().value(),
-      "Basic YWRtaW46cGFzc3dvcmQ="
+    Invoice createdInvoiceOnAlice = aliceClient.getOrSyncInvoice(createdInvoiceOnBob.accountId(), createdInvoiceOnBob.invoiceUrl().get().toString());
+    StreamPayment payment = aliceClient.payInvoice(
+      createdInvoiceOnAlice.accountId(),
+      createdInvoiceOnAlice.id().value(),
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXVsIiwibmFtZSI6InBhdWwiLCJpYXQiOjE1MTYyMzkwMjJ9.rdYwzQKAG8tFC2aRvG3XsW8BFsHxEFnOwcY-17KAA7g"
     );
 
-    getLogger().info(sendMoneyResult.toString());
+    assertThat(payment.amount().abs()).isEqualTo(createdInvoiceOnAlice.amount().bigIntegerValue());
+    assertThat(payment.deliveredAmount()).isEqualTo(createdInvoiceOnBob.amount());
+
+    Invoice invoiceOnAliceAfterPayment = bobClient.getInvoice(createdInvoiceOnBob.invoiceUrl().get().uri());
+    assertThat(invoiceOnAliceAfterPayment.isPaid());
   }
 
   private Invoice createInvoice(HttpUrl invoiceUri) {
     Invoice invoice = Invoice.builder()
       .accountId("paul")
-      .assetCode(Denominations.XRP.assetCode())
-      .assetScale(Denominations.XRP.assetScale())
+      .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
+      .assetScale(Denominations.XRP_MILLI_DROPS.assetScale())
       .amount(UnsignedLong.valueOf(100))
       .description("IT payment")
       .paymentNetwork(PaymentNetwork.ILP)
       .subject("$localhost:8081/peter")
       .build();
 
-    return client.createInvoice(invoiceUri.uri(), invoice);
+    return bobClient.createInvoice(invoiceUri.uri(), invoice);
   }
 
   @Override

@@ -6,6 +6,7 @@ import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.PaymentNetwork;
 
 import com.google.common.primitives.UnsignedLong;
+import okhttp3.HttpUrl;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -23,6 +24,7 @@ public final class SampleObjectUtils {
       .id(InvoiceId.of(UUID.randomUUID().toString()))
       .received(UnsignedLong.ZERO)
       .subject("$xpring.money/paymebruh")
+      .invoiceUrl(HttpUrl.get("https://xpring.money/paymebruh/invoices/1234"))
       .build();
   }
 

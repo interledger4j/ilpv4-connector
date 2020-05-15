@@ -2,11 +2,13 @@ package org.interledger.connector.server.wallet.spring.config;
 
 import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 
+import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.InvoiceFactory;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
+import org.interledger.connector.payments.SendPaymentService;
+import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.properties.converters.HttpUrlPropertyConverter;
@@ -15,13 +17,13 @@ import org.interledger.connector.wallet.IlpOpenPaymentsPaymentService;
 import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.connector.wallet.XrpOpenPaymentsPaymentService;
 import org.interledger.spsp.PaymentPointerResolver;
+import org.interledger.stream.SendMoneyResult;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.eventbus.EventBus;
 import io.xpring.common.XRPLNetwork;
 import io.xpring.payid.PayIDClient;
-import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -62,9 +64,9 @@ public class OpenPaymentsConfig {
     InvoiceFactory invoiceFactory,
     OpenPaymentsClient openPaymentsClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    OpenPaymentsPaymentService xrpOpenPaymentsPaymentService,
-    OpenPaymentsPaymentService ilpOpenPaymentsPaymentService
-  ) {
+    OpenPaymentsPaymentService<SendMoneyResult> xrpOpenPaymentsPaymentService,
+    OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService,
+    EventBus eventBus) {
     return new DefaultInvoiceService(
       invoicesRepository,
       conversionService,
@@ -72,37 +74,31 @@ public class OpenPaymentsConfig {
       openPaymentsClient,
       openPaymentsSettingsSupplier,
       xrpOpenPaymentsPaymentService,
-      ilpOpenPaymentsPaymentService
-    );
+      ilpOpenPaymentsPaymentService,
+      eventBus);
   }
 
   @Bean
   @Qualifier(OPA_ILP)
-  public OpenPaymentsPaymentService ilpOpenPaymentsPaymentService(
-    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
+  public OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService(
     PaymentPointerResolver paymentPointerResolver,
     @Value("${" + SPSP__URL_PATH + ":}") final String opaUrlPath,
     StreamConnectionGenerator streamConnectionGenerator,
     ServerSecretSupplier serverSecretSupplier,
-    AccountSettingsRepository accountSettingsRepository,
-    OkHttpClient okHttpClient,
-    ObjectMapper objectMapper
-  ) {
+    SendPaymentService sendPaymentService,
+    LocalDestinationAddressUtils localDestinationAddressUtils) {
     return new IlpOpenPaymentsPaymentService(
-      openPaymentsSettingsSupplier,
       opaUrlPath,
       paymentPointerResolver,
       streamConnectionGenerator,
       serverSecretSupplier,
-      accountSettingsRepository,
-      okHttpClient,
-      objectMapper
-    );
+      sendPaymentService,
+      localDestinationAddressUtils);
   }
 
   @Bean
   @Qualifier(XRP)
-  public OpenPaymentsPaymentService xrpOpenPaymentsPaymentService(PayIDClient payIDClient) {
+  public OpenPaymentsPaymentService<SendMoneyResult> xrpOpenPaymentsPaymentService(PayIDClient payIDClient) {
     return new XrpOpenPaymentsPaymentService(payIDClient);
   }
 
@@ -113,8 +109,8 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
-  public OpenPaymentsClient openPaymentsClient() {
-    return OpenPaymentsClient.construct();
+  public OpenPaymentsClient openPaymentsClient(Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier) {
+    return OpenPaymentsClient.construct(openPaymentsSettingsSupplier.get().metadata().issuer().toString());
   }
 
   @Bean

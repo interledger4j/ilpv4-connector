@@ -16,8 +16,8 @@ import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
-import org.interledger.stream.SendMoneyResult;
 
+import okhttp3.HttpUrl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -29,11 +29,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.spring.common.MediaTypes;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -77,6 +81,18 @@ public class InvoicesController {
     final HttpHeaders headers = new HttpHeaders();
     headers.setLocation(getInvoiceLocation(invoice.id()));
     return new ResponseEntity(createdInvoice, headers, HttpStatus.CREATED);
+  }
+
+  @RequestMapping(
+    path = OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + OpenPaymentsPathConstants.SLASH_INVOICES + "/sync",
+    method = RequestMethod.POST,
+    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+  )
+  public @ResponseBody Invoice getOrSyncInvoice(
+    @RequestParam("name") String invoiceUrl
+  ) throws UnsupportedEncodingException {
+    String decodedInvoiceUrl = URLDecoder.decode(invoiceUrl, StandardCharsets.UTF_8.toString());
+    return invoiceService.getOrSyncInvoice(HttpUrl.get(decodedInvoiceUrl));
   }
 
   @RequestMapping(
@@ -138,7 +154,7 @@ public class InvoicesController {
     method = RequestMethod.POST,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public SendMoneyResult payInvoice(
+  public StreamPayment payInvoice(
     @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) String accountId,
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
     @RequestHeader("Authorization") String bearerToken // TODO: What do here?

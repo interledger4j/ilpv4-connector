@@ -25,6 +25,15 @@ public interface StreamPaymentManager {
   List<StreamPayment> findByAccountId(AccountId accountId, PageRequest pageRequest);
 
   /**
+   * Lists stream payments by accountId. Requests are paged to avoid accidentally fetching lots of stream payments.
+   * @param accountId
+   * @param correlationId
+   * @param pageRequest
+   * @return
+   */
+  List<StreamPayment> findByAccountIdAndCorrelationId(AccountId accountId, String correlationId, PageRequest pageRequest);
+
+  /**
    * Find stream payment by accountId and reference id
    *
    * @param accountId       The {@link AccountId} of the account to find stream payments for.

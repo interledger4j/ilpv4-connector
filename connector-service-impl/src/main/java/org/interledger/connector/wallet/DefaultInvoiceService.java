@@ -11,11 +11,14 @@ import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
+import org.interledger.connector.payments.ClosedPaymentEvent;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.stream.SendMoneyResult;
 
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import feign.FeignException;
 import okhttp3.HttpUrl;
@@ -33,8 +36,8 @@ public class DefaultInvoiceService implements InvoiceService {
   private final InvoiceFactory invoiceFactory;
   private final OpenPaymentsClient openPaymentsClient;
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
-  private final OpenPaymentsPaymentService xrpOpenPaymentsPaymentService;
-  private final OpenPaymentsPaymentService ilpOpenPaymentsPaymentService;
+  private final OpenPaymentsPaymentService<SendMoneyResult> xrpOpenPaymentsPaymentService;
+  private final OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService;
 
   public DefaultInvoiceService(
     final InvoicesRepository invoicesRepository,
@@ -42,9 +45,9 @@ public class DefaultInvoiceService implements InvoiceService {
     InvoiceFactory invoiceFactory,
     OpenPaymentsClient openPaymentsClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    OpenPaymentsPaymentService xrpOpenPaymentsPaymentService,
-    OpenPaymentsPaymentService ilpOpenPaymentsPaymentService
-  ) {
+    OpenPaymentsPaymentService<SendMoneyResult> xrpOpenPaymentsPaymentService,
+    OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService,
+    EventBus eventBus) {
     this.invoicesRepository = Objects.requireNonNull(invoicesRepository);
     this.conversionService = Objects.requireNonNull(conversionService);
     this.invoiceFactory = Objects.requireNonNull(invoiceFactory);
@@ -52,44 +55,60 @@ public class DefaultInvoiceService implements InvoiceService {
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
     this.xrpOpenPaymentsPaymentService = Objects.requireNonNull(xrpOpenPaymentsPaymentService);
     this.ilpOpenPaymentsPaymentService = Objects.requireNonNull(ilpOpenPaymentsPaymentService);
+    eventBus.register(this);
   }
 
   @Override
   public Invoice getInvoiceById(InvoiceId invoiceId) {
     Objects.requireNonNull(invoiceId);
 
-    Invoice invoice = invoicesRepository.findInvoiceByInvoiceId(invoiceId)
+    return invoicesRepository.findInvoiceByInvoiceId(invoiceId)
       .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceId));
+  }
 
-    HttpUrl invoiceUrl = invoice.invoiceUrl()
-      .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
+  @Override
+  public Invoice getOrSyncInvoice(HttpUrl invoiceUrl) {
+    Objects.requireNonNull(invoiceUrl);
 
-    // The sender and receiver wallets could be the same wallet, so the invoice and the invoice receipt could be
-    // the same record. In this case, we should just return what we have.
-    if (isForThisWallet(invoiceUrl)) {
-      return invoice;
-    }
+    // See if we have that invoice already
+    return invoicesRepository.findInvoiceByInvoiceUrl(invoiceUrl)
+      .map(i -> {
+        // if we do:
 
-    // Otherwise, we can assume that some other wallet is the invoice owner.
-    // Look at our own records. If, from our view, the invoice has been paid, no need to reach out to the receiver to
-    // update it.
-    if (invoice.isPaid()) {
-      return invoice;
-    } else {
-      // If our copy of the invoice hasn't been paid, or we don't have a record of that invoice, try
-      // to reach out to the invoice owner to update/create our record
-      try {
-        Invoice invoiceOnReceiver = openPaymentsClient.getInvoice(invoiceUrl.uri());
-        return this.updateOrCreateInvoice(invoiceOnReceiver);
-      } catch (FeignException e) {
-        if (e.status() == 404) {
-          throw new InvoiceNotFoundProblem("Original invoice was not found in invoice owner's records.", invoiceId);
+        // The sender and receiver wallets could be the same wallet, so the invoice and the invoice receipt could be
+        // the same record. In this case, we should just return what we have.
+        if (isForThisWallet(invoiceUrl)) {
+          return i;
         }
 
-        throw e;
-      }
-    }
+        // Otherwise, we can assume that some other wallet is the invoice owner.
+        // Look at our own records. If, from our view, the invoice has been paid, no need to reach out to the receiver to
+        // update it.
+        if (i.isPaid()) {
+          return i;
+        } else {
+          // If our copy of the invoice hasn't been paid, try
+          // to reach out to the invoice owner to update our record
+          Invoice invoiceOnReceiver = this.getRemoteInvoice(invoiceUrl);
+          return this.updateInvoice(invoiceOnReceiver);
+        }
+      })
+      .orElseGet(() -> {
+        Invoice invoiceOnReceiver = this.getRemoteInvoice(invoiceUrl);
+        return invoicesRepository.saveInvoice(invoiceOnReceiver);
+      });
+  }
 
+  private Invoice getRemoteInvoice(HttpUrl invoiceUrl) {
+    try {
+      return openPaymentsClient.getInvoice(invoiceUrl.uri());
+    } catch (FeignException e) {
+      if (e.status() == 404) {
+        throw new InvoiceNotFoundProblem("Original invoice was not found in invoice owner's records.", invoiceUrl);
+      }
+
+      throw e;
+    }
   }
 
   @Override
@@ -160,7 +179,7 @@ public class DefaultInvoiceService implements InvoiceService {
   }
 
   @Override
-  public SendMoneyResult payInvoice(InvoiceId invoiceId, AccountId senderAccountId, String bearerToken) {
+  public StreamPayment payInvoice(InvoiceId invoiceId, AccountId senderAccountId, String bearerToken) {
     final Invoice invoice = this.getInvoiceById(invoiceId);
 
     if (!invoice.paymentNetwork().equals(PaymentNetwork.ILP)) {
@@ -180,7 +199,7 @@ public class DefaultInvoiceService implements InvoiceService {
 
     UnsignedLong amountLeftToSend = invoice.amount().minus(invoice.received());
     try {
-      return ilpOpenPaymentsPaymentService.payInvoice(ilpPaymentDetails, senderAccountId, amountLeftToSend, bearerToken);
+      return ilpOpenPaymentsPaymentService.payInvoice(ilpPaymentDetails, senderAccountId, amountLeftToSend, invoiceId);
     } catch (InterruptedException | ExecutionException e) {
       // TODO: Throw an invoice problem
       throw new RuntimeException(e);
@@ -194,7 +213,31 @@ public class DefaultInvoiceService implements InvoiceService {
 
   @Override
   public Optional<Invoice> onPayment(StreamPayment streamPayment) {
-    return Optional.empty();
+    InvoiceId invoiceIdFromCorrelationId = streamPayment.correlationId()
+      .map(InvoiceId::of)
+      .orElseThrow(() -> new IllegalArgumentException("StreamPayment did not have a correlationId.  Unable to update invoice for payment."));
+
+    Invoice existingInvoice = this.getInvoiceById(invoiceIdFromCorrelationId);
+
+    if (!existingInvoice.assetCode().equals(streamPayment.assetCode())) {
+      throw new IllegalStateException(String.format("Invoice asset code was different than the StreamPayment asset code." +
+        "Unable to accurately credit invoice. Invoice assetCode: %s ; Payment assetCode: %s", existingInvoice.assetCode(), streamPayment.assetCode()));
+    }
+
+    Invoice updatedInvoice = Invoice.builder()
+      .from(existingInvoice)
+      .received(existingInvoice.received().plus(streamPayment.deliveredAmount()))
+      .build();
+
+    return Optional.of(this.updateInvoice(updatedInvoice));
+  }
+
+  @Subscribe
+  private void onClosedPayment(ClosedPaymentEvent closedPaymentEvent) {
+    StreamPayment payment = closedPaymentEvent.payment();
+    if (payment.correlationId().isPresent()) {
+      onPayment(payment);
+    }
   }
 
   private boolean isForThisWallet(HttpUrl invoiceUrl) {
@@ -205,4 +248,5 @@ public class DefaultInvoiceService implements InvoiceService {
 
     return issuer.host().equals(invoiceUrl.host());
   }
+
 }

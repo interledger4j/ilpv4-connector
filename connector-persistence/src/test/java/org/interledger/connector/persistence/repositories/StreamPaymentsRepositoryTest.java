@@ -70,6 +70,46 @@ public class StreamPaymentsRepositoryTest {
   }
 
   @Test
+  public void upsertDestinationDetails() {
+    AccountId accountId = AccountId.of(generateUuid());
+    String streamPaymentId = generateUuid();
+    short assetScale = 9;
+    String assetCode = "XRP";
+
+    for (int i = 0; i < 3; i++) {
+      final StreamPaymentEntity entity1 = newEntity(accountId, streamPaymentId, 1);
+      entity1.setAssetScale(assetScale);
+      entity1.setAssetCode(assetCode);
+      entity1.setDeliveredAmount(BigInteger.valueOf(10));
+      streamPaymentsRepository.upsertAmounts(entity1);
+    }
+    final StreamPaymentEntity loadedAccessTokenEntity =
+      streamPaymentsRepository.findByAccountIdAndStreamPaymentId(accountId, streamPaymentId).get();
+
+    assertThat(loadedAccessTokenEntity.getAmount()).isEqualTo(BigInteger.valueOf(3));
+    assertThat(loadedAccessTokenEntity.getDeliveredAmount()).isEqualTo(BigInteger.valueOf(30));
+    assertThat(loadedAccessTokenEntity.getAssetCode()).isEqualTo(assetCode);
+    assertThat(loadedAccessTokenEntity.getAssetScale()).isEqualTo(assetScale);
+  }
+
+  @Test
+  public void updateSourceAddress() {
+    AccountId accountId = AccountId.of(generateUuid());
+    String streamPaymentId = generateUuid();
+    String sourceAddress = "test.source";
+
+    final StreamPaymentEntity entity1 = newEntity(accountId, streamPaymentId, 10);
+
+    streamPaymentsRepository.upsertAmounts(entity1);
+
+    streamPaymentsRepository.updateSourceAddress(accountId, streamPaymentId, sourceAddress);
+
+    StreamPaymentEntity streamPayment1 =
+      streamPaymentsRepository.findByAccountIdAndStreamPaymentId(accountId, streamPaymentId).get();
+    assertThat(streamPayment1.getSourceAddress()).isEqualTo(sourceAddress);
+  }
+
+  @Test
   public void updateStatus() {
     AccountId accountId = AccountId.of(generateUuid());
     String streamPaymentId = generateUuid();
@@ -117,6 +157,34 @@ public class StreamPaymentsRepositoryTest {
   }
 
   @Test
+  public void findByAccountIdCorrelationId() {
+    AccountId accountId = AccountId.of(generateUuid());
+    String invoice1 = "invoice1";
+    String invoice2 = "invoice2";
+    PageRequest pageRequest = PageRequest.of(0, 50);
+
+    StreamPaymentEntity invoice1Payment1 = newEntity(accountId, generateUuid(), 10);
+    invoice1Payment1.setCorrelationId(invoice1);
+    streamPaymentsRepository.upsertAmounts(invoice1Payment1);
+
+    StreamPaymentEntity invoice1Payment2 = newEntity(accountId, generateUuid(), 10);
+    invoice1Payment2.setCorrelationId(invoice1);
+    streamPaymentsRepository.upsertAmounts(invoice1Payment2);
+
+    StreamPaymentEntity invoice2Payment1 = newEntity(accountId, generateUuid(), 10);
+    invoice2Payment1.setCorrelationId(invoice2);
+    streamPaymentsRepository.upsertAmounts(invoice2Payment1);
+
+    List<StreamPaymentEntity> invoice1Payments =
+      streamPaymentsRepository.findByAccountIdAndCorrelationIdOrderByCreatedDateDesc(accountId, invoice1, pageRequest);
+    assertThat(invoice1Payments).hasSize(2);
+
+    List<StreamPaymentEntity> invoice2Payments =
+      streamPaymentsRepository.findByAccountIdAndCorrelationIdOrderByCreatedDateDesc(accountId, invoice2, pageRequest);
+    assertThat(invoice2Payments).hasSize(1);
+  }
+
+  @Test
   public void findByAccountIdWithWrongAccountIdReturnsEmpty() {
     AccountId accountId = AccountId.of(generateUuid());
     streamPaymentsRepository.upsertAmounts(newEntity(accountId, generateUuid(), 10));
@@ -136,7 +204,7 @@ public class StreamPaymentsRepositoryTest {
   }
 
   @Test
-  public void upsertMultipleStreamPayments() throws InterruptedException {
+  public void upsertMultipleStreamPayments() {
     AccountId accountId = AccountId.of(generateUuid());
     String streamPaymentId = generateUuid();
     String streamPaymentId2 = generateUuid();
@@ -193,9 +261,11 @@ public class StreamPaymentsRepositoryTest {
     StreamPaymentEntity entity = new StreamPaymentEntity();
     entity.setSourceAddress("test.foo.bar");
     entity.setAccountId(accountId);
+    entity.setCorrelationId("correlation is not causation");
     entity.setPacketCount(1);
     entity.setStreamPaymentId(streamPaymentId);
     entity.setAmount(BigInteger.valueOf(amount));
+    entity.setExpectedAmount(BigInteger.valueOf(amount));
     entity.setAssetCode("XRP");
     entity.setAssetScale((short) 9);
     entity.setDestinationAddress("test." + streamPaymentId);

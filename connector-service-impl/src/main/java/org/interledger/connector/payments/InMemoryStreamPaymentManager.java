@@ -1,8 +1,12 @@
 package org.interledger.connector.payments;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 import org.interledger.connector.accounts.AccountId;
 
+import com.google.common.eventbus.EventBus;
 import org.immutables.value.Value;
+import org.slf4j.Logger;
 import org.springframework.data.domain.PageRequest;
 
 import java.time.Instant;
@@ -16,10 +20,18 @@ import java.util.stream.Collectors;
  * Implementation of {@link StreamPaymentManager} that store payments in memory and does not persist
  * across restarts. Intended for local dev where a persistent datastore is not being used.
  */
-public class InMemoryStreamPaymentnManager implements StreamPaymentManager {
+public class InMemoryStreamPaymentManager implements StreamPaymentManager {
+
+  private static final Logger LOGGER = getLogger(InMemoryStreamPaymentManager.class);
 
   // merge is synchronized so no need for concurrent hashmap
   private final Map<MapKey, StreamPayment> transactionsMap = new HashMap<>();
+  
+  private final EventBus eventBus;
+
+  public InMemoryStreamPaymentManager(EventBus eventBus) {
+    this.eventBus = eventBus;
+  }
 
   @Override
   public List<StreamPayment> findByAccountId(AccountId accountId, PageRequest pageRequest) {
@@ -38,17 +50,39 @@ public class InMemoryStreamPaymentnManager implements StreamPaymentManager {
   }
 
   @Override
+  public List<StreamPayment> findByAccountIdAndCorrelationId(AccountId accountId,
+                                                             String correlationId,
+                                                             PageRequest pageRequest) {
+    return transactionsMap.values()
+      .stream()
+      .filter(trx -> trx.accountId().equals(accountId))
+      .filter(trx -> trx.correlationId().equals(correlationId))
+      .skip(pageRequest.getOffset())
+      .limit(pageRequest.getPageSize())
+      .collect(Collectors.toList());
+  }
+
+  @Override
   public synchronized void merge(StreamPayment streamPayment) {
     StreamPayment merged = upsertAmounts(streamPayment);
-    if (streamPayment.sourceAddress().isPresent()) {
+    if (streamPayment.deliveredAssetCode().isPresent()) {
       merged = put(StreamPayment.builder().from(merged)
-        .sourceAddress(streamPayment.sourceAddress())
+        .deliveredAssetCode(streamPayment.deliveredAssetCode())
+        .deliveredAssetScale(streamPayment.deliveredAssetScale())
         .build());
     }
     if (!streamPayment.status().equals(StreamPaymentStatus.PENDING)) {
       put(StreamPayment.builder().from(merged)
         .status(streamPayment.status())
         .build());
+      merged = transactionsMap.get(MapKey.of(streamPayment.accountId(), streamPayment.streamPaymentId()));
+    }
+    if (merged.status().equals(StreamPaymentStatus.CLOSED_BY_STREAM)) {
+      try {
+        eventBus.post(ClosedPaymentEvent.builder().payment(merged).build());
+      } catch (Exception e) {
+        LOGGER.error("Error notifying invoiceService about payment {}", streamPayment, e);
+      }
     }
   }
 
@@ -56,6 +90,7 @@ public class InMemoryStreamPaymentnManager implements StreamPaymentManager {
     return findByAccountIdAndStreamPaymentId(streamPayment.accountId(), streamPayment.streamPaymentId())
       .map(existing -> put(StreamPayment.builder().from(existing)
         .amount(existing.amount().add(streamPayment.amount()))
+        .deliveredAmount(existing.deliveredAmount().plus(streamPayment.deliveredAmount()))
         .packetCount(existing.packetCount() + streamPayment.packetCount())
         .modifiedAt(Instant.now())
         .build()))

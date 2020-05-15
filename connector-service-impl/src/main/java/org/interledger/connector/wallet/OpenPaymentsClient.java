@@ -7,14 +7,13 @@ import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
-import org.interledger.stream.SendMoneyResult;
+import org.interledger.connector.payments.StreamPayment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Feign;
 import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
-import feign.Target;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 import feign.optionals.OptionalDecoder;
@@ -37,14 +36,15 @@ public interface OpenPaymentsClient {
    *
    * @return A {@link OpenPaymentsClient}.
    */
-  static OpenPaymentsClient construct() {
+  static OpenPaymentsClient construct(final String httpUrl) {
 
     final ObjectMapper objectMapper = ObjectMapperFactory.createObjectMapperForProblemsJson();
     return Feign.builder()
       .encoder(new JacksonEncoder(objectMapper))
       .decode404()
       .decoder(new OptionalDecoder(new JacksonDecoder(objectMapper)))
-      .target(Target.HardCodedTarget.EmptyTarget.create(OpenPaymentsClient.class));
+      .target(OpenPaymentsClient.class, httpUrl);
+//      .target(Target.HardCodedTarget.EmptyTarget.create(OpenPaymentsClient.class));
   }
 
   @RequestLine("GET /.well-known/open-payments")
@@ -73,6 +73,16 @@ public interface OpenPaymentsClient {
     URI invoiceUrl
   ) throws ThrowableProblem;
 
+  @RequestLine("POST {accountId}/invoices/sync?name={invoiceUrl}")
+  @Headers({
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON
+  })
+  Invoice getOrSyncInvoice(
+    @Param("accountId") String accountId,
+    @Param("invoiceUrl") String invoiceUrl
+  );
+
   @RequestLine("GET /")
   @Headers({
     ACCEPT + APPLICATION_CONNECTION_JSON_VALUE,
@@ -97,8 +107,7 @@ public interface OpenPaymentsClient {
     CONTENT_TYPE + APPLICATION_JSON,
     AUTHORIZATION + "{authorization}"
   })
-  SendMoneyResult payInvoice(
-    URI invoiceUrl,
+  StreamPayment payInvoice(
     @Param("accountId") String accountId,
     @Param("invoiceId") String invoiceId,
     @Param("authorization") String authorization

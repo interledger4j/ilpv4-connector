@@ -3,6 +3,7 @@ package org.interledger.connector.wallet;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.Invoice;
+import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.opa.model.problems.InvoicePaymentDetailsProblem;
@@ -14,7 +15,7 @@ import io.xpring.payid.PayIDException;
 
 import java.util.Objects;
 
-public class XrpOpenPaymentsPaymentService implements OpenPaymentsPaymentService {
+public class XrpOpenPaymentsPaymentService implements OpenPaymentsPaymentService<SendMoneyResult> {
 
   private PayIDClient payIDClient;
 
@@ -36,7 +37,7 @@ public class XrpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
   }
 
   @Override
-  public SendMoneyResult payInvoice(PaymentDetails paymentDetails, AccountId senderAccountId, UnsignedLong amount, String bearerToken) {
+  public SendMoneyResult payInvoice(PaymentDetails paymentDetails, AccountId senderAccountId, UnsignedLong amount, InvoiceId invoiceId) {
     // TODO: Throw an exception here because we can't send XRP from OPS
     return null;
   }

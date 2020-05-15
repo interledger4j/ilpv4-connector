@@ -1,0 +1,33 @@
+# See https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#common-application-properties
+spring:
+  profiles:
+    include: insecure, postgres, migrate, local-spsp-fulfillment
+  output:
+    ansi:
+      enabled: ALWAYS
+
+interledger:
+  connector:
+    nodeIlpAddress: test.connie
+    enabledProtocols:
+      # Enables the REST Endpoint for SPSP requests.
+      spspEnabled: true
+    enabledFeatures:
+      localSpspFulfillmentEnabled: true
+    spsp:
+      urlPath: p
+      addressPrefixSegment: spsp-test
+      # For testing only.
+      serverSecret: aQLR5IWAGV2vKnBhnFFsl2cXOCh9u0IWz3PiA64KlJ8=
+    globalRoutingSettings:
+      # A simulated routing secret, which is a seed used for generating routing table auth values.
+      # Represents the plaintext value of `shh`, encrypted.
+      routingSecret: enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=
+    fx:
+      # these are just random overrides for test assertions
+      connectionDefaults:
+        connectTimeoutMillis: 5000
+        readTimeoutMillis: 30000
+        writeTimeoutMillis: 40000
+        maxIdleConnections: 10
+        keepAliveMinutes: 2

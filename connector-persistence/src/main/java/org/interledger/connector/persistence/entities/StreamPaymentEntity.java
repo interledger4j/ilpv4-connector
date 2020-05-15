@@ -51,11 +51,26 @@ public class StreamPaymentEntity {
   @Column(name = "AMOUNT")
   private BigInteger amount;
 
+  @Column(name = "EXPECTED_AMOUNT")
+  private BigInteger expectedAmount;
+
   @Column(name = "PACKET_COUNT")
   private int packetCount;
 
   @Column(name = "SOURCE_ADDRESS")
   private String sourceAddress;
+
+  @Column(name = "DELIVERED_AMOUNT")
+  private BigInteger deliveredAmount;
+
+  @Column(name = "DELIVERED_ASSET_CODE")
+  private String deliveredAssetCode;
+
+  @Column(name = "DELIVERED_ASSET_SCALE")
+  private Short deliveredAssetScale;
+
+  @Column(name = "CORRELATION_ID")
+  private String correlationId;
 
   @Column(name = "STATUS")
   @Enumerated(EnumType.STRING)
@@ -114,6 +129,14 @@ public class StreamPaymentEntity {
     this.amount = amount;
   }
 
+  public BigInteger getExpectedAmount() {
+    return expectedAmount;
+  }
+
+  public void setExpectedAmount(BigInteger expectedAmount) {
+    this.expectedAmount = expectedAmount;
+  }
+
   public int getPacketCount() {
     return packetCount;
   }
@@ -121,7 +144,6 @@ public class StreamPaymentEntity {
   public void setPacketCount(int packetCount) {
     this.packetCount = packetCount;
   }
-
 
   public String getStreamPaymentId() {
     return streamPaymentId;
@@ -137,6 +159,38 @@ public class StreamPaymentEntity {
 
   public void setSourceAddress(String sourceAddress) {
     this.sourceAddress = sourceAddress;
+  }
+
+  public BigInteger getDeliveredAmount() {
+    return deliveredAmount;
+  }
+
+  public void setDeliveredAmount(BigInteger deliveredAmount) {
+    this.deliveredAmount = deliveredAmount;
+  }
+
+  public String getDeliveredAssetCode() {
+    return deliveredAssetCode;
+  }
+
+  public void setDeliveredAssetCode(String deliveredAssetCode) {
+    this.deliveredAssetCode = deliveredAssetCode;
+  }
+
+  public Short getDeliveredAssetScale() {
+    return deliveredAssetScale;
+  }
+
+  public void setDeliveredAssetScale(Short deliveredAssetScale) {
+    this.deliveredAssetScale = deliveredAssetScale;
+  }
+
+  public String getCorrelationId() {
+    return correlationId;
+  }
+
+  public void setCorrelationId(String correlationId) {
+    this.correlationId = correlationId;
   }
 
   public StreamPaymentStatus getStatus() {
@@ -202,7 +256,7 @@ public class StreamPaymentEntity {
 
   @Override
   public String toString() {
-    return "TransactionEntity{" +
+    return "StreamPaymentEntity{" +
       "id=" + id +
       ", streamPaymentId='" + streamPaymentId + '\'' +
       ", accountId=" + accountId +
@@ -210,14 +264,20 @@ public class StreamPaymentEntity {
       ", assetCode='" + assetCode + '\'' +
       ", assetScale=" + assetScale +
       ", amount=" + amount +
+      ", expectedAmount=" + expectedAmount +
       ", packetCount=" + packetCount +
       ", sourceAddress='" + sourceAddress + '\'' +
-      ", status='" + status + '\'' +
-      ", type='" + type + '\'' +
+      ", deliveredAmount=" + deliveredAmount +
+      ", deliveredAssetCode='" + deliveredAssetCode + '\'' +
+      ", deliveredAssetScale=" + deliveredAssetScale +
+      ", correlationId=" + correlationId +
+      ", status=" + status +
+      ", type=" + type +
       ", createdDate=" + createdDate +
       ", modifiedDate=" + modifiedDate +
       '}';
   }
+
 }
 
 
