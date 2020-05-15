@@ -62,6 +62,7 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
     final StreamConnectionDetails streamConnectionDetails =
       streamConnectionGenerator.generateConnectionDetails(serverSecretSupplier, paymentReceiverAddress);
 
+    // TODO(bridge): Replace this with a bridge call instead of a SendPaymentService direct call.
     sendPaymentService.createPlaceholderPayment(receiverAccountId,
       StreamPaymentType.PAYMENT_RECEIVED,
       streamConnectionDetails.destinationAddress(),

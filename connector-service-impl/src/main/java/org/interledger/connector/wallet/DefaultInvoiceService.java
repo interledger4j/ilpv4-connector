@@ -69,7 +69,7 @@ public class DefaultInvoiceService implements InvoiceService {
   }
 
   @Override
-  public Invoice getOrSyncInvoice(HttpUrl invoiceUrl) {
+  public Invoice syncInvoice(HttpUrl invoiceUrl) {
     Objects.requireNonNull(invoiceUrl);
 
     // See if we have that invoice already
@@ -151,15 +151,6 @@ public class DefaultInvoiceService implements InvoiceService {
   }
 
   @Override
-  public Invoice updateOrCreateInvoice(Invoice invoice) {
-    try {
-      return this.updateInvoice(invoice);
-    } catch (InvoiceNotFoundProblem e) {
-      return this.createInvoice(invoice);
-    }
-  }
-
-  @Override
   public PaymentDetails getPaymentDetails(InvoiceId invoiceId) {
     final Invoice invoice = this.getInvoiceById(invoiceId);
 
@@ -235,6 +226,7 @@ public class DefaultInvoiceService implements InvoiceService {
     return Optional.of(this.updateInvoice(updatedInvoice));
   }
 
+  // TODO: Use the bridge to listen for payments.
   @Subscribe
   private void onClosedPayment(ClosedPaymentEvent closedPaymentEvent) {
     StreamPayment payment = closedPaymentEvent.payment();
