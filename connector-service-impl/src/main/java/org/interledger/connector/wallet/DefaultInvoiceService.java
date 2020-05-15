@@ -17,7 +17,6 @@ import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.stream.SendMoneyResult;
 
-import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -200,7 +199,7 @@ public class DefaultInvoiceService implements InvoiceService {
 
     UnsignedLong amountLeftToSend = invoice.amount().minus(invoice.received());
     try {
-      return ilpOpenPaymentsPaymentService.payInvoice(ilpPaymentDetails, senderAccountId, amountLeftToSend, bearerToken);
+      return ilpOpenPaymentsPaymentService.payInvoice(ilpPaymentDetails, senderAccountId, amountLeftToSend, invoiceId);
     } catch (InterruptedException | ExecutionException e) {
       // TODO: Throw an invoice problem
       throw new RuntimeException(e);
