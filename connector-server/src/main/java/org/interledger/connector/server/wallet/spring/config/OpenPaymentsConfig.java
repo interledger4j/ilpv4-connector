@@ -21,6 +21,7 @@ import org.interledger.stream.SendMoneyResult;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
+import com.google.common.eventbus.EventBus;
 import io.xpring.common.XRPLNetwork;
 import io.xpring.payid.PayIDClient;
 import org.slf4j.Logger;
@@ -64,8 +65,8 @@ public class OpenPaymentsConfig {
     OpenPaymentsClient openPaymentsClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     OpenPaymentsPaymentService<SendMoneyResult> xrpOpenPaymentsPaymentService,
-    OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService
-  ) {
+    OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService,
+    EventBus eventBus) {
     return new DefaultInvoiceService(
       invoicesRepository,
       conversionService,
@@ -73,14 +74,13 @@ public class OpenPaymentsConfig {
       openPaymentsClient,
       openPaymentsSettingsSupplier,
       xrpOpenPaymentsPaymentService,
-      ilpOpenPaymentsPaymentService
-    );
+      ilpOpenPaymentsPaymentService,
+      eventBus);
   }
 
   @Bean
   @Qualifier(OPA_ILP)
   public OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService(
-    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     PaymentPointerResolver paymentPointerResolver,
     @Value("${" + SPSP__URL_PATH + ":}") final String opaUrlPath,
     StreamConnectionGenerator streamConnectionGenerator,
@@ -88,7 +88,6 @@ public class OpenPaymentsConfig {
     SendPaymentService sendPaymentService,
     LocalDestinationAddressUtils localDestinationAddressUtils) {
     return new IlpOpenPaymentsPaymentService(
-      openPaymentsSettingsSupplier,
       opaUrlPath,
       paymentPointerResolver,
       streamConnectionGenerator,

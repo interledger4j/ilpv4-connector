@@ -51,6 +51,10 @@
       <artifactId>connector-fxrates</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.interledger</groupId>
+      <artifactId>spsp-core</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
     </dependency>

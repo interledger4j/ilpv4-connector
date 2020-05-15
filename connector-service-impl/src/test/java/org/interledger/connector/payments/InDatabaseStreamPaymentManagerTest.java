@@ -13,6 +13,7 @@ import org.interledger.connector.persistence.repositories.StreamPaymentsReposito
 import org.interledger.core.InterledgerAddress;
 
 import com.google.common.collect.Lists;
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Rule;
@@ -39,6 +40,9 @@ public class InDatabaseStreamPaymentManagerTest {
   @Mock
   private StreamPaymentsRepository mockRepo;
 
+  @Mock
+  private EventBus eventBus;
+
   private InDatabaseStreamPaymentManager transactionManager;
   private StreamPaymentFromEntityConverter streamPaymentFromEntityConverter = new StreamPaymentFromEntityConverter();
   private StreamPaymentToEntityConverter streamPaymentToEntityConverter = new StreamPaymentToEntityConverter();
@@ -48,7 +52,8 @@ public class InDatabaseStreamPaymentManagerTest {
     streamPaymentToEntityConverter = new StreamPaymentToEntityConverter();
     transactionManager = new InDatabaseStreamPaymentManager(mockRepo,
       streamPaymentFromEntityConverter,
-      streamPaymentToEntityConverter);
+      streamPaymentToEntityConverter,
+      eventBus);
   }
 
   @Test

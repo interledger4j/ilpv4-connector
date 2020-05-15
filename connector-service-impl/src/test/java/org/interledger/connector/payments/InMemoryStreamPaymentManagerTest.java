@@ -1,11 +1,13 @@
 package org.interledger.connector.payments;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.core.InterledgerAddress;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,9 +25,12 @@ public class InMemoryStreamPaymentManagerTest {
 
   private InMemoryStreamPaymentManager paymentTransactionManager;
 
+  private EventBus eventBus;
+
   @Before
   public void setUp() {
-    paymentTransactionManager = new InMemoryStreamPaymentManager();
+    eventBus = mock(EventBus.class);
+    paymentTransactionManager = new InMemoryStreamPaymentManager(eventBus);
   }
 
   @Test

@@ -28,6 +28,20 @@ public interface StreamPaymentsRepository extends Repository<StreamPaymentEntity
 
 
   /**
+   * Find an list {@link StreamPaymentEntity} by accountId and correlation order by creation date desc
+   *
+   * @param accountId An id corresponding to {@link StreamPaymentEntity#getAccountId()}.
+   * @param correlationId correlation id to match
+   * @param pageable page request
+   *
+   * @return List of {@link StreamPaymentEntity}.
+   */
+  List<StreamPaymentEntity> findByAccountIdAndCorrelationIdOrderByCreatedDateDesc(
+    AccountId accountId,
+    String correlationId,
+    Pageable pageable);
+
+  /**
    * Find an {@link StreamPaymentEntity} by its natural identifier corresponding to
    * {@link AccountId} and {@link StreamPaymentEntity#getStreamPaymentId()}.
    *

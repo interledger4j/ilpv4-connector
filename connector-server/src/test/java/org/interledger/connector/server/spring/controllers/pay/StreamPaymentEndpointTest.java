@@ -38,6 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.primitives.UnsignedLong;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
@@ -219,9 +220,11 @@ public class StreamPaymentEndpointTest extends AbstractEndpointTest {
   public void sendDurablePaymentWithLocalSendAndLocalFulfill() {
     final UnsignedLong amountToSend = UnsignedLong.valueOf(19389);
 
+    String correlationId = "sendDurablePaymentWithLocalSendAndLocalFulfill";
     LocalSendPaymentRequest request = LocalSendPaymentRequest.builder()
       .amount(amountToSend)
       .destinationPaymentPointer(localPaymentPointer(LOCAL_RECEIVER).toString())
+      .correlationId(correlationId)
       .build();
 
     LocalSendPaymentResponse response = userClient.sendPayment(bearer(SHH), AccountId.of(SENDER), request);
@@ -229,16 +232,21 @@ public class StreamPaymentEndpointTest extends AbstractEndpointTest {
     assertThat(response.expectedAmount()).isNotEmpty()
       .hasValue(amountToSend.bigIntegerValue().negate());
     assertThat(response.successfulPayment()).isTrue();
+    assertThat(response.correlationId()).hasValue(correlationId);
 
-    ListStreamPaymentsResponse senderPayments = userClient.listPayments(bearer(SHH), AccountId.of(SENDER));
+    ListStreamPaymentsResponse senderPayments = userClient.listPayments(
+      bearer(SHH),
+      AccountId.of(SENDER),
+      ImmutableMap.of("page", 0, "correlationId", correlationId)
+    );
     assertThat(senderPayments.pageNumber()).isEqualTo(0);
     assertThat(senderPayments.pageSize()).isEqualTo(100);
     assertThat(filterByDestinationAddress(senderPayments.payments(), response.destinationAddress()))
       .contains(StreamPayment.builder().from(response).build());
 
     // verify no result on the next page
-    assertThat(userClient.listPayments(bearer(SHH), AccountId.of(SENDER), 1).payments()).isEmpty();
-
+    assertThat(userClient.listPayments(bearer(SHH), AccountId.of(SENDER), ImmutableMap.of("page", 1)).payments())
+      .isEmpty();
 
     ListStreamPaymentsResponse receiverPayments = userClient.listPayments(bearer(SHH), AccountId.of(LOCAL_RECEIVER));
     Optional<StreamPayment> receiverPayment =

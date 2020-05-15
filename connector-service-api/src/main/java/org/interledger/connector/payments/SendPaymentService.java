@@ -1,9 +1,10 @@
 package org.interledger.connector.payments;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.spsp.StreamConnectionDetails;
+import org.interledger.core.InterledgerAddress;
 
-import com.google.common.primitives.UnsignedLong;
+import java.math.BigInteger;
+import java.util.Optional;
 
 /**
  * Service for initiating send payments for accounts on this connector.
@@ -12,6 +13,9 @@ public interface SendPaymentService {
 
   StreamPayment sendMoney(SendPaymentRequest request);
 
-  StreamPayment sendMoney(AccountId senderAccountId, StreamConnectionDetails receiverDetails, UnsignedLong amount);
-
+  StreamPayment createPlaceholderPayment(AccountId accountId,
+                                         StreamPaymentType type,
+                                         InterledgerAddress destinationAddress,
+                                         Optional<String> correlationId,
+                                         Optional<BigInteger> expectedAmount);
 }

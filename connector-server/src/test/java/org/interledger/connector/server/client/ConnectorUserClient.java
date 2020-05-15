@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Feign;
 import feign.Headers;
 import feign.Param;
+import feign.QueryMap;
 import feign.RequestLine;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
@@ -24,6 +25,7 @@ import okhttp3.HttpUrl;
 import org.zalando.problem.ThrowableProblem;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -108,11 +110,11 @@ public interface ConnectorUserClient {
   ListStreamPaymentsResponse listPayments(@Param("auth") String authorizationHeader,
                                           @Param("accountId") AccountId accountId) throws ThrowableProblem;
 
-  @RequestLine("GET " + SLASH_ACCOUNTS_PAYMENTS_PATH + "?page={page}")
+  @RequestLine("GET " + SLASH_ACCOUNTS_PAYMENTS_PATH + "?page={page}&")
   @Headers( {AUTHORIZATION, ACCEPT_JSON, CONTENT_TYPE_JSON})
   ListStreamPaymentsResponse listPayments(@Param("auth") String authorizationHeader,
                                           @Param("accountId") AccountId accountId,
-                                          @Param("page") int page) throws ThrowableProblem;
+                                          @QueryMap Map<String, Object> queryMap) throws ThrowableProblem;
 
 
 }

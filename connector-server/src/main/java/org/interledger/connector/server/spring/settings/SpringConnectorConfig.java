@@ -657,14 +657,16 @@ public class SpringConnectorConfig {
 
   @Bean
   protected StreamPaymentManager streamPaymentManager(Supplier<ConnectorSettings> connectorSettingsSupplier,
-                                                      StreamPaymentsRepository streamPaymentsRepository) {
+                                                      StreamPaymentsRepository streamPaymentsRepository,
+                                                      EventBus eventBus) {
     switch (connectorSettingsSupplier.get().enabledFeatures().streamPaymentAggregationMode()) {
       case IN_POSTGRES: return new InDatabaseStreamPaymentManager(
         streamPaymentsRepository,
         new StreamPaymentFromEntityConverter(),
-        new StreamPaymentToEntityConverter());
+        new StreamPaymentToEntityConverter(),
+        eventBus);
       default:
-        return new InMemoryStreamPaymentManager();
+        return new InMemoryStreamPaymentManager(eventBus);
     }
   }
 

@@ -18,6 +18,7 @@ public class StreamPaymentFromEntityConverter implements Converter<StreamPayment
       .expectedAmount(Optional.ofNullable(source.getExpectedAmount()))
       .assetCode(source.getAssetCode())
       .assetScale(source.getAssetScale())
+      .correlationId(Optional.ofNullable(source.getCorrelationId()))
       .createdAt(source.getCreatedDate())
       .destinationAddress(InterledgerAddress.of(source.getDestinationAddress()))
       .modifiedAt(source.getModifiedDate())

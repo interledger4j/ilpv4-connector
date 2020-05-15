@@ -11,11 +11,15 @@ import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
+import org.interledger.connector.payments.ClosedPaymentEvent;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.stream.SendMoneyResult;
 
+import com.google.api.gax.rpc.InvalidArgumentException;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import feign.FeignException;
 import okhttp3.HttpUrl;
@@ -43,8 +47,8 @@ public class DefaultInvoiceService implements InvoiceService {
     OpenPaymentsClient openPaymentsClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     OpenPaymentsPaymentService<SendMoneyResult> xrpOpenPaymentsPaymentService,
-    OpenPaymentsPaymentService<StreamPayment>  ilpOpenPaymentsPaymentService
-  ) {
+    OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService,
+    EventBus eventBus) {
     this.invoicesRepository = Objects.requireNonNull(invoicesRepository);
     this.conversionService = Objects.requireNonNull(conversionService);
     this.invoiceFactory = Objects.requireNonNull(invoiceFactory);
@@ -52,6 +56,7 @@ public class DefaultInvoiceService implements InvoiceService {
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
     this.xrpOpenPaymentsPaymentService = Objects.requireNonNull(xrpOpenPaymentsPaymentService);
     this.ilpOpenPaymentsPaymentService = Objects.requireNonNull(ilpOpenPaymentsPaymentService);
+    eventBus.register(this);
   }
 
   @Override
@@ -209,7 +214,31 @@ public class DefaultInvoiceService implements InvoiceService {
 
   @Override
   public Optional<Invoice> onPayment(StreamPayment streamPayment) {
-    return Optional.empty();
+    InvoiceId invoiceIdFromCorrelationId = streamPayment.correlationId()
+      .map(InvoiceId::of)
+      .orElseThrow(() -> new IllegalArgumentException("StreamPayment did not have a correlationId.  Unable to update invoice for payment."));
+
+    Invoice existingInvoice = this.getInvoiceById(invoiceIdFromCorrelationId);
+
+    if (!existingInvoice.assetCode().equals(streamPayment.assetCode())) {
+      throw new IllegalStateException(String.format("Invoice asset code was different than the StreamPayment asset code." +
+        "Unable to accurately credit invoice. Invoice assetCode: %s ; Payment assetCode: %s", existingInvoice.assetCode(), streamPayment.assetCode()));
+    }
+
+    Invoice updatedInvoice = Invoice.builder()
+      .from(existingInvoice)
+      .received(existingInvoice.received().plus(streamPayment.deliveredAmount()))
+      .build();
+
+    return Optional.of(this.updateInvoice(updatedInvoice));
+  }
+
+  @Subscribe
+  private void onClosedPayment(ClosedPaymentEvent closedPaymentEvent) {
+    StreamPayment payment = closedPaymentEvent.payment();
+    if (payment.correlationId().isPresent()) {
+      onPayment(payment);
+    }
   }
 
   private boolean isForThisWallet(HttpUrl invoiceUrl) {
@@ -220,4 +249,5 @@ public class DefaultInvoiceService implements InvoiceService {
 
     return issuer.host().equals(invoiceUrl.host());
   }
+
 }
