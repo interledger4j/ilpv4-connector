@@ -21,6 +21,7 @@ import org.zalando.problem.ThrowableProblem;
 
 import java.net.URI;
 
+// TODO: Update this guy for the new endpoints.
 public interface OpenPaymentsClient {
   String ACCEPT = "Accept:";
   String CONTENT_TYPE = "Content-Type:";
