@@ -78,7 +78,7 @@ public interface InvoiceService {
    *
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} to pay.
    * @param senderAccountId The {@link AccountId} of the sender.
-   * @param payInvoiceRequest
+   * @param payInvoiceRequest Optional request body containing the amount to pay on the {@link Invoice}.
    * @return The result of the payment.
    */
   StreamPayment payInvoice(final InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest);

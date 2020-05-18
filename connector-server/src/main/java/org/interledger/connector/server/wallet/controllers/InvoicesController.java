@@ -147,6 +147,7 @@ public class InvoicesController {
    *
    * @param accountId The {@link AccountId} of the sender.
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} to pay.
+   * @param payInvoiceRequest Optional request body containing the amount to pay on the {@link Invoice}.
    * @return The result of the payment.
    */
   @RequestMapping(
