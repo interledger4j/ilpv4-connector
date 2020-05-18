@@ -23,6 +23,7 @@ interledger:
       ilpOperatorAddress: "test.jc1"
       connector-url: https://test.jc1.dev
       metadata:
+        accountServicer: "http://localhost:4000/ilp-wallet"
         issuer: "https://localhost:8080"
         authorizationIssuer: "https://localhost:3000"
         assetsSupported:

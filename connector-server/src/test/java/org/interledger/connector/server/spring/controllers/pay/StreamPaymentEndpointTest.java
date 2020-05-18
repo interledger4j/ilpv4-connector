@@ -11,6 +11,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.core.ConfigConstants;
+import org.interledger.connector.payments.ListStreamPaymentsResponse;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.routing.StaticRoute;
 import org.interledger.connector.server.ConnectorServerConfig;

@@ -7,8 +7,8 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.balances.AccountBalanceResponse;
 import org.interledger.connector.client.ConnectorAdminClient;
 import org.interledger.connector.jackson.ObjectMapperFactory;
+import org.interledger.connector.payments.ListStreamPaymentsResponse;
 import org.interledger.connector.payments.StreamPayment;
-import org.interledger.connector.server.spring.controllers.pay.ListStreamPaymentsResponse;
 import org.interledger.connector.server.spring.controllers.pay.LocalSendPaymentRequest;
 import org.interledger.connector.server.spring.controllers.pay.LocalSendPaymentResponse;
 

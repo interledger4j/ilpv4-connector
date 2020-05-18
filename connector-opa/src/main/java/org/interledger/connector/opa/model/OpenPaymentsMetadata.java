@@ -115,6 +115,14 @@ public interface OpenPaymentsMetadata {
   };
 
   /**
+   * FIXME doc
+   * @return
+   */
+  @Value.Default
+  @JsonProperty("accountServicer")
+  default HttpUrl accountServicer() { return issuer(); }
+
+  /**
    * @return A list of {@link SupportedAsset} for assets that can be used to create agreements on this server
    */
   @JsonProperty("assets_supported")

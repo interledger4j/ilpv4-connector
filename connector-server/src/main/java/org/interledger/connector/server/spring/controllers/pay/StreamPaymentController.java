@@ -3,6 +3,7 @@ package org.interledger.connector.server.spring.controllers.pay;
 import static org.interledger.connector.server.spring.controllers.PathConstants.SLASH_ACCOUNTS_PAYMENTS_PATH;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.payments.ListStreamPaymentsResponse;
 import org.interledger.connector.payments.SendPaymentRequest;
 import org.interledger.connector.payments.SendPaymentService;
 import org.interledger.connector.payments.StreamPayment;
