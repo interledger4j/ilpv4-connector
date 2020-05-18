@@ -5,6 +5,7 @@ import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
+import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
 import org.interledger.connector.payments.SendPaymentRequest;
@@ -79,7 +80,7 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
     PaymentDetails paymentDetails,
     AccountId senderAccountId,
     UnsignedLong amount,
-    String bearerToken
+    InvoiceId invoiceId
   ) {
     // Send payment using STREAM
     IlpPaymentDetails ilpPaymentDetails = (IlpPaymentDetails) paymentDetails;
@@ -88,6 +89,7 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
       SendPaymentRequest.builder()
       .accountId(senderAccountId)
       .amount(amount)
+      .correlationId(invoiceId.value())
       .streamConnectionDetails(
         StreamConnectionDetails.builder()
           .destinationAddress(ilpPaymentDetails.destinationAddress())

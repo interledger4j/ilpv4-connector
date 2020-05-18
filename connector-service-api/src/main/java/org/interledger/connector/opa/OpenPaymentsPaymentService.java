@@ -2,6 +2,7 @@ package org.interledger.connector.opa;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.Invoice;
+import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.PaymentDetails;
 
 import com.google.common.primitives.UnsignedLong;
@@ -25,6 +26,6 @@ public interface OpenPaymentsPaymentService<T> {
     final PaymentDetails paymentDetails,
     final AccountId senderAccountId,
     final UnsignedLong amount,
-    final String bearerToken
+    final InvoiceId correlationId
   ) throws ExecutionException, InterruptedException;
 }
