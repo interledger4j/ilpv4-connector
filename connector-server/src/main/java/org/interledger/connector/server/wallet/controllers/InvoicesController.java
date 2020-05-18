@@ -11,6 +11,7 @@ import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsMediaType;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
@@ -37,6 +38,7 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 @RestController
@@ -152,13 +154,13 @@ public class InvoicesController {
     method = RequestMethod.POST,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  // TODO: Add an amount to pay field in the req body, in case you only want to pay part of an invoice.
-  // TODO: Create a generic type for payments instead of coupling to ILP.
+  // TODO: Create a generic type for payments instead of coupling to ILP. (Wait for David's changes)
   public StreamPayment payInvoice(
-    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) String accountId, // TODO: type this as AccountId
-    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId
-  ) {
-    return invoiceService.payInvoice(invoiceId, AccountId.of(accountId));
+    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) AccountId accountId,
+    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
+    @RequestBody Optional<PayInvoiceRequest> payInvoiceRequest
+    ) {
+    return invoiceService.payInvoice(invoiceId, accountId, payInvoiceRequest);
   }
 
   private URI getInvoiceLocation(InvoiceId invoiceId) {

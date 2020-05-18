@@ -4,6 +4,7 @@ package org.interledger.connector.opa;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
+import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.payments.StreamPayment;
@@ -77,9 +78,10 @@ public interface InvoiceService {
    *
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} to pay.
    * @param senderAccountId The {@link AccountId} of the sender.
+   * @param payInvoiceRequest
    * @return The result of the payment.
    */
-  StreamPayment payInvoice(final InvoiceId invoiceId, AccountId senderAccountId);
+  StreamPayment payInvoice(final InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest);
 
   /**
    * Execute any actions necessary in the event of a received XRP payment.

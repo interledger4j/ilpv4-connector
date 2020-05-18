@@ -6,6 +6,7 @@ import org.interledger.connector.jackson.ObjectMapperFactory;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
+import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.payments.StreamPayment;
 
@@ -20,8 +21,8 @@ import feign.optionals.OptionalDecoder;
 import org.zalando.problem.ThrowableProblem;
 
 import java.net.URI;
+import java.util.Optional;
 
-// TODO: Update this guy for the new endpoints.
 public interface OpenPaymentsClient {
   String ACCEPT = "Accept:";
   String CONTENT_TYPE = "Content-Type:";
@@ -48,7 +49,7 @@ public interface OpenPaymentsClient {
 //      .target(Target.HardCodedTarget.EmptyTarget.create(OpenPaymentsClient.class));
   }
 
-  @RequestLine("GET /{accountId}")
+  @RequestLine("GET {accountId}")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
@@ -111,6 +112,7 @@ public interface OpenPaymentsClient {
   StreamPayment payInvoice(
     @Param("accountId") String accountId,
     @Param("invoiceId") String invoiceId,
-    @Param("authorization") String authorization
+    @Param("authorization") String authorization,
+    Optional<PayInvoiceRequest> payInvoiceRequest
   ) throws ThrowableProblem;
 }
