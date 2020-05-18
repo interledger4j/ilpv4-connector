@@ -48,7 +48,7 @@ public interface OpenPaymentsClient {
 //      .target(Target.HardCodedTarget.EmptyTarget.create(OpenPaymentsClient.class));
   }
 
-  @RequestLine("GET /.well-known/open-payments")
+  @RequestLine("GET /{accountId}")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
@@ -74,7 +74,7 @@ public interface OpenPaymentsClient {
     URI invoiceUrl
   ) throws ThrowableProblem;
 
-  @RequestLine("POST {accountId}/invoices/sync?name={invoiceUrl}")
+  @RequestLine("POST accounts/{accountId}/invoices/sync?name={invoiceUrl}")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON

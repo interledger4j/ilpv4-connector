@@ -61,9 +61,9 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   private OpenPaymentsClient aliceClient;
   private OpenPaymentsClient bobClient;
 
-  private HttpUrl paulAtAliceInvoicesUri = HttpUrl.get(ALICE_HTTP_BASE_URL + "/paul/invoices");
-  private HttpUrl peterAtAliceInvoicesUri = HttpUrl.get(ALICE_HTTP_BASE_URL + "/peter/invoices");
-  private HttpUrl peterAtBobInvoicesUri = HttpUrl.get(BOB_HTTP_BASE_URL + "/peter/invoices");
+  private HttpUrl paulAtAliceInvoicesUri = HttpUrl.get(ALICE_HTTP_BASE_URL + "/accounts/paul/invoices");
+  private HttpUrl peterAtAliceInvoicesUri = HttpUrl.get(ALICE_HTTP_BASE_URL + "/accounts/peter/invoices");
+  private HttpUrl peterAtBobInvoicesUri = HttpUrl.get(BOB_HTTP_BASE_URL + "/accounts/peter/invoices");
 
   @BeforeClass
   public static void startTopology() {
@@ -99,7 +99,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
     assertThat(createdInvoice.invoiceUrl())
       .isNotEmpty()
       .get()
-      .isEqualTo(HttpUrl.get("http://localhost:8081/peter/invoices/" + createdInvoice.id().value()));
+      .isEqualTo(HttpUrl.get("http://localhost:8081/accounts/peter/invoices/" + createdInvoice.id().value()));
   }
 
   @Test
@@ -108,7 +108,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
     assertThat(createdInvoice.invoiceUrl())
       .isNotEmpty()
       .get()
-      .isEqualTo(HttpUrl.get("http://localhost:8081/peter/invoices/" + createdInvoice.id().value()));
+      .isEqualTo(HttpUrl.get("http://localhost:8081/accounts/peter/invoices/" + createdInvoice.id().value()));
   }
 
   @Test

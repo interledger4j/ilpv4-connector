@@ -5,7 +5,7 @@ import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.OpenPaymentsPaymentService;
-import org.interledger.connector.opa.model.InvoiceFactory;
+import org.interledger.connector.wallet.InvoiceFactory;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.payments.SendPaymentService;
 import org.interledger.connector.payments.StreamPayment;
@@ -33,6 +33,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.ConversionService;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 @Configuration
@@ -119,8 +120,8 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
-  public InvoiceFactory invoiceFactory(PaymentPointerResolver paymentPointerResolver, Supplier<ConnectorSettings> connectorSettings) {
-    return new InvoiceFactory(paymentPointerResolver, openPaymentsSettingsSupplier(connectorSettings));
+  public InvoiceFactory invoiceFactory(PaymentPointerResolver paymentPointerResolver, Supplier<ConnectorSettings> connectorSettings, Optional<String> opaUrlPath) {
+    return new InvoiceFactory(paymentPointerResolver, openPaymentsSettingsSupplier(connectorSettings), opaUrlPath);
   }
 
 }

@@ -1,10 +1,14 @@
-package org.interledger.connector.opa.model;
+package org.interledger.connector.wallet;
 
+import org.interledger.connector.opa.model.Invoice;
+import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
 
 import okhttp3.HttpUrl;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 public class InvoiceFactory {
@@ -13,9 +17,16 @@ public class InvoiceFactory {
 
   private final OpenPaymentsSettings openPaymentsSettings;
 
-  public InvoiceFactory(PaymentPointerResolver paymentPointerResolver, Supplier<OpenPaymentsSettings> openPaymentsSettings) {
+  private final Optional<String> opaUrlPath;
+
+  public InvoiceFactory(
+    PaymentPointerResolver paymentPointerResolver,
+    Supplier<OpenPaymentsSettings> openPaymentsSettings,
+    Optional<String> opaUrlPath
+  ) {
     this.paymentPointerResolver = paymentPointerResolver;
     this.openPaymentsSettings = openPaymentsSettings.get();
+    this.opaUrlPath = opaUrlPath;
   }
 
   public Invoice construct(Invoice initialInvoice) {
@@ -38,8 +49,19 @@ public class InvoiceFactory {
         .build();
     }
 
-    HttpUrl invoiceUrl = identifierUrl
-      .newBuilder()
+    // Only want the account part of the payment pointer path
+    String paymentPointerPath = identifierUrl.pathSegments().stream().reduce("", (s, s2) -> s + "/" + s2);
+    if (paymentPointerPath.startsWith("/")) {
+      paymentPointerPath = paymentPointerPath.substring(1);
+    }
+    String paymentTarget = PaymentDetailsUtils.getPaymentTarget(paymentPointerPath, this.opaUrlPath);
+
+    HttpUrl invoiceUrl = new HttpUrl.Builder()
+      .scheme(identifierUrl.scheme())
+      .host(identifierUrl.host())
+      .port(identifierUrl.port())
+      .addPathSegment("accounts")
+      .addPathSegment(paymentTarget)
       .addPathSegment("invoices")
       .addPathSegment(initialInvoice.id().value())
       .build();

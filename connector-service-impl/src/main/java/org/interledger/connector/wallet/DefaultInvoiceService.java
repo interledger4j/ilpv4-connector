@@ -4,7 +4,6 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.InvoiceFactory;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PaymentDetails;
@@ -128,6 +127,7 @@ public class DefaultInvoiceService implements InvoiceService {
         .scheme(invoiceUrl.scheme())
         .host(invoiceUrl.host())
         .port(invoiceUrl.port())
+        .addPathSegment("accounts")
         .addPathSegment(invoice.accountId())
         .addPathSegment("invoices")
         .build();
