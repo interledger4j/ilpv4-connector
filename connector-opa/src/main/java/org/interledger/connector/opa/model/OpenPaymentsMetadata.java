@@ -10,8 +10,7 @@ import org.immutables.value.Value;
 import java.util.List;
 
 /**
- * A configurable settings class which holds information about this Open Payments server, which can be discovered
- * at the server's /.well-known/open-payments endpoint.
+ * A configurable settings class which holds information about this Open Payments server.
  */
 @Value.Immutable(intern = true)
 @JsonSerialize(as = ImmutableOpenPaymentsMetadata.class)
@@ -115,8 +114,11 @@ public interface OpenPaymentsMetadata {
   };
 
   /**
-   * FIXME doc
-   * @return
+   * The {@link HttpUrl} of the servicer of the account which created the invoice.
+   *
+   * This could be the URL of a wallet front end, which can be redirected to in order to complete a checkout flow.
+   *
+   * @return The {@link HttpUrl} of the servicer of this {@link Invoice}.
    */
   @Value.Default
   @JsonProperty("accountServicer")
