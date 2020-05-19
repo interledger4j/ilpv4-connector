@@ -17,6 +17,7 @@ import org.interledger.connector.server.spring.controllers.converters.OerPrepare
 import org.interledger.connector.server.spring.settings.CodecContextConfig;
 import org.interledger.connector.server.spring.settings.link.IlpOverHttpConfig;
 import org.interledger.connector.server.wallet.controllers.converters.InvoiceIdConverter;
+import org.interledger.connector.settings.properties.converters.HttpUrlPropertyConverter;
 import org.interledger.encoding.asn.framework.CodecContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,7 +36,6 @@ import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.zalando.problem.ProblemModule;
@@ -97,6 +97,11 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
   ////////////////////////
   // HttpMessageConverters
   ////////////////////////
+
+  @Bean
+  public HttpUrlPropertyConverter httpUrlPropertyConverter() {
+    return new HttpUrlPropertyConverter();
+  }
 
   @Bean
   OerPreparePacketHttpMessageConverter oerPreparePacketHttpMessageConverter() {

@@ -33,6 +33,13 @@ public interface Invoice {
     return ImmutableInvoice.builder();
   }
 
+  /**
+   * The location of this {@link Invoice}, specified by an HTTP URL.
+   *
+   * Optional for invoice creation requests, but MUST be populated once created.
+   *
+   * @return The unique {@link HttpUrl} of this {@link Invoice}.
+   */
   @JsonProperty("name")
   Optional<HttpUrl> invoiceUrl();
 
@@ -48,12 +55,28 @@ public interface Invoice {
     return InvoiceId.of(UUID.randomUUID().toString());
   }
 
+  /**
+   * The underlying payment network that this {@link Invoice} will be or has been paid on.
+   *
+   * @return The {@link PaymentNetwork} that this {@link Invoice} can be paid on, or was previously paid on.
+   */
   @Value.Default
   default PaymentNetwork paymentNetwork() {
     return PaymentNetwork.ILP;
   }
 
-  @Value.Default
+  /**
+   * Some form of this {@link Invoice}'s {@link Invoice#id()} such that it can be attached to a payment to later
+   * correlate the payment to this {@link Invoice}.
+   *
+   * For example, the paymentId for an {@link Invoice} paid over Interledger will be {@link Invoice#id()} Base 64 encoded.
+   * Alternatively, the paymentId for an {@link Invoice} paid over XRPL will be the SHA-256 hash of {@link Invoice#id()},
+   * which can be included as the InvoiceID on an XRPL transaction.
+   *
+   * @return A {@link String} containing an identifier which can be included in a payment to correlate it to this
+   *  {@link Invoice}.
+   */
+  @Value.Derived
   default String paymentId() {
     if (paymentNetwork().equals(PaymentNetwork.XRPL)) {
       HashCode hashCode = Hashing.sha256()
@@ -147,7 +170,7 @@ public interface Invoice {
 
   /**
    * The identifier of the receiver of the funds from this invoice. For ILP payments this will be a Payment Pointer.
-   * For XRP payments, this will likely be an XRP address.
+   * For XRP payments, this will likely be an XRP address or PayID.
    *
    * @return A {@link String} representing the identifier of the receiver of this invoice.
    */
@@ -189,11 +212,17 @@ public interface Invoice {
     return Instant.now();
   }
 
+  /**
+   * Simple check to see if this {@link Invoice} has been paid.
+   *
+   * @return true if amount received is greater than or equal to the amount of the {@link Invoice}, otherwise false.
+   */
   @JsonIgnore
   @Value.Derived
   default boolean isPaid() {
     return amount().longValue() <= received().longValue();
   }
+
   /**
    * Represents the {@link Instant} in time when this invoice was finalized.
    *
@@ -209,6 +238,13 @@ public interface Invoice {
   @JsonSerialize(as = ImmutableInvoice.class)
   @JsonDeserialize(as = ImmutableInvoice.class)
   abstract class AbstractInvoice implements Invoice {
+
+    /**
+     * Validates that the invoice subject is valid. For ILP, this checks that the subject can be parsed to a
+     * {@link PaymentPointer}.
+     *
+     * @return This {@link AbstractInvoice}.
+     */
     @Value.Check
     protected AbstractInvoice checkInvoiceSubject() {
       if (paymentNetwork().equals(PaymentNetwork.ILP)) {

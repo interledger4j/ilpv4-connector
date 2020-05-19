@@ -291,7 +291,6 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
     String connectorUrl) {
     return OpenPaymentsSettings.builder()
       .ilpOperatorAddress(interledgerAddress)
-      .connectorUrl(HttpUrl.parse("http://localhost:" + port))
       .metadata(
         OpenPaymentsMetadata.builder()
           .assetsSupported(Collections.singleton(SupportedAssets.XRP))
@@ -299,7 +298,6 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
           .defaultScheme("http")
           .build()
       )
-      .connectorUrl(HttpUrl.get(connectorUrl))
       .build();
   }
 

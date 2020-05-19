@@ -140,7 +140,7 @@ public class TwoConnectorIlpOverHttpPingTestIT extends AbstractIlpOverHttpIT {
     assertThat(ilpOverHttpLinkSettings.incomingLinkSettings().get().authType())
       .isEqualTo(IlpOverHttpLinkSettings.AuthType.JWT_HS_256);
 
-    assertThat(connector.getStaticRoutesManager().getAllStaticRoutes().size()).isEqualTo(1);
+    assertThat(connector.getStaticRoutesManager().getAllStaticRoutes().size()).isEqualTo(2);
   }
 
   /**

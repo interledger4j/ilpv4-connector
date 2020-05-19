@@ -106,6 +106,7 @@ interledger:
       ildcpEnabled: true
       # The default for packet-switch mode
       spspEnabled: false
+      openPaymentsEnabled: false
     # settlementEngines:
       # connectionDefaults:
       # Default connect timeout (in milliseconds).

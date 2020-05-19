@@ -25,8 +25,6 @@ public interface OpenPaymentsSettings {
    */
   InterledgerAddress ilpOperatorAddress();
 
-  HttpUrl connectorUrl();
-
   /**
    * Discoverable Open Payments Metadata that can be used to set up Open Payments flows.
    */

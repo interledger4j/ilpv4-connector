@@ -37,20 +37,7 @@ public class PaymentDetailsUtils {
     Objects.requireNonNull(prefixPath);
 
     // path will have the leading configured path stripped off.
-    String paymentTarget = baseUrlPath
-      .map(urlPath -> {
-        if (!StringUtils.startsWith(prefixPath, urlPath)) {
-          return "";
-        } else {
-          // Strip off the url path as configured.
-          String returnable = StringUtils.trimToEmpty(prefixPath).replace(urlPath, "");
-          if (returnable.endsWith("/")) {
-            returnable = returnable.substring(0, returnable.length() - 1); // remove trailing slash.
-          }
-          return returnable;
-        }
-      })
-      .orElse(StringUtils.trimToEmpty(prefixPath));
+    String paymentTarget = getPaymentTarget(prefixPath, baseUrlPath);
 
     paymentTarget = paymentTarget.replace("/", ".");
     paymentTarget = paymentTarget.replace("..", ".");
@@ -64,6 +51,23 @@ public class PaymentDetailsUtils {
     }
 
     return paymentTarget;
+  }
+
+  protected static String getPaymentTarget(String prefixPath, Optional<String> baseUrlPath) {
+    return baseUrlPath
+      .map(urlPath -> {
+        if (!StringUtils.startsWith(prefixPath, urlPath)) {
+          return "";
+        } else {
+          // Strip off the url path as configured.
+          String returnable = StringUtils.trimToEmpty(prefixPath).replace(urlPath, "");
+          if (returnable.endsWith("/")) {
+            returnable = returnable.substring(0, returnable.length() - 1); // remove trailing slash.
+          }
+          return returnable;
+        }
+      })
+      .orElse(StringUtils.trimToEmpty(prefixPath));
   }
 
   /**

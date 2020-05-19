@@ -4,7 +4,6 @@ import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.accounts.AccountSettingsCache;
 import org.interledger.connector.balances.BalanceTracker;
 import org.interledger.connector.links.LinkManager;
-import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.entities.AccountSettingsEntity;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
@@ -85,8 +84,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
 
   private final FilterAccountByValidAccountId filterAccountByValidAccountId;
 
-  private final InvoiceService invoiceService;
-
   @VisibleForTesting
   DefaultILPv4Connector(
     final Supplier<ConnectorSettings> connectorSettingsSupplier,
@@ -98,8 +95,7 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     final ILPv4PacketSwitch ilpPacketSwitch,
     final BalanceTracker balanceTracker,
     final SettlementService settlementService,
-    final AccountSettingsCache accountSettingsCache,
-    final InvoiceService invoiceService
+    final AccountSettingsCache accountSettingsCache
   ) {
     this(
       connectorSettingsSupplier,
@@ -112,7 +108,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
       balanceTracker,
       settlementService,
       accountSettingsCache,
-      invoiceService,
       new EventBus()
     );
   }
@@ -131,7 +126,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     final BalanceTracker balanceTracker,
     final SettlementService settlementService,
     final AccountSettingsCache accountSettingsCache,
-    final InvoiceService invoiceService,
     final EventBus eventBus
   ) {
     this.connectorSettingsSupplier = Objects.requireNonNull(connectorSettingsSupplier);
@@ -149,7 +143,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
     this.eventBus.register(this);
 
     this.filterAccountByValidAccountId = new FilterAccountByValidAccountId();
-    this.invoiceService = invoiceService;
   }
 
   /**
@@ -243,11 +236,6 @@ public class DefaultILPv4Connector implements ILPv4Connector {
   @Override
   public AccountSettingsCache getAccountSettingsCache() {
     return accountSettingsCache;
-  }
-
-  @Override
-  public InvoiceService getInvoiceService() {
-    return invoiceService;
   }
 
   /**

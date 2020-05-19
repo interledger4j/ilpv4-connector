@@ -180,12 +180,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS_PAYMENTS_PATH).authenticated()
 
       .antMatchers(HttpMethod.GET, METRICS_ENDPOINT_URL_PATH).permitAll() // permitAll if hidden by LB.
-
-      // Open Payments Invoices.  All open for now.
-      // TODO: put this in a request matcher to disable when opa is not enabled?
-      .antMatchers(HttpMethod.GET, OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + "/**").permitAll()
-      .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + "/**").permitAll()
-//      .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.SLASH_ACCOUNTS_OPA_PAY).authenticated()
       // SPSP (if enabled)
       .requestMatchers(spspRequestMatcher).permitAll()
     ;
@@ -237,11 +231,22 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       .antMatchers(HttpMethod.DELETE, PathConstants.SLASH_ROUTES_STATIC_PREFIX).hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
 
       // encrypted
-      .antMatchers(HttpMethod.POST, PathConstants.SLASH_ENCRYPTION + "/**").hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN)
+      .antMatchers(HttpMethod.POST, PathConstants.SLASH_ENCRYPTION + "/**").hasAuthority(AuthConstants.Authorities.CONNECTOR_ADMIN);
 
-      // Everything else...
+
+    if (connectorSettingsSupplier.get().enabledProtocols().isOpenPaymentsEnabled()) {
+      // Open Payments Invoices.  All open for now.
+      http
+        .authorizeRequests()
+        //      .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.SLASH_ACCOUNTS_OPA_PAY).authenticated()
+        .antMatchers(HttpMethod.GET, OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + "/**").permitAll()
+        .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + "/**").permitAll();
+    }
+
+    // Everything else...
+    http
+      .authorizeRequests()
       .anyRequest().denyAll()
-
       .and()
       .addFilter(securityContextHolderAwareRequestFilter())
       .cors()

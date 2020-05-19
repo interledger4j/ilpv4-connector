@@ -14,6 +14,7 @@ interledger:
     enabledProtocols:
       # Enables the REST Endpoint for SPSP requests.
       spspEnabled: true
+      openPaymentsEnabled: true
     enabledFeatures:
       localSpspFulfillmentEnabled: true
     spsp:

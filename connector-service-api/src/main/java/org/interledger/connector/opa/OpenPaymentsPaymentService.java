@@ -9,6 +9,11 @@ import com.google.common.primitives.UnsignedLong;
 
 import java.util.concurrent.ExecutionException;
 
+/**
+ * Service interface for all payment specific Open Payments operations.
+ *
+ * @param <T> The type of payment response returned by a call to payInvoice.
+ */
 public interface OpenPaymentsPaymentService<T> {
 
   /**
@@ -22,6 +27,17 @@ public interface OpenPaymentsPaymentService<T> {
    */
   PaymentDetails getPaymentDetails(final Invoice invoice);
 
+  /**
+   * Pay the invoice with the specified {@link InvoiceId}, using {@link PaymentDetails} needed to make the payment.
+   *
+   * @param paymentDetails The {@link PaymentDetails} needed to make the payment.
+   * @param senderAccountId The {@link AccountId} of the sender.
+   * @param amount The amount to pay.
+   * @param correlationId The {@link InvoiceId} of the {@link Invoice} to pay.
+   * @return The result of the payment.
+   * @throws ExecutionException
+   * @throws InterruptedException
+   */
   T payInvoice(
     final PaymentDetails paymentDetails,
     final AccountId senderAccountId,

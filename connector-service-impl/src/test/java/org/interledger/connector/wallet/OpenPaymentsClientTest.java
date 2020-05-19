@@ -1,23 +1,15 @@
 package org.interledger.connector.wallet;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.interledger.connector.jackson.ObjectMapperFactory;
-import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.primitives.UnsignedLong;
 import feign.FeignException;
-import feign.Response;
 import okhttp3.HttpUrl;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.time.Instant;
 
 public class OpenPaymentsClientTest {
 
@@ -29,7 +21,7 @@ public class OpenPaymentsClientTest {
 
   @Before
   public void setUp() {
-    openPaymentsClient = OpenPaymentsClient.construct("");
+    openPaymentsClient = OpenPaymentsClient.construct("https://test.com");
 
     paymentPointerResolver = PaymentPointerResolver.defaultResolver();
 

@@ -7,6 +7,7 @@ import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.opa.model.problems.InvoicePaymentDetailsProblem;
+import org.interledger.connector.opa.model.problems.UnsupportedInvoiceOperationProblem;
 import org.interledger.stream.SendMoneyResult;
 
 import com.google.common.primitives.UnsignedLong;
@@ -38,7 +39,6 @@ public class XrpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
 
   @Override
   public SendMoneyResult payInvoice(PaymentDetails paymentDetails, AccountId senderAccountId, UnsignedLong amount, InvoiceId invoiceId) {
-    // TODO: Throw an exception here because we can't send XRP from OPS
-    return null;
+    throw new UnsupportedInvoiceOperationProblem("Invoices cannot be paid over XRPL from this wallet.", invoiceId);
   }
 }

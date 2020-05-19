@@ -2,6 +2,7 @@ package org.interledger.connector.client;
 
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.jackson.ObjectMapperFactory;
+import org.interledger.connector.payments.ListStreamPaymentsResponse;
 import org.interledger.connector.routing.StaticRoute;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -91,6 +92,12 @@ public interface ConnectorAdminClient {
     ACCEPT + APPLICATION_JSON
   })
   Optional<AccountSettings> findAccount(@Param(ID) String accountId) throws ThrowableProblem;
+
+  @RequestLine("GET /accounts/{id}/payments")
+  @Headers( {
+    ACCEPT + APPLICATION_JSON
+  })
+  ListStreamPaymentsResponse findAccountPayments(@Param(ID) String accountId) throws ThrowableProblem;
 
   @RequestLine("DELETE /accounts/{id}")
   @Headers( {

@@ -1,6 +1,4 @@
-package org.interledger.connector.server.spring.controllers.pay;
-
-import org.interledger.connector.payments.StreamPayment;
+package org.interledger.connector.payments;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

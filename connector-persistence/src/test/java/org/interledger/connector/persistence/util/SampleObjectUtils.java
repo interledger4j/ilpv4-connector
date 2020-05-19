@@ -40,6 +40,7 @@ public final class SampleObjectUtils {
       .received(UnsignedLong.ZERO)
       .subject("paymebruh$xpring.money")
       .paymentNetwork(PaymentNetwork.XRPL)
+      .invoiceUrl(HttpUrl.get("https://xpring.money/paymebruh/invoices/1234"))
       .build();
   }
 }

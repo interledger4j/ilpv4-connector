@@ -62,8 +62,7 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
     final StreamConnectionDetails streamConnectionDetails =
       streamConnectionGenerator.generateConnectionDetails(serverSecretSupplier, paymentReceiverAddress);
 
-    // TODO: this service should not be accessible like this. If this functionality is required, it should be done
-    //  throuh a facade to the Connector.
+    // TODO(bridge): Replace this with a bridge call instead of a SendPaymentService direct call.
     sendPaymentService.createPlaceholderPayment(receiverAccountId,
       StreamPaymentType.PAYMENT_RECEIVED,
       streamConnectionDetails.destinationAddress(),
@@ -87,6 +86,8 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
     // Send payment using STREAM
     IlpPaymentDetails ilpPaymentDetails = (IlpPaymentDetails) paymentDetails;
 
+    // TODO(bridge): Let the bridge know that an invoice payment is being sent instead of this
+    //                direct call?
     return sendPaymentService.sendMoney(
       SendPaymentRequest.builder()
       .accountId(senderAccountId)

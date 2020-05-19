@@ -38,6 +38,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -61,9 +62,9 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   private OpenPaymentsClient aliceClient;
   private OpenPaymentsClient bobClient;
 
-  private HttpUrl paulAtAliceInvoicesUri = HttpUrl.get(ALICE_HTTP_BASE_URL + "/paul/invoices");
-  private HttpUrl peterAtAliceInvoicesUri = HttpUrl.get(ALICE_HTTP_BASE_URL + "/peter/invoices");
-  private HttpUrl peterAtBobInvoicesUri = HttpUrl.get(BOB_HTTP_BASE_URL + "/peter/invoices");
+  private HttpUrl paulAtAliceInvoicesUri = HttpUrl.get(ALICE_HTTP_BASE_URL + "/accounts/paul/invoices");
+  private HttpUrl peterAtAliceInvoicesUri = HttpUrl.get(ALICE_HTTP_BASE_URL + "/accounts/peter/invoices");
+  private HttpUrl peterAtBobInvoicesUri = HttpUrl.get(BOB_HTTP_BASE_URL + "/accounts/peter/invoices");
 
   @BeforeClass
   public static void startTopology() {
@@ -99,7 +100,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
     assertThat(createdInvoice.invoiceUrl())
       .isNotEmpty()
       .get()
-      .isEqualTo(HttpUrl.get("http://localhost:8081/peter/invoices/" + createdInvoice.id().value()));
+      .isEqualTo(HttpUrl.get("http://localhost:8081/accounts/peter/invoices/" + createdInvoice.id().value()));
   }
 
   @Test
@@ -108,7 +109,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
     assertThat(createdInvoice.invoiceUrl())
       .isNotEmpty()
       .get()
-      .isEqualTo(HttpUrl.get("http://localhost:8081/peter/invoices/" + createdInvoice.id().value()));
+      .isEqualTo(HttpUrl.get("http://localhost:8081/accounts/peter/invoices/" + createdInvoice.id().value()));
   }
 
   @Test
@@ -156,7 +157,8 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
     StreamPayment payment = aliceClient.payInvoice(
       createdInvoiceOnAlice.accountId(),
       createdInvoiceOnAlice.id().value(),
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXVsIiwibmFtZSI6InBhdWwiLCJpYXQiOjE1MTYyMzkwMjJ9.rdYwzQKAG8tFC2aRvG3XsW8BFsHxEFnOwcY-17KAA7g"
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXVsIiwibmFtZSI6InBhdWwiLCJpYXQiOjE1MTYyMzkwMjJ9.rdYwzQKAG8tFC2aRvG3XsW8BFsHxEFnOwcY-17KAA7g",
+      Optional.empty()
     );
 
     assertThat(payment.amount().abs()).isEqualTo(createdInvoiceOnAlice.amount().bigIntegerValue());

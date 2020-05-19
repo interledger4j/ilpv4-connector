@@ -6,6 +6,7 @@ import org.interledger.connector.jackson.ObjectMapperFactory;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
+import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.payments.StreamPayment;
 
@@ -20,6 +21,7 @@ import feign.optionals.OptionalDecoder;
 import org.zalando.problem.ThrowableProblem;
 
 import java.net.URI;
+import java.util.Optional;
 
 public interface OpenPaymentsClient {
   String ACCEPT = "Accept:";
@@ -44,10 +46,9 @@ public interface OpenPaymentsClient {
       .decode404()
       .decoder(new OptionalDecoder(new JacksonDecoder(objectMapper)))
       .target(OpenPaymentsClient.class, httpUrl);
-//      .target(Target.HardCodedTarget.EmptyTarget.create(OpenPaymentsClient.class));
   }
 
-  @RequestLine("GET /.well-known/open-payments")
+  @RequestLine("GET {accountId}")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
@@ -64,6 +65,16 @@ public interface OpenPaymentsClient {
     Invoice invoice
   ) throws ThrowableProblem;
 
+
+  @RequestLine("POST accounts/{accountId}/invoices")
+  @Headers({
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON
+  })
+  Invoice createInvoice(
+    Invoice invoice
+  ) throws ThrowableProblem;
+
   @RequestLine("GET /")
   @Headers({
     ACCEPT + APPLICATION_JSON,
@@ -73,7 +84,17 @@ public interface OpenPaymentsClient {
     URI invoiceUrl
   ) throws ThrowableProblem;
 
-  @RequestLine("POST {accountId}/invoices/sync?name={invoiceUrl}")
+  @RequestLine("GET accounts/{accountId}/invoices/{invoiceId}")
+  @Headers({
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON
+  })
+  Invoice getInvoice(
+    @Param("accountId") String accountId,
+    @Param("invoiceId") String invoiceId
+  ) throws ThrowableProblem;
+
+  @RequestLine("POST accounts/{accountId}/invoices/sync?name={invoiceUrl}")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
@@ -110,6 +131,7 @@ public interface OpenPaymentsClient {
   StreamPayment payInvoice(
     @Param("accountId") String accountId,
     @Param("invoiceId") String invoiceId,
-    @Param("authorization") String authorization
+    @Param("authorization") String authorization,
+    Optional<PayInvoiceRequest> payInvoiceRequest
   ) throws ThrowableProblem;
 }

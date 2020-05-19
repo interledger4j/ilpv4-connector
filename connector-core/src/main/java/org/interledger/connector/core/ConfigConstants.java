@@ -45,6 +45,7 @@ public interface ConfigConstants {
   ////////////////////
   String ENABLED_PROTOCOLS = INTERLEDGER__CONNECTOR + DOT + "enabledProtocols";
   String SPSP_ENABLED = "spspEnabled";
+  String OPEN_PAYMENTS_ENABLED = "openPaymentsEnabled";
 
   /**
    * @deprecated This value will likely go away if we transition to a BTP proxy that doesn't typically run in the

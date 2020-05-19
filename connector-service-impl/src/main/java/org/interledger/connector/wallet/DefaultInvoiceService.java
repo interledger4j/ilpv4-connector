@@ -5,13 +5,15 @@ import org.interledger.connector.events.StreamPaymentClosedEvent;
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.InvoiceFactory;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
+import org.interledger.connector.opa.model.problems.InvoicePaymentProblem;
+import org.interledger.connector.payments.ClosedPaymentEvent;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
@@ -63,18 +65,21 @@ public class DefaultInvoiceService implements InvoiceService {
   public Invoice getInvoiceById(InvoiceId invoiceId) {
     Objects.requireNonNull(invoiceId);
 
+    // TODO(bridge): If the invoice hasn't been paid, ask the bridge for any payments that have been sent for the invoice
+    //  and update the invoice received amount.
     return invoicesRepository.findInvoiceByInvoiceId(invoiceId)
       .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceId));
   }
 
   @Override
-  public Invoice getOrSyncInvoice(HttpUrl invoiceUrl) {
+  public Invoice syncInvoice(HttpUrl invoiceUrl) {
     Objects.requireNonNull(invoiceUrl);
 
     // See if we have that invoice already
     return invoicesRepository.findInvoiceByInvoiceUrl(invoiceUrl)
       .map(i -> {
-        // if we do:
+        // TODO(bridge): When the sender already has the invoice, we should throw an error and return a 409(?), which
+        //  will let the client know they can just do a get on the invoice ID.
 
         // The sender and receiver wallets could be the same wallet, so the invoice and the invoice receipt could be
         // the same record. In this case, we should just return what we have.
@@ -126,6 +131,7 @@ public class DefaultInvoiceService implements InvoiceService {
         .scheme(invoiceUrl.scheme())
         .host(invoiceUrl.host())
         .port(invoiceUrl.port())
+        .addPathSegment("accounts")
         .addPathSegment(invoice.accountId())
         .addPathSegment("invoices")
         .build();
@@ -146,15 +152,6 @@ public class DefaultInvoiceService implements InvoiceService {
       })
       .map(entity -> this.conversionService.convert(entity, Invoice.class))
       .orElseThrow(() -> new InvoiceNotFoundProblem(invoice.id()));
-  }
-
-  @Override
-  public Invoice updateOrCreateInvoice(Invoice invoice) {
-    try {
-      return this.updateInvoice(invoice);
-    } catch (InvoiceNotFoundProblem e) {
-      return this.createInvoice(invoice);
-    }
   }
 
   @Override
@@ -180,7 +177,7 @@ public class DefaultInvoiceService implements InvoiceService {
   }
 
   @Override
-  public StreamPayment payInvoice(InvoiceId invoiceId, AccountId senderAccountId, String bearerToken) {
+  public StreamPayment payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) {
     final Invoice invoice = this.getInvoiceById(invoiceId);
 
     if (!invoice.paymentNetwork().equals(PaymentNetwork.ILP)) {
@@ -199,11 +196,13 @@ public class DefaultInvoiceService implements InvoiceService {
     }
 
     UnsignedLong amountLeftToSend = invoice.amount().minus(invoice.received());
+    UnsignedLong amountToPay =
+      min(amountLeftToSend, payInvoiceRequest.orElse(PayInvoiceRequest.builder().build()).amount());
+
     try {
-      return ilpOpenPaymentsPaymentService.payInvoice(ilpPaymentDetails, senderAccountId, amountLeftToSend, invoiceId);
+      return ilpOpenPaymentsPaymentService.payInvoice(ilpPaymentDetails, senderAccountId, amountToPay, invoiceId);
     } catch (InterruptedException | ExecutionException e) {
-      // TODO: Throw an invoice problem
-      throw new RuntimeException(e);
+      throw new InvoicePaymentProblem(e.getMessage(), invoiceId);
     }
   }
 
@@ -256,4 +255,12 @@ public class DefaultInvoiceService implements InvoiceService {
     return issuer.host().equals(invoiceUrl.host());
   }
 
+
+  private UnsignedLong min(UnsignedLong first, UnsignedLong second) {
+    if (first.compareTo(second) < 0) {
+      return first;
+    }
+
+    return second;
+  }
 }

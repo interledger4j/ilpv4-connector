@@ -1,6 +1,5 @@
 package org.interledger.connector.opa.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -10,8 +9,7 @@ import org.immutables.value.Value;
 import java.util.List;
 
 /**
- * A configurable settings class which holds information about this Open Payments server, which can be discovered
- * at the server's /.well-known/open-payments endpoint.
+ * A configurable settings class which holds information about this Open Payments server.
  */
 @Value.Immutable(intern = true)
 @JsonSerialize(as = ImmutableOpenPaymentsMetadata.class)
@@ -27,7 +25,6 @@ public interface OpenPaymentsMetadata {
    *
    * @return an {@link HttpUrl} representing the URL of the issuer.
    */
-  @JsonIgnore
   HttpUrl issuer();
 
   /**
@@ -52,7 +49,7 @@ public interface OpenPaymentsMetadata {
    * @return An {@link HttpUrl} representing the base URL for the Authorization Server.
    */
   @Value.Default
-  @JsonIgnore
+  @JsonProperty("authorization_issuer")
   default HttpUrl authorizationIssuer() {
     return this.issuer();
   };
@@ -96,7 +93,7 @@ public interface OpenPaymentsMetadata {
    * @return The {@link HttpUrl} of the endpoint on the Open Payments Server which handles invoices.
    */
   @Value.Default
-  @JsonIgnore
+  @JsonProperty("invoices_endpoint")
   default HttpUrl invoicesEndpoint() {
     return issuer().newBuilder().addPathSegment("invoices").build();
   };
@@ -109,10 +106,21 @@ public interface OpenPaymentsMetadata {
    * @return The {@link HttpUrl} of the endpoint on the Open Payments Server which handles mandates.
    */
   @Value.Default
-  @JsonIgnore
+  @JsonProperty("mandates_endpoint")
   default HttpUrl mandatesEndpoint() {
     return issuer().newBuilder().addPathSegment("mandates").build();
   };
+
+  /**
+   * The {@link HttpUrl} of the servicer of the account which created the invoice.
+   *
+   * This could be the URL of a wallet front end, which can be redirected to in order to complete a checkout flow.
+   *
+   * @return The {@link HttpUrl} of the servicer of this {@link Invoice}.
+   */
+  @Value.Default
+  @JsonProperty("accountServicer")
+  default HttpUrl accountServicer() { return issuer(); }
 
   /**
    * @return A list of {@link SupportedAsset} for assets that can be used to create agreements on this server

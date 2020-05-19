@@ -24,7 +24,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 @SpringBootTest(
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   classes = {ConnectorServerConfig.class},
-  properties = {"interledger.connector.spsp.urlPath=/p"}
+  properties = {"interledger.connector.spsp.urlPath=/p",
+    "interledger.connector.enabledProtocols.openPaymentsEnabled=true"}
 )
 @ActiveProfiles( {"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 public class SpspControllerSpringTest {
@@ -50,19 +51,6 @@ public class SpspControllerSpringTest {
     );
 
     spspClient.getStreamConnectionDetails(HttpUrl.parse("http://localhost:" + randomServerPort));
-  }
-
-  @Test
-  public void testInvalidPath() {
-    expectedException.expect(SpspClientException.class);
-    expectedException
-      .expectMessage(startsWith("Received non-successful HTTP response code 401 calling http://localhost:"));
-
-    spspClient.getStreamConnectionDetails(
-      HttpUrl.parse("http://localhost:" + randomServerPort).newBuilder()
-        .addPathSegment("bob") // Missing /p
-        .build()
-    );
   }
 
   @Test
