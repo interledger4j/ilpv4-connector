@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.events.StreamPaymentClosedEvent;
 import org.interledger.connector.persistence.repositories.StreamPaymentsRepository;
 import org.interledger.core.InterledgerAddress;
 
@@ -97,7 +98,7 @@ public class InDatabaseStreamPaymentManagerTest {
     verify(mockRepo, times(1)).updateStatus(trx.accountId(), trx.streamPaymentId(), trx.status());
     verify(mockRepo, times(1)).findByAccountIdAndStreamPaymentId(trx.accountId(), trx.streamPaymentId());
     verifyNoMoreInteractions(mockRepo);
-    verify(eventBus).post(ClosedPaymentEvent.builder().payment(trx).build());
+    verify(eventBus).post(StreamPaymentClosedEvent.builder().streamPayment(trx).build());
   }
 
   @Test
