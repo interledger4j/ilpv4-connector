@@ -4,6 +4,8 @@ import org.interledger.connector.core.settlement.SettlementQuantity;
 import org.interledger.connector.settlement.SettlementServiceException;
 import org.interledger.core.Immutable;
 
+import java.util.Optional;
+
 /**
  * Indicates this Connector initiated a settlement with the settlement engine.
  */
@@ -36,8 +38,8 @@ public interface OutgoingSettlementInitiationFailedEvent extends ConnectorEvent 
   SettlementServiceException settlementServiceException();
 
   @Override
-  default String message() {
-    return "Settlement initiation failed";
+  default Optional<String> message() {
+    return Optional.of("Settlement initiation failed");
   }
 
 }

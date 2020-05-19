@@ -4,6 +4,8 @@ import org.interledger.connector.accounts.SettlementEngineAccountId;
 import org.interledger.connector.core.settlement.SettlementQuantity;
 import org.interledger.core.Immutable;
 
+import java.util.Optional;
+
 /**
  * Indicates a local settlement was processed by this Connector's Settlement Engine and propagated to this Connector via
  * the `/accounts/{accountId}/settlements` endpoint.
@@ -46,8 +48,8 @@ public interface IncomingSettlementSucceededEvent extends ConnectorEvent {
   SettlementQuantity processedQuantity();
 
   @Override
-  default String message() {
-    return "Local settlement succeeded.";
+  default Optional<String> message() {
+    return Optional.of("Local settlement succeeded.");
   }
 
 }

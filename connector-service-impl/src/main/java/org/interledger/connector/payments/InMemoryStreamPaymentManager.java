@@ -80,7 +80,7 @@ public class InMemoryStreamPaymentManager implements StreamPaymentManager {
     }
     if (merged.status().equals(StreamPaymentStatus.CLOSED_BY_STREAM)) {
       try {
-        eventBus.post(StreamPaymentClosedEvent.builder().payment(merged).build());
+        eventBus.post(StreamPaymentClosedEvent.builder().streamPayment(merged).build());
       } catch (Exception e) {
         LOGGER.error("Error notifying invoiceService about payment {}", streamPayment, e);
       }

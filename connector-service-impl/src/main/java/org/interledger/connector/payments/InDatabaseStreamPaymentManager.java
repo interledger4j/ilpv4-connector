@@ -98,7 +98,7 @@ public class InDatabaseStreamPaymentManager implements StreamPaymentManager {
   private StreamPayment notifyReceivedPaymentClosed(StreamPaymentEntity streamPaymentEntity) {
     StreamPayment streamPayment = streamPaymentFromEntityConverter.convert(streamPaymentEntity);
     try {
-      eventBus.post(StreamPaymentClosedEvent.builder().payment(streamPayment).build());
+      eventBus.post(StreamPaymentClosedEvent.builder().streamPayment(streamPayment).build());
     } catch (Exception e) {
       LOGGER.error("Error notifying invoiceService about payment {}", streamPayment, e);
     }

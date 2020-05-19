@@ -1,7 +1,5 @@
 package org.interledger.connector.events;
 
-import org.interledger.connector.payments.ImmutableStreamPaymentClosedEvent;
-import org.interledger.connector.payments.ImmutableStreamPaymentClosedEvent.Builder;
 import org.interledger.connector.payments.StreamPayment;
 
 import org.immutables.value.Value;
@@ -12,7 +10,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface StreamPaymentClosedEvent extends ConnectorEvent {
 
-  static Builder builder() {
+  static ImmutableStreamPaymentClosedEvent.Builder builder() {
     return ImmutableStreamPaymentClosedEvent.builder();
   }
 

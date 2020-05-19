@@ -13,7 +13,6 @@ import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.opa.model.problems.InvoicePaymentProblem;
-import org.interledger.connector.payments.ClosedPaymentEvent;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
@@ -50,7 +49,8 @@ public class DefaultInvoiceService implements InvoiceService {
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     OpenPaymentsPaymentService<SendMoneyResult> xrpOpenPaymentsPaymentService,
     OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService,
-    EventBus eventBus) {
+    EventBus eventBus
+  ) {
     this.invoicesRepository = Objects.requireNonNull(invoicesRepository);
     this.conversionService = Objects.requireNonNull(conversionService);
     this.invoiceFactory = Objects.requireNonNull(invoiceFactory);
