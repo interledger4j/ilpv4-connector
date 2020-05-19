@@ -75,6 +75,18 @@
 <!--      <artifactId>openpayments-service-impl</artifactId>-->
 <!--    </dependency>-->
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>openpayments-model</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>openpayments-service-api</artifactId>
+    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>${project.groupId}</groupId>-->
+<!--      <artifactId>openpayments-service-impl</artifactId>-->
+<!--    </dependency>-->
+    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
     </dependency>
