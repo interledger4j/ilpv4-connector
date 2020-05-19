@@ -1,22 +1,14 @@
 package org.interledger.connector.wallet;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.InvoiceService;
-import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.Payment;
-import org.interledger.connector.opa.model.PaymentDetails;
-import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
-import org.interledger.connector.opa.model.problems.InvoicePaymentProblem;
-import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
-import org.interledger.stream.SendMoneyResult;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -26,28 +18,21 @@ import org.springframework.core.convert.ConversionService;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
-// TODO: Split this into an ILPInvoiceService and an XRPInvoiceService?
-public class DefaultInvoiceService implements InvoiceService {
+public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsType> implements InvoiceService<PaymentResultType, PaymentDetailsType> {
+  protected final InvoicesRepository invoicesRepository;
+  protected final ConversionService conversionService;
+  protected final InvoiceFactory invoiceFactory;
+  protected final OpenPaymentsClient openPaymentsClient;
+  protected final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
 
-  private final InvoicesRepository invoicesRepository;
-  private final ConversionService conversionService;
-  private final InvoiceFactory invoiceFactory;
-  private final OpenPaymentsClient openPaymentsClient;
-  private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
-  private final OpenPaymentsPaymentService<SendMoneyResult> xrpOpenPaymentsPaymentService;
-  private final OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService;
-
-  public DefaultInvoiceService(
+  public AbstractInvoiceService(
     final InvoicesRepository invoicesRepository,
     ConversionService conversionService,
     InvoiceFactory invoiceFactory,
     OpenPaymentsClient openPaymentsClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    OpenPaymentsPaymentService<SendMoneyResult> xrpOpenPaymentsPaymentService,
-    OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService,
     EventBus eventBus
   ) {
     this.invoicesRepository = Objects.requireNonNull(invoicesRepository);
@@ -55,8 +40,6 @@ public class DefaultInvoiceService implements InvoiceService {
     this.invoiceFactory = Objects.requireNonNull(invoiceFactory);
     this.openPaymentsClient = Objects.requireNonNull(openPaymentsClient);
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
-    this.xrpOpenPaymentsPaymentService = Objects.requireNonNull(xrpOpenPaymentsPaymentService);
-    this.ilpOpenPaymentsPaymentService = Objects.requireNonNull(ilpOpenPaymentsPaymentService);
     eventBus.register(this);
   }
 
@@ -153,85 +136,31 @@ public class DefaultInvoiceService implements InvoiceService {
       .orElseThrow(() -> new InvoiceNotFoundProblem(invoice.id()));
   }
 
-  @Override
-  public PaymentDetails getPaymentDetails(InvoiceId invoiceId) {
-    final Invoice invoice = this.getInvoiceById(invoiceId);
-
-    final HttpUrl invoiceUrl = invoice.invoiceUrl()
-      .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
-
-    if (!isForThisWallet(invoiceUrl)) {
-      if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
-        return openPaymentsClient.getXrpInvoicePaymentDetails(invoiceUrl.uri());
-      } else {
-        return openPaymentsClient.getIlpInvoicePaymentDetails(invoiceUrl.uri());
-      }
-    }
-
-    if (invoice.paymentNetwork().equals(PaymentNetwork.XRPL)) {
-      return xrpOpenPaymentsPaymentService.getPaymentDetails(invoice);
-    } else {
-      return ilpOpenPaymentsPaymentService.getPaymentDetails(invoice);
-    }
-  }
-
-  @Override
-  public Payment payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) {
-    final Invoice invoice = this.getInvoiceById(invoiceId);
-
-    if (!invoice.paymentNetwork().equals(PaymentNetwork.ILP)) {
-      throw new IllegalStateException("Unable to pay invoice from Open Payment Server over non-ILP payment network.");
-    }
-
-    final HttpUrl invoiceUrl = invoice.invoiceUrl()
-      .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
-
-    PaymentDetails ilpPaymentDetails;
-
-    if (!isForThisWallet(invoiceUrl)) {
-      ilpPaymentDetails = openPaymentsClient.getIlpInvoicePaymentDetails(invoiceUrl.uri());
-    } else {
-      ilpPaymentDetails = ilpOpenPaymentsPaymentService.getPaymentDetails(invoice);
-    }
-
-    UnsignedLong amountLeftToSend = invoice.amount().minus(invoice.received());
-    UnsignedLong amountToPay =
-      min(amountLeftToSend, payInvoiceRequest.orElse(PayInvoiceRequest.builder().build()).amount());
-
-    try {
-      return ilpOpenPaymentsPaymentService.payInvoice(ilpPaymentDetails, senderAccountId, amountToPay, invoiceId);
-    } catch (InterruptedException | ExecutionException e) {
-      throw new InvoicePaymentProblem(e.getMessage(), invoiceId);
-    }
-  }
-
-  @Override
   public Optional<Invoice> onPayment(XrpPayment xrpPayment) {
     return Optional.empty();
   }
 
-  @Override
-  public Optional<Invoice> onPayment(StreamPayment streamPayment) {
-    InvoiceId invoiceIdFromCorrelationId = streamPayment.correlationId()
+  public Optional<Invoice> onPayment(Payment payment) {
+    InvoiceId invoiceIdFromCorrelationId = payment.correlationId()
       .map(InvoiceId::of)
       .orElseThrow(() -> new IllegalArgumentException("StreamPayment did not have a correlationId.  Unable to update invoice for payment."));
 
     Invoice existingInvoice = this.getInvoiceById(invoiceIdFromCorrelationId);
 
-    if (!existingInvoice.assetCode().equals(streamPayment.assetCode())) {
+    if (!existingInvoice.assetCode().equals(payment.assetCode())) {
       throw new IllegalStateException(String.format("Invoice asset code was different than the StreamPayment asset code." +
-        "Unable to accurately credit invoice. Invoice assetCode: %s ; Payment assetCode: %s", existingInvoice.assetCode(), streamPayment.assetCode()));
+        "Unable to accurately credit invoice. Invoice assetCode: %s ; Payment assetCode: %s", existingInvoice.assetCode(), payment.assetCode()));
     }
 
     Invoice updatedInvoice = Invoice.builder()
       .from(existingInvoice)
-      .received(existingInvoice.received().plus(streamPayment.deliveredAmount()))
+      .received(existingInvoice.received().plus(payment.deliveredAmount()))
       .build();
 
     return Optional.of(this.updateInvoice(updatedInvoice));
   }
 
-  private boolean isForThisWallet(HttpUrl invoiceUrl) {
+  protected boolean isForThisWallet(HttpUrl invoiceUrl) {
     HttpUrl issuer = openPaymentsSettingsSupplier.get().metadata().issuer();
     if (issuer.host().equals("localhost")) {
       return issuer.host().equals(invoiceUrl.host()) && issuer.port() == invoiceUrl.port();
@@ -241,7 +170,7 @@ public class DefaultInvoiceService implements InvoiceService {
   }
 
 
-  private UnsignedLong min(UnsignedLong first, UnsignedLong second) {
+  protected UnsignedLong min(UnsignedLong first, UnsignedLong second) {
     if (first.compareTo(second) < 0) {
       return first;
     }

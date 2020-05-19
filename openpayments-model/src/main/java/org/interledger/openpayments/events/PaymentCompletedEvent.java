@@ -1,6 +1,6 @@
 package org.interledger.openpayments.events;
 
-import org.interledger.openpayments.Payment;
+import org.interledger.connector.opa.model.Payment;
 
 import org.immutables.value.Value;
 

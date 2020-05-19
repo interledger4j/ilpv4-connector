@@ -1,4 +1,4 @@
-package org.interledger.openpayments;
+package org.interledger.connector.opa.model;
 
 import org.interledger.connector.opa.model.PaymentId;
 

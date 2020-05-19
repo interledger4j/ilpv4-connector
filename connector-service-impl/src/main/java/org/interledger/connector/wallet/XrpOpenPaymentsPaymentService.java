@@ -16,7 +16,7 @@ import io.xpring.payid.PayIDException;
 
 import java.util.Objects;
 
-public class XrpOpenPaymentsPaymentService implements OpenPaymentsPaymentService<SendMoneyResult> {
+public class XrpOpenPaymentsPaymentService implements OpenPaymentsPaymentService<SendMoneyResult, XrpPaymentDetails> {
 
   private PayIDClient payIDClient;
 
@@ -25,7 +25,7 @@ public class XrpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
   }
 
   @Override
-  public PaymentDetails getPaymentDetails(Invoice invoice) {
+  public XrpPaymentDetails getPaymentDetails(Invoice invoice) {
     try {
       String xrpAddress = payIDClient.xrpAddressForPayID(invoice.subject());
       return XrpPaymentDetails.builder()

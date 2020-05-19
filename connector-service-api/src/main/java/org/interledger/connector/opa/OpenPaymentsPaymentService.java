@@ -14,7 +14,7 @@ import java.util.concurrent.ExecutionException;
  *
  * @param <T> The type of payment response returned by a call to payInvoice.
  */
-public interface OpenPaymentsPaymentService<T> {
+public interface OpenPaymentsPaymentService<T, K> {
 
   /**
    * Get the details necessary to make a payment for an invoice.
@@ -25,7 +25,7 @@ public interface OpenPaymentsPaymentService<T> {
    * @param invoice The subject of the invoice.
    * @return The {@link PaymentDetails} needed to pay an {@link Invoice}.
    */
-  PaymentDetails getPaymentDetails(final Invoice invoice);
+  K getPaymentDetails(final Invoice invoice);
 
   /**
    * Pay the invoice with the specified {@link InvoiceId}, using {@link PaymentDetails} needed to make the payment.

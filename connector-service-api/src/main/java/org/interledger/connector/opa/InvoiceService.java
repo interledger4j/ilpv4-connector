@@ -6,8 +6,6 @@ import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.PaymentDetails;
-import org.interledger.connector.opa.model.XrpPayment;
-import org.interledger.connector.payments.StreamPayment;
 
 import okhttp3.HttpUrl;
 
@@ -16,7 +14,7 @@ import java.util.Optional;
 /**
  * Service layer interface for dealing with {@link Invoice}s in different Open Payments flows.
  */
-public interface InvoiceService {
+public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
 
   /**
    * Get an existing invoice.
@@ -67,7 +65,7 @@ public interface InvoiceService {
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} this payment is being set up to pay.
    * @return The payment details necessary to pay an invoice.
    */
-  PaymentDetails getPaymentDetails(final InvoiceId invoiceId);
+  PaymentDetailsType getPaymentDetails(final InvoiceId invoiceId);
 
   /**
    * Make a payment towards an {@link Invoice}.
@@ -81,21 +79,6 @@ public interface InvoiceService {
    * @param payInvoiceRequest Optional request body containing the amount to pay on the {@link Invoice}.
    * @return The result of the payment.
    */
-  StreamPayment payInvoice(final InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest);
+  PaymentResultType payInvoice(final InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest);
 
-  /**
-   * Execute any actions necessary in the event of a received XRP payment.
-   *
-   * @param xrpPayment An {@link XrpPayment} with details about the XRP payment.
-   * @return The updated invoice, if the XRP payment was determined to be for an invoice, otherwise empty.
-   */
-  Optional<Invoice> onPayment(final XrpPayment xrpPayment);
-
-  /**
-   * Execute any actions necessary in the event of a received ILP STREAM payment.
-   *
-   * @param streamPayment A {@link StreamPayment} with details about the ILP payment.
-   * @return The updated invoice, if the ILP payment was determined to be for an invoice, otherwise empty.
-   */
-  Optional<Invoice> onPayment(final StreamPayment streamPayment);
 }

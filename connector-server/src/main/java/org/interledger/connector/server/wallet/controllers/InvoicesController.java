@@ -7,18 +7,23 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.InvoiceService;
+import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsMediaType;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
+import org.interledger.connector.opa.model.Payment;
 import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
+import org.interledger.connector.wallet.IlpInvoiceService;
+import org.interledger.connector.wallet.XrplInvoiceService;
 
 import okhttp3.HttpUrl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -46,14 +51,17 @@ import java.util.function.Supplier;
 public class InvoicesController {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-  private InvoiceService invoiceService;
+  private IlpInvoiceService ilpInvoiceService;
+  private XrplInvoiceService xrpInvoiceService;
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
 
   public InvoicesController(
-    final InvoiceService invoiceService,
+    final IlpInvoiceService ilpInvoiceService,
+    final XrplInvoiceService xrpInvoiceService,
     final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier
   ) {
-    this.invoiceService = Objects.requireNonNull(invoiceService);
+    this.ilpInvoiceService = Objects.requireNonNull(ilpInvoiceService);
+    this.xrpInvoiceService = xrpInvoiceService;
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
   }
 
@@ -74,7 +82,7 @@ public class InvoicesController {
     @PathVariable String accountId,
     @RequestBody Invoice invoice
   ) {
-    Invoice createdInvoice = invoiceService.createInvoice(invoice);
+    Invoice createdInvoice = ilpInvoiceService.createInvoice(invoice);
 
     final HttpHeaders headers = new HttpHeaders();
     headers.setLocation(getInvoiceLocation(invoice.id()));
@@ -101,7 +109,7 @@ public class InvoicesController {
     @RequestParam("name") String invoiceUrl
   ) throws UnsupportedEncodingException {
     String decodedInvoiceUrl = URLDecoder.decode(invoiceUrl, StandardCharsets.UTF_8.toString());
-    return invoiceService.syncInvoice(HttpUrl.get(decodedInvoiceUrl));
+    return ilpInvoiceService.syncInvoice(HttpUrl.get(decodedInvoiceUrl));
   }
 
   /**
@@ -119,22 +127,58 @@ public class InvoicesController {
   @RequestMapping(
     path = OpenPaymentsPathConstants.INVOICES_WITH_ID,
     method = RequestMethod.GET,
-    produces = {OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE, APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public @ResponseBody ResponseEntity getInvoiceDetails(
+  public @ResponseBody ResponseEntity getInvoice(
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
     @RequestHeader("Accept") String acceptHeader
   ) {
     final HttpHeaders headers = new HttpHeaders();
     headers.setLocation(getInvoiceLocation(invoiceId));
 
-    if (acceptHeader.equals(OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE)) {
-      PaymentDetails paymentDetails = invoiceService.getPaymentDetails(invoiceId);
-      return new ResponseEntity(paymentDetails, headers, HttpStatus.OK);
-    } else {
-      Invoice invoice = invoiceService.getInvoiceById(invoiceId);
-      return new ResponseEntity(invoice, headers, HttpStatus.OK);
-    }
+    Invoice invoice = ilpInvoiceService.getInvoiceById(invoiceId);
+    return new ResponseEntity(invoice, headers, HttpStatus.OK);
+
+  }
+
+  /**
+   * Get either {@link PaymentDetails} for the {@link Invoice} with the given {@link InvoiceId} or the {@link Invoice}
+   * itself.
+   *
+   * To get {@link PaymentDetails} for an {@link Invoice}, send an Accept header value of "application/connection+json".
+   * Otherwise, send an Accept header value of "application/json".
+   *
+   * @param invoiceId The {@link InvoiceId} of the invoice to get details for.
+   * @param acceptHeader "application/connection+json" for {@link PaymentDetails},
+   *                     "application/json" for an {@link Invoice}.
+   * @return Either {@link PaymentDetails} for an {@link Invoice} or the {@link Invoice} itself.
+   */
+  @RequestMapping(
+    path = OpenPaymentsPathConstants.INVOICES_WITH_ID + "/ilp",
+    method = RequestMethod.GET,
+    produces = {OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE, APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+  )
+  public @ResponseBody IlpPaymentDetails getIlpPaymentDetails(
+    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
+    @RequestHeader("Accept") String acceptHeader
+  ) {
+    return ilpInvoiceService.getPaymentDetails(invoiceId);
+  }
+
+  @RequestMapping(
+    path = OpenPaymentsPathConstants.INVOICES_WITH_ID + "/xrp",
+    method = RequestMethod.GET,
+    produces = {OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE, APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+  )
+  public @ResponseBody ResponseEntity getXrpPaymentDetails(
+    @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
+    @RequestHeader("Accept") String acceptHeader
+  ) {
+    final HttpHeaders headers = new HttpHeaders();
+    headers.setLocation(getInvoiceLocation(invoiceId));
+
+    PaymentDetails paymentDetails = xrpInvoiceService.getPaymentDetails(invoiceId);
+    return new ResponseEntity(paymentDetails, headers, HttpStatus.OK);
   }
 
   /**
@@ -160,7 +204,7 @@ public class InvoicesController {
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
     @RequestBody Optional<PayInvoiceRequest> payInvoiceRequest
     ) {
-    return invoiceService.payInvoice(invoiceId, accountId, payInvoiceRequest);
+    return ilpInvoiceService.payInvoice(invoiceId, accountId, payInvoiceRequest);
   }
 
   private URI getInvoiceLocation(InvoiceId invoiceId) {

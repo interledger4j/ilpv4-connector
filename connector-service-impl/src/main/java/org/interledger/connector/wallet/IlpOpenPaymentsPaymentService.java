@@ -26,7 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Objects;
 import java.util.Optional;
 
-public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService<StreamPayment> {
+public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService<StreamPayment, IlpPaymentDetails> {
 
   private final Optional<String> opaUrlPath;
   private final PaymentPointerResolver paymentPointerResolver;
@@ -50,7 +50,7 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
   }
 
   @Override
-  public PaymentDetails getPaymentDetails(Invoice invoice) {
+  public IlpPaymentDetails getPaymentDetails(Invoice invoice) {
 
     final String ilpIntermediateSuffix = this.validateInvoiceSubjectAndComputeAddressSuffix(invoice.subject());
 
