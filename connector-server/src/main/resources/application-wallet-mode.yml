@@ -19,6 +19,8 @@ interledger:
     enabledProtocols:
       # Enables the Connector to respond to SPSP requests.
       spspEnabled: true
+      # FIXME default to false once everyone has updated
+      openPaymentsEnabled: true
     open-payments:
       ilpOperatorAddress: "test.jc1"
       connector-url: https://test.jc1.dev

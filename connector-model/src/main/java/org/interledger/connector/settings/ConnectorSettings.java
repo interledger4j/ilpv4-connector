@@ -11,6 +11,7 @@ import org.interledger.link.Link;
 import org.immutables.value.Value;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * A view of the settings currently configured for this Connector.
@@ -72,7 +73,7 @@ public interface ConnectorSettings {
    *
    * @return
    */
-  OpenPaymentsSettings openPayments();
+  Optional<OpenPaymentsSettings> openPayments();
 
   /**
    * Connection settings/defaults used for FX pools and clients

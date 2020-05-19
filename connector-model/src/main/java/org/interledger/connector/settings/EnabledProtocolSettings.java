@@ -62,6 +62,8 @@ public interface EnabledProtocolSettings {
     return false;
   }
 
+  default boolean isOpenPaymentsEnabled() { return false; }
+
   @Value.Immutable(intern = true)
   abstract class AbstractEnabledProtocolSettings implements EnabledProtocolSettings {
 
@@ -92,6 +94,12 @@ public interface EnabledProtocolSettings {
     @Override
     @Value.Default
     public boolean isSpspEnabled() {
+      return false;
+    }
+
+    @Override
+    @Value.Default
+    public boolean isOpenPaymentsEnabled() {
       return false;
     }
   }

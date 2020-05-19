@@ -91,10 +91,14 @@ public class InDatabaseStreamPaymentManagerTest {
     StreamPayment trx = transactionBuilder()
       .status(StreamPaymentStatus.CLOSED_BY_STREAM)
       .build();
+    when(mockRepo.findByAccountIdAndStreamPaymentId(trx.accountId(), trx.streamPaymentId()))
+      .thenReturn(Optional.of(streamPaymentToEntityConverter.convert(trx)));
     transactionManager.merge(trx);
     verify(mockRepo, times(1)).upsertAmounts(streamPaymentToEntityConverter.convert(trx));
     verify(mockRepo, times(1)).updateStatus(trx.accountId(), trx.streamPaymentId(), trx.status());
+    verify(mockRepo, times(1)).findByAccountIdAndStreamPaymentId(trx.accountId(), trx.streamPaymentId());
     verifyNoMoreInteractions(mockRepo);
+    verify(eventBus).post(ClosedPaymentEvent.builder().payment(trx).build());
   }
 
   @Test

@@ -1,6 +1,7 @@
 package org.interledger.connector.settings.properties;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
@@ -189,8 +190,8 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   }
 
   @Override
-  public OpenPaymentsSettingsFromPropertyFile openPayments() {
-    return openPayments;
+  public Optional<OpenPaymentsSettings> openPayments() {
+    return Optional.ofNullable(openPayments);
   }
 
   public void setOpenPayments(OpenPaymentsSettingsFromPropertyFile openPayments) {

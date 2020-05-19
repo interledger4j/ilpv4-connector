@@ -11,6 +11,7 @@ public class EnabledProtocolSettingsFromPropertyFile implements EnabledProtocolS
   private boolean peerRoutingEnabled;
   private boolean ildcpEnabled;
   private boolean spspEnabled;
+  private boolean openPaymentsEnabled;
 
   @Override
   public boolean isPingProtocolEnabled() {
@@ -48,4 +49,12 @@ public class EnabledProtocolSettingsFromPropertyFile implements EnabledProtocolS
     this.spspEnabled = spspEnabled;
   }
 
+  @Override
+  public boolean isOpenPaymentsEnabled() {
+    return openPaymentsEnabled;
+  }
+
+  public void setOpenPaymentsEnabled(boolean openPaymentsEnabled) {
+    this.openPaymentsEnabled = openPaymentsEnabled;
+  }
 }

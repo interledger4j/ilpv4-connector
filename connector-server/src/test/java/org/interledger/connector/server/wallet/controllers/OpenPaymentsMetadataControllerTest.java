@@ -1,14 +1,12 @@
 package org.interledger.connector.server.wallet.controllers;
 
 import static org.mockito.MockitoAnnotations.initMocks;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.server.spring.controllers.AbstractControllerTest;
-import org.interledger.connector.server.spring.controllers.PathConstants;
-import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -24,8 +22,9 @@ import java.util.function.Supplier;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(
+  properties = {"interledger.connector.enabledProtocols.openPayments=true"},
   controllers = OpenPaymentsMetadataController.class,
-  excludeAutoConfiguration = {SecurityAutoConfiguration.class}
+  excludeAutoConfiguration = {SecurityAutoConfiguration.class,}
 )
 public class OpenPaymentsMetadataControllerTest extends AbstractControllerTest {
   @Autowired

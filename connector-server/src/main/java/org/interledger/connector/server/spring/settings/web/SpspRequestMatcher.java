@@ -1,12 +1,14 @@
 package org.interledger.connector.server.spring.settings.web;
 
+import static org.interledger.connector.server.wallet.controllers.SpspController.APPLICATION_SPSP_JSON_VALUE;
+import static org.interledger.spsp.client.SpspClient.APPLICATION_SPSP4_JSON_VALUE;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.util.UrlPathHelper;
 
 import java.util.Objects;
 import java.util.Optional;
-
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -50,8 +52,8 @@ public class SpspRequestMatcher implements RequestMatcher {
     return Optional.ofNullable(httpServletRequest.getHeader("Accept"))
       .filter(StringUtils::isNotBlank)
       .filter(
-        acceptHeader -> StringUtils.contains(acceptHeader, "application/spsp4+json")
-          || StringUtils.contains(acceptHeader, "application/spsp+json")
+        acceptHeader -> StringUtils.contains(acceptHeader, APPLICATION_SPSP4_JSON_VALUE)
+          || StringUtils.contains(acceptHeader, APPLICATION_SPSP_JSON_VALUE)
       )
       .map(acceptHeader -> true) // If anything makes it past the filters
       .orElse(false); // empty/blank/null string.

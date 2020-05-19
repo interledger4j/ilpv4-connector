@@ -1,7 +1,7 @@
 package org.interledger.connector.server.wallet.controllers;
 
 import static org.interledger.connector.core.ConfigConstants.ENABLED_PROTOCOLS;
-import static org.interledger.connector.core.ConfigConstants.SPSP_ENABLED;
+import static org.interledger.connector.core.ConfigConstants.OPEN_PAYMENTS_ENABLED;
 import static org.interledger.connector.core.ConfigConstants.TRUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -42,8 +42,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 @RestController
-// TODO make an enabled property for open payments?
-@ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = SPSP_ENABLED, havingValue = TRUE)
+@ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = OPEN_PAYMENTS_ENABLED, havingValue = TRUE)
 public class InvoicesController {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 

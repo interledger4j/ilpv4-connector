@@ -22,7 +22,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 @SpringBootTest(
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   classes = {ConnectorServerConfig.class},
-  properties = {"interledger.connector.enabledProtocols.spspEnabled=false"}
+  properties = {"interledger.connector.enabledProtocols.spspEnabled=false",
+    "interledger.connector.enabledProtocols.openPaymentsEnabled=false"}
 )
 @ActiveProfiles( {"test"}) // Uses the `application-test.properties` file in the `src/test/resources` folder
 public class SpspControllerDisabledSpringTest {

@@ -5,7 +5,6 @@ import static org.interledger.connector.core.ConfigConstants.SPSP_ENABLED;
 import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 import static org.interledger.connector.core.ConfigConstants.TRUE;
 import static org.interledger.spsp.client.SpspClient.APPLICATION_SPSP4_JSON_VALUE;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
@@ -42,6 +41,7 @@ import javax.servlet.http.HttpServletRequest;
 public class SpspController {
 
   private static final MediaType APPLICATION_SPSP4_JSON = MediaType.valueOf(APPLICATION_SPSP4_JSON_VALUE);
+  public static final String APPLICATION_SPSP_JSON_VALUE = "application/spsp+json";
 
   private final StreamReceiver streamReceiver;
   private final UrlPathHelper urlPathHelper;
@@ -67,7 +67,7 @@ public class SpspController {
    */
   @RequestMapping(
     path = "/**", method = RequestMethod.GET,
-    produces = {APPLICATION_SPSP4_JSON_VALUE, APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    produces = {APPLICATION_SPSP4_JSON_VALUE, APPLICATION_SPSP_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public ResponseEntity<StreamConnectionDetails> getSpspResponse(final HttpServletRequest httpServletRequest) {
     final String requestedUrlPath = urlPathHelper.getPathWithinApplication(httpServletRequest);
