@@ -62,14 +62,14 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>connector-fxrates</artifactId>
     </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>openpayments-model</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>openpayments-service-api</artifactId>
-    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>${project.groupId}</groupId>-->
+<!--      <artifactId>openpayments-model</artifactId>-->
+<!--    </dependency>-->
+<!--    <dependency>-->
+<!--      <groupId>${project.groupId}</groupId>-->
+<!--      <artifactId>openpayments-service-api</artifactId>-->
+<!--    </dependency>-->
 <!--    <dependency>-->
 <!--      <groupId>${project.groupId}</groupId>-->
 <!--      <artifactId>openpayments-service-impl</artifactId>-->
