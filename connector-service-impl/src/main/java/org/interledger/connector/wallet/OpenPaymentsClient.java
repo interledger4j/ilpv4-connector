@@ -46,7 +46,6 @@ public interface OpenPaymentsClient {
       .decode404()
       .decoder(new OptionalDecoder(new JacksonDecoder(objectMapper)))
       .target(OpenPaymentsClient.class, httpUrl);
-//      .target(Target.HardCodedTarget.EmptyTarget.create(OpenPaymentsClient.class));
   }
 
   @RequestLine("GET {accountId}")
@@ -66,6 +65,16 @@ public interface OpenPaymentsClient {
     Invoice invoice
   ) throws ThrowableProblem;
 
+
+  @RequestLine("POST accounts/{accountId}/invoices")
+  @Headers({
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON
+  })
+  Invoice createInvoice(
+    Invoice invoice
+  ) throws ThrowableProblem;
+
   @RequestLine("GET /")
   @Headers({
     ACCEPT + APPLICATION_JSON,
@@ -73,6 +82,16 @@ public interface OpenPaymentsClient {
   })
   Invoice getInvoice(
     URI invoiceUrl
+  ) throws ThrowableProblem;
+
+  @RequestLine("GET accounts/{accountId}/invoices/{invoiceId}")
+  @Headers({
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON
+  })
+  Invoice getInvoice(
+    @Param("accountId") String accountId,
+    @Param("invoiceId") String invoiceId
   ) throws ThrowableProblem;
 
   @RequestLine("POST accounts/{accountId}/invoices/sync?name={invoiceUrl}")

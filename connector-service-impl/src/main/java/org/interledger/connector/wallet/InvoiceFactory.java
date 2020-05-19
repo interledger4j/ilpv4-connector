@@ -7,10 +7,12 @@ import org.interledger.spsp.PaymentPointerResolver;
 
 import okhttp3.HttpUrl;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+/**
+ * Factory class for creating {@link Invoice}s.
+ */
 public class InvoiceFactory {
 
   private final PaymentPointerResolver paymentPointerResolver;
@@ -29,6 +31,12 @@ public class InvoiceFactory {
     this.opaUrlPath = opaUrlPath;
   }
 
+  /**
+   * Populate the URL of an invoice.  This MUST be called before creating an {@link Invoice} in the database.
+   *
+   * @param initialInvoice An {@link Invoice} without a URL.
+   * @return An {@link Invoice} with a URL.
+   */
   public Invoice construct(Invoice initialInvoice) {
     if (initialInvoice.invoiceUrl().isPresent()) {
       return initialInvoice;

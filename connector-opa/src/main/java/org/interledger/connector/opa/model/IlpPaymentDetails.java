@@ -9,6 +9,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
+/**
+ * Payment details necessary to pay an {@link Invoice} over Interledger.
+ */
 @Value.Immutable
 @JsonSerialize(as = ImmutableIlpPaymentDetails.class)
 @JsonDeserialize(as = ImmutableIlpPaymentDetails.class)
@@ -18,6 +21,14 @@ public interface IlpPaymentDetails extends PaymentDetails {
     return ImmutableIlpPaymentDetails.builder();
   }
 
+  /**
+   * This class is just a copy of {@link StreamConnectionDetails}, but necessary to force inheritance from
+   * a common ancestor {@link PaymentDetails}. The details we receive from a connection generator are
+   * {@link StreamConnectionDetails}, but need to be converted to {@link IlpPaymentDetails}.
+   *
+   * @param streamConnectionDetails The {@link StreamConnectionDetails} returned from a connection generator.
+   * @return The {@link IlpPaymentDetails} equivalent of {@code streamConnectionDetails}.
+   */
   static IlpPaymentDetails from(StreamConnectionDetails streamConnectionDetails) {
     return builder()
       .destinationAddress(streamConnectionDetails.destinationAddress())

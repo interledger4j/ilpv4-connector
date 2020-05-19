@@ -6,6 +6,8 @@ import java.util.Objects;
 
 /**
  * Defines an asset denomination which is supported by this Open Payments server by providing an asset code and scale.
+ *
+ * Must be a POJO, not an immutable, to be able to accurately populate this class from a configuration file.
  */
 public class SupportedAsset {
 
