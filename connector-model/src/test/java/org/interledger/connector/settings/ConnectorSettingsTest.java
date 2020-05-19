@@ -27,7 +27,6 @@ public class ConnectorSettingsTest {
     final ConnectorSettings defaultConnectorSettings = ImmutableConnectorSettings.builder()
       .globalRoutingSettings(GlobalRoutingSettings.builder().routingSecret("foo").build())
       .openPayments(OpenPaymentsSettings.builder()
-        .connectorUrl(HttpUrl.parse("https://connector.example.com"))
         .ilpOperatorAddress(InterledgerAddress.of("example.connector"))
         .metadata(OpenPaymentsMetadata.builder()
           .issuer(HttpUrl.parse("https://connector.example.com"))
