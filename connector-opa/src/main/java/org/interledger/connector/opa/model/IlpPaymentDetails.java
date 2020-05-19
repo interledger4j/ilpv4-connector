@@ -15,7 +15,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableIlpPaymentDetails.class)
 @JsonDeserialize(as = ImmutableIlpPaymentDetails.class)
-public interface IlpPaymentDetails extends PaymentDetails {
+public interface IlpPaymentDetails {
 
   static ImmutableIlpPaymentDetails.Builder builder() {
     return ImmutableIlpPaymentDetails.builder();
@@ -23,7 +23,7 @@ public interface IlpPaymentDetails extends PaymentDetails {
 
   /**
    * This class is just a copy of {@link StreamConnectionDetails}, but necessary to force inheritance from
-   * a common ancestor {@link PaymentDetails}. The details we receive from a connection generator are
+   * a common ancestor {@link IlpPaymentDetails}. The details we receive from a connection generator are
    * {@link StreamConnectionDetails}, but need to be converted to {@link IlpPaymentDetails}.
    *
    * @param streamConnectionDetails The {@link StreamConnectionDetails} returned from a connection generator.

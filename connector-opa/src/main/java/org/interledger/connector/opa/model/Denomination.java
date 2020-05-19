@@ -1,4 +1,4 @@
-package org.interledger.openpayments;
+package org.interledger.connector.opa.model;
 
 import org.immutables.value.Value.Immutable;
 

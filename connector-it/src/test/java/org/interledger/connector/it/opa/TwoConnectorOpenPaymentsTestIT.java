@@ -16,7 +16,6 @@ import org.interledger.connector.it.topology.AbstractBaseTopology;
 import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.wallet.OpenPaymentsClient;
@@ -132,7 +131,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   @Test
   public void getPeterInvoicePaymentDetailsOnBob() {
     Invoice createdInvoice = createInvoice(peterAtBobInvoicesUri);
-    PaymentDetails paymentDetails = aliceClient.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
+    IlpPaymentDetails paymentDetails = aliceClient.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
     assertThat(paymentDetails).isInstanceOf(IlpPaymentDetails.class);
     IlpPaymentDetails ilpPaymentDetails = (IlpPaymentDetails) paymentDetails;
 
@@ -142,7 +141,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   @Test
   public void getPeterInvoicePaymentDetailsViaAliceOnBob() {
     Invoice createdInvoice = createInvoice(peterAtAliceInvoicesUri);
-    PaymentDetails paymentDetails = aliceClient.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
+    IlpPaymentDetails paymentDetails = aliceClient.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
     assertThat(paymentDetails).isInstanceOf(IlpPaymentDetails.class);
     IlpPaymentDetails ilpPaymentDetails = (IlpPaymentDetails) paymentDetails;
 

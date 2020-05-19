@@ -1,12 +1,16 @@
 package org.interledger.connector.wallet;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.Payment;
 import org.interledger.connector.opa.model.XrpPayment;
+import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
+import org.interledger.connector.opa.model.problems.UnsupportedInvoiceOperationProblem;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 
@@ -136,8 +140,14 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
       .orElseThrow(() -> new InvoiceNotFoundProblem(invoice.id()));
   }
 
-  public Optional<Invoice> onPayment(XrpPayment xrpPayment) {
-    return Optional.empty();
+  @Override
+  public PaymentDetailsType getPaymentDetails(InvoiceId invoiceId) {
+    throw new UnsupportedInvoiceOperationProblem(invoiceId);
+  }
+
+  @Override
+  public PaymentResultType payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) {
+    throw new UnsupportedInvoiceOperationProblem(invoiceId);
   }
 
   public Optional<Invoice> onPayment(Payment payment) {
@@ -147,14 +157,14 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
 
     Invoice existingInvoice = this.getInvoiceById(invoiceIdFromCorrelationId);
 
-    if (!existingInvoice.assetCode().equals(payment.assetCode())) {
+    if (!existingInvoice.assetCode().equals(payment.denomination().assetCode())) {
       throw new IllegalStateException(String.format("Invoice asset code was different than the StreamPayment asset code." +
-        "Unable to accurately credit invoice. Invoice assetCode: %s ; Payment assetCode: %s", existingInvoice.assetCode(), payment.assetCode()));
+        "Unable to accurately credit invoice. Invoice assetCode: %s ; Payment assetCode: %s", existingInvoice.assetCode(), payment.denomination().assetCode()));
     }
 
     Invoice updatedInvoice = Invoice.builder()
       .from(existingInvoice)
-      .received(existingInvoice.received().plus(payment.deliveredAmount()))
+      .received(existingInvoice.received().plus(payment.amount()))
       .build();
 
     return Optional.of(this.updateInvoice(updatedInvoice));

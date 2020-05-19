@@ -10,7 +10,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ImmutableXrpPaymentDetails.class)
 @JsonDeserialize(as = ImmutableXrpPaymentDetails.class)
-public interface XrpPaymentDetails extends PaymentDetails {
+public interface XrpPaymentDetails {
 
   static ImmutableXrpPaymentDetails.Builder builder() {
     return ImmutableXrpPaymentDetails.builder();

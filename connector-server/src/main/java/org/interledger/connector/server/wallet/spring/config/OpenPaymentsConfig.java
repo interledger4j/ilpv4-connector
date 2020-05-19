@@ -7,19 +7,21 @@ import static org.interledger.connector.core.ConfigConstants.TRUE;
 
 import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.opa.InvoiceService;
-import org.interledger.connector.opa.OpenPaymentsPaymentService;
+import org.interledger.connector.opa.PaymentSystemFacade;
+import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.XrpPayment;
+import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.payments.SendPaymentService;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.settings.ConnectorSettings;
-import org.interledger.connector.wallet.DefaultInvoiceService;
-import org.interledger.connector.wallet.IlpOpenPaymentsPaymentService;
+import org.interledger.connector.wallet.IlpInvoiceService;
+import org.interledger.connector.wallet.IlpPaymentSystemFacade;
 import org.interledger.connector.wallet.InvoiceFactory;
 import org.interledger.connector.wallet.OpenPaymentsClient;
-import org.interledger.connector.wallet.XrpOpenPaymentsPaymentService;
+import org.interledger.connector.wallet.XrplInvoiceService;
 import org.interledger.spsp.PaymentPointerResolver;
-import org.interledger.stream.SendMoneyResult;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
@@ -59,54 +61,59 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
-  public InvoiceService defaultInvoiceService(
+  public InvoiceService<StreamPayment, IlpPaymentDetails> ilpInvoiceService(
     InvoicesRepository invoicesRepository,
     ConversionService conversionService,
     InvoiceFactory invoiceFactory,
     OpenPaymentsClient openPaymentsClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    OpenPaymentsPaymentService<SendMoneyResult> xrpOpenPaymentsPaymentService,
-    OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService,
+    PaymentSystemFacade<StreamPayment, IlpPaymentDetails> ilpPaymentSystemFacade,
     EventBus eventBus) {
-    return new DefaultInvoiceService(
+    return new IlpInvoiceService(
       invoicesRepository,
       conversionService,
       invoiceFactory,
       openPaymentsClient,
       openPaymentsSettingsSupplier,
-      xrpOpenPaymentsPaymentService,
-      ilpOpenPaymentsPaymentService,
+      ilpPaymentSystemFacade,
       eventBus);
   }
 
   @Bean
+  public InvoiceService<XrpPayment, XrpPaymentDetails> xrpInvoiceService(
+    InvoicesRepository invoicesRepository,
+    ConversionService conversionService,
+    InvoiceFactory invoiceFactory,
+    OpenPaymentsClient openPaymentsClient,
+    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
+    EventBus eventBus
+  ) {
+    return new XrplInvoiceService(
+      invoicesRepository,
+      conversionService,
+      invoiceFactory,
+      openPaymentsClient,
+      openPaymentsSettingsSupplier,
+      eventBus
+    );
+  }
+
+  @Bean
   @Qualifier(OPA_ILP)
-  public OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService(
+  public PaymentSystemFacade<StreamPayment, IlpPaymentDetails> ilpPaymentSystemFacade(
     PaymentPointerResolver paymentPointerResolver,
     @Value("${" + SPSP__URL_PATH + ":}") final String opaUrlPath,
     StreamConnectionGenerator streamConnectionGenerator,
     ServerSecretSupplier serverSecretSupplier,
     SendPaymentService sendPaymentService,
     LocalDestinationAddressUtils localDestinationAddressUtils) {
-    return new IlpOpenPaymentsPaymentService(
+    return new IlpPaymentSystemFacade(
       opaUrlPath,
       paymentPointerResolver,
       streamConnectionGenerator,
       serverSecretSupplier,
       sendPaymentService,
       localDestinationAddressUtils);
-  }
-
-  @Bean
-  @Qualifier(XRP)
-  public OpenPaymentsPaymentService<SendMoneyResult> xrpOpenPaymentsPaymentService(PayIDClient payIDClient) {
-    return new XrpOpenPaymentsPaymentService(payIDClient);
-  }
-
-  @Bean
-  public PayIDClient payIDClient() {
-    // TODO: make network configurable
-    return new PayIDClient(XRPLNetwork.TEST);
   }
 
   @Bean

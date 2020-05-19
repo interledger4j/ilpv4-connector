@@ -2,10 +2,12 @@ package org.interledger.connector.opa.model;
 
 import org.interledger.connector.opa.model.PaymentId;
 
+import com.google.common.primitives.UnsignedLong;
 import org.immutables.value.Value;
 
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.Optional;
 
 /**
  * A user-facing Payment for transaction history purposes.
@@ -16,6 +18,14 @@ public interface Payment {
   static ImmutablePayment.Builder builder() {
     return ImmutablePayment.builder();
   }
+
+  /**
+   * Correlation id provided by external clients to correlate this stream payment to their systems. Not required and
+   * does not need to be unique.
+   *
+   * @return
+   */
+  Optional<String> correlationId();
 
   /**
    * Unique id for stream payment. Locally unique by accountId.
@@ -60,7 +70,7 @@ public interface Payment {
    *
    * @return A {@link BigInteger}.
    */
-  BigInteger amount();
+  UnsignedLong amount();
 
   /**
    * The asset code and scale of this payment.

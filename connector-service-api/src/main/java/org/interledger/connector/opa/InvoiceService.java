@@ -5,7 +5,6 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
-import org.interledger.connector.opa.model.PaymentDetails;
 
 import okhttp3.HttpUrl;
 
@@ -65,6 +64,7 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} this payment is being set up to pay.
    * @return The payment details necessary to pay an invoice.
    */
+  // TODO: Always return ILP details
   PaymentDetailsType getPaymentDetails(final InvoiceId invoiceId);
 
   /**

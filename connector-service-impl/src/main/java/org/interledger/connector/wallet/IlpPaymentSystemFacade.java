@@ -2,11 +2,10 @@ package org.interledger.connector.wallet;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
-import org.interledger.connector.opa.OpenPaymentsPaymentService;
+import org.interledger.connector.opa.PaymentSystemFacade;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.PaymentDetails;
 import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
 import org.interledger.connector.payments.SendPaymentRequest;
 import org.interledger.connector.payments.SendPaymentService;
@@ -26,7 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Objects;
 import java.util.Optional;
 
-public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService<StreamPayment, IlpPaymentDetails> {
+public class IlpPaymentSystemFacade implements PaymentSystemFacade<StreamPayment, IlpPaymentDetails> {
 
   private final Optional<String> opaUrlPath;
   private final PaymentPointerResolver paymentPointerResolver;
@@ -35,12 +34,13 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
   private final SendPaymentService sendPaymentService;
   private LocalDestinationAddressUtils localDestinationAddressUtils;
 
-  public IlpOpenPaymentsPaymentService(
+  public IlpPaymentSystemFacade(
     String opaUrlPath,
     PaymentPointerResolver paymentPointerResolver,
     StreamConnectionGenerator streamConnectionGenerator,
     ServerSecretSupplier serverSecretSupplier,
-    SendPaymentService sendPaymentService, LocalDestinationAddressUtils localDestinationAddressUtils) {
+    SendPaymentService sendPaymentService, LocalDestinationAddressUtils localDestinationAddressUtils
+  ) {
     this.opaUrlPath = PaymentDetailsUtils.cleanupUrlPath(opaUrlPath);
     this.paymentPointerResolver = Objects.requireNonNull(paymentPointerResolver);
     this.streamConnectionGenerator = Objects.requireNonNull(streamConnectionGenerator);
@@ -78,14 +78,12 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
 
   @Override
   public StreamPayment payInvoice(
-    PaymentDetails paymentDetails,
+    IlpPaymentDetails paymentDetails,
     AccountId senderAccountId,
     UnsignedLong amount,
     InvoiceId invoiceId
   ) {
     // Send payment using STREAM
-    IlpPaymentDetails ilpPaymentDetails = (IlpPaymentDetails) paymentDetails;
-
     // TODO(bridge): Let the bridge know that an invoice payment is being sent instead of this
     //                direct call?
     return sendPaymentService.sendMoney(
@@ -95,8 +93,8 @@ public class IlpOpenPaymentsPaymentService implements OpenPaymentsPaymentService
       .correlationId(invoiceId.value())
       .streamConnectionDetails(
         StreamConnectionDetails.builder()
-          .destinationAddress(ilpPaymentDetails.destinationAddress())
-        .sharedSecret(ilpPaymentDetails.sharedSecret())
+          .destinationAddress(paymentDetails.destinationAddress())
+        .sharedSecret(paymentDetails.sharedSecret())
         .build())
       .build()
     );
