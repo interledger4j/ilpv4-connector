@@ -298,7 +298,6 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
           .defaultScheme("http")
           .build()
       )
-      .connectorUrl(HttpUrl.get(connectorUrl))
       .build();
   }
 
