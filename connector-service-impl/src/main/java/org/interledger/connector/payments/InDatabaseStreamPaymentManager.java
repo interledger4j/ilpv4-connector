@@ -3,6 +3,7 @@ package org.interledger.connector.payments;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.events.StreamPaymentClosedEvent;
 import org.interledger.connector.persistence.entities.StreamPaymentEntity;
 import org.interledger.connector.persistence.repositories.StreamPaymentsRepository;
 
@@ -97,7 +98,7 @@ public class InDatabaseStreamPaymentManager implements StreamPaymentManager {
   private StreamPayment notifyReceivedPaymentClosed(StreamPaymentEntity streamPaymentEntity) {
     StreamPayment streamPayment = streamPaymentFromEntityConverter.convert(streamPaymentEntity);
     try {
-      eventBus.post(ClosedPaymentEvent.builder().payment(streamPayment).build());
+      eventBus.post(StreamPaymentClosedEvent.builder().payment(streamPayment).build());
     } catch (Exception e) {
       LOGGER.error("Error notifying invoiceService about payment {}", streamPayment, e);
     }

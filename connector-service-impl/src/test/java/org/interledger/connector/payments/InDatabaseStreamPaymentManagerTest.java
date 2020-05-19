@@ -50,10 +50,9 @@ public class InDatabaseStreamPaymentManagerTest {
   @Before
   public void setUp() {
     streamPaymentToEntityConverter = new StreamPaymentToEntityConverter();
-    transactionManager = new InDatabaseStreamPaymentManager(mockRepo,
-      streamPaymentFromEntityConverter,
-      streamPaymentToEntityConverter,
-      eventBus);
+    transactionManager = new InDatabaseStreamPaymentManager(
+      mockRepo, streamPaymentFromEntityConverter, streamPaymentToEntityConverter, eventBus
+    );
   }
 
   @Test
@@ -119,7 +118,8 @@ public class InDatabaseStreamPaymentManagerTest {
       .build();
     transactionManager.merge(trx);
     verify(mockRepo, times(1)).upsertAmounts(streamPaymentToEntityConverter.convert(trx));
-    verify(mockRepo, times(1)).udpdateDeliveredDenomination(trx.accountId(), trx.streamPaymentId(), assetCode, assetScale);
+    verify(mockRepo, times(1))
+      .udpdateDeliveredDenomination(trx.accountId(), trx.streamPaymentId(), assetCode, assetScale);
     verifyNoMoreInteractions(mockRepo);
   }
 

@@ -19,6 +19,6 @@ public interface ConnectorEvent {
    *
    * @return A {@link String}.
    */
-  String message();
+  Optional<String> message();
 
 }

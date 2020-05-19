@@ -3,6 +3,7 @@ package org.interledger.connector.payments;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.events.StreamPaymentClosedEvent;
 
 import com.google.common.eventbus.EventBus;
 import org.immutables.value.Value;
@@ -79,7 +80,7 @@ public class InMemoryStreamPaymentManager implements StreamPaymentManager {
     }
     if (merged.status().equals(StreamPaymentStatus.CLOSED_BY_STREAM)) {
       try {
-        eventBus.post(ClosedPaymentEvent.builder().payment(merged).build());
+        eventBus.post(StreamPaymentClosedEvent.builder().payment(merged).build());
       } catch (Exception e) {
         LOGGER.error("Error notifying invoiceService about payment {}", streamPayment, e);
       }

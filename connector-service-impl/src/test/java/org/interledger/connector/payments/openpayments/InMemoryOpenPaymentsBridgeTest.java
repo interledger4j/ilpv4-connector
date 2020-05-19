@@ -8,7 +8,7 @@ import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.payments.ImmutableStreamPayment.Builder;
-import org.interledger.connector.payments.OpenPaymentsEventHandler;
+import org.interledger.connector.paymen.OpenPaymentsEventHandler;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.payments.StreamPaymentStatus;
 import org.interledger.connector.payments.StreamPaymentType;
@@ -84,7 +84,8 @@ public class InMemoryOpenPaymentsBridgeTest {
     };
 
     // InMemoryOpenPaymentsBridge is both a PaymentsSystemFacade AND a OpenPaymentsFacade
-    this.openPaymentsBridge = new InMemoryOpenPaymentsBridge(openPaymentsEventHandler, paymentSystemEventHandler);
+    this.openPaymentsBridge = new InMemoryOpenPaymentsBridge(openPaymentsEventHandler, paymentSystemEventHandler,
+      paymentSystemFacadeDelegate);
   }
 
   /**
@@ -104,7 +105,7 @@ public class InMemoryOpenPaymentsBridgeTest {
   @Test
   public void testPaymentCreated() throws InterruptedException {
     // An OpenPayments Server will have a PaymentSystemFacade.
-    this.openPaymentsBridge.emitPaymentCompleted(this.constructStreamPaymentBuilder().build());
+    this.openPaymentsBridge.publishStreamPaymentCompleted(this.constructStreamPaymentBuilder().build());
 
     this.numPaymentCompletedInvocations.await(5, TimeUnit.SECONDS);
     assertThat(numInvoiceCreatedInvocations.getCount()).isEqualTo(1);
@@ -114,7 +115,7 @@ public class InMemoryOpenPaymentsBridgeTest {
   @Test
   public void testTogether() throws InterruptedException {
     // An OpenPayments Server will have a PaymentSystemFacade.
-    this.openPaymentsBridge.emitPaymentCompleted(constructStreamPaymentBuilder().build());
+    this.openPaymentsBridge.publishStreamPaymentCompleted(constructStreamPaymentBuilder().build());
     this.openPaymentsBridge.emitInvoiceCreated(constructInvoice().build());
 
     this.numInvoiceCreatedInvocations.await(5, TimeUnit.SECONDS);
@@ -137,7 +138,7 @@ public class InMemoryOpenPaymentsBridgeTest {
 
     List<CompletableFuture<Object>> results =
       runInParallel(10, runCount, () -> {
-        this.openPaymentsBridge.emitPaymentCompleted(streamPayment);
+        this.openPaymentsBridge.publishStreamPaymentCompleted(streamPayment);
         this.openPaymentsBridge.emitInvoiceCreated(this.constructInvoice().build());
       });
 

@@ -121,8 +121,10 @@ import ch.qos.logback.classic.LoggerContext;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.RateLimiter;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -148,8 +150,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
 import javax.annotation.PostConstruct;
 
 /**
@@ -239,7 +245,13 @@ public class SpringConnectorConfig {
    */
   @Bean
   EventBus eventBus() {
-    return new EventBus();
+    final ThreadFactory factory = new ThreadFactoryBuilder()
+      .setDaemon(true)
+      .setNameFormat("connector-event-subsystem-%d")
+      .build();
+    final ExecutorService threadPool = Executors.newFixedThreadPool(30, factory);
+
+    return new AsyncEventBus("connector-event-subsystem", threadPool);
   }
 
   /**
@@ -515,7 +527,8 @@ public class SpringConnectorConfig {
 
   @Bean
   List<LinkFilter> linkFilters(
-    BalanceTracker balanceTracker, SettlementService settlementService, MetricsService metricsService, EventBus eventBus,
+    BalanceTracker balanceTracker, SettlementService settlementService, MetricsService metricsService,
+    EventBus eventBus,
     FulfillmentGeneratedEventAggregator fulfillmentGeneratedEventAggregator) {
     final Supplier<InterledgerAddress> operatorAddressSupplier =
       () -> connectorSettingsSupplier().get().operatorAddress();
@@ -656,15 +669,18 @@ public class SpringConnectorConfig {
   }
 
   @Bean
-  protected StreamPaymentManager streamPaymentManager(Supplier<ConnectorSettings> connectorSettingsSupplier,
-                                                      StreamPaymentsRepository streamPaymentsRepository,
-                                                      EventBus eventBus) {
+  protected StreamPaymentManager streamPaymentManager(
+    Supplier<ConnectorSettings> connectorSettingsSupplier,
+    StreamPaymentsRepository streamPaymentsRepository,
+    EventBus eventBus
+  ) {
     switch (connectorSettingsSupplier.get().enabledFeatures().streamPaymentAggregationMode()) {
-      case IN_POSTGRES: return new InDatabaseStreamPaymentManager(
-        streamPaymentsRepository,
-        new StreamPaymentFromEntityConverter(),
-        new StreamPaymentToEntityConverter(),
-        eventBus);
+      case IN_POSTGRES:
+        return new InDatabaseStreamPaymentManager(
+          streamPaymentsRepository,
+          new StreamPaymentFromEntityConverter(),
+          new StreamPaymentToEntityConverter(),
+          eventBus);
       default:
         return new InMemoryStreamPaymentManager(eventBus);
     }
@@ -672,7 +688,10 @@ public class SpringConnectorConfig {
 
   @Bean
   protected FulfillmentGeneratedEventAggregator fulfilledTransactionAggregator(
-    StreamPaymentManager streamPaymentManager, StreamEncryptionService streamEncryptionService, CodecContext streamCodecContext) {
+    StreamPaymentManager streamPaymentManager,
+    StreamEncryptionService streamEncryptionService,
+    CodecContext streamCodecContext
+  ) {
     return new SynchronousFulfillmentGeneratedEventAggregator(streamPaymentManager,
       new FulfillmentGeneratedEventConverter(streamEncryptionService, streamCodecContext));
   }
@@ -687,7 +706,8 @@ public class SpringConnectorConfig {
     return new SimpleExchangeRateCalculator();
   }
 
-  @Bean LocalPacketSwitchLinkFactory localPacketSwitchLinkFactory(ILPv4PacketSwitch ilpPacketSwitch) {
+  @Bean
+  LocalPacketSwitchLinkFactory localPacketSwitchLinkFactory(ILPv4PacketSwitch ilpPacketSwitch) {
     return new LocalPacketSwitchLinkFactory(ilpPacketSwitch);
   }
 
@@ -698,12 +718,12 @@ public class SpringConnectorConfig {
 
   @Bean
   protected SendPaymentService streamPaymentService(StreamSenderFactory streamSenderFactory,
-                                                    SpspClient spspClient,
-                                                    ExchangeRateCalculator exchangeRateCalculator,
-                                                    Supplier<ConnectorSettings> connectorSettingsSupplier,
-                                                    StreamPaymentManager streamPaymentManager,
-                                                    AccountManager accountManager,
-                                                    LocalPacketSwitchLinkFactory localPacketSwitchLinkFactory) {
+    SpspClient spspClient,
+    ExchangeRateCalculator exchangeRateCalculator,
+    Supplier<ConnectorSettings> connectorSettingsSupplier,
+    StreamPaymentManager streamPaymentManager,
+    AccountManager accountManager,
+    LocalPacketSwitchLinkFactory localPacketSwitchLinkFactory) {
     return new DefaultSendPaymentService(
       streamSenderFactory,
       spspClient,

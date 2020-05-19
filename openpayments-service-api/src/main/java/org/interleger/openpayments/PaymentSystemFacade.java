@@ -9,10 +9,11 @@ import org.interledger.connector.opa.model.Invoice;
 public interface PaymentSystemFacade {
 
   /**
-   * Called by the OpenPayments server when an invoice has been created.
+   * Called by the OpenPayments server to obtain a payment address for the specified invoice.
    *
-   * @param invoice A newly created {@link Invoice}.
+   * @param invoice An {@link Invoice}.
+   *
+   * @return
    */
-  void emitInvoiceCreated(Invoice invoice);
-
+  String getPaymentAddress(Invoice invoice);
 }
