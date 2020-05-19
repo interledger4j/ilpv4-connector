@@ -31,11 +31,6 @@ public class OpenPaymentsSettingsFromPropertyFile implements OpenPaymentsSetting
     return metadata;
   }
 
-  @Override
-  public HttpUrl connectorUrl() {
-    return connectorUrl;
-  }
-
   public void setIlpOperatorAddress(InterledgerAddress ilpOperatorAddress) {
     this.ilpOperatorAddress = ilpOperatorAddress;
   }
