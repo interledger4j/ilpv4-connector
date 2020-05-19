@@ -3,6 +3,8 @@ package org.interledger.connector.events;
 import org.interledger.connector.core.settlement.SettlementQuantity;
 import org.interledger.core.Immutable;
 
+import java.util.Optional;
+
 /**
  * Indicates this Connector initiated a settlement with the settlement engine.
  */
@@ -35,8 +37,8 @@ public interface OutgoingSettlementInitiationSucceededEvent extends ConnectorEve
   SettlementQuantity processedQuantityInClearingUnits();
 
   @Override
-  default String message() {
-    return "Settlement initiation succeeded";
+  default Optional<String> message() {
+    return Optional.of("Settlement initiation succeeded");
   }
 
 }

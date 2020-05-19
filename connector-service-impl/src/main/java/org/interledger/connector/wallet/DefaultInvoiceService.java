@@ -1,6 +1,7 @@
 package org.interledger.connector.wallet;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.events.StreamPaymentClosedEvent;
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.OpenPaymentsPaymentService;
 import org.interledger.connector.opa.model.Invoice;
@@ -12,7 +13,6 @@ import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.opa.model.problems.InvoicePaymentProblem;
-import org.interledger.connector.payments.ClosedPaymentEvent;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
+// TODO: Split this into an ILPInvoiceService and an XRPInvoiceService?
 public class DefaultInvoiceService implements InvoiceService {
 
   private final InvoicesRepository invoicesRepository;
@@ -48,7 +49,8 @@ public class DefaultInvoiceService implements InvoiceService {
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     OpenPaymentsPaymentService<SendMoneyResult> xrpOpenPaymentsPaymentService,
     OpenPaymentsPaymentService<StreamPayment> ilpOpenPaymentsPaymentService,
-    EventBus eventBus) {
+    EventBus eventBus
+  ) {
     this.invoicesRepository = Objects.requireNonNull(invoicesRepository);
     this.conversionService = Objects.requireNonNull(conversionService);
     this.invoiceFactory = Objects.requireNonNull(invoiceFactory);
@@ -230,10 +232,15 @@ public class DefaultInvoiceService implements InvoiceService {
     return Optional.of(this.updateInvoice(updatedInvoice));
   }
 
-  // TODO: Use the bridge to listen for payments.
+  /**
+   * Handler that is called whenever a {@link StreamPaymentClosedEvent} is posted to the event bus.
+   *
+   * @param streamPaymentClosedEvent A {@link StreamPaymentClosedEvent}.
+   */
   @Subscribe
-  private void onClosedPayment(ClosedPaymentEvent closedPaymentEvent) {
-    StreamPayment payment = closedPaymentEvent.payment();
+  private void onStreamPaymentClosed(final StreamPaymentClosedEvent streamPaymentClosedEvent) {
+    Objects.requireNonNull(streamPaymentClosedEvent);
+    StreamPayment payment = streamPaymentClosedEvent.streamPayment();
     if (payment.correlationId().isPresent()) {
       onPayment(payment);
     }

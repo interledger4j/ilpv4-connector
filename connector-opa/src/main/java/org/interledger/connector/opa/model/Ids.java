@@ -30,10 +30,22 @@ public interface Ids {
       try {
         UUID.fromString(this.value());
         return this;
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
         throw new InvalidInvoiceIdProblem("InvoiceIds must match the UUID format.", this);
       }
+    }
+  }
+
+  /**
+   * A wrapper that defines a unique identifier for a Payment.
+   */
+  @Value.Immutable
+  @Wrapped
+  abstract class _PaymentId extends Wrapper<String> {
+
+    @Override
+    public String toString() {
+      return this.value();
     }
   }
 

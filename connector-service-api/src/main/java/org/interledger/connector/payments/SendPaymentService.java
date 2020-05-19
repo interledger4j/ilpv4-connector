@@ -13,9 +13,11 @@ public interface SendPaymentService {
 
   StreamPayment sendMoney(SendPaymentRequest request);
 
-  StreamPayment createPlaceholderPayment(AccountId accountId,
-                                         StreamPaymentType type,
-                                         InterledgerAddress destinationAddress,
-                                         Optional<String> correlationId,
-                                         Optional<BigInteger> expectedAmount);
+  StreamPayment createPlaceholderPayment(
+    AccountId accountId,
+    StreamPaymentType type,
+    InterledgerAddress destinationAddress,
+    Optional<String> correlationId,
+    Optional<BigInteger> expectedAmount
+  );
 }

@@ -9,6 +9,8 @@ import org.interledger.core.Immutable;
 
 import org.immutables.value.Value.Derived;
 
+import java.util.Optional;
+
 /**
  * Indicates a local settlement was processed by this Connector's Settlement Engine and propagated to this Connector via
  * the `/accounts/{accountId}/settlements` endpoint.
@@ -24,13 +26,13 @@ public interface IncomingSettlementFailedEvent extends ConnectorEvent {
    * The AccountId that this settlement request failure pertains to.
    *
    * @return If the AccountSettings is present in this class, then returns {@link AccountSettings#accountId()}.
-   *     Otherwise, returns the settlement engine accountId as an {@link AccountId}.
+   *   Otherwise, returns the settlement engine accountId as an {@link AccountId}.
    */
   @Derived
   default AccountId requestedAccountId() {
     return accountSettings()
-        .map(AccountSettings::accountId)
-        .orElseGet(() -> AccountId.of(settlementEngineAccountId().value()));
+      .map(AccountSettings::accountId)
+      .orElseGet(() -> AccountId.of(settlementEngineAccountId().value()));
   }
 
   /**
@@ -63,8 +65,8 @@ public interface IncomingSettlementFailedEvent extends ConnectorEvent {
   SettlementServiceException settlementServiceException();
 
   @Override
-  default String message() {
-    return "Local settlement failed.";
+  default Optional<String> message() {
+    return Optional.of("Local settlement failed.");
   }
 
 }
