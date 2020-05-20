@@ -1,7 +1,7 @@
 package org.interleger.openpayments;
 
 
-import org.interledger.openpayments.events.PaymentCompletedEvent;
+import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
 
 /**
  * Defines the OpenPayments view of a "payment system" allowing the OpenPayments server to interact with an underlying
@@ -13,9 +13,9 @@ import org.interledger.openpayments.events.PaymentCompletedEvent;
 public interface PaymentSystemEventHandler {
 
   /**
-   * Called whenever a new {@link PaymentCompletedEvent} is encountered. Implementations should implement this method to
+   * Called whenever a new {@link XrpPaymentCompletedEvent} is encountered. Implementations should implement this method to
    * handle this event properly.
    */
-  void onPaymentCompleted(PaymentCompletedEvent paymentCompletedEvent);
+  void onPaymentCompleted(XrpPaymentCompletedEvent xrpPaymentCompletedEvent);
 
 }

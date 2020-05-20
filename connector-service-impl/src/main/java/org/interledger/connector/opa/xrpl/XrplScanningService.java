@@ -1,5 +1,8 @@
 package org.interledger.connector.opa.xrpl;
 
+import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
+import org.interledger.openpayments.events.XrplMessage;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;
@@ -117,7 +120,7 @@ public class XrplScanningService {
       try {
         XrplMessage xrplMessage = objectMapper.readValue(text, XrplMessage.class);
         if (xrplMessage.isSuccessfulTransaction()) {
-          eventBus.post(xrplMessage.transaction());
+          eventBus.post(XrpPaymentCompletedEvent.builder().payment(xrplMessage.transaction()).build());
           logger.info("XRPL transaction: " + xrplMessage.transaction());
 
         }

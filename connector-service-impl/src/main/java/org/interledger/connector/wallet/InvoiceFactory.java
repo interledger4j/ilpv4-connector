@@ -2,6 +2,7 @@ package org.interledger.connector.wallet;
 
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.PayId;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
 
@@ -16,6 +17,7 @@ import java.util.function.Supplier;
 public class InvoiceFactory {
 
   private final PaymentPointerResolver paymentPointerResolver;
+  private final PayIdResolver payIdResolver;
 
   private final OpenPaymentsSettings openPaymentsSettings;
 
@@ -23,10 +25,12 @@ public class InvoiceFactory {
 
   public InvoiceFactory(
     PaymentPointerResolver paymentPointerResolver,
+    PayIdResolver payIdResolver,
     Supplier<OpenPaymentsSettings> openPaymentsSettings,
     Optional<String> opaUrlPath
   ) {
     this.paymentPointerResolver = paymentPointerResolver;
+    this.payIdResolver = payIdResolver;
     this.openPaymentsSettings = openPaymentsSettings.get();
     this.opaUrlPath = opaUrlPath;
   }
@@ -45,17 +49,18 @@ public class InvoiceFactory {
     HttpUrl identifierUrl;
     try {
       identifierUrl = paymentPointerResolver.resolveHttpUrl(PaymentPointer.of(initialInvoice.subject()));
-      // largely for testing reasons since we may need to override and start on http instead of https
-      identifierUrl = identifierUrl.newBuilder().scheme(openPaymentsSettings.metadata().defaultScheme()).build();
     } catch (IllegalArgumentException e) {
       // Subject is a PayID
-      String[] payIdParts = initialInvoice.subject().split("$");
-      identifierUrl = new HttpUrl.Builder()
-        .scheme(openPaymentsSettings.metadata().defaultScheme())
-        .host(payIdParts[1])
-        .addPathSegment(payIdParts[0])
-        .build();
+      String payIdString = initialInvoice.subject();
+      if (!payIdString.startsWith("payid:")) {
+        payIdString = "payid:" + payIdString;
+      }
+      PayId payId = PayId.of(payIdString);
+      identifierUrl = payIdResolver.resolveHttpUrl(payId);
     }
+
+    // largely for testing reasons since we may need to override and start on http instead of https
+    identifierUrl = identifierUrl.newBuilder().scheme(openPaymentsSettings.metadata().defaultScheme()).build();
 
     // Only want the account part of the payment pointer path
     String paymentPointerPath = identifierUrl.pathSegments().stream().reduce("", (s, s2) -> s + "/" + s2);

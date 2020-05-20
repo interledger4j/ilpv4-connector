@@ -14,8 +14,6 @@ public interface XrpPayment {
     return ImmutableXrpPayment.builder();
   }
 
-  XrpPaymentDetails paymentDetails();
 
-  UnsignedLong amount();
 
 }

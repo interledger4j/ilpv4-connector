@@ -109,6 +109,7 @@ public abstract class AbstractIlpOverHttpIT {
     System.setProperty(ConfigConstants.ENABLED_PROTOCOLS + DOT + ConfigConstants.ILP_OVER_HTTP_ENABLED, "true");
     System.setProperty(ConfigConstants.ENABLED_PROTOCOLS + DOT + ConfigConstants.SPSP_ENABLED, "true");
     System.setProperty(ConfigConstants.ENABLED_FEATURES + DOT + ConfigConstants.LOCAL_SPSP_FULFILLMENT_ENABLED, "true");
+    System.setProperty(ConfigConstants.ENABLED_PROTOCOLS + DOT + ConfigConstants.OPEN_PAYMENTS_ENABLED, "true");
     pubsub.start();
   }
 

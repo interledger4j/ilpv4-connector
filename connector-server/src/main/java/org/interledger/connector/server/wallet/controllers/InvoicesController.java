@@ -114,7 +114,7 @@ public class InvoicesController {
   @RequestMapping(
     path = OpenPaymentsPathConstants.INVOICES_WITH_ID,
     method = RequestMethod.GET,
-    produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
+    produces = {OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE, APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody ResponseEntity getInvoiceDetails(
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,

@@ -84,6 +84,6 @@ public interface Payment {
    *
    * @return A {@link PaymentType}.
    */
-  PaymentType type();
+//  Optional<PaymentType> type();
 
 }

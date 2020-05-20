@@ -5,7 +5,7 @@ import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.opa.PaymentSystemFacade;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.InvoiceId;
+import org.interledger.connector.opa.model.PaymentId;
 import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
 import org.interledger.connector.payments.SendPaymentRequest;
 import org.interledger.connector.payments.SendPaymentService;
@@ -66,7 +66,7 @@ public class IlpPaymentSystemFacade implements PaymentSystemFacade<StreamPayment
     sendPaymentService.createPlaceholderPayment(receiverAccountId,
       StreamPaymentType.PAYMENT_RECEIVED,
       streamConnectionDetails.destinationAddress(),
-      Optional.of(invoice.id().value()),
+      Optional.of(invoice.paymentId().value()),
       Optional.of(invoice.amount().minus(invoice.received()).bigIntegerValue())
     );
 
@@ -81,7 +81,7 @@ public class IlpPaymentSystemFacade implements PaymentSystemFacade<StreamPayment
     IlpPaymentDetails paymentDetails,
     AccountId senderAccountId,
     UnsignedLong amount,
-    InvoiceId invoiceId
+    PaymentId correlationId
   ) {
     // Send payment using STREAM
     // TODO(bridge): Let the bridge know that an invoice payment is being sent instead of this
@@ -90,7 +90,7 @@ public class IlpPaymentSystemFacade implements PaymentSystemFacade<StreamPayment
       SendPaymentRequest.builder()
       .accountId(senderAccountId)
       .amount(amount)
-      .correlationId(invoiceId.value())
+      .correlationId(correlationId.value())
       .streamConnectionDetails(
         StreamConnectionDetails.builder()
           .destinationAddress(paymentDetails.destinationAddress())

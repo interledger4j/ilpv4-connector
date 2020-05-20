@@ -1,11 +1,13 @@
 package org.interledger.connector.wallet;
 
-import org.interledger.connector.opa.PaymentSystemFacade;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.Payment;
+import org.interledger.connector.opa.model.PaymentId;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
-import org.interledger.openpayments.events.PaymentCompletedEvent;
+import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
+import org.interledger.openpayments.events.XrplTransaction;
 
 import com.google.common.eventbus.EventBus;
 import org.springframework.core.convert.ConversionService;
@@ -33,7 +35,21 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
   }
 
   @Override
-  public void onPaymentCompleted(PaymentCompletedEvent paymentCompletedEvent) {
-
+  public void onPaymentCompleted(XrpPaymentCompletedEvent xrpPaymentCompletedEvent) {
+    XrplTransaction transaction = xrpPaymentCompletedEvent.payment();
+    if (transaction.invoiceHash() != null) {
+      Payment payment = Payment.builder()
+        .amount(transaction.amount())
+        .correlationId(transaction.invoiceHash())
+        .paymentId(PaymentId.of(transaction.invoiceHash()))
+        .createdAt(transaction.createdAt())
+        .modifiedAt(transaction.modifiedAt())
+        .sourceAddress(transaction.account() + transaction.sourceTag())
+        .destinationAddress(transaction.destination() + transaction.destinationTag())
+        .amount(transaction.amount())
+        .denomination(transaction.denomination())
+        .build();
+      this.onPayment(payment);
+    }
   }
 }

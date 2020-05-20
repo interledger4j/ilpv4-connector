@@ -1,4 +1,4 @@
-package org.interledger.connector.opa.xrpl;
+package org.interledger.openpayments.events;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

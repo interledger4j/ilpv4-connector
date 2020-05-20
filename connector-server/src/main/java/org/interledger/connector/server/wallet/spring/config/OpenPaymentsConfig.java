@@ -20,14 +20,13 @@ import org.interledger.connector.wallet.IlpInvoiceService;
 import org.interledger.connector.wallet.IlpPaymentSystemFacade;
 import org.interledger.connector.wallet.InvoiceFactory;
 import org.interledger.connector.wallet.OpenPaymentsClient;
+import org.interledger.connector.wallet.PayIdResolver;
 import org.interledger.connector.wallet.XrplInvoiceService;
 import org.interledger.spsp.PaymentPointerResolver;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
 import com.google.common.eventbus.EventBus;
-import io.xpring.common.XRPLNetwork;
-import io.xpring.payid.PayIDClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -127,8 +126,18 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
-  public InvoiceFactory invoiceFactory(PaymentPointerResolver paymentPointerResolver, Supplier<ConnectorSettings> connectorSettings, Optional<String> opaUrlPath) {
-    return new InvoiceFactory(paymentPointerResolver, openPaymentsSettingsSupplier(connectorSettings), opaUrlPath);
+  public InvoiceFactory invoiceFactory(
+    PaymentPointerResolver paymentPointerResolver,
+    PayIdResolver payIdPointerResolver,
+    Supplier<ConnectorSettings> connectorSettings,
+    Optional<String> opaUrlPath
+  ) {
+    return new InvoiceFactory(paymentPointerResolver, payIdPointerResolver, openPaymentsSettingsSupplier(connectorSettings), opaUrlPath);
+  }
+
+  @Bean
+  public PayIdResolver payIdResolver() {
+    return PayIdResolver.defaultPayIdResolver();
   }
 
 }

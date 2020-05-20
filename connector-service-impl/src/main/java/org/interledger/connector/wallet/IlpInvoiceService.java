@@ -89,7 +89,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
       min(amountLeftToSend, payInvoiceRequest.orElse(PayInvoiceRequest.builder().build()).amount());
 
     try {
-      return ilpPaymentSystemFacade.payInvoice(ilpPaymentDetails, senderAccountId, amountToPay, invoiceId);
+      return ilpPaymentSystemFacade.payInvoice(ilpPaymentDetails, senderAccountId, amountToPay, invoice.paymentId());
     } catch (ExecutionException | InterruptedException e) {
       throw new InvoicePaymentProblem(e.getMessage(), invoiceId);
     }
@@ -114,7 +114,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
           .assetCode(streamPayment.assetCode())
           .assetScale(streamPayment.assetScale())
           .build())
-        .type(PaymentType.valueOf(streamPayment.type().name()))
+//        .type(PaymentType.valueOf(streamPayment.type().name()))
         .build();
       this.onPayment(payment);
     }

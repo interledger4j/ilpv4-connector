@@ -2,12 +2,10 @@ package org.interledger.connector.opa.model;
 
 import org.interledger.spsp.PaymentPointer;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.common.base.Preconditions;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.primitives.UnsignedLong;
@@ -17,7 +15,6 @@ import org.immutables.value.Value;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 import javax.annotation.Nullable;
@@ -76,21 +73,11 @@ public interface Invoice {
    * @return A {@link String} containing an identifier which can be included in a payment to correlate it to this
    *  {@link Invoice}.
    */
-  @Value.Derived
-  default String paymentId() {
-    if (paymentNetwork().equals(PaymentNetwork.XRPL)) {
-      HashCode hashCode = Hashing.sha256()
-        .hashString(id().value(), StandardCharsets.UTF_8);
-      return hashCode.toString();
-    }
-
-    if (paymentNetwork().equals(PaymentNetwork.ILP)) {
-      // Base64 encode the invoiceId to add to the connection tag
-      final byte[] invoiceIdBytes = id().value().getBytes();
-      return Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceIdBytes);
-    }
-
-    return "";
+  @Value.Default
+  default PaymentId paymentId() {
+    HashCode hashCode = Hashing.sha256()
+      .hashString(id().value(), StandardCharsets.UTF_8);
+    return PaymentId.of(hashCode.toString());
   };
 
   /**
@@ -143,7 +130,12 @@ public interface Invoice {
       return paymentPointerSubject.path().substring(paymentPointerSubject.path().lastIndexOf("/") + 1);
     } catch (IllegalArgumentException e) {
       // subject is a PayID
-      return subject().split("$")[0];
+      String payIdString = subject();
+      if (!payIdString.startsWith("payid:")) {
+        payIdString = "payid:" + payIdString;
+      }
+      PayId payId = PayId.of(payIdString);
+      return payId.account();
     }
   };
 

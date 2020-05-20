@@ -239,8 +239,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       http
         .authorizeRequests()
         //      .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.SLASH_ACCOUNTS_OPA_PAY).authenticated()
-        .antMatchers(HttpMethod.GET, OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + "/**").permitAll()
-        .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.SLASH_ACCOUNT_ID + "/**").permitAll();
+        .antMatchers(HttpMethod.GET, OpenPaymentsPathConstants.INVOICES_BASE + "/**").permitAll()
+        .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.INVOICES_BASE + "/**").permitAll();
     }
 
     // Everything else...

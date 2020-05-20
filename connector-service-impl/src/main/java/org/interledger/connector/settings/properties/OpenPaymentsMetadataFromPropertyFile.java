@@ -18,6 +18,7 @@ public class OpenPaymentsMetadataFromPropertyFile implements OpenPaymentsMetadat
 
   private HttpUrl issuer;
   private HttpUrl authorizationIssuer;
+  private String defaultScheme;
   private HttpUrl authorizationEndpoint;
   private HttpUrl tokenEndpoint;
   private HttpUrl invoicesEndpoint;
@@ -33,6 +34,11 @@ public class OpenPaymentsMetadataFromPropertyFile implements OpenPaymentsMetadat
   @Override
   public HttpUrl authorizationIssuer() {
     return authorizationIssuer;
+  }
+
+  @Override
+  public String defaultScheme() {
+    return defaultScheme;
   }
 
   @Override
@@ -71,6 +77,10 @@ public class OpenPaymentsMetadataFromPropertyFile implements OpenPaymentsMetadat
 
   public void setAuthorizationIssuer(HttpUrl authorizationIssuer) {
     this.authorizationIssuer = authorizationIssuer;
+  }
+
+  public void setDefaultScheme(String defaultScheme) {
+    this.defaultScheme = defaultScheme;
   }
 
   public void setAuthorizationEndpoint(HttpUrl authorizationEndpoint) {

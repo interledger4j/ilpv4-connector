@@ -2,6 +2,7 @@ package org.interledger.connector.persistence.converters;
 
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
+import org.interledger.connector.opa.model.PaymentId;
 import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 
@@ -26,6 +27,7 @@ public class InvoiceEntityConverter implements Converter<InvoiceEntity, Invoice>
       .expiresAt(invoiceEntity.getExpiresAt())
       .finalizedAt(invoiceEntity.getFinalizedAt())
       .id(InvoiceId.of(invoiceEntity.getInvoiceId()))
+      .paymentId(PaymentId.of(invoiceEntity.getPaymentId()))
       .received(UnsignedLong.valueOf(invoiceEntity.getReceived()))
       .subject(invoiceEntity.getSubject())
       .updatedAt(Optional.ofNullable(invoiceEntity.getModifiedDate()).orElse(Instant.now()))

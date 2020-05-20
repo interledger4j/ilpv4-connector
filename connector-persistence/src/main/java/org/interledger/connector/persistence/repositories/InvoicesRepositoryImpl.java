@@ -2,6 +2,7 @@ package org.interledger.connector.persistence.repositories;
 
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
+import org.interledger.connector.opa.model.PaymentId;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 
 import okhttp3.HttpUrl;
@@ -39,6 +40,13 @@ public class InvoicesRepositoryImpl implements InvoicesRepositoryCustom {
   public Optional<Invoice> findInvoiceByInvoiceUrl(HttpUrl invoiceUrl) {
     Objects.requireNonNull(invoiceUrl);
     Optional<InvoiceEntity> entity = invoicesRepository.findByInvoiceUrl(invoiceUrl);
+    return entity.map(e -> conversionService.convert(e, Invoice.class));
+  }
+
+  @Override
+  public Optional<Invoice> findInvoiceByPaymentId(PaymentId paymentId) {
+    Objects.requireNonNull(paymentId);
+    Optional<InvoiceEntity> entity = invoicesRepository.findByPaymentId(paymentId);
     return entity.map(e -> conversionService.convert(e, Invoice.class));
   }
 }

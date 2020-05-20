@@ -5,6 +5,7 @@ import static org.interledger.connector.persistence.entities.DataConstants.Index
 import static org.interledger.connector.persistence.entities.DataConstants.TableNames.INVOICES;
 
 import org.interledger.connector.opa.model.Invoice;
+import org.interledger.connector.opa.model.PaymentId;
 
 import org.hibernate.annotations.NaturalId;
 
@@ -90,7 +91,7 @@ public class InvoiceEntity extends AbstractEntity {
     this.received = invoice.received().longValue();
     this.subject = invoice.subject();
     this.paymentNetwork = invoice.paymentNetwork().toString();
-    this.paymentId = invoice.paymentId();
+    this.paymentId = invoice.paymentId().value();
     this.invoiceUrl = invoice.invoiceUrl().get().toString();
   }
 

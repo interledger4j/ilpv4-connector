@@ -7,6 +7,7 @@ import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.Payment;
+import org.interledger.connector.opa.model.PaymentId;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
@@ -51,8 +52,6 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   public Invoice getInvoiceById(InvoiceId invoiceId) {
     Objects.requireNonNull(invoiceId);
 
-    // TODO(bridge): If the invoice hasn't been paid, ask the bridge for any payments that have been sent for the invoice
-    //  and update the invoice received amount.
     return invoicesRepository.findInvoiceByInvoiceId(invoiceId)
       .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceId));
   }
@@ -151,11 +150,12 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   public Optional<Invoice> onPayment(Payment payment) {
-    InvoiceId invoiceIdFromCorrelationId = payment.correlationId()
-      .map(InvoiceId::of)
+    PaymentId paymentIdFromCorrelationId = payment.correlationId()
+      .map(PaymentId::of)
       .orElseThrow(() -> new IllegalArgumentException("StreamPayment did not have a correlationId.  Unable to update invoice for payment."));
 
-    Invoice existingInvoice = this.getInvoiceById(invoiceIdFromCorrelationId);
+    Invoice existingInvoice = invoicesRepository.findInvoiceByPaymentId(paymentIdFromCorrelationId)
+      .orElseThrow(() -> new IllegalArgumentException("Could not find invoice by correlation ID.")); // TODO: throw InvoiceNotFoundProblem
 
     if (!existingInvoice.assetCode().equals(payment.denomination().assetCode())) {
       throw new IllegalStateException(String.format("Invoice asset code was different than the StreamPayment asset code." +
