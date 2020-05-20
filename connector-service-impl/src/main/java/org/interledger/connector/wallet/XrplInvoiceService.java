@@ -10,6 +10,7 @@ import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
 import org.interledger.openpayments.events.XrplTransaction;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import org.springframework.core.convert.ConversionService;
 
 import java.util.function.Supplier;
@@ -35,6 +36,7 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
   }
 
   @Override
+  @Subscribe
   public void onPaymentCompleted(XrpPaymentCompletedEvent xrpPaymentCompletedEvent) {
     XrplTransaction transaction = xrpPaymentCompletedEvent.payment();
     if (transaction.invoiceHash() != null) {
