@@ -154,7 +154,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import javax.annotation.PostConstruct;
 
 /**
@@ -184,7 +183,8 @@ import javax.annotation.PostConstruct;
   WalletConfig.class,
   GcpPubSubConfig.class,
   RedisPubSubConfig.class,
-  XrplScanningConfig.class
+  XrplScanningConfig.class,
+  SpringAsyncConfig.class,
 })
 // support extension by looking for annotated Component/Config classes under the configured extensions.basePackage
 @ComponentScan(basePackages = "${interledger.connector.extensions.basePackage:org.interledger.connector.extensions}",

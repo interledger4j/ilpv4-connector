@@ -27,7 +27,7 @@ public class InMemoryStreamPaymentManager implements StreamPaymentManager {
 
   // merge is synchronized so no need for concurrent hashmap
   private final Map<MapKey, StreamPayment> transactionsMap = new HashMap<>();
-  
+
   private final EventBus eventBus;
 
   public InMemoryStreamPaymentManager(EventBus eventBus) {
@@ -87,6 +87,31 @@ public class InMemoryStreamPaymentManager implements StreamPaymentManager {
     }
   }
 
+  @Override
+  public List<StreamPayment> closeIdlePendingPayments(Instant idleSince) {
+    return transactionsMap.values()
+      .stream()
+      .filter(trx -> trx.status().equals(StreamPaymentStatus.PENDING))
+      .filter(trx -> trx.modifiedAt().isBefore(idleSince))
+      .map(payment -> updateExistingStatus(payment, StreamPaymentStatus.CLOSED_BY_EXPIRATION))
+      .collect(Collectors.toList());
+  }
+
+  @Override
+  public boolean updateStatus(AccountId accountId, String streamPaymentId, StreamPaymentStatus status) {
+    return findByAccountIdAndStreamPaymentId(accountId, streamPaymentId)
+      .map(existing -> updateExistingStatus(existing, status))
+      .map($ -> true)
+      .orElse(false);
+  }
+
+  private StreamPayment updateExistingStatus(StreamPayment existing, StreamPaymentStatus newStatus) {
+    return put(StreamPayment.builder().from(existing)
+      .status(newStatus)
+      .modifiedAt(Instant.now())
+      .build());
+  }
+
   private StreamPayment upsertAmounts(StreamPayment streamPayment) {
     return findByAccountIdAndStreamPaymentId(streamPayment.accountId(), streamPayment.streamPaymentId())
       .map(existing -> put(StreamPayment.builder().from(existing)
@@ -114,6 +139,7 @@ public class InMemoryStreamPaymentManager implements StreamPaymentManager {
     }
 
     AccountId accountId();
+
     String streamPaymentId();
   }
 

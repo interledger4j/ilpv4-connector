@@ -6,12 +6,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * The Connector's Spring Data configuration.
  */
 @Configuration
 @EnableJpaAuditing
+@EnableTransactionManagement
 @ComponentScan("org.interledger.connector.persistence")
 @EnableJpaRepositories(basePackages = "org.interledger.connector.persistence.repositories")
 @EntityScan("org.interledger.connector.persistence.entities")

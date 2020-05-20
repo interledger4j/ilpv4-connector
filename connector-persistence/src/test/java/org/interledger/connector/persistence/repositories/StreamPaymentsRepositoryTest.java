@@ -1,6 +1,7 @@
 package org.interledger.connector.persistence.repositories;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.payments.StreamPaymentStatus;
@@ -26,11 +27,16 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
+import javax.persistence.RollbackException;
 
 /**
  * Unit tests for {@link AccessTokensRepository}.
@@ -53,6 +59,9 @@ public class StreamPaymentsRepositoryTest {
 
   @Autowired
   private NamedParameterJdbcTemplate jdbcTemplate;
+
+  @Autowired
+  private Consumer<Boolean> batchUpdater;
 
   @Test
   public void upsertSingleTransaction() {
@@ -253,6 +262,70 @@ public class StreamPaymentsRepositoryTest {
     assertThat(streamPayment2.get().getModifiedDate()).isEqualTo(streamPayment2.get().getCreatedDate());
   }
 
+  @Test
+  public void updateStatusOlderThan() throws InterruptedException {
+    AccountId accountId = AccountId.of(generateUuid());
+    int pendingPayments = 10;
+    for (int i = 0; i < pendingPayments; i++) {
+      streamPaymentsRepository.upsertAmounts(newEntity(accountId, "payment" + i, i));
+    }
+
+    assertThat(streamPaymentsRepository.closePendingPaymentsOlderThan(Instant.now().minusSeconds(1))).hasSize(0);
+
+    Thread.sleep(1000);
+
+    List<StreamPaymentEntity> updated =
+      streamPaymentsRepository.closePendingPaymentsOlderThan(Instant.now().minusSeconds(1));
+
+    assertThat(updated).hasSize(pendingPayments)
+      .extracting(StreamPaymentEntity::getStatus).containsOnly(StreamPaymentStatus.CLOSED_BY_EXPIRATION);
+
+    assertThat(streamPaymentsRepository.closePendingPaymentsOlderThan(Instant.now().minusSeconds(1))).hasSize(0);
+  }
+
+  @Test
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  public void updateStatusOlderThanTransactionalCommits() {
+    AccountId accountId = AccountId.of(generateUuid());
+    int pendingPayments = 10;
+    for (int i = 0; i < pendingPayments; i++) {
+      streamPaymentsRepository.upsertAmounts(newEntity(accountId, "payment" + i, i));
+    }
+
+    batchUpdater.accept(false);
+
+    List<StreamPaymentEntity> payments = streamPaymentsRepository.findByAccountIdOrderByCreatedDateDesc(accountId,
+      PageRequest.of(0, 100));
+
+    // make sure nothing update
+    assertThat(payments).hasSize(pendingPayments)
+      .extracting(StreamPaymentEntity::getStatus).containsOnly(StreamPaymentStatus.CLOSED_BY_EXPIRATION);
+  }
+
+  @Test
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  public void updateStatusOlderThanTransactionalRollsback() {
+    AccountId accountId = AccountId.of(generateUuid());
+    int pendingPayments = 10;
+    for (int i = 0; i < pendingPayments; i++) {
+      streamPaymentsRepository.upsertAmounts(newEntity(accountId, "payment" + i, i));
+    }
+
+    try {
+      batchUpdater.accept(true);
+      fail("exception expected");
+    } catch (Exception e) {
+      assertThat(e).isInstanceOf(RollbackException.class);
+    }
+
+    List<StreamPaymentEntity> payments = streamPaymentsRepository.findByAccountIdOrderByCreatedDateDesc(accountId,
+      PageRequest.of(0, 100));
+
+    // make sure nothing update
+    assertThat(payments).hasSize(pendingPayments)
+      .extracting(StreamPaymentEntity::getStatus).containsOnly(StreamPaymentStatus.PENDING);
+  }
+
   private String generateUuid() {
     return UUID.randomUUID().toString();
   }
@@ -289,6 +362,21 @@ public class StreamPaymentsRepositoryTest {
     @Bean
     public ConfigurableConversionService conversionService() {
       return new DefaultConversionService();
+    }
+
+    @Bean
+    public Consumer<Boolean> batchUpdater(StreamPaymentsRepository repository) {
+      return new Consumer<Boolean>() {
+        @Override
+        @Transactional(propagation = Propagation.REQUIRES_NEW)
+        public void accept(Boolean throwException) {
+          repository.closePendingPaymentsOlderThan(Instant.now());
+          if (throwException) {
+            throw new RollbackException("thrown exception to trigger rollback");
+          }
+        }
+      };
+
     }
   }
 }

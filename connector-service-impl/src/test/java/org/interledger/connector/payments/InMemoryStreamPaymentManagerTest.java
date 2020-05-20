@@ -131,6 +131,52 @@ public class InMemoryStreamPaymentManagerTest {
   }
 
 
+  @Test
+  public void updateStatus() {
+    String assetCode = "XRP";
+    short assetScale = 9;
+    UnsignedLong deliveredAmount = UnsignedLong.valueOf(100);
+    AccountId accountId = AccountId.of(generateUuid());
+    String streamPaymentId = generateUuid();
+    StreamPayment payment = StreamPayment.builder().from(newTransaction(accountId, streamPaymentId, 10))
+      .deliveredAssetCode(assetCode)
+      .deliveredAssetScale(assetScale)
+      .deliveredAmount(deliveredAmount)
+      .build();
+
+    paymentTransactionManager.merge(payment);
+    paymentTransactionManager.updateStatus(accountId, streamPaymentId, StreamPaymentStatus.CLOSED_BY_EXPIRATION);
+
+    Optional<StreamPayment> found =
+      paymentTransactionManager.findByAccountIdAndStreamPaymentId(accountId, streamPaymentId);
+
+    assertThat(found).isPresent();
+
+    assertThat(found.get().deliveredAssetCode()).hasValue(assetCode);
+    assertThat(found.get().deliveredAssetScale()).hasValue(assetScale);
+    assertThat(found.get().deliveredAmount()).isEqualTo(deliveredAmount);
+    assertThat(found.get().status()).isEqualTo(StreamPaymentStatus.CLOSED_BY_EXPIRATION);
+  }
+
+  @Test
+  public void closeIdlePending() {
+    AccountId accountId = AccountId.of(generateUuid());
+    String streamPaymentId = generateUuid();
+    String streamPaymentId2 = generateUuid();
+
+    paymentTransactionManager.merge(newTransaction(accountId, streamPaymentId, 10));
+    paymentTransactionManager.merge(newTransaction(accountId, streamPaymentId2, 10));
+
+    assertThat(paymentTransactionManager.closeIdlePendingPayments(Instant.now().minusSeconds(30))).isEmpty();
+
+    List<StreamPayment> closedPayments = paymentTransactionManager.closeIdlePendingPayments(Instant.now());
+
+    assertThat(closedPayments).hasSize(2)
+      .extracting(StreamPayment::status).containsOnly(StreamPaymentStatus.CLOSED_BY_EXPIRATION);
+
+    assertThat(paymentTransactionManager.closeIdlePendingPayments(Instant.now())).isEmpty();
+  }
+
   private void assertEqual(StreamPayment loadedAccessTokenEntity, StreamPayment entity1) {
     assertThat(loadedAccessTokenEntity).isEqualTo(entity1);
   }

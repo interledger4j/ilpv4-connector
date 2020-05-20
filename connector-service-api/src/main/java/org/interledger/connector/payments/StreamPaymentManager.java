@@ -4,6 +4,7 @@ import org.interledger.connector.accounts.AccountId;
 
 import org.springframework.data.domain.PageRequest;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,4 +52,20 @@ public interface StreamPaymentManager {
    */
   void merge(StreamPayment streamPayment);
 
+  /**
+   * Updates just the status of a payment
+   * @param accountId
+   * @param streamPaymentId
+   * @param status
+   * @return true if status updated, false if not updated because no matching payment found
+   */
+  boolean updateStatus(AccountId accountId, String streamPaymentId, StreamPaymentStatus status);
+
+  /**
+   * Updates payments in {@link StreamPaymentStatus#PENDING} status to {@link StreamPaymentStatus#CLOSED_BY_EXPIRATION}
+   * that have not been modified since specified time.
+   * @param idleSince
+   * @return payments that were updated
+   */
+  List<StreamPayment> closeIdlePendingPayments(Instant idleSince);
 }
