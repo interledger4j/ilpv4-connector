@@ -11,24 +11,24 @@ info:
     name: Apache 2.0
     url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
 servers:
-  -
-    url: 'https://{domain}:{port}'
+  - url: 'https://{domain}:{port}/{base}'
     description: The default server
     variables:
       domain:
         default: localhost
       port:
-        default: '3000'
-        description: The default port for a running ILPv4 Connector
+        default: '8080'
+      base:
+        default: ''
+        description: An optional base-path for the Connector admin APIs
 paths:
-  /admin/accounts:
+  /accounts:
     summary: Connector Accounts
     get:
       tags:
         - Accounts
       parameters:
-        -
-          explode: false
+        - explode: false
           name: offset
           description: The offset to use for paging
           schema:
@@ -36,14 +36,12 @@ paths:
             type: string
           in: query
           required: false
-        -
-          name: numPerPage
+        - name: numPerPage
           description: The total number of results to return in a single response.
           schema:
             type: number
           in: query
-        -
-          name: pageNumber
+        - name: pageNumber
           description: >-
             The 0-based page index, computed by dividing the total number of results by the value
             of `numPerPage`. If not specified, this value should default to `0`.
@@ -62,8 +60,7 @@ paths:
                 $ref: '#/components/schemas/AccountPage'
           description: A pageable list of Accounts configured at this Connector.
       security:
-        -
-          BASIC: []
+        - BASIC: []
       operationId: getAccounts
       summary: All Accounts
       description: Retrieve a pagable collection of Connector Accounts.
@@ -88,19 +85,17 @@ paths:
         '409':
           description: An Account with this identifier already exists.
       security:
-        -
-          BASIC: []
+        - BASIC: []
       operationId: createAccount
       summary: New Account
       description: Create a new account in the Connector.
-  '/admin/accounts/{account_id}':
+  '/accounts/{account_id}':
     summary: Individual Connector Account.
     get:
       tags:
         - Accounts
       parameters:
-        -
-          name: account_id
+        - name: account_id
           description: ID of account to return
           schema:
             format: uuid
@@ -152,8 +147,7 @@ paths:
                     status: 404
           description: Account not found
       security:
-        -
-          BASIC: []
+        - BASIC: []
       operationId: getAccount
       summary: Individual Account
       description: 'Get the account identified by :account_id.'
@@ -203,8 +197,7 @@ paths:
       tags:
         - Accounts
       parameters:
-        -
-          name: account_id
+        - name: account_id
           schema:
             type: string
           in: path
@@ -217,8 +210,7 @@ paths:
                 $ref: '#/components/schemas/Account'
           description: The successfully update Account.
       security:
-        -
-          BASIC: []
+        - BASIC: []
       operationId: updateAccount
       summary: Update Account
       description: Update a Connector account.
@@ -264,8 +256,7 @@ paths:
             Return a pageable collection of Routes that this Connector has in it routing table
             (include both static and dynamic).
       security:
-        -
-          BASIC: []
+        - BASIC: []
       summary: All Routes
       description: Retrieve a pageable collection of all routes in this Connector's routing table.
   /routes/static:
@@ -298,8 +289,7 @@ paths:
                 $ref: '#/components/schemas/StaticRouteExists'
           description: The static route already exists in the Connector.
       security:
-        -
-          BASIC: []
+        - BASIC: []
       operationId: CreateStaticRoute
       summary: Create Static Route
     delete:
@@ -315,8 +305,7 @@ paths:
                 $ref: '#/components/schemas/StaticRouteNotFound'
           description: The request static route does not exist for removal.
       security:
-        -
-          BASIC: []
+        - BASIC: []
       operationId: RemoveStaticRoute
       summary: Remove Static Route
 components:
@@ -574,8 +563,7 @@ components:
       example:
         _embedded:
           routes:
-            -
-              routePrefix: g.foo
+            - routePrefix: g.foo
               nextHopAccountId: '123'
               path: []
               auth: YPdfhiJL3niltb1hChYzKwFPPimfPIb0gcNtvoKglsY=
@@ -590,8 +578,7 @@ components:
       example:
         _embedded:
           accounts:
-            -
-              accountId: __ping_account__
+            - accountId: __ping_account__
               createdAt: '2019-11-18T18:23:30.948Z'
               modifiedAt: '2019-11-18T18:23:30.948Z'
               description: A receiver-like child account for collecting all Ping protocol revenues.
@@ -749,9 +736,6 @@ components:
       type: http
       description: HTTP Basic Authentication
 security:
-  -
-    OAuth2:
-      - 'accounts:read'
-    Bearer: []
-    JWTBearer: []
-    BASIC: []
+  Bearer: []
+  JWTBearer: []
+  BASIC: []

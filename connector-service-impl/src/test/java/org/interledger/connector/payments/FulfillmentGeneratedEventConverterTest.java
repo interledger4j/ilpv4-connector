@@ -5,11 +5,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.interledger.codecs.stream.StreamCodecContextFactory;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.events.FulfillmentGeneratedEvent;
-import org.interledger.connector.localsend.StreamPacketWithSharedSecret;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerCondition;
 import org.interledger.core.InterledgerFulfillPacket;
 import org.interledger.core.InterledgerFulfillment;
+import org.interledger.core.InterledgerPacket;
 import org.interledger.core.InterledgerPacketType;
 import org.interledger.core.InterledgerPreparePacket;
 import org.interledger.core.SharedSecret;
@@ -35,18 +35,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.Optional;
 
 public class FulfillmentGeneratedEventConverterTest {
 
+  public static final InterledgerAddress DESTINATION_ADDRESS = InterledgerAddress.of("g.destination");
   private static final AccountId ACCOUNT_ID = AccountId.of("bob");
   private static final Denomination DENOMINATION = Denomination.builder()
     .assetScale((short) 9)
     .assetCode("XRP")
     .build();
-  public static final InterledgerAddress DESTINATION_ADDRESS = InterledgerAddress.of("g.destination");
-
   private StreamEncryptionService streamEncryptionService;
   private CodecContext streamCodecContext;
 
@@ -277,7 +277,7 @@ public class FulfillmentGeneratedEventConverterTest {
     UnsignedLong sentAmount = UnsignedLong.valueOf(20);
     UnsignedLong deliveredAmount = UnsignedLong.valueOf(15);
 
-    StreamPacket streamPreparePacket = StreamPacketWithSharedSecret.builder()
+    StreamPacket streamPreparePacket = StreamPacket.builder()
       .interledgerPacketType(InterledgerPacketType.PREPARE)
       .sequence(UnsignedLong.ONE)
       .prepareAmount(UnsignedLong.valueOf(10))
@@ -330,7 +330,7 @@ public class FulfillmentGeneratedEventConverterTest {
     UnsignedLong sentAmount = UnsignedLong.valueOf(20);
     UnsignedLong deliveredAmount = UnsignedLong.valueOf(20);
 
-    StreamPacket streamPreparePacket = StreamPacketWithSharedSecret.builder()
+    StreamPacket streamPreparePacket = StreamPacket.builder()
       .interledgerPacketType(InterledgerPacketType.PREPARE)
       .sequence(UnsignedLong.ONE)
       .prepareAmount(UnsignedLong.valueOf(10))
@@ -377,9 +377,93 @@ public class FulfillmentGeneratedEventConverterTest {
     assertThat(streamPayment).isEqualTo(expected);
   }
 
+  @Test
+  public void findSharedSecretInIlpPackets() {
+    final SharedSecret sharedSecret1 = SharedSecret.of(ByteArrayUtils.generate32RandomBytes());
+    final SharedSecret sharedSecret2 = SharedSecret.of(ByteArrayUtils.generate32RandomBytes());
+    final SharedSecret sharedSecret3 = SharedSecret.of(ByteArrayUtils.generate32RandomBytes());
+
+    // No packets
+    assertThat(this.converter.getSharedSecret(new InterledgerPacket[0])).isEmpty();
+
+    // No shared-secret in 1 packets.
+    assertThat(this.converter.getSharedSecret(
+      new InterledgerPacket[] {constructInterledgerPacketWithStreamPacket(Optional.empty())}
+    )).isEmpty();
+
+    // Shared secret in 1 packet
+    assertThat(this.converter.getSharedSecret(
+      new InterledgerPacket[] {constructInterledgerPacketWithStreamPacket(Optional.of(sharedSecret1))}
+    )).get().isEqualTo(sharedSecret1);
+
+    // No shared-secret in 3 packets.
+    assertThat(this.converter.getSharedSecret(
+      new InterledgerPacket[] {
+        constructInterledgerPacketWithStreamPacket(Optional.empty()),
+        constructInterledgerPacketWithStreamPacket(Optional.empty()),
+        constructInterledgerPacketWithStreamPacket(Optional.empty())
+      }
+    )).isEmpty();
+
+    // Shared secret in all 3 packets.
+    assertThat(this.converter.getSharedSecret(
+      new InterledgerPacket[] {
+        constructInterledgerPacketWithStreamPacket(Optional.of(sharedSecret1)),
+        constructInterledgerPacketWithStreamPacket(Optional.of(sharedSecret2)),
+        constructInterledgerPacketWithStreamPacket(Optional.of(sharedSecret3))
+      }
+    )).get().isEqualTo(sharedSecret1);
+
+    // Shared secret in First of 3 packets.
+    assertThat(this.converter.getSharedSecret(
+      new InterledgerPacket[] {
+        constructInterledgerPacketWithStreamPacket(Optional.of(sharedSecret1)),
+        constructInterledgerPacketWithStreamPacket(Optional.empty()),
+        constructInterledgerPacketWithStreamPacket(Optional.empty())
+      }
+    )).get().isEqualTo(sharedSecret1);
+
+    // Shared secret in 2nd of 3 packets.
+    assertThat(this.converter.getSharedSecret(
+      new InterledgerPacket[] {
+        constructInterledgerPacketWithStreamPacket(Optional.empty()),
+        constructInterledgerPacketWithStreamPacket(Optional.of(sharedSecret2)),
+        constructInterledgerPacketWithStreamPacket(Optional.empty())
+      }
+    )).get().isEqualTo(sharedSecret2);
+
+    // Shared secret in Last of 3 packets.
+    assertThat(this.converter.getSharedSecret(
+      new InterledgerPacket[] {
+        constructInterledgerPacketWithStreamPacket(Optional.empty()),
+        constructInterledgerPacketWithStreamPacket(Optional.empty()),
+        constructInterledgerPacketWithStreamPacket(Optional.of(sharedSecret3))
+      }
+    )).get().isEqualTo(sharedSecret3);
+  }
+
+  private InterledgerPacket constructInterledgerPacketWithStreamPacket(final Optional<SharedSecret> sharedSecret) {
+    Objects.requireNonNull(sharedSecret);
+    final StreamPacket streamPacket = StreamPacket.builder()
+      .interledgerPacketType(InterledgerPacketType.PREPARE)
+      .sequence(UnsignedLong.ONE)
+      .prepareAmount(UnsignedLong.valueOf(10))
+      .sharedSecret(sharedSecret)
+      .addFrames(moneyFrame())
+      .build();
+
+    final byte[] data = sharedSecret.map(ss -> toEncrypted(ss, streamPacket)).orElse(new byte[0]);
+    return InterledgerPreparePacket.builder()
+      .destination(InterledgerAddress.of("example.foo"))
+      .expiresAt(Instant.now().plus(30, ChronoUnit.SECONDS))
+      .executionCondition(InterledgerCondition.of(new byte[32]))
+      .data(data)
+      .typedData(streamPacket)
+      .build();
+  }
+
   private InterledgerPreparePacket.AbstractInterledgerPreparePacket preparePacket(long amount,
-                                                                                  Optional<StreamPacket> streamPayment)
-  {
+    Optional<StreamPacket> streamPayment) {
     return InterledgerPreparePacket.builder()
       .amount(UnsignedLong.valueOf(amount))
       .expiresAt(Instant.now())
@@ -390,7 +474,7 @@ public class FulfillmentGeneratedEventConverterTest {
   }
 
   private InterledgerPreparePacket.AbstractInterledgerPreparePacket preparePacket(long amount,
-                                                                                  StreamPacket streamPacket) {
+    StreamPacket streamPacket) {
     return preparePacket(amount, Optional.of(streamPacket));
   }
 

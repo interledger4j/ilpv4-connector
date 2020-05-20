@@ -1,7 +1,6 @@
 package org.interledger.connector.payments;
 
 import org.interledger.connector.events.FulfillmentGeneratedEvent;
-import org.interledger.connector.localsend.StreamPacketWithSharedSecret;
 import org.interledger.connector.stream.StreamPacketUtils;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerFulfillPacket;
@@ -30,7 +29,8 @@ public class FulfillmentGeneratedEventConverter implements Converter<Fulfillment
   private final StreamEncryptionService streamEncryptionService;
   private final CodecContext streamCodecContext;
 
-  public FulfillmentGeneratedEventConverter(StreamEncryptionService streamEncryptionService, CodecContext streamCodecContext) {
+  public FulfillmentGeneratedEventConverter(StreamEncryptionService streamEncryptionService,
+    CodecContext streamCodecContext) {
     this.streamEncryptionService = streamEncryptionService;
     this.streamCodecContext = streamCodecContext;
   }
@@ -56,7 +56,6 @@ public class FulfillmentGeneratedEventConverter implements Converter<Fulfillment
       .assetScale(source.denomination().assetScale())
       .assetCode(source.denomination().assetCode())
       .accountId(source.accountId());
-
 
     switch (source.paymentType()) {
       case PAYMENT_RECEIVED: {
@@ -96,11 +95,12 @@ public class FulfillmentGeneratedEventConverter implements Converter<Fulfillment
    * Convert the encrypted bytes of a stream packet into a {@link StreamPacket} using the CodecContext and {@code
    * sharedSecret}.
    *
-   * @param sharedSecret               The shared secret known only to this client and the remote STREAM receiver,
-   *                                   used to encrypt and decrypt STREAM frames and packets sent and received inside
-   *                                   of ILPv4 packets sent over the Interledger between these two entities (i.e.,
-   *                                   sender and receiver).
+   * @param sharedSecret               The shared secret known only to this client and the remote STREAM receiver, used
+   *                                   to encrypt and decrypt STREAM frames and packets sent and received inside of
+   *                                   ILPv4 packets sent over the Interledger between these two entities (i.e., sender
+   *                                   and receiver).
    * @param encryptedStreamPacketBytes A byte-array containing an encrypted ASN.1 OER encoded {@link StreamPacket}.
+   *
    * @return The decrypted {@link StreamPacket}.
    */
   @VisibleForTesting
@@ -116,18 +116,18 @@ public class FulfillmentGeneratedEventConverter implements Converter<Fulfillment
   }
 
   private Optional<StreamPacket> streamPreparePacket(InterledgerPreparePacket preparePacket,
-                                                     InterledgerFulfillPacket fulfillPacket) {
+    InterledgerFulfillPacket fulfillPacket) {
     return findStreamPacket(preparePacket, fulfillPacket);
   }
 
   private Optional<StreamPacket> streamFulfillPacket(InterledgerPreparePacket preparePacket,
-                                                     InterledgerFulfillPacket fulfillPacket) {
+    InterledgerFulfillPacket fulfillPacket) {
     return findStreamPacket(fulfillPacket, preparePacket);
   }
 
 
   private Optional<StreamPacket> findStreamPacket(InterledgerPacket primary,
-                                                  InterledgerPacket secondary) {
+    InterledgerPacket secondary) {
     Optional<StreamPacket> fromTypedData = primary.typedData().flatMap(typedData -> {
       if (typedData instanceof StreamPacket) {
         return Optional.of((StreamPacket) typedData);
@@ -143,14 +143,24 @@ public class FulfillmentGeneratedEventConverter implements Converter<Fulfillment
     }
   }
 
-  private Optional<SharedSecret> getSharedSecret(InterledgerPacket... packets) {
+  /**
+   * Helper method to obtain an optionally present {@link SharedSecret} from an array of STREAM packets.
+   *
+   * @param packets An array of type {@link StreamPacket}.
+   *
+   * @return The first {@link SharedSecret} encountered.
+   */
+  @VisibleForTesting
+  protected Optional<SharedSecret> getSharedSecret(InterledgerPacket... packets) {
     return Lists.newArrayList(packets).stream()
       .map(InterledgerPacket::typedData)
       .filter(Optional::isPresent)
       .map(Optional::get)
-      .filter(typedData -> typedData instanceof StreamPacketWithSharedSecret)
-      .map(typedData -> (StreamPacketWithSharedSecret) typedData)
-      .map(StreamPacketWithSharedSecret::sharedSecret)
+      .filter(typedData -> typedData instanceof StreamPacket)
+      .map(typedData -> (StreamPacket) typedData)
+      .map(StreamPacket::sharedSecret)
+      .filter(Optional::isPresent)
+      .map(Optional::get)
       .findFirst();
   }
 
