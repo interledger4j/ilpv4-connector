@@ -13,7 +13,7 @@
   <name>OpenPayments :: Services API</name>
   <description>All service object interfaces for the OpenPayments Server.</description>
 
-  <dependencies>
+  <!--<dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>connector-opa</artifactId>
@@ -22,6 +22,6 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>openpayments-model</artifactId>
     </dependency>
-  </dependencies>
+  </dependencies>-->
 
 </project>
