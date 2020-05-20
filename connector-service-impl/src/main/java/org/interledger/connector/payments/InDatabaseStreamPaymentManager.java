@@ -11,6 +11,7 @@ import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.springframework.data.domain.PageRequest;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -84,7 +85,7 @@ public class InDatabaseStreamPaymentManager implements StreamPaymentManager {
           assetScale);
     });
     if (!streamPayment.status().equals(StreamPaymentStatus.PENDING)) {
-      streamPaymentsRepository.updateStatus(streamPayment.accountId(),
+      updateStatus(streamPayment.accountId(),
         streamPayment.streamPaymentId(),
         streamPayment.status());
     }
@@ -93,6 +94,18 @@ public class InDatabaseStreamPaymentManager implements StreamPaymentManager {
         .findByAccountIdAndStreamPaymentId(streamPayment.accountId(), streamPayment.streamPaymentId())
         .map(this::notifyReceivedPaymentClosed);
     }
+  }
+
+  @Override
+  public boolean updateStatus(AccountId accountId, String streamPaymentId, StreamPaymentStatus status) {
+    return streamPaymentsRepository.updateStatus(accountId, streamPaymentId, status) == 1;
+  }
+
+  @Override
+  public List<StreamPayment> closeIdlePendingPayments(Instant idleSince) {
+    return streamPaymentsRepository.closePendingPaymentsOlderThan(idleSince).stream()
+      .map(streamPaymentFromEntityConverter::convert)
+      .collect(Collectors.toList());
   }
 
   private StreamPayment notifyReceivedPaymentClosed(StreamPaymentEntity streamPaymentEntity) {

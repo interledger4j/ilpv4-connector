@@ -4,8 +4,10 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.entities.StreamPaymentEntity;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,5 +52,10 @@ public interface StreamPaymentsRepository extends Repository<StreamPaymentEntity
    * @return record if found
    */
   Optional<StreamPaymentEntity> findByAccountIdAndStreamPaymentId(AccountId accountId, String streamPaymentId);
+
+  @Query(value = "UPDATE stream_payments SET status = 'CLOSED_BY_EXPIRATION', modified_dttm = now() " +
+    "WHERE status = 'PENDING' AND modified_dttm < ?1 RETURNING *",
+    nativeQuery = true)
+  List<StreamPaymentEntity> closePendingPaymentsOlderThan(Instant olderThan);
 
 }
