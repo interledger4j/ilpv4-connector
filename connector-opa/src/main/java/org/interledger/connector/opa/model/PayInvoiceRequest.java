@@ -1,5 +1,7 @@
 package org.interledger.connector.opa.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.primitives.UnsignedLong;
 import org.immutables.value.Value;
 
@@ -7,6 +9,8 @@ import org.immutables.value.Value;
  * Request object included in a request to pay an invoice.
  */
 @Value.Immutable
+@JsonSerialize(as = ImmutablePayInvoiceRequest.class)
+@JsonDeserialize(as = ImmutablePayInvoiceRequest.class)
 public interface PayInvoiceRequest {
 
   static ImmutablePayInvoiceRequest.Builder builder() {
