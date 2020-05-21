@@ -10,6 +10,7 @@ public interface DataConstants {
     String STATIC_ROUTES = "STATIC_ROUTES";
     String STREAM_PAYMENTS = "STREAM_PAYMENTS";
     String INVOICES = "INVOICES";
+    String INVOICE_PAYMENTS = "INVOICE_PAYMENTS";
   }
 
   interface ColumnNames {
