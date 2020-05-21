@@ -41,7 +41,7 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
    * @param invoice The {@link Invoice} to store.
    * @return The {@link Invoice} that was stored.
    */
-  Invoice createInvoice(final Invoice invoice);
+  Invoice createInvoice(final Invoice invoice, final AccountId accountId);
 
   /**
    * Update an existing {@link Invoice}.

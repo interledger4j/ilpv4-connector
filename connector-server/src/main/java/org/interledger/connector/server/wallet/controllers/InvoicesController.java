@@ -75,10 +75,10 @@ public class InvoicesController {
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody ResponseEntity<Invoice> createInvoice(
-    @PathVariable String accountId,
+    @PathVariable AccountId accountId,
     @RequestBody Invoice invoice
   ) {
-    Invoice createdInvoice = ilpInvoiceService.createInvoice(invoice);
+    Invoice createdInvoice = ilpInvoiceService.createInvoice(invoice, accountId);
 
     final HttpHeaders headers = new HttpHeaders();
     headers.setLocation(getInvoiceLocation(invoice.id()));

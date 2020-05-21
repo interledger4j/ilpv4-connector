@@ -83,7 +83,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public Invoice createInvoice(Invoice invoice) {
+  public Invoice createInvoice(Invoice invoice, AccountId accountId) {
     Objects.requireNonNull(invoice);
 
     Invoice invoiceWithUrl = invoiceFactory.construct(invoice);
@@ -91,6 +91,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
 
     HttpUrl invoiceUrl = invoiceWithUrl.invoiceUrl().get();
 
+    Invoice invoiceToSave = invoiceWithUrl;
     if (!isForThisWallet(invoiceUrl)) {
       HttpUrl createUrl = new HttpUrl.Builder()
         .scheme(invoiceUrl.scheme())
@@ -100,11 +101,14 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
         .addPathSegment(invoice.accountId())
         .addPathSegment("invoices")
         .build();
-      Invoice invoiceCreatedOnReceiver = openPaymentsClient.createInvoice(createUrl.uri(), invoice);
-      return invoicesRepository.saveInvoice(invoiceCreatedOnReceiver);
+      invoiceToSave = openPaymentsClient.createInvoice(createUrl.uri(), invoice);
     }
 
-    return invoicesRepository.saveInvoice(invoiceWithUrl);
+    Invoice invoiceWithCorrectAccountId = Invoice.builder()
+      .from(invoiceToSave)
+      .accountId(accountId.value())
+      .build();
+    return invoicesRepository.saveInvoice(invoiceWithCorrectAccountId);
   }
 
   @Override
