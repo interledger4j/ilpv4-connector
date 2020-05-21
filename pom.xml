@@ -234,6 +234,11 @@
         <version>1.7.30</version>
       </dependency>
       <dependency>
+        <groupId>net.logstash.logback</groupId>
+        <artifactId>logstash-logback-encoder</artifactId>
+        <version>6.3</version>
+      </dependency>
+      <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>28.2-jre</version>
@@ -464,6 +469,7 @@
 
                   <!-- Sentry is not used directly in code, but needs to be a dependency in order to work. -->
                   <ignoredDependency>io.sentry:sentry-logback:jar</ignoredDependency>
+                  <ignoredDependency>net.logstash.logback:logstash-logback-encoder:jar</ignoredDependency>
                   <ignoredDependency>com.h2database:h2:jar</ignoredDependency>
                   <ignoredDependency>org.hibernate:hibernate-entitymanager</ignoredDependency>
                   <ignoredDependency>org.liquibase:liquibase-core:jar</ignoredDependency>
