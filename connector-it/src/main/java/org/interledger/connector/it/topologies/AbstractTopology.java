@@ -28,12 +28,15 @@ public abstract class AbstractTopology {
   public static final String BOB = "bob";
   public static final String PAUL = "paul";
   public static final String PETER = "peter";
+  public static final String EDDY = "eddy";
+
   public static final AccountId ALICE_ACCOUNT = AccountId.of(ALICE);
   public static final AccountId BOB_ACCOUNT = AccountId.of(BOB);
 
   // Used for sending Pings from an account that is neither Alice nor Bob.
   public static final AccountId PAUL_ACCOUNT = AccountId.of(PAUL);
   public static final AccountId PETER_ACCOUNT = AccountId.of(PETER);
+  public static final AccountId EDDY_ACCOUNT = AccountId.of(EDDY);
 
   public static final String TEST = InterledgerAddress.AllocationScheme.TEST.getValue();
 
@@ -43,6 +46,7 @@ public abstract class AbstractTopology {
   public static final InterledgerAddress ALICE_AT_BOB_ADDRESS = BOB_CONNECTOR_ADDRESS.with(ALICE);
   public static final InterledgerAddress PAUL_AT_ALICE_ADDRESS = ALICE_CONNECTOR_ADDRESS.with(PAUL);
   public static final InterledgerAddress PETER_AT_BOB_ADDRESS = BOB_CONNECTOR_ADDRESS.with(PETER);
+  public static final InterledgerAddress EDDY_AT_ALICE_ADDRESS = ALICE_CONNECTOR_ADDRESS.with(EDDY);
 
   public static final String ALICE_TOKEN_ISSUER = HttpUrl.parse("https://" + ALICE + ".example.com").toString();
   public static final String BOB_TOKEN_ISSUER = HttpUrl.parse("https://" + BOB + ".example.com").toString();

@@ -45,6 +45,12 @@ public interface InvoicesRepository extends CrudRepository<InvoiceEntity, Long>,
     return findByInvoiceUrlAndAccountId(invoiceUrl.toString(), accountId.value());
   }
 
+  Optional<InvoiceEntity> findByInvoiceUrl(String invoiceUrl);
+
+  default Optional<InvoiceEntity> findByInvoiceUrl(HttpUrl invoiceUrl) {
+    return findByInvoiceUrl(invoiceUrl.toString());
+  }
+
   Optional<InvoiceEntity> findByCorrelationIdAndAccountId(String correlationId, String accountId);
 
   default Optional<InvoiceEntity> findByCorrelationIdAndAccountId(CorrelationId correlationId, AccountId accountId) {

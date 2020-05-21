@@ -45,6 +45,13 @@ public class InvoicesRepositoryImpl implements InvoicesRepositoryCustom {
   }
 
   @Override
+  public Optional<Invoice> findInvoiceByInvoiceUrl(HttpUrl invoiceUrl) {
+    Objects.requireNonNull(invoiceUrl);
+    Optional<InvoiceEntity> entity = invoicesRepository.findByInvoiceUrl(invoiceUrl);
+    return entity.map(e -> conversionService.convert(e, Invoice.class));
+  }
+
+  @Override
   public Optional<Invoice> findInvoiceByCorrelationIdAndAccountId(CorrelationId correlationId, AccountId accountId) {
     Objects.requireNonNull(correlationId);
     Optional<InvoiceEntity> entity = invoicesRepository.findByCorrelationIdAndAccountId(correlationId, accountId);

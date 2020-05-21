@@ -72,6 +72,7 @@ public interface OpenPaymentsClient {
     CONTENT_TYPE + APPLICATION_JSON
   })
   Invoice createInvoice(
+    @Param("accountId") String accountId,
     Invoice invoice
   ) throws ThrowableProblem;
 

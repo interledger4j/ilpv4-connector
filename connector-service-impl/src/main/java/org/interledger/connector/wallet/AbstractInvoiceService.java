@@ -64,14 +64,22 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     if (existingInvoice.isPresent()) {
       throw new InvoiceAlreadyExistsProblem(existingInvoice.get().id());
     } else {
-      // If not, get it from the receiver
-      Invoice invoiceOnReceiver = this.getRemoteInvoice(invoiceUrl);
+      // If not, get it from the receiver, or just copy it locally
+      Invoice invoiceOfReceiver;
+      if (!isForThisWallet(invoiceUrl)) {
+        invoiceOfReceiver = this.getRemoteInvoice(invoiceUrl);
+      } else {
+        invoiceOfReceiver = invoicesRepository.findInvoiceByInvoiceUrl(invoiceUrl)
+          .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceUrl));
+      }
+
       // And set the accountId of the invoice to the sender's accountId
       Invoice invoiceWithCorrectAccountId = Invoice.builder()
-        .from(invoiceOnReceiver)
+        .from(invoiceOfReceiver)
         .accountId(accountId.value())
         .build();
-      return invoicesRepository.saveInvoice(invoiceWithCorrectAccountId);
+      Invoice invoice = invoicesRepository.saveInvoice(invoiceWithCorrectAccountId);
+      return invoice;
     }
   }
 

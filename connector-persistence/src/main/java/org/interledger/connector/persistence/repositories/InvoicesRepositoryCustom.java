@@ -22,5 +22,7 @@ public interface InvoicesRepositoryCustom {
 
   Optional<Invoice> findInvoiceByInvoiceUrlAndAccountId(HttpUrl invoiceUrl, AccountId accountId);
 
+  Optional<Invoice> findInvoiceByInvoiceUrl(HttpUrl invoiceUrl);
+
   Optional<Invoice> findInvoiceByCorrelationIdAndAccountId(CorrelationId correlationId, AccountId accountId);
 }

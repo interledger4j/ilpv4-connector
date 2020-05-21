@@ -99,12 +99,17 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
             aliceBobDenomination, maxPacketAmount);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(bobAccountSettingsAtAlice);
 
-          // Add Paul's account on Alice (Paul is used for sending pings)
+          // Add Paul's account on Alice
           final AccountSettings paulAccountSettingsAtAlice = constructPaulAccountSettingsOnAlice(
             paulAtAliceDenomination, alicePort);
           aliceServerNode.getILPv4Connector().getAccountManager().createAccount(paulAccountSettingsAtAlice);
 
-          // Add Peter's account on Bob (Peter is used for sending pings)
+          // Add Eddy's account on Alice
+          final AccountSettings eddyAccountSettingsAtAlice = constructEddyAccountSettingsOnAlice(
+            paulAtAliceDenomination, alicePort);
+          aliceServerNode.getILPv4Connector().getAccountManager().createAccount(eddyAccountSettingsAtAlice);
+
+          // Add Peter's account on Bob
           final AccountSettings peterAccountSettingsAtBob = constructPeterAccountSettingsOnBob(bobPort);
           bobServerNode.getILPv4Connector().getAccountManager().createAccount(peterAccountSettingsAtBob);
 
@@ -223,6 +228,35 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
       .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
       .putCustomSettings(
         OutgoingLinkSettings.HTTP_OUTGOING_URL, createOutgoingLinkUrl(alicePort, PAUL_ACCOUNT)
+      )
+
+      .build();
+  }
+
+  /**
+   * An AccountSettings object that represents Paul's account at Alice. Since this account is only used to send, it does
+   * not require any incoming connection settings.
+   */
+  private static AccountSettings constructEddyAccountSettingsOnAlice(final Denomination denomination, int alicePort) {
+    return AccountSettings.builder()
+      .accountId(EDDY_ACCOUNT)
+      .description("ILP-over-HTTP sender account for Paul")
+      .accountRelationship(AccountRelationship.CHILD)
+      .linkType(IlpOverHttpLink.LINK_TYPE)
+      .assetScale(denomination.assetScale())
+      .assetCode(denomination.assetCode())
+
+      // Incoming
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_TOKEN_SUBJECT, EDDY)
+      .putCustomSettings(IncomingLinkSettings.HTTP_INCOMING_SHARED_SECRET, ENCRYPTED_SHH)
+
+      // Outgoing settings needed by testPing
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_AUTH_TYPE, IlpOverHttpLinkSettings.AuthType.JWT_HS_256)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_TOKEN_SUBJECT, EDDY)
+      .putCustomSettings(OutgoingLinkSettings.HTTP_OUTGOING_SHARED_SECRET, ENCRYPTED_SHH)
+      .putCustomSettings(
+        OutgoingLinkSettings.HTTP_OUTGOING_URL, createOutgoingLinkUrl(alicePort, EDDY_ACCOUNT)
       )
 
       .build();

@@ -37,13 +37,17 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
     );
   }
 
+  /**
+   * ONLY FOR RECEIVING
+   * @param xrpPaymentCompletedEvent
+   */
   @Override
   @Subscribe
   public void onPaymentCompleted(XrpPaymentCompletedEvent xrpPaymentCompletedEvent) {
     XrplTransaction transaction = xrpPaymentCompletedEvent.payment();
     if (transaction.invoiceHash() != null) {
       Payment payment = Payment.builder()
-        .accountId(AccountId.of("")) // TODO: figure out how to correlate a payment to accountId
+        .accountId(AccountId.of(transaction.destination() + transaction.destinationTag()))
         .amount(transaction.amount())
         .correlationId(Optional.ofNullable(transaction.invoiceHash()))
         .paymentId(PaymentId.of(transaction.hash()))
