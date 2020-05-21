@@ -4,7 +4,7 @@
     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
   <changeSet id="payments" author="nkramer">
-    <createTable tableName="PAYMENTS">
+    <createTable tableName="INVOICE_PAYMENTS">
       <column name="ID" autoIncrement="true" type="BIGINT">
         <constraints nullable="false" primaryKey="true"/>
       </column>
@@ -39,7 +39,7 @@
         <constraints nullable="false"/>
       </column>
     </createTable>
-    <createIndex tableName="PAYMENTS"
+    <createIndex tableName="INVOICE_PAYMENTS"
                  indexName="PAYMENTS_ID_IDX">
       <column name="PAYMENT_ID"/>
     </createIndex>
