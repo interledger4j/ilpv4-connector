@@ -51,7 +51,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   public Invoice getInvoiceById(InvoiceId invoiceId, AccountId accountId) {
     Objects.requireNonNull(invoiceId);
 
-    return invoicesRepository.findInvoiceByInvoiceId(invoiceId)
+    return invoicesRepository.findInvoiceByInvoiceIdAndAccountId(invoiceId, accountId)
       .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceId));
   }
 
@@ -60,7 +60,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     Objects.requireNonNull(invoiceUrl);
 
     // See if we have that invoice already
-    Optional<Invoice> existingInvoice = invoicesRepository.findInvoiceByInvoiceUrl(invoiceUrl);
+    Optional<Invoice> existingInvoice = invoicesRepository.findInvoiceByInvoiceUrlAndAccountId(invoiceUrl, accountId);
     if (existingInvoice.isPresent()) {
       throw new InvoiceAlreadyExistsProblem(existingInvoice.get().id());
     } else {
@@ -118,7 +118,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
 
   @Override
   public Invoice updateInvoice(Invoice invoice, AccountId accountId) {
-    return invoicesRepository.findByInvoiceId(invoice.id())
+    return invoicesRepository.findByInvoiceIdAndAccountId(invoice.id(), accountId)
       .map(entity -> {
         entity.setReceived(invoice.received().longValue());
         InvoiceEntity saved = invoicesRepository.save(entity);
@@ -143,7 +143,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
       .map(CorrelationId::of)
       .orElseThrow(() -> new IllegalArgumentException("StreamPayment did not have a correlationId.  Unable to update invoice for payment."));
 
-    Invoice existingInvoice = invoicesRepository.findInvoiceByCorrelationId(correlationId)
+    Invoice existingInvoice = invoicesRepository.findInvoiceByCorrelationIdAndAccountId(correlationId, payment.accountId())
       .orElseThrow(() -> new IllegalArgumentException("Could not find invoice by correlation ID.")); // TODO: throw InvoiceNotFoundProblem
 
     if (!existingInvoice.assetCode().equals(payment.denomination().assetCode())) {

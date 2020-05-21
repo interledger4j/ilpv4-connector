@@ -1,5 +1,6 @@
 package org.interledger.connector.persistence.repositories;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
@@ -30,23 +31,23 @@ public class InvoicesRepositoryImpl implements InvoicesRepositoryCustom {
   }
 
   @Override
-  public Optional<Invoice> findInvoiceByInvoiceId(InvoiceId invoiceId) {
+  public Optional<Invoice> findInvoiceByInvoiceIdAndAccountId(InvoiceId invoiceId, AccountId accountId) {
     Objects.requireNonNull(invoiceId);
-    Optional<InvoiceEntity> entity = invoicesRepository.findByInvoiceId(invoiceId);
+    Optional<InvoiceEntity> entity = invoicesRepository.findByInvoiceIdAndAccountId(invoiceId, accountId);
     return entity.map(e -> conversionService.convert(e, Invoice.class));
   }
 
   @Override
-  public Optional<Invoice> findInvoiceByInvoiceUrl(HttpUrl invoiceUrl) {
+  public Optional<Invoice> findInvoiceByInvoiceUrlAndAccountId(HttpUrl invoiceUrl, AccountId accountId) {
     Objects.requireNonNull(invoiceUrl);
-    Optional<InvoiceEntity> entity = invoicesRepository.findByInvoiceUrl(invoiceUrl);
+    Optional<InvoiceEntity> entity = invoicesRepository.findByInvoiceUrlAndAccountId(invoiceUrl, accountId);
     return entity.map(e -> conversionService.convert(e, Invoice.class));
   }
 
   @Override
-  public Optional<Invoice> findInvoiceByCorrelationId(CorrelationId correlationId) {
+  public Optional<Invoice> findInvoiceByCorrelationIdAndAccountId(CorrelationId correlationId, AccountId accountId) {
     Objects.requireNonNull(correlationId);
-    Optional<InvoiceEntity> entity = invoicesRepository.findByCorrelationId(correlationId);
+    Optional<InvoiceEntity> entity = invoicesRepository.findByCorrelationIdAndAccountId(correlationId, accountId);
     return entity.map(e -> conversionService.convert(e, Invoice.class));
   }
 }

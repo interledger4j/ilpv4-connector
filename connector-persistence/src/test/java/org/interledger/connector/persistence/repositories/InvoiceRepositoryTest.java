@@ -2,9 +2,11 @@ package org.interledger.connector.persistence.repositories;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.connector.persistence.converters.InvoiceEntityConverter;
+import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.util.SampleObjectUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,15 +38,24 @@ public class InvoiceRepositoryTest {
   private InvoicesRepository invoicesRepository;
 
   @Test
-  public void saveGetSaveGetDeleteGetIlpInvoice() {
+  public void saveAndGetIlpInvoice() {
     Invoice invoice = SampleObjectUtils.createNewIlpInvoice();
     saveAndGetInvoice(invoice);
   }
 
   @Test
-  public void saveGetSaveGetDeleteGetXrpInvoice() {
+  public void saveAndGetXrpInvoice() {
     Invoice invoice = SampleObjectUtils.createNewXrpInvoice();
     saveAndGetInvoice(invoice);
+  }
+
+  @Test
+  public void saveAndGetIlpInvoiceWithWrongAccountIdYieldsEmpty() {
+    Invoice invoice = SampleObjectUtils.createNewIlpInvoice();
+    Invoice saved = invoicesRepository.saveInvoice(invoice);
+    Optional<InvoiceEntity> fetched = invoicesRepository
+      .findByInvoiceIdAndAccountId(invoice.id(), AccountId.of(invoice.accountId() + "fakeAccount"));
+    assertThat(fetched).isEmpty();
   }
 
   @Test
@@ -54,7 +65,7 @@ public class InvoiceRepositoryTest {
     assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(invoice,
       "id", "createdAt", "updatedAt");
 
-    Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceUrl(invoice.invoiceUrl().get());
+    Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceUrlAndAccountId(invoice.invoiceUrl().get(), AccountId.of(saved.accountId()));
     assertThat(fetched).isNotEmpty().get().isEqualTo(saved);
   }
 
@@ -62,7 +73,7 @@ public class InvoiceRepositoryTest {
     Invoice saved = invoicesRepository.saveInvoice(invoice);
     assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(invoice,
       "id", "createdAt", "updatedAt");
-    Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceId(invoice.id());
+    Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceIdAndAccountId(invoice.id(), AccountId.of(saved.accountId()));
     assertThat(fetched).isNotEmpty().get().isEqualTo(saved);
   }
 

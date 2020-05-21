@@ -1,5 +1,6 @@
 package org.interledger.connector.wallet;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.Payment;
 import org.interledger.connector.opa.model.PaymentId;
@@ -13,6 +14,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import org.springframework.core.convert.ConversionService;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPaymentDetails> implements XrplPaymentEventHandler {
@@ -41,9 +43,10 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
     XrplTransaction transaction = xrpPaymentCompletedEvent.payment();
     if (transaction.invoiceHash() != null) {
       Payment payment = Payment.builder()
+        .accountId(AccountId.of("")) // TODO: figure out how to correlate a payment to accountId
         .amount(transaction.amount())
-        .correlationId(transaction.invoiceHash())
-        .paymentId(PaymentId.of(transaction.invoiceHash()))
+        .correlationId(Optional.ofNullable(transaction.invoiceHash()))
+        .paymentId(PaymentId.of(transaction.hash()))
         .createdAt(transaction.createdAt())
         .modifiedAt(transaction.modifiedAt())
         .sourceAddress(transaction.account() + transaction.sourceTag())
