@@ -1,8 +1,8 @@
 package org.interledger.connector.persistence.repositories;
 
+import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.PaymentId;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 
 import okhttp3.HttpUrl;
@@ -44,9 +44,9 @@ public class InvoicesRepositoryImpl implements InvoicesRepositoryCustom {
   }
 
   @Override
-  public Optional<Invoice> findInvoiceByPaymentId(PaymentId paymentId) {
-    Objects.requireNonNull(paymentId);
-    Optional<InvoiceEntity> entity = invoicesRepository.findByPaymentId(paymentId);
+  public Optional<Invoice> findInvoiceByCorrelationId(CorrelationId correlationId) {
+    Objects.requireNonNull(correlationId);
+    Optional<InvoiceEntity> entity = invoicesRepository.findByCorrelationId(correlationId);
     return entity.map(e -> conversionService.convert(e, Invoice.class));
   }
 }

@@ -2,14 +2,12 @@ package org.interledger.connector.wallet;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.InvoiceService;
+import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.Payment;
-import org.interledger.connector.opa.model.PaymentId;
-import org.interledger.connector.opa.model.XrpPayment;
-import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.opa.model.problems.UnsupportedInvoiceOperationProblem;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
@@ -150,11 +148,11 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   public Optional<Invoice> onPayment(Payment payment) {
-    PaymentId paymentIdFromCorrelationId = payment.correlationId()
-      .map(PaymentId::of)
+    CorrelationId correlationId = payment.correlationId()
+      .map(CorrelationId::of)
       .orElseThrow(() -> new IllegalArgumentException("StreamPayment did not have a correlationId.  Unable to update invoice for payment."));
 
-    Invoice existingInvoice = invoicesRepository.findInvoiceByPaymentId(paymentIdFromCorrelationId)
+    Invoice existingInvoice = invoicesRepository.findInvoiceByCorrelationId(correlationId)
       .orElseThrow(() -> new IllegalArgumentException("Could not find invoice by correlation ID.")); // TODO: throw InvoiceNotFoundProblem
 
     if (!existingInvoice.assetCode().equals(payment.denomination().assetCode())) {

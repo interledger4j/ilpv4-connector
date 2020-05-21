@@ -88,7 +88,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
       min(amountLeftToSend, payInvoiceRequest.orElse(PayInvoiceRequest.builder().build()).amount());
 
     try {
-      return ilpPaymentSystemFacade.payInvoice(ilpPaymentDetails, senderAccountId, amountToPay, invoice.invoiceIdHash());
+      return ilpPaymentSystemFacade.payInvoice(ilpPaymentDetails, senderAccountId, amountToPay, invoice.correlationId());
     } catch (ExecutionException | InterruptedException e) {
       throw new InvoicePaymentProblem(e.getMessage(), invoiceId);
     }
@@ -102,7 +102,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
     if (streamPayment.correlationId().isPresent()) {
       Payment payment = Payment.builder()
         .amount(streamPayment.deliveredAmount())
-        .correlationId(streamPayment.correlationId().get())
+        .correlationId(streamPayment.correlationId())
         .paymentId(PaymentId.of(streamPayment.streamPaymentId()))
         .createdAt(streamPayment.createdAt())
         .modifiedAt(streamPayment.modifiedAt())

@@ -1,6 +1,7 @@
 package org.interledger.connector.jackson;
 
 import org.interledger.connector.jackson.modules.AccountIdModule;
+import org.interledger.connector.jackson.modules.CorrelationIdModule;
 import org.interledger.connector.jackson.modules.HttpUrlModule;
 import org.interledger.connector.jackson.modules.InvoiceIdModule;
 import org.interledger.connector.jackson.modules.PaymentIdModule;
@@ -43,6 +44,7 @@ public class ObjectMapperFactory {
       .registerModule(new PaymentPointerModule())
       .registerModule(new InvoiceIdModule())
       .registerModule(new PaymentIdModule())
+      .registerModule(new CorrelationIdModule())
       .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
       // Even though `false`` is the default setting for WRITE_NUMBERS_AS_STRINGS, we overtly set it here to alert
       // the reader that this value must be set this way in order to easily support Problems JSON, which per

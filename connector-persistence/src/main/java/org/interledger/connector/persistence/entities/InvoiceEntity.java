@@ -69,8 +69,8 @@ public class InvoiceEntity extends AbstractEntity {
   @Column(name = "PAYMENT_NETWORK")
   private String paymentNetwork;
 
-  @Column(name = "INVOICE_ID_HASH")
-  private String invoiceIdHash;
+  @Column(name = "CORRELATION_ID")
+  private String correlationId;
 
   /**
    * For Hibernate
@@ -90,7 +90,7 @@ public class InvoiceEntity extends AbstractEntity {
     this.received = invoice.received().longValue();
     this.subject = invoice.subject();
     this.paymentNetwork = invoice.paymentNetwork().toString();
-    this.invoiceIdHash = invoice.invoiceIdHash().value();
+    this.correlationId = invoice.correlationId().value();
     this.invoiceUrl = invoice.invoiceUrl().get().toString();
   }
 
@@ -190,12 +190,12 @@ public class InvoiceEntity extends AbstractEntity {
     this.paymentNetwork = paymentNetwork;
   }
 
-  public String getInvoiceIdHash() {
-    return invoiceIdHash;
+  public String getCorrelationId() {
+    return correlationId;
   }
 
-  public void setInvoiceIdHash(String invoiceIdHash) {
-    this.invoiceIdHash = invoiceIdHash;
+  public void setCorrelationId(String correlationId) {
+    this.correlationId = correlationId;
   }
 
   public String getInvoiceUrl() {

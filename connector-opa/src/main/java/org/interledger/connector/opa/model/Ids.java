@@ -49,4 +49,14 @@ public interface Ids {
     }
   }
 
+  @Value.Immutable
+  @Wrapped
+  abstract class _CorrelationId extends Wrapper<String> {
+
+    @Override
+    public String toString() {
+      return this.value();
+    }
+  }
+
 }

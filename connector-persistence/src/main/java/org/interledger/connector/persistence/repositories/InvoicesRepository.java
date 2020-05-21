@@ -1,7 +1,7 @@
 package org.interledger.connector.persistence.repositories;
 
+import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.PaymentId;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 
 import okhttp3.HttpUrl;
@@ -42,10 +42,10 @@ public interface InvoicesRepository extends CrudRepository<InvoiceEntity, Long>,
     return findByInvoiceUrl(invoiceUrl.toString());
   }
 
-  Optional<InvoiceEntity> findByPaymentId(String paymentId);
+  Optional<InvoiceEntity> findByCorrelationId(String correlationId);
 
-  default Optional<InvoiceEntity> findByPaymentId(PaymentId paymentId) {
-    return findByPaymentId(paymentId.value());
+  default Optional<InvoiceEntity> findByCorrelationId(CorrelationId invoiceIdHash) {
+    return findByCorrelationId(invoiceIdHash.value());
   }
 
 }

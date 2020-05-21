@@ -74,10 +74,10 @@ public interface Invoice {
    *  {@link Invoice}.
    */
   @Value.Default
-  default PaymentId invoiceIdHash() {
+  default CorrelationId correlationId() {
     HashCode hashCode = Hashing.sha256()
       .hashString(id().value(), StandardCharsets.UTF_8);
-    return PaymentId.of(hashCode.toString());
+    return CorrelationId.of(hashCode.toString());
   };
 
   /**
