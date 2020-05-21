@@ -1,8 +1,11 @@
 package org.interledger.connector.persistence.util;
 
+import org.interledger.connector.opa.model.Denomination;
 import org.interledger.connector.opa.model.ImmutableInvoice;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
+import org.interledger.connector.opa.model.Payment;
+import org.interledger.connector.opa.model.PaymentId;
 import org.interledger.connector.opa.model.PaymentNetwork;
 
 import com.google.common.primitives.UnsignedLong;
@@ -41,6 +44,34 @@ public final class SampleObjectUtils {
       .subject("paymebruh$xpring.money")
       .paymentNetwork(PaymentNetwork.XRPL)
       .invoiceUrl(HttpUrl.get("https://xpring.money/paymebruh/invoices/1234"))
+      .build();
+  }
+
+  public static Payment createNewIlpPayment() {
+    return Payment.builder()
+      .correlationId("f1546058d8e46d2903438bcf71e2af4381a4e5830e95787b66b299c0f30100de")
+      .paymentId(PaymentId.of(UUID.randomUUID().toString()))
+      .sourceAddress("test.foo.bar")
+      .destinationAddress("test.foo.baz.1234")
+      .amount(UnsignedLong.ONE)
+      .denomination(Denomination.builder()
+        .assetCode("XRP")
+        .assetScale((short) 6)
+        .build())
+      .build();
+  }
+
+  public static Payment createNewXrpPayment() {
+    return Payment.builder()
+      .correlationId("f1546058d8e46d2903438bcf71e2af4381a4e5830e95787b66b299c0f30100de")
+      .paymentId(PaymentId.of(UUID.randomUUID().toString()))
+      .sourceAddress("rPm88mdDuXLgxzpmZPXf6wPQ1ZTHRNvYVr 123456")
+      .destinationAddress("rDJFnv5sEfp42LMFiX3mVQKczpFTdxYDzM 123456")
+      .amount(UnsignedLong.ONE)
+      .denomination(Denomination.builder()
+        .assetCode("XRP")
+        .assetScale((short) 6)
+        .build())
       .build();
   }
 }

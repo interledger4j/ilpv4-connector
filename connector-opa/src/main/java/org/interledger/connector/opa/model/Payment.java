@@ -41,14 +41,20 @@ public interface Payment {
    *
    * @return An {@link Instant}.
    */
-  Instant createdAt();
+  @Value.Default
+  default Instant createdAt() {
+    return Instant.now();
+  };
 
   /**
    * Last time stream payment was modified, typically as a result of packets being aggregated or a status change.
    *
    * @return An {@link Instant}.
    */
-  Instant modifiedAt();
+  @Value.Default
+  default Instant modifiedAt() {
+    return Instant.now();
+  };
 
   /**
    * Source address that initiated the payment. Optional because in the case of payments received, the source address
