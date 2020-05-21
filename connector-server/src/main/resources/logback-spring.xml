@@ -18,7 +18,15 @@
     </appender>
   </springProfile>
 
-  <springProfile name="!stackdriver">
+  <springProfile name="logstash">
+    <appender name="LOGSTASH" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+        <findAndRegisterJacksonModules>false</findAndRegisterJacksonModules>
+      </encoder>
+    </appender>
+  </springProfile>
+
+  <springProfile name="!(stackdriver | logstash)">
     <include resource="org/springframework/boot/logging/logback/base.xml" />
   </springProfile>
 
@@ -37,6 +45,9 @@
   <root level="INFO">
     <springProfile name="stackdriver">
       <appender-ref ref="ASYNC"/>
+    </springProfile>
+    <springProfile name="logstash">
+      <appender-ref ref="LOGSTASH"/>
     </springProfile>
     <appender-ref ref="SENTRY"/>
   </root>
