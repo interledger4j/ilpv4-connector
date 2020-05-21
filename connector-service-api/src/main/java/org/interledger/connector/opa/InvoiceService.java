@@ -5,6 +5,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
+import org.interledger.connector.opa.model.problems.InvoiceAlreadyExistsProblem;
 
 import okhttp3.HttpUrl;
 
@@ -21,24 +22,26 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
    * Implementations SHOULD get the latest received state of the {@link Invoice} from the underlying payment layer.
    *
    * @param invoiceId The {@link InvoiceId} of the invoice to get.
+   * @param accountId
    * @return The existing {@link Invoice} with the specified {@link InvoiceId}
    */
-  Invoice getInvoiceById(final InvoiceId invoiceId);
+  Invoice getInvoiceById(final InvoiceId invoiceId, final AccountId accountId);
 
   /**
    * Get and save the latest state of the invoice located at a remote OPS at {@code invoiceUrl},
    * if the invoice with that location does not already exist on this Open Payments Server.
    *
    * @param invoiceUrl The unique URL of the {@link Invoice}.
+   * @param accountId
    * @return The synced {@link Invoice}.
    */
-  // TODO: Add exception to signature to indicate that this can only be called once per invoice.
-  Invoice syncInvoice(final HttpUrl invoiceUrl);
+  Invoice syncInvoice(final HttpUrl invoiceUrl, final AccountId accountId) throws InvoiceAlreadyExistsProblem;
 
   /**
    * Create a new invoice by storing it.
    *
    * @param invoice The {@link Invoice} to store.
+   * @param accountId
    * @return The {@link Invoice} that was stored.
    */
   Invoice createInvoice(final Invoice invoice, final AccountId accountId);
@@ -47,9 +50,10 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
    * Update an existing {@link Invoice}.
    *
    * @param invoice An updated {@link Invoice}.
+   * @param accountId
    * @return The updated {@link Invoice}.
    */
-  Invoice updateInvoice(final Invoice invoice);
+  Invoice updateInvoice(final Invoice invoice, final AccountId accountId);
 
   /**
    * Generate {@link PaymentDetails} for any supported payment rail.
@@ -62,10 +66,11 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
    * The type of {@link PaymentDetails} returned is determined by the {@link Invoice#paymentNetwork()}.
    *
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} this payment is being set up to pay.
+   * @param accountId
    * @return The payment details necessary to pay an invoice.
    */
   // TODO: Always return ILP details
-  PaymentDetailsType getPaymentDetails(final InvoiceId invoiceId);
+  PaymentDetailsType getPaymentDetails(final InvoiceId invoiceId, final AccountId accountId);
 
   /**
    * Make a payment towards an {@link Invoice}.
@@ -79,6 +84,10 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
    * @param payInvoiceRequest Optional request body containing the amount to pay on the {@link Invoice}.
    * @return The result of the payment.
    */
-  PaymentResultType payInvoice(final InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest);
+  PaymentResultType payInvoice(
+    final InvoiceId invoiceId,
+    final AccountId senderAccountId,
+    final Optional<PayInvoiceRequest> payInvoiceRequest
+  );
 
 }

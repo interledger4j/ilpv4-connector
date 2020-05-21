@@ -13,12 +13,8 @@ import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsMediaType;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
-import org.interledger.connector.opa.model.XrpPayment;
-import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
-import org.interledger.connector.wallet.IlpInvoiceService;
-import org.interledger.connector.wallet.XrplInvoiceService;
 
 import okhttp3.HttpUrl;
 import org.slf4j.Logger;
@@ -102,10 +98,11 @@ public class InvoicesController {
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody Invoice syncInvoice(
+    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) AccountId accountId,
     @RequestParam("name") String invoiceUrl
   ) throws UnsupportedEncodingException {
     String decodedInvoiceUrl = URLDecoder.decode(invoiceUrl, StandardCharsets.UTF_8.toString());
-    return ilpInvoiceService.syncInvoice(HttpUrl.get(decodedInvoiceUrl));
+    return ilpInvoiceService.syncInvoice(HttpUrl.get(decodedInvoiceUrl), accountId);
   }
 
   /**
@@ -117,6 +114,7 @@ public class InvoicesController {
     produces = {OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE, APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody ResponseEntity getInvoiceDetails(
+    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) AccountId accountId,
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
     @RequestHeader("Accept") String acceptHeader
   ) {
@@ -124,10 +122,10 @@ public class InvoicesController {
     headers.setLocation(getInvoiceLocation(invoiceId));
 
     if (acceptHeader.equals(OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE)) {
-      IlpPaymentDetails paymentDetails = ilpInvoiceService.getPaymentDetails(invoiceId);
+      IlpPaymentDetails paymentDetails = ilpInvoiceService.getPaymentDetails(invoiceId, accountId);
       return new ResponseEntity(paymentDetails, headers, HttpStatus.OK);
     }
-    Invoice invoice = ilpInvoiceService.getInvoiceById(invoiceId);
+    Invoice invoice = ilpInvoiceService.getInvoiceById(invoiceId, accountId);
     return new ResponseEntity(invoice, headers, HttpStatus.OK);
   }
 

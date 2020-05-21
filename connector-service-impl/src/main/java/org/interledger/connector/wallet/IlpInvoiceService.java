@@ -51,8 +51,8 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
   }
 
   @Override
-  public IlpPaymentDetails getPaymentDetails(InvoiceId invoiceId) {
-    final Invoice invoice = this.getInvoiceById(invoiceId);
+  public IlpPaymentDetails getPaymentDetails(InvoiceId invoiceId, AccountId accountId) {
+    final Invoice invoice = this.getInvoiceById(invoiceId, accountId);
 
     final HttpUrl invoiceUrl = invoice.invoiceUrl()
       .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
@@ -66,7 +66,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
 
   @Override
   public StreamPayment payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) {
-    final Invoice invoice = this.getInvoiceById(invoiceId);
+    final Invoice invoice = this.getInvoiceById(invoiceId, senderAccountId);
 
     if (!invoice.paymentNetwork().equals(PaymentNetwork.ILP)) {
       throw new IllegalStateException("Unable to pay invoice from Open Payment Server over non-ILP payment network.");
@@ -101,6 +101,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
     StreamPayment streamPayment = paymentCompletedEvent.streamPayment();
     if (streamPayment.correlationId().isPresent()) {
       Payment payment = Payment.builder()
+        .accountId(streamPayment.accountId())
         .amount(streamPayment.deliveredAmount())
         .correlationId(streamPayment.correlationId())
         .paymentId(PaymentId.of(streamPayment.streamPaymentId()))

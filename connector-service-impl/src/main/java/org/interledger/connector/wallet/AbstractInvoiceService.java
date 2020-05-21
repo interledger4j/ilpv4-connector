@@ -48,7 +48,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public Invoice getInvoiceById(InvoiceId invoiceId) {
+  public Invoice getInvoiceById(InvoiceId invoiceId, AccountId accountId) {
     Objects.requireNonNull(invoiceId);
 
     return invoicesRepository.findInvoiceByInvoiceId(invoiceId)
@@ -56,7 +56,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public Invoice syncInvoice(HttpUrl invoiceUrl) {
+  public Invoice syncInvoice(HttpUrl invoiceUrl, AccountId accountId) {
     Objects.requireNonNull(invoiceUrl);
 
     // See if we have that invoice already
@@ -66,7 +66,12 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     } else {
       // If not, get it from the receiver
       Invoice invoiceOnReceiver = this.getRemoteInvoice(invoiceUrl);
-      return invoicesRepository.saveInvoice(invoiceOnReceiver);
+      // And set the accountId of the invoice to the sender's accountId
+      Invoice invoiceWithCorrectAccountId = Invoice.builder()
+        .from(invoiceOnReceiver)
+        .accountId(accountId.value())
+        .build();
+      return invoicesRepository.saveInvoice(invoiceWithCorrectAccountId);
     }
   }
 
@@ -112,7 +117,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public Invoice updateInvoice(Invoice invoice) {
+  public Invoice updateInvoice(Invoice invoice, AccountId accountId) {
     return invoicesRepository.findByInvoiceId(invoice.id())
       .map(entity -> {
         entity.setReceived(invoice.received().longValue());
@@ -124,7 +129,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public PaymentDetailsType getPaymentDetails(InvoiceId invoiceId) {
+  public PaymentDetailsType getPaymentDetails(InvoiceId invoiceId, AccountId accountId) {
     throw new UnsupportedInvoiceOperationProblem(invoiceId);
   }
 
@@ -151,7 +156,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
       .received(existingInvoice.received().plus(payment.amount()))
       .build();
 
-    return Optional.of(this.updateInvoice(updatedInvoice));
+    return Optional.of(this.updateInvoice(updatedInvoice, payment.accountId()));
   }
 
   protected boolean isForThisWallet(HttpUrl invoiceUrl) {
