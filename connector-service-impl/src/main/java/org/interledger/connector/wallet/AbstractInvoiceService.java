@@ -8,6 +8,7 @@ import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.Payment;
+import org.interledger.connector.opa.model.problems.InvoiceAlreadyExistsProblem;
 import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.opa.model.problems.UnsupportedInvoiceOperationProblem;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
@@ -59,33 +60,14 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     Objects.requireNonNull(invoiceUrl);
 
     // See if we have that invoice already
-    return invoicesRepository.findInvoiceByInvoiceUrl(invoiceUrl)
-      .map(i -> {
-        // TODO(bridge): When the sender already has the invoice, we should throw an error and return a 409(?), which
-        //  will let the client know they can just do a get on the invoice ID.
-
-        // The sender and receiver wallets could be the same wallet, so the invoice and the invoice receipt could be
-        // the same record. In this case, we should just return what we have.
-        if (isForThisWallet(invoiceUrl)) {
-          return i;
-        }
-
-        // Otherwise, we can assume that some other wallet is the invoice owner.
-        // Look at our own records. If, from our view, the invoice has been paid, no need to reach out to the receiver to
-        // update it.
-        if (i.isPaid()) {
-          return i;
-        } else {
-          // If our copy of the invoice hasn't been paid, try
-          // to reach out to the invoice owner to update our record
-          Invoice invoiceOnReceiver = this.getRemoteInvoice(invoiceUrl);
-          return this.updateInvoice(invoiceOnReceiver);
-        }
-      })
-      .orElseGet(() -> {
-        Invoice invoiceOnReceiver = this.getRemoteInvoice(invoiceUrl);
-        return invoicesRepository.saveInvoice(invoiceOnReceiver);
-      });
+    Optional<Invoice> existingInvoice = invoicesRepository.findInvoiceByInvoiceUrl(invoiceUrl);
+    if (existingInvoice.isPresent()) {
+      throw new InvoiceAlreadyExistsProblem(existingInvoice.get().id());
+    } else {
+      // If not, get it from the receiver
+      Invoice invoiceOnReceiver = this.getRemoteInvoice(invoiceUrl);
+      return invoicesRepository.saveInvoice(invoiceOnReceiver);
+    }
   }
 
   private Invoice getRemoteInvoice(HttpUrl invoiceUrl) {
