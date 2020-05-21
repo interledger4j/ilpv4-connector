@@ -1,5 +1,9 @@
 package org.interledger.connector.persistence.entities;
 
+import static org.interledger.connector.persistence.entities.DataConstants.ColumnNames.INVOICE_IDX_COLUMN_NAMES;
+import static org.interledger.connector.persistence.entities.DataConstants.ColumnNames.PAYMENT_IDX_COLUMN_NAMES;
+import static org.interledger.connector.persistence.entities.DataConstants.IndexNames.INVOICES_ID_IDX;
+import static org.interledger.connector.persistence.entities.DataConstants.TableNames.INVOICES;
 import static org.interledger.connector.persistence.entities.DataConstants.TableNames.INVOICE_PAYMENTS;
 
 import org.interledger.connector.opa.model.Payment;
@@ -14,11 +18,14 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.Table;
 
 @Entity
 @Access(AccessType.FIELD)
-@Table(name = INVOICE_PAYMENTS)
+@Table(name = INVOICE_PAYMENTS, indexes = {
+  @Index(name = INVOICES_ID_IDX, columnList = PAYMENT_IDX_COLUMN_NAMES)
+})
 public class PaymentEntity extends AbstractEntity {
 
   @Id

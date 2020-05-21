@@ -39,5 +39,9 @@
         <constraints nullable="false"/>
       </column>
     </createTable>
+    <createIndex tableName="PAYMENTS"
+                 indexName="PAYMENTS_ID_IDX">
+      <column name="PAYMENT_ID"/>
+    </createIndex>
   </changeSet>
 </databaseChangeLog>

@@ -30,6 +30,9 @@ public interface DataConstants {
 
     // INVOICE ID
     String INVOICE_IDX_COLUMN_NAMES = "INVOICE_ID";
+
+    // PAYMENT ID
+    String PAYMENT_IDX_COLUMN_NAMES = "PAYMENT_ID";
   }
 
   interface IndexNames {
@@ -50,6 +53,10 @@ public interface DataConstants {
 
     // INVOICES
     String INVOICES_ID_IDX = "INVOICES_ID_IDX";
+
+    // PAYMENTS
+    String PAYMENTS_ID_IDX = "PAYMENTS_ID_IDX";
+
   }
 
   interface ConstraintNames {
