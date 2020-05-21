@@ -66,7 +66,7 @@ public class IlpPaymentSystemFacade implements PaymentSystemFacade<StreamPayment
     sendPaymentService.createPlaceholderPayment(receiverAccountId,
       StreamPaymentType.PAYMENT_RECEIVED,
       streamConnectionDetails.destinationAddress(),
-      Optional.of(invoice.paymentId().value()),
+      Optional.of(invoice.invoiceIdHash().value()),
       Optional.of(invoice.amount().minus(invoice.received()).bigIntegerValue())
     );
 

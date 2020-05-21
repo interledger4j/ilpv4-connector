@@ -27,7 +27,7 @@ public class InvoiceEntityConverter implements Converter<InvoiceEntity, Invoice>
       .expiresAt(invoiceEntity.getExpiresAt())
       .finalizedAt(invoiceEntity.getFinalizedAt())
       .id(InvoiceId.of(invoiceEntity.getInvoiceId()))
-      .paymentId(PaymentId.of(invoiceEntity.getPaymentId()))
+      .invoiceIdHash(PaymentId.of(invoiceEntity.getInvoiceIdHash()))
       .received(UnsignedLong.valueOf(invoiceEntity.getReceived()))
       .subject(invoiceEntity.getSubject())
       .updatedAt(Optional.ofNullable(invoiceEntity.getModifiedDate()).orElse(Instant.now()))

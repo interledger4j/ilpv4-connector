@@ -5,7 +5,6 @@ import static org.interledger.connector.persistence.entities.DataConstants.Index
 import static org.interledger.connector.persistence.entities.DataConstants.TableNames.INVOICES;
 
 import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.PaymentId;
 
 import org.hibernate.annotations.NaturalId;
 
@@ -70,8 +69,8 @@ public class InvoiceEntity extends AbstractEntity {
   @Column(name = "PAYMENT_NETWORK")
   private String paymentNetwork;
 
-  @Column(name = "PAYMENT_ID")
-  private String paymentId;
+  @Column(name = "INVOICE_ID_HASH")
+  private String invoiceIdHash;
 
   /**
    * For Hibernate
@@ -91,7 +90,7 @@ public class InvoiceEntity extends AbstractEntity {
     this.received = invoice.received().longValue();
     this.subject = invoice.subject();
     this.paymentNetwork = invoice.paymentNetwork().toString();
-    this.paymentId = invoice.paymentId().value();
+    this.invoiceIdHash = invoice.invoiceIdHash().value();
     this.invoiceUrl = invoice.invoiceUrl().get().toString();
   }
 
@@ -191,12 +190,12 @@ public class InvoiceEntity extends AbstractEntity {
     this.paymentNetwork = paymentNetwork;
   }
 
-  public String getPaymentId() {
-    return paymentId;
+  public String getInvoiceIdHash() {
+    return invoiceIdHash;
   }
 
-  public void setPaymentId(String paymentId) {
-    this.paymentId = paymentId;
+  public void setInvoiceIdHash(String invoiceIdHash) {
+    this.invoiceIdHash = invoiceIdHash;
   }
 
   public String getInvoiceUrl() {

@@ -12,7 +12,6 @@ import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.Payment;
 import org.interledger.connector.opa.model.PaymentId;
 import org.interledger.connector.opa.model.PaymentNetwork;
-import org.interledger.connector.opa.model.PaymentType;
 import org.interledger.connector.opa.model.problems.InvoicePaymentProblem;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
@@ -89,7 +88,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
       min(amountLeftToSend, payInvoiceRequest.orElse(PayInvoiceRequest.builder().build()).amount());
 
     try {
-      return ilpPaymentSystemFacade.payInvoice(ilpPaymentDetails, senderAccountId, amountToPay, invoice.paymentId());
+      return ilpPaymentSystemFacade.payInvoice(ilpPaymentDetails, senderAccountId, amountToPay, invoice.invoiceIdHash());
     } catch (ExecutionException | InterruptedException e) {
       throw new InvoicePaymentProblem(e.getMessage(), invoiceId);
     }
