@@ -5,6 +5,7 @@ import org.interledger.connector.persistence.converters.AccountBalanceSettingsEn
 import org.interledger.connector.persistence.converters.AccountSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.FxRateOverridesEntityConverter;
 import org.interledger.connector.persistence.converters.InvoiceEntityConverter;
+import org.interledger.connector.persistence.converters.PaymentEntityConverter;
 import org.interledger.connector.persistence.converters.RateLimitSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.SettlementEngineDetailsEntityConverter;
 import org.interledger.connector.persistence.converters.StaticRouteEntityConverter;
@@ -56,5 +57,10 @@ public class ConvertersConfig {
   @Bean
   InvoiceEntityConverter invoiceEntityConverter() {
     return new InvoiceEntityConverter();
+  }
+
+  @Bean
+  PaymentEntityConverter paymentEntityConverter() {
+    return new PaymentEntityConverter();
   }
 }

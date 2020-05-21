@@ -10,6 +10,7 @@ import org.interledger.connector.persistence.converters.AccountBalanceSettingsEn
 import org.interledger.connector.persistence.converters.AccountSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.FxRateOverridesEntityConverter;
 import org.interledger.connector.persistence.converters.InvoiceEntityConverter;
+import org.interledger.connector.persistence.converters.PaymentEntityConverter;
 import org.interledger.connector.persistence.converters.RateLimitSettingsEntityConverter;
 import org.interledger.connector.persistence.converters.SettlementEngineDetailsEntityConverter;
 import org.interledger.connector.persistence.converters.StaticRouteEntityConverter;
@@ -94,6 +95,9 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
   @Autowired
   private InvoiceEntityConverter invoiceEntityConverter;
 
+  @Autowired
+  private PaymentEntityConverter paymentEntityConverter;
+
   ////////////////////////
   // HttpMessageConverters
   ////////////////////////
@@ -151,6 +155,7 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
     registry.addConverter(staticRouteEntityConverter);
     registry.addConverter(accessTokenEntityConverter);
     registry.addConverter(invoiceEntityConverter);
+    registry.addConverter(paymentEntityConverter);
     registry.addConverter(new InvoiceIdConverter());
   }
 

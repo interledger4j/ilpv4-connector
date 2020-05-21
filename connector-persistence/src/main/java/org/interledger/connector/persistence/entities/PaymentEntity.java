@@ -12,6 +12,7 @@ import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
@@ -21,6 +22,7 @@ import javax.persistence.Table;
 public class PaymentEntity extends AbstractEntity {
 
   @Id
+  @GeneratedValue
   @Column(name = "ID")
   private Long id;
 
