@@ -34,7 +34,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
     InvoicesRepository invoicesRepository,
     ConversionService conversionService,
     InvoiceFactory invoiceFactory,
-    OpenPaymentsClient openPaymentsClient,
+    OpenPaymentsProxyClient openPaymentsProxyClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     PaymentSystemFacade<StreamPayment, IlpPaymentDetails> ilpPaymentSystemFacade,
     EventBus eventBus
@@ -43,7 +43,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
       invoicesRepository,
       conversionService,
       invoiceFactory,
-      openPaymentsClient,
+      openPaymentsProxyClient,
       openPaymentsSettingsSupplier,
       eventBus
     );
@@ -58,7 +58,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
       .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
 
     if (!isForThisWallet(invoiceUrl)) {
-      return openPaymentsClient.getIlpInvoicePaymentDetails(invoiceUrl.uri());
+      return openPaymentsProxyClient.getIlpInvoicePaymentDetails(invoiceUrl.uri());
     }
 
     return ilpPaymentSystemFacade.getPaymentDetails(invoice);
@@ -78,7 +78,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
     IlpPaymentDetails ilpPaymentDetails;
 
     if (!isForThisWallet(invoiceUrl)) {
-      ilpPaymentDetails = openPaymentsClient.getIlpInvoicePaymentDetails(invoiceUrl.uri());
+      ilpPaymentDetails = openPaymentsProxyClient.getIlpInvoicePaymentDetails(invoiceUrl.uri());
     } else {
       ilpPaymentDetails = ilpPaymentSystemFacade.getPaymentDetails(invoice);
     }

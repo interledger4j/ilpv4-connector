@@ -20,6 +20,7 @@ import org.interledger.connector.wallet.IlpInvoiceService;
 import org.interledger.connector.wallet.IlpPaymentSystemFacade;
 import org.interledger.connector.wallet.InvoiceFactory;
 import org.interledger.connector.wallet.OpenPaymentsClient;
+import org.interledger.connector.wallet.OpenPaymentsProxyClient;
 import org.interledger.connector.wallet.PayIdResolver;
 import org.interledger.connector.wallet.XrplInvoiceService;
 import org.interledger.spsp.PaymentPointerResolver;
@@ -64,7 +65,7 @@ public class OpenPaymentsConfig {
     InvoicesRepository invoicesRepository,
     ConversionService conversionService,
     InvoiceFactory invoiceFactory,
-    OpenPaymentsClient openPaymentsClient,
+    OpenPaymentsProxyClient openPaymentsProxyClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     PaymentSystemFacade<StreamPayment, IlpPaymentDetails> ilpPaymentSystemFacade,
     EventBus eventBus) {
@@ -72,7 +73,7 @@ public class OpenPaymentsConfig {
       invoicesRepository,
       conversionService,
       invoiceFactory,
-      openPaymentsClient,
+      openPaymentsProxyClient,
       openPaymentsSettingsSupplier,
       ilpPaymentSystemFacade,
       eventBus);
@@ -83,7 +84,7 @@ public class OpenPaymentsConfig {
     InvoicesRepository invoicesRepository,
     ConversionService conversionService,
     InvoiceFactory invoiceFactory,
-    OpenPaymentsClient openPaymentsClient,
+    OpenPaymentsProxyClient openPaymentsProxyClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     EventBus eventBus
   ) {
@@ -91,7 +92,7 @@ public class OpenPaymentsConfig {
       invoicesRepository,
       conversionService,
       invoiceFactory,
-      openPaymentsClient,
+      openPaymentsProxyClient,
       openPaymentsSettingsSupplier,
       eventBus
     );
@@ -116,8 +117,8 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
-  public OpenPaymentsClient openPaymentsClient(Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier) {
-    return OpenPaymentsClient.construct(openPaymentsSettingsSupplier.get().metadata().issuer().toString());
+  public OpenPaymentsProxyClient openPaymentsClient() {
+    return OpenPaymentsProxyClient.construct();
   }
 
   @Bean

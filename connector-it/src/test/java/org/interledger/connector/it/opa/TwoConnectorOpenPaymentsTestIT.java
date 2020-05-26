@@ -100,7 +100,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
 
   @Test
   public void peterCreatesInvoiceForHimselfOnBob() {
-    Invoice createdInvoice = createInvoiceForPeter(peterAtBobInvoicesUri);
+    Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
     assertThat(createdInvoice.invoiceUrl())
       .isNotEmpty()
       .get()
@@ -111,7 +111,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
 
   @Test
   public void paulCreatesInvoiceForPeterOnBobViaAlice() {
-    Invoice createdInvoice = createInvoiceForPeter(paulAtAliceInvoicesUri);
+    Invoice createdInvoice = createInvoiceForPeter(aliceClient, PAUL);
     assertThat(createdInvoice.invoiceUrl())
       .isNotEmpty()
       .get()
@@ -125,7 +125,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
 
   @Test
   public void peterGetsHisOwnInvoiceOnBob() {
-    Invoice createdInvoice = createInvoiceForPeter(peterAtBobInvoicesUri);
+    Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
     Invoice getInvoice = bobClient.getInvoice(PETER, createdInvoice.id().value());
 
     assertThat(createdInvoice).isEqualTo(getInvoice);
@@ -133,7 +133,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
 
   @Test
   public void paulSyncsInvoiceForPeterOnAliceFromBob() {
-    Invoice petersInvoiceOnBob = createInvoiceForPeter(peterAtBobInvoicesUri);
+    Invoice petersInvoiceOnBob = createInvoiceForPeter(bobClient, PETER);
 
     Invoice synced = aliceClient.getOrSyncInvoice(PAUL, petersInvoiceOnBob.invoiceUrl().get().toString());
     assertThat(petersInvoiceOnBob)
@@ -146,23 +146,24 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
 
   @Test
   public void getPeterInvoicePaymentDetailsOnBob() {
-    Invoice createdInvoice = createInvoiceForPeter(peterAtBobInvoicesUri);
-    IlpPaymentDetails paymentDetails = bobClient.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
+    Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
+    IlpPaymentDetails paymentDetails = bobClient.getIlpInvoicePaymentDetails(createdInvoice.accountId(), createdInvoice.id().value());
 
     assertThat(paymentDetails.destinationAddress().getValue()).startsWith("test.bob.spsp.peter");
   }
 
   @Test
   public void getPeterInvoicePaymentDetailsViaAliceOnBob() {
-    Invoice createdInvoice = createInvoiceForPeter(peterAtAliceInvoicesUri);
-    IlpPaymentDetails paymentDetails = aliceClient.getIlpInvoicePaymentDetails(createdInvoice.invoiceUrl().get().uri());
+    Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
+    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, createdInvoice.invoiceUrl().get().toString());
+    IlpPaymentDetails paymentDetails = aliceClient.getIlpInvoicePaymentDetails(syncedInvoice.accountId(), syncedInvoice.id().value());
 
     assertThat(paymentDetails.destinationAddress().getValue()).startsWith("test.bob.spsp.peter");
   }
 
   @Test
   public void paulPaysInvoiceForPeterViaAliceOnBob() {
-    Invoice createdInvoiceOnBob = createInvoiceForPeter(peterAtBobInvoicesUri);
+    Invoice createdInvoiceOnBob = createInvoiceForPeter(bobClient, PETER);
 
     Invoice createdInvoiceOnAlice = aliceClient.getOrSyncInvoice(PAUL, createdInvoiceOnBob.invoiceUrl().get().toString());
     StreamPayment payment = aliceClient.payInvoice(
@@ -175,7 +176,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
     assertThat(payment.amount().abs()).isEqualTo(createdInvoiceOnAlice.amount().bigIntegerValue());
     assertThat(payment.deliveredAmount()).isEqualTo(createdInvoiceOnBob.amount());
 
-    Invoice invoiceOnAliceAfterPayment = bobClient.getInvoice(createdInvoiceOnBob.invoiceUrl().get().uri());
+    Invoice invoiceOnAliceAfterPayment = bobClient.getInvoice(createdInvoiceOnBob.accountId(), createdInvoiceOnBob.id().value());
     assertThat(invoiceOnAliceAfterPayment.isPaid());
   }
 
@@ -219,7 +220,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
     assertThat(paulsViewOfTheInvoice.received()).isEqualTo(paulsViewOfTheInvoice.amount());
   }
 
-  private Invoice createInvoiceForPeter(HttpUrl invoiceUri) {
+  private Invoice createInvoiceForPeter(OpenPaymentsClient client, String accountId) {
     Invoice invoice = Invoice.builder()
       .accountId(PETER)
       .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
@@ -230,7 +231,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
       .subject("$localhost:8081/peter")
       .build();
 
-    return bobClient.createInvoice(invoiceUri.uri(), invoice);
+    return client.createInvoice(accountId, invoice);
   }
 
   @Override

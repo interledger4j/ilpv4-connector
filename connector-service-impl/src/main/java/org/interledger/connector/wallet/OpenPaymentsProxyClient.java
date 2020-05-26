@@ -5,25 +5,26 @@ import static org.interledger.connector.opa.model.OpenPaymentsMediaType.APPLICAT
 import org.interledger.connector.jackson.ObjectMapperFactory;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.OpenPaymentsMetadata;
-import org.interledger.connector.opa.model.PayInvoiceRequest;
-import org.interledger.connector.opa.model.XrpPaymentDetails;
-import org.interledger.connector.payments.StreamPayment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Feign;
 import feign.Headers;
-import feign.Param;
 import feign.RequestLine;
+import feign.Target;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 import feign.optionals.OptionalDecoder;
 import org.zalando.problem.ThrowableProblem;
 
 import java.net.URI;
-import java.util.Optional;
 
-public interface OpenPaymentsClient {
+/**
+ * A Client that can be used by an Open Payments server to proxy requests to other wallets.
+ *
+ * Unlike {@link OpenPaymentsClient}, this client makes requests to dynamic clients, which allows request proxying
+ * for a given payment identifier.
+ */
+public interface OpenPaymentsProxyClient {
   String ACCEPT = "Accept:";
   String CONTENT_TYPE = "Content-Type:";
   String AUTHORIZATION = "Authorization:";
@@ -38,74 +39,41 @@ public interface OpenPaymentsClient {
    *
    * @return A {@link OpenPaymentsClient}.
    */
-  static OpenPaymentsClient construct(final String httpUrl) {
+  static OpenPaymentsProxyClient construct() {
 
     final ObjectMapper objectMapper = ObjectMapperFactory.createObjectMapperForProblemsJson();
     return Feign.builder()
       .encoder(new JacksonEncoder(objectMapper))
       .decode404()
       .decoder(new OptionalDecoder(new JacksonDecoder(objectMapper)))
-      .target(OpenPaymentsClient.class, httpUrl);
+      .target(Target.HardCodedTarget.EmptyTarget.create(OpenPaymentsProxyClient.class));
   }
 
-  @RequestLine("GET {accountId}")
-  @Headers({
-    ACCEPT + APPLICATION_JSON,
-    CONTENT_TYPE + APPLICATION_JSON
-  })
-  OpenPaymentsMetadata getMetadata(URI baseUrl) throws ThrowableProblem;
-
-
-  @RequestLine("POST accounts/{accountId}/invoices")
+  @RequestLine("POST /")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
   })
   Invoice createInvoice(
-    @Param("accountId") String accountId,
+    URI invoiceEndpoint,
     Invoice invoice
   ) throws ThrowableProblem;
 
-  @RequestLine("GET accounts/{accountId}/invoices/{invoiceId}")
+  @RequestLine("GET /")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
   })
   Invoice getInvoice(
-    @Param("accountId") String accountId,
-    @Param("invoiceId") String invoiceId
+    URI invoiceUrl
   ) throws ThrowableProblem;
 
-  @RequestLine("POST accounts/{accountId}/invoices/sync?name={invoiceUrl}")
-  @Headers({
-    ACCEPT + APPLICATION_JSON,
-    CONTENT_TYPE + APPLICATION_JSON
-  })
-  Invoice getOrSyncInvoice(
-    @Param("accountId") String accountId,
-    @Param("invoiceUrl") String invoiceUrl
-  );
-
-  @RequestLine("GET accounts/{accountId}/invoices/{invoiceId}")
+  @RequestLine("GET /")
   @Headers({
     ACCEPT + APPLICATION_CONNECTION_JSON_VALUE,
     CONTENT_TYPE + APPLICATION_JSON
   })
   IlpPaymentDetails getIlpInvoicePaymentDetails(
-    @Param("accountId") String accountId,
-    @Param("invoiceId") String invoiceId
-  ) throws ThrowableProblem;
-
-  @RequestLine("POST /accounts/{accountId}/invoices/{invoiceId}/pay")
-  @Headers({
-    ACCEPT + APPLICATION_JSON,
-    CONTENT_TYPE + APPLICATION_JSON,
-    AUTHORIZATION + "{authorization}"
-  })
-  StreamPayment payInvoice(
-    @Param("accountId") String accountId,
-    @Param("invoiceId") String invoiceId,
-    @Param("authorization") String authorization,
-    Optional<PayInvoiceRequest> payInvoiceRequest
+    URI invoiceUrl
   ) throws ThrowableProblem;
 }

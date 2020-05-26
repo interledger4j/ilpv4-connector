@@ -28,21 +28,21 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   protected final InvoicesRepository invoicesRepository;
   protected final ConversionService conversionService;
   protected final InvoiceFactory invoiceFactory;
-  protected final OpenPaymentsClient openPaymentsClient;
+  protected final OpenPaymentsProxyClient openPaymentsProxyClient;
   protected final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
 
   public AbstractInvoiceService(
     final InvoicesRepository invoicesRepository,
     ConversionService conversionService,
     InvoiceFactory invoiceFactory,
-    OpenPaymentsClient openPaymentsClient,
+    OpenPaymentsProxyClient openPaymentsProxyClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     EventBus eventBus
   ) {
     this.invoicesRepository = Objects.requireNonNull(invoicesRepository);
     this.conversionService = Objects.requireNonNull(conversionService);
     this.invoiceFactory = Objects.requireNonNull(invoiceFactory);
-    this.openPaymentsClient = Objects.requireNonNull(openPaymentsClient);
+    this.openPaymentsProxyClient = Objects.requireNonNull(openPaymentsProxyClient);
     this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
     eventBus.register(this);
   }
@@ -85,7 +85,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
 
   private Invoice getRemoteInvoice(HttpUrl invoiceUrl) {
     try {
-      return openPaymentsClient.getInvoice(invoiceUrl.uri());
+      return openPaymentsProxyClient.getInvoice(invoiceUrl.uri());
     } catch (FeignException e) {
       if (e.status() == 404) {
         throw new InvoiceNotFoundProblem("Original invoice was not found in invoice owner's records.", invoiceUrl);
@@ -114,7 +114,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
         .addPathSegment(invoice.accountId())
         .addPathSegment("invoices")
         .build();
-      invoiceToSave = openPaymentsClient.createInvoice(createUrl.uri(), invoice);
+      invoiceToSave = openPaymentsProxyClient.createInvoice(createUrl.uri(), invoice);
     }
 
     Invoice invoiceWithCorrectAccountId = Invoice.builder()

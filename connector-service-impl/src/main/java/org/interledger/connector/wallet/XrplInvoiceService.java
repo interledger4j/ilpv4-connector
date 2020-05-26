@@ -23,7 +23,7 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
     InvoicesRepository invoicesRepository,
     ConversionService conversionService,
     InvoiceFactory invoiceFactory,
-    OpenPaymentsClient openPaymentsClient,
+    OpenPaymentsProxyClient openPaymentsProxyClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     EventBus eventBus
   ) {
@@ -31,7 +31,7 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
       invoicesRepository,
       conversionService,
       invoiceFactory,
-      openPaymentsClient,
+      openPaymentsProxyClient,
       openPaymentsSettingsSupplier,
       eventBus
     );
