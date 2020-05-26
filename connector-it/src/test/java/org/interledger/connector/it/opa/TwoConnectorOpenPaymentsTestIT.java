@@ -180,7 +180,7 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   }
 
   @Test
-  public void paulPaysInvoiceForEddyAllOnAlice() {
+  public void paulPaysInvoiceForEddyAllOnAlice() throws InterruptedException {
     Invoice invoice = Invoice.builder()
       .accountId(EDDY)
       .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
@@ -206,6 +206,9 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
     );
     assertThat(payment.amount().abs()).isEqualTo(syncedInvoice.amount().bigIntegerValue());
     assertThat(payment.deliveredAmount()).isEqualTo(eddyInvoiceOnAlice.amount());
+
+    // Let the payment system event out and the OP system to update
+    Thread.sleep(5000);
 
     Invoice eddysViewOfTheInvoice = aliceClient.getInvoice(EDDY, eddyInvoiceOnAlice.id().value());
     Invoice paulsViewOfTheInvoice = aliceClient.getInvoice(PAUL, syncedInvoice.id().value());
