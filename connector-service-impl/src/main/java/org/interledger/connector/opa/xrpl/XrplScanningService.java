@@ -116,13 +116,11 @@ public class XrplScanningService {
 
     @Override
     public void onMessage(WebSocket webSocket, String text) {
-//      logger.info("MESSAGE text: " + text);
+      logger.info("MESSAGE text: " + text);
       try {
         XrplMessage xrplMessage = objectMapper.readValue(text, XrplMessage.class);
         if (xrplMessage.isSuccessfulTransaction()) {
           eventBus.post(XrpPaymentCompletedEvent.builder().payment(xrplMessage.transaction()).build());
-          logger.info("XRPL transaction: " + xrplMessage.transaction());
-
         }
       } catch (JsonProcessingException e) {
         logger.error("Cannot read transaction JSON " + text, e);

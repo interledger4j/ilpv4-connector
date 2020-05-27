@@ -9,6 +9,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.immutables.value.Value;
 
 import java.time.Instant;
+import java.util.List;
 import javax.annotation.Nullable;
 
 @Value.Immutable
@@ -38,6 +39,10 @@ public interface XrplTransaction {
   @JsonProperty("InvoiceID")
   @Nullable
   String invoiceHash();
+
+  @JsonProperty("Memos")
+  @Nullable
+  List<MemoWrapper> memos();
 
   @Value.Default
   default Instant createdAt() {
