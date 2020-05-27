@@ -1,7 +1,6 @@
 package org.interledger.connector.it.opa;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.interledger.connector.it.topologies.AbstractTopology.ALICE;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_CONNECTOR_ADDRESS;
 import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_HTTP_BASE_URL;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_CONNECTOR_ADDRESS;
@@ -18,7 +17,6 @@ import org.interledger.connector.it.markers.OpenPayments;
 import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerIlpOverHttpTopology;
 import org.interledger.connector.it.topology.AbstractBaseTopology;
 import org.interledger.connector.it.topology.Topology;
-import org.interledger.connector.opa.model.Denomination;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.PaymentNetwork;
@@ -65,10 +63,6 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
 
   private OpenPaymentsClient aliceClient;
   private OpenPaymentsClient bobClient;
-
-  private HttpUrl paulAtAliceInvoicesUri = HttpUrl.get(ALICE_HTTP_BASE_URL + "/accounts/paul/invoices");
-  private HttpUrl peterAtAliceInvoicesUri = HttpUrl.get(ALICE_HTTP_BASE_URL + "/accounts/peter/invoices");
-  private HttpUrl peterAtBobInvoicesUri = HttpUrl.get(BOB_HTTP_BASE_URL + "/accounts/peter/invoices");
 
   @BeforeClass
   public static void startTopology() {

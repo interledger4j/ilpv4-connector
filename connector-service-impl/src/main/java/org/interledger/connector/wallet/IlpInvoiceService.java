@@ -114,7 +114,6 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
           .assetCode(streamPayment.assetCode())
           .assetScale(streamPayment.assetScale())
           .build())
-//        .type(PaymentType.valueOf(streamPayment.type().name()))
         .build();
       this.onPayment(payment);
     }

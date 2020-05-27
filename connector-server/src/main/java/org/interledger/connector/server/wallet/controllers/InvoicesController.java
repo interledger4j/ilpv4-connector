@@ -60,7 +60,7 @@ public class InvoicesController {
   /**
    * Create and return an Invoice on the Open Payments server.
    *
-   * An Invoice is created after it is stored in a data store.
+   *
    *
    * @param invoice An {@link Invoice} to create on the Open Payments server.
    * @return A 201 Created if successful, and the fully populated {@link Invoice} which was stored.
@@ -136,6 +136,8 @@ public class InvoicesController {
    * Non-custodial wallets should instead get {@link IlpPaymentDetails} for an {@link Invoice} and execute the payment
    * from the client.
    *
+   * Also note that currently, this endpoint only supports paying invoices over ILP.
+   *
    * @param accountId The {@link AccountId} of the sender.
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} to pay.
    * @param payInvoiceRequest Optional request body containing the amount to pay on the {@link Invoice}.
@@ -146,7 +148,6 @@ public class InvoicesController {
     method = RequestMethod.POST,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  // TODO: Create a generic type for payments instead of coupling to ILP. (Wait for David's changes)
   public StreamPayment payInvoice(
     @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) AccountId accountId,
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
