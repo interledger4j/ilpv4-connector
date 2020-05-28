@@ -15,6 +15,7 @@ import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.payments.SendPaymentService;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
+import org.interledger.connector.persistence.repositories.PaymentsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.wallet.IlpInvoiceService;
 import org.interledger.connector.wallet.IlpPaymentSystemFacade;
@@ -63,6 +64,7 @@ public class OpenPaymentsConfig {
   @Bean
   public InvoiceService<StreamPayment, IlpPaymentDetails> ilpInvoiceService(
     InvoicesRepository invoicesRepository,
+    PaymentsRepository paymentsRepository,
     ConversionService conversionService,
     InvoiceFactory invoiceFactory,
     OpenPaymentsProxyClient openPaymentsProxyClient,
@@ -71,6 +73,7 @@ public class OpenPaymentsConfig {
     EventBus eventBus) {
     return new IlpInvoiceService(
       invoicesRepository,
+      paymentsRepository,
       conversionService,
       invoiceFactory,
       openPaymentsProxyClient,
@@ -82,6 +85,7 @@ public class OpenPaymentsConfig {
   @Bean
   public InvoiceService<XrpPayment, XrpPaymentDetails> xrpInvoiceService(
     InvoicesRepository invoicesRepository,
+    PaymentsRepository paymentsRepository,
     ConversionService conversionService,
     InvoiceFactory invoiceFactory,
     OpenPaymentsProxyClient openPaymentsProxyClient,
@@ -90,6 +94,7 @@ public class OpenPaymentsConfig {
   ) {
     return new XrplInvoiceService(
       invoicesRepository,
+      paymentsRepository,
       conversionService,
       invoiceFactory,
       openPaymentsProxyClient,

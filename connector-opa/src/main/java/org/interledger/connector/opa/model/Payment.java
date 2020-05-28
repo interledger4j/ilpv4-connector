@@ -1,8 +1,5 @@
 package org.interledger.connector.opa.model;
 
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.model.PaymentId;
-
 import com.google.common.primitives.UnsignedLong;
 import org.immutables.value.Value;
 
@@ -20,10 +17,7 @@ public interface Payment {
     return ImmutablePayment.builder();
   }
 
-  @Deprecated
-  AccountId accountId();
-
-  Long invoicePrimaryKey();
+  Optional<Long> invoicePrimaryKey();
 
   /**
    * Correlation id provided by external clients to correlate this stream payment to their systems. Not required and
@@ -31,7 +25,7 @@ public interface Payment {
    *
    * @return
    */
-  String correlationId();
+  CorrelationId correlationId();
 
   /**
    * Unique id for a payment. Locally unique by invoiceId.

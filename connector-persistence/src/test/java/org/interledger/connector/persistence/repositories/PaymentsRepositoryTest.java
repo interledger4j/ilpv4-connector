@@ -37,27 +37,6 @@ public class PaymentsRepositoryTest {
   @Autowired
   private PaymentsRepository paymentsRepository;
 
-  @Test
-  public void saveAndGetPaymentByPaymentId() {
-    Payment payment = SampleObjectUtils.createNewIlpPayment();
-    Payment saved = paymentsRepository.savePayment(payment);
-    assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(payment,
-      "id", "createdAt", "modifiedAt");
-
-    Optional<Payment> fetched = paymentsRepository.findPaymentByPaymentId(payment.paymentId());
-    assertThat(fetched).isNotEmpty().get().isEqualTo(saved);
-  }
-
-  @Test
-  public void saveAndGetPaymentByCorrelationId() {
-    Payment payment = SampleObjectUtils.createNewIlpPayment();
-    Payment saved = paymentsRepository.savePayment(payment);
-    assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(payment,
-      "id", "createdAt", "modifiedAt");
-
-    Optional<Payment> fetched = paymentsRepository.findPaymentByCorrelationId(payment.correlationId());
-    assertThat(fetched).isNotEmpty().get().isEqualTo(saved);
-  }
 
   @Configuration("application.yml")
   public static class TestPersistenceConfig {

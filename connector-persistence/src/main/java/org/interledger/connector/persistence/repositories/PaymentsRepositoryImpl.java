@@ -28,16 +28,10 @@ public class PaymentsRepositoryImpl implements PaymentsRepositoryCustom {
   }
 
   @Override
-  public Optional<Payment> findPaymentByPaymentId(PaymentId paymentId) {
+  public Optional<Payment> findPaymentByPaymentIdAndInvoicePrimaryKey(PaymentId paymentId, Long invoicePrimaryKey) {
     Objects.requireNonNull(paymentId);
-    return paymentsRepository.findByPaymentId(paymentId)
-      .map(e -> conversionService.convert(e, Payment.class));
-  }
-
-  @Override
-  public Optional<Payment> findPaymentByCorrelationId(String correlationId) {
-    Objects.requireNonNull(correlationId);
-    return paymentsRepository.findByCorrelationId(correlationId)
+    Objects.requireNonNull(invoicePrimaryKey);
+    return paymentsRepository.findByPaymentIdAndInvoicePrimaryKey(paymentId, invoicePrimaryKey)
       .map(e -> conversionService.convert(e, Payment.class));
   }
 }

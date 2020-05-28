@@ -1,5 +1,6 @@
 package org.interledger.connector.persistence.util;
 
+import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.Denomination;
 import org.interledger.connector.opa.model.ImmutableInvoice;
 import org.interledger.connector.opa.model.Invoice;
@@ -49,7 +50,7 @@ public final class SampleObjectUtils {
 
   public static Payment createNewIlpPayment() {
     return Payment.builder()
-      .correlationId("f1546058d8e46d2903438bcf71e2af4381a4e5830e95787b66b299c0f30100de")
+      .correlationId(CorrelationId.of("f1546058d8e46d2903438bcf71e2af4381a4e5830e95787b66b299c0f30100de"))
       .paymentId(PaymentId.of(UUID.randomUUID().toString()))
       .sourceAddress("test.foo.bar")
       .destinationAddress("test.foo.baz.1234")
@@ -63,7 +64,7 @@ public final class SampleObjectUtils {
 
   public static Payment createNewXrpPayment() {
     return Payment.builder()
-      .correlationId("f1546058d8e46d2903438bcf71e2af4381a4e5830e95787b66b299c0f30100de")
+      .correlationId(CorrelationId.of("f1546058d8e46d2903438bcf71e2af4381a4e5830e95787b66b299c0f30100de"))
       .paymentId(PaymentId.of(UUID.randomUUID().toString()))
       .sourceAddress("rPm88mdDuXLgxzpmZPXf6wPQ1ZTHRNvYVr 123456")
       .destinationAddress("rDJFnv5sEfp42LMFiX3mVQKczpFTdxYDzM 123456")

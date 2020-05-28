@@ -1,12 +1,16 @@
 package org.interledger.connector.wallet;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.Payment;
 import org.interledger.connector.opa.model.PaymentId;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
+import org.interledger.connector.persistence.repositories.PaymentsRepository;
+import org.interledger.openpayments.events.Memo;
+import org.interledger.openpayments.events.MemoWrapper;
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
 import org.interledger.openpayments.events.XrplTransaction;
 
@@ -21,6 +25,7 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
 
   public XrplInvoiceService(
     InvoicesRepository invoicesRepository,
+    PaymentsRepository paymentsRepository,
     ConversionService conversionService,
     InvoiceFactory invoiceFactory,
     OpenPaymentsProxyClient openPaymentsProxyClient,
@@ -29,6 +34,7 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
   ) {
     super(
       invoicesRepository,
+      paymentsRepository,
       conversionService,
       invoiceFactory,
       openPaymentsProxyClient,
@@ -45,11 +51,15 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
   @Subscribe
   public void onPaymentCompleted(XrpPaymentCompletedEvent xrpPaymentCompletedEvent) {
     XrplTransaction transaction = xrpPaymentCompletedEvent.payment();
-    if (transaction.invoiceHash() != null) {
+    Optional<Memo> invoiceMemo = transaction.memos().stream()
+      .map(MemoWrapper::memo)
+      .filter(memo -> memo.memoType().equals("?????????")) // FIXME: Define a memoType constant
+      .findFirst();
+
+    invoiceMemo.ifPresent(memo -> {
       Payment payment = Payment.builder()
-        .accountId(AccountId.of(transaction.destination() + transaction.destinationTag()))
         .amount(transaction.amount())
-        .correlationId(Optional.ofNullable(transaction.invoiceHash()))
+        .correlationId(CorrelationId.of(memo.memoData())) // FIXME: may need to decode hex
         .paymentId(PaymentId.of(transaction.hash()))
         .createdAt(transaction.createdAt())
         .modifiedAt(transaction.modifiedAt())
@@ -59,6 +69,6 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
         .denomination(transaction.denomination())
         .build();
       this.onPayment(payment);
-    }
+    });
   }
 }

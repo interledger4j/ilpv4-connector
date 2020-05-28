@@ -18,6 +18,7 @@ public class InvoiceEntityConverter implements Converter<InvoiceEntity, Invoice>
   @Override
   public Invoice convert(InvoiceEntity invoiceEntity) {
     return Invoice.builder()
+      .primaryKey(invoiceEntity.getId())
       .accountId(invoiceEntity.getAccountId())
       .amount(UnsignedLong.valueOf(invoiceEntity.getAmount()))
       .assetCode(invoiceEntity.getAssetCode())

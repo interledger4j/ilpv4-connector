@@ -43,9 +43,6 @@ public class PaymentEntity extends AbstractEntity {
   @Column(name = "PAYMENT_ID")
   private String paymentId;
 
-  @Column(name = "ACCOUNT_ID")
-  private String accountId;
-
   @Column(name = "SOURCE_ADDRESS")
   private String sourceAddress;
 
@@ -65,10 +62,10 @@ public class PaymentEntity extends AbstractEntity {
 
   public PaymentEntity(final Payment payment) {
     Objects.requireNonNull(payment);
-    this.invoicePrimaryKey = payment.invoicePrimaryKey();
-    this.correlationId = payment.correlationId();
+    this.invoicePrimaryKey = payment.invoicePrimaryKey()
+      .orElseThrow(() -> new IllegalArgumentException("Payment must have invoice primary key before before being stored."));
+    this.correlationId = payment.correlationId().value();
     this.paymentId = payment.paymentId().value();
-    this.accountId = payment.accountId().value();
     this.sourceAddress = payment.sourceAddress();
     this.destinationAddress = payment.destinationAddress();
     this.amount = payment.amount().bigIntegerValue();
@@ -82,14 +79,6 @@ public class PaymentEntity extends AbstractEntity {
 
   public void setInvoicePrimaryKey(Long invoicePrimaryKey) {
     this.invoicePrimaryKey = invoicePrimaryKey;
-  }
-
-  public String getAccountId() {
-    return accountId;
-  }
-
-  public void setAccountId(String accountId) {
-    this.accountId = accountId;
   }
 
   public Long getId() {

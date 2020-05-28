@@ -8,6 +8,9 @@
       <column name="ID" autoIncrement="true" type="BIGINT">
         <constraints nullable="false" primaryKey="true"/>
       </column>
+      <column name="INVOICE_PRIMARY_KEY" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
       <column name="CORRELATION_ID" type="VARCHAR(64)">
         <constraints nullable="false"/>
       </column>

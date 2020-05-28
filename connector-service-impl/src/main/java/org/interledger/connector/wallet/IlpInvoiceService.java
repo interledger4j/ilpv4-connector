@@ -3,6 +3,7 @@ package org.interledger.connector.wallet;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.events.StreamPaymentClosedEvent;
 import org.interledger.connector.opa.PaymentSystemFacade;
+import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.Denomination;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
@@ -15,6 +16,7 @@ import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.problems.InvoicePaymentProblem;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
+import org.interledger.connector.persistence.repositories.PaymentsRepository;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -32,6 +34,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
 
   public IlpInvoiceService(
     InvoicesRepository invoicesRepository,
+    PaymentsRepository paymentsRepository,
     ConversionService conversionService,
     InvoiceFactory invoiceFactory,
     OpenPaymentsProxyClient openPaymentsProxyClient,
@@ -41,6 +44,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
   ) {
     super(
       invoicesRepository,
+      paymentsRepository,
       conversionService,
       invoiceFactory,
       openPaymentsProxyClient,
@@ -101,9 +105,8 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
     StreamPayment streamPayment = paymentCompletedEvent.streamPayment();
     if (streamPayment.correlationId().isPresent()) {
       Payment payment = Payment.builder()
-        .accountId(streamPayment.accountId())
         .amount(streamPayment.deliveredAmount())
-        .correlationId(streamPayment.correlationId())
+        .correlationId(CorrelationId.of(streamPayment.correlationId().get()))
         .paymentId(PaymentId.of(streamPayment.streamPaymentId()))
         .createdAt(streamPayment.createdAt())
         .modifiedAt(streamPayment.modifiedAt())

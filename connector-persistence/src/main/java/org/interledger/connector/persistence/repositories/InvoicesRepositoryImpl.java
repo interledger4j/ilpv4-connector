@@ -11,8 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.convert.ConversionService;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class InvoicesRepositoryImpl implements InvoicesRepositoryCustom {
 
@@ -56,5 +58,14 @@ public class InvoicesRepositoryImpl implements InvoicesRepositoryCustom {
     Objects.requireNonNull(correlationId);
     Optional<InvoiceEntity> entity = invoicesRepository.findByCorrelationIdAndAccountId(correlationId, accountId);
     return entity.map(e -> conversionService.convert(e, Invoice.class));
+  }
+
+  @Override
+  public List<Invoice> findAllInvoicesByCorrelationId(CorrelationId correlationId) {
+    Objects.requireNonNull(correlationId);
+    return invoicesRepository.findAllByCorrelationId(correlationId)
+      .stream()
+      .map(e -> conversionService.convert(e, Invoice.class))
+      .collect(Collectors.toList());
   }
 }

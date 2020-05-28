@@ -9,6 +9,7 @@ import okhttp3.HttpUrl;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -57,4 +58,10 @@ public interface InvoicesRepository extends CrudRepository<InvoiceEntity, Long>,
     return findByCorrelationIdAndAccountId(correlationId.value(), accountId.value());
   }
 
+
+  List<InvoiceEntity> findAllByCorrelationId(String correlationId);
+
+  default List<InvoiceEntity> findAllByCorrelationId(CorrelationId correlationId) {
+    return findAllByCorrelationId(correlationId.value());
+  }
 }

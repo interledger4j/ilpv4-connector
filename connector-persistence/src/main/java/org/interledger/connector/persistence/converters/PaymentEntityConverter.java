@@ -1,5 +1,6 @@
 package org.interledger.connector.persistence.converters;
 
+import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.Denomination;
 import org.interledger.connector.opa.model.Payment;
 import org.interledger.connector.opa.model.PaymentId;
@@ -17,7 +18,7 @@ public class PaymentEntityConverter implements Converter<PaymentEntity, Payment>
   public Payment convert(PaymentEntity paymentEntity) {
     return Payment.builder()
       .invoicePrimaryKey(paymentEntity.getInvoicePrimaryKey())
-      .correlationId(paymentEntity.getCorrelationId())
+      .correlationId(CorrelationId.of(paymentEntity.getCorrelationId()))
       .paymentId(PaymentId.of(paymentEntity.getPaymentId()))
       .sourceAddress(paymentEntity.getSourceAddress())
       .destinationAddress(paymentEntity.getDestinationAddress())

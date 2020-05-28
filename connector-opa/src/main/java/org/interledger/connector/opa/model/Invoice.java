@@ -30,6 +30,12 @@ public interface Invoice {
     return ImmutableInvoice.builder();
   }
 
+  @JsonIgnore
+  @Value.Default
+  default Long primaryKey() {
+    return 0L;
+  };
+
   /**
    * The location of this {@link Invoice}, specified by an HTTP URL.
    *

@@ -2,7 +2,6 @@ package org.interledger.connector.wallet;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.InvoiceService;
-import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
@@ -13,19 +12,26 @@ import org.interledger.connector.opa.model.problems.InvoiceNotFoundProblem;
 import org.interledger.connector.opa.model.problems.UnsupportedInvoiceOperationProblem;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
+import org.interledger.connector.persistence.repositories.PaymentsRepository;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import feign.FeignException;
 import okhttp3.HttpUrl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsType> implements InvoiceService<PaymentResultType, PaymentDetailsType> {
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
   protected final InvoicesRepository invoicesRepository;
+  protected final PaymentsRepository paymentsRepository;
   protected final ConversionService conversionService;
   protected final InvoiceFactory invoiceFactory;
   protected final OpenPaymentsProxyClient openPaymentsProxyClient;
@@ -33,13 +39,14 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
 
   public AbstractInvoiceService(
     final InvoicesRepository invoicesRepository,
-    ConversionService conversionService,
+    PaymentsRepository paymentsRepository, ConversionService conversionService,
     InvoiceFactory invoiceFactory,
     OpenPaymentsProxyClient openPaymentsProxyClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     EventBus eventBus
   ) {
     this.invoicesRepository = Objects.requireNonNull(invoicesRepository);
+    this.paymentsRepository = Objects.requireNonNull(paymentsRepository);
     this.conversionService = Objects.requireNonNull(conversionService);
     this.invoiceFactory = Objects.requireNonNull(invoiceFactory);
     this.openPaymentsProxyClient = Objects.requireNonNull(openPaymentsProxyClient);
@@ -146,23 +153,34 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     throw new UnsupportedInvoiceOperationProblem(invoiceId);
   }
 
-  public Optional<Invoice> onPayment(Payment payment) {
-    CorrelationId correlationId = CorrelationId.of(payment.correlationId());
+  public void onPayment(Payment payment) {
 
-    Invoice existingInvoice = invoicesRepository.findInvoiceByCorrelationIdAndAccountId(correlationId, payment.accountId())
-      .orElseThrow(() -> new IllegalArgumentException("Could not find invoice by correlation ID.")); // TODO: throw InvoiceNotFoundProblem
+    List<Invoice> invoices = invoicesRepository.findAllInvoicesByCorrelationId(payment.correlationId());
 
-    if (!existingInvoice.assetCode().equals(payment.denomination().assetCode())) {
-      throw new IllegalStateException(String.format("Invoice asset code was different than the StreamPayment asset code." +
-        "Unable to accurately credit invoice. Invoice assetCode: %s ; Payment assetCode: %s", existingInvoice.assetCode(), payment.denomination().assetCode()));
+    if (invoices.isEmpty()) {
+      throw new IllegalArgumentException("Could not find invoice by correlation ID.");
     }
 
-    Invoice updatedInvoice = Invoice.builder()
-      .from(existingInvoice)
-      .received(existingInvoice.received().plus(payment.amount()))
-      .build();
+    invoices
+      .forEach(invoice -> {
+        // See if we have already processed this payment for this invoice
+        Optional<Payment> existingPayment = paymentsRepository.findPaymentByPaymentIdAndInvoicePrimaryKey(payment.paymentId(), invoice.primaryKey());
 
-    return Optional.of(this.updateInvoice(updatedInvoice, payment.accountId()));
+        // If we haven't, do it
+        if (!existingPayment.isPresent()) {
+          Invoice updatedInvoice = Invoice.builder()
+            .from(invoice)
+            .received(invoice.received().plus(payment.amount()))
+            .build();
+          this.updateInvoice(updatedInvoice, AccountId.of(invoice.accountId()));
+
+          Payment paymentToSave = Payment.builder()
+            .from(payment)
+            .invoicePrimaryKey(invoice.primaryKey())
+            .build();
+          paymentsRepository.savePayment(paymentToSave);
+        }
+      });
   }
 
   protected boolean isForThisWallet(HttpUrl invoiceUrl) {
