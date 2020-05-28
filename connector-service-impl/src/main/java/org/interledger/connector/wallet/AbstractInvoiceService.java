@@ -76,7 +76,12 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
       if (!isForThisWallet(invoiceUrl)) {
         invoiceOfReceiver = this.getRemoteInvoice(invoiceUrl);
       } else {
-        invoiceOfReceiver = invoicesRepository.findInvoiceByInvoiceUrl(invoiceUrl)
+        invoiceOfReceiver = invoicesRepository.findAllInvoicesByInvoiceUrl(invoiceUrl)
+          .stream()
+          .filter(invoice -> {
+            return invoice.subject().contains(invoice.accountId()); // FIXME: What's the best way to figure out if an invoice is owned by the receiver?
+          })
+          .findFirst()
           .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceUrl));
       }
 
