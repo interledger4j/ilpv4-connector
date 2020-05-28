@@ -20,7 +20,10 @@ public interface Payment {
     return ImmutablePayment.builder();
   }
 
+  @Deprecated
   AccountId accountId();
+
+  Long invoicePrimaryKey();
 
   /**
    * Correlation id provided by external clients to correlate this stream payment to their systems. Not required and
@@ -28,10 +31,10 @@ public interface Payment {
    *
    * @return
    */
-  Optional<String> correlationId();
+  String correlationId();
 
   /**
-   * Unique id for stream payment. Locally unique by accountId.
+   * Unique id for a payment. Locally unique by invoiceId.
    *
    * @return A {@link String} containing the unique identifier of this STREAM payment.
    */
@@ -87,12 +90,5 @@ public interface Payment {
    * @return A {@link Denomination}.
    */
   Denomination denomination();
-
-  /**
-   * Type of stream payment (e.g. payment sent vs payment received)
-   *
-   * @return A {@link PaymentType}.
-   */
-//  Optional<PaymentType> type();
 
 }

@@ -147,9 +147,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   public Optional<Invoice> onPayment(Payment payment) {
-    CorrelationId correlationId = payment.correlationId()
-      .map(CorrelationId::of)
-      .orElseThrow(() -> new IllegalArgumentException("StreamPayment did not have a correlationId.  Unable to update invoice for payment."));
+    CorrelationId correlationId = CorrelationId.of(payment.correlationId());
 
     Invoice existingInvoice = invoicesRepository.findInvoiceByCorrelationIdAndAccountId(correlationId, payment.accountId())
       .orElseThrow(() -> new IllegalArgumentException("Could not find invoice by correlation ID.")); // TODO: throw InvoiceNotFoundProblem

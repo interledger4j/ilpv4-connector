@@ -16,6 +16,7 @@ public class PaymentEntityConverter implements Converter<PaymentEntity, Payment>
   @Override
   public Payment convert(PaymentEntity paymentEntity) {
     return Payment.builder()
+      .invoicePrimaryKey(paymentEntity.getInvoicePrimaryKey())
       .correlationId(paymentEntity.getCorrelationId())
       .paymentId(PaymentId.of(paymentEntity.getPaymentId()))
       .sourceAddress(paymentEntity.getSourceAddress())

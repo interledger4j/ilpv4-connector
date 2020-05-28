@@ -55,7 +55,7 @@ public class PaymentsRepositoryTest {
     assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(payment,
       "id", "createdAt", "modifiedAt");
 
-    Optional<Payment> fetched = paymentsRepository.findPaymentByCorrelationId(payment.correlationId().get());
+    Optional<Payment> fetched = paymentsRepository.findPaymentByCorrelationId(payment.correlationId());
     assertThat(fetched).isNotEmpty().get().isEqualTo(saved);
   }
 

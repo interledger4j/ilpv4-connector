@@ -33,12 +33,18 @@ public class PaymentEntity extends AbstractEntity {
   @Column(name = "ID")
   private Long id;
 
+  @Column(name = "INVOICE_PRIMARY_KEY")
+  private Long invoicePrimaryKey;
+
   @Column(name = "CORRELATION_ID")
   private String correlationId;
 
   @NaturalId
   @Column(name = "PAYMENT_ID")
   private String paymentId;
+
+  @Column(name = "ACCOUNT_ID")
+  private String accountId;
 
   @Column(name = "SOURCE_ADDRESS")
   private String sourceAddress;
@@ -59,13 +65,31 @@ public class PaymentEntity extends AbstractEntity {
 
   public PaymentEntity(final Payment payment) {
     Objects.requireNonNull(payment);
-    this.correlationId = payment.correlationId().orElseThrow(() -> new IllegalArgumentException("PaymentEntity must have a correlationId."));
+    this.invoicePrimaryKey = payment.invoicePrimaryKey();
+    this.correlationId = payment.correlationId();
     this.paymentId = payment.paymentId().value();
+    this.accountId = payment.accountId().value();
     this.sourceAddress = payment.sourceAddress();
     this.destinationAddress = payment.destinationAddress();
     this.amount = payment.amount().bigIntegerValue();
     this.assetCode = payment.denomination().assetCode();
     this.assetScale = payment.denomination().assetScale();
+  }
+
+  public Long getInvoicePrimaryKey() {
+    return invoicePrimaryKey;
+  }
+
+  public void setInvoicePrimaryKey(Long invoicePrimaryKey) {
+    this.invoicePrimaryKey = invoicePrimaryKey;
+  }
+
+  public String getAccountId() {
+    return accountId;
+  }
+
+  public void setAccountId(String accountId) {
+    this.accountId = accountId;
   }
 
   public Long getId() {
