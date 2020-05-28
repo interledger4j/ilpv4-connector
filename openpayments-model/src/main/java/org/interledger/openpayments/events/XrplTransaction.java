@@ -36,10 +36,6 @@ public interface XrplTransaction {
 
   String hash();
 
-  @JsonProperty("InvoiceID")
-  @Nullable
-  String invoiceHash();
-
   @JsonProperty("Memos")
   @Nullable
   List<MemoWrapper> memos();

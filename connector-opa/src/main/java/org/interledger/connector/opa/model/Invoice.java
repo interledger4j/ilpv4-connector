@@ -22,6 +22,7 @@ import javax.annotation.Nullable;
 /**
  * Represents an amount payable that can be presented to a third party and/or a Mandate to pay.
  */
+@Value.Immutable
 @JsonSerialize(as = ImmutableInvoice.class)
 @JsonDeserialize(as = ImmutableInvoice.class)
 public interface Invoice {
@@ -56,16 +57,6 @@ public interface Invoice {
   @Value.Default
   default InvoiceId id() {
     return InvoiceId.of(UUID.randomUUID().toString());
-  }
-
-  /**
-   * The underlying payment network that this {@link Invoice} will be or has been paid on.
-   *
-   * @return The {@link PaymentNetwork} that this {@link Invoice} can be paid on, or was previously paid on.
-   */
-  @Value.Default
-  default PaymentNetwork paymentNetwork() {
-    return PaymentNetwork.ILP;
   }
 
   /**
@@ -231,27 +222,5 @@ public interface Invoice {
   @JsonIgnore
   @Nullable
   Instant finalizedAt();
-
-  @Value.Immutable
-  @JsonSerialize(as = ImmutableInvoice.class)
-  @JsonDeserialize(as = ImmutableInvoice.class)
-  abstract class AbstractInvoice implements Invoice {
-
-    /**
-     * Validates that the invoice subject is valid. For ILP, this checks that the subject can be parsed to a
-     * {@link PaymentPointer}.
-     *
-     * @return This {@link AbstractInvoice}.
-     */
-    @Value.Check
-    protected AbstractInvoice checkInvoiceSubject() {
-      if (paymentNetwork().equals(PaymentNetwork.ILP)) {
-        PaymentPointer.of(subject());
-      } else {
-        // TODO: PayID.of(subject());
-      }
-
-      return this;
-    }
-  }
+  
 }

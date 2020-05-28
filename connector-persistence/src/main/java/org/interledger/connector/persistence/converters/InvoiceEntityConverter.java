@@ -32,7 +32,6 @@ public class InvoiceEntityConverter implements Converter<InvoiceEntity, Invoice>
       .received(UnsignedLong.valueOf(invoiceEntity.getReceived()))
       .subject(invoiceEntity.getSubject())
       .updatedAt(Optional.ofNullable(invoiceEntity.getModifiedDate()).orElse(Instant.now()))
-      .paymentNetwork(PaymentNetwork.valueOf(invoiceEntity.getPaymentNetwork()))
       .invoiceUrl(HttpUrl.parse(invoiceEntity.getInvoiceUrl()))
       .build();
   }

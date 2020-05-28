@@ -23,6 +23,11 @@ import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.openpayments.events.ImmutableXrpPaymentCompletedEvent;
+import org.interledger.openpayments.events.Memo;
+import org.interledger.openpayments.events.MemoWrapper;
+import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
+import org.interledger.openpayments.events.XrplTransaction;
 import org.interledger.stream.Denominations;
 
 import com.google.common.primitives.UnsignedLong;
@@ -45,7 +50,7 @@ import java.util.concurrent.TimeoutException;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Category(OpenPayments.class)
-public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
+public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
 
   private static final Network network = Network.newNetwork();
 
@@ -139,39 +144,38 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   }
 
   @Test
-  public void getPeterInvoicePaymentDetailsOnBob() {
-    Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
-    IlpPaymentDetails paymentDetails = bobClient.getIlpInvoicePaymentDetails(createdInvoice.accountId(), createdInvoice.id().value());
-
-    assertThat(paymentDetails.destinationAddress().getValue()).startsWith("test.bob.spsp.peter");
-  }
-
-  @Test
-  public void getPeterInvoicePaymentDetailsViaAliceOnBob() {
-    Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
-    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, createdInvoice.invoiceUrl().get().toString());
-    IlpPaymentDetails paymentDetails = aliceClient.getIlpInvoicePaymentDetails(syncedInvoice.accountId(), syncedInvoice.id().value());
-
-    assertThat(paymentDetails.destinationAddress().getValue()).startsWith("test.bob.spsp.peter");
-  }
-
-  @Test
-  public void paulPaysInvoiceForPeterViaAliceOnBob() {
+  public void paulPaysInvoiceForPeterViaAliceOnBobOverXrp() throws InterruptedException {
     Invoice createdInvoiceOnBob = createInvoiceForPeter(bobClient, PETER);
 
     Invoice createdInvoiceOnAlice = aliceClient.getOrSyncInvoice(PAUL, createdInvoiceOnBob.invoiceUrl().get().toString());
-    StreamPayment payment = aliceClient.payInvoice(
-      createdInvoiceOnAlice.accountId(),
-      createdInvoiceOnAlice.id().value(),
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXVsIiwibmFtZSI6InBhdWwiLCJpYXQiOjE1MTYyMzkwMjJ9.rdYwzQKAG8tFC2aRvG3XsW8BFsHxEFnOwcY-17KAA7g",
-      Optional.empty()
-    );
 
-    assertThat(payment.amount().abs()).isEqualTo(createdInvoiceOnAlice.amount().bigIntegerValue());
-    assertThat(payment.deliveredAmount()).isEqualTo(createdInvoiceOnBob.amount());
+    // Manually trigger a payment completed event
+    XrplTransaction xprlPayment = XrplTransaction.builder()
+      .account("SENDER_ADDRESS")
+      .sourceTag("123456")
+      .destination("RECEIVER_ADDRESS")
+      .destinationTag(123456)
+      .amount(createdInvoiceOnAlice.amount())
+      .hash("PAYMENT_ID_HASH")
+      .addMemos(MemoWrapper.builder()
+        .memo(Memo.builder()
+          .memoFormat("abcdef")
+          .memoType("INVOICE_PAYMENT")
+          .memoData(createdInvoiceOnAlice.correlationId().value())
+          .build())
+        .build())
+      .build();
+    ImmutableXrpPaymentCompletedEvent xrpPaymentCompletedEvent = XrpPaymentCompletedEvent.builder().payment(xprlPayment).build();
+    aliceConnector.getEventBus().post(xrpPaymentCompletedEvent);
+    bobConnector.getEventBus().post(xrpPaymentCompletedEvent);
 
-    Invoice invoiceOnAliceAfterPayment = bobClient.getInvoice(createdInvoiceOnBob.accountId(), createdInvoiceOnBob.id().value());
-    assertThat(invoiceOnAliceAfterPayment.isPaid());
+    Thread.sleep(5000);
+
+    Invoice invoiceOnBobAfterPayment = bobClient.getInvoice(createdInvoiceOnBob.accountId(), createdInvoiceOnBob.id().value());
+    assertThat(invoiceOnBobAfterPayment.isPaid()).isTrue();
+
+    Invoice invoiceOnAliceAfterPayment = aliceClient.getInvoice(createdInvoiceOnAlice.accountId(), createdInvoiceOnAlice.id().value());
+    assertThat(invoiceOnAliceAfterPayment.isPaid()).isTrue();
   }
 
   @Test
@@ -181,9 +185,9 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
       .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
       .assetScale(Denominations.XRP_MILLI_DROPS.assetScale())
       .amount(UnsignedLong.valueOf(100))
-      .paymentNetwork(PaymentNetwork.ILP)
-      .subject("$localhost:8080/eddy")
+      .subject("eddy$localhost:8080")
       .build();
+
     Invoice eddyInvoiceOnAlice = aliceClient.createInvoice(EDDY, invoice);
     Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, eddyInvoiceOnAlice.invoiceUrl().get().toString());
     assertThat(eddyInvoiceOnAlice)
@@ -193,14 +197,24 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
     assertThat(syncedInvoice.accountId())
       .isEqualTo(PAUL);
 
-    StreamPayment payment = aliceClient.payInvoice(
-      syncedInvoice.accountId(),
-      syncedInvoice.id().value(),
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXVsIiwibmFtZSI6InBhdWwiLCJpYXQiOjE1MTYyMzkwMjJ9.rdYwzQKAG8tFC2aRvG3XsW8BFsHxEFnOwcY-17KAA7g",
-      Optional.empty()
-    );
-    assertThat(payment.amount().abs()).isEqualTo(syncedInvoice.amount().bigIntegerValue());
-    assertThat(payment.deliveredAmount()).isEqualTo(eddyInvoiceOnAlice.amount());
+    // Manually trigger a payment completed event
+    XrplTransaction xprlPayment = XrplTransaction.builder()
+      .account("SENDER_ADDRESS")
+      .sourceTag("123456")
+      .destination("RECEIVER_ADDRESS")
+      .destinationTag(123456)
+      .amount(syncedInvoice.amount())
+      .hash("PAYMENT_ID_HASH")
+      .addMemos(MemoWrapper.builder()
+        .memo(Memo.builder()
+          .memoFormat("abcdef")
+          .memoType("INVOICE_PAYMENT")
+          .memoData(syncedInvoice.correlationId().value())
+          .build())
+        .build())
+      .build();
+    ImmutableXrpPaymentCompletedEvent xrpPaymentCompletedEvent = XrpPaymentCompletedEvent.builder().payment(xprlPayment).build();
+    aliceConnector.getEventBus().post(xrpPaymentCompletedEvent);
 
     // Let the payment system event out and the OP system to update
     Thread.sleep(5000);
@@ -217,12 +231,11 @@ public class TwoConnectorOpenPaymentsTestIT extends AbstractIlpOverHttpIT {
   private Invoice createInvoiceForPeter(OpenPaymentsClient client, String accountId) {
     Invoice invoice = Invoice.builder()
       .accountId(PETER)
-      .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
-      .assetScale(Denominations.XRP_MILLI_DROPS.assetScale())
+      .assetCode(Denominations.XRP_DROPS.assetCode())
+      .assetScale(Denominations.XRP_DROPS.assetScale())
       .amount(UnsignedLong.valueOf(100))
       .description("IT payment")
-      .paymentNetwork(PaymentNetwork.ILP)
-      .subject("$localhost:8081/peter")
+      .subject("peter$localhost:8081")
       .build();
 
     return client.createInvoice(accountId, invoice);

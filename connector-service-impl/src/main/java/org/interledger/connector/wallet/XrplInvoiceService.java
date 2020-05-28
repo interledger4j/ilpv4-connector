@@ -53,7 +53,7 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
     XrplTransaction transaction = xrpPaymentCompletedEvent.payment();
     Optional<Memo> invoiceMemo = transaction.memos().stream()
       .map(MemoWrapper::memo)
-      .filter(memo -> memo.memoType().equals("?????????")) // FIXME: Define a memoType constant
+      .filter(memo -> memo.memoType().equals("INVOICE_PAYMENT")) // FIXME: Define a memoType constant
       .findFirst();
 
     invoiceMemo.ifPresent(memo -> {

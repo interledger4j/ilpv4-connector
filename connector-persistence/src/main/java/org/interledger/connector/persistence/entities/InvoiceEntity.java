@@ -66,9 +66,6 @@ public class InvoiceEntity extends AbstractEntity {
   @Column(name = "FINALIZED_AT")
   private Instant finalizedAt;
 
-  @Column(name = "PAYMENT_NETWORK")
-  private String paymentNetwork;
-
   @Column(name = "CORRELATION_ID")
   private String correlationId;
 
@@ -89,7 +86,6 @@ public class InvoiceEntity extends AbstractEntity {
     this.invoiceId = invoice.id().value();
     this.received = invoice.received().longValue();
     this.subject = invoice.subject();
-    this.paymentNetwork = invoice.paymentNetwork().toString();
     this.correlationId = invoice.correlationId().value();
     this.invoiceUrl = invoice.invoiceUrl().get().toString();
   }
@@ -180,14 +176,6 @@ public class InvoiceEntity extends AbstractEntity {
 
   public void setFinalizedAt(Instant finalizedAt) {
     this.finalizedAt = finalizedAt;
-  }
-
-  public String getPaymentNetwork() {
-    return paymentNetwork;
-  }
-
-  public void setPaymentNetwork(String paymentNetwork) {
-    this.paymentNetwork = paymentNetwork;
   }
 
   public String getCorrelationId() {

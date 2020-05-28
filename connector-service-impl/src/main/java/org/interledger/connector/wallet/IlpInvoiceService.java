@@ -72,10 +72,6 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
   public StreamPayment payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) {
     final Invoice invoice = this.getInvoiceById(invoiceId, senderAccountId);
 
-    if (!invoice.paymentNetwork().equals(PaymentNetwork.ILP)) {
-      throw new IllegalStateException("Unable to pay invoice from Open Payment Server over non-ILP payment network.");
-    }
-
     final HttpUrl invoiceUrl = invoice.invoiceUrl()
       .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
 

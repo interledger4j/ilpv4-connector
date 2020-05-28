@@ -58,9 +58,6 @@
       <column name="VERSION" type="SMALLINT">
         <constraints nullable="false"/>
       </column>
-      <column name="PAYMENT_NETWORK" type="VARCHAR(10)">
-        <constraints nullable="false"/>
-      </column>
       <column name="CORRELATION_ID" type="VARCHAR(2000)">
         <constraints nullable="false"/>
       </column>
