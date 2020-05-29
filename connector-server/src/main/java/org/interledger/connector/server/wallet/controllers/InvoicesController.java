@@ -58,9 +58,7 @@ public class InvoicesController {
   }
 
   /**
-   * Create and return an Invoice on the Open Payments server.
-   *
-   *
+   * Create an {@link Invoice} on the Open Payments server.
    *
    * @param invoice An {@link Invoice} to create on the Open Payments server.
    * @return A 201 Created if successful, and the fully populated {@link Invoice} which was stored.
@@ -71,7 +69,7 @@ public class InvoicesController {
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody ResponseEntity<Invoice> createInvoice(
-    @PathVariable AccountId accountId,
+    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) AccountId accountId,
     @RequestBody Invoice invoice
   ) {
     Invoice createdInvoice = ilpInvoiceService.createInvoice(invoice, accountId);
@@ -106,7 +104,14 @@ public class InvoicesController {
   }
 
   /**
+   * Get either an {@link Invoice} or {@link IlpPaymentDetails} for an {@link Invoice}.
    *
+   * Note that retrieval of payment details is only supported for Interledger Payments.
+   *
+   * @param accountId The {@link AccountId} of the {@link Invoice} owner.
+   * @param invoiceId The {@link InvoiceId} of the {@link Invoice}.
+   * @param acceptHeader "application/json" to get an {@link Invoice}, or "application/ilp-stream+json" to get {@link IlpPaymentDetails}.
+   * @return A {@link ResponseEntity} containing the {@link Invoice} or the {@link IlpPaymentDetails}.
    */
   @RequestMapping(
     path = OpenPaymentsPathConstants.INVOICES_WITH_ID,
@@ -125,7 +130,7 @@ public class InvoicesController {
       IlpPaymentDetails paymentDetails = ilpInvoiceService.getPaymentDetails(invoiceId, accountId);
       return new ResponseEntity(paymentDetails, headers, HttpStatus.OK);
     }
-    Invoice invoice = ilpInvoiceService.getInvoiceById(invoiceId, accountId);
+    Invoice invoice = ilpInvoiceService.getInvoice(invoiceId, accountId);
     return new ResponseEntity(invoice, headers, HttpStatus.OK);
   }
 
@@ -133,7 +138,7 @@ public class InvoicesController {
    * Make a payment towards an {@link Invoice}.
    *
    * Note that this endpoint should only exist for custodial wallets which can make payments on behalf of a sender.
-   * Non-custodial wallets should instead get {@link IlpPaymentDetails} for an {@link Invoice} and execute the payment
+   * Non-custodial wallets should instead get payment details for an {@link Invoice} and execute the payment
    * from the client.
    *
    * Also note that currently, this endpoint only supports paying invoices over ILP.
@@ -148,6 +153,7 @@ public class InvoicesController {
     method = RequestMethod.POST,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
+  // FIXME: this is weird... I think a client would expect to get a Payment back, which it can then query
   public StreamPayment payInvoice(
     @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) AccountId accountId,
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,

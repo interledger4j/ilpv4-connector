@@ -19,30 +19,29 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
   /**
    * Get an existing invoice.
    *
-   * Implementations SHOULD get the latest received state of the {@link Invoice} from the underlying payment layer.
-   *
    * @param invoiceId The {@link InvoiceId} of the invoice to get.
-   * @param accountId
-   * @return The existing {@link Invoice} with the specified {@link InvoiceId}
+   * @param accountId The {@link AccountId} associated with the {@link Invoice}.
+   * @return The existing {@link Invoice} with the specified {@link InvoiceId} and {@link AccountId}.
    */
-  Invoice getInvoiceById(final InvoiceId invoiceId, final AccountId accountId);
+  Invoice getInvoice(final InvoiceId invoiceId, final AccountId accountId);
 
   /**
-   * Get and save the latest state of the invoice located at a remote OPS at {@code invoiceUrl},
-   * if the invoice with that location does not already exist on this Open Payments Server.
+   * Get and save the latest state of the invoice owned by the receiver, either located at a remote OPS at
+   * {@code invoiceUrl}, or on this OPS, if the invoice with that location does not already exist on this OPS.
    *
    * @param invoiceUrl The unique URL of the {@link Invoice}.
-   * @param accountId
+   * @param accountId The {@link AccountId} to associate the synced {@link Invoice} with.
    * @return The synced {@link Invoice}.
+   * @throws InvoiceAlreadyExistsProblem if the {@link Invoice} has already been synced.
    */
   Invoice syncInvoice(final HttpUrl invoiceUrl, final AccountId accountId) throws InvoiceAlreadyExistsProblem;
 
   /**
-   * Create a new invoice by storing it.
+   * Create a new invoice at the invoices URL resolved from {@code invoice#subject()}.
    *
-   * @param invoice The {@link Invoice} to store.
-   * @param accountId
-   * @return The {@link Invoice} that was stored.
+   * @param invoice The {@link Invoice} to create.
+   * @param accountId The {@link AccountId} that should be associated with the created {@link Invoice}.
+   * @return The {@link Invoice} that was created.
    */
   Invoice createInvoice(final Invoice invoice, final AccountId accountId);
 
@@ -50,33 +49,29 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
    * Update an existing {@link Invoice}.
    *
    * @param invoice An updated {@link Invoice}.
-   * @param accountId
+   * @param accountId The {@link AccountId} associated with the given {@link Invoice}.
    * @return The updated {@link Invoice}.
    */
   Invoice updateInvoice(final Invoice invoice, final AccountId accountId);
 
   /**
-   * Generate {@link PaymentDetails} for any supported payment rail.
+   * Generate {@link PaymentDetailsType} for any supported payment rail. Note that currently, Interledger payments
+   * are the only payments that require this method.
    *
    * For ILP payments, this logic will largely be the same as an SPSP server's setup logic. However,
    * implementations should keep track of the invoice in the underlying payment layer.
    *
-   * For XRP payments, this will return an XRP address and the invoiceId encoded in Base64.
-   *
-   * The type of {@link PaymentDetails} returned is determined by the {@link Invoice#paymentNetwork()}.
-   *
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} this payment is being set up to pay.
-   * @param accountId
+   * @param accountId The {@link AccountId} associated with the {@link Invoice}.
    * @return The payment details necessary to pay an invoice.
    */
-  // TODO: Always return ILP details
   PaymentDetailsType getPaymentDetails(final InvoiceId invoiceId, final AccountId accountId);
 
   /**
    * Make a payment towards an {@link Invoice}.
    *
    * Note that this method should only be implemented for custodial wallets which can make payments on behalf of a sender.
-   * Non-custodial wallets should instead get {@link PaymentDetails} for an {@link Invoice} and execute the payment
+   * Non-custodial wallets should instead determine Payment Details outside of the OPS and execute the payment
    * from the client.
    *
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} to pay.

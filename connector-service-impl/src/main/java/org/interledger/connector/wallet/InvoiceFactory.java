@@ -62,6 +62,8 @@ public class InvoiceFactory {
     // largely for testing reasons since we may need to override and start on http instead of https
     identifierUrl = identifierUrl.newBuilder().scheme(openPaymentsSettings.metadata().defaultScheme()).build();
 
+    // FIXME: Just tack on /invoices/{invoiceId} to the resolved payment identifier.  This requires our payment
+    //  identifiers to start with /accounts
     // Only want the account part of the payment pointer path
     String paymentPointerPath = identifierUrl.pathSegments().stream().reduce("", (s, s2) -> s + "/" + s2);
     if (paymentPointerPath.startsWith("/")) {

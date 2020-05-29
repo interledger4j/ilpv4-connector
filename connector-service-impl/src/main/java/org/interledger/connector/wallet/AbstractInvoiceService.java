@@ -27,6 +27,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+/**
+ * An abstract implementation of {@link InvoiceService} which performs common operations on {@link Invoice}s.
+ *
+ * @param <PaymentResultType> The type of the result of a call to {@link InvoiceService#payInvoice}.
+ * @param <PaymentDetailsType> The type of the payment details returned from a call to {@link InvoiceService#getPaymentDetails}
+ */
 public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsType> implements InvoiceService<PaymentResultType, PaymentDetailsType> {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -39,11 +45,12 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
 
   public AbstractInvoiceService(
     final InvoicesRepository invoicesRepository,
-    PaymentsRepository paymentsRepository, ConversionService conversionService,
-    InvoiceFactory invoiceFactory,
-    OpenPaymentsProxyClient openPaymentsProxyClient,
-    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    EventBus eventBus
+    final PaymentsRepository paymentsRepository,
+    final ConversionService conversionService,
+    final InvoiceFactory invoiceFactory,
+    final OpenPaymentsProxyClient openPaymentsProxyClient,
+    final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
+    final EventBus eventBus
   ) {
     this.invoicesRepository = Objects.requireNonNull(invoicesRepository);
     this.paymentsRepository = Objects.requireNonNull(paymentsRepository);
@@ -55,16 +62,18 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public Invoice getInvoiceById(InvoiceId invoiceId, AccountId accountId) {
+  public Invoice getInvoice(final InvoiceId invoiceId, final AccountId accountId) {
     Objects.requireNonNull(invoiceId);
+    Objects.requireNonNull(accountId);
 
     return invoicesRepository.findInvoiceByInvoiceIdAndAccountId(invoiceId, accountId)
       .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceId));
   }
 
   @Override
-  public Invoice syncInvoice(HttpUrl invoiceUrl, AccountId accountId) {
+  public Invoice syncInvoice(final HttpUrl invoiceUrl, final AccountId accountId) {
     Objects.requireNonNull(invoiceUrl);
+    Objects.requireNonNull(accountId);
 
     // See if we have that invoice already
     Optional<Invoice> existingInvoice = invoicesRepository.findInvoiceByInvoiceUrlAndAccountId(invoiceUrl, accountId);
@@ -90,12 +99,12 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
         .from(invoiceOfReceiver)
         .accountId(accountId.value())
         .build();
-      Invoice invoice = invoicesRepository.saveInvoice(invoiceWithCorrectAccountId);
-      return invoice;
+
+      return invoicesRepository.saveInvoice(invoiceWithCorrectAccountId);
     }
   }
 
-  private Invoice getRemoteInvoice(HttpUrl invoiceUrl) {
+  private Invoice getRemoteInvoice(final HttpUrl invoiceUrl) {
     try {
       return openPaymentsProxyClient.getInvoice(invoiceUrl.uri());
     } catch (FeignException e) {
@@ -108,16 +117,17 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public Invoice createInvoice(Invoice invoice, AccountId accountId) {
+  public Invoice createInvoice(final Invoice invoice, final AccountId accountId) {
     Objects.requireNonNull(invoice);
+    Objects.requireNonNull(accountId);
 
     Invoice invoiceWithUrl = invoiceFactory.construct(invoice);
-    // This creation was meant for another...
 
     HttpUrl invoiceUrl = invoiceWithUrl.invoiceUrl().get();
 
     Invoice invoiceToSave = invoiceWithUrl;
     if (!isForThisWallet(invoiceUrl)) {
+      // FIXME: Just strip the invoiceId from the invoiceUrl. This requires our payment pointers to start with /accounts
       HttpUrl createUrl = new HttpUrl.Builder()
         .scheme(invoiceUrl.scheme())
         .host(invoiceUrl.host())
@@ -137,7 +147,10 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public Invoice updateInvoice(Invoice invoice, AccountId accountId) {
+  public Invoice updateInvoice(final Invoice invoice, final AccountId accountId) {
+    Objects.requireNonNull(invoice);
+    Objects.requireNonNull(accountId);
+
     return invoicesRepository.findByInvoiceIdAndAccountId(invoice.id(), accountId)
       .map(entity -> {
         entity.setReceived(invoice.received().longValue());
@@ -158,12 +171,19 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     throw new UnsupportedInvoiceOperationProblem(invoiceId);
   }
 
-  public void onPayment(Payment payment) {
+  /**
+   * Update all of the {@link Invoice}s associated with a {@link Payment}, which has been detected on an underlying
+   * payment rail.
+   *
+   * @param payment The {@link Payment} that was detected on an underlying payment rail.
+   */
+  protected void onPayment(final Payment payment) {
+    Objects.requireNonNull(payment);
 
     List<Invoice> invoices = invoicesRepository.findAllInvoicesByCorrelationId(payment.correlationId());
 
     if (invoices.isEmpty()) {
-      throw new IllegalArgumentException("Could not find invoice by correlation ID.");
+      throw new IllegalArgumentException("Could not find invoice by correlation ID."); // FIXME: throw InvoiceNotFoundProblem
     }
 
     invoices
@@ -173,6 +193,8 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
 
         // If we haven't, do it
         if (!existingPayment.isPresent()) {
+          // FIXME: If the invoice assetCode and assetScale are different than the account's assetCode and assetScale,
+          //  we need to do a conversion.
           Invoice updatedInvoice = Invoice.builder()
             .from(invoice)
             .received(invoice.received().plus(payment.amount()))
@@ -188,16 +210,25 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
       });
   }
 
+  /**
+   * Utility method to determine if an {@link Invoice}'s owner exists on this OPS.
+   *
+   * @param invoiceUrl The {@link HttpUrl} of the {@link Invoice}.
+   * @return true if the {@link Invoice} is for this wallet, false if not.
+   */
   protected boolean isForThisWallet(HttpUrl invoiceUrl) {
     HttpUrl issuer = openPaymentsSettingsSupplier.get().metadata().issuer();
-    if (issuer.host().equals("localhost")) {
-      return issuer.host().equals(invoiceUrl.host()) && issuer.port() == invoiceUrl.port();
-    }
-
-    return issuer.host().equals(invoiceUrl.host());
+    return issuer.host().equals(invoiceUrl.host()) && issuer.port() == invoiceUrl.port();
   }
 
-
+  /**
+   * Utility method to get the minimum of two {@link UnsignedLong}s, because {@link Math#min} does not allow
+   * {@link UnsignedLong} and large {@link UnsignedLong}s can cause overflow.
+   *
+   * @param first One {@link UnsignedLong}.
+   * @param second The other {@link UnsignedLong}.
+   * @return The minimum of the two arguments.
+   */
   protected UnsignedLong min(UnsignedLong first, UnsignedLong second) {
     if (first.compareTo(second) < 0) {
       return first;
