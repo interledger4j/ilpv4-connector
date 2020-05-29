@@ -28,6 +28,9 @@ A Java implementation of an Interledger v4 Connector.
 
 To learn more about this project, consult the [documentation here](https://interledger.gitbook.io/java-ilp-connector/). 
 
-For questions, ideas, or just to say hello, connect with us on the [Interledger Forum](https://forum.interledger.org).
+For questions, ideas, or just to say hello:
+
+* Connect with us on the [Interledger Forum](https://forum.interledger.org)
+* Submit a new idea at [feedback.interledger4j.dev](https://feedback.interledger4j.dev/).
 
 **Disclaimer: _This implementation is currently a prototype and SHOULD NOT be used in a production deployment!_**
