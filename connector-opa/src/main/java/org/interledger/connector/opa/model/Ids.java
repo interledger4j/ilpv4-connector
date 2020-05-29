@@ -59,4 +59,31 @@ public interface Ids {
     }
   }
 
+  /**
+   * A wrapper that defines a unique identifier for a Mandate.
+   */
+  @Value.Immutable
+  @Wrapped
+  abstract class _MandateId extends Wrapper<String> {
+
+    @Override
+    public String toString() {
+      return this.value();
+    }
+  }
+
+
+  /**
+   * A wrapper that defines a unique identifier for a Charge.
+   */
+  @Value.Immutable
+  @Wrapped
+  abstract class _ChargeId extends Wrapper<String> {
+
+    @Override
+    public String toString() {
+      return this.value();
+    }
+  }
+
 }
