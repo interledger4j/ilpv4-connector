@@ -1,5 +1,6 @@
 package org.interledger.connector.opa.model;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.spsp.PaymentPointer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -31,6 +32,13 @@ public interface Invoice {
     return ImmutableInvoice.builder();
   }
 
+  /**
+   * The true unique identifier of this {@link Invoice}. If sender and receiver on the same OPS, or multiple
+   * senders pay the same invoice from the same OPS, there could be multiple copies of an {@link Invoice} with the same
+   * {@link Invoice#id()}.
+   *
+   * @return A unique identifier for this {@link Invoice}.
+   */
   @JsonIgnore
   @Value.Default
   default Long primaryKey() {
@@ -48,7 +56,9 @@ public interface Invoice {
   Optional<HttpUrl> invoiceUrl();
 
   /**
-   * A unique identifier for this {@link Invoice}.
+   * The identifier of this {@link Invoice}. If sender and receiver on the same OPS, or multiple
+   * senders pay the same invoice from the same OPS, there could be multiple copies of an {@link Invoice} with the same
+   * {@link Invoice#id()}.
    *
    * Defaults to a random UUID.
    *
@@ -63,11 +73,9 @@ public interface Invoice {
    * Some form of this {@link Invoice}'s {@link Invoice#id()} such that it can be attached to a payment to later
    * correlate the payment to this {@link Invoice}.
    *
-   * For example, the paymentId for an {@link Invoice} paid over Interledger will be {@link Invoice#id()} Base 64 encoded.
-   * Alternatively, the paymentId for an {@link Invoice} paid over XRPL will be the SHA-256 hash of {@link Invoice#id()},
-   * which can be included as the InvoiceID on an XRPL transaction.
+   * Defaults to a SHA-256 hash of {@link Invoice#id()}.
    *
-   * @return A {@link String} containing an identifier which can be included in a payment to correlate it to this
+   * @return A {@link CorrelationId} containing an identifier which can be included in a payment to correlate it to this
    *  {@link Invoice}.
    */
   @Value.Default
@@ -121,10 +129,11 @@ public interface Invoice {
    * @return A {@link String} representing the account ID of the user who created this invoice.
    */
   @Value.Default
-  default String accountId() {
+  default AccountId accountId() {
+    // FIXME: We don't have to default this value once we derive creation URL from the payment pointer
     try {
       PaymentPointer paymentPointerSubject = PaymentPointer.of(subject());
-      return paymentPointerSubject.path().substring(paymentPointerSubject.path().lastIndexOf("/") + 1);
+      return AccountId.of(paymentPointerSubject.path().substring(paymentPointerSubject.path().lastIndexOf("/") + 1));
     } catch (IllegalArgumentException e) {
       // subject is a PayID
       String payIdString = subject();
@@ -132,7 +141,7 @@ public interface Invoice {
         payIdString = "payid:" + payIdString;
       }
       PayId payId = PayId.of(payIdString);
-      return payId.account();
+      return AccountId.of(payId.account());
     }
   };
 
@@ -222,5 +231,5 @@ public interface Invoice {
   @JsonIgnore
   @Nullable
   Instant finalizedAt();
-  
+
 }

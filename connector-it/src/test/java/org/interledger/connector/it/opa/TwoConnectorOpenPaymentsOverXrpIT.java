@@ -6,8 +6,10 @@ import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_HTT
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_CONNECTOR_ADDRESS;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_HTTP_BASE_URL;
 import static org.interledger.connector.it.topologies.AbstractTopology.EDDY;
+import static org.interledger.connector.it.topologies.AbstractTopology.EDDY_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.PAUL;
 import static org.interledger.connector.it.topologies.AbstractTopology.PETER;
+import static org.interledger.connector.it.topologies.AbstractTopology.PETER_ACCOUNT;
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.it.AbstractIlpOverHttpIT;
@@ -171,17 +173,17 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
 
     Thread.sleep(5000);
 
-    Invoice invoiceOnBobAfterPayment = bobClient.getInvoice(createdInvoiceOnBob.accountId(), createdInvoiceOnBob.id().value());
+    Invoice invoiceOnBobAfterPayment = bobClient.getInvoice(createdInvoiceOnBob.accountId().value(), createdInvoiceOnBob.id().value());
     assertThat(invoiceOnBobAfterPayment.isPaid()).isTrue();
 
-    Invoice invoiceOnAliceAfterPayment = aliceClient.getInvoice(createdInvoiceOnAlice.accountId(), createdInvoiceOnAlice.id().value());
+    Invoice invoiceOnAliceAfterPayment = aliceClient.getInvoice(createdInvoiceOnAlice.accountId().value(), createdInvoiceOnAlice.id().value());
     assertThat(invoiceOnAliceAfterPayment.isPaid()).isTrue();
   }
 
   @Test
   public void paulPaysInvoiceForEddyAllOnAlice() throws InterruptedException {
     Invoice invoice = Invoice.builder()
-      .accountId(EDDY)
+      .accountId(EDDY_ACCOUNT)
       .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
       .assetScale(Denominations.XRP_MILLI_DROPS.assetScale())
       .amount(UnsignedLong.valueOf(100))
@@ -230,7 +232,7 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
 
   private Invoice createInvoiceForPeter(OpenPaymentsClient client, String accountId) {
     Invoice invoice = Invoice.builder()
-      .accountId(PETER)
+      .accountId(PETER_ACCOUNT)
       .assetCode(Denominations.XRP_DROPS.assetCode())
       .assetScale(Denominations.XRP_DROPS.assetScale())
       .amount(UnsignedLong.valueOf(100))

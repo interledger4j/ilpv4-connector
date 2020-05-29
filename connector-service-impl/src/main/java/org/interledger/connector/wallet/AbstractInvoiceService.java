@@ -88,7 +88,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
         invoiceOfReceiver = invoicesRepository.findAllInvoicesByInvoiceUrl(invoiceUrl)
           .stream()
           .filter(invoice -> {
-            return invoice.subject().contains(invoice.accountId()); // FIXME: What's the best way to figure out if an invoice is owned by the receiver?
+            return invoice.subject().contains(invoice.accountId().value()); // FIXME: What's the best way to figure out if an invoice is owned by the receiver?
           })
           .findFirst()
           .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceUrl));
@@ -97,7 +97,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
       // And set the accountId of the invoice to the sender's accountId
       Invoice invoiceWithCorrectAccountId = Invoice.builder()
         .from(invoiceOfReceiver)
-        .accountId(accountId.value())
+        .accountId(accountId)
         .build();
 
       return invoicesRepository.saveInvoice(invoiceWithCorrectAccountId);
@@ -133,7 +133,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
         .host(invoiceUrl.host())
         .port(invoiceUrl.port())
         .addPathSegment("accounts")
-        .addPathSegment(invoice.accountId())
+        .addPathSegment(invoice.accountId().value())
         .addPathSegment("invoices")
         .build();
       invoiceToSave = openPaymentsProxyClient.createInvoice(createUrl.uri(), invoice);
@@ -141,7 +141,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
 
     Invoice invoiceWithCorrectAccountId = Invoice.builder()
       .from(invoiceToSave)
-      .accountId(accountId.value())
+      .accountId(accountId)
       .build();
     return invoicesRepository.saveInvoice(invoiceWithCorrectAccountId);
   }
@@ -199,7 +199,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
             .from(invoice)
             .received(invoice.received().plus(payment.amount()))
             .build();
-          this.updateInvoice(updatedInvoice, AccountId.of(invoice.accountId()));
+          this.updateInvoice(updatedInvoice, invoice.accountId());
 
           Payment paymentToSave = Payment.builder()
             .from(payment)
