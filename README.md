@@ -26,11 +26,11 @@
 
 A Java implementation of an Interledger v4 Connector.
 
-To learn more about this project, consult the [documentation here](https://interledger.gitbook.io/java-ilp-connector/). 
+To learn more about the project and/or contribute, consult the following links:
 
-For questions, ideas, or just to say hello:
+* Documentation: [Gitbook Docs](https://interledger.gitbook.io/java-ilp-connector/). 
+* Wish something was different? [Submit a new Idea](https://feedback.interledger4j.dev/)
+* Talk to a human? [Interledger Forum](https://forum.interledger.org)
 
-* Connect with us on the [Interledger Forum](https://forum.interledger.org)
-* Submit a new idea at [feedback.interledger4j.dev](https://feedback.interledger4j.dev/).
 
 **Disclaimer: _This implementation is currently a prototype and SHOULD NOT be used in a production deployment!_**
