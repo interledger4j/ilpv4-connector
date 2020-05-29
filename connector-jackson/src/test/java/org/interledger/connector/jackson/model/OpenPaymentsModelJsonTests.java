@@ -2,6 +2,7 @@ package org.interledger.connector.jackson.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.jackson.ObjectMapperFactory;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
@@ -77,7 +78,7 @@ public class OpenPaymentsModelJsonTests {
       .subject(subject.toString())
       .description(description)
       .expiresAt(Instant.now().plusSeconds(30))
-      .accountId("foo")
+      .accountId(AccountId.of("foo"))
       .build();
 
     String invoiceJson = objectMapper.writeValueAsString(invoice);
