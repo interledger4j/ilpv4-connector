@@ -3,11 +3,14 @@ package org.interledger.connector.wallet;
 import static org.interledger.connector.opa.model.OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE;
 
 import org.interledger.connector.jackson.ObjectMapperFactory;
+import org.interledger.connector.opa.model.Charge;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
+import org.interledger.connector.opa.model.Mandate;
+import org.interledger.connector.opa.model.NewCharge;
+import org.interledger.connector.opa.model.NewMandate;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
-import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.payments.StreamPayment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,7 +33,7 @@ public interface OpenPaymentsClient {
 
   String ID = "id";
   String PREFIX = "prefix";
-  String APPLICATION_JSON = "application/json";
+  String APPLICATION_JSON = "application/json; application/problem+json";
   String PLAIN_TEXT = "text/plain";
 
   /**
@@ -107,5 +110,53 @@ public interface OpenPaymentsClient {
     @Param("invoiceId") String invoiceId,
     @Param("authorization") String authorization,
     Optional<PayInvoiceRequest> payInvoiceRequest
+  ) throws ThrowableProblem;
+
+  @RequestLine("POST /accounts/{accountId}/mandates")
+  @Headers({
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON,
+    AUTHORIZATION + "{authorization}"
+  })
+  Mandate createMandate(
+    @Param("accountId") String accountId,
+    @Param("authorization") String authorization,
+    NewMandate newMandate
+  ) throws ThrowableProblem;
+
+//  @RequestLine("GET /accounts/{accountId}/mandates")
+//  @Headers({
+//    ACCEPT + APPLICATION_JSON,
+//    CONTENT_TYPE + APPLICATION_JSON,
+//    AUTHORIZATION + "{authorization}"
+//  })
+//  List<Mandate> getMandates(
+//    @Param("accountId") String accountId,
+//    @Param("authorization") String authorization
+//  ) throws ThrowableProblem;
+//
+  @RequestLine("GET /accounts/{accountId}/mandates/{mandateId}")
+  @Headers({
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON,
+    AUTHORIZATION + "{authorization}"
+  })
+  Mandate findMandateById(
+    @Param("accountId") String accountId,
+    @Param("mandateId") String mandateId,
+    @Param("authorization") String authorization
+  ) throws ThrowableProblem;
+
+  @RequestLine("POST /accounts/{accountId}/mandates/{mandateId}/charges")
+  @Headers({
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON,
+    AUTHORIZATION + "{authorization}"
+  })
+  Charge createCharge(
+    @Param("accountId") String accountId,
+    @Param("mandateId") String mandateId,
+    @Param("authorization") String authorization,
+    NewCharge newCharge
   ) throws ThrowableProblem;
 }

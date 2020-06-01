@@ -9,6 +9,10 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableNewCharge.class)
 public interface NewCharge {
 
+  static ImmutableNewCharge.Builder builder() {
+    return ImmutableNewCharge.builder();
+  }
+
   HttpUrl invoice();
 
   @Value.Immutable

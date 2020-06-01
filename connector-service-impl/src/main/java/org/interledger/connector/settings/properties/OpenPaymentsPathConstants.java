@@ -43,4 +43,8 @@ public class OpenPaymentsPathConstants {
   public static final String MANDATES_BASE = SLASH_ACCOUNTS + SLASH_ACCOUNT_ID + SLASH_MANDATES;
   public static final String MANDATES_WITH_ID = MANDATES_BASE + "/{mandateId:.+}";
 
+  public static final String CHARGES_BASE = MANDATES_WITH_ID + "/charges";
+  public static final String CHARGES_WITH_ID = CHARGES_BASE + "/{chargeId:.+}";
+
+
 }

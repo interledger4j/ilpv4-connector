@@ -25,4 +25,6 @@ public interface Charge extends NewCharge {
 
   ChargeId chargeId();
 
+  MandateId mandateId();
+
 }

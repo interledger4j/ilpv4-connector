@@ -3,6 +3,10 @@ package org.interledger.connector.wallet.mandates;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.MutableClock;
+import org.interledger.connector.opa.model.Charge;
+import org.interledger.connector.opa.model.ChargeId;
+import org.interledger.connector.opa.model.ChargeStatus;
+import org.interledger.connector.opa.model.ImmutableCharge;
 import org.interledger.connector.opa.model.ImmutableMandate;
 import org.interledger.connector.opa.model.Mandate;
 import org.interledger.connector.opa.model.MandateId;
@@ -14,6 +18,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 
 public class DefaultMandateAccrualServiceTest {
 
@@ -104,7 +109,7 @@ public class DefaultMandateAccrualServiceTest {
   @Test
   public void calculateAccruedAmountPartiallyCharged() {
     Mandate mandate = mandateBuilder()
-      .totalCharged(UnsignedLong.valueOf(10))
+      .addCharges(chargeBuilder(UnsignedLong.valueOf(10)).build())
       .build();
 
     assertThat(service.calculateBalance(mandate)).isEqualTo(UnsignedLong.valueOf(90));
@@ -113,7 +118,7 @@ public class DefaultMandateAccrualServiceTest {
   @Test
   public void calculateAccruedAmountFullyCharged() {
     Mandate mandate = mandateBuilder()
-      .totalCharged(UnsignedLong.valueOf(100))
+      .addCharges(chargeBuilder(UnsignedLong.valueOf(100)).build())
       .build();
 
     assertThat(service.calculateBalance(mandate)).isEqualTo(UnsignedLong.ZERO);
@@ -122,7 +127,7 @@ public class DefaultMandateAccrualServiceTest {
   @Test
   public void calculateAccruedAmountOverCharged() {
     Mandate mandate = mandateBuilder()
-      .totalCharged(UnsignedLong.valueOf(101))
+      .addCharges(chargeBuilder(UnsignedLong.valueOf(101)).build())
       .build();
 
     assertThat(service.calculateBalance(mandate)).isEqualTo(UnsignedLong.ZERO);
@@ -140,4 +145,18 @@ public class DefaultMandateAccrualServiceTest {
       .startAt(startsAt)
       .balance(UnsignedLong.ZERO);
   }
+
+  public ImmutableCharge.Builder chargeBuilder(UnsignedLong amount) {
+    ChargeId chargeId = ChargeId.of(UUID.randomUUID().toString());
+    return Charge.builder()
+      .id(HttpUrl.parse("http://localhost/accounts/1/mandates/1/" + chargeId.value()))
+      .chargeId(chargeId)
+      .mandate(HttpUrl.parse("http://localhost/accounts/1/mandates/1"))
+      .mandateId(MandateId.of("1"))
+      .status(ChargeStatus.CREATED)
+      .invoice(HttpUrl.parse("http://localhost/invoices/123"))
+      .amount(amount);
+
+  }
+
 }

@@ -1,30 +1,42 @@
 package org.interledger.connector.wallet.mandates;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.opa.model.Charge;
+import org.interledger.connector.opa.model.ChargeId;
+import org.interledger.connector.opa.model.ChargeStatus;
+import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.Mandate;
 import org.interledger.connector.opa.model.MandateId;
+import org.interledger.connector.opa.model.NewCharge;
 import org.interledger.connector.opa.model.NewMandate;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.problems.MandateInsufficientBalanceProblem;
+import org.interledger.connector.opa.model.problems.MandateNotFoundProblem;
+import org.interledger.connector.wallet.RemoteInvoiceService;
 
-import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class InMemoryMandateService implements MandateService {
 
   private final HashMap<MandateId, Mandate> mandates = new HashMap<>();
 
   private final MandateAccrualService mandateAccrualService;
+  private final RemoteInvoiceService remoteInvoiceService;
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
 
 
   public InMemoryMandateService(MandateAccrualService mandateAccrualService,
+                                RemoteInvoiceService remoteInvoiceService,
                                 Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier) {
     this.mandateAccrualService = mandateAccrualService;
+    this.remoteInvoiceService = remoteInvoiceService;
     this.openPaymentsSettingsSupplier = openPaymentsSettingsSupplier;
   }
 
@@ -34,7 +46,7 @@ public class InMemoryMandateService implements MandateService {
     Mandate mandate = Mandate.builder().from(newMandate)
       .mandateId(mandateId)
       .accountId(accountId.value())
-      .balance(UnsignedLong.ZERO)
+      .balance(newMandate.amount())
       .account(makeAccountUrl(accountId))
       .id(makeMandateUrl(accountId, mandateId))
       .build();
@@ -45,8 +57,9 @@ public class InMemoryMandateService implements MandateService {
   }
 
   @Override
-  public Optional<Mandate> findMandateById(MandateId mandateId) {
+  public Optional<Mandate> findMandateById(AccountId accountId, MandateId mandateId) {
     return Optional.ofNullable(mandates.get(mandateId))
+      .filter(mandate -> mandate.accountId().equals(accountId.value()))
       .map(mandate -> Mandate.builder().from(mandate)
         .balance(mandateAccrualService.calculateBalance(mandate))
         .build()
@@ -54,18 +67,52 @@ public class InMemoryMandateService implements MandateService {
   }
 
   @Override
-  public synchronized boolean chargeMandate(MandateId mandateId, UnsignedLong amount) {
-    return findMandateById(mandateId)
-      .map(mandate -> {
-        if (mandate.balance().compareTo(amount) >= 0) {
-          Mandate updated = Mandate.builder().from(mandate)
-            .totalCharged(mandate.totalCharged().plus(amount))
-            .build();
-          mandates.put(mandateId, updated);
-          return true;
-        }
-        return false;
-      }).orElse(false);
+  public List<Mandate> findMandatesByAccountId(AccountId accountId) {
+    return mandates.values().stream()
+      .filter(mandate -> mandate.accountId().equals(accountId.value()))
+      .map(mandate -> Mandate.builder().from(mandate)
+        .balance(mandateAccrualService.calculateBalance(mandate))
+        .build())
+      .collect(Collectors.toList());
+  }
+
+  @Override
+  public Optional<Charge> findChargeById(AccountId accountId, MandateId mandateId, ChargeId chargeId) {
+    return findMandateById(accountId, mandateId).flatMap(mandate -> mandate.charges().stream()
+      .filter(charge -> charge.chargeId().equals(chargeId.value()))
+      .findAny());
+  }
+
+  @Override
+  public Charge createCharge(AccountId accountId, MandateId mandateId, NewCharge newCharge) {
+    Invoice invoice = remoteInvoiceService.getInvoice(newCharge.invoice());
+    synchronized (mandates) {
+      Mandate mandate = findMandateById(accountId, mandateId)
+        .orElseThrow(() -> new MandateNotFoundProblem(mandateId));
+
+      if (mandate.balance().compareTo(invoice.amount()) >= 0) {
+        ChargeId chargeId = ChargeId.of(UUID.randomUUID().toString());
+        Charge charge = Charge.builder()
+          .amount(invoice.amount())
+          .invoice(invoice.invoiceUrl().get())
+          .mandate(mandate.id())
+          .mandateId(mandate.mandateId())
+          .status(ChargeStatus.CREATED)
+          .chargeId(chargeId)
+          .id(mandate.id().newBuilder().addPathSegment("charges").addPathSegment(chargeId.value()).build())
+          .build();
+
+        Mandate updated = Mandate.builder()
+          .from(mandate)
+          .addCharges(charge)
+          .build();
+
+        mandates.put(mandate.mandateId(), updated);
+        return charge;
+      } else {
+        throw new MandateInsufficientBalanceProblem(mandateId);
+      }
+    }
   }
 
   private HttpUrl makeAccountUrl(AccountId accountId) {

@@ -17,18 +17,25 @@ import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.persistence.repositories.PaymentsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.connector.wallet.DefaultRemoteInvoiceService;
 import org.interledger.connector.wallet.IlpInvoiceService;
 import org.interledger.connector.wallet.IlpPaymentSystemFacade;
 import org.interledger.connector.wallet.InvoiceFactory;
-import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.connector.wallet.OpenPaymentsProxyClient;
 import org.interledger.connector.wallet.PayIdResolver;
+import org.interledger.connector.wallet.RemoteInvoiceService;
 import org.interledger.connector.wallet.XrplInvoiceService;
+import org.interledger.connector.wallet.mandates.DefaultMandateAccrualService;
+import org.interledger.connector.wallet.mandates.InMemoryMandateService;
+import org.interledger.connector.wallet.mandates.MandateAccrualService;
+import org.interledger.connector.wallet.mandates.MandateService;
 import org.interledger.spsp.PaymentPointerResolver;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;
+import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -39,6 +46,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.ConversionService;
 
+import java.time.Clock;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -144,6 +152,24 @@ public class OpenPaymentsConfig {
   @Bean
   public PayIdResolver payIdResolver() {
     return PayIdResolver.defaultPayIdResolver();
+  }
+
+  @Bean
+  public RemoteInvoiceService remoteInvoiceService(OkHttpClient okHttpClient, ObjectMapper objectMapper) {
+    return new DefaultRemoteInvoiceService(okHttpClient, objectMapper);
+  }
+
+  @Bean
+  public MandateAccrualService mandateAccrualService(Clock clock) {
+    return new DefaultMandateAccrualService(clock);
+  }
+
+  @Bean
+  public MandateService mandateService(
+    MandateAccrualService mandateAccrualService,
+    RemoteInvoiceService remoteInvoiceService,
+    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier) {
+    return new InMemoryMandateService(mandateAccrualService, remoteInvoiceService, openPaymentsSettingsSupplier);
   }
 
 }
