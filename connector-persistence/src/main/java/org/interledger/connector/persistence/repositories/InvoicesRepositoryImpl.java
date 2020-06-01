@@ -49,7 +49,7 @@ public class InvoicesRepositoryImpl implements InvoicesRepositoryCustom {
   @Override
   public List<Invoice> findAllInvoicesByInvoiceUrl(HttpUrl invoiceUrl) {
     Objects.requireNonNull(invoiceUrl);
-    return invoicesRepository.findAllInvoicesByInvoiceUrl(invoiceUrl)
+    return invoicesRepository.findAllByInvoiceUrl(invoiceUrl)
       .stream()
       .map(e -> conversionService.convert(e, Invoice.class))
       .collect(Collectors.toList());

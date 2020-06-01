@@ -8,6 +8,7 @@ import static org.interledger.connector.it.topologies.AbstractTopology.BOB_HTTP_
 import static org.interledger.connector.it.topologies.AbstractTopology.EDDY;
 import static org.interledger.connector.it.topologies.AbstractTopology.EDDY_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.PAUL;
+import static org.interledger.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.PETER;
 import static org.interledger.connector.it.topologies.AbstractTopology.PETER_ACCOUNT;
 
@@ -102,7 +103,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
       .get()
       .isEqualTo(HttpUrl.get("http://localhost:8081/accounts/peter/invoices/" + createdInvoice.id().value()));
     assertThat(createdInvoice.accountId())
-      .isEqualTo(PETER);
+      .isEqualTo(PETER_ACCOUNT);
   }
 
   @Test
@@ -113,10 +114,10 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
       .get()
       .isEqualTo(HttpUrl.get("http://localhost:8081/accounts/peter/invoices/" + createdInvoice.id().value()));
     assertThat(createdInvoice.accountId())
-      .isEqualTo(PAUL);
+      .isEqualTo(PAUL_ACCOUNT);
     Invoice invoiceOnBob = bobClient.getInvoice(PETER, createdInvoice.id().value());
     assertThat(invoiceOnBob.accountId())
-      .isEqualTo(PETER);
+      .isEqualTo(PETER_ACCOUNT);
   }
 
   @Test
@@ -135,9 +136,9 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
     assertThat(petersInvoiceOnBob)
       .isEqualToIgnoringGivenFields(synced, "accountId", "createdAt", "updatedAt");
     assertThat(petersInvoiceOnBob.accountId())
-      .isEqualTo(PETER);
+      .isEqualTo(PETER_ACCOUNT);
     assertThat(synced.accountId())
-      .isEqualTo(PAUL);
+      .isEqualTo(PAUL_ACCOUNT);
   }
 
   @Test
@@ -190,9 +191,9 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
     assertThat(eddyInvoiceOnAlice)
       .isEqualToIgnoringGivenFields(syncedInvoice, "accountId", "createdAt", "updatedAt");
     assertThat(eddyInvoiceOnAlice.accountId())
-      .isEqualTo(EDDY);
+      .isEqualTo(EDDY_ACCOUNT);
     assertThat(syncedInvoice.accountId())
-      .isEqualTo(PAUL);
+      .isEqualTo(PAUL_ACCOUNT);
 
     StreamPayment payment = aliceClient.payInvoice(
       syncedInvoice.accountId().value(),
