@@ -14,7 +14,6 @@ import org.interledger.connector.opa.model.Payment;
 import org.interledger.connector.opa.model.PaymentId;
 import org.interledger.connector.opa.model.problems.InvoicePaymentProblem;
 import org.interledger.connector.payments.StreamPayment;
-import org.interledger.connector.payments.StreamPaymentType;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.persistence.repositories.PaymentsRepository;
 
@@ -24,6 +23,7 @@ import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
 import org.springframework.core.convert.ConversionService;
 
+import java.math.BigInteger;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
@@ -58,8 +58,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
   public IlpPaymentDetails getPaymentDetails(InvoiceId invoiceId, AccountId accountId) {
     final Invoice invoice = this.getInvoice(invoiceId, accountId);
 
-    final HttpUrl invoiceUrl = invoice.invoiceUrl()
-      .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
+    final HttpUrl invoiceUrl = invoice.originalInvoiceUrl();
 
     if (!isForThisWallet(invoiceUrl)) {
       return openPaymentsProxyClient.getIlpInvoicePaymentDetails(invoiceUrl.uri());
@@ -72,8 +71,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
   public StreamPayment payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) {
     final Invoice invoice = this.getInvoice(invoiceId, senderAccountId);
 
-    final HttpUrl invoiceUrl = invoice.invoiceUrl()
-      .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
+    final HttpUrl invoiceUrl = invoice.originalInvoiceUrl();
 
     IlpPaymentDetails ilpPaymentDetails;
 
@@ -101,7 +99,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
     StreamPayment streamPayment = paymentCompletedEvent.streamPayment();
     if (streamPayment.correlationId().isPresent()) {
       Payment payment = Payment.builder()
-        .amount(UnsignedLong.valueOf(streamPayment.amount()))
+        .amount(UnsignedLong.valueOf(streamPayment.amount().abs()))
         .correlationId(CorrelationId.of(streamPayment.correlationId().get()))
         .paymentId(PaymentId.of(streamPayment.streamPaymentId()))
         .createdAt(streamPayment.createdAt())

@@ -2,6 +2,8 @@ package org.interledger.connector.wallet;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.InvoiceService;
+import org.interledger.connector.opa.model.CorrelationId;
+import org.interledger.connector.opa.model.CreateInvoiceRequest;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
@@ -15,6 +17,7 @@ import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.persistence.repositories.PaymentsRepository;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.hash.Hashing;
 import com.google.common.primitives.UnsignedLong;
 import feign.FeignException;
 import okhttp3.HttpUrl;
@@ -22,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -66,7 +70,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     Objects.requireNonNull(invoiceId);
     Objects.requireNonNull(accountId);
 
-    return invoicesRepository.findInvoiceByInvoiceIdAndAccountId(invoiceId, accountId)
+    return invoicesRepository.findInvoiceByInvoiceId(invoiceId)
       .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceId));
   }
 
@@ -76,7 +80,12 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     Objects.requireNonNull(accountId);
 
     // See if we have that invoice already
-    Optional<Invoice> existingInvoice = invoicesRepository.findInvoiceByInvoiceUrlAndAccountId(invoiceUrl, accountId);
+    CorrelationId correlationId = CorrelationId.of(
+      Hashing.sha256().hashString(invoiceUrl.toString(), StandardCharsets.UTF_8).toString()
+    );
+
+    Optional<Invoice> existingInvoice = invoicesRepository.findInvoiceByCorrelationIdAndAccountId(correlationId, accountId);
+
     if (existingInvoice.isPresent()) {
       throw new InvoiceAlreadyExistsProblem(existingInvoice.get().id());
     } else {
@@ -85,19 +94,25 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
       if (!isForThisWallet(invoiceUrl)) {
         invoiceOfReceiver = this.getRemoteInvoice(invoiceUrl);
       } else {
-        invoiceOfReceiver = invoicesRepository.findAllInvoicesByInvoiceUrl(invoiceUrl)
+        invoiceOfReceiver = invoicesRepository.findAllInvoicesByCorrelationId(correlationId)
           .stream()
-          .filter(invoice -> {
-            return invoice.subject().contains(invoice.accountId().value()); // FIXME: What's the best way to figure out if an invoice is owned by the receiver?
-          })
+          .filter(invoice -> !invoice.accountId().equals(accountId))
           .findFirst()
           .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceUrl));
       }
 
-      // And set the accountId of the invoice to the sender's accountId
+      // Set the account URL to the sender's URL, which will give the invoice copy a new invoice URL and accountId
+      // Also set the correlationId so that it is the same as the receiver's
       Invoice invoiceWithCorrectAccountId = Invoice.builder()
-        .from(invoiceOfReceiver)
-        .accountId(accountId)
+        .subject(invoiceOfReceiver.subject())
+        .assetCode(invoiceOfReceiver.assetCode())
+        .assetScale(invoiceOfReceiver.assetScale())
+        .amount(invoiceOfReceiver.amount())
+        .expiresAt(invoiceOfReceiver.expiresAt())
+        .description(invoiceOfReceiver.description())
+        .originalInvoiceUrl(invoiceUrl)
+        .correlationId(correlationId)
+        .account(accountUrlFromAccountId(accountId))
         .build();
 
       return invoicesRepository.saveInvoice(invoiceWithCorrectAccountId);
@@ -117,33 +132,25 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public Invoice createInvoice(final Invoice invoice, final AccountId accountId) {
-    Objects.requireNonNull(invoice);
+  public Invoice createInvoice(final CreateInvoiceRequest invoiceRequest, final AccountId accountId) {
+    Objects.requireNonNull(invoiceRequest);
     Objects.requireNonNull(accountId);
 
-    Invoice invoiceWithUrl = invoiceFactory.construct(invoice);
+    // Populate the accountUrl from the invoice subject, which will populate the invoice URL
+    Invoice invoiceWithUrl = invoiceFactory.construct(invoiceRequest);
 
-    HttpUrl invoiceUrl = invoiceWithUrl.invoiceUrl().get();
+    HttpUrl invoiceUrl = invoiceWithUrl.invoiceUrl();
 
-    Invoice invoiceToSave = invoiceWithUrl;
     if (!isForThisWallet(invoiceUrl)) {
-      // FIXME: Just strip the invoiceId from the invoiceUrl. This requires our payment pointers to start with /accounts
-      HttpUrl createUrl = new HttpUrl.Builder()
-        .scheme(invoiceUrl.scheme())
-        .host(invoiceUrl.host())
-        .port(invoiceUrl.port())
-        .addPathSegment("accounts")
-        .addPathSegment(invoice.accountId().value())
-        .addPathSegment("invoices")
+      HttpUrl createUrl = invoiceUrl.newBuilder()
+        .removePathSegment(invoiceUrl.pathSegments().size() - 1)
         .build();
-      invoiceToSave = openPaymentsProxyClient.createInvoice(createUrl.uri(), invoice);
+      // Return what we get from the remote receiver. Must call sync after to get it locally.
+      Invoice invoice = openPaymentsProxyClient.createInvoice(createUrl.uri(), invoiceRequest);
+      return invoice;
     }
 
-    Invoice invoiceWithCorrectAccountId = Invoice.builder()
-      .from(invoiceToSave)
-      .accountId(accountId)
-      .build();
-    return invoicesRepository.saveInvoice(invoiceWithCorrectAccountId);
+    return invoicesRepository.saveInvoice(invoiceWithUrl);
   }
 
   @Override
@@ -151,7 +158,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     Objects.requireNonNull(invoice);
     Objects.requireNonNull(accountId);
 
-    return invoicesRepository.findByInvoiceIdAndAccountId(invoice.id(), accountId)
+    return invoicesRepository.findByInvoiceId(invoice.id())
       .map(entity -> {
         entity.setReceived(invoice.received().longValue());
         InvoiceEntity saved = invoicesRepository.save(entity);
@@ -183,13 +190,13 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     List<Invoice> invoices = invoicesRepository.findAllInvoicesByCorrelationId(payment.correlationId());
 
     if (invoices.isEmpty()) {
-      throw new IllegalArgumentException("Could not find invoice by correlation ID."); // FIXME: throw InvoiceNotFoundProblem
+      throw new IllegalArgumentException("Could not find any invoices by correlation ID."); // FIXME: throw InvoiceNotFoundProblem
     }
 
     invoices
       .forEach(invoice -> {
         // See if we have already processed this payment for this invoice
-        Optional<Payment> existingPayment = paymentsRepository.findPaymentByPaymentIdAndInvoicePrimaryKey(payment.paymentId(), invoice.primaryKey());
+        Optional<Payment> existingPayment = paymentsRepository.findPaymentByPaymentIdAndInvoiceId(payment.paymentId(), invoice.id());
 
         // If we haven't, do it
         if (!existingPayment.isPresent()) {
@@ -203,7 +210,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
 
           Payment paymentToSave = Payment.builder()
             .from(payment)
-            .invoicePrimaryKey(invoice.primaryKey())
+            .invoiceId(invoice.id())
             .build();
           paymentsRepository.savePayment(paymentToSave);
         }
@@ -235,5 +242,12 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     }
 
     return second;
+  }
+
+  protected HttpUrl accountUrlFromAccountId(AccountId accountId) {
+    return openPaymentsSettingsSupplier.get().metadata().issuer()
+      .newBuilder()
+      .addPathSegment("accounts")
+      .addPathSegment(accountId.value()).build();
   }
 }

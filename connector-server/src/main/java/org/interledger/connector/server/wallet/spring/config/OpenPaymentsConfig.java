@@ -14,13 +14,13 @@ import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.payments.SendPaymentService;
 import org.interledger.connector.payments.StreamPayment;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.persistence.repositories.PaymentsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.wallet.IlpInvoiceService;
 import org.interledger.connector.wallet.IlpPaymentSystemFacade;
 import org.interledger.connector.wallet.InvoiceFactory;
-import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.connector.wallet.OpenPaymentsProxyClient;
 import org.interledger.connector.wallet.PayIdResolver;
 import org.interledger.connector.wallet.XrplInvoiceService;
@@ -39,7 +39,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.ConversionService;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 
 @Configuration
@@ -135,10 +134,9 @@ public class OpenPaymentsConfig {
   public InvoiceFactory invoiceFactory(
     PaymentPointerResolver paymentPointerResolver,
     PayIdResolver payIdPointerResolver,
-    Supplier<ConnectorSettings> connectorSettings,
-    Optional<String> opaUrlPath
+    Supplier<ConnectorSettings> connectorSettings
   ) {
-    return new InvoiceFactory(paymentPointerResolver, payIdPointerResolver, openPaymentsSettingsSupplier(connectorSettings), opaUrlPath);
+    return new InvoiceFactory(paymentPointerResolver, payIdPointerResolver, openPaymentsSettingsSupplier(connectorSettings));
   }
 
   @Bean

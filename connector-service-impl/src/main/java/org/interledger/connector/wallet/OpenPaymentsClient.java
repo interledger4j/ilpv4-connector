@@ -3,6 +3,7 @@ package org.interledger.connector.wallet;
 import static org.interledger.connector.opa.model.OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE;
 
 import org.interledger.connector.jackson.ObjectMapperFactory;
+import org.interledger.connector.opa.model.CreateInvoiceRequest;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
@@ -63,7 +64,7 @@ public interface OpenPaymentsClient {
   })
   Invoice createInvoice(
     @Param("accountId") String accountId,
-    Invoice invoice
+    CreateInvoiceRequest createInvoiceRequest
   ) throws ThrowableProblem;
 
   @RequestLine("GET accounts/{accountId}/invoices/{invoiceId}")

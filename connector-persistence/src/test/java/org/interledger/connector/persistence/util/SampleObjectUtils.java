@@ -1,6 +1,5 @@
 package org.interledger.connector.persistence.util;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.Denomination;
 import org.interledger.connector.opa.model.ImmutableInvoice;
@@ -8,10 +7,8 @@ import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.Payment;
 import org.interledger.connector.opa.model.PaymentId;
-import org.interledger.connector.opa.model.PaymentNetwork;
 
 import com.google.common.primitives.UnsignedLong;
-import okhttp3.HttpUrl;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -20,7 +17,7 @@ public final class SampleObjectUtils {
 
   public static ImmutableInvoice createNewIlpInvoice() {
     return Invoice.builder()
-      .accountId(AccountId.of("ricketycricket"))
+//      .accountId(AccountId.of("ricketycricket"))
       .amount(UnsignedLong.valueOf(1000))
       .assetCode("XRP")
       .assetScale((short) 9)
@@ -29,13 +26,13 @@ public final class SampleObjectUtils {
       .id(InvoiceId.of(UUID.randomUUID().toString()))
       .received(UnsignedLong.ZERO)
       .subject("$xpring.money/paymebruh")
-      .invoiceUrl(HttpUrl.get("https://xpring.money/paymebruh/invoices/1234"))
+//      .invoiceUrl(HttpUrl.get("https://xpring.money/paymebruh/invoices/1234"))
       .build();
   }
 
   public static ImmutableInvoice createNewXrpInvoice() {
     return Invoice.builder()
-      .accountId(AccountId.of("ricketycricket"))
+//      .accountId(AccountId.of("ricketycricket"))
       .amount(UnsignedLong.valueOf(1000))
       .assetCode("XRP")
       .assetScale((short) 9)
@@ -44,7 +41,7 @@ public final class SampleObjectUtils {
       .id(InvoiceId.of(UUID.randomUUID().toString()))
       .received(UnsignedLong.ZERO)
       .subject("paymebruh$xpring.money")
-      .invoiceUrl(HttpUrl.get("https://xpring.money/paymebruh/invoices/1234"))
+//      .invoiceUrl(HttpUrl.get("https://xpring.money/paymebruh/invoices/1234"))
       .build();
   }
 

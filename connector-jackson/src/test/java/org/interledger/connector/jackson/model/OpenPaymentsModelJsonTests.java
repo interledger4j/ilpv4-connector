@@ -70,7 +70,6 @@ public class OpenPaymentsModelJsonTests {
     UnsignedLong received = UnsignedLong.valueOf(158);
 
     Invoice invoice = Invoice.builder()
-      .id(InvoiceId.of(invoiceId))
       .assetCode(assetCode)
       .assetScale(assetScale)
       .amount(amount)
@@ -78,7 +77,6 @@ public class OpenPaymentsModelJsonTests {
       .subject(subject.toString())
       .description(description)
       .expiresAt(Instant.now().plusSeconds(30))
-      .accountId(AccountId.of("foo"))
       .build();
 
     String invoiceJson = objectMapper.writeValueAsString(invoice);

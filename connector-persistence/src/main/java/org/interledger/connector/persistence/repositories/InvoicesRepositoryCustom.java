@@ -19,11 +19,9 @@ public interface InvoicesRepositoryCustom {
 
   Invoice saveInvoice(Invoice invoice);
 
-  Optional<Invoice> findInvoiceByInvoiceIdAndAccountId(InvoiceId invoiceId, AccountId accountId);
+  Optional<Invoice> findInvoiceByInvoiceId(InvoiceId invoiceId);
 
-  Optional<Invoice> findInvoiceByInvoiceUrlAndAccountId(HttpUrl invoiceUrl, AccountId accountId);
-
-  List<Invoice> findAllInvoicesByInvoiceUrl(HttpUrl invoiceUrl);
+  Optional<Invoice> findInvoiceByCorrelationIdAndAccountId(CorrelationId correlationId, AccountId accountId);
 
   List<Invoice> findAllInvoicesByCorrelationId(CorrelationId correlationId);
 }

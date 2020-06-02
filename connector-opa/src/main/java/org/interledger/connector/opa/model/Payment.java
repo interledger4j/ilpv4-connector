@@ -1,6 +1,7 @@
 package org.interledger.connector.opa.model;
 
 import com.google.common.primitives.UnsignedLong;
+import okhttp3.HttpUrl;
 import org.immutables.value.Value;
 
 import java.math.BigInteger;
@@ -17,7 +18,14 @@ public interface Payment {
     return ImmutablePayment.builder();
   }
 
-  Optional<Long> invoicePrimaryKey();
+  /**
+   * Unique id for a payment. Locally unique by invoiceId.
+   *
+   * @return A {@link String} containing the unique identifier of this STREAM payment.
+   */
+  PaymentId paymentId();
+
+  Optional<InvoiceId> invoiceId();
 
   /**
    * Correlation id provided by external clients to correlate this stream payment to their systems. Not required and
@@ -26,35 +34,6 @@ public interface Payment {
    * @return
    */
   CorrelationId correlationId();
-
-  /**
-   * Unique id for a payment. Locally unique by invoiceId.
-   *
-   * @return A {@link String} containing the unique identifier of this STREAM payment.
-   */
-  PaymentId paymentId();
-
-  /**
-   * Last time stream payment was modified, typically as a result of packets being aggregated or a status change.
-   *
-   * /** When first packet on stream payment was received and aggregated into this payment
-   *
-   * @return An {@link Instant}.
-   */
-  @Value.Default
-  default Instant createdAt() {
-    return Instant.now();
-  };
-
-  /**
-   * Last time stream payment was modified, typically as a result of packets being aggregated or a status change.
-   *
-   * @return An {@link Instant}.
-   */
-  @Value.Default
-  default Instant modifiedAt() {
-    return Instant.now();
-  };
 
   /**
    * Source address that initiated the payment. Optional because in the case of payments received, the source address
@@ -84,5 +63,27 @@ public interface Payment {
    * @return A {@link Denomination}.
    */
   Denomination denomination();
+
+  /**
+   * Last time stream payment was modified, typically as a result of packets being aggregated or a status change.
+   *
+   * /** When first packet on stream payment was received and aggregated into this payment
+   *
+   * @return An {@link Instant}.
+   */
+  @Value.Default
+  default Instant createdAt() {
+    return Instant.now();
+  };
+
+  /**
+   * Last time stream payment was modified, typically as a result of packets being aggregated or a status change.
+   *
+   * @return An {@link Instant}.
+   */
+  @Value.Default
+  default Instant modifiedAt() {
+    return Instant.now();
+  };
 
 }

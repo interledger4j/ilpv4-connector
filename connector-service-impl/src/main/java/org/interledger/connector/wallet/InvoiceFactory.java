@@ -1,14 +1,18 @@
 package org.interledger.connector.wallet;
 
+import org.interledger.connector.accounts.AccountNotFoundProblem;
+import org.interledger.connector.accounts.AccountSettings;
+import org.interledger.connector.opa.model.CreateInvoiceRequest;
+import org.interledger.connector.opa.model.ImmutableInvoice;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PayId;
+import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
 
 import okhttp3.HttpUrl;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -21,37 +25,30 @@ public class InvoiceFactory {
 
   private final OpenPaymentsSettings openPaymentsSettings;
 
-  private final Optional<String> opaUrlPath;
-
   public InvoiceFactory(
     PaymentPointerResolver paymentPointerResolver,
     PayIdResolver payIdResolver,
-    Supplier<OpenPaymentsSettings> openPaymentsSettings,
-    Optional<String> opaUrlPath
+    Supplier<OpenPaymentsSettings> openPaymentsSettings
   ) {
     this.paymentPointerResolver = paymentPointerResolver;
     this.payIdResolver = payIdResolver;
     this.openPaymentsSettings = openPaymentsSettings.get();
-    this.opaUrlPath = opaUrlPath;
   }
 
   /**
-   * Populate the URL of an invoice.  This MUST be called before creating an {@link Invoice} in the database.
+   * Populate the account URL of an invoice, which will populate the invoiceUrl and accountId of an invoice.
+   * This MUST be called before creating an {@link Invoice} in the database.
    *
-   * @param initialInvoice An {@link Invoice} without a URL.
+   * @param createInvoiceRequest An {@link Invoice} without a URL.
    * @return An {@link Invoice} with a URL.
    */
-  public Invoice construct(Invoice initialInvoice) {
-    if (initialInvoice.invoiceUrl().isPresent()) {
-      return initialInvoice;
-    }
-
+  public Invoice construct(CreateInvoiceRequest createInvoiceRequest) {
     HttpUrl identifierUrl;
     try {
-      identifierUrl = paymentPointerResolver.resolveHttpUrl(PaymentPointer.of(initialInvoice.subject()));
+      identifierUrl = paymentPointerResolver.resolveHttpUrl(PaymentPointer.of(createInvoiceRequest.subject()));
     } catch (IllegalArgumentException e) {
       // Subject is a PayID
-      String payIdString = initialInvoice.subject();
+      String payIdString = createInvoiceRequest.subject();
       if (!payIdString.startsWith("payid:")) {
         payIdString = "payid:" + payIdString;
       }
@@ -62,27 +59,13 @@ public class InvoiceFactory {
     // largely for testing reasons since we may need to override and start on http instead of https
     identifierUrl = identifierUrl.newBuilder().scheme(openPaymentsSettings.metadata().defaultScheme()).build();
 
-    // FIXME: Just tack on /invoices/{invoiceId} to the resolved payment identifier.  This requires our payment
-    //  identifiers to start with /accounts
-    // Only want the account part of the payment pointer path
-    String paymentPointerPath = identifierUrl.pathSegments().stream().reduce("", (s, s2) -> s + "/" + s2);
-    if (paymentPointerPath.startsWith("/")) {
-      paymentPointerPath = paymentPointerPath.substring(1);
-    }
-    String paymentTarget = PaymentDetailsUtils.getPaymentTarget(paymentPointerPath, this.opaUrlPath);
-
-    HttpUrl invoiceUrl = new HttpUrl.Builder()
-      .scheme(identifierUrl.scheme())
-      .host(identifierUrl.host())
-      .port(identifierUrl.port())
-      .addPathSegment("accounts")
-      .addPathSegment(paymentTarget)
-      .addPathSegment("invoices")
-      .addPathSegment(initialInvoice.id().value())
-      .build();
-
-    return Invoice.builder().from(initialInvoice)
-      .invoiceUrl(invoiceUrl)
+    return Invoice.builder()
+      .account(identifierUrl)
+      .subject(createInvoiceRequest.subject())
+      .assetCode(createInvoiceRequest.assetCode())
+      .assetScale(createInvoiceRequest.assetScale())
+      .assetScale((short) 9)
+      .amount(createInvoiceRequest.amount())
       .build();
   }
 }

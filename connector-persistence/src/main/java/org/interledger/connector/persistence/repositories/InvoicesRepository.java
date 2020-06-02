@@ -22,36 +22,25 @@ public interface InvoicesRepository extends CrudRepository<InvoiceEntity, Long>,
    * Find an {@link InvoiceEntity} by its natural identifier (i.e., the invoiceId as a String).
    *
    * @param invoiceId A {@link String} corresponding to {@link InvoiceEntity#getInvoiceId()}.
-   *
-   * @param accountId
    * @return the {@link InvoiceEntity} if present.
    */
-  Optional<InvoiceEntity> findByInvoiceIdAndAccountId(String invoiceId, String accountId);
+  Optional<InvoiceEntity> findByInvoiceId(String invoiceId);
 
   /**
    * Find an {@link InvoiceEntity} by its natural identifier (i.e., the invoiceId as a String).
    *
    * @param invoiceId A {@link InvoiceId} corresponding to {@link InvoiceEntity#getInvoiceId()}.
-   *
-   * @param accountId
    * @return the {@link InvoiceEntity} if present.
    */
-  default Optional<InvoiceEntity> findByInvoiceIdAndAccountId(InvoiceId invoiceId, AccountId accountId) {
-    return findByInvoiceIdAndAccountId(invoiceId.value(), accountId.value());
+  default Optional<InvoiceEntity> findByInvoiceId(InvoiceId invoiceId) {
+    return findByInvoiceId(invoiceId.value());
   }
 
-  Optional<InvoiceEntity> findByInvoiceUrlAndAccountId(String invoiceUrl, String accountId);
+  Optional<InvoiceEntity> findByCorrelationIdAndAccountId(String correlationId, String accountId);
 
-  default Optional<InvoiceEntity> findByInvoiceUrlAndAccountId(HttpUrl invoiceUrl, AccountId accountId) {
-    return findByInvoiceUrlAndAccountId(invoiceUrl.toString(), accountId.value());
-  }
-
-  List<InvoiceEntity> findAllByInvoiceUrl(String invoiceUrl);
-
-  default List<InvoiceEntity> findAllByInvoiceUrl(HttpUrl invoiceUrl) {
-    return findAllByInvoiceUrl(invoiceUrl.toString());
-  }
-
+  default Optional<InvoiceEntity> findByCorrelationIdAndAccountId(CorrelationId correlationId, AccountId accountId) {
+    return findByCorrelationIdAndAccountId(correlationId.value(), accountId.value());
+  };
 
   List<InvoiceEntity> findAllByCorrelationId(String correlationId);
 

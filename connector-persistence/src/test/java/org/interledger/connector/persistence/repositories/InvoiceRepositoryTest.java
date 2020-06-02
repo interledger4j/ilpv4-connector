@@ -37,45 +37,6 @@ public class InvoiceRepositoryTest {
   @Autowired
   private InvoicesRepository invoicesRepository;
 
-  @Test
-  public void saveAndGetIlpInvoice() {
-    Invoice invoice = SampleObjectUtils.createNewIlpInvoice();
-    saveAndGetInvoice(invoice);
-  }
-
-  @Test
-  public void saveAndGetXrpInvoice() {
-    Invoice invoice = SampleObjectUtils.createNewXrpInvoice();
-    saveAndGetInvoice(invoice);
-  }
-
-  @Test
-  public void saveAndGetIlpInvoiceWithWrongAccountIdYieldsEmpty() {
-    Invoice invoice = SampleObjectUtils.createNewIlpInvoice();
-    Invoice saved = invoicesRepository.saveInvoice(invoice);
-    Optional<InvoiceEntity> fetched = invoicesRepository
-      .findByInvoiceIdAndAccountId(invoice.id(), AccountId.of(invoice.accountId() + "fakeAccount"));
-    assertThat(fetched).isEmpty();
-  }
-
-  @Test
-  public void saveAndGetInvoiceByUrl() {
-    Invoice invoice = SampleObjectUtils.createNewIlpInvoice();
-    Invoice saved = invoicesRepository.saveInvoice(invoice);
-    assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(invoice,
-      "id", "createdAt", "updatedAt");
-
-    Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceUrlAndAccountId(invoice.invoiceUrl().get(), saved.accountId());
-    assertThat(fetched).isNotEmpty().get().isEqualTo(saved);
-  }
-
-  private void saveAndGetInvoice(Invoice invoice) {
-    Invoice saved = invoicesRepository.saveInvoice(invoice);
-    assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(invoice,
-      "id", "createdAt", "updatedAt");
-    Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceIdAndAccountId(invoice.id(), saved.accountId());
-    assertThat(fetched).isNotEmpty().get().isEqualTo(saved);
-  }
 
   @Configuration("application.yml")
   public static class TestPersistenceConfig {

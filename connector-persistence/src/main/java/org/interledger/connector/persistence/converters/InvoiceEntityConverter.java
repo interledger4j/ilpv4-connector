@@ -1,10 +1,8 @@
 package org.interledger.connector.persistence.converters;
 
-import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.CorrelationId;
-import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 
 import com.google.common.primitives.UnsignedLong;
@@ -19,21 +17,19 @@ public class InvoiceEntityConverter implements Converter<InvoiceEntity, Invoice>
   @Override
   public Invoice convert(InvoiceEntity invoiceEntity) {
     return Invoice.builder()
-      .primaryKey(invoiceEntity.getId())
-      .accountId(AccountId.of(invoiceEntity.getAccountId()))
-      .amount(UnsignedLong.valueOf(invoiceEntity.getAmount()))
+      .account(HttpUrl.get(invoiceEntity.getAccountUrl()))
+      .invoiceUrl(HttpUrl.get(invoiceEntity.getInvoiceUrl()))
+      .originalInvoiceUrl(HttpUrl.get(invoiceEntity.getOriginalInvoiceUrl()))
+      .subject(invoiceEntity.getSubject())
+      .correlationId(CorrelationId.of(invoiceEntity.getCorrelationId()))
       .assetCode(invoiceEntity.getAssetCode())
       .assetScale((short) invoiceEntity.getAssetScale())
-      .createdAt(Optional.ofNullable(invoiceEntity.getCreatedDate()).orElse(Instant.now()))
-      .description(invoiceEntity.getDescription())
+      .amount(UnsignedLong.valueOf(invoiceEntity.getAmount()))
       .expiresAt(invoiceEntity.getExpiresAt())
-      .finalizedAt(invoiceEntity.getFinalizedAt())
-      .id(InvoiceId.of(invoiceEntity.getInvoiceId()))
-      .correlationId(CorrelationId.of(invoiceEntity.getCorrelationId()))
+      .description(invoiceEntity.getDescription())
+      .createdAt(Optional.ofNullable(invoiceEntity.getCreatedDate()).orElse(Instant.now()))
       .received(UnsignedLong.valueOf(invoiceEntity.getReceived()))
-      .subject(invoiceEntity.getSubject())
       .updatedAt(Optional.ofNullable(invoiceEntity.getModifiedDate()).orElse(Instant.now()))
-      .invoiceUrl(HttpUrl.parse(invoiceEntity.getInvoiceUrl()))
       .build();
   }
 }

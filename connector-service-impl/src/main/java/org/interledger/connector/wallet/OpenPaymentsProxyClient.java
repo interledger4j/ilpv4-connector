@@ -3,6 +3,7 @@ package org.interledger.connector.wallet;
 import static org.interledger.connector.opa.model.OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE;
 
 import org.interledger.connector.jackson.ObjectMapperFactory;
+import org.interledger.connector.opa.model.CreateInvoiceRequest;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 
@@ -56,7 +57,7 @@ public interface OpenPaymentsProxyClient {
   })
   Invoice createInvoice(
     URI invoiceEndpoint,
-    Invoice invoice
+    CreateInvoiceRequest createInvoiceRequest
   ) throws ThrowableProblem;
 
   @RequestLine("GET /")

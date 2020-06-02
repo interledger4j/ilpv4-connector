@@ -1,7 +1,6 @@
 package org.interledger.connector.opa.model;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.spsp.PaymentPointer;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -33,47 +32,71 @@ public interface Invoice {
   }
 
   /**
-   * The true unique identifier of this {@link Invoice}. If sender and receiver on the same OPS, or multiple
-   * senders pay the same invoice from the same OPS, there could be multiple copies of an {@link Invoice} with the same
-   * {@link Invoice#id()}.
-   *
-   * @return A unique identifier for this {@link Invoice}.
-   */
-  @JsonIgnore
-  @Value.Default
-  default Long primaryKey() {
-    return 0L;
-  };
-
-  /**
    * The location of this {@link Invoice}, specified by an HTTP URL.
    *
    * Optional for invoice creation requests, but MUST be populated once created.
    *
    * @return The unique {@link HttpUrl} of this {@link Invoice}.
    */
-  @JsonProperty("name")
-  Optional<HttpUrl> invoiceUrl();
-
-  /**
-   * The identifier of this {@link Invoice}. If sender and receiver on the same OPS, or multiple
-   * senders pay the same invoice from the same OPS, there could be multiple copies of an {@link Invoice} with the same
-   * {@link Invoice#id()}.
-   *
-   * Defaults to a random UUID.
-   *
-   * @return The {@link UUID} of this {@link Invoice}.
-   */
+  @JsonProperty("id")
   @Value.Default
-  default InvoiceId id() {
-    return InvoiceId.of(UUID.randomUUID().toString());
+  default HttpUrl invoiceUrl() {
+    return account().newBuilder()
+          .addPathSegment("invoices")
+          .addPathSegment(UUID.randomUUID().toString())
+          .build();
+  }
+
+  @JsonIgnore
+  @Value.Default
+  default HttpUrl originalInvoiceUrl() {
+    return invoiceUrl();
   }
 
   /**
-   * Some form of this {@link Invoice}'s {@link Invoice#id()} such that it can be attached to a payment to later
+   * Unique identifier of the invoice.  Even sender copies of an invoice will have different InvoiceIds.
+   *
+   * If invoiceUrl is present, id will be derived from it
+   * @return
+   */
+  @JsonIgnore
+  @Value.Derived
+  default InvoiceId id() {
+    return InvoiceId.of(invoiceUrl().pathSegments().get(invoiceUrl().pathSegments().size() - 1));
+  }
+
+  @JsonProperty("account")
+  HttpUrl account();
+
+  /**
+   * The account ID of the creator of this invoice.
+   *
+   * For ILP invoices, this will be the {@link String} form of an AccountId. For other payment networks,
+   * this may be the account ID of a wallet holder.
+   *
+   * @return A {@link String} representing the account ID of the user who created this invoice.
+   */
+  @JsonIgnore
+  @Value.Derived
+  default AccountId accountId() {
+    String account = account().toString();
+    String cleanAccountUrl = account.endsWith("/") ? account.substring(account.length() - 1) : account;
+    return AccountId.of(cleanAccountUrl.substring(cleanAccountUrl.lastIndexOf("/") + 1));
+  }
+
+  /**
+   * The identifier of the receiver of the funds from this invoice. For ILP payments this will be a Payment Pointer.
+   * For XRP payments, this will likely be an XRP address or PayID.
+   *
+   * @return A {@link String} representing the identifier of the receiver of this invoice.
+   */
+  String subject();
+
+  /**
+   * Some form of this {@link Invoice}'s {@link Invoice#invoiceUrl()} such that it can be attached to a payment to later
    * correlate the payment to this {@link Invoice}.
    *
-   * Defaults to a SHA-256 hash of {@link Invoice#id()}.
+   * Defaults to a SHA-256 hash of {@link Invoice#invoiceUrl()}.
    *
    * @return A {@link CorrelationId} containing an identifier which can be included in a payment to correlate it to this
    *  {@link Invoice}.
@@ -81,9 +104,9 @@ public interface Invoice {
   @Value.Default
   default CorrelationId correlationId() {
     HashCode hashCode = Hashing.sha256()
-      .hashString(id().value(), StandardCharsets.UTF_8);
+      .hashString(originalInvoiceUrl().toString(), StandardCharsets.UTF_8);
     return CorrelationId.of(hashCode.toString());
-  };
+  }
 
   /**
    * Currency code or other asset identifier that this invoice is denominated in.
@@ -121,31 +144,6 @@ public interface Invoice {
   short assetScale();
 
   /**
-   * The account ID of the creator of this invoice.
-   *
-   * For ILP invoices, this will be the {@link String} form of an AccountId. For other payment networks,
-   * this may be the account ID of a wallet holder.
-   *
-   * @return A {@link String} representing the account ID of the user who created this invoice.
-   */
-  @Value.Default
-  default AccountId accountId() {
-    // FIXME: We don't have to default this value once we derive creation URL from the payment pointer
-    try {
-      PaymentPointer paymentPointerSubject = PaymentPointer.of(subject());
-      return AccountId.of(paymentPointerSubject.path().substring(paymentPointerSubject.path().lastIndexOf("/") + 1));
-    } catch (IllegalArgumentException e) {
-      // subject is a PayID
-      String payIdString = subject();
-      if (!payIdString.startsWith("payid:")) {
-        payIdString = "payid:" + payIdString;
-      }
-      PayId payId = PayId.of(payIdString);
-      return AccountId.of(payId.account());
-    }
-  };
-
-  /**
    * The amount that should be paid to this invoice, denominated in {@code assetCode()} and {@code assetScale()}.
    *
    * An invoice has not been fully paid until {@code received()} equals {@code amount()}.
@@ -165,14 +163,6 @@ public interface Invoice {
   default UnsignedLong received() {
     return UnsignedLong.ZERO;
   };
-
-  /**
-   * The identifier of the receiver of the funds from this invoice. For ILP payments this will be a Payment Pointer.
-   * For XRP payments, this will likely be an XRP address or PayID.
-   *
-   * @return A {@link String} representing the identifier of the receiver of this invoice.
-   */
-  String subject();
 
   /**
    * Invoices can no longer be paid after this time.
@@ -220,16 +210,4 @@ public interface Invoice {
   default boolean isPaid() {
     return amount().longValue() <= received().longValue();
   }
-
-  /**
-   * Represents the {@link Instant} in time when this invoice was finalized.
-   *
-   * An invoice is finalized when it is paid in full.
-   *
-   * @return The {@link Instant} when the invoice was finalized.
-   */
-  @JsonIgnore
-  @Nullable
-  Instant finalizedAt();
-
 }

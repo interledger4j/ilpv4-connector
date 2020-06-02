@@ -1,8 +1,11 @@
 package org.interledger.connector.persistence.repositories;
 
 import org.interledger.connector.opa.model.CorrelationId;
+import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.Payment;
 import org.interledger.connector.opa.model.PaymentId;
+
+import okhttp3.HttpUrl;
 
 import java.util.Optional;
 
@@ -15,5 +18,5 @@ public interface PaymentsRepositoryCustom {
 
   Payment savePayment(Payment payment);
 
-  Optional<Payment> findPaymentByPaymentIdAndInvoicePrimaryKey(PaymentId paymentId, Long invoicePrimaryKey);
+  Optional<Payment> findPaymentByPaymentIdAndInvoiceId(PaymentId paymentId, InvoiceId invoiceId);
 }

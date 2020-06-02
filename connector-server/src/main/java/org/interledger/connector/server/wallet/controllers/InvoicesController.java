@@ -7,11 +7,11 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.InvoiceService;
+import org.interledger.connector.opa.model.CreateInvoiceRequest;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.OpenPaymentsMediaType;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
@@ -34,12 +34,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.zalando.problem.spring.common.MediaTypes;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 @RestController
 @ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = OPEN_PAYMENTS_ENABLED, havingValue = TRUE)
@@ -47,20 +45,17 @@ public class InvoicesController {
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private InvoiceService<StreamPayment, IlpPaymentDetails> ilpInvoiceService;
-  private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
 
   public InvoicesController(
-    final InvoiceService<StreamPayment, IlpPaymentDetails> ilpInvoiceService,
-    final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier
+    final InvoiceService<StreamPayment, IlpPaymentDetails> ilpInvoiceService
   ) {
     this.ilpInvoiceService = Objects.requireNonNull(ilpInvoiceService);
-    this.openPaymentsSettingsSupplier = Objects.requireNonNull(openPaymentsSettingsSupplier);
   }
 
   /**
    * Create an {@link Invoice} on the Open Payments server.
    *
-   * @param invoice An {@link Invoice} to create on the Open Payments server.
+   * @param invoiceRequest An {@link Invoice} to create on the Open Payments server.
    * @return A 201 Created if successful, and the fully populated {@link Invoice} which was stored.
    */
   @RequestMapping(
@@ -70,12 +65,12 @@ public class InvoicesController {
   )
   public @ResponseBody ResponseEntity<Invoice> createInvoice(
     @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) AccountId accountId,
-    @RequestBody Invoice invoice
+    @RequestBody CreateInvoiceRequest invoiceRequest
   ) {
-    Invoice createdInvoice = ilpInvoiceService.createInvoice(invoice, accountId);
+    Invoice createdInvoice = ilpInvoiceService.createInvoice(invoiceRequest, accountId);
 
     final HttpHeaders headers = new HttpHeaders();
-    headers.setLocation(getInvoiceLocation(invoice.id()));
+    headers.setLocation(createdInvoice.invoiceUrl().uri());
     return new ResponseEntity(createdInvoice, headers, HttpStatus.CREATED);
   }
 
@@ -124,13 +119,13 @@ public class InvoicesController {
     @RequestHeader("Accept") String acceptHeader
   ) {
     final HttpHeaders headers = new HttpHeaders();
-    headers.setLocation(getInvoiceLocation(invoiceId));
 
     if (acceptHeader.equals(OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE)) {
       IlpPaymentDetails paymentDetails = ilpInvoiceService.getPaymentDetails(invoiceId, accountId);
       return new ResponseEntity(paymentDetails, headers, HttpStatus.OK);
     }
     Invoice invoice = ilpInvoiceService.getInvoice(invoiceId, accountId);
+    headers.setLocation(invoice.invoiceUrl().uri());
     return new ResponseEntity(invoice, headers, HttpStatus.OK);
   }
 
@@ -160,16 +155,5 @@ public class InvoicesController {
     @RequestBody Optional<PayInvoiceRequest> payInvoiceRequest
   ) {
     return ilpInvoiceService.payInvoice(invoiceId, accountId, payInvoiceRequest);
-  }
-
-  private URI getInvoiceLocation(InvoiceId invoiceId) {
-    return openPaymentsSettingsSupplier
-      .get()
-      .metadata()
-      .invoicesEndpoint()
-      .newBuilder()
-      .addPathSegment(invoiceId.toString())
-      .build()
-      .uri();
   }
 }

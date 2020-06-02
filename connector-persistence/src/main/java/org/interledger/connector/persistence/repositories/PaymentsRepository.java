@@ -1,9 +1,11 @@
 package org.interledger.connector.persistence.repositories;
 
+import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.Payment;
 import org.interledger.connector.opa.model.PaymentId;
 import org.interledger.connector.persistence.entities.PaymentEntity;
 
+import okhttp3.HttpUrl;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,9 +17,9 @@ import java.util.Optional;
 @Repository
 public interface PaymentsRepository extends CrudRepository<PaymentEntity, Long>, PaymentsRepositoryCustom {
 
-  Optional<PaymentEntity> findByPaymentIdAndInvoicePrimaryKey(String paymentId, Long invoicePrimaryKey);
+  Optional<PaymentEntity> findByPaymentIdAndInvoiceId(String paymentId, String invoiceId);
 
-  default Optional<PaymentEntity> findByPaymentIdAndInvoicePrimaryKey(PaymentId paymentId, Long invoicePrimaryKey) {
-    return findByPaymentIdAndInvoicePrimaryKey(paymentId.value(), invoicePrimaryKey);
+  default Optional<PaymentEntity> findByPaymentIdAndInvoiceId(PaymentId paymentId, InvoiceId invoiceId) {
+    return findByPaymentIdAndInvoiceId(paymentId.value(), invoiceId.toString());
   };
 }

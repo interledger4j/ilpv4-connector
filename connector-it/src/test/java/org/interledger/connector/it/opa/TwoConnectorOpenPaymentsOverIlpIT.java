@@ -20,9 +20,9 @@ import org.interledger.connector.it.markers.OpenPayments;
 import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerIlpOverHttpTopology;
 import org.interledger.connector.it.topology.AbstractBaseTopology;
 import org.interledger.connector.it.topology.Topology;
+import org.interledger.connector.opa.model.CreateInvoiceRequest;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.core.InterledgerAddress;
@@ -99,8 +99,6 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   public void peterCreatesInvoiceForHimselfOnBob() {
     Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
     assertThat(createdInvoice.invoiceUrl())
-      .isNotEmpty()
-      .get()
       .isEqualTo(HttpUrl.get("http://localhost:8081/accounts/peter/invoices/" + createdInvoice.id().value()));
     assertThat(createdInvoice.accountId())
       .isEqualTo(PETER_ACCOUNT);
@@ -110,15 +108,14 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   public void paulCreatesInvoiceForPeterOnBobViaAlice() {
     Invoice createdInvoice = createInvoiceForPeter(aliceClient, PAUL);
     assertThat(createdInvoice.invoiceUrl())
-      .isNotEmpty()
-      .get()
       .isEqualTo(HttpUrl.get("http://localhost:8081/accounts/peter/invoices/" + createdInvoice.id().value()));
     assertThat(createdInvoice.accountId())
-      .isEqualTo(PAUL_ACCOUNT);
+      .isEqualTo(PETER_ACCOUNT);
     Invoice invoiceOnBob = bobClient.getInvoice(PETER, createdInvoice.id().value());
     assertThat(invoiceOnBob.accountId())
       .isEqualTo(PETER_ACCOUNT);
   }
+
 
   @Test
   public void peterGetsHisOwnInvoiceOnBob() {
@@ -132,14 +129,15 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   public void paulSyncsInvoiceForPeterOnAliceFromBob() {
     Invoice petersInvoiceOnBob = createInvoiceForPeter(bobClient, PETER);
 
-    Invoice synced = aliceClient.getOrSyncInvoice(PAUL, petersInvoiceOnBob.invoiceUrl().get().toString());
+    Invoice synced = aliceClient.getOrSyncInvoice(PAUL, petersInvoiceOnBob.invoiceUrl().toString());
     assertThat(petersInvoiceOnBob)
-      .isEqualToIgnoringGivenFields(synced, "accountId", "createdAt", "updatedAt");
+      .isEqualToIgnoringGivenFields(synced, "accountId", "id", "account", "invoiceUrl", "originalInvoiceUrl", "createdAt", "updatedAt");
     assertThat(petersInvoiceOnBob.accountId())
       .isEqualTo(PETER_ACCOUNT);
     assertThat(synced.accountId())
       .isEqualTo(PAUL_ACCOUNT);
   }
+
 
   @Test
   public void getPeterInvoicePaymentDetailsOnBob() {
@@ -149,10 +147,11 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
     assertThat(paymentDetails.destinationAddress().getValue()).startsWith("test.bob.spsp.peter");
   }
 
+
   @Test
   public void getPeterInvoicePaymentDetailsViaAliceOnBob() {
     Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
-    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, createdInvoice.invoiceUrl().get().toString());
+    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, createdInvoice.invoiceUrl().toString());
     IlpPaymentDetails paymentDetails = aliceClient.getIlpInvoicePaymentDetails(syncedInvoice.accountId().value(), syncedInvoice.id().value());
 
     assertThat(paymentDetails.destinationAddress().getValue()).startsWith("test.bob.spsp.peter");
@@ -162,7 +161,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   public void paulPaysInvoiceForPeterViaAliceOnBob() {
     Invoice createdInvoiceOnBob = createInvoiceForPeter(bobClient, PETER);
 
-    Invoice createdInvoiceOnAlice = aliceClient.getOrSyncInvoice(PAUL, createdInvoiceOnBob.invoiceUrl().get().toString());
+    Invoice createdInvoiceOnAlice = aliceClient.getOrSyncInvoice(PAUL, createdInvoiceOnBob.invoiceUrl().toString());
     StreamPayment payment = aliceClient.payInvoice(
       createdInvoiceOnAlice.accountId().value(),
       createdInvoiceOnAlice.id().value(),
@@ -179,17 +178,17 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
 
   @Test
   public void paulPaysInvoiceForEddyAllOnAlice() throws InterruptedException {
-    Invoice invoice = Invoice.builder()
-      .accountId(EDDY_ACCOUNT)
+    CreateInvoiceRequest createInvoiceRequest = CreateInvoiceRequest.builder()
       .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
       .assetScale(Denominations.XRP_MILLI_DROPS.assetScale())
       .amount(UnsignedLong.valueOf(100))
-      .subject("$localhost:8080/eddy")
+      .subject("$localhost:8080/accounts/eddy")
       .build();
-    Invoice eddyInvoiceOnAlice = aliceClient.createInvoice(EDDY, invoice);
-    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, eddyInvoiceOnAlice.invoiceUrl().get().toString());
+
+    Invoice eddyInvoiceOnAlice = aliceClient.createInvoice(EDDY, createInvoiceRequest);
+    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, eddyInvoiceOnAlice.invoiceUrl().toString());
     assertThat(eddyInvoiceOnAlice)
-      .isEqualToIgnoringGivenFields(syncedInvoice, "accountId", "createdAt", "updatedAt");
+      .isEqualToIgnoringGivenFields(syncedInvoice, "accountId", "id", "account", "invoiceUrl", "originalInvoiceUrl", "createdAt", "updatedAt");
     assertThat(eddyInvoiceOnAlice.accountId())
       .isEqualTo(EDDY_ACCOUNT);
     assertThat(syncedInvoice.accountId())
@@ -204,29 +203,30 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
     assertThat(payment.amount().abs()).isEqualTo(syncedInvoice.amount().bigIntegerValue());
     assertThat(payment.deliveredAmount()).isEqualTo(eddyInvoiceOnAlice.amount());
 
-    // Let the payment system event out and the OP system to update
+    // Let the payment system event out and the OP system update
     Thread.sleep(5000);
 
     Invoice eddysViewOfTheInvoice = aliceClient.getInvoice(EDDY, eddyInvoiceOnAlice.id().value());
     Invoice paulsViewOfTheInvoice = aliceClient.getInvoice(PAUL, syncedInvoice.id().value());
 
     assertThat(eddysViewOfTheInvoice)
-      .isEqualToIgnoringGivenFields(paulsViewOfTheInvoice, "accountId" ,"createdAt", "updatedAt");
+      .isEqualToIgnoringGivenFields(paulsViewOfTheInvoice, "accountId", "id", "account", "invoiceUrl", "originalInvoiceUrl", "createdAt", "updatedAt");
     assertThat(eddysViewOfTheInvoice.received()).isEqualTo(eddysViewOfTheInvoice.amount());
     assertThat(paulsViewOfTheInvoice.received()).isEqualTo(paulsViewOfTheInvoice.amount());
+
+    getLogger().info("Eddy's view of the invoice: " + eddysViewOfTheInvoice);
+    getLogger().info("Paul's view of the invoice: " + paulsViewOfTheInvoice);
   }
 
   private Invoice createInvoiceForPeter(OpenPaymentsClient client, String accountId) {
-    Invoice invoice = Invoice.builder()
-      .accountId(PETER_ACCOUNT)
+    CreateInvoiceRequest invoiceRequest = CreateInvoiceRequest.builder()
+      .amount(UnsignedLong.valueOf(100))
       .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
       .assetScale(Denominations.XRP_MILLI_DROPS.assetScale())
-      .amount(UnsignedLong.valueOf(100))
-      .description("IT payment")
-      .subject("$localhost:8081/peter")
+      .subject("$localhost:8081/accounts/peter")
       .build();
 
-    return client.createInvoice(accountId, invoice);
+    return client.createInvoice(accountId, invoiceRequest);
   }
 
   @Override

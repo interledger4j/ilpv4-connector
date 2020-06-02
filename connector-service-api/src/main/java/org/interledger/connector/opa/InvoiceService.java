@@ -2,6 +2,7 @@ package org.interledger.connector.opa;
 
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.opa.model.CreateInvoiceRequest;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
@@ -39,11 +40,11 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
   /**
    * Create a new invoice at the invoices URL resolved from {@code invoice#subject()}.
    *
-   * @param invoice The {@link Invoice} to create.
+   * @param invoiceRequest The {@link Invoice} to create.
    * @param accountId The {@link AccountId} that should be associated with the created {@link Invoice}.
    * @return The {@link Invoice} that was created.
    */
-  Invoice createInvoice(final Invoice invoice, final AccountId accountId);
+  Invoice createInvoice(final CreateInvoiceRequest invoiceRequest, final AccountId accountId);
 
   /**
    * Update an existing {@link Invoice}.
