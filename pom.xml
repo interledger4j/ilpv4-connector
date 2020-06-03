@@ -76,6 +76,7 @@
     <module>openpayments-model</module>
     <module>openpayments-service-api</module>
     <module>openpayments-service-impl</module>
+    <module>openpayments-xumm</module>
   </modules>
 
   <profiles>

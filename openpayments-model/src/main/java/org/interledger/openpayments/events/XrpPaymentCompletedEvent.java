@@ -1,6 +1,7 @@
 package org.interledger.openpayments.events;
 
 import org.interledger.connector.opa.model.XrpPayment;
+import org.interledger.connector.opa.model.XrplTransaction;
 
 import org.immutables.value.Value;
 

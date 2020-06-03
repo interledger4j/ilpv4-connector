@@ -17,13 +17,11 @@ import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.persistence.repositories.PaymentsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
-import org.interledger.connector.wallet.DefaultRemoteInvoiceService;
 import org.interledger.connector.wallet.IlpInvoiceService;
 import org.interledger.connector.wallet.IlpPaymentSystemFacade;
 import org.interledger.connector.wallet.InvoiceFactory;
 import org.interledger.connector.wallet.OpenPaymentsProxyClient;
 import org.interledger.connector.wallet.PayIdResolver;
-import org.interledger.connector.wallet.RemoteInvoiceService;
 import org.interledger.connector.wallet.XrplInvoiceService;
 import org.interledger.connector.wallet.mandates.DefaultMandateAccrualService;
 import org.interledger.connector.wallet.mandates.InMemoryMandateService;
@@ -33,9 +31,7 @@ import org.interledger.spsp.PaymentPointerResolver;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;
-import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -107,8 +103,8 @@ public class OpenPaymentsConfig {
       invoiceFactory,
       openPaymentsProxyClient,
       openPaymentsSettingsSupplier,
-      eventBus
-    );
+      eventBus,
+      ilpPaymentSystemFacade);
   }
 
   @Bean
@@ -155,11 +151,6 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
-  public RemoteInvoiceService remoteInvoiceService(OkHttpClient okHttpClient, ObjectMapper objectMapper) {
-    return new DefaultRemoteInvoiceService(okHttpClient, objectMapper);
-  }
-
-  @Bean
   public MandateAccrualService mandateAccrualService(Clock clock) {
     return new DefaultMandateAccrualService(clock);
   }
@@ -167,9 +158,10 @@ public class OpenPaymentsConfig {
   @Bean
   public MandateService mandateService(
     MandateAccrualService mandateAccrualService,
-    RemoteInvoiceService remoteInvoiceService,
-    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier) {
-    return new InMemoryMandateService(mandateAccrualService, remoteInvoiceService, openPaymentsSettingsSupplier);
+    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
+    InvoiceService<StreamPayment, IlpPaymentDetails> ilpInvoiceService,
+    InvoiceService<XrpPayment, XrpPaymentDetails> xrpInvoiceService) {
+    return new InMemoryMandateService(mandateAccrualService, ilpInvoiceService, xrpInvoiceService, openPaymentsSettingsSupplier);
   }
 
 }

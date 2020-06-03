@@ -1,6 +1,4 @@
-package org.interledger.openpayments.events;
-
-import org.interledger.connector.opa.model.Denomination;
+package org.interledger.connector.opa.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

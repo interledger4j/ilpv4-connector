@@ -1,18 +1,23 @@
 package org.interledger.connector.wallet.mandates;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.model.Charge;
 import org.interledger.connector.opa.model.ChargeId;
 import org.interledger.connector.opa.model.ChargeStatus;
+import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.Mandate;
 import org.interledger.connector.opa.model.MandateId;
 import org.interledger.connector.opa.model.NewCharge;
 import org.interledger.connector.opa.model.NewMandate;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.PayInvoiceRequest;
+import org.interledger.connector.opa.model.XrpPayment;
+import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.opa.model.problems.MandateInsufficientBalanceProblem;
 import org.interledger.connector.opa.model.problems.MandateNotFoundProblem;
-import org.interledger.connector.wallet.RemoteInvoiceService;
+import org.interledger.connector.payments.StreamPayment;
 
 import okhttp3.HttpUrl;
 
@@ -28,15 +33,16 @@ public class InMemoryMandateService implements MandateService {
   private final HashMap<MandateId, Mandate> mandates = new HashMap<>();
 
   private final MandateAccrualService mandateAccrualService;
-  private final RemoteInvoiceService remoteInvoiceService;
+  private final InvoiceService<StreamPayment, IlpPaymentDetails> ilpInvoiceService;
+  private final InvoiceService<XrpPayment, XrpPaymentDetails> xrpInvoiceService;
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
 
 
   public InMemoryMandateService(MandateAccrualService mandateAccrualService,
-                                RemoteInvoiceService remoteInvoiceService,
-                                Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier) {
+                                InvoiceService<StreamPayment, IlpPaymentDetails> ilpInvoiceService, InvoiceService<XrpPayment, XrpPaymentDetails> xrpInvoiceService, Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier) {
     this.mandateAccrualService = mandateAccrualService;
-    this.remoteInvoiceService = remoteInvoiceService;
+    this.ilpInvoiceService = ilpInvoiceService;
+    this.xrpInvoiceService = xrpInvoiceService;
     this.openPaymentsSettingsSupplier = openPaymentsSettingsSupplier;
   }
 
@@ -85,7 +91,7 @@ public class InMemoryMandateService implements MandateService {
 
   @Override
   public Charge createCharge(AccountId accountId, MandateId mandateId, NewCharge newCharge) {
-    Invoice invoice = remoteInvoiceService.getInvoice(newCharge.invoice());
+    Invoice invoice = xrpInvoiceService.syncInvoice(newCharge.invoice(), accountId);
     synchronized (mandates) {
       Mandate mandate = findMandateById(accountId, mandateId)
         .orElseThrow(() -> new MandateNotFoundProblem(mandateId));
@@ -127,6 +133,12 @@ public class InMemoryMandateService implements MandateService {
       .addPathSegment("mandates")
       .addPathSegment(mandateId.value())
       .build();
+  }
+
+  private XrpPayment chargeInvoice(Invoice invoice) {
+    return xrpInvoiceService.payInvoice(invoice.id(), AccountId.of(invoice.accountId()), Optional.of(
+      PayInvoiceRequest.builder().amount(invoice.amount()).build()
+    ));
   }
 
 

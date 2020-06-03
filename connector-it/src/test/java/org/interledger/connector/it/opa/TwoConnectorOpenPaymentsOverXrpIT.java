@@ -17,17 +17,14 @@ import org.interledger.connector.it.markers.OpenPayments;
 import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerIlpOverHttpTopology;
 import org.interledger.connector.it.topology.AbstractBaseTopology;
 import org.interledger.connector.it.topology.Topology;
-import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.PaymentNetwork;
-import org.interledger.connector.payments.StreamPayment;
+import org.interledger.connector.opa.model.Memo;
+import org.interledger.connector.opa.model.MemoWrapper;
+import org.interledger.connector.opa.model.XrplTransaction;
 import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.openpayments.events.ImmutableXrpPaymentCompletedEvent;
-import org.interledger.openpayments.events.Memo;
-import org.interledger.openpayments.events.MemoWrapper;
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
-import org.interledger.openpayments.events.XrplTransaction;
 import org.interledger.stream.Denominations;
 
 import com.google.common.primitives.UnsignedLong;
@@ -45,7 +42,6 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)

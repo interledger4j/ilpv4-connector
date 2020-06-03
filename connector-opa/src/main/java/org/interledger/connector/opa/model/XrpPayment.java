@@ -2,8 +2,9 @@ package org.interledger.connector.opa.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.common.primitives.UnsignedLong;
 import org.immutables.value.Value;
+
+import java.util.Optional;
 
 @Value.Immutable
 @JsonSerialize(as = ImmutableXrpPayment.class)
@@ -14,6 +15,9 @@ public interface XrpPayment {
     return ImmutableXrpPayment.builder();
   }
 
+  Optional<String> userAuthorizationUrl();
+
+  Optional<XrplTransaction> transaction();
 
 
 }
