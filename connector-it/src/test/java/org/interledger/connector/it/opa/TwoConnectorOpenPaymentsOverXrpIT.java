@@ -28,6 +28,7 @@ import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.openpayments.events.ImmutableXrpPaymentCompletedEvent;
+import org.interledger.openpayments.events.ImmutableXrplTransaction;
 import org.interledger.openpayments.events.Memo;
 import org.interledger.openpayments.events.MemoWrapper;
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
@@ -36,6 +37,7 @@ import org.interledger.stream.Denominations;
 
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
+import org.apache.commons.codec.binary.Hex;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -142,22 +144,7 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
     Invoice createdInvoiceOnAlice = aliceClient.getOrSyncInvoice(PAUL, createdInvoiceOnBob.receiverInvoiceUrl().toString());
 
     // Manually trigger a payment completed event
-    XrplTransaction xprlPayment = XrplTransaction.builder()
-      .account("SENDER_ADDRESS")
-      .sourceTag("123456")
-      .destination("RECEIVER_ADDRESS")
-      .destinationTag(123456)
-      .amount(createdInvoiceOnAlice.amount())
-      .hash("PAYMENT_ID_HASH")
-      .addMemos(MemoWrapper.builder()
-        .memo(Memo.builder()
-          .memoFormat("abcdef")
-          .memoType("INVOICE_PAYMENT")
-          .memoData(createdInvoiceOnAlice.correlationId().value())
-          .build())
-        .build())
-      .build();
-    ImmutableXrpPaymentCompletedEvent xrpPaymentCompletedEvent = XrpPaymentCompletedEvent.builder().payment(xprlPayment).build();
+    XrpPaymentCompletedEvent xrpPaymentCompletedEvent = this.getXrpPaymentCompletedEvent(createdInvoiceOnAlice);
     aliceConnector.getEventBus().post(xrpPaymentCompletedEvent);
     bobConnector.getEventBus().post(xrpPaymentCompletedEvent);
 
@@ -190,22 +177,7 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
       .isEqualTo(PAUL_ACCOUNT);
 
     // Manually trigger a payment completed event
-    XrplTransaction xprlPayment = XrplTransaction.builder()
-      .account("SENDER_ADDRESS")
-      .sourceTag("123456")
-      .destination("RECEIVER_ADDRESS")
-      .destinationTag(123456)
-      .amount(syncedInvoice.amount())
-      .hash("PAYMENT_ID_HASH")
-      .addMemos(MemoWrapper.builder()
-        .memo(Memo.builder()
-          .memoFormat("abcdef")
-          .memoType("INVOICE_PAYMENT")
-          .memoData(syncedInvoice.correlationId().value())
-          .build())
-        .build())
-      .build();
-    ImmutableXrpPaymentCompletedEvent xrpPaymentCompletedEvent = XrpPaymentCompletedEvent.builder().payment(xprlPayment).build();
+    XrpPaymentCompletedEvent xrpPaymentCompletedEvent = this.getXrpPaymentCompletedEvent(syncedInvoice);
     aliceConnector.getEventBus().post(xrpPaymentCompletedEvent);
 
     // Let the payment system event out and the OP system to update
@@ -229,6 +201,23 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
       .build();
 
     return client.createInvoice(accountId, invoice);
+  }
+
+  protected XrpPaymentCompletedEvent getXrpPaymentCompletedEvent(Invoice invoice) {
+    ImmutableXrplTransaction xrplTransaction = XrplTransaction.builder()
+      .account("SENDER_ADDRESS")
+      .destination("RECEIVER_ADDRESS")
+      .amount(invoice.amount())
+      .hash("PAYMENT_ID_HASH")
+      .addMemos(MemoWrapper.builder()
+        .memo(Memo.builder()
+          .memoFormat(Hex.encodeHexString("jaypeg".getBytes()))
+          .memoType(Hex.encodeHexString("meme".getBytes()))
+          .memoData(Hex.encodeHexString(invoice.correlationId().value().getBytes()))
+          .build())
+        .build())
+      .build();
+    return XrpPaymentCompletedEvent.builder().payment(xrplTransaction).build();
   }
 
   @Override

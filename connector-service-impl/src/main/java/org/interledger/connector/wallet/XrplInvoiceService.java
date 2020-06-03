@@ -1,7 +1,5 @@
 package org.interledger.connector.wallet;
 
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.Payment;
 import org.interledger.connector.opa.model.PaymentId;
@@ -9,19 +7,20 @@ import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.persistence.repositories.PaymentsRepository;
-import org.interledger.openpayments.events.Memo;
-import org.interledger.openpayments.events.MemoWrapper;
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
 import org.interledger.openpayments.events.XrplTransaction;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 
 public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPaymentDetails> implements XrplPaymentEventHandler {
+
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
   public XrplInvoiceService(
     InvoicesRepository invoicesRepository,
@@ -51,15 +50,11 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
   @Subscribe
   public void onPaymentCompleted(XrpPaymentCompletedEvent xrpPaymentCompletedEvent) {
     XrplTransaction transaction = xrpPaymentCompletedEvent.payment();
-    Optional<Memo> invoiceMemo = transaction.memos().stream()
-      .map(MemoWrapper::memo)
-      .filter(memo -> memo.memoType().equals("INVOICE_PAYMENT")) // FIXME: Define a memoType constant
-      .findFirst();
-
-    invoiceMemo.ifPresent(memo -> {
+    logger.warn("Transaction picked up: " + transaction);
+    transaction.invoiceMemoCorrelationId().ifPresent(correlationId -> {
       Payment payment = Payment.builder()
         .amount(transaction.amount())
-        .correlationId(CorrelationId.of(memo.memoData())) // FIXME: may need to decode hex
+        .correlationId(correlationId) // FIXME: may need to decode hex
         .paymentId(PaymentId.of(transaction.hash()))
         .createdAt(transaction.createdAt())
         .modifiedAt(transaction.modifiedAt())

@@ -1,7 +1,10 @@
 package org.interledger.connector.opa.xrpl;
 
+import org.interledger.openpayments.events.Memo;
+import org.interledger.openpayments.events.MemoWrapper;
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
 import org.interledger.openpayments.events.XrplMessage;
+import org.interledger.openpayments.events.XrplTransaction;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,6 +17,7 @@ import okhttp3.WebSocketListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -119,8 +123,10 @@ public class XrplScanningService {
       logger.info("MESSAGE text: " + text);
       try {
         XrplMessage xrplMessage = objectMapper.readValue(text, XrplMessage.class);
-        if (xrplMessage.isSuccessfulTransaction()) {
-          eventBus.post(XrpPaymentCompletedEvent.builder().payment(xrplMessage.transaction()).build());
+        if (xrplMessage.transaction() != null && xrplMessage.isSuccessfulTransaction()) {
+          if (xrplMessage.transaction().invoiceMemoCorrelationId().isPresent()) {
+            eventBus.post(XrpPaymentCompletedEvent.builder().payment(xrplMessage.transaction()).build());
+          }
         }
       } catch (JsonProcessingException e) {
         logger.error("Cannot read transaction JSON " + text, e);
