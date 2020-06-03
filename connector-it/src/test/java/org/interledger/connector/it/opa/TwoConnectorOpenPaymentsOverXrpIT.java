@@ -8,6 +8,7 @@ import static org.interledger.connector.it.topologies.AbstractTopology.BOB_HTTP_
 import static org.interledger.connector.it.topologies.AbstractTopology.EDDY;
 import static org.interledger.connector.it.topologies.AbstractTopology.EDDY_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.PAUL;
+import static org.interledger.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.PETER;
 import static org.interledger.connector.it.topologies.AbstractTopology.PETER_ACCOUNT;
 
@@ -104,16 +105,16 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
   public void peterCreatesInvoiceForHimselfOnBob() {
     Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
     assertThat(createdInvoice.invoicePath())
-      .isEqualTo(HttpUrl.get("/accounts/peter/invoices/" + createdInvoice.id().value()));
+      .isEqualTo("/peter/invoices/" + createdInvoice.id().value());
     assertThat(createdInvoice.accountId())
-      .isEqualTo(PETER);
+      .isEqualTo(PETER_ACCOUNT);
   }
 
   @Test
   public void paulCreatesInvoiceForPeterOnBobViaAlice() {
     Invoice createdInvoice = createInvoiceForPeter(aliceClient, PAUL);
     assertThat(createdInvoice.invoicePath())
-      .isEqualTo("/accounts/peter/invoices/" + createdInvoice.id().value());
+      .isEqualTo("/peter/invoices/" + createdInvoice.id().value());
     assertThat(createdInvoice.accountId())
       .isEqualTo(PETER_ACCOUNT);
     Invoice invoiceOnBob = bobClient.getInvoice(PETER, createdInvoice.id().value());
@@ -129,9 +130,9 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
     assertThat(petersInvoiceOnBob)
       .isEqualToIgnoringGivenFields(synced, "accountId", "id", "invoicePath", "createdAt", "updatedAt");
     assertThat(petersInvoiceOnBob.accountId())
-      .isEqualTo(PETER);
+      .isEqualTo(PETER_ACCOUNT);
     assertThat(synced.accountId())
-      .isEqualTo(PAUL);
+      .isEqualTo(PAUL_ACCOUNT);
   }
 
   @Test
@@ -172,7 +173,7 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
   @Test
   public void paulPaysInvoiceForEddyAllOnAlice() throws InterruptedException {
     NewInvoice invoice = NewInvoice.builder()
-      .subject("accounts/eddy$localhost:8080")
+      .subject("eddy$localhost:8080")
       .amount(UnsignedLong.valueOf(100))
       .assetCode(Denominations.XRP_DROPS.assetCode())
       .assetScale(Denominations.XRP_DROPS.assetScale())
@@ -184,9 +185,9 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
     assertThat(eddyInvoiceOnAlice)
       .isEqualToIgnoringGivenFields(syncedInvoice, "accountId", "id", "invoicePath", "createdAt", "updatedAt");
     assertThat(eddyInvoiceOnAlice.accountId())
-      .isEqualTo(EDDY);
+      .isEqualTo(EDDY_ACCOUNT);
     assertThat(syncedInvoice.accountId())
-      .isEqualTo(PAUL);
+      .isEqualTo(PAUL_ACCOUNT);
 
     // Manually trigger a payment completed event
     XrplTransaction xprlPayment = XrplTransaction.builder()
@@ -224,7 +225,7 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
       .assetScale(Denominations.XRP_DROPS.assetScale())
       .amount(UnsignedLong.valueOf(100))
       .description("IT payment")
-      .subject("peter$localhost:8081/accounts")
+      .subject("peter$localhost:8081")
       .build();
 
     return client.createInvoice(accountId, invoice);

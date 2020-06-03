@@ -100,7 +100,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   public void peterCreatesInvoiceForHimselfOnBob() {
     Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
     assertThat(createdInvoice.invoicePath())
-      .isEqualTo("/accounts/peter/invoices/" + createdInvoice.id().value());
+      .isEqualTo("/peter/invoices/" + createdInvoice.id().value());
     assertThat(createdInvoice.accountId())
       .isEqualTo(PETER_ACCOUNT);
   }
@@ -110,7 +110,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   public void paulCreatesInvoiceForPeterOnBobViaAlice() {
     Invoice createdInvoice = createInvoiceForPeter(aliceClient, PAUL);
     assertThat(createdInvoice.invoicePath())
-      .isEqualTo("/accounts/peter/invoices/" + createdInvoice.id().value());
+      .isEqualTo("/peter/invoices/" + createdInvoice.id().value());
     assertThat(createdInvoice.accountId())
       .isEqualTo(PETER_ACCOUNT);
     Invoice invoiceOnBob = bobClient.getInvoice(PETER, createdInvoice.id().value());
@@ -155,10 +155,11 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   }
 
   @Test
-  public void paulPaysInvoiceForPeterViaAliceOnBob() {
+  public void paulPaysInvoiceForPeterViaAliceOnBob() throws InterruptedException {
     Invoice createdInvoiceOnBob = createInvoiceForPeter(bobClient, PETER);
 
     Invoice createdInvoiceOnAlice = aliceClient.getOrSyncInvoice(PAUL, createdInvoiceOnBob.receiverInvoiceUrl().toString());
+
     StreamPayment payment = aliceClient.payInvoice(
       createdInvoiceOnAlice.accountId().value(),
       createdInvoiceOnAlice.id().value(),
@@ -179,7 +180,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   @Test
   public void paulPaysInvoiceForEddyAllOnAlice() throws InterruptedException {
     NewInvoice invoice = NewInvoice.builder()
-      .subject("$localhost:8080/accounts/eddy")
+      .subject("$localhost:8080/eddy")
       .amount(UnsignedLong.valueOf(100))
       .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
       .assetScale(Denominations.XRP_MILLI_DROPS.assetScale())
@@ -218,7 +219,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
 
   private Invoice createInvoiceForPeter(OpenPaymentsClient client, String accountId) {
     NewInvoice invoice = NewInvoice.builder()
-      .subject("$localhost:8081/accounts/peter")
+      .subject("$localhost:8081/peter")
       .amount(UnsignedLong.valueOf(100))
       .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
       .assetScale(Denominations.XRP_MILLI_DROPS.assetScale())

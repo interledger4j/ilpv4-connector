@@ -7,6 +7,7 @@ import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.NewInvoice;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
+import org.interledger.connector.opa.model.OpenPaymentsPathConstants;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.payments.StreamPayment;
@@ -57,7 +58,7 @@ public interface OpenPaymentsClient {
   OpenPaymentsMetadata getMetadata(URI baseUrl) throws ThrowableProblem;
 
 
-  @RequestLine("POST accounts/{accountId}/invoices")
+  @RequestLine("POST " + OpenPaymentsPathConstants.INVOICES_BASE)
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
@@ -67,7 +68,7 @@ public interface OpenPaymentsClient {
     NewInvoice newInvoice
   ) throws ThrowableProblem;
 
-  @RequestLine("GET accounts/{accountId}/invoices/{invoiceId}")
+  @RequestLine("GET " + OpenPaymentsPathConstants.INVOICES_WITH_ID)
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
@@ -77,7 +78,7 @@ public interface OpenPaymentsClient {
     @Param("invoiceId") String invoiceId
   ) throws ThrowableProblem;
 
-  @RequestLine("POST accounts/{accountId}/invoices/sync?name={invoiceUrl}")
+  @RequestLine("POST " + OpenPaymentsPathConstants.SYNC_INVOICE + "?name={invoiceUrl}")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
@@ -87,7 +88,7 @@ public interface OpenPaymentsClient {
     @Param("invoiceUrl") String invoiceUrl
   );
 
-  @RequestLine("GET accounts/{accountId}/invoices/{invoiceId}")
+  @RequestLine("GET " + OpenPaymentsPathConstants.INVOICES_WITH_ID)
   @Headers({
     ACCEPT + APPLICATION_CONNECTION_JSON_VALUE,
     CONTENT_TYPE + APPLICATION_JSON
@@ -97,7 +98,7 @@ public interface OpenPaymentsClient {
     @Param("invoiceId") String invoiceId
   ) throws ThrowableProblem;
 
-  @RequestLine("POST /accounts/{accountId}/invoices/{invoiceId}/pay")
+  @RequestLine("POST " + OpenPaymentsPathConstants.PAY_INVOICE)
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON,

@@ -38,8 +38,8 @@ public class OpenPaymentsPathConstants {
   public static final String SYNC = "sync";
   public static final String SLASH_SYNC = SLASH + SYNC;
 
-  public static final String INVOICES_BASE = SLASH_ACCOUNTS + SLASH_ACCOUNT_ID + SLASH_INVOICES;
+  public static final String INVOICES_BASE = /*SLASH_ACCOUNTS + */SLASH_ACCOUNT_ID + SLASH_INVOICES;
   public static final String INVOICES_WITH_ID = INVOICES_BASE + SLASH_INVOICE_ID;
   public static final String SYNC_INVOICE = INVOICES_BASE + SLASH_SYNC;
-  public static final String PAY_INVOICE = INVOICES_WITH_ID + SLASH_PAY;
+  public static final String PAY_INVOICE = SLASH_ACCOUNTS + INVOICES_WITH_ID + SLASH_PAY;
 }
