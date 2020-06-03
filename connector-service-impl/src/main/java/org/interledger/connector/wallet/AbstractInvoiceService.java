@@ -71,12 +71,17 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
+  public Optional<Invoice> findInvoiceByUrl(HttpUrl invoiceUrl, AccountId accountId) {
+    return invoicesRepository.findInvoiceByInvoiceUrlAndAccountId(invoiceUrl, accountId);
+  }
+
+  @Override
   public Invoice syncInvoice(final HttpUrl invoiceUrl, final AccountId accountId) {
     Objects.requireNonNull(invoiceUrl);
     Objects.requireNonNull(accountId);
 
     // See if we have that invoice already
-    Optional<Invoice> existingInvoice = invoicesRepository.findInvoiceByInvoiceUrlAndAccountId(invoiceUrl, accountId);
+    Optional<Invoice> existingInvoice = findInvoiceByUrl(invoiceUrl, accountId);
     if (existingInvoice.isPresent()) {
       throw new InvoiceAlreadyExistsProblem(existingInvoice.get().id());
     } else {

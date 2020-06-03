@@ -25,6 +25,8 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
    */
   Invoice getInvoice(final InvoiceId invoiceId, final AccountId accountId);
 
+  Optional<Invoice> findInvoiceByUrl(HttpUrl invoiceUrl, AccountId accountId);
+
   /**
    * Get and save the latest state of the invoice owned by the receiver, either located at a remote OPS at
    * {@code invoiceUrl}, or on this OPS, if the invoice with that location does not already exist on this OPS.

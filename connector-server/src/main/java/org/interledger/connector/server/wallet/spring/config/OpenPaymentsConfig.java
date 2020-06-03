@@ -7,7 +7,9 @@ import static org.interledger.connector.core.ConfigConstants.TRUE;
 
 import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.opa.InvoiceService;
+import org.interledger.connector.opa.InvoiceServiceFactory;
 import org.interledger.connector.opa.PaymentSystemFacade;
+import org.interledger.connector.opa.PaymentSystemFacadeFactory;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.XrpPayment;
@@ -17,6 +19,8 @@ import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.persistence.repositories.PaymentsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
+import org.interledger.connector.wallet.DefaultInvoiceServiceFactory;
+import org.interledger.connector.wallet.DefaultPaymentSystemFacadeFactory;
 import org.interledger.connector.wallet.IlpInvoiceService;
 import org.interledger.connector.wallet.IlpPaymentSystemFacade;
 import org.interledger.connector.wallet.InvoiceFactory;
@@ -43,6 +47,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.ConversionService;
 
 import java.time.Clock;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -87,6 +92,17 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
+  public InvoiceServiceFactory invoiceServiceFactory(List<InvoiceService> invoiceServices) {
+    return new DefaultInvoiceServiceFactory().register(invoiceServices);
+  }
+
+
+  @Bean
+  public PaymentSystemFacadeFactory paymentSystemFacadeFactory(List<PaymentSystemFacade> paymentSystemFacades) {
+    return new DefaultPaymentSystemFacadeFactory().register(paymentSystemFacades);
+  }
+
+  @Bean
   public InvoiceService<XrpPayment, XrpPaymentDetails> xrpInvoiceService(
     InvoicesRepository invoicesRepository,
     PaymentsRepository paymentsRepository,
@@ -94,8 +110,8 @@ public class OpenPaymentsConfig {
     InvoiceFactory invoiceFactory,
     OpenPaymentsProxyClient openPaymentsProxyClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    EventBus eventBus
-  ) {
+    EventBus eventBus,
+    PaymentSystemFacadeFactory paymentSystemFacadeFactory) {
     return new XrplInvoiceService(
       invoicesRepository,
       paymentsRepository,
@@ -104,7 +120,7 @@ public class OpenPaymentsConfig {
       openPaymentsProxyClient,
       openPaymentsSettingsSupplier,
       eventBus,
-      ilpPaymentSystemFacade);
+      paymentSystemFacadeFactory);
   }
 
   @Bean

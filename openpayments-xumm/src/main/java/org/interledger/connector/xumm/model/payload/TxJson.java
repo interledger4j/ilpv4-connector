@@ -3,6 +3,7 @@ package org.interledger.connector.xumm.model.payload;
 import org.interledger.connector.opa.model.MemoWrapper;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -16,6 +17,7 @@ import javax.annotation.Nullable;
 @Value.Immutable
 @JsonSerialize(as = ImmutableTxJson.class)
 @JsonDeserialize(as = ImmutableTxJson.class)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public interface TxJson {
 
   static ImmutableTxJson.Builder builder() {

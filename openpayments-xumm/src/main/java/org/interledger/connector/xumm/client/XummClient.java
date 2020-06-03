@@ -21,11 +21,10 @@ public interface XummClient {
   String CONTENT_TYPE = "Content-Type:";
   String APPLICATION_JSON = "application/json";
 
-  static XummClient construct(String xummApiKey, String xummApiSecret) {
+  static XummClient construct(ObjectMapper objectMapper, String xummApiKey, String xummApiSecret) {
     Objects.requireNonNull(xummApiKey);
     Objects.requireNonNull(xummApiSecret);
 
-    ObjectMapper objectMapper = new ObjectMapper();
     return Feign.builder()
       .encoder(new JacksonEncoder(objectMapper))
       .decode404()

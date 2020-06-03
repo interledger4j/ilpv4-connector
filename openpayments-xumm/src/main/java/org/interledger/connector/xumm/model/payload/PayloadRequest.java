@@ -20,6 +20,7 @@ public interface PayloadRequest {
 
   TxJson txjson();
 
+  @JsonProperty("user_token")
   Optional<String> userToken();
 
   @JsonProperty("custom_meta")

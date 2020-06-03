@@ -1,9 +1,9 @@
 package org.interledger.connector.opa;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.CorrelationId;
 
 import com.google.common.primitives.UnsignedLong;
 
@@ -46,4 +46,8 @@ public interface PaymentSystemFacade<PaymentResultType, PaymentDetailsType> {
     final UnsignedLong amount,
     final CorrelationId correlationId
   ) throws ExecutionException, InterruptedException;
+
+  Class<PaymentResultType> getResultType();
+  Class<PaymentDetailsType> getDetailsType();
+
 }

@@ -3,9 +3,9 @@ package org.interledger.connector.wallet;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.opa.PaymentSystemFacade;
+import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.problems.InvalidInvoiceSubjectProblem;
 import org.interledger.connector.payments.SendPaymentRequest;
 import org.interledger.connector.payments.SendPaymentService;
@@ -98,6 +98,16 @@ public class IlpPaymentSystemFacade implements PaymentSystemFacade<StreamPayment
         .build())
       .build()
     );
+  }
+
+  @Override
+  public Class<IlpPaymentDetails> getDetailsType() {
+    return IlpPaymentDetails.class;
+  }
+
+  @Override
+  public Class<StreamPayment> getResultType() {
+    return StreamPayment.class;
   }
 
   /**

@@ -4,6 +4,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.PaymentSystemFacade;
+import org.interledger.connector.opa.PaymentSystemFacadeFactory;
 import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
@@ -35,7 +36,7 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
 
   private static final Logger LOGGER = getLogger(XrplInvoiceService.class);
 
-  private final PaymentSystemFacade<XrpPayment, XrpPaymentDetails> xrpPaymentSystemFacade;
+  private final PaymentSystemFacadeFactory paymentSystemFacadeFactory;
 
   public XrplInvoiceService(
     InvoicesRepository invoicesRepository,
@@ -45,7 +46,7 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
     OpenPaymentsProxyClient openPaymentsProxyClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     EventBus eventBus,
-    PaymentSystemFacade<XrpPayment, XrpPaymentDetails> xrpPaymentSystemFacade) {
+    PaymentSystemFacadeFactory paymentSystemFacadeFactory) {
     super(
       invoicesRepository,
       paymentsRepository,
@@ -55,24 +56,28 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
       openPaymentsSettingsSupplier,
       eventBus
     );
-    this.xrpPaymentSystemFacade = xrpPaymentSystemFacade;
+    this.paymentSystemFacadeFactory = paymentSystemFacadeFactory;
+    eventBus.register(this);
   }
 
   @Override
   public XrpPaymentDetails getPaymentDetails(InvoiceId invoiceId, AccountId accountId) {
-    final Invoice invoice = this.getInvoiceById(invoiceId, accountId);
+    final Invoice invoice = this.getInvoice(invoiceId, accountId);
 
     final HttpUrl invoiceUrl = invoice.invoiceUrl()
       .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
 
     final Invoice receiverInvoice = openPaymentsProxyClient.getInvoice(invoiceUrl.uri());
 
-    return xrpPaymentSystemFacade.getPaymentDetails(receiverInvoice);
+    PaymentSystemFacade<XrpPayment, XrpPaymentDetails> paymentFacade =
+      paymentSystemFacadeFactory.get(XrpPayment.class, XrpPaymentDetails.class)
+        .orElseThrow(() -> new UnsupportedOperationException("No provider for XrpPayment type"));
+    return paymentFacade.getPaymentDetails(receiverInvoice);
   }
 
   @Override
   public XrpPayment payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) {
-    final Invoice invoice = this.getInvoiceById(invoiceId, senderAccountId);
+    final Invoice invoice = this.getInvoice(invoiceId, senderAccountId);
     final HttpUrl invoiceUrl = invoice.invoiceUrl()
       .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
 
@@ -81,10 +86,18 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
       throw new UnsupportedOperationException("remote invoice payments not yet implemented");
     } else {
       try {
-        return xrpPaymentSystemFacade.payInvoice(getPaymentDetails(invoiceId, senderAccountId),
-          senderAccountId,
-          payInvoiceRequest.get().amount(),
-          CorrelationId.of(transactionHash(invoiceId)));
+        return paymentSystemFacadeFactory.get(XrpPayment.class, XrpPaymentDetails.class)
+          .map(facade -> {
+            try {
+              return facade.payInvoice(getPaymentDetails(invoiceId, senderAccountId),
+                senderAccountId,
+                payInvoiceRequest.get().amount(),
+                CorrelationId.of(transactionHash(invoiceId)));
+            } catch (Exception e) {
+              throw new RuntimeException(e);
+            }
+          })
+          .orElseThrow(() -> new UnsupportedOperationException("No provider for XrpPayment type"));
       } catch (Exception e) {
         LOGGER.error("failed to payinvoice for invoiceId {}", invoiceId, e);
         // FIXME what to do here?
@@ -95,6 +108,7 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
 
   /**
    * ONLY FOR RECEIVING
+   *
    * @param xrpPaymentCompletedEvent
    */
   @Override

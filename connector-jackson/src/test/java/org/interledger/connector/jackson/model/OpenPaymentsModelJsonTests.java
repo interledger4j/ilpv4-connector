@@ -6,6 +6,7 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.jackson.ObjectMapperFactory;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
+import org.interledger.connector.opa.model.Memo;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.model.SupportedAsset;
 import org.interledger.connector.opa.model.SupportedAssets;
@@ -94,6 +95,12 @@ public class OpenPaymentsModelJsonTests {
 
     Invoice deserializedInvoice = objectMapper.readValue(invoiceJson, Invoice.class);
     assertThat(deserializedInvoice).isEqualToIgnoringGivenFields(invoice, "finalizedAt", "createdAt", "updatedAt");
+  }
+
+  @Test
+  public void testMemo() throws JsonProcessingException {
+    Memo memo = Memo.builder().memoType("foo").memoData("bar").build();
+    System.out.println(objectMapper.writeValueAsString(memo));
   }
 
 }

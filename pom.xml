@@ -211,6 +211,11 @@
       </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>openpayments-xumm</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>openpayments-model</artifactId>
         <version>${project.version}</version>
       </dependency>

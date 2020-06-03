@@ -3,6 +3,8 @@ package org.interledger.connector.server.wallet.controllers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.interledger.connector.server.wallet.controllers.MandatesEndpointTest.TEST_DOT_BOB;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import org.interledger.connector.accounts.AccountId;
@@ -16,10 +18,13 @@ import org.interledger.connector.opa.model.NewCharge;
 import org.interledger.connector.opa.model.NewMandate;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.XrpPayment;
+import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.connector.server.ilpoverhttp.AbstractEndpointTest;
 import org.interledger.connector.server.spsp.LocalSpspClientTestConfig;
 import org.interledger.connector.wallet.OpenPaymentsClient;
+import org.interledger.connector.xumm.service.XummPaymentService;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings.AuthType;
@@ -146,7 +151,7 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
     assertThat(mandate.balance()).isEqualTo(amount);
 
     Invoice invoice = openPaymentsClient.createInvoice(PAYEE, Invoice.builder()
-      .accountId(PAYEE)
+      .accountId(AccountId.of(PAYEE))
       .amount(amount)
       .assetCode("XRP")
       .assetScale((short) 9)
@@ -188,7 +193,7 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
     assertThat(mandate.balance()).isEqualTo(amount);
 
     Invoice invoice = openPaymentsClient.createInvoice(PAYEE, Invoice.builder()
-      .accountId(PAYEE)
+      .accountId(AccountId.of(PAYEE))
       .amount(amount)
       .assetCode("XRP")
       .assetScale((short) 9)
@@ -204,10 +209,19 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
 
     assertThat(charge.amount()).isEqualTo(amount);
 
+    Invoice invoice2 = openPaymentsClient.createInvoice(PAYEE, Invoice.builder()
+      .accountId(AccountId.of(PAYEE))
+      .amount(amount)
+      .assetCode("XRP")
+      .assetScale((short) 9)
+      .subject(PAYEE + "$localhost:" + localServerPort)
+      .build()
+    );
+
     expectedException.expectMessage("Mandate does not have sufficient balance");
     openPaymentsClient.createCharge(PAYER, mandate.mandateId().value(), bearer(SHH),
       NewCharge.builder()
-        .invoice(invoice.invoiceUrl().get())
+        .invoice(invoice2.invoiceUrl().get())
         .build()
     );
   }
@@ -234,6 +248,24 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
     @Override
     public void onApplicationEvent(final ServletWebServerInitializedEvent event) {
       localServerPort = event.getWebServer().getPort();
+    }
+
+    @Primary
+    @Bean
+    public XummPaymentService xummPaymentServiceMock() {
+      XummPaymentService mock = mock(XummPaymentService.class);
+      when(mock.getDetailsType()).thenReturn(XrpPaymentDetails.class);
+      when(mock.getResultType()).thenReturn(XrpPayment.class);
+      when(mock.payInvoice(any(), any(), any(), any()))
+        .thenReturn(XrpPayment.builder()
+          .build()
+        );
+      when(mock.getPaymentDetails(any())).thenReturn(XrpPaymentDetails.builder()
+        .address("notARealXrpAddress")
+        .invoiceIdHash("notARealInvoiceHash")
+        .build()
+      );
+      return mock;
     }
 
     @Primary

@@ -22,7 +22,7 @@ public interface UserToken {
   @JsonProperty("token_issued")
   Instant tokenIssued();
 
-  @JsonProperty("token_issued")
+  @JsonProperty("token_expiration")
   Instant tokenExpiration();
 
 }

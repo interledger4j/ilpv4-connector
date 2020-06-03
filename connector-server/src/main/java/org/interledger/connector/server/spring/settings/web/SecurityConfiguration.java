@@ -207,6 +207,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       // Once that's addressed, then these should be secured.
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID + PathConstants.SLASH_SETTLEMENTS).permitAll()
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID + PathConstants.SLASH_MESSAGES).permitAll()
+      .antMatchers(HttpMethod.POST, PathConstants.WEBHOOKS + "/**").permitAll()
 
       ////////
       // Admin API
