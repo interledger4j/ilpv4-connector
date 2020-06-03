@@ -6,8 +6,11 @@ import static org.interledger.connector.it.topologies.AbstractTopology.ALICE_HTT
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_CONNECTOR_ADDRESS;
 import static org.interledger.connector.it.topologies.AbstractTopology.BOB_HTTP_BASE_URL;
 import static org.interledger.connector.it.topologies.AbstractTopology.EDDY;
+import static org.interledger.connector.it.topologies.AbstractTopology.EDDY_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.PAUL;
+import static org.interledger.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.PETER;
+import static org.interledger.connector.it.topologies.AbstractTopology.PETER_ACCOUNT;
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.it.AbstractIlpOverHttpIT;
@@ -100,7 +103,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
       .get()
       .isEqualTo(HttpUrl.get("http://localhost:8081/accounts/peter/invoices/" + createdInvoice.id().value()));
     assertThat(createdInvoice.accountId())
-      .isEqualTo(PETER);
+      .isEqualTo(PETER_ACCOUNT);
   }
 
   @Test
@@ -111,10 +114,10 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
       .get()
       .isEqualTo(HttpUrl.get("http://localhost:8081/accounts/peter/invoices/" + createdInvoice.id().value()));
     assertThat(createdInvoice.accountId())
-      .isEqualTo(PAUL);
+      .isEqualTo(PAUL_ACCOUNT);
     Invoice invoiceOnBob = bobClient.getInvoice(PETER, createdInvoice.id().value());
     assertThat(invoiceOnBob.accountId())
-      .isEqualTo(PETER);
+      .isEqualTo(PETER_ACCOUNT);
   }
 
   @Test
@@ -133,15 +136,15 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
     assertThat(petersInvoiceOnBob)
       .isEqualToIgnoringGivenFields(synced, "accountId", "createdAt", "updatedAt");
     assertThat(petersInvoiceOnBob.accountId())
-      .isEqualTo(PETER);
+      .isEqualTo(PETER_ACCOUNT);
     assertThat(synced.accountId())
-      .isEqualTo(PAUL);
+      .isEqualTo(PAUL_ACCOUNT);
   }
 
   @Test
   public void getPeterInvoicePaymentDetailsOnBob() {
     Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
-    IlpPaymentDetails paymentDetails = bobClient.getIlpInvoicePaymentDetails(createdInvoice.accountId(), createdInvoice.id().value());
+    IlpPaymentDetails paymentDetails = bobClient.getIlpInvoicePaymentDetails(createdInvoice.accountId().value(), createdInvoice.id().value());
 
     assertThat(paymentDetails.destinationAddress().getValue()).startsWith("test.bob.spsp.peter");
   }
@@ -150,7 +153,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   public void getPeterInvoicePaymentDetailsViaAliceOnBob() {
     Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
     Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, createdInvoice.invoiceUrl().get().toString());
-    IlpPaymentDetails paymentDetails = aliceClient.getIlpInvoicePaymentDetails(syncedInvoice.accountId(), syncedInvoice.id().value());
+    IlpPaymentDetails paymentDetails = aliceClient.getIlpInvoicePaymentDetails(syncedInvoice.accountId().value(), syncedInvoice.id().value());
 
     assertThat(paymentDetails.destinationAddress().getValue()).startsWith("test.bob.spsp.peter");
   }
@@ -161,7 +164,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
 
     Invoice createdInvoiceOnAlice = aliceClient.getOrSyncInvoice(PAUL, createdInvoiceOnBob.invoiceUrl().get().toString());
     StreamPayment payment = aliceClient.payInvoice(
-      createdInvoiceOnAlice.accountId(),
+      createdInvoiceOnAlice.accountId().value(),
       createdInvoiceOnAlice.id().value(),
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXVsIiwibmFtZSI6InBhdWwiLCJpYXQiOjE1MTYyMzkwMjJ9.rdYwzQKAG8tFC2aRvG3XsW8BFsHxEFnOwcY-17KAA7g",
       Optional.empty()
@@ -170,14 +173,14 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
     assertThat(payment.amount().abs()).isEqualTo(createdInvoiceOnAlice.amount().bigIntegerValue());
     assertThat(payment.deliveredAmount()).isEqualTo(createdInvoiceOnBob.amount());
 
-    Invoice invoiceOnAliceAfterPayment = bobClient.getInvoice(createdInvoiceOnBob.accountId(), createdInvoiceOnBob.id().value());
+    Invoice invoiceOnAliceAfterPayment = bobClient.getInvoice(createdInvoiceOnBob.accountId().value(), createdInvoiceOnBob.id().value());
     assertThat(invoiceOnAliceAfterPayment.isPaid());
   }
 
   @Test
   public void paulPaysInvoiceForEddyAllOnAlice() throws InterruptedException {
     Invoice invoice = Invoice.builder()
-      .accountId(EDDY)
+      .accountId(EDDY_ACCOUNT)
       .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
       .assetScale(Denominations.XRP_MILLI_DROPS.assetScale())
       .amount(UnsignedLong.valueOf(100))
@@ -188,12 +191,12 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
     assertThat(eddyInvoiceOnAlice)
       .isEqualToIgnoringGivenFields(syncedInvoice, "accountId", "createdAt", "updatedAt");
     assertThat(eddyInvoiceOnAlice.accountId())
-      .isEqualTo(EDDY);
+      .isEqualTo(EDDY_ACCOUNT);
     assertThat(syncedInvoice.accountId())
-      .isEqualTo(PAUL);
+      .isEqualTo(PAUL_ACCOUNT);
 
     StreamPayment payment = aliceClient.payInvoice(
-      syncedInvoice.accountId(),
+      syncedInvoice.accountId().value(),
       syncedInvoice.id().value(),
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXVsIiwibmFtZSI6InBhdWwiLCJpYXQiOjE1MTYyMzkwMjJ9.rdYwzQKAG8tFC2aRvG3XsW8BFsHxEFnOwcY-17KAA7g",
       Optional.empty()
@@ -215,7 +218,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
 
   private Invoice createInvoiceForPeter(OpenPaymentsClient client, String accountId) {
     Invoice invoice = Invoice.builder()
-      .accountId(PETER)
+      .accountId(PETER_ACCOUNT)
       .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
       .assetScale(Denominations.XRP_MILLI_DROPS.assetScale())
       .amount(UnsignedLong.valueOf(100))

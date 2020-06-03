@@ -65,7 +65,7 @@ public class InvoiceRepositoryTest {
     assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(invoice,
       "id", "createdAt", "updatedAt");
 
-    Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceUrlAndAccountId(invoice.invoiceUrl().get(), AccountId.of(saved.accountId()));
+    Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceUrlAndAccountId(invoice.invoiceUrl().get(), saved.accountId());
     assertThat(fetched).isNotEmpty().get().isEqualTo(saved);
   }
 
@@ -73,7 +73,7 @@ public class InvoiceRepositoryTest {
     Invoice saved = invoicesRepository.saveInvoice(invoice);
     assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(invoice,
       "id", "createdAt", "updatedAt");
-    Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceIdAndAccountId(invoice.id(), AccountId.of(saved.accountId()));
+    Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceIdAndAccountId(invoice.id(), saved.accountId());
     assertThat(fetched).isNotEmpty().get().isEqualTo(saved);
   }
 

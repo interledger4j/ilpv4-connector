@@ -1,5 +1,6 @@
 package org.interledger.connector.persistence.converters;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.opa.model.CorrelationId;
@@ -19,7 +20,7 @@ public class InvoiceEntityConverter implements Converter<InvoiceEntity, Invoice>
   public Invoice convert(InvoiceEntity invoiceEntity) {
     return Invoice.builder()
       .primaryKey(invoiceEntity.getId())
-      .accountId(invoiceEntity.getAccountId())
+      .accountId(AccountId.of(invoiceEntity.getAccountId()))
       .amount(UnsignedLong.valueOf(invoiceEntity.getAmount()))
       .assetCode(invoiceEntity.getAssetCode())
       .assetScale((short) invoiceEntity.getAssetScale())

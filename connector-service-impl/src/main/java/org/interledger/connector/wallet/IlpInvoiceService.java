@@ -12,9 +12,9 @@ import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.Payment;
 import org.interledger.connector.opa.model.PaymentId;
-import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.problems.InvoicePaymentProblem;
 import org.interledger.connector.payments.StreamPayment;
+import org.interledger.connector.payments.StreamPaymentType;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.persistence.repositories.PaymentsRepository;
 
@@ -56,7 +56,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
 
   @Override
   public IlpPaymentDetails getPaymentDetails(InvoiceId invoiceId, AccountId accountId) {
-    final Invoice invoice = this.getInvoiceById(invoiceId, accountId);
+    final Invoice invoice = this.getInvoice(invoiceId, accountId);
 
     final HttpUrl invoiceUrl = invoice.invoiceUrl()
       .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
@@ -70,7 +70,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
 
   @Override
   public StreamPayment payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) {
-    final Invoice invoice = this.getInvoiceById(invoiceId, senderAccountId);
+    final Invoice invoice = this.getInvoice(invoiceId, senderAccountId);
 
     final HttpUrl invoiceUrl = invoice.invoiceUrl()
       .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
@@ -101,7 +101,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
     StreamPayment streamPayment = paymentCompletedEvent.streamPayment();
     if (streamPayment.correlationId().isPresent()) {
       Payment payment = Payment.builder()
-        .amount(streamPayment.deliveredAmount())
+        .amount(UnsignedLong.valueOf(streamPayment.amount()))
         .correlationId(CorrelationId.of(streamPayment.correlationId().get()))
         .paymentId(PaymentId.of(streamPayment.streamPaymentId()))
         .createdAt(streamPayment.createdAt())

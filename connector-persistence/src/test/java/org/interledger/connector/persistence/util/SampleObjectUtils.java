@@ -1,5 +1,6 @@
 package org.interledger.connector.persistence.util;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.CorrelationId;
 import org.interledger.connector.opa.model.Denomination;
 import org.interledger.connector.opa.model.ImmutableInvoice;
@@ -18,7 +19,7 @@ public final class SampleObjectUtils {
 
   public static ImmutableInvoice createNewIlpInvoice() {
     return Invoice.builder()
-      .accountId("ricketycricket")
+      .accountId(AccountId.of("ricketycricket"))
       .amount(UnsignedLong.valueOf(1000))
       .assetCode("XRP")
       .assetScale((short) 9)
@@ -33,7 +34,7 @@ public final class SampleObjectUtils {
 
   public static ImmutableInvoice createNewXrpInvoice() {
     return Invoice.builder()
-      .accountId("ricketycricket")
+      .accountId(AccountId.of("ricketycricket"))
       .amount(UnsignedLong.valueOf(1000))
       .assetCode("XRP")
       .assetScale((short) 9)
