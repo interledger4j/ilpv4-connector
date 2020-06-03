@@ -7,6 +7,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.InvoiceService;
+import org.interledger.connector.opa.model.NewInvoice;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
@@ -14,7 +15,7 @@ import org.interledger.connector.opa.model.OpenPaymentsMediaType;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.payments.StreamPayment;
-import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
+import org.interledger.connector.opa.model.OpenPaymentsPathConstants;
 
 import okhttp3.HttpUrl;
 import org.slf4j.Logger;
@@ -60,7 +61,7 @@ public class InvoicesController {
   /**
    * Create an {@link Invoice} on the Open Payments server.
    *
-   * @param invoice An {@link Invoice} to create on the Open Payments server.
+   * @param newInvoice An {@link Invoice} to create on the Open Payments server.
    * @return A 201 Created if successful, and the fully populated {@link Invoice} which was stored.
    */
   @RequestMapping(
@@ -70,12 +71,12 @@ public class InvoicesController {
   )
   public @ResponseBody ResponseEntity<Invoice> createInvoice(
     @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) AccountId accountId,
-    @RequestBody Invoice invoice
+    @RequestBody NewInvoice newInvoice
   ) {
-    Invoice createdInvoice = ilpInvoiceService.createInvoice(invoice, accountId);
+    Invoice createdInvoice = ilpInvoiceService.createInvoice(newInvoice, accountId);
 
     final HttpHeaders headers = new HttpHeaders();
-    headers.setLocation(getInvoiceLocation(invoice.id()));
+    headers.setLocation(getInvoiceLocation(createdInvoice.id()));
     return new ResponseEntity(createdInvoice, headers, HttpStatus.CREATED);
   }
 
@@ -172,4 +173,11 @@ public class InvoicesController {
       .build()
       .uri();
   }
+
+
+  // POST /accounts/foo/invoices/123 w/ NewInvoice (Create invoice)
+  // POST /accounts/foo/invoices/sync?name={remoteInvoiceUrl} (Sync invoice)
+  // GET /accounts/foo/invoices/123 (Get invoice)
+  // GET /accounts/foo/invoices/123 Accept=application/ilp-stream+json (Get payment details)
+  // POST /accounts/foo/invoices/123/pay (Pay and invoice over ilp)
 }

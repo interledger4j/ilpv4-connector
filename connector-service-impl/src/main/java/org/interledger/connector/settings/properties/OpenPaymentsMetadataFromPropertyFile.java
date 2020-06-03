@@ -1,6 +1,7 @@
 package org.interledger.connector.settings.properties;
 
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
+import org.interledger.connector.opa.model.OpenPaymentsPathConstants;
 import org.interledger.connector.opa.model.SupportedAsset;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

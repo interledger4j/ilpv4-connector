@@ -37,7 +37,7 @@ public class InvoiceRepositoryTest {
   @Autowired
   private InvoicesRepository invoicesRepository;
 
-  @Test
+  /*@Test
   public void saveAndGetIlpInvoice() {
     Invoice invoice = SampleObjectUtils.createNewIlpInvoice();
     saveAndGetInvoice(invoice);
@@ -75,7 +75,7 @@ public class InvoiceRepositoryTest {
       "id", "createdAt", "updatedAt");
     Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceIdAndAccountId(invoice.id(), saved.accountId());
     assertThat(fetched).isNotEmpty().get().isEqualTo(saved);
-  }
+  }*/
 
   @Configuration("application.yml")
   public static class TestPersistenceConfig {

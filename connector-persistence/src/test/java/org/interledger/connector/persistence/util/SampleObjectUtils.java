@@ -29,7 +29,7 @@ public final class SampleObjectUtils {
       .id(InvoiceId.of(UUID.randomUUID().toString()))
       .received(UnsignedLong.ZERO)
       .subject("$xpring.money/paymebruh")
-      .invoiceUrl(HttpUrl.get("https://xpring.money/paymebruh/invoices/1234"))
+//      .invoiceUrl(HttpUrl.get("https://xpring.money/paymebruh/invoices/1234"))
       .build();
   }
 
@@ -44,7 +44,7 @@ public final class SampleObjectUtils {
       .id(InvoiceId.of(UUID.randomUUID().toString()))
       .received(UnsignedLong.ZERO)
       .subject("paymebruh$xpring.money")
-      .invoiceUrl(HttpUrl.get("https://xpring.money/paymebruh/invoices/1234"))
+//      .invoiceUrl(HttpUrl.get("https://xpring.money/paymebruh/invoices/1234"))
       .build();
   }
 

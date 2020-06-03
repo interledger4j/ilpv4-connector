@@ -40,16 +40,9 @@ public class InvoicesRepositoryImpl implements InvoicesRepositoryCustom {
   }
 
   @Override
-  public Optional<Invoice> findInvoiceByInvoiceUrlAndAccountId(HttpUrl invoiceUrl, AccountId accountId) {
-    Objects.requireNonNull(invoiceUrl);
-    Optional<InvoiceEntity> entity = invoicesRepository.findByInvoiceUrlAndAccountId(invoiceUrl, accountId);
-    return entity.map(e -> conversionService.convert(e, Invoice.class));
-  }
-
-  @Override
-  public List<Invoice> findAllInvoicesByInvoiceUrl(HttpUrl invoiceUrl) {
-    Objects.requireNonNull(invoiceUrl);
-    return invoicesRepository.findAllByInvoiceUrl(invoiceUrl)
+  public List<Invoice> findAllInvoicesByReceiverInvoiceUrl(HttpUrl receiverInvoiceUrl) {
+    Objects.requireNonNull(receiverInvoiceUrl);
+    return invoicesRepository.findAllByReceiverInvoiceUrl(receiverInvoiceUrl)
       .stream()
       .map(e -> conversionService.convert(e, Invoice.class))
       .collect(Collectors.toList());

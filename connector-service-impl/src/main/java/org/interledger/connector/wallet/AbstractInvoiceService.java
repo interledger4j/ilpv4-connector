@@ -4,6 +4,8 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
+import org.interledger.connector.opa.model.NewInvoice;
+import org.interledger.connector.opa.model.OpenPaymentsPathConstants;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.Payment;
@@ -25,6 +27,7 @@ import org.springframework.core.convert.ConversionService;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
@@ -62,46 +65,70 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
+  public Invoice createInvoice(final NewInvoice newInvoice, final AccountId accountId) {
+    Objects.requireNonNull(newInvoice);
+    Objects.requireNonNull(accountId);
+
+    // Really only to determine if we need to proxy
+    HttpUrl ownerAccountUrl = invoiceFactory.resolveInvoiceSubject(newInvoice.subject());
+
+    if (!isForThisWallet(ownerAccountUrl)) {
+      HttpUrl createUrl = ownerAccountUrl.newBuilder()
+        .addPathSegment(OpenPaymentsPathConstants.INVOICES)
+        .build();
+      return openPaymentsProxyClient.createInvoice(createUrl.uri(), newInvoice);
+    }
+
+    Invoice invoice = invoiceFactory.construct(newInvoice);
+
+    return invoicesRepository.saveInvoice(invoice);
+  }
+
+  @Override
+  public Invoice syncInvoice(final HttpUrl receiverInvoiceUrl, final AccountId accountId) {
+    Objects.requireNonNull(receiverInvoiceUrl);
+    Objects.requireNonNull(accountId);
+
+    // See if we have that invoice already
+    List<Invoice> existingInvoices = invoicesRepository.findAllInvoicesByReceiverInvoiceUrl(receiverInvoiceUrl);
+    existingInvoices
+      .stream()
+      .filter(invoice -> invoice.accountId().equals(accountId))
+      .findFirst()
+      .ifPresent(invoice -> {
+        throw new InvoiceAlreadyExistsProblem(invoice.id());
+      });
+
+    // If not, get it from the receiver, or just copy it locally
+    Invoice invoiceOfReceiver;
+    if (!isForThisWallet(receiverInvoiceUrl)) {
+      invoiceOfReceiver = this.getRemoteInvoice(receiverInvoiceUrl);
+    } else {
+      invoiceOfReceiver = existingInvoices
+        .stream()
+        .filter(invoice -> !invoice.accountId().equals(accountId))
+        .findFirst()
+        .orElseThrow(() -> new InvoiceNotFoundProblem(receiverInvoiceUrl));
+    }
+
+    // And set the accountId of the invoice to the sender's accountId
+    Invoice invoiceWithCorrectAccountId = Invoice.builder()
+      .from(invoiceOfReceiver)
+      .id(InvoiceId.of(UUID.randomUUID().toString()))
+      .accountId(accountId)
+      .build();
+
+    return invoicesRepository.saveInvoice(invoiceWithCorrectAccountId);
+
+  }
+
+  @Override
   public Invoice getInvoice(final InvoiceId invoiceId, final AccountId accountId) {
     Objects.requireNonNull(invoiceId);
     Objects.requireNonNull(accountId);
 
     return invoicesRepository.findInvoiceByInvoiceIdAndAccountId(invoiceId, accountId)
       .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceId));
-  }
-
-  @Override
-  public Invoice syncInvoice(final HttpUrl invoiceUrl, final AccountId accountId) {
-    Objects.requireNonNull(invoiceUrl);
-    Objects.requireNonNull(accountId);
-
-    // See if we have that invoice already
-    Optional<Invoice> existingInvoice = invoicesRepository.findInvoiceByInvoiceUrlAndAccountId(invoiceUrl, accountId);
-    if (existingInvoice.isPresent()) {
-      throw new InvoiceAlreadyExistsProblem(existingInvoice.get().id());
-    } else {
-      // If not, get it from the receiver, or just copy it locally
-      Invoice invoiceOfReceiver;
-      if (!isForThisWallet(invoiceUrl)) {
-        invoiceOfReceiver = this.getRemoteInvoice(invoiceUrl);
-      } else {
-        invoiceOfReceiver = invoicesRepository.findAllInvoicesByInvoiceUrl(invoiceUrl)
-          .stream()
-          .filter(invoice -> {
-            return invoice.subject().contains(invoice.accountId().value()); // FIXME: What's the best way to figure out if an invoice is owned by the receiver?
-          })
-          .findFirst()
-          .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceUrl));
-      }
-
-      // And set the accountId of the invoice to the sender's accountId
-      Invoice invoiceWithCorrectAccountId = Invoice.builder()
-        .from(invoiceOfReceiver)
-        .accountId(accountId)
-        .build();
-
-      return invoicesRepository.saveInvoice(invoiceWithCorrectAccountId);
-    }
   }
 
   private Invoice getRemoteInvoice(final HttpUrl invoiceUrl) {
@@ -114,36 +141,6 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
 
       throw e;
     }
-  }
-
-  @Override
-  public Invoice createInvoice(final Invoice invoice, final AccountId accountId) {
-    Objects.requireNonNull(invoice);
-    Objects.requireNonNull(accountId);
-
-    Invoice invoiceWithUrl = invoiceFactory.construct(invoice);
-
-    HttpUrl invoiceUrl = invoiceWithUrl.invoiceUrl().get();
-
-    Invoice invoiceToSave = invoiceWithUrl;
-    if (!isForThisWallet(invoiceUrl)) {
-      // FIXME: Just strip the invoiceId from the invoiceUrl. This requires our payment pointers to start with /accounts
-      HttpUrl createUrl = new HttpUrl.Builder()
-        .scheme(invoiceUrl.scheme())
-        .host(invoiceUrl.host())
-        .port(invoiceUrl.port())
-        .addPathSegment("accounts")
-        .addPathSegment(invoice.accountId().value())
-        .addPathSegment("invoices")
-        .build();
-      invoiceToSave = openPaymentsProxyClient.createInvoice(createUrl.uri(), invoice);
-    }
-
-    Invoice invoiceWithCorrectAccountId = Invoice.builder()
-      .from(invoiceToSave)
-      .accountId(accountId)
-      .build();
-    return invoicesRepository.saveInvoice(invoiceWithCorrectAccountId);
   }
 
   @Override
@@ -189,7 +186,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     invoices
       .forEach(invoice -> {
         // See if we have already processed this payment for this invoice
-        Optional<Payment> existingPayment = paymentsRepository.findPaymentByPaymentIdAndInvoicePrimaryKey(payment.paymentId(), invoice.primaryKey());
+        Optional<Payment> existingPayment = paymentsRepository.findPaymentByPaymentIdAndInvoiceId(payment.paymentId(), invoice.id());
 
         // If we haven't, do it
         if (!existingPayment.isPresent()) {
@@ -203,7 +200,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
 
           Payment paymentToSave = Payment.builder()
             .from(payment)
-            .invoicePrimaryKey(invoice.primaryKey())
+            .invoiceId(invoice.id())
             .build();
           paymentsRepository.savePayment(paymentToSave);
         }

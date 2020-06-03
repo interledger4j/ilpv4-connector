@@ -7,7 +7,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
+import org.interledger.connector.opa.model.OpenPaymentsPathConstants;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.RequestMapping;

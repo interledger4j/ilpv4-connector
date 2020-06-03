@@ -36,8 +36,11 @@ public class InvoiceEntity extends AbstractEntity {
   @Column(name = "INVOICE_ID") // Hibernate treats this as unique, but Liquibase is explicit about uniqueness.
   private String invoiceId;
 
-  @Column(name = "INVOICE_URL")
-  private String invoiceUrl;
+  @Column(name = "RECEIVER_INVOICE_URL")
+  private String receiverInvoiceUrl;
+
+  @Column(name = "CORRELATION_ID")
+  private String correlationId;
 
   @Column(name = "ACCOUNT_ID")
   private String accountId;
@@ -66,8 +69,6 @@ public class InvoiceEntity extends AbstractEntity {
   @Column(name = "FINALIZED_AT")
   private Instant finalizedAt;
 
-  @Column(name = "CORRELATION_ID")
-  private String correlationId;
 
   /**
    * For Hibernate
@@ -76,18 +77,18 @@ public class InvoiceEntity extends AbstractEntity {
 
   public InvoiceEntity(final Invoice invoice) {
     Objects.requireNonNull(invoice);
+    this.invoiceId = invoice.id().value();
+    this.receiverInvoiceUrl = invoice.receiverInvoiceUrl().toString();
+    this.correlationId = invoice.correlationId().value();
     this.accountId = invoice.accountId().value();
-    this.amount = invoice.amount().longValue();
     this.assetCode = invoice.assetCode();
     this.assetScale = invoice.assetScale();
+    this.amount = invoice.amount().longValue();
+    this.received = invoice.received().longValue();
     this.description = invoice.description();
+    this.subject = invoice.subject();
     this.expiresAt = invoice.expiresAt();
     this.finalizedAt = invoice.finalizedAt();
-    this.invoiceId = invoice.id().value();
-    this.received = invoice.received().longValue();
-    this.subject = invoice.subject();
-    this.correlationId = invoice.correlationId().value();
-    this.invoiceUrl = invoice.invoiceUrl().get().toString();
   }
 
   public Long getId() {
@@ -104,6 +105,22 @@ public class InvoiceEntity extends AbstractEntity {
 
   public void setInvoiceId(String invoiceId) {
     this.invoiceId = invoiceId;
+  }
+
+  public String getReceiverInvoiceUrl() {
+    return receiverInvoiceUrl;
+  }
+
+  public void setReceiverInvoiceUrl(String receiverInvoiceUrl) {
+    this.receiverInvoiceUrl = receiverInvoiceUrl;
+  }
+
+  public String getCorrelationId() {
+    return correlationId;
+  }
+
+  public void setCorrelationId(String correlationId) {
+    this.correlationId = correlationId;
   }
 
   public String getAccountId() {
@@ -176,22 +193,6 @@ public class InvoiceEntity extends AbstractEntity {
 
   public void setFinalizedAt(Instant finalizedAt) {
     this.finalizedAt = finalizedAt;
-  }
-
-  public String getCorrelationId() {
-    return correlationId;
-  }
-
-  public void setCorrelationId(String correlationId) {
-    this.correlationId = correlationId;
-  }
-
-  public String getInvoiceUrl() {
-    return invoiceUrl;
-  }
-
-  public void setInvoiceUrl(String invoiceUrl) {
-    this.invoiceUrl = invoiceUrl;
   }
 
   @Override

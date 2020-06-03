@@ -40,18 +40,11 @@ public interface InvoicesRepository extends CrudRepository<InvoiceEntity, Long>,
     return findByInvoiceIdAndAccountId(invoiceId.value(), accountId.value());
   }
 
-  Optional<InvoiceEntity> findByInvoiceUrlAndAccountId(String invoiceUrl, String accountId);
+  List<InvoiceEntity> findAllByReceiverInvoiceUrl(String receiverInvoiceUrl);
 
-  default Optional<InvoiceEntity> findByInvoiceUrlAndAccountId(HttpUrl invoiceUrl, AccountId accountId) {
-    return findByInvoiceUrlAndAccountId(invoiceUrl.toString(), accountId.value());
-  }
-
-  List<InvoiceEntity> findAllByInvoiceUrl(String invoiceUrl);
-
-  default List<InvoiceEntity> findAllByInvoiceUrl(HttpUrl invoiceUrl) {
-    return findAllByInvoiceUrl(invoiceUrl.toString());
-  }
-
+  default List<InvoiceEntity> findAllByReceiverInvoiceUrl(HttpUrl receiverInvoiceUrl) {
+    return findAllByReceiverInvoiceUrl(receiverInvoiceUrl.toString());
+  };
 
   List<InvoiceEntity> findAllByCorrelationId(String correlationId);
 

@@ -33,27 +33,32 @@ public interface Invoice {
   }
 
   /**
-   * The true unique identifier of this {@link Invoice}. If sender and receiver on the same OPS, or multiple
-   * senders pay the same invoice from the same OPS, there could be multiple copies of an {@link Invoice} with the same
-   * {@link Invoice#id()}.
-   *
-   * @return A unique identifier for this {@link Invoice}.
-   */
-  @JsonIgnore
-  @Value.Default
-  default Long primaryKey() {
-    return 0L;
-  };
-
-  /**
-   * The location of this {@link Invoice}, specified by an HTTP URL.
+   * The location of this {@link Invoice}, specified by an HTTP URL path.
    *
    * Optional for invoice creation requests, but MUST be populated once created.
    *
    * @return The unique {@link HttpUrl} of this {@link Invoice}.
    */
-  @JsonProperty("name")
-  Optional<HttpUrl> invoiceUrl();
+  @JsonProperty("self")
+  @Value.Derived
+  default String invoicePath() {
+    return OpenPaymentsPathConstants.INVOICES_WITH_ID
+      .replace(OpenPaymentsPathConstants.ACCOUNT_ID_PARAM, accountId().value())
+      .replace(OpenPaymentsPathConstants.INVOICE_ID_PARAM, id().value());
+  };
+
+  @Value.Default
+  default HttpUrl receiverInvoiceUrl() {
+    return ownerAccountUrl()
+      .map(url -> url.newBuilder()
+        .addPathSegment(OpenPaymentsPathConstants.INVOICES)
+        .addPathSegment(id().value())
+        .build()
+      )
+      .orElseThrow(() -> new IllegalArgumentException("receiverInvoiceUrl can only be derived if ownerAccountUrl is set."));
+  };
+
+  Optional<HttpUrl> ownerAccountUrl();
 
   /**
    * The identifier of this {@link Invoice}. If sender and receiver on the same OPS, or multiple
@@ -81,7 +86,7 @@ public interface Invoice {
   @Value.Default
   default CorrelationId correlationId() {
     HashCode hashCode = Hashing.sha256()
-      .hashString(id().value(), StandardCharsets.UTF_8);
+      .hashString(receiverInvoiceUrl().toString(), StandardCharsets.UTF_8);
     return CorrelationId.of(hashCode.toString());
   };
 
@@ -128,22 +133,7 @@ public interface Invoice {
    *
    * @return A {@link String} representing the account ID of the user who created this invoice.
    */
-  @Value.Default
-  default AccountId accountId() {
-    // FIXME: We don't have to default this value once we derive creation URL from the payment pointer
-    try {
-      PaymentPointer paymentPointerSubject = PaymentPointer.of(subject());
-      return AccountId.of(paymentPointerSubject.path().substring(paymentPointerSubject.path().lastIndexOf("/") + 1));
-    } catch (IllegalArgumentException e) {
-      // subject is a PayID
-      String payIdString = subject();
-      if (!payIdString.startsWith("payid:")) {
-        payIdString = "payid:" + payIdString;
-      }
-      PayId payId = PayId.of(payIdString);
-      return AccountId.of(payId.account());
-    }
-  };
+  AccountId accountId();
 
   /**
    * The amount that should be paid to this invoice, denominated in {@code assetCode()} and {@code assetScale()}.

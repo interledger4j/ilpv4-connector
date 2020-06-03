@@ -54,7 +54,8 @@ public class IlpPaymentSystemFacade implements PaymentSystemFacade<StreamPayment
 
     final String ilpIntermediateSuffix = this.validateInvoiceSubjectAndComputeAddressSuffix(invoice.subject());
 
-    AccountId receiverAccountId = AccountId.of(ilpIntermediateSuffix);
+    String[] suffixParts = ilpIntermediateSuffix.split("\\.");
+    AccountId receiverAccountId = AccountId.of(suffixParts[suffixParts.length - 1]);
     final InterledgerAddress paymentReceiverAddress =
       localDestinationAddressUtils.getLocalFulfillmentAddress(receiverAccountId);
 

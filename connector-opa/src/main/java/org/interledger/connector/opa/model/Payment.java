@@ -17,7 +17,7 @@ public interface Payment {
     return ImmutablePayment.builder();
   }
 
-  Optional<Long> invoicePrimaryKey();
+  Optional<InvoiceId> invoiceId();
 
   /**
    * Correlation id provided by external clients to correlate this stream payment to their systems. Not required and

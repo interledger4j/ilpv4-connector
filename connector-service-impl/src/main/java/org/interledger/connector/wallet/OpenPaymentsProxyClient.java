@@ -5,6 +5,7 @@ import static org.interledger.connector.opa.model.OpenPaymentsMediaType.APPLICAT
 import org.interledger.connector.jackson.ObjectMapperFactory;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
+import org.interledger.connector.opa.model.NewInvoice;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Feign;
@@ -56,7 +57,7 @@ public interface OpenPaymentsProxyClient {
   })
   Invoice createInvoice(
     URI invoiceEndpoint,
-    Invoice invoice
+    NewInvoice newInvoice
   ) throws ThrowableProblem;
 
   @RequestLine("GET /")

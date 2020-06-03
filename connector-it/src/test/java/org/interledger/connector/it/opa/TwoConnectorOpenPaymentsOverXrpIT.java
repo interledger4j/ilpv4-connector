@@ -21,6 +21,7 @@ import org.interledger.connector.it.topology.AbstractBaseTopology;
 import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
+import org.interledger.connector.opa.model.NewInvoice;
 import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.wallet.OpenPaymentsClient;
@@ -102,10 +103,8 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
   @Test
   public void peterCreatesInvoiceForHimselfOnBob() {
     Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
-    assertThat(createdInvoice.invoiceUrl())
-      .isNotEmpty()
-      .get()
-      .isEqualTo(HttpUrl.get("http://localhost:8081/accounts/peter/invoices/" + createdInvoice.id().value()));
+    assertThat(createdInvoice.invoicePath())
+      .isEqualTo(HttpUrl.get("/accounts/peter/invoices/" + createdInvoice.id().value()));
     assertThat(createdInvoice.accountId())
       .isEqualTo(PETER);
   }
@@ -113,32 +112,22 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
   @Test
   public void paulCreatesInvoiceForPeterOnBobViaAlice() {
     Invoice createdInvoice = createInvoiceForPeter(aliceClient, PAUL);
-    assertThat(createdInvoice.invoiceUrl())
-      .isNotEmpty()
-      .get()
-      .isEqualTo(HttpUrl.get("http://localhost:8081/accounts/peter/invoices/" + createdInvoice.id().value()));
+    assertThat(createdInvoice.invoicePath())
+      .isEqualTo("/accounts/peter/invoices/" + createdInvoice.id().value());
     assertThat(createdInvoice.accountId())
-      .isEqualTo(PAUL);
+      .isEqualTo(PETER_ACCOUNT);
     Invoice invoiceOnBob = bobClient.getInvoice(PETER, createdInvoice.id().value());
-    assertThat(invoiceOnBob.accountId())
-      .isEqualTo(PETER);
-  }
-
-  @Test
-  public void peterGetsHisOwnInvoiceOnBob() {
-    Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
-    Invoice getInvoice = bobClient.getInvoice(PETER, createdInvoice.id().value());
-
-    assertThat(createdInvoice).isEqualTo(getInvoice);
+    assertThat(invoiceOnBob)
+      .isEqualTo(createdInvoice);
   }
 
   @Test
   public void paulSyncsInvoiceForPeterOnAliceFromBob() {
     Invoice petersInvoiceOnBob = createInvoiceForPeter(bobClient, PETER);
 
-    Invoice synced = aliceClient.getOrSyncInvoice(PAUL, petersInvoiceOnBob.invoiceUrl().get().toString());
+    Invoice synced = aliceClient.getOrSyncInvoice(PAUL, petersInvoiceOnBob.receiverInvoiceUrl().toString());
     assertThat(petersInvoiceOnBob)
-      .isEqualToIgnoringGivenFields(synced, "accountId", "createdAt", "updatedAt");
+      .isEqualToIgnoringGivenFields(synced, "accountId", "id", "invoicePath", "createdAt", "updatedAt");
     assertThat(petersInvoiceOnBob.accountId())
       .isEqualTo(PETER);
     assertThat(synced.accountId())
@@ -149,7 +138,7 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
   public void paulPaysInvoiceForPeterViaAliceOnBobOverXrp() throws InterruptedException {
     Invoice createdInvoiceOnBob = createInvoiceForPeter(bobClient, PETER);
 
-    Invoice createdInvoiceOnAlice = aliceClient.getOrSyncInvoice(PAUL, createdInvoiceOnBob.invoiceUrl().get().toString());
+    Invoice createdInvoiceOnAlice = aliceClient.getOrSyncInvoice(PAUL, createdInvoiceOnBob.receiverInvoiceUrl().toString());
 
     // Manually trigger a payment completed event
     XrplTransaction xprlPayment = XrplTransaction.builder()
@@ -182,18 +171,18 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
 
   @Test
   public void paulPaysInvoiceForEddyAllOnAlice() throws InterruptedException {
-    Invoice invoice = Invoice.builder()
-      .accountId(EDDY_ACCOUNT)
-      .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
-      .assetScale(Denominations.XRP_MILLI_DROPS.assetScale())
+    NewInvoice invoice = NewInvoice.builder()
+      .subject("accounts/eddy$localhost:8080")
       .amount(UnsignedLong.valueOf(100))
-      .subject("eddy$localhost:8080")
+      .assetCode(Denominations.XRP_DROPS.assetCode())
+      .assetScale(Denominations.XRP_DROPS.assetScale())
+      .description("IT payment")
       .build();
 
     Invoice eddyInvoiceOnAlice = aliceClient.createInvoice(EDDY, invoice);
-    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, eddyInvoiceOnAlice.invoiceUrl().get().toString());
+    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, eddyInvoiceOnAlice.receiverInvoiceUrl().toString());
     assertThat(eddyInvoiceOnAlice)
-      .isEqualToIgnoringGivenFields(syncedInvoice, "accountId", "createdAt", "updatedAt");
+      .isEqualToIgnoringGivenFields(syncedInvoice, "accountId", "id", "invoicePath", "createdAt", "updatedAt");
     assertThat(eddyInvoiceOnAlice.accountId())
       .isEqualTo(EDDY);
     assertThat(syncedInvoice.accountId())
@@ -225,19 +214,17 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
     Invoice paulsViewOfTheInvoice = aliceClient.getInvoice(PAUL, syncedInvoice.id().value());
 
     assertThat(eddysViewOfTheInvoice)
-      .isEqualToIgnoringGivenFields(paulsViewOfTheInvoice, "accountId" ,"createdAt", "updatedAt");
+      .isEqualToIgnoringGivenFields(paulsViewOfTheInvoice, "accountId", "id", "invoicePath", "createdAt", "updatedAt");
     assertThat(eddysViewOfTheInvoice.received()).isEqualTo(eddysViewOfTheInvoice.amount());
     assertThat(paulsViewOfTheInvoice.received()).isEqualTo(paulsViewOfTheInvoice.amount());
   }
-
   private Invoice createInvoiceForPeter(OpenPaymentsClient client, String accountId) {
-    Invoice invoice = Invoice.builder()
-      .accountId(PETER_ACCOUNT)
+    NewInvoice invoice = NewInvoice.builder()
       .assetCode(Denominations.XRP_DROPS.assetCode())
       .assetScale(Denominations.XRP_DROPS.assetScale())
       .amount(UnsignedLong.valueOf(100))
       .description("IT payment")
-      .subject("peter$localhost:8081")
+      .subject("peter$localhost:8081/accounts")
       .build();
 
     return client.createInvoice(accountId, invoice);

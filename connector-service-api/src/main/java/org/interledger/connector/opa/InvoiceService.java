@@ -4,6 +4,7 @@ package org.interledger.connector.opa;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.InvoiceId;
+import org.interledger.connector.opa.model.NewInvoice;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
 import org.interledger.connector.opa.model.problems.InvoiceAlreadyExistsProblem;
 
@@ -17,6 +18,26 @@ import java.util.Optional;
 public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
 
   /**
+   * Create a new invoice at the invoices URL resolved from {@code invoice#subject()}.
+   *
+   * @param newInvoice The {@link Invoice} to create.
+   * @param accountId The {@link AccountId} that should be associated with the created {@link Invoice}.
+   * @return The {@link Invoice} that was created.
+   */
+  Invoice createInvoice(final NewInvoice newInvoice, final AccountId accountId);
+
+  /**
+   * Get and save the latest state of the invoice owned by the receiver, either located at a remote OPS at
+   * {@code receiverInvoiceUrl}, or on this OPS, if the invoice with that location does not already exist on this OPS.
+   *
+   * @param receiverInvoiceUrl The unique URL of the {@link Invoice}.
+   * @param accountId The {@link AccountId} to associate the synced {@link Invoice} with.
+   * @return The synced {@link Invoice}.
+   * @throws InvoiceAlreadyExistsProblem if the {@link Invoice} has already been synced.
+   */
+  Invoice syncInvoice(final HttpUrl receiverInvoiceUrl, final AccountId accountId) throws InvoiceAlreadyExistsProblem;
+
+  /**
    * Get an existing invoice.
    *
    * @param invoiceId The {@link InvoiceId} of the invoice to get.
@@ -24,26 +45,6 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
    * @return The existing {@link Invoice} with the specified {@link InvoiceId} and {@link AccountId}.
    */
   Invoice getInvoice(final InvoiceId invoiceId, final AccountId accountId);
-
-  /**
-   * Get and save the latest state of the invoice owned by the receiver, either located at a remote OPS at
-   * {@code invoiceUrl}, or on this OPS, if the invoice with that location does not already exist on this OPS.
-   *
-   * @param invoiceUrl The unique URL of the {@link Invoice}.
-   * @param accountId The {@link AccountId} to associate the synced {@link Invoice} with.
-   * @return The synced {@link Invoice}.
-   * @throws InvoiceAlreadyExistsProblem if the {@link Invoice} has already been synced.
-   */
-  Invoice syncInvoice(final HttpUrl invoiceUrl, final AccountId accountId) throws InvoiceAlreadyExistsProblem;
-
-  /**
-   * Create a new invoice at the invoices URL resolved from {@code invoice#subject()}.
-   *
-   * @param invoice The {@link Invoice} to create.
-   * @param accountId The {@link AccountId} that should be associated with the created {@link Invoice}.
-   * @return The {@link Invoice} that was created.
-   */
-  Invoice createInvoice(final Invoice invoice, final AccountId accountId);
 
   /**
    * Update an existing {@link Invoice}.

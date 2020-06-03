@@ -1,4 +1,4 @@
-package org.interledger.connector.settings.properties;
+package org.interledger.connector.opa.model;
 
 public class OpenPaymentsPathConstants {
   private static final String SLASH = "/";
@@ -13,7 +13,8 @@ public class OpenPaymentsPathConstants {
   public static final String SLASH_INVOICES = SLASH + INVOICES;
 
   public static final String INVOICE_ID = "invoiceId";
-  public static final String SLASH_INVOICE_ID = "/{" + INVOICE_ID + ":.+}";
+  public static final String INVOICE_ID_PARAM = "{" + INVOICE_ID + ":.+}";
+  public static final String SLASH_INVOICE_ID = "/" + INVOICE_ID_PARAM;
 
   public static final String MANDATES = "mandates";
   public static final String SLASH_MANDATES = SLASH + MANDATES;
@@ -31,7 +32,8 @@ public class OpenPaymentsPathConstants {
   public static final String SLASH_ILP = SLASH + ILP;
 
   public static final String ACCOUNT_ID = "accountId";
-  public static final String SLASH_ACCOUNT_ID = "/{" + ACCOUNT_ID + ":.+}";
+  public static final String ACCOUNT_ID_PARAM = "{" + ACCOUNT_ID + ":.+}";
+  public static final String SLASH_ACCOUNT_ID = "/" + ACCOUNT_ID_PARAM;
 
   public static final String SYNC = "sync";
   public static final String SLASH_SYNC = SLASH + SYNC;
