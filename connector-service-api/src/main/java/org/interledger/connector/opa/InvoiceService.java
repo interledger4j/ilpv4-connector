@@ -2,11 +2,11 @@ package org.interledger.connector.opa;
 
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.NewInvoice;
-import org.interledger.connector.opa.model.PayInvoiceRequest;
-import org.interledger.connector.opa.model.problems.InvoiceAlreadyExistsProblem;
+import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.InvoiceId;
+import org.interledger.openpayments.NewInvoice;
+import org.interledger.openpayments.PayInvoiceRequest;
+import org.interledger.openpayments.problems.InvoiceAlreadyExistsProblem;
 
 import okhttp3.HttpUrl;
 

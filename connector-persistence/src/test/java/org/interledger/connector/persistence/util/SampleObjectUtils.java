@@ -1,24 +1,21 @@
 package org.interledger.connector.persistence.util;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.model.CorrelationId;
-import org.interledger.connector.opa.model.Denomination;
-import org.interledger.connector.opa.model.ImmutableInvoice;
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.Payment;
-import org.interledger.connector.opa.model.PaymentId;
-import org.interledger.connector.opa.model.PaymentNetwork;
+import org.interledger.openpayments.CorrelationId;
+import org.interledger.openpayments.Denomination;
+import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.InvoiceId;
+import org.interledger.openpayments.Payment;
+import org.interledger.openpayments.PaymentId;
 
 import com.google.common.primitives.UnsignedLong;
-import okhttp3.HttpUrl;
 
 import java.time.Instant;
 import java.util.UUID;
 
 public final class SampleObjectUtils {
 
-  public static ImmutableInvoice createNewIlpInvoice() {
+  public static Invoice createNewIlpInvoice() {
     return Invoice.builder()
       .accountId(AccountId.of("ricketycricket"))
       .amount(UnsignedLong.valueOf(1000))
@@ -33,7 +30,7 @@ public final class SampleObjectUtils {
       .build();
   }
 
-  public static ImmutableInvoice createNewXrpInvoice() {
+  public static Invoice createNewXrpInvoice() {
     return Invoice.builder()
       .accountId(AccountId.of("ricketycricket"))
       .amount(UnsignedLong.valueOf(1000))

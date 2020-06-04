@@ -1,14 +1,14 @@
 package org.interledger.connector.jackson.modules;
 
-import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.PaymentId;
+
+import org.interledger.openpayments.PaymentId;
 
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 
 /**
- * A Jackson {@link SimpleModule} for serializing and deserializing instances of {@link InvoiceId}.
+ * A Jackson {@link SimpleModule} for serializing and deserializing instances of {@link PaymentId}.
  */
 public class PaymentIdModule extends SimpleModule {
 

@@ -1,6 +1,7 @@
 package org.interledger.connector.jackson.modules;
 
-import org.interledger.connector.opa.model.InvoiceId;
+
+import org.interledger.openpayments.InvoiceId;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;

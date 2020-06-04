@@ -1,7 +1,6 @@
 package org.interledger.connector.persistence.types;
 
-import org.interledger.connector.opa.model.InvoiceId;
-
+import org.interledger.openpayments.InvoiceId;
 import org.hibernate.type.AbstractSingleColumnStandardBasicType;
 import org.hibernate.type.descriptor.WrapperOptions;
 import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;

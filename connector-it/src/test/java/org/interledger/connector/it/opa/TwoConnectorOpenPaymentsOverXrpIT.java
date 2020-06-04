@@ -20,15 +20,14 @@ import org.interledger.connector.it.markers.OpenPayments;
 import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerIlpOverHttpTopology;
 import org.interledger.connector.it.topology.AbstractBaseTopology;
 import org.interledger.connector.it.topology.Topology;
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.NewInvoice;
 import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.openpayments.events.ImmutableXrplTransaction;
-import org.interledger.openpayments.events.Memo;
-import org.interledger.openpayments.events.MemoWrapper;
+import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.NewInvoice;
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
-import org.interledger.openpayments.events.XrplTransaction;
+import org.interledger.openpayments.xrpl.Memo;
+import org.interledger.openpayments.xrpl.MemoWrapper;
+import org.interledger.openpayments.xrpl.XrplTransaction;
 import org.interledger.stream.Denominations;
 
 import com.google.common.primitives.UnsignedLong;
@@ -198,7 +197,7 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
   }
 
   protected XrpPaymentCompletedEvent getXrpPaymentCompletedEvent(Invoice invoice) {
-    ImmutableXrplTransaction xrplTransaction = XrplTransaction.builder()
+    XrplTransaction xrplTransaction = XrplTransaction.builder()
       .account("SENDER_ADDRESS")
       .destination("RECEIVER_ADDRESS")
       .amount(invoice.amount())

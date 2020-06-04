@@ -8,10 +8,6 @@ import static org.interledger.connector.core.ConfigConstants.TRUE;
 import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.PaymentSystemFacade;
-import org.interledger.connector.opa.model.IlpPaymentDetails;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.connector.opa.model.XrpPayment;
-import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.payments.SendPaymentService;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
@@ -20,10 +16,13 @@ import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.wallet.IlpInvoiceService;
 import org.interledger.connector.wallet.IlpPaymentSystemFacade;
 import org.interledger.connector.wallet.InvoiceFactory;
-import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.connector.wallet.OpenPaymentsProxyClient;
 import org.interledger.connector.wallet.PayIdResolver;
 import org.interledger.connector.wallet.XrplInvoiceService;
+import org.interledger.openpayments.IlpPaymentDetails;
+import org.interledger.openpayments.XrpPaymentDetails;
+import org.interledger.openpayments.config.OpenPaymentsSettings;
+import org.interledger.openpayments.xrpl.XrplTransaction;
 import org.interledger.spsp.PaymentPointerResolver;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
@@ -83,7 +82,7 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
-  public InvoiceService<XrpPayment, XrpPaymentDetails> xrpInvoiceService(
+  public InvoiceService<XrplTransaction, XrpPaymentDetails> xrpInvoiceService(
     InvoicesRepository invoicesRepository,
     PaymentsRepository paymentsRepository,
     ConversionService conversionService,

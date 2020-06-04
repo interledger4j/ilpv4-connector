@@ -5,9 +5,9 @@ import static org.interledger.connector.core.ConfigConstants.OPEN_PAYMENTS_ENABL
 import static org.interledger.connector.core.ConfigConstants.TRUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-import org.interledger.connector.opa.model.OpenPaymentsMetadata;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.connector.opa.model.OpenPaymentsPathConstants;
+import org.interledger.openpayments.config.OpenPaymentsMetadata;
+import org.interledger.openpayments.config.OpenPaymentsPathConstants;
+import org.interledger.openpayments.config.OpenPaymentsSettings;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.RequestMapping;

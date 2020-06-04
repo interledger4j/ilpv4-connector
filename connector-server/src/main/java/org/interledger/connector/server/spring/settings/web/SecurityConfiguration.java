@@ -13,11 +13,11 @@ import org.interledger.connector.server.spring.auth.ilpoverhttp.BearerTokenSecur
 import org.interledger.connector.server.spring.auth.ilpoverhttp.IlpOverHttpAuthenticationProvider;
 import org.interledger.connector.server.spring.controllers.PathConstants;
 import org.interledger.connector.settings.ConnectorSettings;
-import org.interledger.connector.opa.model.OpenPaymentsPathConstants;
 import org.interledger.crypto.ByteArrayUtils;
 import org.interledger.crypto.Decryptor;
 import org.interledger.crypto.EncryptedSecret;
 import org.interledger.crypto.EncryptionService;
+import org.interledger.openpayments.config.OpenPaymentsPathConstants;
 
 import com.auth0.spring.security.api.JwtAuthenticationEntryPoint;
 import com.google.common.eventbus.EventBus;

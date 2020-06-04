@@ -1,10 +1,10 @@
 package org.interledger.connector.wallet;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.NewInvoice;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.connector.opa.model.PayId;
+import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.NewInvoice;
+import org.interledger.openpayments.PayId;
+import org.interledger.openpayments.config.OpenPaymentsSettings;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
 

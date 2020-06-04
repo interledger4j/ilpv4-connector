@@ -1,12 +1,12 @@
 package org.interledger.connector.settings;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.crypto.CryptoKey;
 import org.interledger.crypto.CryptoKeys;
 import org.interledger.link.Link;
+import org.interledger.openpayments.config.OpenPaymentsSettings;
 
 import org.immutables.value.Value;
 

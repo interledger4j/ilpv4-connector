@@ -7,15 +7,15 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.InvoiceService;
-import org.interledger.connector.opa.model.NewInvoice;
-import org.interledger.connector.opa.model.IlpPaymentDetails;
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.OpenPaymentsMediaType;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.connector.opa.model.PayInvoiceRequest;
+import org.interledger.openpayments.IlpPaymentDetails;
+import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.InvoiceId;
+import org.interledger.openpayments.NewInvoice;
+import org.interledger.openpayments.OpenPaymentsMediaType;
+import org.interledger.openpayments.PayInvoiceRequest;
 import org.interledger.connector.payments.StreamPayment;
-import org.interledger.connector.opa.model.OpenPaymentsPathConstants;
+import org.interledger.openpayments.config.OpenPaymentsPathConstants;
+import org.interledger.openpayments.config.OpenPaymentsSettings;
 
 import okhttp3.HttpUrl;
 import org.slf4j.Logger;

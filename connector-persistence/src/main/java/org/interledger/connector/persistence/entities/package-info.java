@@ -14,7 +14,7 @@
 package org.interledger.connector.persistence.entities;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.model.InvoiceId;
+import org.interledger.openpayments.InvoiceId;
 import org.interledger.connector.persistence.types.AccountIdType;
 import org.interledger.connector.persistence.types.InvoiceIdType;
 

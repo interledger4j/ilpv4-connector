@@ -1,16 +1,15 @@
 package org.interledger.connector.wallet;
 
-import static org.interledger.connector.opa.model.OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE;
+import static org.interledger.openpayments.OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE;
 
 import org.interledger.connector.jackson.ObjectMapperFactory;
-import org.interledger.connector.opa.model.IlpPaymentDetails;
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.NewInvoice;
-import org.interledger.connector.opa.model.OpenPaymentsMetadata;
-import org.interledger.connector.opa.model.OpenPaymentsPathConstants;
-import org.interledger.connector.opa.model.PayInvoiceRequest;
-import org.interledger.connector.opa.model.XrpPaymentDetails;
+import org.interledger.openpayments.IlpPaymentDetails;
+import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.NewInvoice;
+import org.interledger.openpayments.PayInvoiceRequest;
 import org.interledger.connector.payments.StreamPayment;
+import org.interledger.openpayments.config.OpenPaymentsMetadata;
+import org.interledger.openpayments.config.OpenPaymentsPathConstants;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Feign;

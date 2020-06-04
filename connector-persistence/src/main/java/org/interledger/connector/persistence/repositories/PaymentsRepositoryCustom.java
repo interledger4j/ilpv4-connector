@@ -1,9 +1,8 @@
 package org.interledger.connector.persistence.repositories;
 
-import org.interledger.connector.opa.model.CorrelationId;
-import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.Payment;
-import org.interledger.connector.opa.model.PaymentId;
+import org.interledger.openpayments.InvoiceId;
+import org.interledger.openpayments.Payment;
+import org.interledger.openpayments.PaymentId;
 
 import java.util.Optional;
 

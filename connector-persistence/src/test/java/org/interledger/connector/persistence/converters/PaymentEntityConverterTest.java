@@ -2,9 +2,7 @@ package org.interledger.connector.persistence.converters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.Payment;
-import org.interledger.connector.persistence.entities.InvoiceEntity;
+import org.interledger.openpayments.Payment;
 import org.interledger.connector.persistence.entities.PaymentEntity;
 import org.interledger.connector.persistence.util.SampleObjectUtils;
 

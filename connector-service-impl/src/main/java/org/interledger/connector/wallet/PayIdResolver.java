@@ -1,6 +1,6 @@
 package org.interledger.connector.wallet;
 
-import org.interledger.connector.opa.model.PayId;
+import org.interledger.openpayments.PayId;
 
 import okhttp3.HttpUrl;
 

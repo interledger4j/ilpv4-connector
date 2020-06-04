@@ -4,7 +4,7 @@ import static org.interledger.connector.persistence.entities.DataConstants.Colum
 import static org.interledger.connector.persistence.entities.DataConstants.IndexNames.INVOICES_ID_IDX;
 import static org.interledger.connector.persistence.entities.DataConstants.TableNames.INVOICES;
 
-import org.interledger.connector.opa.model.Invoice;
+import org.interledger.openpayments.Invoice;
 
 import org.hibernate.annotations.NaturalId;
 

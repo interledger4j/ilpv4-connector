@@ -105,10 +105,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>connector-opa</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>connector-model</artifactId>
     </dependency>
     <dependency>
@@ -142,6 +138,10 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>connector-pubsub</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>openpayments-model</artifactId>
     </dependency>
     <dependency>
       <groupId>com.auth0</groupId>

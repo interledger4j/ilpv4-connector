@@ -1,7 +1,6 @@
 package org.interledger.connector.jackson.modules;
 
-import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.CorrelationId;
+import org.interledger.openpayments.CorrelationId;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -10,7 +9,7 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import java.io.IOException;
 
 /**
- * Jackson deserializer for {@link InvoiceId}.
+ * Jackson deserializer for {@link CorrelationId}.
  */
 public class CorrelationIdDeserializer extends StdDeserializer<CorrelationId> {
 

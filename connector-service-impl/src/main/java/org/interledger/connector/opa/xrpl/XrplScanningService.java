@@ -1,10 +1,7 @@
 package org.interledger.connector.opa.xrpl;
 
-import org.interledger.openpayments.events.Memo;
-import org.interledger.openpayments.events.MemoWrapper;
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
-import org.interledger.openpayments.events.XrplMessage;
-import org.interledger.openpayments.events.XrplTransaction;
+import org.interledger.openpayments.xrpl.XrplMessage;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +14,6 @@ import okhttp3.WebSocketListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;

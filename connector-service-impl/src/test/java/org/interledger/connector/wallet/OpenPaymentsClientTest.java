@@ -1,7 +1,7 @@
 package org.interledger.connector.wallet;
 
 import org.interledger.connector.jackson.ObjectMapperFactory;
-import org.interledger.connector.opa.model.OpenPaymentsMetadata;
+import org.interledger.openpayments.config.OpenPaymentsMetadata;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
 

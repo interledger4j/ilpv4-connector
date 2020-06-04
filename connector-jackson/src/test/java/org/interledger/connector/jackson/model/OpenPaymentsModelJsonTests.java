@@ -4,11 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.jackson.ObjectMapperFactory;
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.OpenPaymentsMetadata;
-import org.interledger.connector.opa.model.SupportedAsset;
-import org.interledger.connector.opa.model.SupportedAssets;
+import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.InvoiceId;
+import org.interledger.openpayments.config.OpenPaymentsMetadata;
+import org.interledger.openpayments.config.SupportedAsset;
+import org.interledger.openpayments.config.SupportedAssets;
 import org.interledger.spsp.PaymentPointer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;

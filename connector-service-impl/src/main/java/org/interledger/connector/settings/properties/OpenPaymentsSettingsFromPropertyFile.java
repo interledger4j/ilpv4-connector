@@ -1,9 +1,9 @@
 package org.interledger.connector.settings.properties;
 
-import org.interledger.connector.opa.model.OpenPaymentsMetadata;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.link.Link;
+import org.interledger.openpayments.config.OpenPaymentsMetadata;
+import org.interledger.openpayments.config.OpenPaymentsSettings;
 
 import okhttp3.HttpUrl;
 import org.springframework.boot.context.properties.ConfigurationProperties;

@@ -1,7 +1,7 @@
 package org.interledger.connector.wallet;
 
-import org.interledger.connector.opa.model.Invoice;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.openpayments.Invoice;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;

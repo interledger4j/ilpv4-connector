@@ -1,7 +1,7 @@
 package org.interledger.connector.server.wallet.controllers.converters;
 
 
-import org.interledger.connector.opa.model.InvoiceId;
+import org.interledger.openpayments.InvoiceId;
 
 import okhttp3.HttpUrl;
 import org.springframework.core.convert.converter.Converter;

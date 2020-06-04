@@ -1,8 +1,6 @@
 package org.interledger.connector.jackson.modules;
 
-import org.interledger.connector.opa.model.CorrelationId;
-import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.PaymentId;
+import org.interledger.openpayments.CorrelationId;
 
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.module.SimpleModule;

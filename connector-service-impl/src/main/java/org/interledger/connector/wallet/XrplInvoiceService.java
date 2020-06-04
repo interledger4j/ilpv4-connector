@@ -1,14 +1,13 @@
 package org.interledger.connector.wallet;
 
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.connector.opa.model.Payment;
-import org.interledger.connector.opa.model.PaymentId;
-import org.interledger.connector.opa.model.XrpPayment;
-import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.persistence.repositories.PaymentsRepository;
+import org.interledger.openpayments.Payment;
+import org.interledger.openpayments.PaymentId;
+import org.interledger.openpayments.XrpPaymentDetails;
+import org.interledger.openpayments.config.OpenPaymentsSettings;
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
-import org.interledger.openpayments.events.XrplTransaction;
+import org.interledger.openpayments.xrpl.XrplTransaction;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -18,7 +17,7 @@ import org.springframework.core.convert.ConversionService;
 
 import java.util.function.Supplier;
 
-public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPaymentDetails> implements XrplPaymentEventHandler {
+public class XrplInvoiceService extends AbstractInvoiceService<XrplTransaction, XrpPaymentDetails> implements XrplPaymentEventHandler {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
 

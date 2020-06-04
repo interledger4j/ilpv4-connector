@@ -13,15 +13,4 @@
   <name>OpenPayments :: Services API</name>
   <description>All service object interfaces for the OpenPayments Server.</description>
 
-  <!--<dependencies>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>connector-opa</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>openpayments-model</artifactId>
-    </dependency>
-  </dependencies>-->
-
 </project>

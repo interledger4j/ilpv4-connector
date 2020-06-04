@@ -7,10 +7,6 @@ import org.interledger.connector.it.topologies.AbstractTopology;
 import org.interledger.connector.it.topology.AbstractBaseTopology;
 import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.it.topology.nodes.ConnectorServerNode;
-import org.interledger.connector.opa.model.ImmutableOpenPaymentsSettings;
-import org.interledger.connector.opa.model.OpenPaymentsMetadata;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.connector.opa.model.SupportedAssets;
 import org.interledger.connector.routing.StaticRoute;
 import org.interledger.connector.server.ConnectorServer;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -24,6 +20,9 @@ import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
+import org.interledger.openpayments.config.OpenPaymentsMetadata;
+import org.interledger.openpayments.config.OpenPaymentsSettings;
+import org.interledger.openpayments.config.SupportedAssets;
 import org.interledger.stream.Denomination;
 
 import com.google.common.collect.Sets;
@@ -320,7 +319,7 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
       .build();
   }
 
-  private static ImmutableOpenPaymentsSettings constructOpenPaymentsSettings(
+  private static OpenPaymentsSettings constructOpenPaymentsSettings(
     InterledgerAddress interledgerAddress,
     int port,
     String connectorUrl) {

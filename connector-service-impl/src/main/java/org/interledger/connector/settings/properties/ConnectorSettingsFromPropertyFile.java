@@ -1,7 +1,6 @@
 package org.interledger.connector.settings.properties;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.GlobalRoutingSettings;
@@ -9,6 +8,7 @@ import org.interledger.connector.settings.IlpOverHttpConnectorSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.link.Link;
+import org.interledger.openpayments.config.OpenPaymentsSettings;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
