@@ -178,6 +178,68 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   }
 
   @Test
+  public void paulDoesAPeerToPeerPaymentToPeterViaAliceOnBob() {
+    Invoice createdInvoice = createInvoiceForPeter(aliceClient, PAUL);
+    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, createdInvoice.receiverInvoiceUrl().toString());
+
+    StreamPayment payment = aliceClient.payInvoice(
+      syncedInvoice.accountId().value(),
+      syncedInvoice.id().value(),
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXVsIiwibmFtZSI6InBhdWwiLCJpYXQiOjE1MTYyMzkwMjJ9.rdYwzQKAG8tFC2aRvG3XsW8BFsHxEFnOwcY-17KAA7g",
+      Optional.empty()
+    );
+
+    assertThat(payment.amount().abs()).isEqualTo(syncedInvoice.amount().bigIntegerValue());
+    assertThat(payment.deliveredAmount()).isEqualTo(createdInvoice.amount());
+
+    Invoice invoiceOnBobAfterPayment = bobClient.getInvoice(createdInvoice.accountId().value(), createdInvoice.id().value());
+    assertThat(invoiceOnBobAfterPayment.isPaid()).isTrue();
+
+    Invoice invoiceOnAliceAfterPayment = aliceClient.getInvoice(syncedInvoice.accountId().value(), syncedInvoice.id().value());
+    assertThat(invoiceOnAliceAfterPayment.isPaid()).isTrue();
+  }
+
+  @Test
+  public void paulDoesAPeerToPeerPaymentToEddyAllOnAlice() throws InterruptedException {
+    NewInvoice invoice = NewInvoice.builder()
+      .subject("$localhost:8080/eddy")
+      .amount(UnsignedLong.valueOf(100))
+      .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
+      .assetScale(Denominations.XRP_MILLI_DROPS.assetScale())
+      .description("IT payment")
+      .build();
+
+    Invoice eddyInvoiceOnAlice = aliceClient.createInvoice(PAUL, invoice);
+    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, eddyInvoiceOnAlice.receiverInvoiceUrl().toString());
+    assertThat(eddyInvoiceOnAlice)
+      .isEqualToIgnoringGivenFields(syncedInvoice, "accountId", "id", "invoicePath", "createdAt", "updatedAt");
+    assertThat(eddyInvoiceOnAlice.accountId())
+      .isEqualTo(EDDY_ACCOUNT);
+    assertThat(syncedInvoice.accountId())
+      .isEqualTo(PAUL_ACCOUNT);
+
+    StreamPayment payment = aliceClient.payInvoice(
+      syncedInvoice.accountId().value(),
+      syncedInvoice.id().value(),
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXVsIiwibmFtZSI6InBhdWwiLCJpYXQiOjE1MTYyMzkwMjJ9.rdYwzQKAG8tFC2aRvG3XsW8BFsHxEFnOwcY-17KAA7g",
+      Optional.empty()
+    );
+    assertThat(payment.amount().abs()).isEqualTo(syncedInvoice.amount().bigIntegerValue());
+    assertThat(payment.deliveredAmount()).isEqualTo(eddyInvoiceOnAlice.amount());
+
+    // Let the payment system event out and the OP system to update
+    Thread.sleep(5000);
+
+    Invoice eddysViewOfTheInvoice = aliceClient.getInvoice(EDDY, eddyInvoiceOnAlice.id().value());
+    Invoice paulsViewOfTheInvoice = aliceClient.getInvoice(PAUL, syncedInvoice.id().value());
+
+    assertThat(eddysViewOfTheInvoice)
+      .isEqualToIgnoringGivenFields(paulsViewOfTheInvoice, "accountId", "id", "invoicePath", "createdAt", "updatedAt");
+    assertThat(eddysViewOfTheInvoice.received()).isEqualTo(eddysViewOfTheInvoice.amount());
+    assertThat(paulsViewOfTheInvoice.received()).isEqualTo(paulsViewOfTheInvoice.amount());
+  }
+
+  @Test
   public void paulPaysInvoiceForEddyAllOnAlice() throws InterruptedException {
     NewInvoice invoice = NewInvoice.builder()
       .subject("$localhost:8080/eddy")

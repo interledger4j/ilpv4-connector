@@ -50,11 +50,10 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
   @Subscribe
   public void onPaymentCompleted(XrpPaymentCompletedEvent xrpPaymentCompletedEvent) {
     XrplTransaction transaction = xrpPaymentCompletedEvent.payment();
-    logger.warn("Transaction picked up: " + transaction);
     transaction.invoiceMemoCorrelationId().ifPresent(correlationId -> {
       Payment payment = Payment.builder()
         .amount(transaction.amount())
-        .correlationId(correlationId) // FIXME: may need to decode hex
+        .correlationId(correlationId)
         .paymentId(PaymentId.of(transaction.hash()))
         .createdAt(transaction.createdAt())
         .modifiedAt(transaction.modifiedAt())
