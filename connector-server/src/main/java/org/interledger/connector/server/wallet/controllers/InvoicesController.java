@@ -6,7 +6,6 @@ import static org.interledger.connector.core.ConfigConstants.TRUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.InvoiceService;
 import org.interledger.openpayments.IlpPaymentDetails;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.InvoiceId;
@@ -18,6 +17,7 @@ import org.interledger.openpayments.config.OpenPaymentsPathConstants;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
 
 import okhttp3.HttpUrl;
+import org.interleger.openpayments.InvoiceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

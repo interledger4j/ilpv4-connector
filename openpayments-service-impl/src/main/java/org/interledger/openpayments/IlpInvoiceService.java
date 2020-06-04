@@ -1,26 +1,20 @@
-package org.interledger.connector.wallet;
+package org.interledger.openpayments;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.events.StreamPaymentClosedEvent;
-import org.interledger.connector.opa.PaymentSystemFacade;
-import org.interledger.openpayments.CorrelationId;
-import org.interledger.openpayments.Denomination;
-import org.interledger.openpayments.IlpPaymentDetails;
-import org.interledger.openpayments.Invoice;
-import org.interledger.openpayments.InvoiceId;
-import org.interledger.openpayments.PayInvoiceRequest;
-import org.interledger.openpayments.Payment;
-import org.interledger.openpayments.PaymentId;
-import org.interledger.openpayments.config.OpenPaymentsSettings;
-import org.interledger.openpayments.problems.InvoicePaymentProblem;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.persistence.repositories.PaymentsRepository;
+import org.interledger.openpayments.config.OpenPaymentsSettings;
+import org.interledger.openpayments.problems.InvoicePaymentProblem;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
+import org.interleger.openpayments.PaymentSystemFacade;
+import org.interleger.openpayments.StreamPaymentEventHandler;
+import org.interleger.openpayments.client.OpenPaymentsProxyClient;
 import org.springframework.core.convert.ConversionService;
 
 import java.util.Optional;

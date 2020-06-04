@@ -1,11 +1,10 @@
-package org.interledger.connector.wallet;
-
-import static org.interledger.openpayments.OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE;
+package org.interleger.openpayments.client;
 
 import org.interledger.connector.jackson.ObjectMapperFactory;
 import org.interledger.openpayments.IlpPaymentDetails;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.NewInvoice;
+import org.interledger.openpayments.OpenPaymentsMediaType;
 import org.interledger.openpayments.PayInvoiceRequest;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.openpayments.config.OpenPaymentsMetadata;
@@ -89,7 +88,7 @@ public interface OpenPaymentsClient {
 
   @RequestLine("GET " + OpenPaymentsPathConstants.INVOICES_WITH_ID)
   @Headers({
-    ACCEPT + APPLICATION_CONNECTION_JSON_VALUE,
+    ACCEPT + OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE,
     CONTENT_TYPE + APPLICATION_JSON
   })
   IlpPaymentDetails getIlpInvoicePaymentDetails(

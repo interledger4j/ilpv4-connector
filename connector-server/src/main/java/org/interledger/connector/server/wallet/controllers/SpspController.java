@@ -9,8 +9,8 @@ import static org.interledger.spsp.client.SpspClient.APPLICATION_SPSP4_JSON_VALU
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
 import org.interledger.connector.problems.spsp.InvalidSpspRequestProblem;
-import org.interledger.connector.wallet.PaymentDetailsUtils;
 import org.interledger.core.InterledgerAddress;
+import org.interledger.openpayments.PaymentDetailsUtils;
 import org.interledger.spsp.StreamConnectionDetails;
 import org.interledger.stream.receiver.StreamReceiver;
 

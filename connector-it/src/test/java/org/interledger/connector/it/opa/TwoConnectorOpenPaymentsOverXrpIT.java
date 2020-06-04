@@ -20,7 +20,6 @@ import org.interledger.connector.it.markers.OpenPayments;
 import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerIlpOverHttpTopology;
 import org.interledger.connector.it.topology.AbstractBaseTopology;
 import org.interledger.connector.it.topology.Topology;
-import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.NewInvoice;
@@ -32,6 +31,7 @@ import org.interledger.stream.Denominations;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.commons.codec.binary.Hex;
+import org.interleger.openpayments.client.OpenPaymentsClient;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;

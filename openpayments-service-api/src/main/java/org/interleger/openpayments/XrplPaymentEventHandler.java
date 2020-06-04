@@ -1,7 +1,6 @@
-package org.interledger.connector.wallet;
+package org.interleger.openpayments;
 
 
-import org.interledger.connector.events.StreamPaymentClosedEvent;
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
 
 /**
@@ -11,12 +10,12 @@ import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
  * This facade provides an abstraction between the OpenPayments services and any underlying payment service in order to
  * enable the OpenPayments server to interoperate with non-Connector payment layers in a consistent manner.
  */
-public interface StreamPaymentEventHandler {
+public interface XrplPaymentEventHandler {
 
   /**
    * Called whenever a new {@link XrpPaymentCompletedEvent} is encountered. Implementations should implement this method to
    * handle this event properly.
    */
-  void onPaymentCompleted(StreamPaymentClosedEvent paymentCompletedEvent);
+  void onPaymentCompleted(XrpPaymentCompletedEvent xrpPaymentCompletedEvent);
 
 }

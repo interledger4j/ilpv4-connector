@@ -1,25 +1,21 @@
-package org.interledger.connector.wallet;
+package org.interledger.openpayments;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.InvoiceService;
-import org.interledger.openpayments.Invoice;
-import org.interledger.openpayments.InvoiceId;
-import org.interledger.openpayments.NewInvoice;
-import org.interledger.openpayments.PayInvoiceRequest;
-import org.interledger.openpayments.Payment;
+import org.interledger.connector.persistence.entities.InvoiceEntity;
+import org.interledger.connector.persistence.repositories.InvoicesRepository;
+import org.interledger.connector.persistence.repositories.PaymentsRepository;
 import org.interledger.openpayments.config.OpenPaymentsPathConstants;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
 import org.interledger.openpayments.problems.InvoiceAlreadyExistsProblem;
 import org.interledger.openpayments.problems.InvoiceNotFoundProblem;
 import org.interledger.openpayments.problems.UnsupportedInvoiceOperationProblem;
-import org.interledger.connector.persistence.entities.InvoiceEntity;
-import org.interledger.connector.persistence.repositories.InvoicesRepository;
-import org.interledger.connector.persistence.repositories.PaymentsRepository;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import feign.FeignException;
 import okhttp3.HttpUrl;
+import org.interleger.openpayments.InvoiceService;
+import org.interleger.openpayments.client.OpenPaymentsProxyClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;

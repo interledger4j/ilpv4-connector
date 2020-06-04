@@ -1,4 +1,4 @@
-package org.interledger.connector.opa;
+package org.interleger.openpayments;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.openpayments.CorrelationId;

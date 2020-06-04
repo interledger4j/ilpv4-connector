@@ -144,6 +144,10 @@
       <artifactId>openpayments-model</artifactId>
     </dependency>
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>openpayments-service-api</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.auth0</groupId>
       <artifactId>java-jwt</artifactId>
     </dependency>
@@ -444,6 +448,10 @@
       <artifactId>embedded-database-spring-test</artifactId>
       <version>1.5.2</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger.connector</groupId>
+      <artifactId>openpayments-service-impl</artifactId>
     </dependency>
   </dependencies>
 

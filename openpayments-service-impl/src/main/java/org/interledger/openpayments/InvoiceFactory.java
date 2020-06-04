@@ -1,4 +1,4 @@
-package org.interledger.connector.wallet;
+package org.interledger.openpayments;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.openpayments.Invoice;

@@ -1,16 +1,15 @@
-package org.interledger.connector.wallet;
+package org.interledger.openpayments;
 
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.persistence.repositories.PaymentsRepository;
-import org.interledger.openpayments.Payment;
-import org.interledger.openpayments.PaymentId;
-import org.interledger.openpayments.XrpPaymentDetails;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
 import org.interledger.openpayments.xrpl.XrplTransaction;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import org.interleger.openpayments.XrplPaymentEventHandler;
+import org.interleger.openpayments.client.OpenPaymentsProxyClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionService;

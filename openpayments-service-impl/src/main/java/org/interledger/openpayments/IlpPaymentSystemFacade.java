@@ -1,16 +1,12 @@
-package org.interledger.connector.wallet;
+package org.interledger.openpayments;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
-import org.interledger.connector.opa.PaymentSystemFacade;
 import org.interledger.connector.payments.SendPaymentRequest;
 import org.interledger.connector.payments.SendPaymentService;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.payments.StreamPaymentType;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.openpayments.CorrelationId;
-import org.interledger.openpayments.IlpPaymentDetails;
-import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.problems.InvalidInvoiceSubjectProblem;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
@@ -21,6 +17,7 @@ import org.interledger.stream.receiver.StreamConnectionGenerator;
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
 import org.apache.commons.lang3.StringUtils;
+import org.interleger.openpayments.PaymentSystemFacade;
 
 import java.util.Objects;
 import java.util.Optional;
