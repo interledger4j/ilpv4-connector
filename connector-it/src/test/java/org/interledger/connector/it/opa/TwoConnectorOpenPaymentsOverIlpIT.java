@@ -23,14 +23,12 @@ import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.NewInvoice;
-import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.stream.Denominations;
 
 import com.google.common.primitives.UnsignedLong;
-import okhttp3.HttpUrl;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -122,7 +120,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   public void paulSyncsInvoiceForPeterOnAliceFromBob() {
     Invoice petersInvoiceOnBob = createInvoiceForPeter(bobClient, PETER);
 
-    Invoice synced = aliceClient.getOrSyncInvoice(PAUL, petersInvoiceOnBob.receiverInvoiceUrl().toString());
+    Invoice synced = aliceClient.syncInvoice(PAUL, petersInvoiceOnBob.receiverInvoiceUrl().toString());
     assertThat(petersInvoiceOnBob)
       .isEqualToIgnoringGivenFields(synced, "accountId", "id", "invoicePath", "createdAt", "updatedAt");
 
@@ -148,7 +146,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   @Test
   public void getPeterInvoicePaymentDetailsViaAliceOnBob() {
     Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
-    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, createdInvoice.receiverInvoiceUrl().toString());
+    Invoice syncedInvoice = aliceClient.syncInvoice(PAUL, createdInvoice.receiverInvoiceUrl().toString());
     IlpPaymentDetails paymentDetails = aliceClient.getIlpInvoicePaymentDetails(syncedInvoice.accountId().value(), syncedInvoice.id().value());
 
     assertThat(paymentDetails.destinationAddress().getValue()).startsWith("test.bob.spsp.peter");
@@ -158,7 +156,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   public void paulPaysInvoiceForPeterViaAliceOnBob() throws InterruptedException {
     Invoice createdInvoiceOnBob = createInvoiceForPeter(bobClient, PETER);
 
-    Invoice createdInvoiceOnAlice = aliceClient.getOrSyncInvoice(PAUL, createdInvoiceOnBob.receiverInvoiceUrl().toString());
+    Invoice createdInvoiceOnAlice = aliceClient.syncInvoice(PAUL, createdInvoiceOnBob.receiverInvoiceUrl().toString());
 
     StreamPayment payment = aliceClient.payInvoice(
       createdInvoiceOnAlice.accountId().value(),
@@ -180,7 +178,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   @Test
   public void paulDoesAPeerToPeerPaymentToPeterViaAliceOnBob() {
     Invoice createdInvoice = createInvoiceForPeter(aliceClient, PAUL);
-    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, createdInvoice.receiverInvoiceUrl().toString());
+    Invoice syncedInvoice = aliceClient.syncInvoice(PAUL, createdInvoice.receiverInvoiceUrl().toString());
 
     StreamPayment payment = aliceClient.payInvoice(
       syncedInvoice.accountId().value(),
@@ -210,7 +208,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
       .build();
 
     Invoice eddyInvoiceOnAlice = aliceClient.createInvoice(PAUL, invoice);
-    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, eddyInvoiceOnAlice.receiverInvoiceUrl().toString());
+    Invoice syncedInvoice = aliceClient.syncInvoice(PAUL, eddyInvoiceOnAlice.receiverInvoiceUrl().toString());
     assertThat(eddyInvoiceOnAlice)
       .isEqualToIgnoringGivenFields(syncedInvoice, "accountId", "id", "invoicePath", "createdAt", "updatedAt");
     assertThat(eddyInvoiceOnAlice.accountId())
@@ -250,7 +248,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
       .build();
 
     Invoice eddyInvoiceOnAlice = aliceClient.createInvoice(EDDY, invoice);
-    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, eddyInvoiceOnAlice.receiverInvoiceUrl().toString());
+    Invoice syncedInvoice = aliceClient.syncInvoice(PAUL, eddyInvoiceOnAlice.receiverInvoiceUrl().toString());
     assertThat(eddyInvoiceOnAlice)
       .isEqualToIgnoringGivenFields(syncedInvoice, "accountId", "id", "invoicePath", "createdAt", "updatedAt");
     assertThat(eddyInvoiceOnAlice.accountId())

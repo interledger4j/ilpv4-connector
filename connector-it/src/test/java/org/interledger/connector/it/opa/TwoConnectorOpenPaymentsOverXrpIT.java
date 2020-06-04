@@ -20,14 +20,10 @@ import org.interledger.connector.it.markers.OpenPayments;
 import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerIlpOverHttpTopology;
 import org.interledger.connector.it.topology.AbstractBaseTopology;
 import org.interledger.connector.it.topology.Topology;
-import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.NewInvoice;
-import org.interledger.connector.opa.model.PaymentNetwork;
-import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.openpayments.events.ImmutableXrpPaymentCompletedEvent;
 import org.interledger.openpayments.events.ImmutableXrplTransaction;
 import org.interledger.openpayments.events.Memo;
 import org.interledger.openpayments.events.MemoWrapper;
@@ -36,7 +32,6 @@ import org.interledger.openpayments.events.XrplTransaction;
 import org.interledger.stream.Denominations;
 
 import com.google.common.primitives.UnsignedLong;
-import okhttp3.HttpUrl;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -51,7 +46,6 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -128,7 +122,7 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
   public void paulSyncsInvoiceForPeterOnAliceFromBob() {
     Invoice petersInvoiceOnBob = createInvoiceForPeter(bobClient, PETER);
 
-    Invoice synced = aliceClient.getOrSyncInvoice(PAUL, petersInvoiceOnBob.receiverInvoiceUrl().toString());
+    Invoice synced = aliceClient.syncInvoice(PAUL, petersInvoiceOnBob.receiverInvoiceUrl().toString());
     assertThat(petersInvoiceOnBob)
       .isEqualToIgnoringGivenFields(synced, "accountId", "id", "invoicePath", "createdAt", "updatedAt");
     assertThat(petersInvoiceOnBob.accountId())
@@ -141,7 +135,7 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
   public void paulPaysInvoiceForPeterViaAliceOnBobOverXrp() throws InterruptedException {
     Invoice createdInvoiceOnBob = createInvoiceForPeter(bobClient, PETER);
 
-    Invoice createdInvoiceOnAlice = aliceClient.getOrSyncInvoice(PAUL, createdInvoiceOnBob.receiverInvoiceUrl().toString());
+    Invoice createdInvoiceOnAlice = aliceClient.syncInvoice(PAUL, createdInvoiceOnBob.receiverInvoiceUrl().toString());
 
     // Manually trigger a payment completed event
     XrpPaymentCompletedEvent xrpPaymentCompletedEvent = this.getXrpPaymentCompletedEvent(createdInvoiceOnAlice);
@@ -168,7 +162,7 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
       .build();
 
     Invoice eddyInvoiceOnAlice = aliceClient.createInvoice(EDDY, invoice);
-    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, eddyInvoiceOnAlice.receiverInvoiceUrl().toString());
+    Invoice syncedInvoice = aliceClient.syncInvoice(PAUL, eddyInvoiceOnAlice.receiverInvoiceUrl().toString());
     assertThat(eddyInvoiceOnAlice)
       .isEqualToIgnoringGivenFields(syncedInvoice, "accountId", "id", "invoicePath", "createdAt", "updatedAt");
     assertThat(eddyInvoiceOnAlice.accountId())

@@ -83,7 +83,7 @@ public interface OpenPaymentsClient {
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
   })
-  Invoice getOrSyncInvoice(
+  Invoice syncInvoice(
     @Param("accountId") String accountId,
     @Param("invoiceUrl") String invoiceUrl
   );
