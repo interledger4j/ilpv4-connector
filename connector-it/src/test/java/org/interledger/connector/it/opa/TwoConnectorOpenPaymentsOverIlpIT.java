@@ -168,6 +168,9 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
     assertThat(payment.amount().abs()).isEqualTo(createdInvoiceOnAlice.amount().bigIntegerValue());
     assertThat(payment.deliveredAmount()).isEqualTo(createdInvoiceOnBob.amount());
 
+    // Let the OP system update after payment
+    Thread.sleep(100);
+
     Invoice invoiceOnBobAfterPayment = bobClient.getInvoice(createdInvoiceOnBob.accountId().value(), createdInvoiceOnBob.id().value());
     assertThat(invoiceOnBobAfterPayment.isPaid()).isTrue();
 

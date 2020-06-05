@@ -7,6 +7,7 @@ import org.interledger.connector.persistence.converters.PaymentEntityConverter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -30,6 +31,10 @@ public class PaymentsRepositoryTest {
   @Autowired
   private PaymentsRepository paymentsRepository;
 
+  @Test
+  public void testSomething() {
+
+  }
 
   @Configuration("application.yml")
   public static class TestPersistenceConfig {

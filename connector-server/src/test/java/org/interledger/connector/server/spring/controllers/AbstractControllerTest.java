@@ -9,12 +9,15 @@ import org.interledger.connector.accounts.AccountManager;
 import org.interledger.connector.crypto.ConnectorEncryptionService;
 import org.interledger.connector.links.LinkSettingsFactory;
 import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
+import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
 import org.interledger.connector.server.openpayments.spring.config.OpenPaymentsConfig;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
+import org.interledger.openpayments.IlpPaymentDetails;
+import org.interledger.openpayments.config.OpenPaymentsSettings;
 import org.interledger.openpayments.settings.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.crypto.EncryptionService;
@@ -103,7 +106,7 @@ public abstract class AbstractControllerTest {
   protected BuildProperties buildProperties;
 
   @MockBean
-  protected InvoiceService invoiceServiceMock;
+  protected InvoiceService<StreamPayment, IlpPaymentDetails> invoiceServiceMock;
 
   @MockBean
   protected StreamConnectionGenerator streamConnectionGeneratorMock;
@@ -116,11 +119,11 @@ public abstract class AbstractControllerTest {
 
   @MockBean
   @Qualifier(OPA_ILP)
-  protected PaymentSystemFacade ilpPaymentSystemFacade;
+  protected PaymentSystemFacade<StreamPayment, IlpPaymentDetails> ilpPaymentSystemFacade;
 
   @MockBean
   @Qualifier(XRP)
-  protected PaymentSystemFacade xrpPaymentSystemFacade;
+  protected PaymentSystemFacade<StreamPayment, IlpPaymentDetails> xrpPaymentSystemFacade;
 
   @MockBean
   protected OpenPaymentsClient openPaymentsClientMock;

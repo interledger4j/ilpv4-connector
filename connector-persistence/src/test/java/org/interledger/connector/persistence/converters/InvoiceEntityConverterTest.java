@@ -19,7 +19,7 @@ public class InvoiceEntityConverterTest {
     InvoiceEntity entity = new InvoiceEntity(invoice);
     Invoice converted = converter.convert(entity);
 
-    assertThat(converted).isEqualToIgnoringGivenFields(invoice, "createdAt", "updatedAt");
+    assertThat(converted).isEqualToIgnoringGivenFields(invoice, "createdAt", "ownerAccountUrl", "updatedAt");
     assertThat(entity).isEqualTo(new InvoiceEntity(converted));
   }
 
@@ -32,7 +32,7 @@ public class InvoiceEntityConverterTest {
     InvoiceEntity entity = new InvoiceEntity(invoice);
     Invoice converted = converter.convert(entity);
 
-    assertThat(converted).isEqualToIgnoringGivenFields(invoice, "createdAt", "updatedAt");
+    assertThat(converted).isEqualToIgnoringGivenFields(invoice, "createdAt", "ownerAccountUrl", "updatedAt");
     assertThat(entity).isEqualTo(new InvoiceEntity(converted));
   }
 }

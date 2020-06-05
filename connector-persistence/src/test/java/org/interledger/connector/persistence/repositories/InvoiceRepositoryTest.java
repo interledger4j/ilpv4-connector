@@ -2,11 +2,16 @@ package org.interledger.connector.persistence.repositories;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.connector.persistence.converters.InvoiceEntityConverter;
+import org.interledger.connector.persistence.entities.InvoiceEntity;
+import org.interledger.connector.persistence.util.SampleObjectUtils;
+import org.interledger.openpayments.Invoice;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -17,6 +22,8 @@ import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.util.Optional;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {
@@ -30,7 +37,7 @@ public class InvoiceRepositoryTest {
   @Autowired
   private InvoicesRepository invoicesRepository;
 
-  /*@Test
+  @Test
   public void saveAndGetIlpInvoice() {
     Invoice invoice = SampleObjectUtils.createNewIlpInvoice();
     saveAndGetInvoice(invoice);
@@ -51,24 +58,13 @@ public class InvoiceRepositoryTest {
     assertThat(fetched).isEmpty();
   }
 
-  @Test
-  public void saveAndGetInvoiceByUrl() {
-    Invoice invoice = SampleObjectUtils.createNewIlpInvoice();
-    Invoice saved = invoicesRepository.saveInvoice(invoice);
-    assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(invoice,
-      "id", "createdAt", "updatedAt");
-
-    Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceUrlAndAccountId(invoice.invoiceUrl().get(), saved.accountId());
-    assertThat(fetched).isNotEmpty().get().isEqualTo(saved);
-  }
-
   private void saveAndGetInvoice(Invoice invoice) {
     Invoice saved = invoicesRepository.saveInvoice(invoice);
     assertThat(saved).isNotNull().isEqualToIgnoringGivenFields(invoice,
-      "id", "createdAt", "updatedAt");
+      "id", "createdAt", "updatedAt", "ownerAccountUrl");
     Optional<Invoice> fetched = invoicesRepository.findInvoiceByInvoiceIdAndAccountId(invoice.id(), saved.accountId());
     assertThat(fetched).isNotEmpty().get().isEqualTo(saved);
-  }*/
+  }
 
   @Configuration("application.yml")
   public static class TestPersistenceConfig {
