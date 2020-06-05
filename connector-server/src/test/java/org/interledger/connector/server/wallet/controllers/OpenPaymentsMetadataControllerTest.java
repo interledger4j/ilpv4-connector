@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.interledger.connector.server.openpayments.controllers.OpenPaymentsMetadataController;
 import org.interledger.connector.server.spring.controllers.AbstractControllerTest;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
 

@@ -17,7 +17,6 @@ import org.interledger.connector.persistence.converters.StaticRouteEntityConvert
 import org.interledger.connector.server.spring.controllers.converters.OerPreparePacketHttpMessageConverter;
 import org.interledger.connector.server.spring.settings.CodecContextConfig;
 import org.interledger.connector.server.spring.settings.link.IlpOverHttpConfig;
-import org.interledger.connector.server.wallet.controllers.converters.InvoiceIdConverter;
 import org.interledger.connector.settings.properties.converters.HttpUrlPropertyConverter;
 import org.interledger.encoding.asn.framework.CodecContext;
 
@@ -156,7 +155,6 @@ public class SpringConnectorWebMvc implements WebMvcConfigurer {
     registry.addConverter(accessTokenEntityConverter);
     registry.addConverter(invoiceEntityConverter);
     registry.addConverter(paymentEntityConverter);
-    registry.addConverter(new InvoiceIdConverter());
   }
 
   @VisibleForTesting

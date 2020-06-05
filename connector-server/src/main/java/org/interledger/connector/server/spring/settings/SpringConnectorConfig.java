@@ -28,7 +28,7 @@ import org.interledger.connector.config.RedisConfig;
 import org.interledger.connector.config.SettlementConfig;
 import org.interledger.connector.config.SpspClientConfig;
 import org.interledger.connector.config.SpspReceiverConfig;
-import org.interledger.connector.config.XrplScanningConfig;
+import org.interledger.openpayments.config.XrplScanningConfig;
 import org.interledger.connector.events.DefaultPacketEventPublisher;
 import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.fx.JavaMoneyUtils;

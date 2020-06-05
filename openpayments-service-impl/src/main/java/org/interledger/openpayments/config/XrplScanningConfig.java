@@ -1,6 +1,6 @@
-package org.interledger.connector.config;
+package org.interledger.openpayments.config;
 
-import org.interledger.connector.opa.xrpl.XrplScanningService;
+import org.interledger.openpayments.xrpl.XrplScanningService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;

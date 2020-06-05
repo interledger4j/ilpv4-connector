@@ -136,7 +136,10 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
     // Alice Connector Node
     ///////////////////
     {
-      final ConnectorServer aliceServer = new ConnectorServer(constructConnectorSettingsForAlice());
+      final ConnectorServer aliceServer = new ConnectorServer(
+        constructConnectorSettingsForAlice(),
+        constructOpenPaymentsSettings(ALICE_CONNECTOR_ADDRESS, ALICE_PORT, ALICE_HTTP_BASE_URL)
+      );
       aliceServer.setPort(ALICE_PORT);
       topology.addNode(ALICE_CONNECTOR_ADDRESS,
         new ConnectorServerNode(ALICE, aliceServer, constructStaticRoutesForAlice()));
@@ -146,7 +149,10 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
     // Bob Connector Node
     ///////////////////
     {
-      final ConnectorServer bobServer = new ConnectorServer(constructConnectorSettingsForBob());
+      final ConnectorServer bobServer = new ConnectorServer(
+        constructConnectorSettingsForBob(),
+        constructOpenPaymentsSettings(BOB_CONNECTOR_ADDRESS, BOB_PORT, BOB_HTTP_BASE_URL)
+      );
       bobServer.setPort(BOB_PORT);
       useH2(bobServer);
       topology.addNode(BOB_CONNECTOR_ADDRESS, new ConnectorServerNode(BOB, bobServer, constructStaticRoutesForBob()));
@@ -315,7 +321,6 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
         .routingSecret("enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=")
         .build()
       )
-      .openPayments(constructOpenPaymentsSettings(ALICE_CONNECTOR_ADDRESS, ALICE_PORT, ALICE_HTTP_BASE_URL))
       .build();
   }
 
@@ -403,7 +408,6 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
         .routingSecret("enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=")
         .build()
       )
-      .openPayments(constructOpenPaymentsSettings(BOB_CONNECTOR_ADDRESS, BOB_PORT, BOB_HTTP_BASE_URL))
       .build();
   }
 

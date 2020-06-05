@@ -10,6 +10,8 @@ import org.immutables.value.Value;
 @Value.Immutable(intern = true)
 public interface OpenPaymentsSettings {
 
+  String OVERRIDE_BEAN_NAME = "interledger.connector.openPaymentsSettingsOverride";
+
   static ImmutableOpenPaymentsSettings.Builder builder() {
     return ImmutableOpenPaymentsSettings.builder();
   }

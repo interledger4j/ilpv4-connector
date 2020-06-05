@@ -2,6 +2,7 @@ package org.interledger.connector.server.wallet.controllers;
 
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import org.interledger.connector.server.openpayments.controllers.InvoicesController;
 import org.interledger.connector.server.spring.controllers.AbstractControllerTest;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
 

@@ -1,4 +1,4 @@
-package org.interledger.connector.settings.properties;
+package org.interledger.openpayments.settings;
 
 import org.interledger.openpayments.config.OpenPaymentsMetadata;
 import org.interledger.openpayments.config.OpenPaymentsPathConstants;

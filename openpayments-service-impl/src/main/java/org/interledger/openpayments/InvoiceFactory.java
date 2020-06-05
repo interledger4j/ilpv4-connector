@@ -1,16 +1,12 @@
 package org.interledger.openpayments;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.openpayments.Invoice;
-import org.interledger.openpayments.NewInvoice;
-import org.interledger.openpayments.PayId;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
 import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
 
 import okhttp3.HttpUrl;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -23,18 +19,14 @@ public class InvoiceFactory {
 
   private final OpenPaymentsSettings openPaymentsSettings;
 
-  private final Optional<String> opaUrlPath;
-
   public InvoiceFactory(
     PaymentPointerResolver paymentPointerResolver,
     PayIdResolver payIdResolver,
-    Supplier<OpenPaymentsSettings> openPaymentsSettings,
-    Optional<String> opaUrlPath
+    Supplier<OpenPaymentsSettings> openPaymentsSettings
   ) {
     this.paymentPointerResolver = paymentPointerResolver;
     this.payIdResolver = payIdResolver;
     this.openPaymentsSettings = openPaymentsSettings.get();
-    this.opaUrlPath = opaUrlPath;
   }
 
   /**

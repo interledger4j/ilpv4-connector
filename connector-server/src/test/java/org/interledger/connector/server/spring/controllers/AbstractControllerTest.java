@@ -1,7 +1,7 @@
 package org.interledger.connector.server.spring.controllers;
 
-import static org.interledger.connector.server.wallet.spring.config.OpenPaymentsConfig.OPA_ILP;
-import static org.interledger.connector.server.wallet.spring.config.OpenPaymentsConfig.XRP;
+import static org.interledger.connector.server.openpayments.spring.config.OpenPaymentsConfig.OPA_ILP;
+import static org.interledger.connector.server.openpayments.spring.config.OpenPaymentsConfig.XRP;
 import static org.interledger.connector.settlement.SettlementConstants.IDEMPOTENCY_KEY;
 
 import org.interledger.connector.accounts.AccessTokenManager;
@@ -12,10 +12,10 @@ import org.interledger.connector.packetswitch.ILPv4PacketSwitch;
 import org.interledger.connector.persistence.repositories.AccountSettingsRepository;
 import org.interledger.connector.routing.ExternalRoutingService;
 import org.interledger.connector.server.spring.settings.web.SpringConnectorWebMvc;
-import org.interledger.connector.server.wallet.spring.config.OpenPaymentsConfig;
+import org.interledger.connector.server.openpayments.spring.config.OpenPaymentsConfig;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.connector.settings.properties.ConnectorSettingsFromPropertyFile;
-import org.interledger.connector.settings.properties.OpenPaymentsSettingsFromPropertyFile;
+import org.interledger.openpayments.settings.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.connector.settlement.SettlementService;
 import org.interledger.crypto.EncryptionService;
 import org.interledger.link.LinkFactoryProvider;

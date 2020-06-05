@@ -8,8 +8,6 @@ import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.crypto.CryptoKey;
 import org.interledger.crypto.CryptoKeys;
 import org.interledger.link.Link;
-import org.interledger.openpayments.config.OpenPaymentsMetadata;
-import org.interledger.openpayments.config.OpenPaymentsSettings;
 
 import okhttp3.HttpUrl;
 import org.junit.Test;
@@ -26,12 +24,6 @@ public class ConnectorSettingsTest {
   public void globalPrefix() {
     final ConnectorSettings defaultConnectorSettings = ImmutableConnectorSettings.builder()
       .globalRoutingSettings(GlobalRoutingSettings.builder().routingSecret("foo").build())
-      .openPayments(OpenPaymentsSettings.builder()
-        .ilpOperatorAddress(InterledgerAddress.of("example.connector"))
-        .metadata(OpenPaymentsMetadata.builder()
-          .issuer(HttpUrl.parse("https://connector.example.com"))
-          .build())
-        .build())
       .build();
 
     assertThat(defaultConnectorSettings.globalPrefix()).isEqualTo(InterledgerAddressPrefix.GLOBAL);

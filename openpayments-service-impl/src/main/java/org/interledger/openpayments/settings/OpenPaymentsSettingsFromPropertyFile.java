@@ -1,4 +1,4 @@
-package org.interledger.connector.settings.properties;
+package org.interledger.openpayments.settings;
 
 import org.interledger.core.InterledgerAddress;
 import org.interledger.link.Link;

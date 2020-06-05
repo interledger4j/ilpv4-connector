@@ -8,7 +8,6 @@ import org.interledger.connector.settings.IlpOverHttpConnectorSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.link.Link;
-import org.interledger.openpayments.config.OpenPaymentsSettings;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -58,8 +57,6 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
   private ConnectorKeysFromPropertyFile keys;
 
   private SpspSettingsFromPropertyFile spsp = new SpspSettingsFromPropertyFile();
-
-  private OpenPaymentsSettingsFromPropertyFile openPayments = new OpenPaymentsSettingsFromPropertyFile();
 
   @Override
   public InterledgerAddress operatorAddress() {
@@ -187,15 +184,6 @@ public class ConnectorSettingsFromPropertyFile implements ConnectorSettings {
 
   public void setSpsp(SpspSettingsFromPropertyFile spsp) {
     this.spsp = spsp;
-  }
-
-  @Override
-  public Optional<OpenPaymentsSettings> openPayments() {
-    return Optional.ofNullable(openPayments);
-  }
-
-  public void setOpenPayments(OpenPaymentsSettingsFromPropertyFile openPayments) {
-    this.openPayments = openPayments;
   }
 
   /**

@@ -3,6 +3,7 @@ package org.interledger.connector.server;
 import org.interledger.connector.server.spring.SpringProfileUtils;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.link.Link;
+import org.interledger.openpayments.config.OpenPaymentsSettings;
 
 import com.google.common.base.Preconditions;
 import org.javamoney.moneta.Money;
@@ -30,15 +31,27 @@ public class ConnectorServer extends Server {
 
   // Allows a Server to use an overridden ConnectorSettings (useful for ITs).
   private final Optional<ConnectorSettings> connectorSettingsOverride;
+  private final Optional<OpenPaymentsSettings> openPaymentsSettingsOverride;
 
   public ConnectorServer() {
     super(ConnectorServerConfig.class);
     this.connectorSettingsOverride = Optional.empty();
+    this.openPaymentsSettingsOverride = Optional.empty();
   }
 
-  public ConnectorServer(final ConnectorSettings connectorSettings) {
+  public ConnectorServer(ConnectorSettings connectorSettings) {
     super(ConnectorServerConfig.class);
     this.connectorSettingsOverride = Optional.of(connectorSettings);
+    this.openPaymentsSettingsOverride = Optional.empty();
+  }
+
+  public ConnectorServer(
+    final ConnectorSettings connectorSettings,
+    final OpenPaymentsSettings openPaymentsSettings
+  ) {
+    super(ConnectorServerConfig.class);
+    this.connectorSettingsOverride = Optional.of(connectorSettings);
+    this.openPaymentsSettingsOverride = Optional.of(openPaymentsSettings);
   }
 
   @Override
@@ -76,6 +89,9 @@ public class ConnectorServer extends Server {
       this.connectorSettingsOverride
         .ifPresent(cso -> ((ApplicationPreparedEvent) event).getApplicationContext().getBeanFactory()
           .registerSingleton(ConnectorSettings.OVERRIDE_BEAN_NAME, cso));
+      this.openPaymentsSettingsOverride
+        .ifPresent(cso -> ((ApplicationPreparedEvent) event).getApplicationContext().getBeanFactory()
+          .registerSingleton(OpenPaymentsSettings.OVERRIDE_BEAN_NAME, cso));
     }
   }
 

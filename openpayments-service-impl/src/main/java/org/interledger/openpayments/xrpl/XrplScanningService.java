@@ -1,4 +1,4 @@
-package org.interledger.connector.opa.xrpl;
+package org.interledger.openpayments.xrpl;
 
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
 import org.interledger.openpayments.xrpl.XrplMessage;

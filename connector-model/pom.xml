@@ -28,10 +28,6 @@
       <artifactId>connector-crypto</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>okhttp</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
@@ -77,10 +73,6 @@
     <dependency>
       <groupId>org.zalando</groupId>
       <artifactId>problem</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.interledger.connector</groupId>
-      <artifactId>openpayments-model</artifactId>
     </dependency>
   </dependencies>
 </project>

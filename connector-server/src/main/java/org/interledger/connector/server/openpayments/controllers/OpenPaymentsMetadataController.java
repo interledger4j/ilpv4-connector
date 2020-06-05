@@ -1,4 +1,4 @@
-package org.interledger.connector.server.wallet.controllers;
+package org.interledger.connector.server.openpayments.controllers;
 
 import static org.interledger.connector.core.ConfigConstants.ENABLED_PROTOCOLS;
 import static org.interledger.connector.core.ConfigConstants.OPEN_PAYMENTS_ENABLED;
