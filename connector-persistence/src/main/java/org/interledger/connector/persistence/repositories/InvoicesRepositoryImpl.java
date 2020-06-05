@@ -1,10 +1,10 @@
 package org.interledger.connector.persistence.repositories;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.model.CorrelationId;
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
+import org.interledger.openpayments.CorrelationId;
+import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.InvoiceId;
 
 import okhttp3.HttpUrl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,16 +40,9 @@ public class InvoicesRepositoryImpl implements InvoicesRepositoryCustom {
   }
 
   @Override
-  public Optional<Invoice> findInvoiceByInvoiceUrlAndAccountId(HttpUrl invoiceUrl, AccountId accountId) {
-    Objects.requireNonNull(invoiceUrl);
-    Optional<InvoiceEntity> entity = invoicesRepository.findByInvoiceUrlAndAccountId(invoiceUrl, accountId);
-    return entity.map(e -> conversionService.convert(e, Invoice.class));
-  }
-
-  @Override
-  public List<Invoice> findAllInvoicesByInvoiceUrl(HttpUrl invoiceUrl) {
-    Objects.requireNonNull(invoiceUrl);
-    return invoicesRepository.findAllByInvoiceUrl(invoiceUrl)
+  public List<Invoice> findAllInvoicesByReceiverInvoiceUrl(HttpUrl receiverInvoiceUrl) {
+    Objects.requireNonNull(receiverInvoiceUrl);
+    return invoicesRepository.findAllByReceiverInvoiceUrl(receiverInvoiceUrl)
       .stream()
       .map(e -> conversionService.convert(e, Invoice.class))
       .collect(Collectors.toList());

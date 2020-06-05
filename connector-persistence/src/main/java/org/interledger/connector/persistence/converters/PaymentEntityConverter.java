@@ -1,10 +1,11 @@
 package org.interledger.connector.persistence.converters;
 
-import org.interledger.connector.opa.model.CorrelationId;
-import org.interledger.connector.opa.model.Denomination;
-import org.interledger.connector.opa.model.Payment;
-import org.interledger.connector.opa.model.PaymentId;
 import org.interledger.connector.persistence.entities.PaymentEntity;
+import org.interledger.openpayments.CorrelationId;
+import org.interledger.openpayments.Denomination;
+import org.interledger.openpayments.InvoiceId;
+import org.interledger.openpayments.Payment;
+import org.interledger.openpayments.PaymentId;
 
 import com.google.common.primitives.UnsignedLong;
 import org.springframework.core.convert.converter.Converter;
@@ -17,7 +18,7 @@ public class PaymentEntityConverter implements Converter<PaymentEntity, Payment>
   @Override
   public Payment convert(PaymentEntity paymentEntity) {
     return Payment.builder()
-      .invoicePrimaryKey(paymentEntity.getInvoicePrimaryKey())
+      .invoiceId(InvoiceId.of(paymentEntity.getInvoiceId()))
       .correlationId(CorrelationId.of(paymentEntity.getCorrelationId()))
       .paymentId(PaymentId.of(paymentEntity.getPaymentId()))
       .sourceAddress(paymentEntity.getSourceAddress())

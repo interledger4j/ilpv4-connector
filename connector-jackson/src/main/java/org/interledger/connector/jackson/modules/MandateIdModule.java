@@ -1,6 +1,6 @@
 package org.interledger.connector.jackson.modules;
 
-import org.interledger.connector.opa.model.MandateId;
+import org.interledger.openpayments.MandateId;
 
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.module.SimpleModule;

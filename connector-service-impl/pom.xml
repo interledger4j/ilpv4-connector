@@ -15,10 +15,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-    </dependency>
-    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>connector-model</artifactId>
     </dependency>
@@ -40,10 +36,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>connector-opa</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>connector-jackson</artifactId>
     </dependency>
     <dependency>
@@ -62,30 +54,6 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>connector-fxrates</artifactId>
     </dependency>
-<!--    <dependency>-->
-<!--      <groupId>${project.groupId}</groupId>-->
-<!--      <artifactId>openpayments-model</artifactId>-->
-<!--    </dependency>-->
-<!--    <dependency>-->
-<!--      <groupId>${project.groupId}</groupId>-->
-<!--      <artifactId>openpayments-service-api</artifactId>-->
-<!--    </dependency>-->
-<!--    <dependency>-->
-<!--      <groupId>${project.groupId}</groupId>-->
-<!--      <artifactId>openpayments-service-impl</artifactId>-->
-<!--    </dependency>-->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>openpayments-model</artifactId>
-    </dependency>
-    <!--<dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>openpayments-service-api</artifactId>
-    </dependency>-->
-<!--    <dependency>-->
-<!--      <groupId>${project.groupId}</groupId>-->
-<!--      <artifactId>openpayments-service-impl</artifactId>-->
-<!--    </dependency>-->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
@@ -276,22 +244,15 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>io.github.openfeign</groupId>
-      <artifactId>feign-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.github.openfeign</groupId>
-      <artifactId>feign-jackson</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.zalando</groupId>
-      <artifactId>problem</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.interledger</groupId>
       <artifactId>stream-client</artifactId>
       <version>1.2.0</version>
       <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger.connector</groupId>
+      <artifactId>openpayments-service-impl</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

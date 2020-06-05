@@ -1,7 +1,7 @@
 package org.interledger.connector.payid;
 
-import org.interledger.connector.opa.model.PayId;
-import org.interledger.connector.opa.model.PaymentNetwork;
+import org.interledger.openpayments.PayId;
+import org.interledger.openpayments.PaymentNetwork;
 
 import java.net.URI;
 

@@ -1,7 +1,6 @@
 package org.interledger.connector.settings;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.crypto.CryptoKey;
@@ -11,7 +10,6 @@ import org.interledger.link.Link;
 import org.immutables.value.Value;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * A view of the settings currently configured for this Connector.
@@ -67,13 +65,6 @@ public interface ConnectorSettings {
   default SpspSettings spspSettings() {
     return SpspSettings.builder().build();
   }
-
-  /**
-   * Settings for the OpenPayments server that is available to be run in this Connector.
-   *
-   * @return
-   */
-  Optional<OpenPaymentsSettings> openPayments();
 
   /**
    * Connection settings/defaults used for FX pools and clients

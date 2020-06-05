@@ -1,9 +1,9 @@
 package org.interledger.connector.persistence.repositories;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.model.CorrelationId;
-import org.interledger.connector.opa.model.InvoiceId;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
+import org.interledger.openpayments.CorrelationId;
+import org.interledger.openpayments.InvoiceId;
 
 import okhttp3.HttpUrl;
 import org.springframework.data.repository.CrudRepository;
@@ -40,18 +40,11 @@ public interface InvoicesRepository extends CrudRepository<InvoiceEntity, Long>,
     return findByInvoiceIdAndAccountId(invoiceId.value(), accountId.value());
   }
 
-  Optional<InvoiceEntity> findByInvoiceUrlAndAccountId(String invoiceUrl, String accountId);
+  List<InvoiceEntity> findAllByReceiverInvoiceUrl(String receiverInvoiceUrl);
 
-  default Optional<InvoiceEntity> findByInvoiceUrlAndAccountId(HttpUrl invoiceUrl, AccountId accountId) {
-    return findByInvoiceUrlAndAccountId(invoiceUrl.toString(), accountId.value());
-  }
-
-  List<InvoiceEntity> findAllByInvoiceUrl(String invoiceUrl);
-
-  default List<InvoiceEntity> findAllByInvoiceUrl(HttpUrl invoiceUrl) {
-    return findAllByInvoiceUrl(invoiceUrl.toString());
-  }
-
+  default List<InvoiceEntity> findAllByReceiverInvoiceUrl(HttpUrl receiverInvoiceUrl) {
+    return findAllByReceiverInvoiceUrl(receiverInvoiceUrl.toString());
+  };
 
   List<InvoiceEntity> findAllByCorrelationId(String correlationId);
 

@@ -1,13 +1,12 @@
 package org.interledger.connector.persistence.util;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.model.CorrelationId;
-import org.interledger.connector.opa.model.Denomination;
-import org.interledger.connector.opa.model.ImmutableInvoice;
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.Payment;
-import org.interledger.connector.opa.model.PaymentId;
+import org.interledger.openpayments.CorrelationId;
+import org.interledger.openpayments.Denomination;
+import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.InvoiceId;
+import org.interledger.openpayments.Payment;
+import org.interledger.openpayments.PaymentId;
 
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
@@ -17,8 +16,9 @@ import java.util.UUID;
 
 public final class SampleObjectUtils {
 
-  public static ImmutableInvoice createNewIlpInvoice() {
+  public static Invoice createNewIlpInvoice() {
     return Invoice.builder()
+      .ownerAccountUrl(HttpUrl.get("https://xpring.money/ricketycricket"))
       .accountId(AccountId.of("ricketycricket"))
       .amount(UnsignedLong.valueOf(1000))
       .assetCode("XRP")
@@ -27,14 +27,14 @@ public final class SampleObjectUtils {
       .expiresAt(Instant.now().plusSeconds(60))
       .id(InvoiceId.of(UUID.randomUUID().toString()))
       .received(UnsignedLong.ZERO)
-      .subject("$xpring.money/paymebruh")
-      .invoiceUrl(HttpUrl.get("https://xpring.money/paymebruh/invoices/1234"))
+      .subject("$xpring.money/ricketycricket")
       .build();
   }
 
-  public static ImmutableInvoice createNewXrpInvoice() {
+  public static Invoice createNewXrpInvoice() {
     return Invoice.builder()
       .accountId(AccountId.of("ricketycricket"))
+      .ownerAccountUrl(HttpUrl.get("https://xpring.money/ricketycricket"))
       .amount(UnsignedLong.valueOf(1000))
       .assetCode("XRP")
       .assetScale((short) 9)
@@ -43,12 +43,12 @@ public final class SampleObjectUtils {
       .id(InvoiceId.of(UUID.randomUUID().toString()))
       .received(UnsignedLong.ZERO)
       .subject("paymebruh$xpring.money")
-      .invoiceUrl(HttpUrl.get("https://xpring.money/paymebruh/invoices/1234"))
       .build();
   }
 
   public static Payment createNewIlpPayment() {
     return Payment.builder()
+      .invoiceId(InvoiceId.of(UUID.randomUUID().toString()))
       .correlationId(CorrelationId.of("f1546058d8e46d2903438bcf71e2af4381a4e5830e95787b66b299c0f30100de"))
       .paymentId(PaymentId.of(UUID.randomUUID().toString()))
       .sourceAddress("test.foo.bar")
@@ -63,6 +63,7 @@ public final class SampleObjectUtils {
 
   public static Payment createNewXrpPayment() {
     return Payment.builder()
+      .invoiceId(InvoiceId.of(UUID.randomUUID().toString()))
       .correlationId(CorrelationId.of("f1546058d8e46d2903438bcf71e2af4381a4e5830e95787b66b299c0f30100de"))
       .paymentId(PaymentId.of(UUID.randomUUID().toString()))
       .sourceAddress("rPm88mdDuXLgxzpmZPXf6wPQ1ZTHRNvYVr 123456")

@@ -3,17 +3,6 @@ package org.interledger.connector.xumm.service;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.PaymentSystemFacade;
-import org.interledger.connector.opa.model.CorrelationId;
-import org.interledger.connector.opa.model.ImmutableMemoWrapper;
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.Memo;
-import org.interledger.connector.opa.model.MemoWrapper;
-import org.interledger.connector.opa.model.PayId;
-import org.interledger.connector.opa.model.PaymentNetwork;
-import org.interledger.connector.opa.model.XrpPayment;
-import org.interledger.connector.opa.model.XrpPaymentDetails;
-import org.interledger.connector.opa.model.XrplTransaction;
 import org.interledger.connector.payid.PayIdClient;
 import org.interledger.connector.payid.PayIdResponse;
 import org.interledger.connector.xumm.client.XummClient;
@@ -24,8 +13,16 @@ import org.interledger.connector.xumm.model.payload.Payload;
 import org.interledger.connector.xumm.model.payload.PayloadRequest;
 import org.interledger.connector.xumm.model.payload.PayloadRequestResponse;
 import org.interledger.connector.xumm.model.payload.TxJson;
+import org.interledger.openpayments.CorrelationId;
+import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.PayId;
+import org.interledger.openpayments.PaymentNetwork;
 import org.interledger.openpayments.SendXrpPaymentRequest;
+import org.interledger.openpayments.XrpPaymentDetails;
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
+import org.interledger.openpayments.xrpl.Memo;
+import org.interledger.openpayments.xrpl.MemoWrapper;
+import org.interledger.openpayments.xrpl.XrplTransaction;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,9 +31,10 @@ import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.UnsignedLong;
 import io.xpring.xrpl.ClassicAddress;
 import io.xpring.xrpl.Utils;
+import org.interleger.openpayments.PaymentSystemFacade;
 import org.slf4j.Logger;
 
-public class XummPaymentService implements PaymentSystemFacade<XrpPayment, XrpPaymentDetails> {
+public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, XrpPaymentDetails> {
 
   private static final Logger LOGGER = getLogger(XummPaymentService.class);
 
@@ -55,7 +53,7 @@ public class XummPaymentService implements PaymentSystemFacade<XrpPayment, XrpPa
   }
 
   @Override
-  public XrpPayment payInvoice(
+  public XrplTransaction payInvoice(
     XrpPaymentDetails paymentDetails,
     AccountId senderAccountId,
     UnsignedLong amount,
@@ -92,7 +90,7 @@ public class XummPaymentService implements PaymentSystemFacade<XrpPayment, XrpPa
         } catch (JsonProcessingException e) {
         }
         xummClient.createPayload(builder.build());
-        return XrpPayment.builder()
+        return XrplTransaction.builder()
           .build();
 
       }).orElseGet(() -> {
@@ -101,7 +99,7 @@ public class XummPaymentService implements PaymentSystemFacade<XrpPayment, XrpPa
         } catch (JsonProcessingException e) {
         }
         PayloadRequestResponse response = xummClient.createPayload(builder.build());
-        return XrpPayment.builder()
+        return XrplTransaction.builder()
           .userAuthorizationUrl(response.next().always())
           .build();
       });
@@ -126,8 +124,8 @@ public class XummPaymentService implements PaymentSystemFacade<XrpPayment, XrpPa
   }
 
   @Override
-  public Class<XrpPayment> getResultType() {
-    return XrpPayment.class;
+  public Class<XrplTransaction> getResultType() {
+    return XrplTransaction.class;
   }
 
   @Override
@@ -176,7 +174,7 @@ public class XummPaymentService implements PaymentSystemFacade<XrpPayment, XrpPa
     );
   }
 
-  public ImmutableMemoWrapper invoicePaymentMemo(String correlationId) {
+  public MemoWrapper invoicePaymentMemo(String correlationId) {
     return MemoWrapper.builder()
       .memo(Memo.builder()
         .memoType(hexEncode("INVOICE_PAYMENT"))

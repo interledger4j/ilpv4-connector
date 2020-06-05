@@ -7,10 +7,6 @@ import org.interledger.connector.it.topologies.AbstractTopology;
 import org.interledger.connector.it.topology.AbstractBaseTopology;
 import org.interledger.connector.it.topology.Topology;
 import org.interledger.connector.it.topology.nodes.ConnectorServerNode;
-import org.interledger.connector.opa.model.ImmutableOpenPaymentsSettings;
-import org.interledger.connector.opa.model.OpenPaymentsMetadata;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.connector.opa.model.SupportedAssets;
 import org.interledger.connector.routing.StaticRoute;
 import org.interledger.connector.server.ConnectorServer;
 import org.interledger.connector.settings.ConnectorSettings;
@@ -24,6 +20,9 @@ import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings;
 import org.interledger.link.http.IncomingLinkSettings;
 import org.interledger.link.http.OutgoingLinkSettings;
+import org.interledger.openpayments.config.OpenPaymentsMetadata;
+import org.interledger.openpayments.config.OpenPaymentsSettings;
+import org.interledger.openpayments.config.SupportedAssets;
 import org.interledger.stream.Denomination;
 
 import com.google.common.collect.Sets;
@@ -137,7 +136,10 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
     // Alice Connector Node
     ///////////////////
     {
-      final ConnectorServer aliceServer = new ConnectorServer(constructConnectorSettingsForAlice());
+      final ConnectorServer aliceServer = new ConnectorServer(
+        constructConnectorSettingsForAlice(),
+        constructOpenPaymentsSettings(ALICE_CONNECTOR_ADDRESS, ALICE_PORT, ALICE_HTTP_BASE_URL)
+      );
       aliceServer.setPort(ALICE_PORT);
       topology.addNode(ALICE_CONNECTOR_ADDRESS,
         new ConnectorServerNode(ALICE, aliceServer, constructStaticRoutesForAlice()));
@@ -147,7 +149,10 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
     // Bob Connector Node
     ///////////////////
     {
-      final ConnectorServer bobServer = new ConnectorServer(constructConnectorSettingsForBob());
+      final ConnectorServer bobServer = new ConnectorServer(
+        constructConnectorSettingsForBob(),
+        constructOpenPaymentsSettings(BOB_CONNECTOR_ADDRESS, BOB_PORT, BOB_HTTP_BASE_URL)
+      );
       bobServer.setPort(BOB_PORT);
       useH2(bobServer);
       topology.addNode(BOB_CONNECTOR_ADDRESS, new ConnectorServerNode(BOB, bobServer, constructStaticRoutesForBob()));
@@ -316,11 +321,10 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
         .routingSecret("enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=")
         .build()
       )
-      .openPayments(constructOpenPaymentsSettings(ALICE_CONNECTOR_ADDRESS, ALICE_PORT, ALICE_HTTP_BASE_URL))
       .build();
   }
 
-  private static ImmutableOpenPaymentsSettings constructOpenPaymentsSettings(
+  private static OpenPaymentsSettings constructOpenPaymentsSettings(
     InterledgerAddress interledgerAddress,
     int port,
     String connectorUrl) {
@@ -404,7 +408,6 @@ public class TwoConnectorPeerIlpOverHttpTopology extends AbstractTopology {
         .routingSecret("enc:JKS:crypto.p12:secret0:1:aes_gcm:AAAADKZPmASojt1iayb2bPy4D-Toq7TGLTN95HzCQAeJtz0=")
         .build()
       )
-      .openPayments(constructOpenPaymentsSettings(BOB_CONNECTOR_ADDRESS, BOB_PORT, BOB_HTTP_BASE_URL))
       .build();
   }
 

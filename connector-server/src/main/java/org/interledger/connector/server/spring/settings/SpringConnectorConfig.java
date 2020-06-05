@@ -28,7 +28,6 @@ import org.interledger.connector.config.RedisConfig;
 import org.interledger.connector.config.SettlementConfig;
 import org.interledger.connector.config.SpspClientConfig;
 import org.interledger.connector.config.SpspReceiverConfig;
-import org.interledger.connector.config.XrplScanningConfig;
 import org.interledger.connector.events.DefaultPacketEventPublisher;
 import org.interledger.connector.events.PacketEventPublisher;
 import org.interledger.connector.fx.JavaMoneyUtils;
@@ -110,6 +109,7 @@ import org.interledger.crypto.Decryptor;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.link.PacketRejector;
 import org.interledger.link.PingLoopbackLink;
+import org.interledger.openpayments.config.XrplScanningConfig;
 import org.interledger.spsp.client.SpspClient;
 import org.interledger.stream.calculators.ExchangeRateCalculator;
 import org.interledger.stream.crypto.JavaxStreamEncryptionService;
@@ -154,7 +154,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import javax.annotation.PostConstruct;
 
 /**

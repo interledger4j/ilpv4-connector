@@ -1,5 +1,7 @@
 package org.interledger.connector.server.wallet.spring.config;
 
+import org.interledger.connector.server.openpayments.spring.config.OpenPaymentsConfig;
+
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;

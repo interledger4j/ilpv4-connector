@@ -8,6 +8,7 @@ import static org.interledger.connector.it.topologies.AbstractTopology.BOB_HTTP_
 import static org.interledger.connector.it.topologies.AbstractTopology.EDDY;
 import static org.interledger.connector.it.topologies.AbstractTopology.EDDY_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.PAUL;
+import static org.interledger.connector.it.topologies.AbstractTopology.PAUL_ACCOUNT;
 import static org.interledger.connector.it.topologies.AbstractTopology.PETER;
 import static org.interledger.connector.it.topologies.AbstractTopology.PETER_ACCOUNT;
 
@@ -19,18 +20,18 @@ import org.interledger.connector.it.markers.OpenPayments;
 import org.interledger.connector.it.topologies.ilpoverhttp.TwoConnectorPeerIlpOverHttpTopology;
 import org.interledger.connector.it.topology.AbstractBaseTopology;
 import org.interledger.connector.it.topology.Topology;
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.Memo;
-import org.interledger.connector.opa.model.MemoWrapper;
-import org.interledger.connector.opa.model.XrplTransaction;
-import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.core.InterledgerAddress;
-import org.interledger.openpayments.events.ImmutableXrpPaymentCompletedEvent;
+import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.NewInvoice;
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
+import org.interledger.openpayments.xrpl.Memo;
+import org.interledger.openpayments.xrpl.MemoWrapper;
+import org.interledger.openpayments.xrpl.XrplTransaction;
 import org.interledger.stream.Denominations;
 
 import com.google.common.primitives.UnsignedLong;
-import okhttp3.HttpUrl;
+import org.apache.commons.codec.binary.Hex;
+import org.interleger.openpayments.client.OpenPaymentsClient;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -98,72 +99,45 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
   @Test
   public void peterCreatesInvoiceForHimselfOnBob() {
     Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
-    assertThat(createdInvoice.invoiceUrl())
-      .isNotEmpty()
-      .get()
-      .isEqualTo(HttpUrl.get("http://localhost:8081/accounts/peter/invoices/" + createdInvoice.id().value()));
+    assertThat(createdInvoice.invoicePath())
+      .isEqualTo("/peter/invoices/" + createdInvoice.id().value());
     assertThat(createdInvoice.accountId())
-      .isEqualTo(PETER);
+      .isEqualTo(PETER_ACCOUNT);
   }
 
   @Test
   public void paulCreatesInvoiceForPeterOnBobViaAlice() {
     Invoice createdInvoice = createInvoiceForPeter(aliceClient, PAUL);
-    assertThat(createdInvoice.invoiceUrl())
-      .isNotEmpty()
-      .get()
-      .isEqualTo(HttpUrl.get("http://localhost:8081/accounts/peter/invoices/" + createdInvoice.id().value()));
+    assertThat(createdInvoice.invoicePath())
+      .isEqualTo("/peter/invoices/" + createdInvoice.id().value());
     assertThat(createdInvoice.accountId())
-      .isEqualTo(PAUL);
+      .isEqualTo(PETER_ACCOUNT);
     Invoice invoiceOnBob = bobClient.getInvoice(PETER, createdInvoice.id().value());
-    assertThat(invoiceOnBob.accountId())
-      .isEqualTo(PETER);
-  }
-
-  @Test
-  public void peterGetsHisOwnInvoiceOnBob() {
-    Invoice createdInvoice = createInvoiceForPeter(bobClient, PETER);
-    Invoice getInvoice = bobClient.getInvoice(PETER, createdInvoice.id().value());
-
-    assertThat(createdInvoice).isEqualTo(getInvoice);
+    assertThat(invoiceOnBob)
+      .isEqualTo(createdInvoice);
   }
 
   @Test
   public void paulSyncsInvoiceForPeterOnAliceFromBob() {
     Invoice petersInvoiceOnBob = createInvoiceForPeter(bobClient, PETER);
 
-    Invoice synced = aliceClient.getOrSyncInvoice(PAUL, petersInvoiceOnBob.invoiceUrl().get().toString());
+    Invoice synced = aliceClient.syncInvoice(PAUL, petersInvoiceOnBob.receiverInvoiceUrl().toString());
     assertThat(petersInvoiceOnBob)
-      .isEqualToIgnoringGivenFields(synced, "accountId", "createdAt", "updatedAt");
+      .isEqualToIgnoringGivenFields(synced, "accountId", "id", "invoicePath", "createdAt", "updatedAt");
     assertThat(petersInvoiceOnBob.accountId())
-      .isEqualTo(PETER);
+      .isEqualTo(PETER_ACCOUNT);
     assertThat(synced.accountId())
-      .isEqualTo(PAUL);
+      .isEqualTo(PAUL_ACCOUNT);
   }
 
   @Test
   public void paulPaysInvoiceForPeterViaAliceOnBobOverXrp() throws InterruptedException {
     Invoice createdInvoiceOnBob = createInvoiceForPeter(bobClient, PETER);
 
-    Invoice createdInvoiceOnAlice = aliceClient.getOrSyncInvoice(PAUL, createdInvoiceOnBob.invoiceUrl().get().toString());
+    Invoice createdInvoiceOnAlice = aliceClient.syncInvoice(PAUL, createdInvoiceOnBob.receiverInvoiceUrl().toString());
 
     // Manually trigger a payment completed event
-    XrplTransaction xprlPayment = XrplTransaction.builder()
-      .account("SENDER_ADDRESS")
-      .sourceTag("123456")
-      .destination("RECEIVER_ADDRESS")
-      .destinationTag(123456)
-      .amount(createdInvoiceOnAlice.amount())
-      .hash("PAYMENT_ID_HASH")
-      .addMemos(MemoWrapper.builder()
-        .memo(Memo.builder()
-          .memoFormat("abcdef")
-          .memoType("INVOICE_PAYMENT")
-          .memoData(createdInvoiceOnAlice.correlationId().value())
-          .build())
-        .build())
-      .build();
-    ImmutableXrpPaymentCompletedEvent xrpPaymentCompletedEvent = XrpPaymentCompletedEvent.builder().payment(xprlPayment).build();
+    XrpPaymentCompletedEvent xrpPaymentCompletedEvent = this.getXrpPaymentCompletedEvent(createdInvoiceOnAlice);
     aliceConnector.getEventBus().post(xrpPaymentCompletedEvent);
     bobConnector.getEventBus().post(xrpPaymentCompletedEvent);
 
@@ -178,40 +152,25 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
 
   @Test
   public void paulPaysInvoiceForEddyAllOnAlice() throws InterruptedException {
-    Invoice invoice = Invoice.builder()
-      .accountId(EDDY_ACCOUNT)
-      .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
-      .assetScale(Denominations.XRP_MILLI_DROPS.assetScale())
-      .amount(UnsignedLong.valueOf(100))
+    NewInvoice invoice = NewInvoice.builder()
       .subject("eddy$localhost:8080")
+      .amount(UnsignedLong.valueOf(100))
+      .assetCode(Denominations.XRP_DROPS.assetCode())
+      .assetScale(Denominations.XRP_DROPS.assetScale())
+      .description("IT payment")
       .build();
 
     Invoice eddyInvoiceOnAlice = aliceClient.createInvoice(EDDY, invoice);
-    Invoice syncedInvoice = aliceClient.getOrSyncInvoice(PAUL, eddyInvoiceOnAlice.invoiceUrl().get().toString());
+    Invoice syncedInvoice = aliceClient.syncInvoice(PAUL, eddyInvoiceOnAlice.receiverInvoiceUrl().toString());
     assertThat(eddyInvoiceOnAlice)
-      .isEqualToIgnoringGivenFields(syncedInvoice, "accountId", "createdAt", "updatedAt");
+      .isEqualToIgnoringGivenFields(syncedInvoice, "accountId", "id", "invoicePath", "createdAt", "updatedAt");
     assertThat(eddyInvoiceOnAlice.accountId())
-      .isEqualTo(EDDY);
+      .isEqualTo(EDDY_ACCOUNT);
     assertThat(syncedInvoice.accountId())
-      .isEqualTo(PAUL);
+      .isEqualTo(PAUL_ACCOUNT);
 
     // Manually trigger a payment completed event
-    XrplTransaction xprlPayment = XrplTransaction.builder()
-      .account("SENDER_ADDRESS")
-      .sourceTag("123456")
-      .destination("RECEIVER_ADDRESS")
-      .destinationTag(123456)
-      .amount(syncedInvoice.amount())
-      .hash("PAYMENT_ID_HASH")
-      .addMemos(MemoWrapper.builder()
-        .memo(Memo.builder()
-          .memoFormat("abcdef")
-          .memoType("INVOICE_PAYMENT")
-          .memoData(syncedInvoice.correlationId().value())
-          .build())
-        .build())
-      .build();
-    ImmutableXrpPaymentCompletedEvent xrpPaymentCompletedEvent = XrpPaymentCompletedEvent.builder().payment(xprlPayment).build();
+    XrpPaymentCompletedEvent xrpPaymentCompletedEvent = this.getXrpPaymentCompletedEvent(syncedInvoice);
     aliceConnector.getEventBus().post(xrpPaymentCompletedEvent);
 
     // Let the payment system event out and the OP system to update
@@ -221,14 +180,12 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
     Invoice paulsViewOfTheInvoice = aliceClient.getInvoice(PAUL, syncedInvoice.id().value());
 
     assertThat(eddysViewOfTheInvoice)
-      .isEqualToIgnoringGivenFields(paulsViewOfTheInvoice, "accountId" ,"createdAt", "updatedAt");
+      .isEqualToIgnoringGivenFields(paulsViewOfTheInvoice, "accountId", "id", "invoicePath", "createdAt", "updatedAt");
     assertThat(eddysViewOfTheInvoice.received()).isEqualTo(eddysViewOfTheInvoice.amount());
     assertThat(paulsViewOfTheInvoice.received()).isEqualTo(paulsViewOfTheInvoice.amount());
   }
-
   private Invoice createInvoiceForPeter(OpenPaymentsClient client, String accountId) {
-    Invoice invoice = Invoice.builder()
-      .accountId(PETER_ACCOUNT)
+    NewInvoice invoice = NewInvoice.builder()
       .assetCode(Denominations.XRP_DROPS.assetCode())
       .assetScale(Denominations.XRP_DROPS.assetScale())
       .amount(UnsignedLong.valueOf(100))
@@ -237,6 +194,23 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
       .build();
 
     return client.createInvoice(accountId, invoice);
+  }
+
+  protected XrpPaymentCompletedEvent getXrpPaymentCompletedEvent(Invoice invoice) {
+    XrplTransaction xrplTransaction = XrplTransaction.builder()
+      .account("SENDER_ADDRESS")
+      .destination("RECEIVER_ADDRESS")
+      .amount(invoice.amount())
+      .hash("PAYMENT_ID_HASH")
+      .addMemos(MemoWrapper.builder()
+        .memo(Memo.builder()
+          .memoFormat(Hex.encodeHexString("jaypeg".getBytes()))
+          .memoType(Hex.encodeHexString("meme".getBytes()))
+          .memoData(Hex.encodeHexString(invoice.correlationId().value().getBytes()))
+          .build())
+        .build())
+      .build();
+    return XrpPaymentCompletedEvent.builder().payment(xrplTransaction).build();
   }
 
   @Override

@@ -1,12 +1,10 @@
 package org.interledger.connector.persistence.entities;
 
-import static org.interledger.connector.persistence.entities.DataConstants.ColumnNames.INVOICE_IDX_COLUMN_NAMES;
 import static org.interledger.connector.persistence.entities.DataConstants.ColumnNames.PAYMENT_IDX_COLUMN_NAMES;
 import static org.interledger.connector.persistence.entities.DataConstants.IndexNames.INVOICES_ID_IDX;
-import static org.interledger.connector.persistence.entities.DataConstants.TableNames.INVOICES;
 import static org.interledger.connector.persistence.entities.DataConstants.TableNames.INVOICE_PAYMENTS;
 
-import org.interledger.connector.opa.model.Payment;
+import org.interledger.openpayments.Payment;
 
 import org.hibernate.annotations.NaturalId;
 
@@ -33,8 +31,8 @@ public class PaymentEntity extends AbstractEntity {
   @Column(name = "ID")
   private Long id;
 
-  @Column(name = "INVOICE_PRIMARY_KEY")
-  private Long invoicePrimaryKey;
+  @Column(name = "INVOICE_ID")
+  private String invoiceId;
 
   @Column(name = "CORRELATION_ID")
   private String correlationId;
@@ -62,8 +60,9 @@ public class PaymentEntity extends AbstractEntity {
 
   public PaymentEntity(final Payment payment) {
     Objects.requireNonNull(payment);
-    this.invoicePrimaryKey = payment.invoicePrimaryKey()
-      .orElseThrow(() -> new IllegalArgumentException("Payment must have invoice primary key before before being stored."));
+    this.invoiceId = payment.invoiceId()
+      .orElseThrow(() -> new IllegalArgumentException("Payment must have invoiceId before storage."))
+      .value();
     this.correlationId = payment.correlationId().value();
     this.paymentId = payment.paymentId().value();
     this.sourceAddress = payment.sourceAddress();
@@ -73,12 +72,12 @@ public class PaymentEntity extends AbstractEntity {
     this.assetScale = payment.denomination().assetScale();
   }
 
-  public Long getInvoicePrimaryKey() {
-    return invoicePrimaryKey;
+  public String getInvoiceId() {
+    return invoiceId;
   }
 
-  public void setInvoicePrimaryKey(Long invoicePrimaryKey) {
-    this.invoicePrimaryKey = invoicePrimaryKey;
+  public void setInvoiceId(String invoiceId) {
+    this.invoiceId = invoiceId;
   }
 
   public Long getId() {

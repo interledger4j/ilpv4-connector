@@ -1,11 +1,9 @@
 package org.interledger.connector.persistence.converters;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.InvoiceId;
-import org.interledger.connector.opa.model.CorrelationId;
-import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
+import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.InvoiceId;
 
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
@@ -19,7 +17,8 @@ public class InvoiceEntityConverter implements Converter<InvoiceEntity, Invoice>
   @Override
   public Invoice convert(InvoiceEntity invoiceEntity) {
     return Invoice.builder()
-      .primaryKey(invoiceEntity.getId())
+      .receiverInvoiceUrl(HttpUrl.get(invoiceEntity.getReceiverInvoiceUrl()))
+      .id(InvoiceId.of(invoiceEntity.getInvoiceId()))
       .accountId(AccountId.of(invoiceEntity.getAccountId()))
       .amount(UnsignedLong.valueOf(invoiceEntity.getAmount()))
       .assetCode(invoiceEntity.getAssetCode())
@@ -28,12 +27,9 @@ public class InvoiceEntityConverter implements Converter<InvoiceEntity, Invoice>
       .description(invoiceEntity.getDescription())
       .expiresAt(invoiceEntity.getExpiresAt())
       .finalizedAt(invoiceEntity.getFinalizedAt())
-      .id(InvoiceId.of(invoiceEntity.getInvoiceId()))
-      .correlationId(CorrelationId.of(invoiceEntity.getCorrelationId()))
       .received(UnsignedLong.valueOf(invoiceEntity.getReceived()))
       .subject(invoiceEntity.getSubject())
       .updatedAt(Optional.ofNullable(invoiceEntity.getModifiedDate()).orElse(Instant.now()))
-      .invoiceUrl(HttpUrl.parse(invoiceEntity.getInvoiceUrl()))
       .build();
   }
 }

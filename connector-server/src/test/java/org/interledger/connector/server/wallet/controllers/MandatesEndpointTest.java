@@ -11,30 +11,31 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.accounts.AccountRelationship;
 import org.interledger.connector.accounts.AccountSettings;
 import org.interledger.connector.core.ConfigConstants;
-import org.interledger.connector.opa.model.Charge;
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.Mandate;
-import org.interledger.connector.opa.model.NewCharge;
-import org.interledger.connector.opa.model.NewMandate;
-import org.interledger.connector.opa.model.OpenPaymentsMetadata;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.connector.opa.model.PaymentNetwork;
-import org.interledger.connector.opa.model.XrpPayment;
-import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.server.ConnectorServerConfig;
 import org.interledger.connector.server.ilpoverhttp.AbstractEndpointTest;
 import org.interledger.connector.server.spsp.LocalSpspClientTestConfig;
-import org.interledger.connector.wallet.OpenPaymentsClient;
 import org.interledger.connector.xumm.service.XummPaymentService;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings.AuthType;
+import org.interledger.openpayments.Charge;
+import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.Mandate;
+import org.interledger.openpayments.NewCharge;
+import org.interledger.openpayments.NewInvoice;
+import org.interledger.openpayments.NewMandate;
+import org.interledger.openpayments.PaymentNetwork;
+import org.interledger.openpayments.XrpPaymentDetails;
+import org.interledger.openpayments.config.OpenPaymentsMetadata;
+import org.interledger.openpayments.config.OpenPaymentsSettings;
+import org.interledger.openpayments.xrpl.XrplTransaction;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 
 import com.google.common.collect.Maps;
 import com.google.common.primitives.UnsignedLong;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import okhttp3.HttpUrl;
+import org.interleger.openpayments.client.OpenPaymentsClient;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -150,18 +151,18 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
     assertThat(mandate.accountId()).isEqualTo(PAYER);
     assertThat(mandate.balance()).isEqualTo(amount);
 
-    Invoice invoice = openPaymentsClient.createInvoice(PAYEE, Invoice.builder()
-      .accountId(AccountId.of(PAYEE))
+    Invoice invoice = openPaymentsClient.createInvoice(PAYEE, NewInvoice.builder()
       .amount(amount)
       .assetCode("XRP")
       .assetScale((short) 9)
       .subject(PAYID)
+      .description("Fight Milk subscription")
       .build()
     );
 
     Charge charge = openPaymentsClient.createCharge(PAYER, mandate.mandateId().value(), bearer(SHH),
       NewCharge.builder()
-        .invoice(invoice.invoiceUrl().get())
+        .invoice(invoice.receiverInvoiceUrl())
         .build()
       );
 
@@ -193,36 +194,36 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
     assertThat(mandate.accountId()).isEqualTo(PAYER);
     assertThat(mandate.balance()).isEqualTo(amount);
 
-    Invoice invoice = openPaymentsClient.createInvoice(PAYEE, Invoice.builder()
-      .accountId(AccountId.of(PAYEE))
+    Invoice invoice = openPaymentsClient.createInvoice(PAYEE, NewInvoice.builder()
       .amount(amount)
       .assetCode("XRP")
       .assetScale((short) 9)
       .subject(PAYID)
+      .description("Wolf Cola subscription")
       .build()
     );
 
     Charge charge = openPaymentsClient.createCharge(PAYER, mandate.mandateId().value(), bearer(SHH),
       NewCharge.builder()
-        .invoice(invoice.invoiceUrl().get())
+        .invoice(invoice.receiverInvoiceUrl())
         .build()
     );
 
     assertThat(charge.amount()).isEqualTo(amount);
 
-    Invoice invoice2 = openPaymentsClient.createInvoice(PAYEE, Invoice.builder()
-      .accountId(AccountId.of(PAYEE))
+    Invoice invoice2 = openPaymentsClient.createInvoice(PAYEE, NewInvoice.builder()
       .amount(amount)
       .assetCode("XRP")
       .assetScale((short) 9)
       .subject(PAYID)
+      .description("Troll toll")
       .build()
     );
 
     expectedException.expectMessage("Mandate does not have sufficient balance");
     openPaymentsClient.createCharge(PAYER, mandate.mandateId().value(), bearer(SHH),
       NewCharge.builder()
-        .invoice(invoice2.invoiceUrl().get())
+        .invoice(invoice2.receiverInvoiceUrl())
         .build()
     );
   }
@@ -256,9 +257,13 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
     public XummPaymentService xummPaymentServiceMock() {
       XummPaymentService mock = mock(XummPaymentService.class);
       when(mock.getDetailsType()).thenReturn(XrpPaymentDetails.class);
-      when(mock.getResultType()).thenReturn(XrpPayment.class);
+      when(mock.getResultType()).thenReturn(XrplTransaction.class);
       when(mock.payInvoice(any(), any(), any(), any()))
-        .thenReturn(XrpPayment.builder()
+        .thenReturn(XrplTransaction.builder()
+          .account("mockAccount")
+          .amount(UnsignedLong.ONE)
+          .hash("FFFF")
+          .destination("mockDestination")
           .build()
         );
       when(mock.getPaymentDetails(any())).thenReturn(XrpPaymentDetails.builder()

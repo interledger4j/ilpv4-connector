@@ -6,17 +6,17 @@ import static org.interledger.connector.core.ConfigConstants.TRUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.model.Charge;
-import org.interledger.connector.opa.model.ChargeId;
-import org.interledger.connector.opa.model.Mandate;
-import org.interledger.connector.opa.model.MandateId;
-import org.interledger.connector.opa.model.NewCharge;
-import org.interledger.connector.opa.model.NewMandate;
-import org.interledger.connector.opa.model.problems.ChargeNotFoundProblem;
-import org.interledger.connector.opa.model.problems.MandateNotFoundProblem;
-import org.interledger.connector.settings.properties.OpenPaymentsPathConstants;
-import org.interledger.connector.wallet.mandates.MandateService;
+import org.interledger.openpayments.Charge;
+import org.interledger.openpayments.ChargeId;
+import org.interledger.openpayments.Mandate;
+import org.interledger.openpayments.MandateId;
+import org.interledger.openpayments.NewCharge;
+import org.interledger.openpayments.NewMandate;
+import org.interledger.openpayments.config.OpenPaymentsPathConstants;
+import org.interledger.openpayments.problems.ChargeNotFoundProblem;
+import org.interledger.openpayments.problems.MandateNotFoundProblem;
 
+import org.interleger.openpayments.mandates.MandateService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;

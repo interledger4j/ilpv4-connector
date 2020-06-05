@@ -1,6 +1,6 @@
 package org.interledger.connector.xumm.model.payload;
 
-import org.interledger.connector.opa.model.MemoWrapper;
+import org.interledger.openpayments.xrpl.MemoWrapper;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;

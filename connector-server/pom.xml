@@ -105,10 +105,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>connector-opa</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>openpayments-xumm</artifactId>
       <scope>runtime</scope>
     </dependency>
@@ -147,6 +143,14 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>connector-pubsub</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>openpayments-model</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>openpayments-service-api</artifactId>
     </dependency>
     <dependency>
       <groupId>com.auth0</groupId>
@@ -449,6 +453,10 @@
       <artifactId>embedded-database-spring-test</artifactId>
       <version>1.5.2</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.interledger.connector</groupId>
+      <artifactId>openpayments-service-impl</artifactId>
     </dependency>
   </dependencies>
 

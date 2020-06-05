@@ -1,8 +1,9 @@
 package org.interledger.connector.persistence.repositories;
 
-import org.interledger.connector.opa.model.Payment;
-import org.interledger.connector.opa.model.PaymentId;
 import org.interledger.connector.persistence.entities.PaymentEntity;
+import org.interledger.openpayments.InvoiceId;
+import org.interledger.openpayments.Payment;
+import org.interledger.openpayments.PaymentId;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -28,10 +29,10 @@ public class PaymentsRepositoryImpl implements PaymentsRepositoryCustom {
   }
 
   @Override
-  public Optional<Payment> findPaymentByPaymentIdAndInvoicePrimaryKey(PaymentId paymentId, Long invoicePrimaryKey) {
+  public Optional<Payment> findPaymentByPaymentIdAndInvoiceId(PaymentId paymentId, InvoiceId invoiceId) {
     Objects.requireNonNull(paymentId);
-    Objects.requireNonNull(invoicePrimaryKey);
-    return paymentsRepository.findByPaymentIdAndInvoicePrimaryKey(paymentId, invoicePrimaryKey)
+    Objects.requireNonNull(invoiceId);
+    return paymentsRepository.findByPaymentIdAndInvoiceId(paymentId, invoiceId)
       .map(e -> conversionService.convert(e, Payment.class));
   }
 }

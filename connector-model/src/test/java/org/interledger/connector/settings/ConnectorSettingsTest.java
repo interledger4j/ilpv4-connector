@@ -3,15 +3,11 @@ package org.interledger.connector.settings;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.connector.opa.model.OpenPaymentsMetadata;
-import org.interledger.connector.opa.model.OpenPaymentsSettings;
-import org.interledger.core.InterledgerAddress;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.crypto.CryptoKey;
 import org.interledger.crypto.CryptoKeys;
 import org.interledger.link.Link;
 
-import okhttp3.HttpUrl;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -26,12 +22,6 @@ public class ConnectorSettingsTest {
   public void globalPrefix() {
     final ConnectorSettings defaultConnectorSettings = ImmutableConnectorSettings.builder()
       .globalRoutingSettings(GlobalRoutingSettings.builder().routingSecret("foo").build())
-      .openPayments(OpenPaymentsSettings.builder()
-        .ilpOperatorAddress(InterledgerAddress.of("example.connector"))
-        .metadata(OpenPaymentsMetadata.builder()
-          .issuer(HttpUrl.parse("https://connector.example.com"))
-          .build())
-        .build())
       .build();
 
     assertThat(defaultConnectorSettings.globalPrefix()).isEqualTo(InterledgerAddressPrefix.GLOBAL);

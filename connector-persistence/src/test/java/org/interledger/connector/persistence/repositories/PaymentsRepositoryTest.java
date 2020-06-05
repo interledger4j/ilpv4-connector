@@ -1,13 +1,7 @@
 package org.interledger.connector.persistence.repositories;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import org.interledger.connector.opa.model.Invoice;
-import org.interledger.connector.opa.model.Payment;
 import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
-import org.interledger.connector.persistence.converters.InvoiceEntityConverter;
 import org.interledger.connector.persistence.converters.PaymentEntityConverter;
-import org.interledger.connector.persistence.util.SampleObjectUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
@@ -23,8 +17,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.Optional;
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {
   ConnectorPersistenceConfig.class, PaymentsRepositoryTest.TestPersistenceConfig.class
@@ -37,6 +29,10 @@ public class PaymentsRepositoryTest {
   @Autowired
   private PaymentsRepository paymentsRepository;
 
+  @Test
+  public void testSomething() {
+
+  }
 
   @Configuration("application.yml")
   public static class TestPersistenceConfig {

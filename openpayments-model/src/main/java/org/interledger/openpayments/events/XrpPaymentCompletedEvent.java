@@ -1,7 +1,6 @@
 package org.interledger.openpayments.events;
 
-import org.interledger.connector.opa.model.XrpPayment;
-import org.interledger.connector.opa.model.XrplTransaction;
+import org.interledger.openpayments.xrpl.XrplTransaction;
 
 import org.immutables.value.Value;
 
@@ -18,7 +17,7 @@ public interface XrpPaymentCompletedEvent {
   /**
    * The XRP payment that was completed on the XRP Ledger.
    *
-   * @return An {@link XrpPayment}.
+   * @return An {@link XrplTransaction}.
    */
   XrplTransaction payment();
 }
