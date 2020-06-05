@@ -14,6 +14,8 @@ import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
+import org.interledger.connector.payid.FeignPayIdClient;
+import org.interledger.connector.payid.PayIdClient;
 import org.interledger.connector.payments.SendPaymentService;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
@@ -35,6 +37,7 @@ import org.interledger.spsp.PaymentPointerResolver;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,6 +145,11 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
+  public PayIdClient payIdClient(ObjectMapper objectMapper) {
+    return FeignPayIdClient.construct(objectMapper);
+  }
+
+  @Bean
   public OpenPaymentsProxyClient openPaymentsClient() {
     return OpenPaymentsProxyClient.construct();
   }
@@ -155,10 +163,10 @@ public class OpenPaymentsConfig {
   public InvoiceFactory invoiceFactory(
     PaymentPointerResolver paymentPointerResolver,
     PayIdResolver payIdPointerResolver,
-    Supplier<ConnectorSettings> connectorSettings,
+    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     Optional<String> opaUrlPath
   ) {
-    return new InvoiceFactory(paymentPointerResolver, payIdPointerResolver, openPaymentsSettingsSupplier(connectorSettings), opaUrlPath);
+    return new InvoiceFactory(paymentPointerResolver, payIdPointerResolver, openPaymentsSettingsSupplier, opaUrlPath);
   }
 
   @Bean
@@ -175,9 +183,8 @@ public class OpenPaymentsConfig {
   public MandateService mandateService(
     MandateAccrualService mandateAccrualService,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    InvoiceService<StreamPayment, IlpPaymentDetails> ilpInvoiceService,
-    InvoiceService<XrpPayment, XrpPaymentDetails> xrpInvoiceService) {
-    return new InMemoryMandateService(mandateAccrualService, ilpInvoiceService, xrpInvoiceService, openPaymentsSettingsSupplier);
+    InvoiceServiceFactory invoiceServiceFactory) {
+    return new InMemoryMandateService(mandateAccrualService, invoiceServiceFactory, openPaymentsSettingsSupplier);
   }
 
 }

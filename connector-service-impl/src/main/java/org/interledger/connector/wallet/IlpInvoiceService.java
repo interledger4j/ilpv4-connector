@@ -14,7 +14,6 @@ import org.interledger.connector.opa.model.Payment;
 import org.interledger.connector.opa.model.PaymentId;
 import org.interledger.connector.opa.model.problems.InvoicePaymentProblem;
 import org.interledger.connector.payments.StreamPayment;
-import org.interledger.connector.payments.StreamPaymentType;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.persistence.repositories.PaymentsRepository;
 
@@ -116,5 +115,15 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
         .build();
       this.onPayment(payment);
     }
+  }
+
+  @Override
+  public Class<StreamPayment> getResultType() {
+    return StreamPayment.class;
+  }
+
+  @Override
+  public Class<IlpPaymentDetails> getRequestType() {
+    return IlpPaymentDetails.class;
   }
 }

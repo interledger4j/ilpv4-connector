@@ -81,29 +81,25 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
     final HttpUrl invoiceUrl = invoice.invoiceUrl()
       .orElseThrow(() -> new IllegalStateException("Invoice should have a location after creation."));
 
-    if (!isForThisWallet(invoiceUrl)) {
-      // FIXME
-      throw new UnsupportedOperationException("remote invoice payments not yet implemented");
-    } else {
-      try {
-        return paymentSystemFacadeFactory.get(XrpPayment.class, XrpPaymentDetails.class)
-          .map(facade -> {
-            try {
-              return facade.payInvoice(getPaymentDetails(invoiceId, senderAccountId),
-                senderAccountId,
-                payInvoiceRequest.get().amount(),
-                CorrelationId.of(transactionHash(invoiceId)));
-            } catch (Exception e) {
-              throw new RuntimeException(e);
-            }
-          })
-          .orElseThrow(() -> new UnsupportedOperationException("No provider for XrpPayment type"));
-      } catch (Exception e) {
-        LOGGER.error("failed to payinvoice for invoiceId {}", invoiceId, e);
-        // FIXME what to do here?
-        throw new RuntimeException("Payment failed and we don't know what to do about it", e);
-      }
+    try {
+      return paymentSystemFacadeFactory.get(XrpPayment.class, XrpPaymentDetails.class)
+        .map(facade -> {
+          try {
+            return facade.payInvoice(getPaymentDetails(invoiceId, senderAccountId),
+              senderAccountId,
+              payInvoiceRequest.get().amount(),
+              CorrelationId.of(transactionHash(invoiceId)));
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        })
+        .orElseThrow(() -> new UnsupportedOperationException("No provider for XrpPayment type"));
+    } catch (Exception e) {
+      LOGGER.error("failed to payinvoice for invoiceId {}", invoiceId, e);
+      // FIXME what to do here?
+      throw new RuntimeException("Payment failed and we don't know what to do about it", e);
     }
+
   }
 
   /**
@@ -117,13 +113,14 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
     XrplTransaction transaction = xrpPaymentCompletedEvent.payment();
     Optional<Memo> invoiceMemo = transaction.memos().stream()
       .map(MemoWrapper::memo)
+      .map(Memo::decoded)
       .filter(memo -> memo.memoType().equals("INVOICE_PAYMENT")) // FIXME: Define a memoType constant
       .findFirst();
 
     invoiceMemo.ifPresent(memo -> {
       Payment payment = Payment.builder()
         .amount(transaction.amount())
-        .correlationId(CorrelationId.of(memo.memoData())) // FIXME: may need to decode hex
+        .correlationId(CorrelationId.of(memo.memoData()))
         .paymentId(PaymentId.of(transaction.hash()))
         .createdAt(transaction.createdAt())
         .modifiedAt(transaction.modifiedAt())
@@ -134,6 +131,16 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrpPayment, XrpPa
         .build();
       this.onPayment(payment);
     });
+  }
+
+  @Override
+  public Class<XrpPaymentDetails> getRequestType() {
+    return XrpPaymentDetails.class;
+  }
+
+  @Override
+  public Class<XrpPayment> getResultType() {
+    return XrpPayment.class;
   }
 
   private String transactionHash(InvoiceId invoiceId) {

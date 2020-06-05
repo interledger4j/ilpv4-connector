@@ -62,6 +62,8 @@ public interface NewMandate {
    */
   UnsignedLong amount();
 
+  PaymentNetwork paymentNetwork();
+
   @Value.Default
   default Instant startAt() {
     return Instant.now();

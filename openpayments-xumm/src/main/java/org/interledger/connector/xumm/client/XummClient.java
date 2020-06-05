@@ -12,6 +12,7 @@ import feign.RequestLine;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 import feign.optionals.OptionalDecoder;
+import okhttp3.HttpUrl;
 
 import java.util.Objects;
 
@@ -21,7 +22,7 @@ public interface XummClient {
   String CONTENT_TYPE = "Content-Type:";
   String APPLICATION_JSON = "application/json";
 
-  static XummClient construct(ObjectMapper objectMapper, String xummApiKey, String xummApiSecret) {
+  static XummClient construct(ObjectMapper objectMapper, HttpUrl apiUrl, String xummApiKey, String xummApiSecret) {
     Objects.requireNonNull(xummApiKey);
     Objects.requireNonNull(xummApiSecret);
 
@@ -31,7 +32,7 @@ public interface XummClient {
       .decoder(new OptionalDecoder(new JacksonDecoder(objectMapper)))
       .requestInterceptor(template -> template.header("x-api-key", xummApiKey)
         .header("x-api-secret", xummApiSecret))
-      .target(XummClient.class, "https://xumm.app");
+      .target(XummClient.class, apiUrl.toString());
   }
 
   @RequestLine("POST /api/v1/platform/payload")

@@ -2,6 +2,7 @@ package org.interledger.connector.xumm.model.payload;
 
 import org.interledger.connector.xumm.model.CustomMeta;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -12,6 +13,7 @@ import java.util.Optional;
 @Value.Immutable
 @JsonSerialize(as = ImmutablePayloadRequest.class)
 @JsonDeserialize(as = ImmutablePayloadRequest.class)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public interface PayloadRequest {
 
   static ImmutablePayloadRequest.Builder builder() {

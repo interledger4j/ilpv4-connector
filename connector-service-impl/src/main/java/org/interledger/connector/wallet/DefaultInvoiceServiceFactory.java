@@ -2,9 +2,13 @@ package org.interledger.connector.wallet;
 
 import org.interledger.connector.opa.InvoiceService;
 import org.interledger.connector.opa.InvoiceServiceFactory;
+import org.interledger.connector.opa.model.AuthorizablePayment;
+import org.interledger.connector.opa.model.IlpPaymentDetails;
+import org.interledger.connector.opa.model.PaymentNetwork;
+import org.interledger.connector.opa.model.XrpPayment;
+import org.interledger.connector.opa.model.XrpPaymentDetails;
+import org.interledger.connector.payments.StreamPayment;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
@@ -14,19 +18,23 @@ public class DefaultInvoiceServiceFactory implements InvoiceServiceFactory {
   private final HashMap<Key, InvoiceService> instances = new HashMap();
 
   @Override
-  public <T, V> void register(InvoiceService<T, V> service) {
-    Type[] genericTypes = getParameterizedTypes(service.getClass());
-    instances.put(new Key(genericTypes[0].getClass(), genericTypes[1].getClass()), service);
+  public <T extends AuthorizablePayment, V> void register(InvoiceService<T, V> service) {
+    instances.put(new Key(service.getResultType(), service.getRequestType()), service);
   }
 
   @Override
-  public <T, V> Optional<InvoiceService<T, V>> get(Class<T> responseType, Class<V> requestType) {
-    InvoiceService<T, V> service = instances.get(new Key(responseType, requestType));
+  public Optional<InvoiceService> get(Class responseType, Class requestType) {
+    InvoiceService service = instances.get(new Key(responseType, requestType));
     return Optional.ofNullable(service);
   }
 
-  private Type[] getParameterizedTypes(Class clazz) {
-    return ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments();
+  @Override
+  public Optional<InvoiceService> get(PaymentNetwork paymentNetwork) {
+    switch (paymentNetwork) {
+      case INTERLEDGER: return get(StreamPayment.class, IlpPaymentDetails.class);
+      case XRPL: return get(XrpPayment.class, XrpPaymentDetails.class);
+      default: return Optional.empty();
+    }
   }
 
   private static class Key {

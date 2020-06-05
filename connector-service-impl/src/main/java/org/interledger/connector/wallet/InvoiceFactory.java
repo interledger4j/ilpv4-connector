@@ -19,7 +19,7 @@ public class InvoiceFactory {
   private final PaymentPointerResolver paymentPointerResolver;
   private final PayIdResolver payIdResolver;
 
-  private final OpenPaymentsSettings openPaymentsSettings;
+  private final Supplier<OpenPaymentsSettings> openPaymentsSettings;
 
   private final Optional<String> opaUrlPath;
 
@@ -31,7 +31,7 @@ public class InvoiceFactory {
   ) {
     this.paymentPointerResolver = paymentPointerResolver;
     this.payIdResolver = payIdResolver;
-    this.openPaymentsSettings = openPaymentsSettings.get();
+    this.openPaymentsSettings = openPaymentsSettings;
     this.opaUrlPath = opaUrlPath;
   }
 
@@ -45,31 +45,28 @@ public class InvoiceFactory {
     if (initialInvoice.invoiceUrl().isPresent()) {
       return initialInvoice;
     }
-
-    HttpUrl identifierUrl;
-    try {
-      identifierUrl = paymentPointerResolver.resolveHttpUrl(PaymentPointer.of(initialInvoice.subject()));
-    } catch (IllegalArgumentException e) {
-      // Subject is a PayID
-      String payIdString = initialInvoice.subject();
-      if (!payIdString.startsWith("payid:")) {
-        payIdString = "payid:" + payIdString;
-      }
-      PayId payId = PayId.of(payIdString);
-      identifierUrl = payIdResolver.resolveHttpUrl(payId);
-    }
-
-    // largely for testing reasons since we may need to override and start on http instead of https
-    identifierUrl = identifierUrl.newBuilder().scheme(openPaymentsSettings.metadata().defaultScheme()).build();
+//
+//    HttpUrl identifierUrl;
+//    try {
+//      identifierUrl = paymentPointerResolver.resolveHttpUrl(PaymentPointer.of(initialInvoice.subject()));
+//    } catch (IllegalArgumentException e) {
+//      // Subject is a PayID
+//      String payIdString = initialInvoice.subject();
+//      if (!payIdString.startsWith("payid:")) {
+//        payIdString = "payid:" + payIdString;
+//      }
+//      PayId payId = PayId.of(payIdString);
+//      identifierUrl = payIdResolver.resolveHttpUrl(payId);
+//    }
+//
+//    // largely for testing reasons since we may need to override and start on http instead of https
+//    identifierUrl = identifierUrl.newBuilder().scheme(openPaymentsSettings.metadata().defaultScheme()).build();
+    HttpUrl identifierUrl = openPaymentsSettings.get().metadata().issuer();
 
     // FIXME: Just tack on /invoices/{invoiceId} to the resolved payment identifier.  This requires our payment
     //  identifiers to start with /accounts
     // Only want the account part of the payment pointer path
-    String paymentPointerPath = identifierUrl.pathSegments().stream().reduce("", (s, s2) -> s + "/" + s2);
-    if (paymentPointerPath.startsWith("/")) {
-      paymentPointerPath = paymentPointerPath.substring(1);
-    }
-    String paymentTarget = PaymentDetailsUtils.getPaymentTarget(paymentPointerPath, this.opaUrlPath);
+    String paymentTarget = getAccount(initialInvoice.subject());
 
     HttpUrl invoiceUrl = new HttpUrl.Builder()
       .scheme(identifierUrl.scheme())
@@ -84,5 +81,21 @@ public class InvoiceFactory {
     return Invoice.builder().from(initialInvoice)
       .invoiceUrl(invoiceUrl)
       .build();
+  }
+
+  public String getAccount(String subject) {
+    try {
+      if (subject.startsWith("payid:")) {
+        return PayId.of(subject).account();
+      } else {
+        return PayId.of("payid:" + subject).account();
+      }
+    } catch (Exception e) {
+      String paymentPointerPath = PaymentPointer.of(subject).path();
+      if (paymentPointerPath.startsWith("/")) {
+        paymentPointerPath = paymentPointerPath.substring(1);
+      }
+      return PaymentDetailsUtils.getPaymentTarget(paymentPointerPath, this.opaUrlPath);
+    }
   }
 }

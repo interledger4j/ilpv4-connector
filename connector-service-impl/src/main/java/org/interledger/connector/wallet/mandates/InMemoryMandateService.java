@@ -4,10 +4,11 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.opa.InvoiceService;
+import org.interledger.connector.opa.InvoiceServiceFactory;
+import org.interledger.connector.opa.model.AuthorizablePayment;
 import org.interledger.connector.opa.model.Charge;
 import org.interledger.connector.opa.model.ChargeId;
 import org.interledger.connector.opa.model.ChargeStatus;
-import org.interledger.connector.opa.model.IlpPaymentDetails;
 import org.interledger.connector.opa.model.ImmutableCharge;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.Mandate;
@@ -16,11 +17,8 @@ import org.interledger.connector.opa.model.NewCharge;
 import org.interledger.connector.opa.model.NewMandate;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
 import org.interledger.connector.opa.model.PayInvoiceRequest;
-import org.interledger.connector.opa.model.XrpPayment;
-import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.opa.model.problems.MandateInsufficientBalanceProblem;
 import org.interledger.connector.opa.model.problems.MandateNotFoundProblem;
-import org.interledger.connector.payments.StreamPayment;
 
 import com.google.common.collect.Lists;
 import okhttp3.HttpUrl;
@@ -41,18 +39,15 @@ public class InMemoryMandateService implements MandateService {
   private final HashMap<MandateId, Mandate> mandates = new HashMap<>();
 
   private final MandateAccrualService mandateAccrualService;
-  private final InvoiceService<StreamPayment, IlpPaymentDetails> ilpInvoiceService;
-  private final InvoiceService<XrpPayment, XrpPaymentDetails> xrpInvoiceService;
+  private final InvoiceServiceFactory invoiceServiceFactory;
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
 
 
   public InMemoryMandateService(MandateAccrualService mandateAccrualService,
-                                InvoiceService<StreamPayment, IlpPaymentDetails> ilpInvoiceService,
-                                InvoiceService<XrpPayment, XrpPaymentDetails> xrpInvoiceService,
+                                InvoiceServiceFactory invoiceServiceFactory,
                                 Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier) {
     this.mandateAccrualService = mandateAccrualService;
-    this.ilpInvoiceService = ilpInvoiceService;
-    this.xrpInvoiceService = xrpInvoiceService;
+    this.invoiceServiceFactory = invoiceServiceFactory;
     this.openPaymentsSettingsSupplier = openPaymentsSettingsSupplier;
   }
 
@@ -101,12 +96,16 @@ public class InMemoryMandateService implements MandateService {
 
   @Override
   public Charge createCharge(AccountId accountId, MandateId mandateId, NewCharge newCharge) {
-    Invoice invoice = xrpInvoiceService.findInvoiceByUrl(newCharge.invoice(), accountId)
-      .orElseGet(() -> xrpInvoiceService.syncInvoice(newCharge.invoice(), accountId));
-    synchronized (mandates) {
-      Mandate mandate = findMandateById(accountId, mandateId)
-        .orElseThrow(() -> new MandateNotFoundProblem(mandateId));
+    Mandate mandate = findMandateById(accountId, mandateId)
+      .orElseThrow(() -> new MandateNotFoundProblem(mandateId));
 
+    InvoiceService<AuthorizablePayment, ?> invoiceService = invoiceServiceFactory.get(mandate.paymentNetwork())
+      .orElseThrow(() -> new UnsupportedOperationException("No invoice service for " + mandate.paymentNetwork()));
+
+    Invoice invoice = invoiceService.findInvoiceByUrl(newCharge.invoice(), accountId)
+      .orElseGet(() -> invoiceService.syncInvoice(newCharge.invoice(), accountId));
+
+    synchronized (mandates) {
       if (mandate.balance().compareTo(invoice.amount()) >= 0) {
         ChargeId chargeId = ChargeId.of(UUID.randomUUID().toString());
         Charge charge = Charge.builder()
@@ -127,10 +126,12 @@ public class InMemoryMandateService implements MandateService {
         mandates.put(mandate.mandateId(), updated);
 
         try {
-          chargeInvoice(invoice).userAuthorizationUrl().ifPresent(authorizationUrl ->
+          invoiceService.payInvoice(invoice.id(), invoice.accountId(), Optional.of(
+            PayInvoiceRequest.builder().amount(invoice.amount()).build()
+          )).userAuthorizationUrl().ifPresent(authorizationUrl ->
             updateAuthorizationUrl(accountId, mandateId, chargeId, authorizationUrl)
           );
-          updateChargeStatus(accountId, mandateId, chargeId, ChargeStatus.PAYMENT_PENDING);
+          updateChargeStatus(accountId, mandateId, chargeId, ChargeStatus.PAYMENT_INITIATED);
         } catch (Exception e) {
           LOGGER.error("charging invoice {} to mandate {} failed", invoice.id(), mandate.mandateId(), e);
           updateChargeStatus(accountId, mandateId, chargeId, ChargeStatus.PAYMENT_FAILED);
@@ -190,12 +191,5 @@ public class InMemoryMandateService implements MandateService {
       .addPathSegment(mandateId.value())
       .build();
   }
-
-  private XrpPayment chargeInvoice(Invoice invoice) {
-    return xrpInvoiceService.payInvoice(invoice.id(), invoice.accountId(), Optional.of(
-      PayInvoiceRequest.builder().amount(invoice.amount()).build()
-    ));
-  }
-
 
 }

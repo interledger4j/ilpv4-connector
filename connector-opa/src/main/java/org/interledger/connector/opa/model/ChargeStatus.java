@@ -4,7 +4,7 @@ public enum ChargeStatus {
 
   CREATED,
   PAYMENT_FAILED,
-  PAYMENT_PENDING,
+  PAYMENT_INITIATED,
   SUCCESSFUL;
 
 }

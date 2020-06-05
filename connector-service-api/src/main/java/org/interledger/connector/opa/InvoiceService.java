@@ -87,4 +87,7 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
     final Optional<PayInvoiceRequest> payInvoiceRequest
   );
 
+  Class<PaymentResultType> getResultType();
+
+  Class<PaymentDetailsType> getRequestType();
 }

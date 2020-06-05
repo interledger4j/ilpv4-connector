@@ -92,9 +92,6 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
       } else {
         invoiceOfReceiver = invoicesRepository.findAllInvoicesByInvoiceUrl(invoiceUrl)
           .stream()
-          .filter(invoice -> {
-            return invoice.subject().contains(invoice.accountId().value()); // FIXME: What's the best way to figure out if an invoice is owned by the receiver?
-          })
           .findFirst()
           .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceUrl));
       }

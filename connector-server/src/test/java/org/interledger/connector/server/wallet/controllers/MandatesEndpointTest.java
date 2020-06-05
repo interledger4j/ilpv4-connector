@@ -18,6 +18,7 @@ import org.interledger.connector.opa.model.NewCharge;
 import org.interledger.connector.opa.model.NewMandate;
 import org.interledger.connector.opa.model.OpenPaymentsMetadata;
 import org.interledger.connector.opa.model.OpenPaymentsSettings;
+import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.server.ConnectorServerConfig;
@@ -28,8 +29,6 @@ import org.interledger.connector.xumm.service.XummPaymentService;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings.AuthType;
-import org.interledger.stream.Denomination;
-import org.interledger.stream.ImmutableDenomination;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 
 import com.google.common.collect.Maps;
@@ -77,12 +76,12 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
 
   public static final String TEST_DOT_BOB = "test.bob";
   private static final String PAYER = "mandate_test_payer";
-  private static final String PAYEE = "mandate_test_payee";
+  private static final String PAYEE = "nhartner";
+  // FIXME make this not depend on an external payid
+  private static final String PAYID = "payid:nhartner$stg.payid.xpring.money";
 
   private static final String USD = "USD";
-  private static final String XRP = "XRP";
   private static final String SHH = "shh";
-  public static final ImmutableDenomination DENOMINATION_XRP = Denomination.builder().assetCode("XRP").assetScale((short) 9).build();
 
   @MockBean
   private ServerSecretSupplier serverSecretSupplier;
@@ -144,6 +143,7 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
         .amount(amount)
         .assetCode("XRP")
         .assetScale((short) 9)
+        .paymentNetwork(PaymentNetwork.XRPL)
         .build()
     );
 
@@ -155,7 +155,7 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
       .amount(amount)
       .assetCode("XRP")
       .assetScale((short) 9)
-      .subject(PAYEE + "$localhost:" + localServerPort)
+      .subject(PAYID)
       .build()
     );
 
@@ -186,6 +186,7 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
         .amount(amount)
         .assetCode("XRP")
         .assetScale((short) 9)
+        .paymentNetwork(PaymentNetwork.XRPL)
         .build()
     );
 
@@ -197,7 +198,7 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
       .amount(amount)
       .assetCode("XRP")
       .assetScale((short) 9)
-      .subject(PAYEE + "$localhost:" + localServerPort)
+      .subject(PAYID)
       .build()
     );
 
@@ -214,7 +215,7 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
       .amount(amount)
       .assetCode("XRP")
       .assetScale((short) 9)
-      .subject(PAYEE + "$localhost:" + localServerPort)
+      .subject(PAYID)
       .build()
     );
 

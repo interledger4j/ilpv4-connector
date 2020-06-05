@@ -9,13 +9,11 @@ import java.util.Optional;
 @Value.Immutable
 @JsonSerialize(as = ImmutableXrpPayment.class)
 @JsonDeserialize(as = ImmutableXrpPayment.class)
-public interface XrpPayment {
+public interface XrpPayment extends AuthorizablePayment {
 
   static ImmutableXrpPayment.Builder builder() {
     return ImmutableXrpPayment.builder();
   }
-
-  Optional<String> userAuthorizationUrl();
 
   Optional<XrplTransaction> transaction();
 

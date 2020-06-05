@@ -9,9 +9,13 @@ import org.interledger.connector.opa.model.ImmutableMemoWrapper;
 import org.interledger.connector.opa.model.Invoice;
 import org.interledger.connector.opa.model.Memo;
 import org.interledger.connector.opa.model.MemoWrapper;
+import org.interledger.connector.opa.model.PayId;
+import org.interledger.connector.opa.model.PaymentNetwork;
 import org.interledger.connector.opa.model.XrpPayment;
 import org.interledger.connector.opa.model.XrpPaymentDetails;
 import org.interledger.connector.opa.model.XrplTransaction;
+import org.interledger.connector.payid.PayIdClient;
+import org.interledger.connector.payid.PayIdResponse;
 import org.interledger.connector.xumm.client.XummClient;
 import org.interledger.connector.xumm.model.CustomMeta;
 import org.interledger.connector.xumm.model.callback.PayloadCallback;
@@ -28,6 +32,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;
 import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.UnsignedLong;
+import io.xpring.xrpl.ClassicAddress;
+import io.xpring.xrpl.Utils;
 import org.slf4j.Logger;
 
 public class XummPaymentService implements PaymentSystemFacade<XrpPayment, XrpPaymentDetails> {
@@ -35,12 +41,14 @@ public class XummPaymentService implements PaymentSystemFacade<XrpPayment, XrpPa
   private static final Logger LOGGER = getLogger(XummPaymentService.class);
 
   private final XummClient xummClient;
+  private final PayIdClient payIdClient;
   private final XummUserTokenService xummUserTokenService;
   private final EventBus eventBus;
   private final ObjectMapper objectMapper;
 
-  public XummPaymentService(XummClient xummClient, XummUserTokenService xummUserTokenService, EventBus eventBus, ObjectMapper objectMapper) {
+  public XummPaymentService(XummClient xummClient, PayIdClient payIdClient, XummUserTokenService xummUserTokenService, EventBus eventBus, ObjectMapper objectMapper) {
     this.xummClient = xummClient;
+    this.payIdClient = payIdClient;
     this.xummUserTokenService = xummUserTokenService;
     this.eventBus = eventBus;
     this.objectMapper = objectMapper;
@@ -53,14 +61,14 @@ public class XummPaymentService implements PaymentSystemFacade<XrpPayment, XrpPa
     UnsignedLong amount,
     CorrelationId correlationId) {
     ImmutablePayloadRequest.Builder builder = PayloadRequest.builder()
-      .txjson(TxJson.builder()
+      .txjson(filterToClassicAddress(TxJson.builder()
         .transactionType("Payment")
         .destination(paymentDetails.address())
         .destinationTag(paymentDetails.addressTag())
         .amount(amount)
         .fee(UnsignedLong.valueOf(12))
         .addMemos(invoicePaymentMemo(correlationId.value()))
-        .build()
+        .build())
       )
       .customMeta(CustomMeta.builder()
         .instruction(paymentDetails.instructions())
@@ -101,10 +109,19 @@ public class XummPaymentService implements PaymentSystemFacade<XrpPayment, XrpPa
 
   @Override
   public XrpPaymentDetails getPaymentDetails(Invoice invoice) {
+    PayIdResponse response = payIdClient.getPayId(PayId.of(invoice.subject()),
+      PaymentNetwork.XRPL,
+      "testnet" // FIXME make config
+    );
+
+    if (response.addresses().isEmpty()) {
+      throw new IllegalStateException("no XRPL address found for payid " + invoice.subject());
+    }
+
     return XrpPaymentDetails.builder()
-      .address("rPdvC6ccq8hCdPKSPJkPmyZ4Mi1oG2FFkT") // FIXME
+      .address(response.addresses().get(0).addressDetails().address())
       .invoiceIdHash(invoice.correlationId().value())
-      .instructions("Invoice from " + invoice.subject())
+      .instructions("Invoice from " + invoice.subject().replaceFirst("payid:", ""))
       .build();
   }
 
@@ -126,20 +143,11 @@ public class XummPaymentService implements PaymentSystemFacade<XrpPayment, XrpPa
 
         Payload payload = xummClient.getPayload(payloadCallback.meta().payloadUuidV4());
 
-        // TODO check if the XRP transaction was successful. For now, assume it was.
-        eventBus.post(XrpPaymentCompletedEvent.builder()
-          .payment(XrplTransaction.builder()
-            .addMemos(invoicePaymentMemo(request.correlationId().toLowerCase()))
-            .account(payload.response().account())
-            .destination(payload.payload().destination())
-            .destinationTag(payload.payload().destinationTag().orElse(null))
-            .amount(request.amountInDrops())
-            .hash(payload.response().txid())
-            .createdAt(payload.response().resolvedAt())
-            .build()
-          )
-          .build()
-        );
+        if (payloadCallback.payloadResponse().signed()) {
+          onSignedPayload(request, payload);
+        } else {
+          onRejectedPayload(request, payload);
+        }
         return true;
       })
       .orElseGet(() -> {
@@ -148,11 +156,31 @@ public class XummPaymentService implements PaymentSystemFacade<XrpPayment, XrpPa
       });
   }
 
+  private void onRejectedPayload(SendXrpPaymentRequest request, Payload payload) {
+    // TODO send payment rejected event
+  }
+
+  public void onSignedPayload(SendXrpPaymentRequest request, Payload payload) {
+    eventBus.post(XrpPaymentCompletedEvent.builder()
+      .payment(XrplTransaction.builder()
+        .addMemos(invoicePaymentMemo(request.correlationId().toLowerCase()))
+        .account(payload.response().account())
+        .destination(payload.payload().destination())
+        .destinationTag(payload.payload().destinationTag().orElse(null))
+        .amount(request.amountInDrops())
+        .hash(payload.response().txid())
+        .createdAt(payload.response().resolvedAt())
+        .build()
+      )
+      .build()
+    );
+  }
+
   public ImmutableMemoWrapper invoicePaymentMemo(String correlationId) {
     return MemoWrapper.builder()
       .memo(Memo.builder()
         .memoType(hexEncode("INVOICE_PAYMENT"))
-        .memoData(hexEncode(correlationId.toUpperCase()))
+        .memoData(hexEncode(correlationId))
         .build())
       .build();
   }
@@ -161,8 +189,15 @@ public class XummPaymentService implements PaymentSystemFacade<XrpPayment, XrpPa
     return BaseEncoding.base16().encode(value.getBytes()).toUpperCase();
   }
 
-  private static String hexDecode(String value) {
-    return new String(BaseEncoding.base16().decode(value));
+  private static TxJson filterToClassicAddress(TxJson txJson) {
+    if (Utils.isValidXAddress(txJson.destination())) {
+      ClassicAddress classicAddress = Utils.decodeXAddress(txJson.destination());
+      return TxJson.builder().from(txJson)
+        .destination(classicAddress.address())
+        .destinationTag(classicAddress.tag())
+        .build();
+    }
+    return txJson;
   }
 
 }

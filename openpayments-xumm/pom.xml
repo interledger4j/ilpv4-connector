@@ -19,7 +19,6 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>2.10.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -29,13 +28,11 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.10.3</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>2.10.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -63,6 +60,10 @@
     <dependency>
       <groupId>org.interledger.connector</groupId>
       <artifactId>openpayments-model</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.xpring</groupId>
+      <artifactId>xpring4j</artifactId>
     </dependency>
   </dependencies>
 
