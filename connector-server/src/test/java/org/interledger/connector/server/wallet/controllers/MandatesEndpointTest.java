@@ -25,6 +25,7 @@ import org.interledger.openpayments.NewCharge;
 import org.interledger.openpayments.NewInvoice;
 import org.interledger.openpayments.NewMandate;
 import org.interledger.openpayments.PaymentNetwork;
+import org.interledger.openpayments.UserAuthorizationRequiredException;
 import org.interledger.openpayments.XrpPaymentDetails;
 import org.interledger.openpayments.config.OpenPaymentsMetadata;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
@@ -157,6 +158,7 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
       .assetScale((short) 9)
       .subject(PAYID)
       .description("Fight Milk subscription")
+      .ownerAccountUrl(accountUrl(PAYEE))
       .build()
     );
 
@@ -175,6 +177,10 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
 
     assertThat(afterCharge.totalCharged()).isEqualTo(amount);
     assertThat(afterCharge.balance()).isEqualTo(UnsignedLong.ZERO);
+  }
+
+  public HttpUrl accountUrl(String account) {
+    return this.testnetHost.newBuilder().addPathSegment(account).build();
   }
 
   @Test
@@ -200,6 +206,7 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
       .assetScale((short) 9)
       .subject(PAYID)
       .description("Wolf Cola subscription")
+      .ownerAccountUrl(accountUrl(PAYEE))
       .build()
     );
 
@@ -217,6 +224,7 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
       .assetScale((short) 9)
       .subject(PAYID)
       .description("Troll toll")
+      .ownerAccountUrl(accountUrl(PAYEE))
       .build()
     );
 
@@ -254,7 +262,7 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
 
     @Primary
     @Bean
-    public XummPaymentService xummPaymentServiceMock() {
+    public XummPaymentService xummPaymentServiceMock() throws UserAuthorizationRequiredException {
       XummPaymentService mock = mock(XummPaymentService.class);
       when(mock.getDetailsType()).thenReturn(XrpPaymentDetails.class);
       when(mock.getResultType()).thenReturn(XrplTransaction.class);

@@ -30,6 +30,7 @@ import org.interledger.openpayments.xrpl.XrplTransaction;
 import org.interledger.stream.Denominations;
 
 import com.google.common.primitives.UnsignedLong;
+import okhttp3.HttpUrl;
 import org.apache.commons.codec.binary.Hex;
 import org.interleger.openpayments.client.OpenPaymentsClient;
 import org.junit.AfterClass;
@@ -153,6 +154,7 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
   @Test
   public void paulPaysInvoiceForEddyAllOnAlice() throws InterruptedException {
     NewInvoice invoice = NewInvoice.builder()
+      .ownerAccountUrl(HttpUrl.parse("http://localhost:8080/eddy"))
       .subject("eddy$localhost:8080")
       .amount(UnsignedLong.valueOf(100))
       .assetCode(Denominations.XRP_DROPS.assetCode())
@@ -186,6 +188,7 @@ public class TwoConnectorOpenPaymentsOverXrpIT extends AbstractIlpOverHttpIT {
   }
   private Invoice createInvoiceForPeter(OpenPaymentsClient client, String accountId) {
     NewInvoice invoice = NewInvoice.builder()
+      .ownerAccountUrl(HttpUrl.parse("http://localhost:8081/peter"))
       .assetCode(Denominations.XRP_DROPS.assetCode())
       .assetScale(Denominations.XRP_DROPS.assetScale())
       .amount(UnsignedLong.valueOf(100))

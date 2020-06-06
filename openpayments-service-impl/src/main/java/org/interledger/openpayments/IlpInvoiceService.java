@@ -80,6 +80,9 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
 
     try {
       return ilpPaymentSystemFacade.payInvoice(ilpPaymentDetails, senderAccountId, amountToPay, invoice.correlationId());
+    } catch (UserAuthorizationRequiredException e) {
+      // should not happen on ILP payments
+      throw new InvoicePaymentProblem(e.getMessage(), invoiceId);
     } catch (ExecutionException | InterruptedException e) {
       throw new InvoicePaymentProblem(e.getMessage(), invoiceId);
     }

@@ -10,6 +10,7 @@ import org.interledger.openpayments.xrpl.XrplTransaction;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.hash.Hashing;
+import io.vavr.control.Either;
 import okhttp3.HttpUrl;
 import org.interleger.openpayments.PaymentSystemFacade;
 import org.interleger.openpayments.PaymentSystemFacadeFactory;
@@ -21,6 +22,7 @@ import org.springframework.core.convert.ConversionService;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 public class XrplInvoiceService extends AbstractInvoiceService<XrplTransaction, XrpPaymentDetails> implements XrplPaymentEventHandler {
@@ -66,23 +68,29 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrplTransaction, 
   }
 
   @Override
-  public XrplTransaction payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) {
+  public XrplTransaction payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) throws
+    UserAuthorizationRequiredException
+    {
     final Invoice invoice = this.getInvoice(invoiceId, senderAccountId);
     final HttpUrl invoiceUrl = invoice.receiverInvoiceUrl();
-
     try {
-      return paymentSystemFacadeFactory.get(XrplTransaction.class, XrpPaymentDetails.class)
+      Either<UserAuthorizationRequiredException, XrplTransaction> result =
+        paymentSystemFacadeFactory.get(XrplTransaction.class, XrpPaymentDetails.class)
         .map(facade -> {
           try {
-            return facade.payInvoice(getPaymentDetails(invoiceId, senderAccountId),
+            XrplTransaction trx = facade.payInvoice(getPaymentDetails(invoiceId, senderAccountId),
               senderAccountId,
               payInvoiceRequest.get().amount(),
               CorrelationId.of(transactionHash(invoiceId)));
-          } catch (Exception e) {
-            throw new RuntimeException(e);
+            return Either.<UserAuthorizationRequiredException, XrplTransaction>right(trx);
+          } catch (UserAuthorizationRequiredException e) {
+            return Either.<UserAuthorizationRequiredException, XrplTransaction>left(e);
+          } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e); // TODO what to do here
           }
         })
         .orElseThrow(() -> new UnsupportedOperationException("No provider for XrpPayment type"));
+      return result.getOrElseThrow((ex) -> ex);
     } catch (Exception e) {
       LOGGER.error("failed to payinvoice for invoiceId {}", invoiceId, e);
       // FIXME what to do here?

@@ -13,6 +13,7 @@ import org.interledger.openpayments.InvoiceId;
 import org.interledger.openpayments.NewInvoice;
 import org.interledger.openpayments.OpenPaymentsMediaType;
 import org.interledger.openpayments.PayInvoiceRequest;
+import org.interledger.openpayments.UserAuthorizationRequiredException;
 import org.interledger.openpayments.config.OpenPaymentsPathConstants;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
 
@@ -159,7 +160,7 @@ public class InvoicesController {
     @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) AccountId accountId,
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
     @RequestBody Optional<PayInvoiceRequest> payInvoiceRequest
-  ) {
+  ) throws UserAuthorizationRequiredException {
     return ilpInvoiceService.payInvoice(invoiceId, accountId, payInvoiceRequest);
   }
 

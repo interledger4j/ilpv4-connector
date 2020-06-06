@@ -49,8 +49,6 @@ public interface XrplTransaction {
   @Nullable
   List<MemoWrapper> memos();
 
-  Optional<String> userAuthorizationUrl();
-
   @Value.Derived
   default Optional<CorrelationId> invoiceMemoCorrelationId() {
     if (memos() == null) {

@@ -18,6 +18,7 @@ import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.PayId;
 import org.interledger.openpayments.PaymentNetwork;
 import org.interledger.openpayments.SendXrpPaymentRequest;
+import org.interledger.openpayments.UserAuthorizationRequiredException;
 import org.interledger.openpayments.XrpPaymentDetails;
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
 import org.interledger.openpayments.xrpl.Memo;
@@ -31,6 +32,7 @@ import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.UnsignedLong;
 import io.xpring.xrpl.ClassicAddress;
 import io.xpring.xrpl.Utils;
+import okhttp3.HttpUrl;
 import org.interleger.openpayments.PaymentSystemFacade;
 import org.slf4j.Logger;
 
@@ -57,7 +59,8 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
     XrpPaymentDetails paymentDetails,
     AccountId senderAccountId,
     UnsignedLong amount,
-    CorrelationId correlationId) {
+    CorrelationId correlationId)
+  throws UserAuthorizationRequiredException {
     ImmutablePayloadRequest.Builder builder = PayloadRequest.builder()
       .txjson(filterToClassicAddress(TxJson.builder()
         .transactionType("Payment")
@@ -93,15 +96,13 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
         return XrplTransaction.builder()
           .build();
 
-      }).orElseGet(() -> {
+      }).orElseThrow(() -> {
         try {
           LOGGER.info("Sending: " + objectMapper.writeValueAsString(builder.build()));
         } catch (JsonProcessingException e) {
         }
         PayloadRequestResponse response = xummClient.createPayload(builder.build());
-        return XrplTransaction.builder()
-          .userAuthorizationUrl(response.next().always())
-          .build();
+        return new UserAuthorizationRequiredException(HttpUrl.parse(response.next().always()));
       });
   }
 

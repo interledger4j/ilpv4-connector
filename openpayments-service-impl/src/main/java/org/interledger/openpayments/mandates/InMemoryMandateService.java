@@ -3,7 +3,6 @@ package org.interledger.openpayments.mandates;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import org.interledger.connector.accounts.AccountId;
-import org.interledger.openpayments.AuthorizablePayment;
 import org.interledger.openpayments.Charge;
 import org.interledger.openpayments.ChargeId;
 import org.interledger.openpayments.ChargeStatus;
@@ -14,6 +13,7 @@ import org.interledger.openpayments.MandateId;
 import org.interledger.openpayments.NewCharge;
 import org.interledger.openpayments.NewMandate;
 import org.interledger.openpayments.PayInvoiceRequest;
+import org.interledger.openpayments.UserAuthorizationRequiredException;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
 import org.interledger.openpayments.problems.MandateInsufficientBalanceProblem;
 import org.interledger.openpayments.problems.MandateNotFoundProblem;
@@ -101,7 +101,7 @@ public class InMemoryMandateService implements MandateService {
     Mandate mandate = findMandateById(accountId, mandateId)
       .orElseThrow(() -> new MandateNotFoundProblem(mandateId));
 
-    InvoiceService<AuthorizablePayment, ?> invoiceService = invoiceServiceFactory.get(mandate.paymentNetwork())
+    InvoiceService<?, ?> invoiceService = invoiceServiceFactory.get(mandate.paymentNetwork())
       .orElseThrow(() -> new UnsupportedOperationException("No invoice service for " + mandate.paymentNetwork()));
 
     Invoice invoice = invoiceService.findInvoiceByUrl(newCharge.invoice(), accountId)
@@ -130,10 +130,11 @@ public class InMemoryMandateService implements MandateService {
         try {
           invoiceService.payInvoice(invoice.id(), invoice.accountId(), Optional.of(
             PayInvoiceRequest.builder().amount(invoice.amount()).build()
-          )).userAuthorizationUrl().ifPresent(authorizationUrl ->
-            updateAuthorizationUrl(accountId, mandateId, chargeId, authorizationUrl)
-          );
+          ));
           updateChargeStatus(accountId, mandateId, chargeId, ChargeStatus.PAYMENT_INITIATED);
+        } catch (UserAuthorizationRequiredException e) {
+          updateAuthorizationUrl(accountId, mandateId, chargeId, e.getUserAuthorizationUrl().toString());
+          updateChargeStatus(accountId, mandateId, chargeId, ChargeStatus.PAYMENT_AWAITING_USER_AUTH);
         } catch (Exception e) {
           LOGGER.error("charging invoice {} to mandate {} failed", invoice.id(), mandate.mandateId(), e);
           updateChargeStatus(accountId, mandateId, chargeId, ChargeStatus.PAYMENT_FAILED);
