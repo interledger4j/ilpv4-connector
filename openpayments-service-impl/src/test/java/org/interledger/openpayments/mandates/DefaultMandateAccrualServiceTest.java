@@ -10,6 +10,7 @@ import org.interledger.openpayments.ImmutableMandate;
 import org.interledger.openpayments.Mandate;
 import org.interledger.openpayments.MandateId;
 import org.interledger.openpayments.MutableClock;
+import org.interledger.openpayments.PaymentNetwork;
 
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
@@ -142,6 +143,7 @@ public class DefaultMandateAccrualServiceTest {
       .amount(UnsignedLong.valueOf(100))
       .assetCode("XRP")
       .assetScale((short) 9)
+      .paymentNetwork(PaymentNetwork.XRPL)
       .startAt(startsAt)
       .balance(UnsignedLong.ZERO);
   }
