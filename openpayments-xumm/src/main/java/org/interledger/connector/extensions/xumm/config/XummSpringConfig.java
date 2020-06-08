@@ -1,6 +1,10 @@
 package org.interledger.connector.extensions.xumm.config;
 
 
+import static org.interledger.connector.core.ConfigConstants.ENABLED_PROTOCOLS;
+import static org.interledger.connector.core.ConfigConstants.OPEN_PAYMENTS_ENABLED;
+import static org.interledger.connector.core.ConfigConstants.TRUE;
+
 import org.interledger.connector.payid.PayIdClient;
 import org.interledger.connector.xumm.client.XummClient;
 import org.interledger.connector.xumm.service.XummPaymentService;
@@ -9,10 +13,12 @@ import org.interledger.connector.xumm.service.XummUserTokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;
 import okhttp3.HttpUrl;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = OPEN_PAYMENTS_ENABLED, havingValue = TRUE)
 public class XummSpringConfig {
 
   // FIXME get from config
