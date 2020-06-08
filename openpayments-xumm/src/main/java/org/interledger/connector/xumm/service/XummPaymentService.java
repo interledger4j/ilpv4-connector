@@ -94,6 +94,10 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
         }
         xummClient.createPayload(builder.build());
         return XrplTransaction.builder()
+          .amount(amount)
+          .destination(paymentDetails.address())
+          .account("pending")
+          .hash("pending")
           .build();
 
       }).orElseThrow(() -> {
