@@ -1,10 +1,6 @@
 package org.interledger.connector.extensions.xumm.config;
 
 
-import static org.interledger.connector.core.ConfigConstants.ENABLED_PROTOCOLS;
-import static org.interledger.connector.core.ConfigConstants.OPEN_PAYMENTS_ENABLED;
-import static org.interledger.connector.core.ConfigConstants.TRUE;
-
 import org.interledger.connector.payid.PayIdClient;
 import org.interledger.connector.xumm.client.XummClient;
 import org.interledger.connector.xumm.service.XummPaymentService;
@@ -13,24 +9,28 @@ import org.interledger.connector.xumm.service.XummUserTokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;
 import okhttp3.HttpUrl;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConditionalOnProperty(prefix = ENABLED_PROTOCOLS, name = OPEN_PAYMENTS_ENABLED, havingValue = TRUE)
+@ConditionalOnProperty("interledger.connector.xumm.apiKey")
 public class XummSpringConfig {
 
-  // FIXME get from config
-  public static final String XUMM_API_KEY = "e28cb433-2886-4794-9e64-1d8b7f7783e2";
-  public static final String XUMM_API_SECRET = "7d98c46a-d21f-4ee3-ad07-b48a674375cb";
+  @Value("${interledger.connector.xumm.apiKey}")
+  private String xummApiKey;
+
+  @Value("${interledger.connector.xumm.apiSecret}")
+  private String xummApiSecret;
 
   @Bean
-  public XummClient xummClient(ObjectMapper objectMapper) {
+  public XummClient xummClient(
+    ObjectMapper objectMapper) {
     return XummClient.construct(objectMapper,
       HttpUrl.parse("https://xumm.app"),
-      XUMM_API_KEY,
-      XUMM_API_SECRET);
+      xummApiKey,
+      xummApiSecret);
   }
 
   @Bean
