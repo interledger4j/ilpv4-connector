@@ -30,14 +30,14 @@ public class BearerTokenSecurityContextRepository implements SecurityContextRepo
 
     SecurityContext context = SecurityContextHolder.createEmptyContext();
     parseToken(requestResponseHolder.getRequest()).ifPresent(token ->
-    {
-      context.setAuthentication(BearerAuthentication.builder()
-        .isAuthenticated(false)
-        .principal(parseAccountId(requestResponseHolder.getRequest()).get())
-        .hmacSha256(Hashing.hmacSha256(ephemeralBytes).hashBytes(token))
-        .bearerToken(token)
-        .build());
-    });
+      parseAccountId(requestResponseHolder.getRequest()).ifPresent(
+        accountId -> context.setAuthentication(BearerAuthentication.builder()
+          .isAuthenticated(false)
+          .principal(parseAccountId(requestResponseHolder.getRequest()).get())
+          .hmacSha256(Hashing.hmacSha256(ephemeralBytes).hashBytes(token))
+          .bearerToken(token)
+          .build())
+      ));
     return context;
   }
 

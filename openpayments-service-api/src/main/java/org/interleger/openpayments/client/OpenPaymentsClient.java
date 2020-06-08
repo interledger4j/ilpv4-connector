@@ -114,7 +114,7 @@ public interface OpenPaymentsClient {
     Optional<PayInvoiceRequest> payInvoiceRequest
   ) throws ThrowableProblem;
 
-  @RequestLine("POST /accounts/{accountId}/mandates")
+  @RequestLine("POST /{accountId}/mandates")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON,
@@ -126,7 +126,7 @@ public interface OpenPaymentsClient {
     NewMandate newMandate
   ) throws ThrowableProblem;
 
-  @RequestLine("GET /accounts/{accountId}/mandates")
+  @RequestLine("GET /{accountId}/mandates")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON,
@@ -137,7 +137,7 @@ public interface OpenPaymentsClient {
     @Param("authorization") String authorization
   ) throws ThrowableProblem;
 
-  @RequestLine("GET /accounts/{accountId}/mandates/{mandateId}")
+  @RequestLine("GET /{accountId}/mandates/{mandateId}")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON,
@@ -149,7 +149,7 @@ public interface OpenPaymentsClient {
     @Param("authorization") String authorization
   ) throws ThrowableProblem;
 
-  @RequestLine("POST /accounts/{accountId}/mandates/{mandateId}/charges")
+  @RequestLine("POST /{accountId}/mandates/{mandateId}/charges")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON,
