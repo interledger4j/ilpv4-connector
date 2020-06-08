@@ -1,9 +1,13 @@
 package org.interleger.openpayments.client;
 
 import org.interledger.connector.jackson.ObjectMapperFactory;
+import org.interledger.openpayments.Charge;
 import org.interledger.openpayments.IlpPaymentDetails;
 import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.Mandate;
+import org.interledger.openpayments.NewCharge;
 import org.interledger.openpayments.NewInvoice;
+import org.interledger.openpayments.NewMandate;
 import org.interledger.openpayments.OpenPaymentsMediaType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -76,4 +80,25 @@ public interface OpenPaymentsProxyClient {
   IlpPaymentDetails getIlpInvoicePaymentDetails(
     URI invoiceUrl
   ) throws ThrowableProblem;
+
+
+  @RequestLine("POST /")
+  @Headers({
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON
+  })
+  Mandate createMandate(
+    URI mandateEndpoint,
+    NewMandate newMandate
+  );
+
+  @RequestLine("POST /")
+  @Headers({
+    ACCEPT + APPLICATION_JSON,
+    CONTENT_TYPE + APPLICATION_JSON
+  })
+  Charge createCharge(
+    URI mandateUrl,
+    NewCharge newCharge
+  );
 }
