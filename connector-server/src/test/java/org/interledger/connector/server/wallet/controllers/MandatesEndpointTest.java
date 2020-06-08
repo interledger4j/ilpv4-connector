@@ -151,6 +151,8 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
 
     assertThat(mandate.accountId()).isEqualTo(PAYER);
     assertThat(mandate.balance()).isEqualTo(amount);
+    assertThat(mandate.id().toString())
+      .isEqualTo(testnetHost + PAYER + "/mandates/" + mandate.mandateId());
 
     Invoice invoice = openPaymentsClient.createInvoice(PAYEE, NewInvoice.builder()
       .amount(amount)

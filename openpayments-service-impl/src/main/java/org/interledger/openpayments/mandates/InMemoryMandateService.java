@@ -183,7 +183,7 @@ public class InMemoryMandateService implements MandateService {
 
   private HttpUrl makeAccountUrl(AccountId accountId) {
     return openPaymentsSettingsSupplier.get().metadata().issuer()
-      .newBuilder().addPathSegment("accounts")
+      .newBuilder()
       .addPathSegment(accountId.value())
       .build();
   }
