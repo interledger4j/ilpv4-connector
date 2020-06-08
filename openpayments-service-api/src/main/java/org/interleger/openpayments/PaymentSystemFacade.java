@@ -3,6 +3,7 @@ package org.interleger.openpayments;
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.openpayments.CorrelationId;
 import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.UserAuthorizationRequiredException;
 
 import com.google.common.primitives.UnsignedLong;
 
@@ -45,5 +46,9 @@ public interface PaymentSystemFacade<PaymentResultType, PaymentDetailsType> {
     final AccountId senderAccountId,
     final UnsignedLong amount,
     final CorrelationId correlationId
-  ) throws ExecutionException, InterruptedException;
+  ) throws ExecutionException, InterruptedException, UserAuthorizationRequiredException;
+
+  Class<PaymentResultType> getResultType();
+  Class<PaymentDetailsType> getDetailsType();
+
 }

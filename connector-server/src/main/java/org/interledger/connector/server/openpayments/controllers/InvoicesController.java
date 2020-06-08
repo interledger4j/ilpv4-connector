@@ -6,13 +6,14 @@ import static org.interledger.connector.core.ConfigConstants.TRUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.payments.StreamPayment;
 import org.interledger.openpayments.IlpPaymentDetails;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.InvoiceId;
 import org.interledger.openpayments.NewInvoice;
 import org.interledger.openpayments.OpenPaymentsMediaType;
 import org.interledger.openpayments.PayInvoiceRequest;
-import org.interledger.connector.payments.StreamPayment;
+import org.interledger.openpayments.UserAuthorizationRequiredException;
 import org.interledger.openpayments.config.OpenPaymentsPathConstants;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
 
@@ -159,7 +160,7 @@ public class InvoicesController {
     @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) AccountId accountId,
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
     @RequestBody Optional<PayInvoiceRequest> payInvoiceRequest
-  ) {
+  ) throws UserAuthorizationRequiredException {
     return ilpInvoiceService.payInvoice(invoiceId, accountId, payInvoiceRequest);
   }
 

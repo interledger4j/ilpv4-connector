@@ -3,6 +3,7 @@ package org.interledger.openpayments;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.primitives.UnsignedLong;
+import okhttp3.HttpUrl;
 import org.immutables.value.Value;
 
 @Value.Immutable
@@ -23,6 +24,8 @@ public interface NewInvoice {
   short assetScale();
 
   String description();
+
+  HttpUrl ownerAccountUrl();
 
 }
 

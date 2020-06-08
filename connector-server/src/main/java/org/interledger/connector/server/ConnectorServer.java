@@ -15,7 +15,6 @@ import org.springframework.context.ApplicationEvent;
 import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.Optional;
-
 import javax.money.CurrencyUnit;
 import javax.money.Monetary;
 import javax.money.MonetaryAmount;

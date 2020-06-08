@@ -1,8 +1,8 @@
 package org.interledger.connector.persistence.repositories;
 
+import org.interledger.connector.persistence.entities.PaymentEntity;
 import org.interledger.openpayments.InvoiceId;
 import org.interledger.openpayments.Payment;
-import org.interledger.connector.persistence.entities.PaymentEntity;
 import org.interledger.openpayments.PaymentId;
 
 import org.springframework.beans.factory.annotation.Autowired;

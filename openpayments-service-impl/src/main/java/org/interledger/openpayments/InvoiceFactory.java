@@ -2,7 +2,6 @@ package org.interledger.openpayments;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
-import org.interledger.spsp.PaymentPointer;
 import org.interledger.spsp.PaymentPointerResolver;
 
 import okhttp3.HttpUrl;
@@ -17,7 +16,7 @@ public class InvoiceFactory {
   private final PaymentPointerResolver paymentPointerResolver;
   private final PayIdResolver payIdResolver;
 
-  private final OpenPaymentsSettings openPaymentsSettings;
+  private final Supplier<OpenPaymentsSettings> openPaymentsSettings;
 
   public InvoiceFactory(
     PaymentPointerResolver paymentPointerResolver,
@@ -26,7 +25,7 @@ public class InvoiceFactory {
   ) {
     this.paymentPointerResolver = paymentPointerResolver;
     this.payIdResolver = payIdResolver;
-    this.openPaymentsSettings = openPaymentsSettings.get();
+    this.openPaymentsSettings = openPaymentsSettings;
   }
 
   /**
@@ -39,7 +38,7 @@ public class InvoiceFactory {
    */
   public Invoice construct(NewInvoice newInvoice) {
 
-    HttpUrl ownerAccountUrl = this.resolveInvoiceSubject(newInvoice.subject());
+    HttpUrl ownerAccountUrl = newInvoice.ownerAccountUrl();
 
     String accountId = ownerAccountUrl.pathSegments().get(ownerAccountUrl.pathSegments().size() - 1);
 
@@ -54,20 +53,4 @@ public class InvoiceFactory {
       .build();
   }
 
-  public HttpUrl resolveInvoiceSubject(String subject) {
-    HttpUrl ownerAccountUrl;
-    try {
-      ownerAccountUrl = paymentPointerResolver.resolveHttpUrl(PaymentPointer.of(subject));
-    } catch (IllegalArgumentException e) {
-      // Subject is a PayID
-      if (!subject.startsWith("payid:")) {
-        subject = "payid:" + subject;
-      }
-      PayId payId = PayId.of(subject);
-      ownerAccountUrl = payIdResolver.resolveHttpUrl(payId);
-    }
-
-    // largely for testing reasons since we may need to override and start on http instead of https
-    return ownerAccountUrl.newBuilder().scheme(openPaymentsSettings.metadata().defaultScheme()).build();
-  }
 }

@@ -1,9 +1,9 @@
 package org.interledger.connector.persistence.repositories;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.openpayments.CorrelationId;
 import org.interledger.openpayments.InvoiceId;
-import org.interledger.connector.persistence.entities.InvoiceEntity;
 
 import okhttp3.HttpUrl;
 import org.springframework.data.repository.CrudRepository;

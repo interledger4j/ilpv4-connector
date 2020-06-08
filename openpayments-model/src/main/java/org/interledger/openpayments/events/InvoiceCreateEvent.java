@@ -1,6 +1,7 @@
 package org.interledger.openpayments.events;
 
 import org.interledger.openpayments.Invoice;
+
 import org.immutables.value.Value;
 
 /**

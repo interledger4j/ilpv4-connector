@@ -1,9 +1,9 @@
 package org.interledger.connector.persistence.converters;
 
+import org.interledger.connector.persistence.entities.PaymentEntity;
 import org.interledger.openpayments.CorrelationId;
 import org.interledger.openpayments.Denomination;
 import org.interledger.openpayments.InvoiceId;
-import org.interledger.connector.persistence.entities.PaymentEntity;
 import org.interledger.openpayments.Payment;
 import org.interledger.openpayments.PaymentId;
 

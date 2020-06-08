@@ -6,10 +6,13 @@ import static org.interledger.connector.core.ConfigConstants.SPSP__URL_PATH;
 import static org.interledger.connector.core.ConfigConstants.TRUE;
 
 import org.interledger.connector.accounts.sub.LocalDestinationAddressUtils;
+import org.interledger.connector.payid.PayIdClient;
 import org.interledger.connector.payments.SendPaymentService;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.persistence.repositories.PaymentsRepository;
+import org.interledger.openpayments.DefaultInvoiceServiceFactory;
+import org.interledger.openpayments.DefaultPaymentSystemFacadeFactory;
 import org.interledger.openpayments.IlpInvoiceService;
 import org.interledger.openpayments.IlpPaymentDetails;
 import org.interledger.openpayments.IlpPaymentSystemFacade;
@@ -18,16 +21,24 @@ import org.interledger.openpayments.PayIdResolver;
 import org.interledger.openpayments.XrpPaymentDetails;
 import org.interledger.openpayments.XrplInvoiceService;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
+import org.interledger.openpayments.mandates.DefaultMandateAccrualService;
+import org.interledger.openpayments.mandates.InMemoryMandateService;
+import org.interledger.openpayments.payid.FeignPayIdClient;
 import org.interledger.openpayments.settings.OpenPaymentsSettingsFromPropertyFile;
 import org.interledger.openpayments.xrpl.XrplTransaction;
 import org.interledger.spsp.PaymentPointerResolver;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 import org.interledger.stream.receiver.StreamConnectionGenerator;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;
 import org.interleger.openpayments.InvoiceService;
+import org.interleger.openpayments.InvoiceServiceFactory;
 import org.interleger.openpayments.PaymentSystemFacade;
+import org.interleger.openpayments.PaymentSystemFacadeFactory;
 import org.interleger.openpayments.client.OpenPaymentsProxyClient;
+import org.interleger.openpayments.mandates.MandateAccrualService;
+import org.interleger.openpayments.mandates.MandateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +52,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.ConversionService;
 
+import java.time.Clock;
+import java.util.List;
 import java.util.function.Supplier;
 
 @Configuration
@@ -93,6 +106,17 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
+  public InvoiceServiceFactory invoiceServiceFactory(List<InvoiceService> invoiceServices) {
+    return new DefaultInvoiceServiceFactory().register(invoiceServices);
+  }
+
+
+  @Bean
+  public PaymentSystemFacadeFactory paymentSystemFacadeFactory(List<PaymentSystemFacade> paymentSystemFacades) {
+    return new DefaultPaymentSystemFacadeFactory().register(paymentSystemFacades);
+  }
+
+  @Bean
   public InvoiceService<XrplTransaction, XrpPaymentDetails> xrpInvoiceService(
     InvoicesRepository invoicesRepository,
     PaymentsRepository paymentsRepository,
@@ -100,8 +124,8 @@ public class OpenPaymentsConfig {
     InvoiceFactory invoiceFactory,
     OpenPaymentsProxyClient openPaymentsProxyClient,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    EventBus eventBus
-  ) {
+    EventBus eventBus,
+    PaymentSystemFacadeFactory paymentSystemFacadeFactory) {
     return new XrplInvoiceService(
       invoicesRepository,
       paymentsRepository,
@@ -109,8 +133,8 @@ public class OpenPaymentsConfig {
       invoiceFactory,
       openPaymentsProxyClient,
       openPaymentsSettingsSupplier,
-      eventBus
-    );
+      eventBus,
+      paymentSystemFacadeFactory);
   }
 
   @Bean
@@ -129,6 +153,11 @@ public class OpenPaymentsConfig {
       serverSecretSupplier,
       sendPaymentService,
       localDestinationAddressUtils);
+  }
+
+  @Bean
+  public PayIdClient payIdClient(ObjectMapper objectMapper) {
+    return FeignPayIdClient.construct(objectMapper);
   }
 
   @Bean
@@ -153,6 +182,19 @@ public class OpenPaymentsConfig {
   @Bean
   public PayIdResolver payIdResolver() {
     return PayIdResolver.defaultPayIdResolver();
+  }
+
+  @Bean
+  public MandateAccrualService mandateAccrualService(Clock clock) {
+    return new DefaultMandateAccrualService(clock);
+  }
+
+  @Bean
+  public MandateService mandateService(
+    MandateAccrualService mandateAccrualService,
+    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
+    InvoiceServiceFactory invoiceServiceFactory) {
+    return new InMemoryMandateService(mandateAccrualService, invoiceServiceFactory, openPaymentsSettingsSupplier);
   }
 
 }

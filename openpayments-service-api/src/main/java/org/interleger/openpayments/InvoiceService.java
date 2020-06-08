@@ -6,6 +6,7 @@ import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.InvoiceId;
 import org.interledger.openpayments.NewInvoice;
 import org.interledger.openpayments.PayInvoiceRequest;
+import org.interledger.openpayments.UserAuthorizationRequiredException;
 import org.interledger.openpayments.problems.InvoiceAlreadyExistsProblem;
 
 import okhttp3.HttpUrl;
@@ -25,6 +26,8 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
    * @return The {@link Invoice} that was created.
    */
   Invoice createInvoice(final NewInvoice newInvoice, final AccountId accountId);
+
+  Optional<Invoice> findInvoiceByUrl(HttpUrl invoiceUrl, AccountId accountId);
 
   /**
    * Get and save the latest state of the invoice owned by the receiver, either located at a remote OPS at
@@ -84,6 +87,9 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
     final InvoiceId invoiceId,
     final AccountId senderAccountId,
     final Optional<PayInvoiceRequest> payInvoiceRequest
-  );
+  ) throws UserAuthorizationRequiredException;
 
+  Class<PaymentResultType> getResultType();
+
+  Class<PaymentDetailsType> getRequestType();
 }

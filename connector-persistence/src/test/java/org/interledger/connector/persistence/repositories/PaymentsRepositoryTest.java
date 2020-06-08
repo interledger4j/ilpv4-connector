@@ -1,7 +1,5 @@
 package org.interledger.connector.persistence.repositories;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.interledger.connector.persistence.config.ConnectorPersistenceConfig;
 import org.interledger.connector.persistence.converters.PaymentEntityConverter;
 

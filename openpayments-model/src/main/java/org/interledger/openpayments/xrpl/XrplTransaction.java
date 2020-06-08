@@ -3,6 +3,7 @@ package org.interledger.openpayments.xrpl;
 import org.interledger.openpayments.CorrelationId;
 import org.interledger.openpayments.Denomination;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -21,6 +22,7 @@ import javax.annotation.Nullable;
 @Value.Immutable
 @JsonSerialize(as = ImmutableXrplTransaction.class)
 @JsonDeserialize(as = ImmutableXrplTransaction.class)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public interface XrplTransaction {
   Logger logger = LoggerFactory.getLogger(XrplTransaction.class);
 
@@ -49,6 +51,9 @@ public interface XrplTransaction {
 
   @Value.Derived
   default Optional<CorrelationId> invoiceMemoCorrelationId() {
+    if (memos() == null) {
+      return Optional.empty();
+    }
     return memos().stream()
       .map(MemoWrapper::memo)
       .filter(memo -> memo.memoType() != null && memo.memoType().equals(Hex.encodeHexString("meme".getBytes())))

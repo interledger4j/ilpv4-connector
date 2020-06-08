@@ -249,6 +249,11 @@
       <version>1.2.0</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>org.interledger.connector</groupId>
+      <artifactId>openpayments-service-impl</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 </project>

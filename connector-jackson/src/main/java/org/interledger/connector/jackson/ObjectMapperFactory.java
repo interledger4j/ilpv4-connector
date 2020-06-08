@@ -1,9 +1,11 @@
 package org.interledger.connector.jackson;
 
 import org.interledger.connector.jackson.modules.AccountIdModule;
+import org.interledger.connector.jackson.modules.ChargeIdModule;
 import org.interledger.connector.jackson.modules.CorrelationIdModule;
 import org.interledger.connector.jackson.modules.HttpUrlModule;
 import org.interledger.connector.jackson.modules.InvoiceIdModule;
+import org.interledger.connector.jackson.modules.MandateIdModule;
 import org.interledger.connector.jackson.modules.PaymentIdModule;
 import org.interledger.connector.jackson.modules.PaymentPointerModule;
 import org.interledger.connector.jackson.modules.SettlementAccountIdModule;
@@ -43,6 +45,8 @@ public class ObjectMapperFactory {
       .registerModule(new InterledgerModule(Encoding.BASE64))
       .registerModule(new PaymentPointerModule())
       .registerModule(new InvoiceIdModule())
+      .registerModule(new MandateIdModule())
+      .registerModule(new ChargeIdModule())
       .registerModule(new PaymentIdModule())
       .registerModule(new CorrelationIdModule())
       .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)

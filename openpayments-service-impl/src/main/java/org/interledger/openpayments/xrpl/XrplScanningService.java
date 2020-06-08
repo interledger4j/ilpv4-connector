@@ -1,7 +1,6 @@
 package org.interledger.openpayments.xrpl;
 
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
-import org.interledger.openpayments.xrpl.XrplMessage;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

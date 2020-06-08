@@ -98,6 +98,16 @@ public class IlpPaymentSystemFacade implements PaymentSystemFacade<StreamPayment
     );
   }
 
+  @Override
+  public Class<IlpPaymentDetails> getDetailsType() {
+    return IlpPaymentDetails.class;
+  }
+
+  @Override
+  public Class<StreamPayment> getResultType() {
+    return StreamPayment.class;
+  }
+
   /**
    * Performs validation logic on the subject of an {@link Invoice} and computes an ILP address suffix from the subject.
    *

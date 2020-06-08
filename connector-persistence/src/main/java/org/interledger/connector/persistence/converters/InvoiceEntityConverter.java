@@ -1,9 +1,9 @@
 package org.interledger.connector.persistence.converters;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.InvoiceId;
-import org.interledger.connector.persistence.entities.InvoiceEntity;
 
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;

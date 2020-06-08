@@ -80,6 +80,9 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
 
     try {
       return ilpPaymentSystemFacade.payInvoice(ilpPaymentDetails, senderAccountId, amountToPay, invoice.correlationId());
+    } catch (UserAuthorizationRequiredException e) {
+      // should not happen on ILP payments
+      throw new InvoicePaymentProblem(e.getMessage(), invoiceId);
     } catch (ExecutionException | InterruptedException e) {
       throw new InvoicePaymentProblem(e.getMessage(), invoiceId);
     }
@@ -107,5 +110,15 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
         .build();
       this.onPayment(payment);
     }
+  }
+
+  @Override
+  public Class<StreamPayment> getResultType() {
+    return StreamPayment.class;
+  }
+
+  @Override
+  public Class<IlpPaymentDetails> getRequestType() {
+    return IlpPaymentDetails.class;
   }
 }

@@ -28,6 +28,7 @@ import org.interledger.openpayments.NewInvoice;
 import org.interledger.stream.Denominations;
 
 import com.google.common.primitives.UnsignedLong;
+import okhttp3.HttpUrl;
 import org.interleger.openpayments.client.OpenPaymentsClient;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -204,6 +205,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   public void paulDoesAPeerToPeerPaymentToEddyAllOnAlice() throws InterruptedException {
     NewInvoice invoice = NewInvoice.builder()
       .subject("$localhost:8080/eddy")
+      .ownerAccountUrl(HttpUrl.parse("http://localhost:8080/eddy"))
       .amount(UnsignedLong.valueOf(100))
       .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
       .assetScale(Denominations.XRP_MILLI_DROPS.assetScale())
@@ -244,6 +246,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
   public void paulPaysInvoiceForEddyAllOnAlice() throws InterruptedException {
     NewInvoice invoice = NewInvoice.builder()
       .subject("$localhost:8080/eddy")
+      .ownerAccountUrl(HttpUrl.parse("http://localhost:8080/eddy"))
       .amount(UnsignedLong.valueOf(100))
       .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())
       .assetScale(Denominations.XRP_MILLI_DROPS.assetScale())
@@ -282,6 +285,7 @@ public class TwoConnectorOpenPaymentsOverIlpIT extends AbstractIlpOverHttpIT {
 
   private Invoice createInvoiceForPeter(OpenPaymentsClient client, String accountId) {
     NewInvoice invoice = NewInvoice.builder()
+      .ownerAccountUrl(HttpUrl.parse("http://localhost:8081/peter"))
       .subject("$localhost:8081/peter")
       .amount(UnsignedLong.valueOf(100))
       .assetCode(Denominations.XRP_MILLI_DROPS.assetCode())

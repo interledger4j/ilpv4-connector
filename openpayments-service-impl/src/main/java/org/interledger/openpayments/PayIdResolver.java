@@ -1,7 +1,5 @@
 package org.interledger.openpayments;
 
-import org.interledger.openpayments.PayId;
-
 import okhttp3.HttpUrl;
 
 import java.util.Objects;

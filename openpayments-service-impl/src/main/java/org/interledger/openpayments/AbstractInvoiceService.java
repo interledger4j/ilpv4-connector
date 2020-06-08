@@ -66,7 +66,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     Objects.requireNonNull(accountId);
 
     // Really only to determine if we need to proxy
-    HttpUrl ownerAccountUrl = invoiceFactory.resolveInvoiceSubject(newInvoice.subject());
+    HttpUrl ownerAccountUrl = newInvoice.ownerAccountUrl();
 
     if (!isForThisWallet(ownerAccountUrl)) {
       HttpUrl createUrl = ownerAccountUrl.newBuilder()
@@ -78,6 +78,14 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     Invoice invoice = invoiceFactory.construct(newInvoice);
 
     return invoicesRepository.saveInvoice(invoice);
+  }
+
+  @Override
+  public Optional<Invoice> findInvoiceByUrl(HttpUrl receiverInvoiceUrl, AccountId accountId) {
+    return invoicesRepository.findAllInvoicesByReceiverInvoiceUrl(receiverInvoiceUrl)
+      .stream()
+      .filter(invoice -> invoice.accountId().equals(accountId))
+      .findFirst();
   }
 
   @Override
@@ -160,7 +168,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public PaymentResultType payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) {
+  public PaymentResultType payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) throws UserAuthorizationRequiredException {
     throw new UnsupportedInvoiceOperationProblem(invoiceId);
   }
 

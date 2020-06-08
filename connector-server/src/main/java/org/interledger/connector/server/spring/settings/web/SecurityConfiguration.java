@@ -207,6 +207,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
       // Once that's addressed, then these should be secured.
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID + PathConstants.SLASH_SETTLEMENTS).permitAll()
       .antMatchers(HttpMethod.POST, PathConstants.SLASH_ACCOUNTS + PathConstants.SLASH_ACCOUNT_ID + PathConstants.SLASH_MESSAGES).permitAll()
+      .antMatchers(HttpMethod.POST, PathConstants.WEBHOOKS + "/**").permitAll()
 
       ////////
       // Admin API
@@ -241,7 +242,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         //      .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.SLASH_ACCOUNTS_OPA_PAY).authenticated()
         .antMatchers(HttpMethod.GET, OpenPaymentsPathConstants.INVOICES_BASE + "/**").permitAll()
         .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.INVOICES_BASE + "/**").permitAll()
-        .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.PAY_INVOICE + "/**").permitAll();
+        .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.PAY_INVOICE + "/**").permitAll()
+        .antMatchers(HttpMethod.GET, OpenPaymentsPathConstants.MANDATES_BASE + "/**").permitAll()
+        .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.MANDATES_BASE + "/**").permitAll();
     }
 
     // Everything else...

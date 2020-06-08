@@ -4,6 +4,8 @@ import static java.lang.String.format;
 import static org.interledger.openpayments.AbstractPayId.upperCasePercentEncoded;
 
 import com.google.common.base.Preconditions;
+import okhttp3.HttpUrl;
+import org.immutables.value.Value;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -100,4 +102,10 @@ public interface PayId {
    * @return A {@link String} containing the 'host' portion of this PayId.
    */
   String host();
+
+  @Value.Derived
+  default HttpUrl baseUrl() {
+    String scheme = (host().contains(":") && !host().endsWith(":443")) ? "http://" : "https://";
+    return HttpUrl.parse(scheme + host());
+  }
 }
