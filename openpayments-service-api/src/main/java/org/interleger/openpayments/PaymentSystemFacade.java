@@ -7,6 +7,7 @@ import org.interledger.openpayments.UserAuthorizationRequiredException;
 
 import com.google.common.primitives.UnsignedLong;
 
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -37,6 +38,7 @@ public interface PaymentSystemFacade<PaymentResultType, PaymentDetailsType> {
    * @param senderAccountId The {@link AccountId} of the sender.
    * @param amount The amount to pay.
    * @param correlationId The {@link CorrelationId} of the {@link Invoice} to pay.
+   * @param paymentCompleteRedirectUrl
    * @return The result of the payment.
    * @throws ExecutionException
    * @throws InterruptedException
@@ -45,7 +47,8 @@ public interface PaymentSystemFacade<PaymentResultType, PaymentDetailsType> {
     final PaymentDetailsType paymentDetails,
     final AccountId senderAccountId,
     final UnsignedLong amount,
-    final CorrelationId correlationId
+    final CorrelationId correlationId,
+    final Optional<String> paymentCompleteRedirectUrl
   ) throws ExecutionException, InterruptedException, UserAuthorizationRequiredException;
 
   Class<PaymentResultType> getResultType();

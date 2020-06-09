@@ -128,9 +128,12 @@ public class InMemoryMandateService implements MandateService {
         mandates.put(mandate.mandateId(), updated);
 
         try {
-          invoiceService.payInvoice(invoice.id(), invoice.accountId(), Optional.of(
-            PayInvoiceRequest.builder().amount(invoice.amount()).build()
-          ));
+          invoiceService.payInvoice(
+            invoice.id(),
+            invoice.accountId(),
+            Optional.of(PayInvoiceRequest.builder().amount(invoice.amount()).build()),
+            newCharge.paymentCompleteRedirectUrl()
+          );
           updateChargeStatus(accountId, mandateId, chargeId, ChargeStatus.PAYMENT_INITIATED);
         } catch (UserAuthorizationRequiredException e) {
           updateAuthorizationUrl(accountId, mandateId, chargeId, e.getUserAuthorizationUrl().toString());

@@ -7,8 +7,10 @@ import org.interledger.connector.payid.PayIdClient;
 import org.interledger.connector.payid.PayIdResponse;
 import org.interledger.connector.xumm.client.XummClient;
 import org.interledger.connector.xumm.model.CustomMeta;
+import org.interledger.connector.xumm.model.ReturnUrl;
 import org.interledger.connector.xumm.model.callback.PayloadCallback;
 import org.interledger.connector.xumm.model.payload.ImmutablePayloadRequest;
+import org.interledger.connector.xumm.model.payload.Options;
 import org.interledger.connector.xumm.model.payload.Payload;
 import org.interledger.connector.xumm.model.payload.PayloadRequest;
 import org.interledger.connector.xumm.model.payload.PayloadRequestResponse;
@@ -36,6 +38,8 @@ import okhttp3.HttpUrl;
 import org.interleger.openpayments.PaymentSystemFacade;
 import org.slf4j.Logger;
 
+import java.util.Optional;
+
 public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, XrpPaymentDetails> {
 
   private static final Logger LOGGER = getLogger(XummPaymentService.class);
@@ -59,7 +63,9 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
     XrpPaymentDetails paymentDetails,
     AccountId senderAccountId,
     UnsignedLong amount,
-    CorrelationId correlationId)
+    CorrelationId correlationId,
+    Optional<String> paymentCompleteRedirectUrl
+  )
   throws UserAuthorizationRequiredException {
     ImmutablePayloadRequest.Builder builder = PayloadRequest.builder()
       .txjson(filterToClassicAddress(TxJson.builder()
@@ -84,6 +90,16 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
         )
         .build()
       );
+
+    paymentCompleteRedirectUrl.ifPresent(redirectUrl ->
+      builder.options(Options.builder()
+        .returnUrl(
+          ReturnUrl.builder()
+            .web(redirectUrl)
+            .build()
+        ).build()
+      )
+    );
     return xummUserTokenService.findByUserId(senderAccountId.value())
       .map(userToken -> {
         builder.userToken(userToken.userToken());

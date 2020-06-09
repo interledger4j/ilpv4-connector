@@ -79,8 +79,8 @@ public class IlpPaymentSystemFacade implements PaymentSystemFacade<StreamPayment
     IlpPaymentDetails paymentDetails,
     AccountId senderAccountId,
     UnsignedLong amount,
-    CorrelationId correlationId
-  ) {
+    CorrelationId correlationId,
+    Optional<String> paymentCompleteRedirectUrl) {
     // Send payment using STREAM
     // TODO(bridge): Let the bridge know that an invoice payment is being sent instead of this
     //                direct call?

@@ -115,7 +115,7 @@ public class XrplScanningService {
 
     @Override
     public void onMessage(WebSocket webSocket, String text) {
-      logger.info("MESSAGE text: " + text);
+//      logger.info("MESSAGE text: " + text);
       try {
         XrplMessage xrplMessage = objectMapper.readValue(text, XrplMessage.class);
         if (xrplMessage.transaction() != null && xrplMessage.isSuccessfulTransaction()) {

@@ -268,7 +268,7 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
       XummPaymentService mock = mock(XummPaymentService.class);
       when(mock.getDetailsType()).thenReturn(XrpPaymentDetails.class);
       when(mock.getResultType()).thenReturn(XrplTransaction.class);
-      when(mock.payInvoice(any(), any(), any(), any()))
+      when(mock.payInvoice(any(), any(), any(), any(), any()))
         .thenReturn(XrplTransaction.builder()
           .account("mockAccount")
           .amount(UnsignedLong.ONE)

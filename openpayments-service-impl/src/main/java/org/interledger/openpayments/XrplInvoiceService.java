@@ -10,6 +10,7 @@ import org.interledger.openpayments.xrpl.XrplTransaction;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.hash.Hashing;
+import com.google.common.primitives.UnsignedLong;
 import io.vavr.control.Either;
 import okhttp3.HttpUrl;
 import org.interleger.openpayments.PaymentSystemFacade;
@@ -68,7 +69,7 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrplTransaction, 
   }
 
   @Override
-  public XrplTransaction payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) throws
+  public XrplTransaction payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest, Optional<String> paymentCompleteRedirectUrl) throws
     UserAuthorizationRequiredException
     {
     final Invoice invoice = this.getInvoice(invoiceId, senderAccountId);
@@ -80,8 +81,9 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrplTransaction, 
           try {
             XrplTransaction trx = facade.payInvoice(getPaymentDetails(invoiceId, senderAccountId),
               senderAccountId,
-              payInvoiceRequest.get().amount(),
-              invoice.correlationId()
+              payInvoiceRequest.get().amount().times(UnsignedLong.valueOf((long) Math.pow(10, invoice.assetScale()))),
+              invoice.correlationId(),
+              paymentCompleteRedirectUrl
             );
             return Either.<UserAuthorizationRequiredException, XrplTransaction>right(trx);
           } catch (UserAuthorizationRequiredException e) {

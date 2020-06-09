@@ -18,7 +18,10 @@ public interface Options {
     return ImmutableOptions.builder();
   }
 
-  boolean submit();
+  @Value.Default
+  default boolean submit() {
+    return true;
+  };
 
   @Value.Default
   default boolean multisign() {
