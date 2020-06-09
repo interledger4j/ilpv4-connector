@@ -1,0 +1,7 @@
+interledger:
+  connector:
+    xumm:
+      ### api key (uuid) from Xumm developer application portal
+      apiKey: e28cb433-2886-4794-9e64-1d8b7f7783e2
+      ### api secret (uuid) from Xumm developer application portal
+      apiSecret: 7d98c46a-d21f-4ee3-ad07-b48a674375cb
