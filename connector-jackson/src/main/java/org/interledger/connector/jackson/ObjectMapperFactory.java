@@ -57,6 +57,7 @@ public class ObjectMapperFactory {
       // we do.
       .configure(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS, true)
       .configure(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN, true)
+      .configure(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS, false)
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 

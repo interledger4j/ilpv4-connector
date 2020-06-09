@@ -184,7 +184,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     List<Invoice> invoices = invoicesRepository.findAllInvoicesByCorrelationId(payment.correlationId());
 
     if (invoices.isEmpty()) {
-      throw new IllegalArgumentException("Could not find invoice by correlation ID."); // FIXME: throw InvoiceNotFoundProblem
+      throw new IllegalArgumentException("Could not find invoice by correlation ID.  " + payment.correlationId()); // FIXME: throw InvoiceNotFoundProblem
     }
 
     invoices

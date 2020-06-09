@@ -33,6 +33,7 @@ public interface XrplTransaction {
   @Nullable
   String sourceTag();
 
+  @Nullable
   @JsonProperty("Destination")
   String destination();
 
@@ -40,6 +41,7 @@ public interface XrplTransaction {
   @JsonProperty("DestinationTag")
   Integer destinationTag();
 
+  @Nullable
   @JsonProperty("Amount")
   UnsignedLong amount();
 
@@ -56,7 +58,7 @@ public interface XrplTransaction {
     }
     return memos().stream()
       .map(MemoWrapper::memo)
-      .filter(memo -> memo.memoType() != null && memo.memoType().equals(Hex.encodeHexString("meme".getBytes())))
+      .filter(memo -> memo.memoType() != null && memo.memoType().toUpperCase().equals(Hex.encodeHexString("INVOICE_PAYMENT".getBytes()).toUpperCase()))
       .findFirst()
       .map(memo -> {
         try {

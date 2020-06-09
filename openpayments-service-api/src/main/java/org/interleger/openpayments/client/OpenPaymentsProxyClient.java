@@ -82,7 +82,7 @@ public interface OpenPaymentsProxyClient {
   ) throws ThrowableProblem;
 
 
-  @RequestLine("POST /")
+  @RequestLine("POST ")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
@@ -90,9 +90,9 @@ public interface OpenPaymentsProxyClient {
   Mandate createMandate(
     URI mandateEndpoint,
     NewMandate newMandate
-  );
+  ) throws ThrowableProblem;
 
-  @RequestLine("POST /")
+  @RequestLine("POST ")
   @Headers({
     ACCEPT + APPLICATION_JSON,
     CONTENT_TYPE + APPLICATION_JSON
@@ -100,5 +100,5 @@ public interface OpenPaymentsProxyClient {
   Charge createCharge(
     URI mandateUrl,
     NewCharge newCharge
-  );
+  ) throws ThrowableProblem;
 }

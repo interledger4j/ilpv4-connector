@@ -81,7 +81,8 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrplTransaction, 
             XrplTransaction trx = facade.payInvoice(getPaymentDetails(invoiceId, senderAccountId),
               senderAccountId,
               payInvoiceRequest.get().amount(),
-              CorrelationId.of(transactionHash(invoiceId)));
+              invoice.correlationId()
+            );
             return Either.<UserAuthorizationRequiredException, XrplTransaction>right(trx);
           } catch (UserAuthorizationRequiredException e) {
             return Either.<UserAuthorizationRequiredException, XrplTransaction>left(e);
