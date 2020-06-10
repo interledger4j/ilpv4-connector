@@ -81,7 +81,7 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrplTransaction, 
           try {
             XrplTransaction trx = facade.payInvoice(getPaymentDetails(invoiceId, senderAccountId),
               senderAccountId,
-              payInvoiceRequest.get().amount().times(UnsignedLong.valueOf((long) Math.pow(10, invoice.assetScale()))),
+              payInvoiceRequest.get().amount(),
               invoice.correlationId(),
               paymentCompleteRedirectUrl
             );
