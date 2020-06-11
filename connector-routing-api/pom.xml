@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.interledger.connector</groupId>
     <artifactId>connector-parent</artifactId>
-    <version>HEAD-SNAPSHOT</version>
+    <version>HEAD-OP-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 

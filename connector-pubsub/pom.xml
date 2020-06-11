@@ -4,7 +4,7 @@
   <parent>
     <artifactId>connector-parent</artifactId>
     <groupId>org.interledger.connector</groupId>
-    <version>HEAD-SNAPSHOT</version>
+    <version>HEAD-OP-SNAPSHOT</version>
   </parent>
 
   <artifactId>connector-pubsub</artifactId>

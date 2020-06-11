@@ -11,7 +11,7 @@
 
   <groupId>org.interledger.connector</groupId>
   <artifactId>connector-parent</artifactId>
-  <version>HEAD-SNAPSHOT</version>
+  <version>HEAD-OP-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Connector :: Parent</name>
@@ -370,7 +370,7 @@
       <dependency>
         <groupId>org.interledger</groupId>
         <artifactId>quilt-bom</artifactId>
-        <version>HEAD-SNAPSHOT</version> <!-- FIXME use release -->
+        <version>1.3.0</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>

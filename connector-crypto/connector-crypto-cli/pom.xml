@@ -12,7 +12,7 @@
 
   <groupId>org.interledger.connector</groupId>
   <artifactId>connector-crypto-cli</artifactId>
-  <version>HEAD-SNAPSHOT</version>
+  <version>HEAD-OP-SNAPSHOT</version>
 
   <name>Connector :: Crypto :: CLI</name>
   <description>A CLI for crypto using using various keystore backends.</description>
