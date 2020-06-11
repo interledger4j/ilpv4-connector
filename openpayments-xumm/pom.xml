@@ -65,6 +65,11 @@
       <groupId>io.xpring</groupId>
       <artifactId>xpring4j</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 

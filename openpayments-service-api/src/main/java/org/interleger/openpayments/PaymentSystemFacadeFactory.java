@@ -1,5 +1,7 @@
 package org.interleger.openpayments;
 
+import org.interledger.openpayments.PaymentNetwork;
+
 import java.util.Collection;
 import java.util.Optional;
 
@@ -13,5 +15,7 @@ public interface PaymentSystemFacadeFactory {
   }
 
   <T, V> Optional<PaymentSystemFacade<T, V>> get(Class<T> responseType, Class<V> requestType);
+
+  Optional<PaymentSystemFacade> get(PaymentNetwork paymentNetwork);
 
 }

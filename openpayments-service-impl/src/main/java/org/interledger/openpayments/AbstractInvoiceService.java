@@ -168,7 +168,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public PaymentResultType payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest, Optional<String> paymentCompleteRedirectUrl) throws UserAuthorizationRequiredException {
+  public PaymentResultType payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) throws UserAuthorizationRequiredException {
     throw new UnsupportedInvoiceOperationProblem(invoiceId);
   }
 

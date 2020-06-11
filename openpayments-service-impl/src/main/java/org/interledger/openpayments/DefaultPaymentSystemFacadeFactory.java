@@ -1,5 +1,8 @@
 package org.interledger.openpayments;
 
+import org.interledger.connector.payments.StreamPayment;
+import org.interledger.openpayments.xrpl.XrplTransaction;
+
 import org.interleger.openpayments.PaymentSystemFacade;
 import org.interleger.openpayments.PaymentSystemFacadeFactory;
 
@@ -18,9 +21,18 @@ public class DefaultPaymentSystemFacadeFactory implements PaymentSystemFacadeFac
   }
 
   @Override
-  public <T, V> Optional<PaymentSystemFacade<T, V>> get(Class<T> responseType, Class<V> requestType) {
-    PaymentSystemFacade<T, V> facade = instances.get(new Key(responseType, requestType));
+  public Optional<PaymentSystemFacade> get(Class responseType, Class requestType) {
+    PaymentSystemFacade facade = instances.get(new Key(responseType, requestType));
     return Optional.ofNullable(facade);
+  }
+
+  @Override
+  public Optional<PaymentSystemFacade> get(PaymentNetwork paymentNetwork) {
+    switch (paymentNetwork) {
+      case INTERLEDGER: return get(StreamPayment.class, IlpPaymentDetails.class);
+      case XRPL: return get(XrplTransaction.class, XrpPaymentDetails.class);
+      default: return Optional.empty();
+    }
   }
 
   private static class Key {

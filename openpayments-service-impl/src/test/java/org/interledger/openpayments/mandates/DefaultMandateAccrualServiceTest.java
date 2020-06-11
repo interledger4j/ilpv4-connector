@@ -9,6 +9,7 @@ import org.interledger.openpayments.ImmutableCharge;
 import org.interledger.openpayments.ImmutableMandate;
 import org.interledger.openpayments.Mandate;
 import org.interledger.openpayments.MandateId;
+import org.interledger.openpayments.MandateStatus;
 import org.interledger.openpayments.MutableClock;
 import org.interledger.openpayments.PaymentNetwork;
 
@@ -145,6 +146,7 @@ public class DefaultMandateAccrualServiceTest {
       .assetScale((short) 9)
       .paymentNetwork(PaymentNetwork.XRPL)
       .startAt(startsAt)
+      .status(MandateStatus.AWAITING_APPROVAL)
       .balance(UnsignedLong.ZERO);
   }
 

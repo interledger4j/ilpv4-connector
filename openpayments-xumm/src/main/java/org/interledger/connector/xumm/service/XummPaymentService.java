@@ -6,8 +6,10 @@ import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.payid.PayIdClient;
 import org.interledger.connector.payid.PayIdResponse;
 import org.interledger.connector.xumm.client.XummClient;
+import org.interledger.connector.xumm.model.ApproveMandateRequestWrapper;
 import org.interledger.connector.xumm.model.CustomMeta;
 import org.interledger.connector.xumm.model.ReturnUrl;
+import org.interledger.connector.xumm.model.SendXrpRequestWrapper;
 import org.interledger.connector.xumm.model.callback.PayloadCallback;
 import org.interledger.connector.xumm.model.payload.ImmutablePayloadRequest;
 import org.interledger.connector.xumm.model.payload.Options;
@@ -15,6 +17,7 @@ import org.interledger.connector.xumm.model.payload.Payload;
 import org.interledger.connector.xumm.model.payload.PayloadRequest;
 import org.interledger.connector.xumm.model.payload.PayloadRequestResponse;
 import org.interledger.connector.xumm.model.payload.TxJson;
+import org.interledger.openpayments.ApproveMandateRequest;
 import org.interledger.openpayments.CorrelationId;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.PayId;
@@ -22,6 +25,8 @@ import org.interledger.openpayments.PaymentNetwork;
 import org.interledger.openpayments.SendXrpPaymentRequest;
 import org.interledger.openpayments.UserAuthorizationRequiredException;
 import org.interledger.openpayments.XrpPaymentDetails;
+import org.interledger.openpayments.events.MandateApprovedEvent;
+import org.interledger.openpayments.events.MandateDeclinedEvent;
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
 import org.interledger.openpayments.xrpl.Memo;
 import org.interledger.openpayments.xrpl.MemoWrapper;
@@ -63,10 +68,9 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
     XrpPaymentDetails paymentDetails,
     AccountId senderAccountId,
     UnsignedLong amount,
-    CorrelationId correlationId,
-    Optional<String> paymentCompleteRedirectUrl
+    CorrelationId correlationId
   )
-  throws UserAuthorizationRequiredException {
+    throws UserAuthorizationRequiredException {
     ImmutablePayloadRequest.Builder builder = PayloadRequest.builder()
       .txjson(filterToClassicAddress(TxJson.builder()
         .transactionType("Payment")
@@ -79,27 +83,20 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
       )
       .customMeta(CustomMeta.builder()
         .instruction(paymentDetails.instructions())
-        .blob(SendXrpPaymentRequest.builder()
-          .destinationTag(paymentDetails.addressTag())
-          .instructionsToUser(paymentDetails.instructions())
-          .correlationId(correlationId.value())
-          .destinationAddress(paymentDetails.address())
-          .amountInDrops(amount)
-          .accountId(senderAccountId.value())
-          .build()
+        .blob(
+          SendXrpRequestWrapper.of(
+            senderAccountId,
+            SendXrpPaymentRequest.builder()
+              .destinationTag(paymentDetails.addressTag())
+              .correlationId(correlationId.value())
+              .destinationAddress(paymentDetails.address())
+              .amountInDrops(amount)
+              .build()
+          )
         )
         .build()
       );
 
-    paymentCompleteRedirectUrl.ifPresent(redirectUrl ->
-      builder.options(Options.builder()
-        .returnUrl(
-          ReturnUrl.builder()
-            .web(redirectUrl)
-            .build()
-        ).build()
-      )
-    );
     return xummUserTokenService.findByUserId(senderAccountId.value())
       .map(userToken -> {
         builder.userToken(userToken.userToken());
@@ -124,6 +121,42 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
         PayloadRequestResponse response = xummClient.createPayload(builder.build());
         return new UserAuthorizationRequiredException(HttpUrl.parse(response.next().always()));
       });
+  }
+
+  @Override
+  public Optional<HttpUrl> getMandateAuthorizationUrl(ApproveMandateRequest request) {
+    ImmutablePayloadRequest.Builder builder = PayloadRequest.builder()
+      .txjson(TxJson.builder()
+        .transactionType("SignIn")
+        .build()
+      )
+      .customMeta(CustomMeta.builder()
+        .instruction(request.memoToUser())
+        .blob(
+          ApproveMandateRequestWrapper.of(request.accountId(), request)
+        )
+        .build()
+      );
+
+    request.redirectUrl().ifPresent(url ->
+      builder.options(Options.builder()
+        .returnUrl(ReturnUrl.builder().web(url.newBuilder()
+          .addEncodedQueryParameter("txid", "{txid}").toString()).build())
+        .build()
+      ));
+
+    xummUserTokenService.findByUserId(request.accountId().value())
+      .ifPresent(token -> builder.userToken(token.userToken()));
+
+    try {
+      LOGGER.info("Sending: " + objectMapper.writeValueAsString(builder.build()));
+    } catch (JsonProcessingException e) {
+      // shouldn't happen
+      LOGGER.error("unexpected json error", e);
+      throw new RuntimeException(e);
+    }
+    PayloadRequestResponse response = xummClient.createPayload(builder.build());
+    return Optional.of(HttpUrl.parse(response.next().always()));
   }
 
   @Override
@@ -158,14 +191,13 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
     LOGGER.debug("Got callback with value={}", payloadCallback);
     return payloadCallback.customMeta().blob()
       .map(request -> {
-        xummUserTokenService.saveUserToken(request.accountId(), payloadCallback.userToken());
-
+        xummUserTokenService.saveUserToken(request.accountId().value(), payloadCallback.userToken());
         Payload payload = xummClient.getPayload(payloadCallback.meta().payloadUuidV4());
 
-        if (payloadCallback.payloadResponse().signed()) {
-          onSignedPayload(request, payload);
-        } else {
-          onRejectedPayload(request, payload);
+        if (request instanceof SendXrpRequestWrapper) {
+          handleSendXrpRequestCallback(payloadCallback, payload, ((SendXrpRequestWrapper) request).value());
+        } else if (request instanceof ApproveMandateRequestWrapper) {
+          handleApproveMandateCallback(payloadCallback, ((ApproveMandateRequestWrapper) request).value());
         }
         return true;
       })
@@ -173,6 +205,37 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
         LOGGER.info("Payload did not contain a paymentRequest. Ignoring.");
         return false;
       });
+  }
+
+  private void handleApproveMandateCallback(PayloadCallback payloadCallback,
+                                            ApproveMandateRequest request) {
+    if (isSigned(payloadCallback)) {
+      eventBus.post(MandateApprovedEvent.builder()
+        .accountId(request.accountId())
+        .mandateId(request.mandateId())
+        .build()
+      );
+    } else {
+      eventBus.post(MandateDeclinedEvent.builder()
+        .accountId(request.accountId())
+        .mandateId(request.mandateId())
+        .build()
+      );
+    }
+  }
+
+  public void handleSendXrpRequestCallback(PayloadCallback payloadCallback,
+                                           Payload payload,
+                                           SendXrpPaymentRequest request) {
+    if (isSigned(payloadCallback)) {
+      onSignedPayload(request, payload);
+    } else {
+      onRejectedPayload(request, payload);
+    }
+  }
+
+  public boolean isSigned(PayloadCallback payloadCallback) {
+    return payloadCallback.payloadResponse().signed();
   }
 
   private void onRejectedPayload(SendXrpPaymentRequest request, Payload payload) {
@@ -209,14 +272,16 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
   }
 
   private static TxJson filterToClassicAddress(TxJson txJson) {
-    if (Utils.isValidXAddress(txJson.destination())) {
-      ClassicAddress classicAddress = Utils.decodeXAddress(txJson.destination());
-      return TxJson.builder().from(txJson)
-        .destination(classicAddress.address())
-        .destinationTag(classicAddress.tag())
-        .build();
-    }
-    return txJson;
+    return txJson.destination().map(destination -> {
+      if (Utils.isValidXAddress(destination)) {
+        ClassicAddress classicAddress = Utils.decodeXAddress(destination);
+        return TxJson.builder().from(txJson)
+          .destination(classicAddress.address())
+          .destinationTag(classicAddress.tag())
+          .build();
+      }
+      return txJson;
+    }).orElse(txJson);
   }
 
 }

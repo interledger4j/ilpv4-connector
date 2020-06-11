@@ -21,6 +21,7 @@ import org.interledger.link.http.IlpOverHttpLinkSettings.AuthType;
 import org.interledger.openpayments.Charge;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.Mandate;
+import org.interledger.openpayments.MandateStatus;
 import org.interledger.openpayments.NewCharge;
 import org.interledger.openpayments.NewInvoice;
 import org.interledger.openpayments.NewMandate;
@@ -29,10 +30,12 @@ import org.interledger.openpayments.UserAuthorizationRequiredException;
 import org.interledger.openpayments.XrpPaymentDetails;
 import org.interledger.openpayments.config.OpenPaymentsMetadata;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
+import org.interledger.openpayments.events.MandateApprovedEvent;
 import org.interledger.openpayments.xrpl.XrplTransaction;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 
 import com.google.common.collect.Maps;
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import okhttp3.HttpUrl;
@@ -42,6 +45,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.web.servlet.context.ServletWebServerInitializedEvent;
@@ -54,6 +58,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -84,6 +89,9 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
 
   private static final String USD = "USD";
   private static final String SHH = "shh";
+
+  @Autowired
+  private EventBus eventBus;
 
   @MockBean
   private ServerSecretSupplier serverSecretSupplier;
@@ -151,8 +159,11 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
 
     assertThat(mandate.accountId()).isEqualTo(PAYER);
     assertThat(mandate.balance()).isEqualTo(amount);
+    assertThat(mandate.status()).isEqualTo(MandateStatus.AWAITING_APPROVAL);
     assertThat(mandate.id().toString())
       .isEqualTo(testnetHost + PAYER + "/mandates/" + mandate.mandateId());
+
+    approveMandate(mandate);
 
     Invoice invoice = openPaymentsClient.createInvoice(PAYEE, NewInvoice.builder()
       .amount(amount)
@@ -181,6 +192,21 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
     assertThat(afterCharge.balance()).isEqualTo(UnsignedLong.ZERO);
   }
 
+  private void approveMandate(Mandate mandate) {
+    eventBus.post(MandateApprovedEvent.builder()
+      .mandateId(mandate.mandateId())
+      .accountId(AccountId.of(mandate.accountId()))
+      .build()
+    );
+    try {
+      Thread.sleep(100);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    Mandate updated = openPaymentsClient.findMandateById(mandate.accountId(), mandate.mandateId().value(), bearer(SHH));
+    assertThat(updated.status()).isEqualTo(MandateStatus.APPROVED);
+  }
+
   public HttpUrl accountUrl(String account) {
     return this.testnetHost.newBuilder().addPathSegment(account).build();
   }
@@ -201,6 +227,8 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
 
     assertThat(mandate.accountId()).isEqualTo(PAYER);
     assertThat(mandate.balance()).isEqualTo(amount);
+
+    approveMandate(mandate);
 
     Invoice invoice = openPaymentsClient.createInvoice(PAYEE, NewInvoice.builder()
       .amount(amount)
@@ -268,7 +296,8 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
       XummPaymentService mock = mock(XummPaymentService.class);
       when(mock.getDetailsType()).thenReturn(XrpPaymentDetails.class);
       when(mock.getResultType()).thenReturn(XrplTransaction.class);
-      when(mock.payInvoice(any(), any(), any(), any(), any()))
+      when(mock.getMandateAuthorizationUrl(any())).thenReturn(Optional.empty());
+      when(mock.payInvoice(any(), any(), any(), any()))
         .thenReturn(XrplTransaction.builder()
           .account("mockAccount")
           .amount(UnsignedLong.ONE)

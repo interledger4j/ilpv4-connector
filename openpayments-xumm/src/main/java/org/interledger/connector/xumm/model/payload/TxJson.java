@@ -28,18 +28,18 @@ public interface TxJson {
   String transactionType();
 
   @JsonProperty("Destination")
-  String destination();
+  Optional<String> destination();
 
   @JsonProperty("DestinationTag")
   Optional<Integer> destinationTag();
 
   @JsonProperty("Amount")
   @JsonFormat(shape = JsonFormat.Shape.STRING)
-  UnsignedLong amount();
+  Optional<UnsignedLong> amount();
 
   @JsonProperty("Fee")
   @JsonFormat(shape = JsonFormat.Shape.STRING)
-  UnsignedLong fee();
+  Optional<UnsignedLong> fee();
 
   @JsonProperty("Flags")
   Optional<Integer> flags();

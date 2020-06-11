@@ -19,11 +19,7 @@ public interface SendXrpPaymentRequest {
     return ImmutableSendXrpPaymentRequest.builder();
   }
 
-  String accountId();
-
   String correlationId();
-
-  Optional<String> instructionsToUser();
 
   String destinationAddress();
 

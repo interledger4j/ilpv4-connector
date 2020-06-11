@@ -3,6 +3,7 @@ package org.interledger.openpayments;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.primitives.UnsignedLong;
+import okhttp3.HttpUrl;
 import org.immutables.value.Value;
 
 import java.time.Duration;
@@ -72,6 +73,10 @@ public interface NewMandate {
   Optional<Instant> expiresAt();
 
   Optional<Duration> interval();
+
+  Optional<HttpUrl> userRedirectUrl();
+
+  Optional<String> description();
 
   @Value.Immutable
   abstract class AbstractNewMandate implements NewMandate {

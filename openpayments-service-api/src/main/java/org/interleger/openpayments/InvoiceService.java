@@ -81,14 +81,12 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} to pay.
    * @param senderAccountId The {@link AccountId} of the sender.
    * @param payInvoiceRequest Optional request body containing the amount to pay on the {@link Invoice}.
-   * @param paymentCompleteRedirectUrl
    * @return The result of the payment.
    */
   PaymentResultType payInvoice(
     final InvoiceId invoiceId,
     final AccountId senderAccountId,
-    final Optional<PayInvoiceRequest> payInvoiceRequest,
-    final Optional<String> paymentCompleteRedirectUrl
+    final Optional<PayInvoiceRequest> payInvoiceRequest
   ) throws UserAuthorizationRequiredException;
 
   Class<PaymentResultType> getResultType();

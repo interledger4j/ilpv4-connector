@@ -193,8 +193,14 @@ public class OpenPaymentsConfig {
   public MandateService mandateService(
     MandateAccrualService mandateAccrualService,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
-    InvoiceServiceFactory invoiceServiceFactory) {
-    return new InMemoryMandateService(mandateAccrualService, invoiceServiceFactory, openPaymentsSettingsSupplier);
+    InvoiceServiceFactory invoiceServiceFactory,
+    PaymentSystemFacadeFactory paymentSystemFacadeFactory,
+    EventBus eventBus) {
+    return new InMemoryMandateService(mandateAccrualService,
+      invoiceServiceFactory,
+      paymentSystemFacadeFactory,
+      eventBus,
+      openPaymentsSettingsSupplier);
   }
 
 }
