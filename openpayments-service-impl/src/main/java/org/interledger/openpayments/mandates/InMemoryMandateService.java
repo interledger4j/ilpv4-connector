@@ -32,6 +32,7 @@ import org.interleger.openpayments.InvoiceService;
 import org.interleger.openpayments.InvoiceServiceFactory;
 import org.interleger.openpayments.PaymentSystemFacade;
 import org.interleger.openpayments.PaymentSystemFacadeFactory;
+import org.interleger.openpayments.client.WebhookClient;
 import org.interleger.openpayments.mandates.MandateAccrualService;
 import org.interleger.openpayments.mandates.MandateService;
 import org.slf4j.Logger;
@@ -53,16 +54,18 @@ public class InMemoryMandateService implements MandateService {
   private final MandateAccrualService mandateAccrualService;
   private final InvoiceServiceFactory invoiceServiceFactory;
   private final PaymentSystemFacadeFactory paymentSystemFacadeFactory;
+  private final WebhookClient webhookClient;
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
 
   public InMemoryMandateService(MandateAccrualService mandateAccrualService,
                                 InvoiceServiceFactory invoiceServiceFactory,
                                 PaymentSystemFacadeFactory paymentSystemFacadeFactory,
                                 EventBus eventBus,
-                                Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier) {
+                                WebhookClient webhookClient, Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier) {
     this.mandateAccrualService = mandateAccrualService;
     this.invoiceServiceFactory = invoiceServiceFactory;
     this.paymentSystemFacadeFactory = paymentSystemFacadeFactory;
+    this.webhookClient = webhookClient;
     this.openPaymentsSettingsSupplier = openPaymentsSettingsSupplier;
     eventBus.register(this);
   }
@@ -195,6 +198,7 @@ public class InMemoryMandateService implements MandateService {
 
   private void updateMandateStatus(AccountId accountId, MandateId mandateId, MandateStatus status) {
     updateMandate(accountId, mandateId, (builder) -> builder.status(status));
+    findMandateById(accountId, mandateId).ifPresent(webhookClient::sendMandateStatusChange);
   }
 
   private void updateChargeStatus(AccountId accountId, MandateId mandateId, ChargeId chargeId, ChargeStatus status) {

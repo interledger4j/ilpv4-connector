@@ -20,6 +20,7 @@ import org.interledger.openpayments.InvoiceFactory;
 import org.interledger.openpayments.PayIdResolver;
 import org.interledger.openpayments.XrpPaymentDetails;
 import org.interledger.openpayments.XrplInvoiceService;
+import org.interledger.openpayments.client.DefaultWebhookClient;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
 import org.interledger.openpayments.mandates.DefaultMandateAccrualService;
 import org.interledger.openpayments.mandates.InMemoryMandateService;
@@ -32,11 +33,13 @@ import org.interledger.stream.receiver.StreamConnectionGenerator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;
+import okhttp3.OkHttpClient;
 import org.interleger.openpayments.InvoiceService;
 import org.interleger.openpayments.InvoiceServiceFactory;
 import org.interleger.openpayments.PaymentSystemFacade;
 import org.interleger.openpayments.PaymentSystemFacadeFactory;
 import org.interleger.openpayments.client.OpenPaymentsProxyClient;
+import org.interleger.openpayments.client.WebhookClient;
 import org.interleger.openpayments.mandates.MandateAccrualService;
 import org.interleger.openpayments.mandates.MandateService;
 import org.slf4j.Logger;
@@ -190,16 +193,23 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
+  public WebhookClient webhookClient(OkHttpClient okHttpClient, ObjectMapper objectMapper) {
+    return new DefaultWebhookClient(okHttpClient, objectMapper);
+  }
+
+  @Bean
   public MandateService mandateService(
     MandateAccrualService mandateAccrualService,
     Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier,
     InvoiceServiceFactory invoiceServiceFactory,
     PaymentSystemFacadeFactory paymentSystemFacadeFactory,
-    EventBus eventBus) {
+    EventBus eventBus,
+    WebhookClient webhookClient) {
     return new InMemoryMandateService(mandateAccrualService,
       invoiceServiceFactory,
       paymentSystemFacadeFactory,
       eventBus,
+      webhookClient,
       openPaymentsSettingsSupplier);
   }
 
