@@ -1,6 +1,7 @@
 package org.interledger.connector.extensions.xumm.config;
 
 
+import org.interledger.connector.extensions.xumm.controller.XummWebhookController;
 import org.interledger.connector.payid.PayIdClient;
 import org.interledger.connector.xumm.client.XummClient;
 import org.interledger.connector.xumm.service.XummPaymentService;
@@ -10,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;
 import okhttp3.HttpUrl;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,6 +49,12 @@ public class XummSpringConfig {
     ObjectMapper objectMapper,
     PayIdClient payIdClient) {
     return new XummPaymentService(xummClient, payIdClient, xummUserTokenService, eventBus, objectMapper);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(XummWebhookController.class)
+  public XummWebhookController xummWebhookController(XummPaymentService xummPaymentService) {
+    return new XummWebhookController(xummPaymentService);
   }
 
 }

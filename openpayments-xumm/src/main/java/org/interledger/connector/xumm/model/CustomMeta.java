@@ -1,7 +1,5 @@
 package org.interledger.connector.xumm.model;
 
-import org.interledger.openpayments.SendXrpPaymentRequest;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -30,7 +28,7 @@ public interface CustomMeta {
    * A custom JSON object containing metadata, attached to this specific payload (stringified max 1500 positions)
    * @return
    */
-  Optional<SendXrpPaymentRequest> blob();
+  Optional<PayloadBlobWrapper> blob();
 
   /**
    * A message (instruction, reason for signing) to display to the XUMM (signing) user (max 280 positions)

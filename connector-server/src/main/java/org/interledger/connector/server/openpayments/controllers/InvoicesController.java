@@ -161,7 +161,7 @@ public class InvoicesController {
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
     @RequestBody Optional<PayInvoiceRequest> payInvoiceRequest
   ) throws UserAuthorizationRequiredException {
-    return ilpInvoiceService.payInvoice(invoiceId, accountId, payInvoiceRequest, Optional.empty());
+    return ilpInvoiceService.payInvoice(invoiceId, accountId, payInvoiceRequest);
   }
 
   private URI getInvoiceLocation(InvoiceId invoiceId) {

@@ -3,25 +3,35 @@ package org.interledger.openpayments.mandates;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import org.interledger.connector.accounts.AccountId;
+import org.interledger.openpayments.ApproveMandateRequest;
 import org.interledger.openpayments.Charge;
 import org.interledger.openpayments.ChargeId;
 import org.interledger.openpayments.ChargeStatus;
 import org.interledger.openpayments.ImmutableCharge;
+import org.interledger.openpayments.ImmutableMandate;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.Mandate;
 import org.interledger.openpayments.MandateId;
+import org.interledger.openpayments.MandateStatus;
 import org.interledger.openpayments.NewCharge;
 import org.interledger.openpayments.NewMandate;
 import org.interledger.openpayments.PayInvoiceRequest;
 import org.interledger.openpayments.UserAuthorizationRequiredException;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
+import org.interledger.openpayments.events.MandateApprovedEvent;
+import org.interledger.openpayments.events.MandateDeclinedEvent;
 import org.interledger.openpayments.problems.MandateInsufficientBalanceProblem;
+import org.interledger.openpayments.problems.MandateNotApprovedProblem;
 import org.interledger.openpayments.problems.MandateNotFoundProblem;
 
 import com.google.common.collect.Lists;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import okhttp3.HttpUrl;
 import org.interleger.openpayments.InvoiceService;
 import org.interleger.openpayments.InvoiceServiceFactory;
+import org.interleger.openpayments.PaymentSystemFacade;
+import org.interleger.openpayments.PaymentSystemFacadeFactory;
 import org.interleger.openpayments.mandates.MandateAccrualService;
 import org.interleger.openpayments.mandates.MandateService;
 import org.slf4j.Logger;
@@ -42,26 +52,43 @@ public class InMemoryMandateService implements MandateService {
 
   private final MandateAccrualService mandateAccrualService;
   private final InvoiceServiceFactory invoiceServiceFactory;
+  private final PaymentSystemFacadeFactory paymentSystemFacadeFactory;
   private final Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier;
-
 
   public InMemoryMandateService(MandateAccrualService mandateAccrualService,
                                 InvoiceServiceFactory invoiceServiceFactory,
+                                PaymentSystemFacadeFactory paymentSystemFacadeFactory,
+                                EventBus eventBus,
                                 Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier) {
     this.mandateAccrualService = mandateAccrualService;
     this.invoiceServiceFactory = invoiceServiceFactory;
+    this.paymentSystemFacadeFactory = paymentSystemFacadeFactory;
     this.openPaymentsSettingsSupplier = openPaymentsSettingsSupplier;
+    eventBus.register(this);
   }
 
   @Override
   public Mandate createMandate(AccountId accountId, NewMandate newMandate) {
     MandateId mandateId = MandateId.of(UUID.randomUUID().toString());
+
+    PaymentSystemFacade paymentSystemFacade = paymentSystemFacadeFactory.get(newMandate.paymentNetwork())
+      .orElseThrow(() -> new UnsupportedOperationException("No payment facade service for " + newMandate.paymentNetwork()));
+
     Mandate mandate = Mandate.builder().from(newMandate)
       .mandateId(mandateId)
       .accountId(accountId.value())
       .balance(newMandate.amount())
+      .status(MandateStatus.AWAITING_APPROVAL)
       .account(makeAccountUrl(accountId))
       .id(makeMandateUrl(accountId, mandateId))
+      .userAuthorizationUrl(paymentSystemFacade.getMandateAuthorizationUrl(
+        ApproveMandateRequest.builder()
+          .mandateId(mandateId)
+          .accountId(accountId)
+          .memoToUser("Approve " + newMandate.description().orElse("recurring payment"))
+          .redirectUrl(newMandate.userRedirectUrl())
+          .build()
+      ))
       .build();
 
     mandates.put(mandate.mandateId(), mandate);
@@ -101,6 +128,10 @@ public class InMemoryMandateService implements MandateService {
     Mandate mandate = findMandateById(accountId, mandateId)
       .orElseThrow(() -> new MandateNotFoundProblem(mandateId));
 
+    if (!mandate.status().equals(MandateStatus.APPROVED)) {
+      throw new MandateNotApprovedProblem(mandateId);
+    }
+
     InvoiceService<?, ?> invoiceService = invoiceServiceFactory.get(mandate.paymentNetwork())
       .orElseThrow(() -> new UnsupportedOperationException("No invoice service for " + mandate.paymentNetwork()));
 
@@ -131,8 +162,7 @@ public class InMemoryMandateService implements MandateService {
           invoiceService.payInvoice(
             invoice.id(),
             invoice.accountId(),
-            Optional.of(PayInvoiceRequest.builder().amount(invoice.amount()).build()),
-            newCharge.paymentCompleteRedirectUrl()
+            Optional.of(PayInvoiceRequest.builder().amount(invoice.amount()).build())
           );
           updateChargeStatus(accountId, mandateId, chargeId, ChargeStatus.PAYMENT_INITIATED);
         } catch (UserAuthorizationRequiredException e) {
@@ -151,6 +181,20 @@ public class InMemoryMandateService implements MandateService {
 
   private void updateAuthorizationUrl(AccountId accountId, MandateId mandateId, ChargeId chargeId, String authorizationUrl) {
     updateCharge(accountId, mandateId, chargeId, (builder) -> builder.userAuthorizationUrl(authorizationUrl));
+  }
+
+  @Subscribe
+  public void onMandateApproved(MandateApprovedEvent mandateApprovedEvent) {
+    updateMandateStatus(mandateApprovedEvent.accountId(), mandateApprovedEvent.mandateId(), MandateStatus.APPROVED);
+  }
+
+  @Subscribe
+  public void onMandateDeclined(MandateDeclinedEvent mandateApprovedEvent) {
+    updateMandateStatus(mandateApprovedEvent.accountId(), mandateApprovedEvent.mandateId(), MandateStatus.DECLINED);
+  }
+
+  private void updateMandateStatus(AccountId accountId, MandateId mandateId, MandateStatus status) {
+    updateMandate(accountId, mandateId, (builder) -> builder.status(status));
   }
 
   private void updateChargeStatus(AccountId accountId, MandateId mandateId, ChargeId chargeId, ChargeStatus status) {
@@ -181,6 +225,16 @@ public class InMemoryMandateService implements MandateService {
         LOGGER.error("could not update missing charge id {}", chargeId);
         return false;
       });
+    });
+  }
+
+  private void updateMandate(AccountId accountId,
+                             MandateId mandateId,
+                             Consumer<ImmutableMandate.Builder> mandateUpdater) {
+    findMandateById(accountId, mandateId).ifPresent(mandate -> {
+      ImmutableMandate.Builder updateBuilder = Mandate.builder().from(mandate);
+      mandateUpdater.accept(updateBuilder);
+      mandates.put(mandateId, updateBuilder.build());
     });
   }
 

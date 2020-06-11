@@ -79,8 +79,7 @@ public class IlpPaymentSystemFacade implements PaymentSystemFacade<StreamPayment
     IlpPaymentDetails paymentDetails,
     AccountId senderAccountId,
     UnsignedLong amount,
-    CorrelationId correlationId,
-    Optional<String> paymentCompleteRedirectUrl) {
+    CorrelationId correlationId) {
     // Send payment using STREAM
     // TODO(bridge): Let the bridge know that an invoice payment is being sent instead of this
     //                direct call?
@@ -96,6 +95,12 @@ public class IlpPaymentSystemFacade implements PaymentSystemFacade<StreamPayment
         .build())
       .build()
     );
+  }
+
+  @Override
+  public Optional<HttpUrl> getMandateAuthorizationUrl(ApproveMandateRequest request) {
+    // FIXME what is this for ILP
+    return Optional.empty();
   }
 
   @Override

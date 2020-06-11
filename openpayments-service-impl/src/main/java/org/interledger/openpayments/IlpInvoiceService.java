@@ -61,7 +61,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
   }
 
   @Override
-  public StreamPayment payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest, Optional<String> paymentCompleteRedirectUrl) {
+  public StreamPayment payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) {
     final Invoice invoice = this.getInvoice(invoiceId, senderAccountId);
 
     final HttpUrl invoiceUrl = invoice.receiverInvoiceUrl();
@@ -79,7 +79,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
       min(amountLeftToSend, payInvoiceRequest.orElse(PayInvoiceRequest.builder().build()).amount());
 
     try {
-      return ilpPaymentSystemFacade.payInvoice(ilpPaymentDetails, senderAccountId, amountToPay, invoice.correlationId(), paymentCompleteRedirectUrl);
+      return ilpPaymentSystemFacade.payInvoice(ilpPaymentDetails, senderAccountId, amountToPay, invoice.correlationId());
     } catch (UserAuthorizationRequiredException e) {
       // should not happen on ILP payments
       throw new InvoicePaymentProblem(e.getMessage(), invoiceId);

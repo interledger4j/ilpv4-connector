@@ -20,4 +20,5 @@ public interface XrpPaymentCompletedEvent {
    * @return An {@link XrplTransaction}.
    */
   XrplTransaction payment();
+
 }

@@ -7,6 +7,7 @@ import okhttp3.HttpUrl;
 import org.immutables.value.Value;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Not 2 dudes going out for burgers and beer.
@@ -28,9 +29,13 @@ public interface Mandate extends NewMandate {
 
   HttpUrl account();
 
+  MandateStatus status();
+
   UnsignedLong balance();
 
   List<Charge> charges();
+
+  Optional<HttpUrl> userAuthorizationUrl();
 
   default UnsignedLong totalCharged() {
     return charges().stream()
