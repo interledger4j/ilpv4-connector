@@ -45,11 +45,6 @@ public interface PayId {
    */
   static PayId of(String value) {
     Objects.requireNonNull(value, "PayID must not be null");
-    if (value.toLowerCase(Locale.ENGLISH).startsWith(PAYID_SCHEME)) {
-      value = value.substring(6);
-    } else {
-      throw new IllegalArgumentException(format("PayID `%s` must start with the 'payid:' scheme", value));
-    }
 
     if (!value.contains("$")) {
       throw new IllegalArgumentException(format("PayID `%s` must contain a $", value));

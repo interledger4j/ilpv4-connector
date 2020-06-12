@@ -30,7 +30,7 @@ abstract class AbstractPayId implements PayId {
   // per RFC-3986.
 
   // ACCOUNT (allowed-chars)
-  private static final String ALLOWED_ACCOUNT_CHARS = UNRESERVED + SUB_DELIMS + PERCENT;
+  private static final String ALLOWED_ACCOUNT_CHARS = UNRESERVED + SUB_DELIMS + PERCENT + ":@/";
   private static final String ALLOWED_ACCOUNT_CHARS_REGEX = "^([" + ALLOWED_ACCOUNT_CHARS + "]+)*$";
 
   // HOST (allowed-chars)
@@ -40,7 +40,7 @@ abstract class AbstractPayId implements PayId {
   private static final String IPV6_ADDRESS = ":\\." + HEX_DIGITS;
   // reg-name syntax allows percent-encoded octets in order to represent non-ASCII registered names in a uniform way
   // that is independent of the underlying name resolution technology
-  private static final String REG_NAME = UNRESERVED + PERCENT + SUB_DELIMS;
+  private static final String REG_NAME = UNRESERVED + PERCENT + SUB_DELIMS + "";
 
   // IPVFUTURE and IP_LITERAL are not accounted for.
   private static final String ALLOWED_HOST_CHARS = IPV4_ADDRESS + IPV6_ADDRESS + REG_NAME;
@@ -100,6 +100,10 @@ abstract class AbstractPayId implements PayId {
 
   @Override
   public String toString() {
+    return account() + "$" + host();
+  }
+
+  public String toUriString() {
     return PAYID_SCHEME + account() + "$" + host();
   }
 }
