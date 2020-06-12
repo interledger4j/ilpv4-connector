@@ -76,6 +76,8 @@ public interface NewMandate {
 
   Optional<HttpUrl> userRedirectUrl();
 
+  Optional<HttpUrl> webhookUrl();
+
   Optional<String> description();
 
   @Value.Immutable

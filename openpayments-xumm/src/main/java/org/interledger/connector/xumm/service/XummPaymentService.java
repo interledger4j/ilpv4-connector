@@ -139,11 +139,17 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
       );
 
     request.redirectUrl().ifPresent(url ->
+    {
+      String returnUrl = url.newBuilder()
+        .addEncodedQueryParameter("txid", "{txid}").toString();
       builder.options(Options.builder()
-        .returnUrl(ReturnUrl.builder().web(url.newBuilder()
-          .addEncodedQueryParameter("txid", "{txid}").toString()).build())
+        .returnUrl(ReturnUrl.builder()
+          .web(returnUrl)
+          .app(returnUrl)
+          .build())
         .build()
-      ));
+      );
+    });
 
     xummUserTokenService.findByUserId(request.accountId().value())
       .ifPresent(token -> builder.userToken(token.userToken()));

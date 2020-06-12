@@ -14,8 +14,10 @@ import org.interledger.quilt.jackson.conditions.Encoding;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -35,20 +37,20 @@ public class ObjectMapperFactory {
    */
   public static ObjectMapper create() {
 
-    return new ObjectMapper()
-      .registerModule(new Jdk8Module())
-      .registerModule(new HttpUrlModule())
-      .registerModule(new JavaTimeModule())
-      .registerModule(new GuavaModule())
-      .registerModule(new AccountIdModule())
-      .registerModule(new SettlementAccountIdModule())
-      .registerModule(new InterledgerModule(Encoding.BASE64))
-      .registerModule(new PaymentPointerModule())
-      .registerModule(new InvoiceIdModule())
-      .registerModule(new MandateIdModule())
-      .registerModule(new ChargeIdModule())
-      .registerModule(new PaymentIdModule())
-      .registerModule(new CorrelationIdModule())
+    return JsonMapper.builder()
+      .addModule(new Jdk8Module())
+      .addModule(new HttpUrlModule())
+      .addModule(new JavaTimeModule())
+      .addModule(new GuavaModule())
+      .addModule(new AccountIdModule())
+      .addModule(new SettlementAccountIdModule())
+      .addModule(new InterledgerModule(Encoding.BASE64))
+      .addModule(new PaymentPointerModule())
+      .addModule(new InvoiceIdModule())
+      .addModule(new MandateIdModule())
+      .addModule(new ChargeIdModule())
+      .addModule(new PaymentIdModule())
+      .addModule(new CorrelationIdModule())
       .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
       // Even though `false`` is the default setting for WRITE_NUMBERS_AS_STRINGS, we overtly set it here to alert
       // the reader that this value must be set this way in order to easily support Problems JSON, which per
@@ -58,7 +60,9 @@ public class ObjectMapperFactory {
       .configure(JsonGenerator.Feature.WRITE_NUMBERS_AS_STRINGS, true)
       .configure(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN, true)
       .configure(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS, false)
-      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+      .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
+      .build();
   }
 
   /**
