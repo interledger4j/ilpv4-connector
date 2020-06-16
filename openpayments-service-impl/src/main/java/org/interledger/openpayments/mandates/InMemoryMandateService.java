@@ -181,7 +181,6 @@ public class InMemoryMandateService implements MandateService {
           );
           updateChargeStatus(accountId, mandateId, chargeId, ChargeStatus.PAYMENT_INITIATED);
         } catch (UserAuthorizationRequiredException e) {
-          updateAuthorizationUrl(accountId, mandateId, chargeId, e.getUserAuthorizationUrl().toString());
           updateChargeStatus(accountId, mandateId, chargeId, ChargeStatus.PAYMENT_AWAITING_USER_AUTH);
         } catch (Exception e) {
           LOGGER.error("charging invoice {} to mandate {} failed", invoice.id(), mandate.mandateId(), e);
@@ -192,10 +191,6 @@ public class InMemoryMandateService implements MandateService {
         throw new MandateInsufficientBalanceProblem(mandateId);
       }
     }
-  }
-
-  private void updateAuthorizationUrl(AccountId accountId, MandateId mandateId, ChargeId chargeId, String authorizationUrl) {
-    updateCharge(accountId, mandateId, chargeId, (builder) -> builder.userAuthorizationUrl(authorizationUrl));
   }
 
   @Subscribe
