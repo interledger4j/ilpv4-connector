@@ -6,6 +6,7 @@ import org.interledger.connector.jackson.modules.CorrelationIdModule;
 import org.interledger.connector.jackson.modules.HttpUrlModule;
 import org.interledger.connector.jackson.modules.InvoiceIdModule;
 import org.interledger.connector.jackson.modules.MandateIdModule;
+import org.interledger.connector.jackson.modules.PayIdAccountIdModule;
 import org.interledger.connector.jackson.modules.PaymentIdModule;
 import org.interledger.connector.jackson.modules.PaymentPointerModule;
 import org.interledger.connector.jackson.modules.SettlementAccountIdModule;
@@ -50,6 +51,7 @@ public class ObjectMapperFactory {
       .addModule(new MandateIdModule())
       .addModule(new ChargeIdModule())
       .addModule(new PaymentIdModule())
+      .addModule(new PayIdAccountIdModule())
       .addModule(new CorrelationIdModule())
       .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
       // Even though `false`` is the default setting for WRITE_NUMBERS_AS_STRINGS, we overtly set it here to alert
