@@ -17,6 +17,8 @@ public interface PayloadRequestResponse {
 
   PayloadNext next();
 
+  PayloadRefs refs();
+
   boolean pushed();
 
 }

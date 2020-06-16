@@ -3,6 +3,7 @@ package org.interledger.connector.xumm.model.payload;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import okhttp3.HttpUrl;
 import org.immutables.value.Value;
 
 import java.util.Optional;
@@ -20,7 +21,7 @@ public interface PayloadNext {
    * URL that user can be redirected to
    * @return
    */
-  String always();
+  HttpUrl always();
 
   /**
    *

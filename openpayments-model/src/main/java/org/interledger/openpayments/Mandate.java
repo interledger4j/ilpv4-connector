@@ -37,6 +37,8 @@ public interface Mandate extends NewMandate {
 
   Optional<HttpUrl> userAuthorizationUrl();
 
+  Optional<HttpUrl> userAuthorizationImageUrl();
+
   default UnsignedLong totalCharged() {
     return charges().stream()
       .filter(charge -> !charge.status().equals(ChargeStatus.PAYMENT_FAILED))
