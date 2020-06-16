@@ -4,6 +4,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.openpayments.ApproveMandateRequest;
+import org.interledger.openpayments.AuthorizationUrls;
 import org.interledger.openpayments.Charge;
 import org.interledger.openpayments.ChargeId;
 import org.interledger.openpayments.ChargeStatus;
@@ -81,22 +82,26 @@ public class InMemoryMandateService implements MandateService {
     PaymentSystemFacade paymentSystemFacade = paymentSystemFacadeFactory.get(newMandate.paymentNetwork())
       .orElseThrow(() -> new UnsupportedOperationException("No payment facade service for " + newMandate.paymentNetwork()));
 
-    Mandate mandate = Mandate.builder().from(newMandate)
+    AuthorizationUrls mandateAuthorization = paymentSystemFacade.getMandateAuthorizationUrls(
+      ApproveMandateRequest.builder()
+        .mandateId(mandateId)
+        .accountId(accountId)
+        .memoToUser("Approve " + newMandate.description().orElse("recurring payment"))
+        .redirectUrl(newMandate.userRedirectUrl())
+        .build()
+    );
+    ImmutableMandate.Builder mandateBuilder = Mandate.builder().from(newMandate)
       .mandateId(mandateId)
       .accountId(accountId.value())
       .balance(newMandate.amount())
       .status(MandateStatus.AWAITING_APPROVAL)
       .account(makeAccountUrl(accountId))
-      .id(makeMandateUrl(accountId, mandateId))
-      .userAuthorizationUrl(paymentSystemFacade.getMandateAuthorizationUrl(
-        ApproveMandateRequest.builder()
-          .mandateId(mandateId)
-          .accountId(accountId)
-          .memoToUser("Approve " + newMandate.description().orElse("recurring payment"))
-          .redirectUrl(newMandate.userRedirectUrl())
-          .build()
-      ))
-      .build();
+      .id(makeMandateUrl(accountId, mandateId));
+
+    mandateAuthorization.imageUrl().ifPresent(mandateBuilder::userAuthorizationImageUrl);
+    mandateAuthorization.pageUrl().ifPresent(mandateBuilder::userAuthorizationUrl);
+
+    Mandate mandate = mandateBuilder.build();
 
     mandates.put(mandate.mandateId(), mandate);
 

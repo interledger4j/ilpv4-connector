@@ -18,6 +18,7 @@ import org.interledger.connector.xumm.model.payload.PayloadRequest;
 import org.interledger.connector.xumm.model.payload.PayloadRequestResponse;
 import org.interledger.connector.xumm.model.payload.TxJson;
 import org.interledger.openpayments.ApproveMandateRequest;
+import org.interledger.openpayments.AuthorizationUrls;
 import org.interledger.openpayments.CorrelationId;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.PayId;
@@ -40,11 +41,8 @@ import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.UnsignedLong;
 import io.xpring.xrpl.ClassicAddress;
 import io.xpring.xrpl.Utils;
-import okhttp3.HttpUrl;
 import org.interleger.openpayments.PaymentSystemFacade;
 import org.slf4j.Logger;
-
-import java.util.Optional;
 
 public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, XrpPaymentDetails> {
 
@@ -120,12 +118,12 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
         } catch (JsonProcessingException e) {
         }
         PayloadRequestResponse response = xummClient.createPayload(builder.build());
-        return new UserAuthorizationRequiredException(HttpUrl.parse(response.next().always()));
+        return new UserAuthorizationRequiredException(response.next().always());
       });
   }
 
   @Override
-  public Optional<HttpUrl> getMandateAuthorizationUrl(ApproveMandateRequest request) {
+  public AuthorizationUrls getMandateAuthorizationUrls(ApproveMandateRequest request) {
     ImmutablePayloadRequest.Builder builder = PayloadRequest.builder()
       .txjson(TxJson.builder()
         .transactionType("SignIn")
@@ -163,7 +161,10 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
       throw new RuntimeException(e);
     }
     PayloadRequestResponse response = xummClient.createPayload(builder.build());
-    return Optional.of(HttpUrl.parse(response.next().always()));
+    return AuthorizationUrls.builder()
+      .pageUrl(response.next().always())
+      .imageUrl(response.refs().qrPng())
+      .build();
   }
 
   @Override

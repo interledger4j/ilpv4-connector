@@ -18,6 +18,7 @@ import org.interledger.connector.xumm.service.XummPaymentService;
 import org.interledger.core.InterledgerAddress;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings.AuthType;
+import org.interledger.openpayments.AuthorizationUrls;
 import org.interledger.openpayments.Charge;
 import org.interledger.openpayments.ChargeStatus;
 import org.interledger.openpayments.Invoice;
@@ -61,7 +62,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -415,7 +415,7 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
       XummPaymentService mock = mock(XummPaymentService.class);
       when(mock.getDetailsType()).thenReturn(XrpPaymentDetails.class);
       when(mock.getResultType()).thenReturn(XrplTransaction.class);
-      when(mock.getMandateAuthorizationUrl(any())).thenReturn(Optional.empty());
+      when(mock.getMandateAuthorizationUrls(any())).thenReturn(AuthorizationUrls.builder().build());
       when(mock.payInvoice(any(), any(), any(), any()))
         .thenReturn(XrplTransaction.builder()
           .account("mockAccount")

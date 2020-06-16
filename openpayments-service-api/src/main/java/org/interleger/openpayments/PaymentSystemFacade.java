@@ -2,14 +2,13 @@ package org.interleger.openpayments;
 
 import org.interledger.connector.accounts.AccountId;
 import org.interledger.openpayments.ApproveMandateRequest;
+import org.interledger.openpayments.AuthorizationUrls;
 import org.interledger.openpayments.CorrelationId;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.UserAuthorizationRequiredException;
 
 import com.google.common.primitives.UnsignedLong;
-import okhttp3.HttpUrl;
 
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -54,5 +53,5 @@ public interface PaymentSystemFacade<PaymentResultType, PaymentDetailsType> {
   Class<PaymentResultType> getResultType();
   Class<PaymentDetailsType> getDetailsType();
 
-  Optional<HttpUrl> getMandateAuthorizationUrl(ApproveMandateRequest request);
+  AuthorizationUrls getMandateAuthorizationUrls(ApproveMandateRequest request);
 }

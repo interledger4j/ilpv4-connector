@@ -98,9 +98,9 @@ public class IlpPaymentSystemFacade implements PaymentSystemFacade<StreamPayment
   }
 
   @Override
-  public Optional<HttpUrl> getMandateAuthorizationUrl(ApproveMandateRequest request) {
+  public AuthorizationUrls getMandateAuthorizationUrls(ApproveMandateRequest request) {
     // FIXME what is this for ILP
-    return Optional.empty();
+    return AuthorizationUrls.builder().build();
   }
 
   @Override
