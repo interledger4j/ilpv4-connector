@@ -41,7 +41,7 @@ public class DefaultWebhookClient implements WebhookClient {
             ))
             .build();
           LOGGER.info("sending webhook callback for mandate {}", mandate);
-          okHttpClient.newCall(okHttpRequest).execute();
+          okHttpClient.newCall(okHttpRequest).execute().close();
         } catch (Exception e) {
           LOGGER.error("error while sending webhook callback", e);
         }
