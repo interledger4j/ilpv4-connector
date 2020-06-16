@@ -12,6 +12,7 @@ import org.interledger.openpayments.Mandate;
 import org.interledger.openpayments.MandateId;
 import org.interledger.openpayments.MandateStatus;
 import org.interledger.openpayments.MutableClock;
+import org.interledger.openpayments.PayIdAccountId;
 import org.interledger.openpayments.PaymentNetwork;
 
 import com.google.common.primitives.UnsignedLong;
@@ -26,7 +27,7 @@ import java.util.UUID;
 
 public class DefaultMandateAccrualServiceTest {
 
-  private static final AccountId ACCOUNT_ID = AccountId.of("alice");
+  private static final PayIdAccountId ACCOUNT_ID = PayIdAccountId.of("alice");
   private Instant startsAt = Instant.now();
 
   private MutableClock mutableClock;

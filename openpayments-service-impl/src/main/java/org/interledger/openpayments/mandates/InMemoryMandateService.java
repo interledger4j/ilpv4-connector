@@ -2,6 +2,7 @@ package org.interledger.openpayments.mandates;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.openpayments.ApproveMandateRequest;
 import org.interledger.openpayments.AuthorizationUrls;
 import org.interledger.openpayments.Charge;
@@ -181,7 +182,6 @@ public class InMemoryMandateService implements MandateService {
           );
           updateChargeStatus(payIdAccountId, mandateId, chargeId, ChargeStatus.PAYMENT_INITIATED);
         } catch (UserAuthorizationRequiredException e) {
-          updateAuthorizationUrl(payIdAccountId, mandateId, chargeId, e.getUserAuthorizationUrl().toString());
           updateChargeStatus(payIdAccountId, mandateId, chargeId, ChargeStatus.PAYMENT_AWAITING_USER_AUTH);
         } catch (Exception e) {
           LOGGER.error("charging invoice {} to mandate {} failed", invoice.id(), mandate.mandateId(), e);
@@ -192,10 +192,6 @@ public class InMemoryMandateService implements MandateService {
         throw new MandateInsufficientBalanceProblem(mandateId);
       }
     }
-  }
-
-  private void updateAuthorizationUrl(PayIdAccountId payIdAccountId, MandateId mandateId, ChargeId chargeId, String authorizationUrl) {
-    updateCharge(payIdAccountId, mandateId, chargeId, (builder) -> builder.userAuthorizationUrl(authorizationUrl));
   }
 
   @Subscribe
