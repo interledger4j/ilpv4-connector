@@ -1,9 +1,9 @@
 package org.interledger.connector.persistence.converters;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.InvoiceId;
+import org.interledger.openpayments.PayIdAccountId;
 
 import com.google.common.primitives.UnsignedLong;
 import okhttp3.HttpUrl;
@@ -19,7 +19,7 @@ public class InvoiceEntityConverter implements Converter<InvoiceEntity, Invoice>
     return Invoice.builder()
       .receiverInvoiceUrl(HttpUrl.get(invoiceEntity.getReceiverInvoiceUrl()))
       .id(InvoiceId.of(invoiceEntity.getInvoiceId()))
-      .accountId(AccountId.of(invoiceEntity.getAccountId()))
+      .accountId(PayIdAccountId.of(invoiceEntity.getAccountId()))
       .amount(UnsignedLong.valueOf(invoiceEntity.getAmount()))
       .assetCode(invoiceEntity.getAssetCode())
       .assetScale((short) invoiceEntity.getAssetScale())

@@ -51,7 +51,7 @@ public class Ids {
 
     // Represents section 5 of RFC-4684, "Base 64 Encoding with URL and Filename Safe Alphabet", plus periods and tilde.
     // Capital letters are allowed, but later lower-cased during normalization.
-    private static final Pattern ALLOWED_CHARS_PATTERN = Pattern.compile("^([A-Za-z0-9\\-_\\.\\~])+$");
+    private static final Pattern ALLOWED_CHARS_PATTERN = Pattern.compile("^([A-Za-z0-9\\-_.~$])+$");
 
     @Override
     public String toString() {

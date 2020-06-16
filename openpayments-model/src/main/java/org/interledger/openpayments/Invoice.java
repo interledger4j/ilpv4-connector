@@ -1,6 +1,5 @@
 package org.interledger.openpayments;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.openpayments.config.OpenPaymentsPathConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -128,12 +127,12 @@ public interface Invoice {
   /**
    * The account ID of the creator of this invoice.
    *
-   * For ILP invoices, this will be the {@link String} form of an AccountId. For other payment networks,
+   * For ILP invoices, this will be the {@link String} form of an PayIdAccountId. For other payment networks,
    * this may be the account ID of a wallet holder.
    *
    * @return A {@link String} representing the account ID of the user who created this invoice.
    */
-  AccountId accountId();
+  PayIdAccountId accountId();
 
   /**
    * The amount that should be paid to this invoice, denominated in {@code assetCode()} and {@code assetScale()}.

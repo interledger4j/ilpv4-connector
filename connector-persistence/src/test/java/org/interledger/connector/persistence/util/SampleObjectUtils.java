@@ -1,10 +1,10 @@
 package org.interledger.connector.persistence.util;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.openpayments.CorrelationId;
 import org.interledger.openpayments.Denomination;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.InvoiceId;
+import org.interledger.openpayments.PayIdAccountId;
 import org.interledger.openpayments.Payment;
 import org.interledger.openpayments.PaymentId;
 
@@ -19,7 +19,7 @@ public final class SampleObjectUtils {
   public static Invoice createNewIlpInvoice() {
     return Invoice.builder()
       .ownerAccountUrl(HttpUrl.get("https://xpring.money/ricketycricket"))
-      .accountId(AccountId.of("ricketycricket"))
+      .accountId(PayIdAccountId.of("ricketycricket"))
       .amount(UnsignedLong.valueOf(1000))
       .assetCode("XRP")
       .assetScale((short) 9)
@@ -33,7 +33,7 @@ public final class SampleObjectUtils {
 
   public static Invoice createNewXrpInvoice() {
     return Invoice.builder()
-      .accountId(AccountId.of("ricketycricket"))
+      .accountId(PayIdAccountId.of("ricketycricket"))
       .ownerAccountUrl(HttpUrl.get("https://xpring.money/ricketycricket"))
       .amount(UnsignedLong.valueOf(1000))
       .assetCode("XRP")

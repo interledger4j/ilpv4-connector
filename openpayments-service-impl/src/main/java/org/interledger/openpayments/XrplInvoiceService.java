@@ -1,6 +1,5 @@
 package org.interledger.openpayments;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.persistence.repositories.PaymentsRepository;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
@@ -54,8 +53,8 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrplTransaction, 
   }
 
   @Override
-  public XrpPaymentDetails getPaymentDetails(InvoiceId invoiceId, AccountId accountId) {
-    final Invoice invoice = this.getInvoice(invoiceId, accountId);
+  public XrpPaymentDetails getPaymentDetails(InvoiceId invoiceId, PayIdAccountId payIdAccountId) {
+    final Invoice invoice = this.getInvoice(invoiceId, payIdAccountId);
 
     final HttpUrl invoiceUrl = invoice.receiverInvoiceUrl();
 
@@ -68,18 +67,20 @@ public class XrplInvoiceService extends AbstractInvoiceService<XrplTransaction, 
   }
 
   @Override
-  public XrplTransaction payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) throws
-    UserAuthorizationRequiredException
-    {
-    final Invoice invoice = this.getInvoice(invoiceId, senderAccountId);
-    final HttpUrl invoiceUrl = invoice.receiverInvoiceUrl();
+  public XrplTransaction payInvoice(
+    InvoiceId invoiceId,
+    PayIdAccountId senderPayIdAccountId,
+    Optional<PayInvoiceRequest> payInvoiceRequest
+  ) throws UserAuthorizationRequiredException {
+    final Invoice invoice = this.getInvoice(invoiceId, senderPayIdAccountId);
+
     try {
       Either<UserAuthorizationRequiredException, XrplTransaction> result =
         paymentSystemFacadeFactory.get(XrplTransaction.class, XrpPaymentDetails.class)
         .map(facade -> {
           try {
-            XrplTransaction trx = facade.payInvoice(getPaymentDetails(invoiceId, senderAccountId),
-              senderAccountId,
+            XrplTransaction trx = facade.payInvoice(getPaymentDetails(invoiceId, senderPayIdAccountId),
+              senderPayIdAccountId,
               payInvoiceRequest.get().amount(),
               invoice.correlationId()
             );

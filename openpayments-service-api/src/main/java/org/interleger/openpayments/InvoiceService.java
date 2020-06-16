@@ -1,10 +1,10 @@
 package org.interleger.openpayments;
 
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.InvoiceId;
 import org.interledger.openpayments.NewInvoice;
+import org.interledger.openpayments.PayIdAccountId;
 import org.interledger.openpayments.PayInvoiceRequest;
 import org.interledger.openpayments.UserAuthorizationRequiredException;
 import org.interledger.openpayments.problems.InvoiceAlreadyExistsProblem;
@@ -22,41 +22,41 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
    * Create a new invoice at the invoices URL resolved from {@code invoice#subject()}.
    *
    * @param newInvoice The {@link Invoice} to create.
-   * @param accountId The {@link AccountId} that should be associated with the created {@link Invoice}.
+   * @param payIdAccountId The {@link PayIdAccountId} that should be associated with the created {@link Invoice}.
    * @return The {@link Invoice} that was created.
    */
-  Invoice createInvoice(final NewInvoice newInvoice, final AccountId accountId);
+  Invoice createInvoice(final NewInvoice newInvoice, final PayIdAccountId payIdAccountId);
 
-  Optional<Invoice> findInvoiceByUrl(HttpUrl invoiceUrl, AccountId accountId);
+  Optional<Invoice> findInvoiceByUrl(HttpUrl invoiceUrl, PayIdAccountId payIdAccountId);
 
   /**
    * Get and save the latest state of the invoice owned by the receiver, either located at a remote OPS at
    * {@code receiverInvoiceUrl}, or on this OPS, if the invoice with that location does not already exist on this OPS.
    *
    * @param receiverInvoiceUrl The unique URL of the {@link Invoice}.
-   * @param accountId The {@link AccountId} to associate the synced {@link Invoice} with.
+   * @param payIdAccountId The {@link PayIdAccountId} to associate the synced {@link Invoice} with.
    * @return The synced {@link Invoice}.
    * @throws InvoiceAlreadyExistsProblem if the {@link Invoice} has already been synced.
    */
-  Invoice syncInvoice(final HttpUrl receiverInvoiceUrl, final AccountId accountId) throws InvoiceAlreadyExistsProblem;
+  Invoice syncInvoice(final HttpUrl receiverInvoiceUrl, final PayIdAccountId payIdAccountId) throws InvoiceAlreadyExistsProblem;
 
   /**
    * Get an existing invoice.
    *
    * @param invoiceId The {@link InvoiceId} of the invoice to get.
-   * @param accountId The {@link AccountId} associated with the {@link Invoice}.
-   * @return The existing {@link Invoice} with the specified {@link InvoiceId} and {@link AccountId}.
+   * @param payIdAccountId
+   * @return The existing {@link Invoice} with the specified {@link InvoiceId} and {@link PayIdAccountId}.
    */
-  Invoice getInvoice(final InvoiceId invoiceId, final AccountId accountId);
+  Invoice getInvoice(final InvoiceId invoiceId, PayIdAccountId payIdAccountId);
 
   /**
    * Update an existing {@link Invoice}.
    *
    * @param invoice An updated {@link Invoice}.
-   * @param accountId The {@link AccountId} associated with the given {@link Invoice}.
+   * @param payIdAccountId The {@link PayIdAccountId} associated with the given {@link Invoice}.
    * @return The updated {@link Invoice}.
    */
-  Invoice updateInvoice(final Invoice invoice, final AccountId accountId);
+  Invoice updateInvoice(final Invoice invoice, final PayIdAccountId payIdAccountId);
 
   /**
    * Generate {@link PaymentDetailsType} for any supported payment rail. Note that currently, Interledger payments
@@ -66,10 +66,10 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
    * implementations should keep track of the invoice in the underlying payment layer.
    *
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} this payment is being set up to pay.
-   * @param accountId The {@link AccountId} associated with the {@link Invoice}.
+   * @param payIdAccountId The {@link PayIdAccountId} associated with the {@link Invoice}.
    * @return The payment details necessary to pay an invoice.
    */
-  PaymentDetailsType getPaymentDetails(final InvoiceId invoiceId, final AccountId accountId);
+  PaymentDetailsType getPaymentDetails(final InvoiceId invoiceId, final PayIdAccountId payIdAccountId);
 
   /**
    * Make a payment towards an {@link Invoice}.
@@ -79,13 +79,13 @@ public interface InvoiceService<PaymentResultType, PaymentDetailsType> {
    * from the client.
    *
    * @param invoiceId The {@link InvoiceId} of the {@link Invoice} to pay.
-   * @param senderAccountId The {@link AccountId} of the sender.
+   * @param senderPayIdAccountId The {@link PayIdAccountId} of the sender.
    * @param payInvoiceRequest Optional request body containing the amount to pay on the {@link Invoice}.
    * @return The result of the payment.
    */
   PaymentResultType payInvoice(
     final InvoiceId invoiceId,
-    final AccountId senderAccountId,
+    final PayIdAccountId senderPayIdAccountId,
     final Optional<PayInvoiceRequest> payInvoiceRequest
   ) throws UserAuthorizationRequiredException;
 

@@ -174,12 +174,8 @@ public class OpenPaymentsConfig {
   }
 
   @Bean
-  public InvoiceFactory invoiceFactory(
-    PaymentPointerResolver paymentPointerResolver,
-    PayIdResolver payIdPointerResolver,
-    Supplier<OpenPaymentsSettings> openPaymentsSettingsSupplier
-  ) {
-    return new InvoiceFactory(paymentPointerResolver, payIdPointerResolver, openPaymentsSettingsSupplier);
+  public InvoiceFactory invoiceFactory() {
+    return new InvoiceFactory();
   }
 
   @Bean

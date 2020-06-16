@@ -1,8 +1,8 @@
 package org.interledger.connector.xumm.model;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.core.immutables.Wrapped;
 import org.interledger.openpayments.ApproveMandateRequest;
+import org.interledger.openpayments.PayIdAccountId;
 import org.interledger.openpayments.SendXrpPaymentRequest;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -15,7 +15,7 @@ import org.immutables.value.Value.Immutable;
 public abstract class PayloadBlobWrapper<T> {
 
   @Value.Parameter
-  public abstract AccountId accountId();
+  public abstract PayIdAccountId accountId();
 
   @Value.Parameter
   public abstract T value();

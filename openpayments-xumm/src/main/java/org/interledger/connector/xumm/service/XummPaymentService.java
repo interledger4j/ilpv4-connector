@@ -2,7 +2,6 @@ package org.interledger.connector.xumm.service;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.payid.PayIdClient;
 import org.interledger.connector.payid.PayIdResponse;
 import org.interledger.connector.xumm.client.XummClient;
@@ -21,6 +20,7 @@ import org.interledger.openpayments.ApproveMandateRequest;
 import org.interledger.openpayments.CorrelationId;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.PayId;
+import org.interledger.openpayments.PayIdAccountId;
 import org.interledger.openpayments.PaymentNetwork;
 import org.interledger.openpayments.SendXrpPaymentRequest;
 import org.interledger.openpayments.UserAuthorizationRequiredException;
@@ -66,7 +66,7 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
   @Override
   public XrplTransaction payInvoice(
     XrpPaymentDetails paymentDetails,
-    AccountId senderAccountId,
+    PayIdAccountId senderPayIdAccountId,
     UnsignedLong amount,
     CorrelationId correlationId
   )
@@ -85,7 +85,7 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
         .instruction(paymentDetails.instructions())
         .blob(
           SendXrpRequestWrapper.of(
-            senderAccountId,
+            senderPayIdAccountId,
             SendXrpPaymentRequest.builder()
               .destinationTag(paymentDetails.addressTag())
               .correlationId(correlationId.value())
@@ -97,7 +97,7 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
         .build()
       );
 
-    return xummUserTokenService.findByUserId(senderAccountId.value())
+    return xummUserTokenService.findByUserId(senderPayIdAccountId.value())
       .map(userToken -> {
         builder.userToken(userToken.userToken());
 

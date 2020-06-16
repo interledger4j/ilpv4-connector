@@ -12,6 +12,7 @@ import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.InvoiceId;
 import org.interledger.openpayments.NewInvoice;
 import org.interledger.openpayments.OpenPaymentsMediaType;
+import org.interledger.openpayments.PayIdAccountId;
 import org.interledger.openpayments.PayInvoiceRequest;
 import org.interledger.openpayments.UserAuthorizationRequiredException;
 import org.interledger.openpayments.config.OpenPaymentsPathConstants;
@@ -71,7 +72,7 @@ public class InvoicesController {
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody ResponseEntity<Invoice> createInvoice(
-    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) AccountId accountId,
+    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) PayIdAccountId accountId,
     @RequestBody NewInvoice newInvoice
   ) {
     Invoice createdInvoice = ilpInvoiceService.createInvoice(newInvoice, accountId);
@@ -98,7 +99,7 @@ public class InvoicesController {
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody Invoice syncInvoice(
-    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) AccountId accountId,
+    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) PayIdAccountId accountId,
     @RequestParam("name") String invoiceUrl
   ) throws UnsupportedEncodingException {
     String decodedInvoiceUrl = URLDecoder.decode(invoiceUrl, StandardCharsets.UTF_8.toString());
@@ -121,7 +122,7 @@ public class InvoicesController {
     produces = {OpenPaymentsMediaType.APPLICATION_CONNECTION_JSON_VALUE, APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody ResponseEntity getInvoiceDetails(
-    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) AccountId accountId,
+    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) PayIdAccountId accountId,
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
     @RequestHeader("Accept") String acceptHeader
   ) {
@@ -157,7 +158,7 @@ public class InvoicesController {
   )
   // FIXME: this is weird... I think a client would expect to get a Payment back, which it can then query
   public StreamPayment payInvoice(
-    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) AccountId accountId,
+    @PathVariable(name = OpenPaymentsPathConstants.ACCOUNT_ID) PayIdAccountId accountId,
     @PathVariable(name = OpenPaymentsPathConstants.INVOICE_ID) InvoiceId invoiceId,
     @RequestBody Optional<PayInvoiceRequest> payInvoiceRequest
   ) throws UserAuthorizationRequiredException {

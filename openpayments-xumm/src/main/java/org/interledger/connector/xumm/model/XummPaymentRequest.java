@@ -1,7 +1,7 @@
 package org.interledger.connector.xumm.model;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.xumm.model.payload.TxJson;
+import org.interledger.openpayments.PayIdAccountId;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -16,7 +16,7 @@ public interface XummPaymentRequest {
     return ImmutableXummPaymentRequest.builder();
   }
 
-  AccountId accountId();
+  PayIdAccountId accountId();
 
   String paymentId();
 

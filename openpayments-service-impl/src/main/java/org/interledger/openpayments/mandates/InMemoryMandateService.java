@@ -2,7 +2,6 @@ package org.interledger.openpayments.mandates;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.openpayments.ApproveMandateRequest;
 import org.interledger.openpayments.Charge;
 import org.interledger.openpayments.ChargeId;
@@ -15,6 +14,7 @@ import org.interledger.openpayments.MandateId;
 import org.interledger.openpayments.MandateStatus;
 import org.interledger.openpayments.NewCharge;
 import org.interledger.openpayments.NewMandate;
+import org.interledger.openpayments.PayIdAccountId;
 import org.interledger.openpayments.PayInvoiceRequest;
 import org.interledger.openpayments.UserAuthorizationRequiredException;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
@@ -71,7 +71,7 @@ public class InMemoryMandateService implements MandateService {
   }
 
   @Override
-  public Mandate createMandate(AccountId accountId, NewMandate newMandate) {
+  public Mandate createMandate(PayIdAccountId payIdAccountId, NewMandate newMandate) {
     MandateId mandateId = MandateId.of(UUID.randomUUID().toString());
 
     PaymentSystemFacade paymentSystemFacade = paymentSystemFacadeFactory.get(newMandate.paymentNetwork())
@@ -79,15 +79,15 @@ public class InMemoryMandateService implements MandateService {
 
     Mandate mandate = Mandate.builder().from(newMandate)
       .mandateId(mandateId)
-      .accountId(accountId.value())
+      .accountId(payIdAccountId.value())
       .balance(newMandate.amount())
       .status(MandateStatus.AWAITING_APPROVAL)
-      .account(makeAccountUrl(accountId))
-      .id(makeMandateUrl(accountId, mandateId))
+      .account(makeAccountUrl(payIdAccountId))
+      .id(makeMandateUrl(payIdAccountId, mandateId))
       .userAuthorizationUrl(paymentSystemFacade.getMandateAuthorizationUrl(
         ApproveMandateRequest.builder()
           .mandateId(mandateId)
-          .accountId(accountId)
+          .accountId(payIdAccountId)
           .memoToUser("Approve " + newMandate.description().orElse("recurring payment"))
           .redirectUrl(newMandate.userRedirectUrl())
           .build()
@@ -100,9 +100,9 @@ public class InMemoryMandateService implements MandateService {
   }
 
   @Override
-  public Optional<Mandate> findMandateById(AccountId accountId, MandateId mandateId) {
+  public Optional<Mandate> findMandateById(PayIdAccountId payIdAccountId, MandateId mandateId) {
     return Optional.ofNullable(mandates.get(mandateId))
-      .filter(mandate -> mandate.accountId().equals(accountId.value()))
+      .filter(mandate -> mandate.accountId().equals(payIdAccountId.value()))
       .map(mandate -> Mandate.builder().from(mandate)
         .balance(mandateAccrualService.calculateBalance(mandate))
         .build()
@@ -110,9 +110,9 @@ public class InMemoryMandateService implements MandateService {
   }
 
   @Override
-  public List<Mandate> findMandatesByAccountId(AccountId accountId) {
+  public List<Mandate> findMandatesByAccountId(PayIdAccountId payIdAccountId) {
     return mandates.values().stream()
-      .filter(mandate -> mandate.accountId().equals(accountId.value()))
+      .filter(mandate -> mandate.accountId().equals(payIdAccountId.value()))
       .map(mandate -> Mandate.builder().from(mandate)
         .balance(mandateAccrualService.calculateBalance(mandate))
         .build())
@@ -120,15 +120,15 @@ public class InMemoryMandateService implements MandateService {
   }
 
   @Override
-  public Optional<Charge> findChargeById(AccountId accountId, MandateId mandateId, ChargeId chargeId) {
-    return findMandateById(accountId, mandateId).flatMap(mandate -> mandate.charges().stream()
+  public Optional<Charge> findChargeById(PayIdAccountId payIdAccountId, MandateId mandateId, ChargeId chargeId) {
+    return findMandateById(payIdAccountId, mandateId).flatMap(mandate -> mandate.charges().stream()
       .filter(charge -> charge.chargeId().equals(chargeId))
       .findAny());
   }
 
   @Override
-  public Charge createCharge(AccountId accountId, MandateId mandateId, NewCharge newCharge) {
-    Mandate mandate = findMandateById(accountId, mandateId)
+  public Charge createCharge(PayIdAccountId payIdAccountId, MandateId mandateId, NewCharge newCharge) {
+    Mandate mandate = findMandateById(payIdAccountId, mandateId)
       .orElseThrow(() -> new MandateNotFoundProblem(mandateId));
 
     if (!mandate.status().equals(MandateStatus.APPROVED)) {
@@ -138,8 +138,8 @@ public class InMemoryMandateService implements MandateService {
     InvoiceService<?, ?> invoiceService = invoiceServiceFactory.get(mandate.paymentNetwork())
       .orElseThrow(() -> new UnsupportedOperationException("No invoice service for " + mandate.paymentNetwork()));
 
-    Invoice invoice = invoiceService.findInvoiceByUrl(newCharge.invoice(), accountId)
-      .orElseGet(() -> invoiceService.syncInvoice(newCharge.invoice(), accountId));
+    Invoice invoice = invoiceService.findInvoiceByUrl(newCharge.invoice(), payIdAccountId)
+      .orElseGet(() -> invoiceService.syncInvoice(newCharge.invoice(), payIdAccountId));
 
     synchronized (mandates) {
       if (mandate.balance().compareTo(invoice.amount()) >= 0) {
@@ -167,23 +167,23 @@ public class InMemoryMandateService implements MandateService {
             invoice.accountId(),
             Optional.of(PayInvoiceRequest.builder().amount(invoice.amount()).build())
           );
-          updateChargeStatus(accountId, mandateId, chargeId, ChargeStatus.PAYMENT_INITIATED);
+          updateChargeStatus(payIdAccountId, mandateId, chargeId, ChargeStatus.PAYMENT_INITIATED);
         } catch (UserAuthorizationRequiredException e) {
-          updateAuthorizationUrl(accountId, mandateId, chargeId, e.getUserAuthorizationUrl().toString());
-          updateChargeStatus(accountId, mandateId, chargeId, ChargeStatus.PAYMENT_AWAITING_USER_AUTH);
+          updateAuthorizationUrl(payIdAccountId, mandateId, chargeId, e.getUserAuthorizationUrl().toString());
+          updateChargeStatus(payIdAccountId, mandateId, chargeId, ChargeStatus.PAYMENT_AWAITING_USER_AUTH);
         } catch (Exception e) {
           LOGGER.error("charging invoice {} to mandate {} failed", invoice.id(), mandate.mandateId(), e);
-          updateChargeStatus(accountId, mandateId, chargeId, ChargeStatus.PAYMENT_FAILED);
+          updateChargeStatus(payIdAccountId, mandateId, chargeId, ChargeStatus.PAYMENT_FAILED);
         }
-        return findChargeById(accountId, mandateId, chargeId).get();
+        return findChargeById(payIdAccountId, mandateId, chargeId).get();
       } else {
         throw new MandateInsufficientBalanceProblem(mandateId);
       }
     }
   }
 
-  private void updateAuthorizationUrl(AccountId accountId, MandateId mandateId, ChargeId chargeId, String authorizationUrl) {
-    updateCharge(accountId, mandateId, chargeId, (builder) -> builder.userAuthorizationUrl(authorizationUrl));
+  private void updateAuthorizationUrl(PayIdAccountId payIdAccountId, MandateId mandateId, ChargeId chargeId, String authorizationUrl) {
+    updateCharge(payIdAccountId, mandateId, chargeId, (builder) -> builder.userAuthorizationUrl(authorizationUrl));
   }
 
   @Subscribe
@@ -196,20 +196,20 @@ public class InMemoryMandateService implements MandateService {
     updateMandateStatus(mandateApprovedEvent.accountId(), mandateApprovedEvent.mandateId(), MandateStatus.DECLINED);
   }
 
-  private void updateMandateStatus(AccountId accountId, MandateId mandateId, MandateStatus status) {
-    updateMandate(accountId, mandateId, (builder) -> builder.status(status));
-    findMandateById(accountId, mandateId).ifPresent(webhookClient::sendMandateStatusChange);
+  private void updateMandateStatus(PayIdAccountId payIdAccountId, MandateId mandateId, MandateStatus status) {
+    updateMandate(payIdAccountId, mandateId, (builder) -> builder.status(status));
+    findMandateById(payIdAccountId, mandateId).ifPresent(webhookClient::sendMandateStatusChange);
   }
 
-  private void updateChargeStatus(AccountId accountId, MandateId mandateId, ChargeId chargeId, ChargeStatus status) {
-    updateCharge(accountId, mandateId, chargeId, (builder) -> builder.status(status));
+  private void updateChargeStatus(PayIdAccountId payIdAccountId, MandateId mandateId, ChargeId chargeId, ChargeStatus status) {
+    updateCharge(payIdAccountId, mandateId, chargeId, (builder) -> builder.status(status));
   }
 
-  private void updateCharge(AccountId accountId,
+  private void updateCharge(PayIdAccountId payIdAccountId,
                             MandateId mandateId,
                             ChargeId chargeId,
                             Consumer<ImmutableCharge.Builder> chargeUpdater) {
-    findMandateById(accountId, mandateId).ifPresent(mandate -> {
+    findMandateById(payIdAccountId, mandateId).ifPresent(mandate -> {
       List<Charge> chargesToUpdate = Lists.newArrayList(mandate.charges());
       chargesToUpdate.stream()
         .filter(c -> c.chargeId().equals(chargeId))
@@ -232,25 +232,25 @@ public class InMemoryMandateService implements MandateService {
     });
   }
 
-  private void updateMandate(AccountId accountId,
+  private void updateMandate(PayIdAccountId payIdAccountId,
                              MandateId mandateId,
                              Consumer<ImmutableMandate.Builder> mandateUpdater) {
-    findMandateById(accountId, mandateId).ifPresent(mandate -> {
+    findMandateById(payIdAccountId, mandateId).ifPresent(mandate -> {
       ImmutableMandate.Builder updateBuilder = Mandate.builder().from(mandate);
       mandateUpdater.accept(updateBuilder);
       mandates.put(mandateId, updateBuilder.build());
     });
   }
 
-  private HttpUrl makeAccountUrl(AccountId accountId) {
+  private HttpUrl makeAccountUrl(PayIdAccountId payIdAccountId) {
     return openPaymentsSettingsSupplier.get().metadata().issuer()
       .newBuilder()
-      .addPathSegment(accountId.value())
+      .addPathSegment(payIdAccountId.value())
       .build();
   }
 
-  private HttpUrl makeMandateUrl(AccountId accountId, MandateId mandateId) {
-    return makeAccountUrl(accountId).newBuilder()
+  private HttpUrl makeMandateUrl(PayIdAccountId payIdAccountId, MandateId mandateId) {
+    return makeAccountUrl(payIdAccountId).newBuilder()
       .addPathSegment("mandates")
       .addPathSegment(mandateId.value())
       .build();

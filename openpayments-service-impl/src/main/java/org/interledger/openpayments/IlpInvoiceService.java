@@ -1,6 +1,5 @@
 package org.interledger.openpayments;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.events.StreamPaymentClosedEvent;
 import org.interledger.connector.payments.StreamPayment;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
@@ -48,8 +47,8 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
   }
 
   @Override
-  public IlpPaymentDetails getPaymentDetails(InvoiceId invoiceId, AccountId accountId) {
-    final Invoice invoice = this.getInvoice(invoiceId, accountId);
+  public IlpPaymentDetails getPaymentDetails(InvoiceId invoiceId, PayIdAccountId payIdAccountId) {
+    final Invoice invoice = this.getInvoice(invoiceId, payIdAccountId);
 
     final HttpUrl invoiceUrl = invoice.receiverInvoiceUrl();
 
@@ -61,8 +60,8 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
   }
 
   @Override
-  public StreamPayment payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) {
-    final Invoice invoice = this.getInvoice(invoiceId, senderAccountId);
+  public StreamPayment payInvoice(InvoiceId invoiceId, PayIdAccountId senderPayIdAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) {
+    final Invoice invoice = this.getInvoice(invoiceId, senderPayIdAccountId);
 
     final HttpUrl invoiceUrl = invoice.receiverInvoiceUrl();
 
@@ -79,7 +78,7 @@ public class IlpInvoiceService extends AbstractInvoiceService<StreamPayment, Ilp
       min(amountLeftToSend, payInvoiceRequest.orElse(PayInvoiceRequest.builder().build()).amount());
 
     try {
-      return ilpPaymentSystemFacade.payInvoice(ilpPaymentDetails, senderAccountId, amountToPay, invoice.correlationId());
+      return ilpPaymentSystemFacade.payInvoice(ilpPaymentDetails, senderPayIdAccountId, amountToPay, invoice.correlationId());
     } catch (UserAuthorizationRequiredException e) {
       // should not happen on ILP payments
       throw new InvoicePaymentProblem(e.getMessage(), invoiceId);

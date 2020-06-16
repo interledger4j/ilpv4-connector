@@ -8,6 +8,7 @@ import org.interledger.connector.persistence.converters.InvoiceEntityConverter;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.util.SampleObjectUtils;
 import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.PayIdAccountId;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
@@ -54,7 +55,7 @@ public class InvoiceRepositoryTest {
     Invoice invoice = SampleObjectUtils.createNewIlpInvoice();
     Invoice saved = invoicesRepository.saveInvoice(invoice);
     Optional<InvoiceEntity> fetched = invoicesRepository
-      .findByInvoiceIdAndAccountId(invoice.id(), AccountId.of(invoice.accountId() + "fakeAccount"));
+      .findByInvoiceIdAndAccountId(invoice.id(), PayIdAccountId.of(invoice.accountId() + "fakeAccount"));
     assertThat(fetched).isEmpty();
   }
 

@@ -1,10 +1,10 @@
 package org.interledger.connector.persistence.repositories;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.openpayments.CorrelationId;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.InvoiceId;
+import org.interledger.openpayments.PayIdAccountId;
 
 import okhttp3.HttpUrl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,7 @@ public class InvoicesRepositoryImpl implements InvoicesRepositoryCustom {
   }
 
   @Override
-  public Optional<Invoice> findInvoiceByInvoiceIdAndAccountId(InvoiceId invoiceId, AccountId accountId) {
+  public Optional<Invoice> findInvoiceByInvoiceIdAndAccountId(InvoiceId invoiceId, PayIdAccountId accountId) {
     Objects.requireNonNull(invoiceId);
     Optional<InvoiceEntity> entity = invoicesRepository.findByInvoiceIdAndAccountId(invoiceId, accountId);
     return entity.map(e -> conversionService.convert(e, Invoice.class));

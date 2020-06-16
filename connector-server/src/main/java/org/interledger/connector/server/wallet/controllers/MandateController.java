@@ -12,6 +12,7 @@ import org.interledger.openpayments.Mandate;
 import org.interledger.openpayments.MandateId;
 import org.interledger.openpayments.NewCharge;
 import org.interledger.openpayments.NewMandate;
+import org.interledger.openpayments.PayIdAccountId;
 import org.interledger.openpayments.config.OpenPaymentsPathConstants;
 import org.interledger.openpayments.problems.ChargeNotFoundProblem;
 import org.interledger.openpayments.problems.MandateNotFoundProblem;
@@ -55,7 +56,7 @@ public class MandateController {
   )
   public @ResponseBody
   ResponseEntity<Mandate> createMandate(
-    @PathVariable AccountId accountId,
+    @PathVariable PayIdAccountId accountId,
     @RequestBody NewMandate newMandate
   ) {
     Mandate mandate = mandateService.createMandate(accountId, newMandate);
@@ -69,7 +70,7 @@ public class MandateController {
     method = RequestMethod.GET,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public @ResponseBody List<Mandate> listMandates(@PathVariable AccountId accountId) {
+  public @ResponseBody List<Mandate> listMandates(@PathVariable PayIdAccountId accountId) {
     return mandateService.findMandatesByAccountId(accountId);
   }
 
@@ -78,7 +79,7 @@ public class MandateController {
     method = RequestMethod.GET,
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
-  public @ResponseBody Mandate getMandate(@PathVariable AccountId accountId, @PathVariable MandateId mandateId) {
+  public @ResponseBody Mandate getMandate(@PathVariable PayIdAccountId accountId, @PathVariable MandateId mandateId) {
     return mandateService.findMandateById(accountId, mandateId).orElseThrow(() -> new MandateNotFoundProblem(mandateId));
   }
 
@@ -96,7 +97,7 @@ public class MandateController {
   )
   public @ResponseBody
   ResponseEntity<Charge> createCharge(
-    @PathVariable AccountId accountId,
+    @PathVariable PayIdAccountId accountId,
     @PathVariable MandateId mandateId,
     @RequestBody NewCharge newCharge
   ) {
@@ -112,7 +113,7 @@ public class MandateController {
     produces = {APPLICATION_JSON_VALUE, MediaTypes.PROBLEM_VALUE}
   )
   public @ResponseBody Charge getCharge(
-    @PathVariable AccountId accountId,
+    @PathVariable PayIdAccountId accountId,
     @PathVariable MandateId mandateId,
     @PathVariable ChargeId chargeId) {
     return mandateService.findChargeById(accountId, mandateId, chargeId).orElseThrow(() -> new ChargeNotFoundProblem(chargeId));

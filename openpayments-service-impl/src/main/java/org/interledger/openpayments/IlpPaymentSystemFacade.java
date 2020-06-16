@@ -77,7 +77,7 @@ public class IlpPaymentSystemFacade implements PaymentSystemFacade<StreamPayment
   @Override
   public StreamPayment payInvoice(
     IlpPaymentDetails paymentDetails,
-    AccountId senderAccountId,
+    PayIdAccountId senderPayIdAccountId,
     UnsignedLong amount,
     CorrelationId correlationId) {
     // Send payment using STREAM
@@ -85,7 +85,7 @@ public class IlpPaymentSystemFacade implements PaymentSystemFacade<StreamPayment
     //                direct call?
     return sendPaymentService.sendMoney(
       SendPaymentRequest.builder()
-      .accountId(senderAccountId)
+      .accountId(AccountId.of(PayId.of(senderPayIdAccountId.value()).account())) // FIXME: This wont work with our accounts anymore, unless the PayId account part is an account on our connector
       .amount(amount)
       .correlationId(correlationId.value())
       .streamConnectionDetails(

@@ -25,9 +25,9 @@ interledger:
       ilpOperatorAddress: "test.jc1"
       metadata:
         accountServicer: "http://localhost:4000/ilp-wallet"
-        issuer: "http://localhost:8080"
+        issuer: "https://xumm-nkramer.ngrok.io"
         authorizationIssuer: "https://localhost:3000"
-        defaultScheme: "http"
+        defaultScheme: "https"
         assetsSupported:
         -
           assetCode: "XRP"

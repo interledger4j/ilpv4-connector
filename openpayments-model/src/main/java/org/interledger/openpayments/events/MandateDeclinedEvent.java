@@ -1,7 +1,7 @@
 package org.interledger.openpayments.events;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.openpayments.MandateId;
+import org.interledger.openpayments.PayIdAccountId;
 
 import org.immutables.value.Value;
 
@@ -15,7 +15,7 @@ public interface MandateDeclinedEvent {
     return ImmutableMandateDeclinedEvent.builder();
   }
 
-  AccountId accountId();
+  PayIdAccountId accountId();
 
   MandateId mandateId();
 }

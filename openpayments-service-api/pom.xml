@@ -15,10 +15,6 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>connector-accounts</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>openpayments-model</artifactId>
     </dependency>
     <dependency>

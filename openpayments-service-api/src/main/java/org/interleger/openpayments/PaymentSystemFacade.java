@@ -1,9 +1,9 @@
 package org.interleger.openpayments;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.openpayments.ApproveMandateRequest;
 import org.interledger.openpayments.CorrelationId;
 import org.interledger.openpayments.Invoice;
+import org.interledger.openpayments.PayIdAccountId;
 import org.interledger.openpayments.UserAuthorizationRequiredException;
 
 import com.google.common.primitives.UnsignedLong;
@@ -37,7 +37,7 @@ public interface PaymentSystemFacade<PaymentResultType, PaymentDetailsType> {
    * Pay the invoice with the specified {@link CorrelationId}, using {@link PaymentDetailsType} needed to make the payment.
    *
    * @param paymentDetails The {@link PaymentDetailsType} needed to make the payment.
-   * @param senderAccountId The {@link AccountId} of the sender.
+   * @param senderPayIdAccountId The {@link PayIdAccountId} of the sender.
    * @param amount The amount to pay.
    * @param correlationId The {@link CorrelationId} of the {@link Invoice} to pay.
    * @return The result of the payment.
@@ -46,7 +46,7 @@ public interface PaymentSystemFacade<PaymentResultType, PaymentDetailsType> {
    */
   PaymentResultType payInvoice(
     final PaymentDetailsType paymentDetails,
-    final AccountId senderAccountId,
+    final PayIdAccountId senderPayIdAccountId,
     final UnsignedLong amount,
     final CorrelationId correlationId
   ) throws ExecutionException, InterruptedException, UserAuthorizationRequiredException;

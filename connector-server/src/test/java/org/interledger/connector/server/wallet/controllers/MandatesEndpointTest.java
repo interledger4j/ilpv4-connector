@@ -25,6 +25,7 @@ import org.interledger.openpayments.MandateStatus;
 import org.interledger.openpayments.NewCharge;
 import org.interledger.openpayments.NewInvoice;
 import org.interledger.openpayments.NewMandate;
+import org.interledger.openpayments.PayIdAccountId;
 import org.interledger.openpayments.PaymentNetwork;
 import org.interledger.openpayments.UserAuthorizationRequiredException;
 import org.interledger.openpayments.XrpPaymentDetails;
@@ -195,7 +196,7 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
   private void approveMandate(Mandate mandate) {
     eventBus.post(MandateApprovedEvent.builder()
       .mandateId(mandate.mandateId())
-      .accountId(AccountId.of(mandate.accountId()))
+      .accountId(PayIdAccountId.of(mandate.accountId()))
       .build()
     );
     try {

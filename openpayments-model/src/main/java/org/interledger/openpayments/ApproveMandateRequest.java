@@ -1,7 +1,5 @@
 package org.interledger.openpayments;
 
-import org.interledger.connector.accounts.AccountId;
-
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import okhttp3.HttpUrl;
@@ -21,7 +19,7 @@ public interface ApproveMandateRequest {
     return ImmutableApproveMandateRequest.builder();
   }
 
-  AccountId accountId();
+  PayIdAccountId accountId();
 
   MandateId mandateId();
 

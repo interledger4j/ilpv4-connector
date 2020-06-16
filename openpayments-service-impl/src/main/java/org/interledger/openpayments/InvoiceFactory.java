@@ -1,32 +1,11 @@
 package org.interledger.openpayments;
 
-import org.interledger.connector.accounts.AccountId;
-import org.interledger.openpayments.config.OpenPaymentsSettings;
-import org.interledger.spsp.PaymentPointerResolver;
-
 import okhttp3.HttpUrl;
-
-import java.util.function.Supplier;
 
 /**
  * Factory class for creating {@link Invoice}s.
  */
 public class InvoiceFactory {
-
-  private final PaymentPointerResolver paymentPointerResolver;
-  private final PayIdResolver payIdResolver;
-
-  private final Supplier<OpenPaymentsSettings> openPaymentsSettings;
-
-  public InvoiceFactory(
-    PaymentPointerResolver paymentPointerResolver,
-    PayIdResolver payIdResolver,
-    Supplier<OpenPaymentsSettings> openPaymentsSettings
-  ) {
-    this.paymentPointerResolver = paymentPointerResolver;
-    this.payIdResolver = payIdResolver;
-    this.openPaymentsSettings = openPaymentsSettings;
-  }
 
   /**
    * Populate the URL of an invoice.  This MUST be called before creating an {@link Invoice} in the database.
@@ -44,7 +23,7 @@ public class InvoiceFactory {
 
     return Invoice.builder()
       .ownerAccountUrl(ownerAccountUrl)
-      .accountId(AccountId.of(accountId))
+      .accountId(PayIdAccountId.of(accountId))
       .amount(newInvoice.amount())
       .assetCode(newInvoice.assetCode())
       .assetScale(newInvoice.assetScale())

@@ -1,6 +1,5 @@
 package org.interledger.openpayments;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.connector.persistence.entities.InvoiceEntity;
 import org.interledger.connector.persistence.repositories.InvoicesRepository;
 import org.interledger.connector.persistence.repositories.PaymentsRepository;
@@ -61,9 +60,9 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public Invoice createInvoice(final NewInvoice newInvoice, final AccountId accountId) {
+  public Invoice createInvoice(final NewInvoice newInvoice, final PayIdAccountId payIdAccountId) {
     Objects.requireNonNull(newInvoice);
-    Objects.requireNonNull(accountId);
+    Objects.requireNonNull(payIdAccountId);
 
     // Really only to determine if we need to proxy
     HttpUrl ownerAccountUrl = newInvoice.ownerAccountUrl();
@@ -81,23 +80,23 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public Optional<Invoice> findInvoiceByUrl(HttpUrl receiverInvoiceUrl, AccountId accountId) {
+  public Optional<Invoice> findInvoiceByUrl(HttpUrl receiverInvoiceUrl, PayIdAccountId payIdAccountId) {
     return invoicesRepository.findAllInvoicesByReceiverInvoiceUrl(receiverInvoiceUrl)
       .stream()
-      .filter(invoice -> invoice.accountId().equals(accountId))
+      .filter(invoice -> invoice.accountId().equals(payIdAccountId))
       .findFirst();
   }
 
   @Override
-  public Invoice syncInvoice(final HttpUrl receiverInvoiceUrl, final AccountId accountId) {
+  public Invoice syncInvoice(final HttpUrl receiverInvoiceUrl, final PayIdAccountId payIdAccountId) {
     Objects.requireNonNull(receiverInvoiceUrl);
-    Objects.requireNonNull(accountId);
+    Objects.requireNonNull(payIdAccountId);
 
     // See if we have that invoice already
     List<Invoice> existingInvoices = invoicesRepository.findAllInvoicesByReceiverInvoiceUrl(receiverInvoiceUrl);
     existingInvoices
       .stream()
-      .filter(invoice -> invoice.accountId().equals(accountId))
+      .filter(invoice -> invoice.accountId().equals(payIdAccountId))
       .findFirst()
       .ifPresent(invoice -> {
         throw new InvoiceAlreadyExistsProblem(invoice.id());
@@ -110,7 +109,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     } else {
       invoiceOfReceiver = existingInvoices
         .stream()
-        .filter(invoice -> !invoice.accountId().equals(accountId))
+        .filter(invoice -> !invoice.accountId().equals(payIdAccountId))
         .findFirst()
         .orElseThrow(() -> new InvoiceNotFoundProblem(receiverInvoiceUrl));
     }
@@ -119,7 +118,7 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
     Invoice invoiceWithCorrectAccountId = Invoice.builder()
       .from(invoiceOfReceiver)
       .id(InvoiceId.of(UUID.randomUUID().toString()))
-      .accountId(accountId)
+      .accountId(payIdAccountId)
       .build();
 
     return invoicesRepository.saveInvoice(invoiceWithCorrectAccountId);
@@ -127,11 +126,11 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public Invoice getInvoice(final InvoiceId invoiceId, final AccountId accountId) {
+  public Invoice getInvoice(final InvoiceId invoiceId, PayIdAccountId payIdAccountId) {
     Objects.requireNonNull(invoiceId);
-    Objects.requireNonNull(accountId);
+    Objects.requireNonNull(payIdAccountId);
 
-    return invoicesRepository.findInvoiceByInvoiceIdAndAccountId(invoiceId, accountId)
+    return invoicesRepository.findInvoiceByInvoiceIdAndAccountId(invoiceId, payIdAccountId)
       .orElseThrow(() -> new InvoiceNotFoundProblem(invoiceId));
   }
 
@@ -148,11 +147,11 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public Invoice updateInvoice(final Invoice invoice, final AccountId accountId) {
+  public Invoice updateInvoice(final Invoice invoice, final PayIdAccountId payIdAccountId) {
     Objects.requireNonNull(invoice);
-    Objects.requireNonNull(accountId);
+    Objects.requireNonNull(payIdAccountId);
 
-    return invoicesRepository.findByInvoiceIdAndAccountId(invoice.id(), accountId)
+    return invoicesRepository.findByInvoiceIdAndAccountId(invoice.id(), payIdAccountId)
       .map(entity -> {
         entity.setReceived(invoice.received().longValue());
         InvoiceEntity saved = invoicesRepository.save(entity);
@@ -163,12 +162,12 @@ public abstract class AbstractInvoiceService<PaymentResultType, PaymentDetailsTy
   }
 
   @Override
-  public PaymentDetailsType getPaymentDetails(InvoiceId invoiceId, AccountId accountId) {
+  public PaymentDetailsType getPaymentDetails(InvoiceId invoiceId, PayIdAccountId payIdAccountId) {
     throw new UnsupportedInvoiceOperationProblem(invoiceId);
   }
 
   @Override
-  public PaymentResultType payInvoice(InvoiceId invoiceId, AccountId senderAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) throws UserAuthorizationRequiredException {
+  public PaymentResultType payInvoice(InvoiceId invoiceId, PayIdAccountId senderPayIdAccountId, Optional<PayInvoiceRequest> payInvoiceRequest) throws UserAuthorizationRequiredException {
     throw new UnsupportedInvoiceOperationProblem(invoiceId);
   }
 

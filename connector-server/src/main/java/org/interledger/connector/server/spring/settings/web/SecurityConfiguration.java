@@ -244,7 +244,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.INVOICES_BASE + "/**").permitAll()
         .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.PAY_INVOICE + "/**").permitAll()
         .antMatchers(HttpMethod.GET, OpenPaymentsPathConstants.MANDATES_BASE + "/**").permitAll()
-        .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.MANDATES_BASE + "/**").permitAll();
+        .antMatchers(HttpMethod.POST, OpenPaymentsPathConstants.MANDATES_BASE + "/**").permitAll()
+        .antMatchers(HttpMethod.GET, OpenPaymentsPathConstants.SLASH_ACCOUNT_ID).permitAll();
     }
 
     // Everything else...

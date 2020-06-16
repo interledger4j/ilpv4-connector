@@ -1,9 +1,9 @@
 package org.interledger.connector.persistence.repositories;
 
-import org.interledger.connector.accounts.AccountId;
 import org.interledger.openpayments.CorrelationId;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.InvoiceId;
+import org.interledger.openpayments.PayIdAccountId;
 
 import okhttp3.HttpUrl;
 
@@ -19,7 +19,7 @@ public interface InvoicesRepositoryCustom {
 
   Invoice saveInvoice(Invoice invoice);
 
-  Optional<Invoice> findInvoiceByInvoiceIdAndAccountId(InvoiceId invoiceId, AccountId accountId);
+  Optional<Invoice> findInvoiceByInvoiceIdAndAccountId(InvoiceId invoiceId, PayIdAccountId accountId);
 
   List<Invoice> findAllInvoicesByReceiverInvoiceUrl(HttpUrl receiverInvoiceUrl);
 
