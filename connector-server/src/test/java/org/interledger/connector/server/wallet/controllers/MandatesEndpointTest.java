@@ -19,6 +19,7 @@ import org.interledger.core.InterledgerAddress;
 import org.interledger.link.http.IlpOverHttpLink;
 import org.interledger.link.http.IlpOverHttpLinkSettings.AuthType;
 import org.interledger.openpayments.Charge;
+import org.interledger.openpayments.ChargeStatus;
 import org.interledger.openpayments.Invoice;
 import org.interledger.openpayments.Mandate;
 import org.interledger.openpayments.MandateStatus;
@@ -31,6 +32,8 @@ import org.interledger.openpayments.XrpPaymentDetails;
 import org.interledger.openpayments.config.OpenPaymentsMetadata;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
 import org.interledger.openpayments.events.MandateApprovedEvent;
+import org.interledger.openpayments.events.PaymentCompletedEvent;
+import org.interledger.openpayments.events.PaymentDeclinedEvent;
 import org.interledger.openpayments.xrpl.XrplTransaction;
 import org.interledger.stream.receiver.ServerSecretSupplier;
 
@@ -182,6 +185,7 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
       );
 
     assertThat(charge.amount()).isEqualTo(amount);
+    assertThat(charge.status()).isEqualTo(ChargeStatus.PAYMENT_INITIATED);
 
     Mandate afterCharge = openPaymentsClient.findMandateById(PAYER,
       mandate.mandateId().value(),
@@ -190,6 +194,103 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
 
     assertThat(afterCharge.totalCharged()).isEqualTo(amount);
     assertThat(afterCharge.balance()).isEqualTo(UnsignedLong.ZERO);
+  }
+
+  @Test
+  public void declinePaymentDeclinesChargeAndMandate() {
+    UnsignedLong amount = UnsignedLong.valueOf(100);
+
+    Mandate mandate = openPaymentsClient.createMandate(PAYER,
+      bearer(SHH),
+      NewMandate.builder()
+        .amount(amount)
+        .assetCode("XRP")
+        .assetScale((short) 9)
+        .paymentNetwork(PaymentNetwork.XRPL)
+        .build()
+    );
+
+    assertThat(mandate.accountId()).isEqualTo(PAYER);
+    assertThat(mandate.balance()).isEqualTo(amount);
+    assertThat(mandate.status()).isEqualTo(MandateStatus.AWAITING_APPROVAL);
+    assertThat(mandate.id().toString())
+      .isEqualTo(testnetHost + PAYER + "/mandates/" + mandate.mandateId());
+
+    approveMandate(mandate);
+
+    Invoice invoice = openPaymentsClient.createInvoice(PAYEE, NewInvoice.builder()
+      .amount(amount)
+      .assetCode("XRP")
+      .assetScale((short) 9)
+      .subject(PAYID)
+      .description("Fight Milk subscription")
+      .ownerAccountUrl(accountUrl(PAYEE))
+      .build()
+    );
+
+    openPaymentsClient.createCharge(PAYER, mandate.mandateId().value(), bearer(SHH),
+      NewCharge.builder()
+        .invoice(invoice.receiverInvoiceUrl())
+        .build()
+    );
+
+    triggerPaymentDeclined(invoice);
+
+    Mandate afterDeclined = openPaymentsClient.findMandateById(PAYER,
+      mandate.mandateId().value(),
+      bearer(SHH)
+    );
+
+    assertThat(afterDeclined.status()).isEqualTo(MandateStatus.DECLINED);
+    assertThat(afterDeclined.charges().get(0).status()).isEqualTo(ChargeStatus.PAYMENT_FAILED);
+  }
+
+  @Test
+  public void approvePaymentUpdatesChargeStatus() {
+    UnsignedLong amount = UnsignedLong.valueOf(100);
+
+    Mandate mandate = openPaymentsClient.createMandate(PAYER,
+      bearer(SHH),
+      NewMandate.builder()
+        .amount(amount)
+        .assetCode("XRP")
+        .assetScale((short) 9)
+        .paymentNetwork(PaymentNetwork.XRPL)
+        .build()
+    );
+
+    assertThat(mandate.accountId()).isEqualTo(PAYER);
+    assertThat(mandate.balance()).isEqualTo(amount);
+    assertThat(mandate.status()).isEqualTo(MandateStatus.AWAITING_APPROVAL);
+    assertThat(mandate.id().toString())
+      .isEqualTo(testnetHost + PAYER + "/mandates/" + mandate.mandateId());
+
+    approveMandate(mandate);
+
+    Invoice invoice = openPaymentsClient.createInvoice(PAYEE, NewInvoice.builder()
+      .amount(amount)
+      .assetCode("XRP")
+      .assetScale((short) 9)
+      .subject(PAYID)
+      .description("Fight Milk subscription")
+      .ownerAccountUrl(accountUrl(PAYEE))
+      .build()
+    );
+
+    openPaymentsClient.createCharge(PAYER, mandate.mandateId().value(), bearer(SHH),
+      NewCharge.builder()
+        .invoice(invoice.receiverInvoiceUrl())
+        .build()
+    );
+
+    triggerPaymentCompleted(invoice);
+
+    Mandate afterPayment = openPaymentsClient.findMandateById(PAYER,
+      mandate.mandateId().value(),
+      bearer(SHH)
+    );
+
+    assertThat(afterPayment.charges().get(0).status()).isEqualTo(ChargeStatus.PAYMENT_SUCCESSFUL);
   }
 
   private void approveMandate(Mandate mandate) {
@@ -278,6 +379,24 @@ public class MandatesEndpointTest extends AbstractEndpointTest {
 
   private String newOutgoingUrl(String accountId) {
     return testnetHost.toString() + "accounts/" + accountId + "/ilp";
+  }
+
+  private void triggerPaymentDeclined(Invoice invoice) {
+    eventBus.post((PaymentDeclinedEvent) () -> invoice.correlationId());
+    try {
+      Thread.sleep(100);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private void triggerPaymentCompleted(Invoice invoice) {
+    eventBus.post((PaymentCompletedEvent) () -> invoice.correlationId());
+    try {
+      Thread.sleep(100);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
   }
 
   @Configuration

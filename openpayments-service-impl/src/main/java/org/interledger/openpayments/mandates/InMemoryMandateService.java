@@ -7,6 +7,7 @@ import org.interledger.openpayments.ApproveMandateRequest;
 import org.interledger.openpayments.Charge;
 import org.interledger.openpayments.ChargeId;
 import org.interledger.openpayments.ChargeStatus;
+import org.interledger.openpayments.CorrelationId;
 import org.interledger.openpayments.ImmutableCharge;
 import org.interledger.openpayments.ImmutableMandate;
 import org.interledger.openpayments.Invoice;
@@ -20,6 +21,8 @@ import org.interledger.openpayments.UserAuthorizationRequiredException;
 import org.interledger.openpayments.config.OpenPaymentsSettings;
 import org.interledger.openpayments.events.MandateApprovedEvent;
 import org.interledger.openpayments.events.MandateDeclinedEvent;
+import org.interledger.openpayments.events.PaymentCompletedEvent;
+import org.interledger.openpayments.events.PaymentDeclinedEvent;
 import org.interledger.openpayments.problems.MandateInsufficientBalanceProblem;
 import org.interledger.openpayments.problems.MandateNotApprovedProblem;
 import org.interledger.openpayments.problems.MandateNotFoundProblem;
@@ -50,6 +53,7 @@ public class InMemoryMandateService implements MandateService {
   private static final Logger LOGGER = getLogger(InMemoryMandateService.class);
 
   private final HashMap<MandateId, Mandate> mandates = new HashMap<>();
+  private final HashMap<CorrelationId, ChargeId> correlationIdToChargeId = new HashMap<>();
 
   private final MandateAccrualService mandateAccrualService;
   private final InvoiceServiceFactory invoiceServiceFactory;
@@ -146,6 +150,7 @@ public class InMemoryMandateService implements MandateService {
         ChargeId chargeId = ChargeId.of(UUID.randomUUID().toString());
         Charge charge = Charge.builder()
           .amount(invoice.amount())
+          .accountId(accountId)
           .invoice(invoice.receiverInvoiceUrl())
           .mandate(mandate.id())
           .mandateId(mandate.mandateId())
@@ -153,6 +158,8 @@ public class InMemoryMandateService implements MandateService {
           .chargeId(chargeId)
           .id(mandate.id().newBuilder().addPathSegment("charges").addPathSegment(chargeId.value()).build())
           .build();
+
+        correlationIdToChargeId.put(invoice.correlationId(), chargeId);
 
         Mandate updated = Mandate.builder()
           .from(mandate)
@@ -194,6 +201,25 @@ public class InMemoryMandateService implements MandateService {
   @Subscribe
   public void onMandateDeclined(MandateDeclinedEvent mandateApprovedEvent) {
     updateMandateStatus(mandateApprovedEvent.accountId(), mandateApprovedEvent.mandateId(), MandateStatus.DECLINED);
+  }
+
+  @Subscribe
+  public void onPaymentDeclined(PaymentDeclinedEvent paymentDeclinedEvent) {
+    Optional.ofNullable(correlationIdToChargeId.get(paymentDeclinedEvent.paymentCorrelationId()))
+      .flatMap(this::findChargeById)
+      .ifPresent(charge -> {
+        updateChargeStatus(charge.accountId(), charge.mandateId(), charge.chargeId(), ChargeStatus.PAYMENT_FAILED);
+        updateMandateStatus(charge.accountId(), charge.mandateId(), MandateStatus.DECLINED);
+      });
+  }
+
+  @Subscribe
+  public void onPaymentCompleted(PaymentCompletedEvent paymentCompletedEvent) {
+    Optional.ofNullable(correlationIdToChargeId.get(paymentCompletedEvent.paymentCorrelationId()))
+      .flatMap(this::findChargeById)
+      .ifPresent(charge -> {
+        updateChargeStatus(charge.accountId(), charge.mandateId(), charge.chargeId(), ChargeStatus.PAYMENT_SUCCESSFUL);
+      });
   }
 
   private void updateMandateStatus(AccountId accountId, MandateId mandateId, MandateStatus status) {
@@ -254,6 +280,12 @@ public class InMemoryMandateService implements MandateService {
       .addPathSegment("mandates")
       .addPathSegment(mandateId.value())
       .build();
+  }
+
+  private Optional<Charge> findChargeById(ChargeId chargeId) {
+    return mandates.values().stream().flatMap(mandate -> mandate.charges().stream())
+      .filter(charge -> charge.chargeId().equals(chargeId))
+      .findAny();
   }
 
 }

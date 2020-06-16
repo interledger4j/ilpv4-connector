@@ -2,6 +2,7 @@ package org.interledger.openpayments.mandates;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.interledger.connector.accounts.AccountId;
 import org.interledger.openpayments.Charge;
 import org.interledger.openpayments.ChargeId;
 import org.interledger.openpayments.ChargeStatus;
@@ -25,6 +26,7 @@ import java.util.UUID;
 
 public class DefaultMandateAccrualServiceTest {
 
+  private static final AccountId ACCOUNT_ID = AccountId.of("alice");
   private Instant startsAt = Instant.now();
 
   private MutableClock mutableClock;
@@ -139,7 +141,7 @@ public class DefaultMandateAccrualServiceTest {
     return Mandate.builder()
       .id(HttpUrl.parse("http://localhost/accounts/1/mandates/1"))
       .account(HttpUrl.parse("http://localhost/accounts/1"))
-      .accountId("1")
+      .accountId(ACCOUNT_ID.value())
       .mandateId(MandateId.of("1"))
       .amount(UnsignedLong.valueOf(100))
       .assetCode("XRP")
@@ -159,6 +161,7 @@ public class DefaultMandateAccrualServiceTest {
       .mandateId(MandateId.of("1"))
       .status(ChargeStatus.CREATED)
       .invoice(HttpUrl.parse("http://localhost/invoices/123"))
+      .accountId(ACCOUNT_ID)
       .amount(amount);
 
   }

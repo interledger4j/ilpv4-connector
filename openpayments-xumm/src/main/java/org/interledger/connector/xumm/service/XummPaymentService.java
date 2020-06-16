@@ -27,6 +27,7 @@ import org.interledger.openpayments.UserAuthorizationRequiredException;
 import org.interledger.openpayments.XrpPaymentDetails;
 import org.interledger.openpayments.events.MandateApprovedEvent;
 import org.interledger.openpayments.events.MandateDeclinedEvent;
+import org.interledger.openpayments.events.PaymentDeclinedEvent;
 import org.interledger.openpayments.events.XrpPaymentCompletedEvent;
 import org.interledger.openpayments.xrpl.Memo;
 import org.interledger.openpayments.xrpl.MemoWrapper;
@@ -245,7 +246,9 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
   }
 
   private void onRejectedPayload(SendXrpPaymentRequest request, Payload payload) {
-    // TODO send payment rejected event
+    eventBus.post(PaymentDeclinedEvent.builder()
+      .paymentCorrelationId(CorrelationId.of(request.correlationId()))
+      .build());
   }
 
   public void onSignedPayload(SendXrpPaymentRequest request, Payload payload) {

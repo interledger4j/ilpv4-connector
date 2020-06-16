@@ -1,5 +1,7 @@
 package org.interledger.openpayments;
 
+import org.interledger.connector.accounts.AccountId;
+
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.primitives.UnsignedLong;
@@ -28,6 +30,8 @@ public interface Charge extends NewCharge {
   ChargeId chargeId();
 
   MandateId mandateId();
+
+  AccountId accountId();
 
   Optional<String> userAuthorizationUrl();
 
