@@ -144,7 +144,6 @@ public class XummPaymentService implements PaymentSystemFacade<XrplTransaction, 
       builder.options(Options.builder()
         .returnUrl(ReturnUrl.builder()
           .web(returnUrl)
-          .app(returnUrl)
           .build())
         .build()
       );
