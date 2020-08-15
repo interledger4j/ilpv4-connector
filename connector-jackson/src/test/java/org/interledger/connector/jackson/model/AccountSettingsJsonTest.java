@@ -55,8 +55,8 @@ public class AccountSettingsJsonTest {
       "\"ilpAddressSegment\":\"bob\"," +
       "\"connectionInitiator\":true," +
       "\"internal\":false," +
-      "\"sendRoutes\":true," +
-      "\"receiveRoutes\":true," +
+      "\"isSendRoutes\":true," +
+      "\"isReceiveRoutes\":true," +
       "\"balanceSettings\":{" +
       "\"minBalance\":null," +
       "\"settleThreshold\":null," +
@@ -90,8 +90,8 @@ public class AccountSettingsJsonTest {
       .ilpAddressSegment("foo")
       .isConnectionInitiator(true)
       .isInternal(true)
-      .sendRoutes(true)
-      .receiveRoutes(true)
+      .isSendRoutes(true)
+      .isReceiveRoutes(true)
       .balanceSettings(AccountBalanceSettings.builder()
         .minBalance(3L)
         .settleThreshold(9L)
@@ -121,8 +121,8 @@ public class AccountSettingsJsonTest {
       "\"ilpAddressSegment\":\"foo\"," +
       "\"connectionInitiator\":true," +
       "\"internal\":true," +
-      "\"sendRoutes\":true," +
-      "\"receiveRoutes\":true," +
+      "\"isSendRoutes\":true," +
+      "\"isReceiveRoutes\":true," +
       "\"balanceSettings\":{" +
       "\"minBalance\":\"3\"," +
       "\"settleThreshold\":\"9\"," +

@@ -164,7 +164,7 @@ public interface AccountSettings {
    *
    * @return {code true} if this account should send routes to the peer; {@code false} otherwise.
    */
-  default boolean sendRoutes() {
+  default boolean isSendRoutes() {
     return this.isPeerAccount() || this.isChildAccount();
   }
 
@@ -175,7 +175,7 @@ public interface AccountSettings {
    *
    * @return {code true} if this account should accept routes from the peer; {@code false} otherwise.
    */
-  default boolean receiveRoutes() {
+  default boolean isReceiveRoutes() {
     return this.isPeerAccount() || this.isParentAccount();
   }
 
@@ -286,14 +286,14 @@ public interface AccountSettings {
     @Value.Default
     @Override
     @JsonProperty("sendRoutes")
-    public boolean sendRoutes() {
+    public boolean isSendRoutes() {
       return this.isPeerAccount() || this.isChildAccount();
     }
 
     @Value.Default
     @Override
     @JsonProperty("receiveRoutes")
-    public boolean receiveRoutes() {
+    public boolean isReceiveRoutes() {
       return this.isPeerAccount() || this.isParentAccount();
     }
 

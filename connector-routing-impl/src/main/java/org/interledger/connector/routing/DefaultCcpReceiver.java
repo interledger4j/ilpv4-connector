@@ -204,7 +204,7 @@ public class DefaultCcpReceiver implements CcpReceiver {
       .data(serializeCcpPacket(request))
       .build();
 
-    // Link handles retry, if any...d
+    // Link handles retry, if any...
     try {
       logger.info(
         "Sending Ccp RouteControl Request to peer={} url={} CcpRouteControlRequest={} InterledgerPreparePacket={}",

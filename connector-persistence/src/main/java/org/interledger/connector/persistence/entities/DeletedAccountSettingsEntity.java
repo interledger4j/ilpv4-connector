@@ -113,8 +113,8 @@ public class DeletedAccountSettingsEntity extends AbstractEntity {
     this.rateLimitSettings = accountSettings.getRateLimitSettings();
     this.settlementEngineDetails = accountSettings.getSettlementEngineDetailsEntity();
 
-    this.sendRoutes = accountSettings.sendRoutes();
-    this.receiveRoutes = accountSettings.receiveRoutes();
+    this.sendRoutes = accountSettings.isSendRoutes();
+    this.receiveRoutes = accountSettings.isReceiveRoutes();
     this.customSettings = accountSettings.getCustomSettings();
   }
 
@@ -234,7 +234,7 @@ public class DeletedAccountSettingsEntity extends AbstractEntity {
     this.settlementEngineDetails = settlementEngineDetails;
   }
 
-  public boolean sendRoutes() {
+  public boolean isSendRoutes() {
     return sendRoutes;
   }
 
@@ -242,7 +242,7 @@ public class DeletedAccountSettingsEntity extends AbstractEntity {
     this.sendRoutes = sendRoutes;
   }
 
-  public boolean receiveRoutes() {
+  public boolean isReceiveRoutes() {
     return receiveRoutes;
   }
 

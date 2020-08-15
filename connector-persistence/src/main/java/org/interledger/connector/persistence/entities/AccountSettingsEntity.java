@@ -120,8 +120,8 @@ public class AccountSettingsEntity extends AbstractEntity {
     this.settlementEngineDetails =
       accountSettings.settlementEngineDetails().map(SettlementEngineDetailsEntity::new).orElse(null);
 
-    this.sendRoutes = accountSettings.sendRoutes();
-    this.receiveRoutes = accountSettings.receiveRoutes();
+    this.sendRoutes = accountSettings.isSendRoutes();
+    this.receiveRoutes = accountSettings.isReceiveRoutes();
     this.customSettings = accountSettings.customSettings();
   }
 
@@ -249,7 +249,7 @@ public class AccountSettingsEntity extends AbstractEntity {
     this.settlementEngineDetails = settlementEngineDetails;
   }
 
-  public boolean sendRoutes() {
+  public boolean isSendRoutes() {
     return sendRoutes;
   }
 
@@ -257,7 +257,7 @@ public class AccountSettingsEntity extends AbstractEntity {
     this.sendRoutes = sendRoutes;
   }
 
-  public boolean receiveRoutes() {
+  public boolean isReceiveRoutes() {
     return receiveRoutes;
   }
 

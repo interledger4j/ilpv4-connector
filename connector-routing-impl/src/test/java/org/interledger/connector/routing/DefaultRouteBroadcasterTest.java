@@ -265,8 +265,8 @@ public class DefaultRouteBroadcasterTest {
       .description("Test Account")
       .accountRelationship(AccountRelationship.CHILD)
       .linkType(LoopbackLink.LINK_TYPE)
-      .sendRoutes(sendRoutes)
-      .receiveRoutes(receiveRoutes)
+      .isSendRoutes(sendRoutes)
+      .isReceiveRoutes(receiveRoutes)
       .build();
 
   }

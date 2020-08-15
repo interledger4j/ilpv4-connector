@@ -47,8 +47,8 @@ public class AccountSettingsEntityConverter implements Converter<AccountSettings
       .linkType(accountSettingsEntity.getLinkType())
       .accountRelationship(accountSettingsEntity.getAccountRelationship())
       .ilpAddressSegment(accountSettingsEntity.getIlpAddressSegment())
-      .sendRoutes(accountSettingsEntity.sendRoutes())
-      .receiveRoutes(accountSettingsEntity.receiveRoutes())
+      .isSendRoutes(accountSettingsEntity.isSendRoutes())
+      .isReceiveRoutes(accountSettingsEntity.isReceiveRoutes())
       .putAllCustomSettings(accountSettingsEntity.getCustomSettings());
 
     accountSettingsEntity.getMaximumPacketAmount()

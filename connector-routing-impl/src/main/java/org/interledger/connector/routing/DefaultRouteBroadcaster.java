@@ -87,9 +87,9 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
     final AccountId accountId = accountSettings.accountId();
 
     // The account described by accountSettings sends routes to its peer (e.g., a `CHILD` or `PEER` account)
-    final boolean sendRoutes = accountSettings.sendRoutes();
+    final boolean sendRoutes = accountSettings.isSendRoutes();
     // The account described by accountSettings receives routes from its peer (e.g., a `PARENT` or `PEER` account)
-    final boolean receiveRoutes = accountSettings.receiveRoutes();
+    final boolean receiveRoutes = accountSettings.isReceiveRoutes();
     if (!sendRoutes && !receiveRoutes) {
       logger.warn("Not sending nor receiving routes for peer. accountId={}", accountId);
       return Optional.empty();

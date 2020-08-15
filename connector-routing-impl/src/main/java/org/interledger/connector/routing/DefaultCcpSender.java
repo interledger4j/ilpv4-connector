@@ -94,9 +94,9 @@ public class DefaultCcpSender implements CcpSender {
 
     // Because a CcpSender only operates for a single peer, we only need a single thread. This is preferable to using a
     // shared thread-pool for all senders because it is not expected that there will be _many_ `CHILD` or `PEER`
-    // accounts requesting route-updates (generally, a CHILD/PEER getting route updates should be business partner of
-    // this Connector. For Connectors that have _many_ CHILD accounts via online setup (e.g., the Xpring testnet),
-    // then these types of accounts should not need to receive routing updates (this assumption may be revisited in
+    // accounts requesting route-updates (generally, a CHILD/PEER getting route updates should be a business partner of
+    // this Connector). For Connectors that have _many_ CHILD accounts via online setup (e.g., the Xpring testnet),
+    // these types of accounts should not need to receive routing updates (this assumption may be revisited in
     // the future depending on real-world use-cases).
     this.scheduler = new ConcurrentTaskScheduler(Executors.newSingleThreadScheduledExecutor());
   }

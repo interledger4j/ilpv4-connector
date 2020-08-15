@@ -203,8 +203,8 @@ public class DefaultAccountManager implements AccountManager {
         entity.setRateLimitSettings(
           new AccountRateLimitSettingsEntity(updatedSettings.rateLimitSettings())
         );
-        entity.setReceiveRoutes(updatedSettings.receiveRoutes());
-        entity.setSendRoutes(updatedSettings.sendRoutes());
+        entity.setReceiveRoutes(updatedSettings.isReceiveRoutes());
+        entity.setSendRoutes(updatedSettings.isSendRoutes());
 
         AccountSettingsEntity saved = accountSettingsRepository.save(entity);
         eventBus.post(AccountUpdatedEvent.builder().accountId(saved.getAccountId()).build());

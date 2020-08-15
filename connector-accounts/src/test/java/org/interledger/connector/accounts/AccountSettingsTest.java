@@ -26,8 +26,8 @@ public class AccountSettingsTest {
       .assetScale(9)
       .build();
 
-    assertThat(accountSettings.sendRoutes()).isTrue();
-    assertThat(accountSettings.receiveRoutes()).isFalse();
+    assertThat(accountSettings.isSendRoutes()).isTrue();
+    assertThat(accountSettings.isReceiveRoutes()).isFalse();
   }
 
   // NOTE: This test validates the method in the interface.
@@ -35,8 +35,8 @@ public class AccountSettingsTest {
   public void testDefaultChildSettingsOnInterface() {
     final AccountSettings accountSettings = this.asInterface(AccountRelationship.CHILD);
 
-    assertThat(accountSettings.sendRoutes()).isTrue();
-    assertThat(accountSettings.receiveRoutes()).isFalse();
+    assertThat(accountSettings.isSendRoutes()).isTrue();
+    assertThat(accountSettings.isReceiveRoutes()).isFalse();
   }
 
   // NOTE: This test validates the method in the abstract base-class.
@@ -50,8 +50,8 @@ public class AccountSettingsTest {
       .assetScale(9)
       .build();
 
-    assertThat(accountSettings.sendRoutes()).isTrue();
-    assertThat(accountSettings.receiveRoutes()).isTrue();
+    assertThat(accountSettings.isSendRoutes()).isTrue();
+    assertThat(accountSettings.isReceiveRoutes()).isTrue();
   }
 
   // NOTE: This test validates the method in the interface.
@@ -59,8 +59,8 @@ public class AccountSettingsTest {
   public void testDefaultPeerSettingsOnInterface() {
     final AccountSettings accountSettings = this.asInterface(AccountRelationship.PEER);
 
-    assertThat(accountSettings.sendRoutes()).isTrue();
-    assertThat(accountSettings.receiveRoutes()).isTrue();
+    assertThat(accountSettings.isSendRoutes()).isTrue();
+    assertThat(accountSettings.isReceiveRoutes()).isTrue();
   }
 
   // NOTE: This test validates the method in the abstract base-class.
@@ -74,8 +74,8 @@ public class AccountSettingsTest {
       .assetScale(9)
       .build();
 
-    assertThat(accountSettings.sendRoutes()).isFalse();
-    assertThat(accountSettings.receiveRoutes()).isTrue();
+    assertThat(accountSettings.isSendRoutes()).isFalse();
+    assertThat(accountSettings.isReceiveRoutes()).isTrue();
   }
 
   // NOTE: This test validates the method in the interface.
@@ -83,8 +83,8 @@ public class AccountSettingsTest {
   public void testDefaultParentSettingsOnInterface() {
     final AccountSettings accountSettings = this.asInterface(AccountRelationship.PARENT);
 
-    assertThat(accountSettings.sendRoutes()).isFalse();
-    assertThat(accountSettings.receiveRoutes()).isTrue();
+    assertThat(accountSettings.isSendRoutes()).isFalse();
+    assertThat(accountSettings.isReceiveRoutes()).isTrue();
   }
 
   private AccountSettings asInterface(final AccountRelationship accountRelationship) {

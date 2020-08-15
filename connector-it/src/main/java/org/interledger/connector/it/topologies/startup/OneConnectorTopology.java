@@ -136,8 +136,8 @@ public class OneConnectorTopology extends AbstractTopology {
       .assetCode("XRP")
       .assetScale(6)
       .accountRelationship(AccountRelationship.PEER)
-      .sendRoutes(true)
-      .receiveRoutes(true)
+      .isSendRoutes(true)
+      .isReceiveRoutes(true)
       .linkType(IlpOverHttpLink.LINK_TYPE)
       .customSettings(
         ImmutableMap.<String, String>builder()

@@ -203,7 +203,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
         // If the account is not eligible for sending route updates, or the account doesn't exist, then
         // preemptively reject this request.
-        final boolean preemptivelyReject = sourceAccountSettings.sendRoutes() == SENDING_NOT_ENABLED;
+        final boolean preemptivelyReject = sourceAccountSettings.isSendRoutes() == SENDING_NOT_ENABLED;
         if (preemptivelyReject) {
           return packetRejector.reject(
               LinkId.of(sourceAccountSettings.accountId().value()),
@@ -237,7 +237,7 @@ public class PeerProtocolPacketFilter extends AbstractPacketFilter implements Pa
 
         // If the account is not eligible for receiving route updates, or the account doesn't exist, then
         // preemptively reject this request.
-        final boolean preemptiveReject = sourceAccountSettings.receiveRoutes() == RECEIVING_NOT_ENABLED;
+        final boolean preemptiveReject = sourceAccountSettings.isReceiveRoutes() == RECEIVING_NOT_ENABLED;
         if (preemptiveReject) {
           return packetRejector.reject(
               LinkId.of(sourceAccountSettings.accountId().value()),
