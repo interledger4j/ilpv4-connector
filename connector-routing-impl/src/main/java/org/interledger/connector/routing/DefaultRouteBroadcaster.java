@@ -86,9 +86,9 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
 
     final AccountId accountId = accountSettings.accountId();
 
-    // The account described by accountSettings sends routes to its peer (e.g., a `CHILD` or `PEER` account)
+    // The account described by accountSettings sends routes to its peer.
     final boolean sendRoutes = accountSettings.isSendRoutes();
-    // The account described by accountSettings receives routes from its peer (e.g., a `PARENT` or `PEER` account)
+    // The account described by accountSettings receives routes from its peer.
     final boolean receiveRoutes = accountSettings.isReceiveRoutes();
     if (!sendRoutes && !receiveRoutes) {
       logger.warn("Not sending nor receiving routes for peer. accountId={}", accountId);
@@ -100,9 +100,9 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
           // Every time we reconnect, we'll send a new route control message to make sure they are still sending us
           // routes, but only as long as receiving is enabled.
           if (receiveRoutes) {
-            // Use the executorService to run this task outside of the main thread. In the case where we have _many_
-            // receivers (e.g., many peer/child accounts, we don't want a single thread-per-receiver. Instead, we use
-            // a single threadpool for all routing.
+            // Use the executorService to run this task outside of the main thread. For example, in the case where we
+            // have _many_ route sending peers, we don't want a single thread-per-receiver. Instead, we use a single
+            // threadpool for all routing.
             this.executorService.submit(() -> existingPeer.ccpReceiver().sendRouteControl());
           }
           logger.warn("CCP Peer already registered with RouteBroadcaster using AccountId=`{}`", accountId);
@@ -127,9 +127,9 @@ public class DefaultRouteBroadcaster implements RouteBroadcaster {
           // Send a RoutControl request to the remote peer, but only if this Connector should receive routes from
           // that peer.
           if (receiveRoutes) {
-            // Use the executorService to run this task outside of the main thread. In the case where we have _many_
-            // receivers (e.g., many peer/child accounts, we don't want a single thread-per-receiver. Instead, we use
-            // a single threadpool for all routing.
+            // Use the executorService to run this task outside of the main thread. For example, in the case where we
+            // have _many_ route sending peers, we don't want a single thread-per-receiver. Instead, we use a single
+            // threadpool for all routing.
             this.executorService.submit(() -> newPeerAccount.ccpReceiver().sendRouteControl());
           }
 

@@ -55,8 +55,8 @@ public class AccountSettingsJsonTest {
       "\"ilpAddressSegment\":\"bob\"," +
       "\"connectionInitiator\":true," +
       "\"internal\":false," +
-      "\"isSendRoutes\":true," +
-      "\"isReceiveRoutes\":true," +
+      "\"sendRoutes\":true," +
+      "\"receiveRoutes\":true," +
       "\"balanceSettings\":{" +
       "\"minBalance\":null," +
       "\"settleThreshold\":null," +
@@ -121,8 +121,8 @@ public class AccountSettingsJsonTest {
       "\"ilpAddressSegment\":\"foo\"," +
       "\"connectionInitiator\":true," +
       "\"internal\":true," +
-      "\"isSendRoutes\":true," +
-      "\"isReceiveRoutes\":true," +
+      "\"sendRoutes\":true," +
+      "\"receiveRoutes\":true," +
       "\"balanceSettings\":{" +
       "\"minBalance\":\"3\"," +
       "\"settleThreshold\":\"9\"," +

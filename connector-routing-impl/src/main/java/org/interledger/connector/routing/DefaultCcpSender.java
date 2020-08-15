@@ -93,11 +93,11 @@ public class DefaultCcpSender implements CcpSender {
     this.lastKnownRoutingTableId = new AtomicReference<>(RoutingTableId.of(UUID.randomUUID()));
 
     // Because a CcpSender only operates for a single peer, we only need a single thread. This is preferable to using a
-    // shared thread-pool for all senders because it is not expected that there will be _many_ `CHILD` or `PEER`
-    // accounts requesting route-updates (generally, a CHILD/PEER getting route updates should be a business partner of
-    // this Connector). For Connectors that have _many_ CHILD accounts via online setup (e.g., the Xpring testnet),
-    // these types of accounts should not need to receive routing updates (this assumption may be revisited in
-    // the future depending on real-world use-cases).
+    // shared thread-pool for ALL senders because it is not expected that there will be _many_ `PEER` accounts
+    // requesting route-updates (E.g., generally a PEER getting route updates should be a business partner of
+    // this Connector as opposed to an account that the public at-large can merely sign-up for). Also, PARENT and
+    // CHILD accounts should typically not receive route-updates nor request them from this connector (this assumption
+    // may be revisited in the future depending on real-world use-cases).
     this.scheduler = new ConcurrentTaskScheduler(Executors.newSingleThreadScheduledExecutor());
   }
 
