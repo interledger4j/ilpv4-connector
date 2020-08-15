@@ -29,6 +29,8 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
@@ -52,6 +54,8 @@ public class DefaultRouteBroadcasterTest {
   private LinkManager linkManagerMock;
   @Mock
   private Link link;
+  @Mock
+  private ExecutorService executorServiceMock;
 
   private DefaultRouteBroadcaster defaultRouteBroadcaster;
 
@@ -98,7 +102,7 @@ public class DefaultRouteBroadcasterTest {
       outgoingRoutingTableMock,
       accountSettingsRepositoryMock,
       linkManagerMock,
-      Executors.newSingleThreadExecutor()
+      executorServiceMock
     );
   }
 
@@ -121,7 +125,9 @@ public class DefaultRouteBroadcasterTest {
       .thenReturn(Optional.of(accountSettings));
 
     assertThat(defaultRouteBroadcaster.registerCcpEnabledAccount(ACCOUNT_ID_1)).isEmpty();
-    Mockito.verifyNoInteractions(link); // Route control should not be initiated.
+    // Route control should not be initiated.
+    Mockito.verifyNoInteractions(link);
+    Mockito.verifyNoInteractions(executorServiceMock);
   }
 
   // true / false
@@ -137,7 +143,9 @@ public class DefaultRouteBroadcasterTest {
 
     final RoutableAccount routableAccount = optRoutableAccount.get();
     assertThat(routableAccount.accountId()).isEqualTo(ACCOUNT_ID_1);
-    Mockito.verifyNoInteractions(link); // Route control should not be initiated.
+    // Route control should not be initiated.
+    Mockito.verifyNoInteractions(link);
+    Mockito.verifyNoInteractions(executorServiceMock);
   }
 
   // false / true
@@ -153,8 +161,10 @@ public class DefaultRouteBroadcasterTest {
 
     final RoutableAccount routableAccount = optRoutableAccount.get();
     assertThat(routableAccount.accountId()).isEqualTo(ACCOUNT_ID_1);
-    Mockito.verify(link).sendPacket(any()); // Route control should  be initiated.
-    Mockito.verifyNoMoreInteractions(link);
+    // Route control should  be initiated, but it will be via submission to the executorService.
+    Mockito.verifyNoInteractions(link);
+    Mockito.verify(executorServiceMock).submit(Mockito.<Callable>any());
+    Mockito.verifyNoMoreInteractions(executorServiceMock);
   }
 
   // true / true
@@ -170,8 +180,11 @@ public class DefaultRouteBroadcasterTest {
 
     final RoutableAccount routableAccount = optRoutableAccount.get();
     assertThat(routableAccount.accountId()).isEqualTo(ACCOUNT_ID_1);
-    Mockito.verify(link).sendPacket(any()); // Route control should  be initiated.
-    Mockito.verifyNoMoreInteractions(link);
+
+    // Route control should  be initiated, but it will be via submission to the executorService.
+    Mockito.verifyNoInteractions(link);
+    Mockito.verify(executorServiceMock).submit(Mockito.<Callable>any());
+    Mockito.verifyNoMoreInteractions(executorServiceMock);
   }
 
   @Test
@@ -188,8 +201,10 @@ public class DefaultRouteBroadcasterTest {
 
     final RoutableAccount routableAccount = optRoutableAccount.get();
     assertThat(routableAccount.accountId()).isEqualTo(ACCOUNT_ID_1);
-    Mockito.verify(link, times(2)).sendPacket(any()); // Route control should  be initiated.
-    Mockito.verifyNoMoreInteractions(link);
+    // Route control should  be initiated, but it will be via submission to the executorService.
+    Mockito.verifyNoInteractions(link);
+    Mockito.verify(executorServiceMock, times(2)).submit(Mockito.<Callable>any());
+    Mockito.verifyNoMoreInteractions(executorServiceMock);
   }
 
   @Test
@@ -206,7 +221,9 @@ public class DefaultRouteBroadcasterTest {
 
     final RoutableAccount routableAccount = optRoutableAccount.get();
     assertThat(routableAccount.accountId()).isEqualTo(ACCOUNT_ID_1);
-    Mockito.verifyNoInteractions(link); // Route control should not be initiated.
+    // Route control should not be initiated.
+    Mockito.verifyNoInteractions(link);
+    Mockito.verifyNoInteractions(executorServiceMock);
   }
 
   @Test
