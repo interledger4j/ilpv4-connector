@@ -8,6 +8,7 @@ import org.interledger.connector.ccp.CcpRouteUpdateRequest;
 import org.interledger.connector.ccp.CcpSyncMode;
 import org.interledger.connector.ccp.CcpWithdrawnRoute;
 import org.interledger.connector.ccp.ImmutableCcpRouteControlRequest;
+import org.interledger.connector.link.CircuitBreakingLink;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerErrorCode;
@@ -203,19 +204,12 @@ public class DefaultCcpReceiver implements CcpReceiver {
       .data(serializeCcpPacket(request))
       .build();
 
-    final String outgoingUrl;
-    if (IlpOverHttpLink.class.isAssignableFrom(link.getClass())) {
-      outgoingUrl = ((IlpOverHttpLink) link).getOutgoingUrl().toString();
-    } else {
-      outgoingUrl = "n/a";
-    }
-
     // Link handles retry, if any...d
     try {
       logger.info(
         "Sending Ccp RouteControl Request to peer={} url={} CcpRouteControlRequest={} InterledgerPreparePacket={}",
         this.peerAccountId,
-        outgoingUrl,
+        this.getOutgoingUrl(link),
         request,
         preparePacket
       );
@@ -321,5 +315,26 @@ public class DefaultCcpReceiver implements CcpReceiver {
       .add("epoch=" + epoch)
       .add("routingTableExpiry=" + routingTableExpiry)
       .toString();
+  }
+
+  /**
+   * Determines if a particular link has a URL inside of it, for logging purposes.
+   *
+   * @param link A {@link Link} to determine the class-type of.
+   *
+   * @return {@code true} if the link has a URL; {@code false} otherwise.
+   */
+  private String getOutgoingUrl(final Link link) {
+    Objects.requireNonNull(link);
+
+    if (IlpOverHttpLink.class.isAssignableFrom(link.getClass())) {
+      return ((IlpOverHttpLink) link).getOutgoingUrl().toString();
+    } else if (CircuitBreakingLink.class.isAssignableFrom(link.getClass())) {
+      final CircuitBreakingLink circuitBreakingLink = (CircuitBreakingLink) link;
+      if (IlpOverHttpLink.class.isAssignableFrom(circuitBreakingLink.getLinkDelegateTyped().getClass())) {
+        return circuitBreakingLink.<IlpOverHttpLink>getLinkDelegateTyped().getOutgoingUrl().toString();
+      }
+    }
+    return "n/a";
   }
 }
