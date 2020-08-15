@@ -1,7 +1,18 @@
 # These setting MUST be overridden in order for the docker-based Postgres and Redis ITs to work properly.
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    ROOT: INFO
+    com: INFO
+    org.springframework.boot: INFO
+    org.springframework.web: INFO
+    org.hibernate: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.engine: WARN
+
 spring:
   profiles:
-    include: insecure, migrate, management
+    include: insecure, migrate
   datasource:
     url: jdbc:postgresql://localhost:35432/connector
     username: connector

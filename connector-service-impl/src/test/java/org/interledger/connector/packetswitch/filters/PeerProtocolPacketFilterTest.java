@@ -135,8 +135,8 @@ public class PeerProtocolPacketFilterTest {
     when(accountSettingsMock.accountId()).thenReturn(ACCOUNT_ID);
     when(accountSettingsMock.assetScale()).thenReturn(9);
     when(accountSettingsMock.assetCode()).thenReturn("XRP");
-    when(accountSettingsMock.isSendRoutes()).thenReturn(sendRoutesEnabled);
-    when(accountSettingsMock.isReceiveRoutes()).thenReturn(receiveRoutesEnabled);
+    when(accountSettingsMock.sendRoutes()).thenReturn(sendRoutesEnabled);
+    when(accountSettingsMock.receiveRoutes()).thenReturn(receiveRoutesEnabled);
 
     when(connectorSettingsMock.toChildAddress(ACCOUNT_ID)).thenReturn(OPERATOR_ADDRESS);
 

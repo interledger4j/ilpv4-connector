@@ -146,6 +146,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
@@ -399,7 +401,8 @@ public class SpringConnectorConfig {
       ccpCodecContext,
       outgoingRoutingTable,
       accountSettingsRepository,
-      linkManager
+      linkManager,
+      Executors.newFixedThreadPool(4)
     );
   }
 

@@ -115,7 +115,7 @@ interledger:
       # This is applied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
       # otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If
       # unspecified, defaults to 10000.
-      # readTimeoutMillis: 10000
+      # readTimeoutMillis: 30000
       # Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1
       # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
       # writeTimeoutMillis: 30000
@@ -129,9 +129,9 @@ interledger:
       # This is applied to both the TCP socket and for individual read IO operations. A value of 0 means no timeout,
       # otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted to milliseconds.  If
       # unspecified, defaults to 10.
-      # readTimeoutMillis: 60000
+      # readTimeoutMillis: 30000
       # Applied to individual write IO operations. A value of 0 means no timeout, otherwise values must be between 1
       # and {@link Integer#MAX_VALUE} when converted to milliseconds. If unspecified, defaults to 10.
-      # writeTimeoutMillis: 60000
+      # writeTimeoutMillis: 30000
       # maxIdleConnections: 5
       # keepAliveMinutes: 5

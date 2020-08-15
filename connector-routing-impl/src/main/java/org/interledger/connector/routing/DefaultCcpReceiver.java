@@ -18,6 +18,7 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.link.Link;
 import org.interledger.link.exceptions.LinkException;
+import org.interledger.link.http.IlpOverHttpLink;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -32,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -201,11 +203,18 @@ public class DefaultCcpReceiver implements CcpReceiver {
       .data(serializeCcpPacket(request))
       .build();
 
-    // Link handles retry, if any...
+    final String outgoingUrl;
+    if (IlpOverHttpLink.class.isAssignableFrom(link.getClass())) {
+      outgoingUrl = ((IlpOverHttpLink) link).getOutgoingUrl().toString();
+    } else {
+      outgoingUrl = "n/a";
+    }
+
+    // Link handles retry, if any...d
     try {
       logger.info(
-        "Sending Ccp RouteControl Request to peer={}." +
-          " CcpRouteControlRequest={} InterledgerPreparePacket={}",
+        "Sending Ccp RouteControl Request to peer={} url={} CcpRouteControlRequest={} InterledgerPreparePacket={}",
+        outgoingUrl,
         this.peerAccountId,
         request,
         preparePacket
@@ -301,5 +310,16 @@ public class DefaultCcpReceiver implements CcpReceiver {
   @VisibleForTesting
   protected Instant getRoutingTableExpiry() {
     return this.routingTableExpiry;
+  }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", DefaultCcpReceiver.class.getSimpleName() + "[", "]")
+      .add("peerAccountId=" + peerAccountId)
+      .add("link=" + link)
+      .add("routingTableId=" + routingTableId)
+      .add("epoch=" + epoch)
+      .add("routingTableExpiry=" + routingTableExpiry)
+      .toString();
   }
 }
