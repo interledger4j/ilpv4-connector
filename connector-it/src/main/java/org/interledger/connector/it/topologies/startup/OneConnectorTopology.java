@@ -45,6 +45,9 @@ public class OneConnectorTopology extends AbstractTopology {
   public static final int NUM_ACCOUNTS = 500;
   private static final Logger LOGGER = LoggerFactory.getLogger(OneConnectorTopology.class);
 
+  // The first time the Topology is started, this will be true. Otherwise, this will be false.
+  private static volatile boolean firstTimeStarted = true;
+
   /**
    * In this topology, each Connector starts-up with no explicit knowledge of the other.
    *
@@ -56,13 +59,22 @@ public class OneConnectorTopology extends AbstractTopology {
       new AbstractBaseTopology.PostConstructListener<Topology>() {
         @Override
         protected void doAfterTopologyStartup(Topology g) {
-          final ConnectorServerNode aliceServerNode =
-            g.getNode(ALICE_CONNECTOR_ADDRESS.getValue(), ConnectorServerNode.class);
+          final ConnectorServerNode aliceServerNode = g.getNode(
+            ALICE_CONNECTOR_ADDRESS.getValue(), ConnectorServerNode.class
+          );
 
-          // Delete all accounts before initializing the Topology otherwise we see sporadic CI build failures when
-          // building on Postgres. This includes the "ping" account so that ping balances get reset from Topology to
-          // Topology.
-          if (aliceServerNode.getILPv4Connector().getAccountSettingsRepository().count() < 20) {
+          if (firstTimeStarted) {
+            // Delete all accounts before initializing the Topology otherwise we see sporadic CI build failures when
+            // building on Postgres. This includes the "ping" account so that ping balances get reset from Topology to
+            // Topology.
+            LOGGER.info(
+              "About to delete {} accounts...",
+              aliceServerNode.getILPv4Connector().getAccountSettingsRepository().count()
+            );
+            aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
+            LOGGER.info("All accounts deleted.");
+            firstTimeStarted = false;
+          } else {
             LOGGER.info("About to create {} test accounts!", NUM_ACCOUNTS);
             for (int i = 0; i < NUM_ACCOUNTS; i++) {
               final AccountSettings accountSettings = constructAccountSettingsWithRoutingEnabled().build();
