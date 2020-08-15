@@ -6,6 +6,7 @@ import static org.interledger.connector.it.topologies.startup.OneConnectorTopolo
 
 import org.interledger.connector.ILPv4Connector;
 import org.interledger.connector.it.AbstractIT;
+import org.interledger.connector.it.ContainerHelper;
 import org.interledger.connector.it.markers.Performance;
 import org.interledger.connector.it.topologies.startup.OneConnectorTopology;
 import org.interledger.connector.it.topology.Topology;
@@ -20,6 +21,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +45,8 @@ import java.util.concurrent.TimeUnit;
 public class ConnectorStartupTestIT extends AbstractIT {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ConnectorStartupTestIT.class);
-
+  private static final Network network = Network.newNetwork();
+  private static GenericContainer redis = ContainerHelper.redis(network);
   private static Topology topology = OneConnectorTopology.init();
   private static long elapsedStartupTime;
 
@@ -50,7 +54,7 @@ public class ConnectorStartupTestIT extends AbstractIT {
 
   @BeforeClass
   public static void startTopology() throws IOException {
-
+    redis.start();
     topology.start(); // To load accounts
     topology.stop(); // To restart (for the timing test).
 
@@ -65,18 +69,22 @@ public class ConnectorStartupTestIT extends AbstractIT {
     }
     server.start(9000);
 
-    LOGGER.info("Initializing topology `{}`...", topology.toString());
+    LOGGER.info("Beginning Startup timer for Topology: `{}`...", topology.toString());
     final long startTime = System.nanoTime();
     topology.start(); // Start a 2nd time to actually collect the elapsedStartupTime with accounts present.
     final long endTime = System.nanoTime();
     elapsedStartupTime = endTime - startTime;
-    LOGGER.info("Topology `{}` initialized.", topology.toString());
+    LOGGER.info(
+      "Topology `{}` started in {}s.",
+      topology.toString(), TimeUnit.SECONDS.convert(elapsedStartupTime, TimeUnit.NANOSECONDS)
+    );
   }
 
   @AfterClass
   public static void stopTopology() {
     LOGGER.info("Stopping Topology `{}`...", topology.toString());
     topology.stop();
+    redis.stop();
     LOGGER.info("Topology `{}` stopped.", topology.toString());
   }
 
@@ -89,14 +97,14 @@ public class ConnectorStartupTestIT extends AbstractIT {
   @Test
   public void testConnectorStartupTime() {
     // Should be enough startup time, even on a slow CI. If this test were to be failing/incorrectly written, it would
-    // hang for hours so even a modest alotment here is good enough to validate the fix for #666.
+    // hang for hours so even a modest allotment here is good enough to validate the fix for #666.
     final long minElapsedStartupTime = 60000L; // 1 min should be enough.
     getLogger().info(
-      "MIN elapsed server startup time: {}", TimeUnit.SECONDS.convert(minElapsedStartupTime, TimeUnit.NANOSECONDS)
+      "MIN elapsed server startup time: {}s", TimeUnit.SECONDS.convert(minElapsedStartupTime, TimeUnit.MILLISECONDS)
     );
 
     long elapsedStartupTimeSeconds = TimeUnit.SECONDS.convert(elapsedStartupTime, TimeUnit.NANOSECONDS);
-    getLogger().info("ACTUAL elapsed server startup time: {}", elapsedStartupTimeSeconds);
+    getLogger().info("ACTUAL elapsed server startup time: {}s", elapsedStartupTimeSeconds);
 
     assertThat(elapsedStartupTimeSeconds).isLessThan(minElapsedStartupTime);
   }

@@ -62,13 +62,14 @@ public class OneConnectorTopology extends AbstractTopology {
           // Delete all accounts before initializing the Topology otherwise we see sporadic CI build failures when
           // building on Postgres. This includes the "ping" account so that ping balances get reset from Topology to
           // Topology.
-          aliceServerNode.getILPv4Connector().getAccountSettingsRepository().deleteAll();
-          LOGGER.info("About to create {} test accounts!", NUM_ACCOUNTS);
-          for (int i = 0; i < NUM_ACCOUNTS; i++) {
-            final AccountSettings accountSettings = constructAccountSettingsWithRoutingEnabled().build();
-            aliceServerNode.getILPv4Connector().getAccountManager().createAccount(accountSettings);
+          if (aliceServerNode.getILPv4Connector().getAccountSettingsRepository().count() < 20) {
+            LOGGER.info("About to create {} test accounts!", NUM_ACCOUNTS);
+            for (int i = 0; i < NUM_ACCOUNTS; i++) {
+              final AccountSettings accountSettings = constructAccountSettingsWithRoutingEnabled().build();
+              aliceServerNode.getILPv4Connector().getAccountManager().createAccount(accountSettings);
+            }
+            LOGGER.info("Created {} test accounts!", NUM_ACCOUNTS);
           }
-          LOGGER.info("Created {} test accounts!", NUM_ACCOUNTS);
         }
       });
 

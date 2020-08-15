@@ -214,8 +214,8 @@ public class DefaultCcpReceiver implements CcpReceiver {
     try {
       logger.info(
         "Sending Ccp RouteControl Request to peer={} url={} CcpRouteControlRequest={} InterledgerPreparePacket={}",
-        outgoingUrl,
         this.peerAccountId,
+        outgoingUrl,
         request,
         preparePacket
       );

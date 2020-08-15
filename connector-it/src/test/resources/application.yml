@@ -21,7 +21,7 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQL10Dialect
     properties:
       hibernate:
-        show_sql: true
+        show_sql: false
         use_sql_comments: true
         format_sql: true
   cloud:
