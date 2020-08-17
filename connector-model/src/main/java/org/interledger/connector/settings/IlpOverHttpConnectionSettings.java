@@ -37,13 +37,13 @@ public interface IlpOverHttpConnectionSettings {
   /**
    * Applied when connecting a TCP socket to the target host. A value of 0 means no
    * timeout, otherwise values must be between 1 and {@link Integer#MAX_VALUE} when
-   * converted to milliseconds. If unspecified, defaults to 10000.
+   * converted to milliseconds. If unspecified, defaults to 1000.
    *
    * @return connect timeout duration in milliseconds
    */
   @Value.Default
   default long connectTimeoutMillis() {
-    return 10000;
+    return 1000;
   }
 
   /**
