@@ -7,7 +7,7 @@
   <parent>
     <groupId>org.interledger.connector</groupId>
     <artifactId>connector-parent</artifactId>
-    <version>0.5.1</version>
+    <version>0.5.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>connector-server</artifactId>
