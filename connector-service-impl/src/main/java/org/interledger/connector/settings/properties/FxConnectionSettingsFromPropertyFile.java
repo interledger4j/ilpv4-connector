@@ -10,9 +10,9 @@ public class FxConnectionSettingsFromPropertyFile implements FxConnectionSetting
 
   private long connectTimeoutMillis = 1000;
 
-  private long readTimeoutMillis = 60000;
+  private long readTimeoutMillis = 30000;
 
-  private long writeTimeoutMillis = 60000;
+  private long writeTimeoutMillis = 30000;
 
   @Override
   public int maxIdleConnections() {
