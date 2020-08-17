@@ -8,6 +8,7 @@ import org.interledger.connector.ccp.CcpRouteUpdateRequest;
 import org.interledger.connector.ccp.CcpSyncMode;
 import org.interledger.connector.ccp.CcpWithdrawnRoute;
 import org.interledger.connector.ccp.ImmutableCcpRouteControlRequest;
+import org.interledger.connector.link.CircuitBreakingLink;
 import org.interledger.connector.settings.ConnectorSettings;
 import org.interledger.core.InterledgerAddressPrefix;
 import org.interledger.core.InterledgerErrorCode;
@@ -18,6 +19,7 @@ import org.interledger.core.InterledgerResponsePacket;
 import org.interledger.encoding.asn.framework.CodecContext;
 import org.interledger.link.Link;
 import org.interledger.link.exceptions.LinkException;
+import org.interledger.link.http.IlpOverHttpLink;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -32,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -204,9 +207,9 @@ public class DefaultCcpReceiver implements CcpReceiver {
     // Link handles retry, if any...
     try {
       logger.info(
-        "Sending Ccp RouteControl Request to peer={}." +
-          " CcpRouteControlRequest={} InterledgerPreparePacket={}",
+        "Sending Ccp RouteControl Request to peer={} url={} CcpRouteControlRequest={} InterledgerPreparePacket={}",
         this.peerAccountId,
+        this.getOutgoingUrl(link),
         request,
         preparePacket
       );
@@ -301,5 +304,37 @@ public class DefaultCcpReceiver implements CcpReceiver {
   @VisibleForTesting
   protected Instant getRoutingTableExpiry() {
     return this.routingTableExpiry;
+  }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", DefaultCcpReceiver.class.getSimpleName() + "[", "]")
+      .add("peerAccountId=" + peerAccountId)
+      .add("link=" + link)
+      .add("routingTableId=" + routingTableId)
+      .add("epoch=" + epoch)
+      .add("routingTableExpiry=" + routingTableExpiry)
+      .toString();
+  }
+
+  /**
+   * Determines if a particular link has a URL inside of it, for logging purposes.
+   *
+   * @param link A {@link Link} to determine the class-type of.
+   *
+   * @return {@code true} if the link has a URL; {@code false} otherwise.
+   */
+  private String getOutgoingUrl(final Link link) {
+    Objects.requireNonNull(link);
+
+    if (IlpOverHttpLink.class.isAssignableFrom(link.getClass())) {
+      return ((IlpOverHttpLink) link).getOutgoingUrl().toString();
+    } else if (CircuitBreakingLink.class.isAssignableFrom(link.getClass())) {
+      final CircuitBreakingLink circuitBreakingLink = (CircuitBreakingLink) link;
+      if (IlpOverHttpLink.class.isAssignableFrom(circuitBreakingLink.getLinkDelegateTyped().getClass())) {
+        return circuitBreakingLink.<IlpOverHttpLink>getLinkDelegateTyped().getOutgoingUrl().toString();
+      }
+    }
+    return "n/a";
   }
 }

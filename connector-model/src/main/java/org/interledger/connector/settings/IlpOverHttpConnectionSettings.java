@@ -37,7 +37,7 @@ public interface IlpOverHttpConnectionSettings {
   /**
    * Applied when connecting a TCP socket to the target host. A value of 0 means no
    * timeout, otherwise values must be between 1 and {@link Integer#MAX_VALUE} when
-   * converted to milliseconds. If unspecified, defaults to 10000.
+   * converted to milliseconds. If unspecified, defaults to 1000.
    *
    * @return connect timeout duration in milliseconds
    */
@@ -49,25 +49,25 @@ public interface IlpOverHttpConnectionSettings {
   /**
    * Applied to both the TCP socket and for individual read IO operations. A value of
    * 0 means no timeout, otherwise values must be between 1 and {@link Integer#MAX_VALUE}
-   * when converted to milliseconds. If unspecified, defaults to 60000.
+   * when converted to milliseconds. If unspecified, defaults to 30000.
    *
    * @return connect timeout duration in milliseconds
    */
   @Value.Default
   default long readTimeoutMillis() {
-    return 60000;
+    return 30000;
   }
 
   /**
    * Applied to individual write IO operations. A value of 0 means no timeout,
    * otherwise values must be between 1 and {@link Integer#MAX_VALUE} when converted
-   * to milliseconds. If unspecified, defaults to 60000.
+   * to milliseconds. If unspecified, defaults to 30000.
    *
    * @return connect timeout duration in milliseconds
    */
   @Value.Default
   default long writeTimeoutMillis() {
-    return 60000;
+    return 30000;
   }
 
   /**

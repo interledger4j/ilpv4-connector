@@ -146,8 +146,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
 import javax.annotation.PostConstruct;
 
 /**
@@ -399,7 +401,10 @@ public class SpringConnectorConfig {
       ccpCodecContext,
       outgoingRoutingTable,
       accountSettingsRepository,
-      linkManager
+      linkManager,
+      // Four threads should be more than sufficient. We don't expect many peers with PEER routing enabled, but if
+      // there are, those requests will pile up and eventually get executed, which is fine.
+      Executors.newFixedThreadPool(4)
     );
   }
 
@@ -512,7 +517,8 @@ public class SpringConnectorConfig {
 
   @Bean
   List<LinkFilter> linkFilters(
-    BalanceTracker balanceTracker, SettlementService settlementService, MetricsService metricsService, EventBus eventBus,
+    BalanceTracker balanceTracker, SettlementService settlementService, MetricsService metricsService,
+    EventBus eventBus,
     FulfillmentGeneratedEventAggregator fulfillmentGeneratedEventAggregator) {
     final Supplier<InterledgerAddress> operatorAddressSupplier =
       () -> connectorSettingsSupplier().get().operatorAddress();
@@ -652,12 +658,13 @@ public class SpringConnectorConfig {
 
   @Bean
   protected StreamPaymentManager streamPaymentManager(Supplier<ConnectorSettings> connectorSettingsSupplier,
-                                                      StreamPaymentsRepository streamPaymentsRepository) {
+    StreamPaymentsRepository streamPaymentsRepository) {
     switch (connectorSettingsSupplier.get().enabledFeatures().streamPaymentAggregationMode()) {
-      case IN_POSTGRES: return new InDatabaseStreamPaymentManager(
-        streamPaymentsRepository,
-        new StreamPaymentFromEntityConverter(),
-        new StreamPaymentToEntityConverter());
+      case IN_POSTGRES:
+        return new InDatabaseStreamPaymentManager(
+          streamPaymentsRepository,
+          new StreamPaymentFromEntityConverter(),
+          new StreamPaymentToEntityConverter());
       default:
         return new InMemoryStreamPaymentManager();
     }
@@ -665,7 +672,8 @@ public class SpringConnectorConfig {
 
   @Bean
   protected FulfillmentGeneratedEventAggregator fulfilledTransactionAggregator(
-    StreamPaymentManager streamPaymentManager, StreamEncryptionService streamEncryptionService, CodecContext streamCodecContext) {
+    StreamPaymentManager streamPaymentManager, StreamEncryptionService streamEncryptionService,
+    CodecContext streamCodecContext) {
     return new SynchronousFulfillmentGeneratedEventAggregator(streamPaymentManager,
       new FulfillmentGeneratedEventConverter(streamEncryptionService, streamCodecContext));
   }
@@ -680,7 +688,8 @@ public class SpringConnectorConfig {
     return new SimpleExchangeRateCalculator();
   }
 
-  @Bean LocalPacketSwitchLinkFactory localPacketSwitchLinkFactory(ILPv4PacketSwitch ilpPacketSwitch) {
+  @Bean
+  LocalPacketSwitchLinkFactory localPacketSwitchLinkFactory(ILPv4PacketSwitch ilpPacketSwitch) {
     return new LocalPacketSwitchLinkFactory(ilpPacketSwitch);
   }
 
@@ -691,12 +700,12 @@ public class SpringConnectorConfig {
 
   @Bean
   protected SendPaymentService streamPaymentService(StreamSenderFactory streamSenderFactory,
-                                                    SpspClient spspClient,
-                                                    ExchangeRateCalculator exchangeRateCalculator,
-                                                    Supplier<ConnectorSettings> connectorSettingsSupplier,
-                                                    StreamPaymentManager streamPaymentManager,
-                                                    AccountManager accountManager,
-                                                    LocalPacketSwitchLinkFactory localPacketSwitchLinkFactory) {
+    SpspClient spspClient,
+    ExchangeRateCalculator exchangeRateCalculator,
+    Supplier<ConnectorSettings> connectorSettingsSupplier,
+    StreamPaymentManager streamPaymentManager,
+    AccountManager accountManager,
+    LocalPacketSwitchLinkFactory localPacketSwitchLinkFactory) {
     return new DefaultSendPaymentService(
       streamSenderFactory,
       spspClient,

@@ -124,7 +124,7 @@ public class TwoConnectorMixedAssetCodeTestIT extends AbstractIlpOverHttpIT {
     // test.alice.bob: Should be in range because this account will receive yen from Paul on this Connector.
     // hard to validate exchange rate but this should be close
     BigInteger bobBalanceAtAlice = aliceConnector.getBalanceTracker().balance(BOB_ACCOUNT).netBalance();
-    assertThat(bobBalanceAtAlice).isBetween(BigInteger.valueOf(115000000), BigInteger.valueOf(125000000));
+    assertThat(bobBalanceAtAlice).isBetween(BigInteger.valueOf(115000000), BigInteger.valueOf(140000000));
 
     // test.bob.alice: Should be negative some range of the source because it pays from Alice Connector, but pays one
     // to the ping account on Bob.

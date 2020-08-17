@@ -14,13 +14,12 @@ import java.util.UUID;
 
 public class CoordinationMessagePublisherImpl implements CoordinationMessagePublisher {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(CoordinationMessagePublisherImpl.class);
   private final RedisTemplate<String, ?> pubsubRedisTemplate;
   private final ChannelTopic topic;
   private final ObjectMapper objectMapper;
   private final CoordinationMessageIdGenerator coordinatedMessageIdGenerator;
   private final UUID applicationCoordinationUuid;
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(CoordinationMessagePublisherImpl.class);
 
   public CoordinationMessagePublisherImpl(
     @Qualifier(PUBSUB_REDIS_TEMPLATE_BEAN_NAME) RedisTemplate<String, ?> pubsubRedisTemplate,
@@ -53,7 +52,7 @@ public class CoordinationMessagePublisherImpl implements CoordinationMessagePubl
       String serialized = objectMapper.writeValueAsString(coordinationMessage);
       pubsubRedisTemplate.convertAndSend(topic.getTopic(), serialized);
     } catch (Exception e) {
-      LOGGER.error("Cannot serialize entity to publish to Redis via Jackson: {}", message);
+      LOGGER.error("Cannot serialize entity to publish to Redis via Jackson={} exception={}", message, e.getMessage());
     }
 
   }
