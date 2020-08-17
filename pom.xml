@@ -252,6 +252,7 @@
         <groupId>com.squareup.okhttp3</groupId>
         <artifactId>mockwebserver</artifactId>
         <version>4.8.1</version>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>io.github.resilience4j</groupId>
